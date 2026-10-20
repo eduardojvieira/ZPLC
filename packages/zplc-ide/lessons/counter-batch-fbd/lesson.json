@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "counter-batch-fbd",
-  "version": 1,
+  "version": 2,
   "order": 17,
   "module": 3,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "FBD"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson counts parts from a photocell signal that Studio replays exactly, and a board has no recorded trace of such a signal for it yet.",
-        "es": "La lección cuenta piezas a partir de una señal de fotocélula que Studio reproduce exactamente, y todavía no hay una traza registrada desde una placa de esa señal."
-      },
-      "instead": {
-        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/batch-count.scenario.json",
     "sha256": "aab7db4d72a4cca5ee265f361e3b2656329822ee625473c86618d92c6134840e"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "left-hand",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Left hand",
+        "es": "Mano izquierda"
+      }
+    },
+    {
+      "id": "right-hand",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Right hand",
+        "es": "Mano derecha"
+      }
+    },
+    {
+      "id": "guard-closed",
+      "kind": "jumper",
+      "channel": "DI2",
+      "label": {
+        "en": "Guard closed",
+        "es": "Protección cerrada"
+      }
+    },
+    {
+      "id": "press-enable",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Press enable",
+        "es": "Habilitación de la prensa"
+      }
+    },
+    {
+      "id": "guard-lamp",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Guard lamp",
+        "es": "Lámpara de la protección"
+      }
+    },
+    {
+      "id": "one-hand-warning",
+      "kind": "led",
+      "channel": "DO2",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "One-hand warning",
+        "es": "Advertencia de una sola mano"
+      }
+    }
+  ]
+}

@@ -18,7 +18,7 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
@@ -39,10 +39,6 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 ## What the evidence covers
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.
-
-## On a board
-
-The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/analog-scaling-integer <<< */}
 

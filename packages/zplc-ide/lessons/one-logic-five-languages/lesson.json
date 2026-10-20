@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "one-logic-five-languages",
-  "version": 1,
+  "version": 2,
   "order": 25,
   "module": 9,
   "level": "advanced",
@@ -16,20 +16,10 @@
     "IL"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson is graded on a request and a close command replayed at exact steps, and no board trace has been recorded for it.",
-        "es": "La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella."
-      },
-      "instead": {
-        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 30,
   "starter": {
@@ -46,5 +36,12 @@
     "path": "tests/gate-latch.scenario.json",
     "sha256": "90a670b5e47ab23b713d42c898002e7f52da799c574e19cb3002924ca47137e4"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

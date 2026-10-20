@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "step",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Step",
+        "es": "Paso"
+      }
+    },
+    {
+      "id": "reset",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Reset",
+        "es": "Reset"
+      }
+    },
+    {
+      "id": "low",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Low",
+        "es": "Bajo"
+      }
+    },
+    {
+      "id": "exact",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Exact",
+        "es": "Exacto"
+      }
+    },
+    {
+      "id": "high",
+      "kind": "led",
+      "channel": "DO2",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "High",
+        "es": "Alto"
+      }
+    }
+  ]
+}

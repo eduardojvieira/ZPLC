@@ -42,7 +42,7 @@ La evidencia de Tests es determinística del host nativo POSIX; no es evidencia 
 
 ## En una placa
 
-La lección se califica contra un cruce peatonal simulado con luces temporizadas, y no se ha escrito una verificación en placa para esa planta. Complétela en Simulación, que modela el cruce y da el mismo resultado cada vez.
+El cruce maneja cinco lámparas y las placas del estudiante tienen cuatro salidas para LED; sus solicitudes de peatones provienen de la planta simulada del cruce. Complétela en Simulación, que modela el cruce y da el mismo resultado cada vez.
 
 {/* <<< END GENERATED: learn/lessons/pedestrian-crossing-states <<< */}
 

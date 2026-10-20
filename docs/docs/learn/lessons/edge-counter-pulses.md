@@ -18,7 +18,7 @@ Use a CTU counter to count three discrete pulses and reset the count.
 - Level: Foundation
 - Estimated time: 15 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
@@ -39,10 +39,6 @@ Use a CTU counter to count three discrete pulses and reset the count.
 ## What the evidence covers
 
 Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.
-
-## On a board
-
-The lesson counts pulses that the scenario sends at exact times; a board would need a pulse source and a recorded trace that has not been written yet. Complete it in Simulation, then try the Edge counter example on your board with a push button.
 
 {/* <<< END GENERATED: learn/lessons/edge-counter-pulses <<< */}
 

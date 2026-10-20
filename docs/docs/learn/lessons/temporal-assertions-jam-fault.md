@@ -42,7 +42,7 @@ Tests provide native POSIX host runtime and discrete-input evidence only; the sc
 
 ## On a board
 
-The lesson checks timed assertions to the millisecond, and a board adds timing jitter that would make those checks unreliable. Complete it in Simulation, where time is exact, then apply the same assertions to a board with the test tools.
+Module 8 teaches scenario tests and diagnosis, which run in simulation, and the lesson reads seven inputs where the learner boards have four. Complete it in Simulation, where time is exact.
 
 {/* <<< END GENERATED: learn/lessons/temporal-assertions-jam-fault <<< */}
 

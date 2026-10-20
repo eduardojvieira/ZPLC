@@ -7,9 +7,11 @@ tags: [learn, hardware, boards]
 
 # Learner kits
 
-The course runs every lesson in simulation. Lessons that list the **Hardware** track also run on one of
-two learner boards: the Raspberry Pi Pico (RP2040) or the ESP32-S3-DevKitC-1. Both boards use the same
-breadboard parts, and every hardware lesson has one wiring file that serves both boards.
+The course grades every simulation lesson on this computer. Lessons that list the **Hardware** track
+are written for the learner boards of the course, the Raspberry Pi Pico (RP2040) and the
+ESP32-S3-DevKitC-1: both use the same breadboard parts, and every hardware lesson has one wiring file
+that serves both boards. No hardware run of a lesson has been recorded on a board yet; until one is,
+the hardware track is a plan backed by the wiring checks below, not by a board.
 
 ## How a lesson declares the hardware track
 

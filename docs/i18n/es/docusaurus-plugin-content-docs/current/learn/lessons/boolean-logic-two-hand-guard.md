@@ -18,7 +18,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 
@@ -39,10 +39,6 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.
-
-## En una placa
-
-La lección pulsa dos entradas en instantes definidos para probar AND, NOT y XOR; una placa necesitaría dos pulsadores cableados y una traza registrada que todavía no existen. Complétela en Simulación, donde el escenario pulsa ambas entradas por usted.
 
 {/* <<< END GENERATED: learn/lessons/boolean-logic-two-hand-guard <<< */}
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pedestrian-crossing-states",
-  "version": 1,
+  "version": 2,
   "order": 2,
   "module": 5,
   "level": "intermediate",
@@ -17,8 +17,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded against a simulated crossing with timed lights, and no board check has been written for that plant.",
-        "es": "La lección se califica contra un cruce peatonal simulado con luces temporizadas, y no se ha escrito una verificación en placa para esa planta."
+        "en": "The crossing drives five lamps, and the learner boards have four LED outputs; its pedestrian requests come from the simulated crossing plant.",
+        "es": "El cruce maneja cinco lámparas y las placas del estudiante tienen cuatro salidas para LED; sus solicitudes de peatones provienen de la planta simulada del cruce."
       },
       "instead": {
         "en": "Complete it in Simulation, which models the crossing and gives the same result each time.",

@@ -3,7 +3,7 @@
   "lessons": [
     {
       "id": "motor-start-stop-safe",
-      "version": 1,
+      "version": 2,
       "order": 1,
       "module": 2,
       "level": "foundation",
@@ -14,20 +14,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson tests a stop that must win over a start, using inputs a script presses at exact times; a board would need wired buttons and a recorded trace that does not exist yet.",
-            "es": "La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, where the scenario presses each input for you, and keep the stop contact wired normally closed on a real motor.",
-            "es": "Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -49,7 +39,75 @@
         "canonical": "{\"durationMs\":180,\"events\":[{\"atMs\":0,\"set\":{\"Motor.EStop\":false,\"Motor.Overload\":false,\"Motor.Start\":true,\"Motor.Stop\":false}},{\"atMs\":10,\"set\":{\"Motor.Start\":false}},{\"atMs\":20,\"set\":{\"Motor.Start\":true}},{\"atMs\":30,\"set\":{\"Motor.Start\":false}},{\"atMs\":40,\"set\":{\"Motor.EStop\":true,\"Motor.Start\":true}},{\"atMs\":50,\"set\":{\"Motor.EStop\":false}},{\"atMs\":60,\"set\":{\"Motor.Start\":false}},{\"atMs\":70,\"set\":{\"Motor.Start\":true}},{\"atMs\":80,\"set\":{\"Motor.Start\":false}},{\"atMs\":90,\"set\":{\"Motor.Overload\":true,\"Motor.Start\":true}},{\"atMs\":100,\"set\":{\"Motor.Overload\":false}},{\"atMs\":110,\"set\":{\"Motor.Start\":false}},{\"atMs\":120,\"set\":{\"Motor.Start\":true}},{\"atMs\":130,\"set\":{\"Motor.Start\":false}},{\"atMs\":140,\"set\":{\"Motor.Start\":true,\"Motor.Stop\":true}},{\"atMs\":150,\"set\":{\"Motor.Stop\":false}},{\"atMs\":160,\"set\":{\"Motor.Start\":false}},{\"atMs\":170,\"set\":{\"Motor.Start\":true}},{\"atMs\":180,\"set\":{\"Motor.Start\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":140,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":150,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":160,\"condition\":{\"Motor.Forward\":false,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":170,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":180,\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":false},\"kind\":\"AT\"},{\"condition\":{\"Motor.Forward\":true},\"fromMs\":120,\"kind\":\"UNTIL\",\"until\":{\"Motor.Stop\":true}},{\"condition\":{\"Motor.Forward\":false},\"forMs\":20,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"Motor.Forward\":true},\"fromMs\":0,\"kind\":\"EVENTUALLY\",\"withinMs\":20},{\"condition\":{\"Motor.Forward\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Motor.Forward\":false},\"fromMs\":40,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"Motor.Forward\":false},\"fromMs\":140,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"Motor.Reverse\":false},\"kind\":\"ALWAYS\"},{\"condition\":{\"Motor.Forward\":true,\"Motor.Reverse\":true},\"kind\":\"NEVER\"}],\"id\":\"MotorStartStop\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "start",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Start",
+                "es": "Arranque"
+              }
+            },
+            {
+              "id": "stop",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Stop",
+                "es": "Parada"
+              }
+            },
+            {
+              "id": "emergency-stop",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Emergency stop (a practice button, not a safety device)",
+                "es": "Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad)"
+              }
+            },
+            {
+              "id": "overload",
+              "kind": "jumper",
+              "channel": "DI3",
+              "label": {
+                "en": "Overload",
+                "es": "Sobrecarga"
+              }
+            },
+            {
+              "id": "forward",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Forward",
+                "es": "Avance"
+              }
+            },
+            {
+              "id": "reverse",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Reverse",
+                "es": "Retroceso"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Safe motor start-stop",
@@ -175,7 +233,7 @@
     },
     {
       "id": "pedestrian-crossing-states",
-      "version": 1,
+      "version": 2,
       "order": 2,
       "module": 5,
       "level": "intermediate",
@@ -191,8 +249,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded against a simulated crossing with timed lights, and no board check has been written for that plant.",
-            "es": "La lección se califica contra un cruce peatonal simulado con luces temporizadas, y no se ha escrito una verificación en placa para esa planta."
+            "en": "The crossing drives five lamps, and the learner boards have four LED outputs; its pedestrian requests come from the simulated crossing plant.",
+            "es": "El cruce maneja cinco lámparas y las placas del estudiante tienen cuatro salidas para LED; sus solicitudes de peatones provienen de la planta simulada del cruce."
           },
           "instead": {
             "en": "Complete it in Simulation, which models the crossing and gives the same result each time.",
@@ -360,7 +418,7 @@
     },
     {
       "id": "tank-level-fault-reset",
-      "version": 1,
+      "version": 2,
       "order": 3,
       "module": 6,
       "level": "intermediate",
@@ -376,12 +434,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson fills and empties a simulated tank to provoke faults, which would be unsafe and slow to repeat on a board.",
-            "es": "La lección llena y vacía un tanque simulado para provocar fallos, algo inseguro y lento de repetir en una placa."
+            "en": "The tank plant's level dynamics and its faults exist only in simulation, and the lesson reads six inputs where the learner boards have four.",
+            "es": "La dinámica del nivel de la planta del tanque y sus fallas existen solo en simulación, y la lección lee seis entradas cuando las placas del estudiante tienen cuatro."
           },
           "instead": {
-            "en": "Complete it in Simulation, where a fault costs nothing and can be repeated, and rehearse the reset steps there.",
-            "es": "Complétela en Simulación, donde un fallo no cuesta nada y se puede repetir, y ensaye allí los pasos de rearme."
+            "en": "Complete it in Simulation, where a fault costs nothing and can be repeated.",
+            "es": "Complétela en Simulación, donde una falla no cuesta nada y se puede repetir."
           }
         }
       },
@@ -543,7 +601,7 @@
     },
     {
       "id": "conveyor-classification-jam",
-      "version": 1,
+      "version": 2,
       "order": 4,
       "module": 8,
       "level": "advanced",
@@ -560,12 +618,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson needs the conveyor plant with its sensors and a forced jam, which a board cannot reproduce without the machine.",
-            "es": "La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina."
+            "en": "The parts and the jam come from the simulated conveyor plant, and the lesson reads seven inputs where the learner boards have four.",
+            "es": "Las piezas y el atasco provienen de la planta simulada del transportador, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
           },
           "instead": {
             "en": "Complete it in Simulation, where the conveyor and the jam are part of the scenario.",
-            "es": "Complétela en Simulación, donde la cinta y el atasco forman parte del escenario."
+            "es": "Complétela en Simulación, donde el transportador y el atasco forman parte del escenario."
           }
         }
       },
@@ -729,7 +787,7 @@
     },
     {
       "id": "blinky-ladder-timer-feedback",
-      "version": 2,
+      "version": 3,
       "order": 5,
       "module": 1,
       "level": "foundation",
@@ -740,20 +798,10 @@
         "LD"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on exact timer edges at 10 ms steps, which a board cannot repeat the same way every run.",
-            "es": "La lección se califica con flancos exactos de temporizador en pasos de 10 ms, que una placa no repite igual en cada ejecución."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.",
-            "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Blinky para Pico."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -775,7 +823,28 @@
         "canonical": "{\"durationMs\":1800,\"events\":[],\"expectations\":[{\"atMs\":0,\"condition\":{\"Blinky.LED_Output\":false},\"kind\":\"AT\"},{\"atMs\":250,\"condition\":{\"Blinky.LED_Output\":false},\"kind\":\"AT\"},{\"atMs\":750,\"condition\":{\"Blinky.LED_Output\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"Blinky.LED_Output\":false},\"kind\":\"AT\"},{\"atMs\":1750,\"condition\":{\"Blinky.LED_Output\":true},\"kind\":\"AT\"},{\"condition\":{\"Blinky.LED_Output\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"Blinky.LED_Output\":true},\"forMs\":280,\"fromMs\":620,\"kind\":\"FOR\"},{\"condition\":{\"Blinky.LED_Output\":false},\"forMs\":280,\"fromMs\":1120,\"kind\":\"FOR\"},{\"condition\":{\"Blinky.LED_Output\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200},{\"condition\":{\"Blinky.LED_Output\":false},\"fromMs\":900,\"kind\":\"FALLING\",\"withinMs\":200},{\"condition\":{\"Blinky.LED_Output\":true},\"fromMs\":1400,\"kind\":\"RISING\",\"withinMs\":300}],\"id\":\"BlinkyVisual\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "led",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "LED output",
+                "es": "Salida del LED"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "TON oscillator and output feedback",
@@ -901,7 +970,7 @@
     },
     {
       "id": "motor-plant-feedback",
-      "version": 1,
+      "version": 2,
       "order": 6,
       "module": 6,
       "level": "intermediate",
@@ -917,12 +986,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
-            "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+            "en": "The run feedback comes from the simulated motor plant, which answers your outputs; a learner board has no motor to give it.",
+            "es": "La realimentación de marcha proviene de la planta simulada del motor, que responde a sus salidas; una placa del estudiante no tiene un motor que la dé."
           },
           "instead": {
             "en": "Complete it in Simulation, which provides the motor and its run feedback.",
-            "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+            "es": "Complétela en Simulación, que proporciona el motor y su realimentación de marcha."
           }
         }
       },
@@ -1082,7 +1151,7 @@
     },
     {
       "id": "edge-counter-pulses",
-      "version": 1,
+      "version": 2,
       "order": 7,
       "module": 3,
       "level": "foundation",
@@ -1093,20 +1162,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson counts pulses that the scenario sends at exact times; a board would need a pulse source and a recorded trace that has not been written yet.",
-            "es": "La lección cuenta pulsos que el escenario envía en instantes exactos; una placa necesitaría una fuente de pulsos y una traza registrada que todavía no se ha escrito."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, then try the Edge counter example on your board with a push button.",
-            "es": "Complétela en Simulación y luego pruebe el ejemplo Contador de flancos en su placa con un pulsador."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -1128,7 +1187,46 @@
         "canonical": "{\"durationMs\":80,\"events\":[{\"atMs\":0,\"set\":{\"EdgeCounter.PulseInput\":false,\"EdgeCounter.Reset\":false}},{\"atMs\":10,\"set\":{\"EdgeCounter.PulseInput\":true}},{\"atMs\":20,\"set\":{\"EdgeCounter.PulseInput\":false}},{\"atMs\":30,\"set\":{\"EdgeCounter.PulseInput\":true}},{\"atMs\":40,\"set\":{\"EdgeCounter.PulseInput\":false}},{\"atMs\":50,\"set\":{\"EdgeCounter.PulseInput\":true}},{\"atMs\":60,\"set\":{\"EdgeCounter.PulseInput\":false}},{\"atMs\":70,\"set\":{\"EdgeCounter.Reset\":true}},{\"atMs\":80,\"set\":{\"EdgeCounter.Reset\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"EdgeCounter.CountReached\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"EdgeCounter.CountReached\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"EdgeCounter.CountReached\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"EdgeCounter.CountReached\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"EdgeCounter.CountReached\":false},\"kind\":\"AT\"},{\"condition\":{\"EdgeCounter.CountReached\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"EdgeCounter.CountReached\":false},\"fromMs\":70,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"EdgeCounter\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "pulse",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Pulse input",
+                "es": "Entrada de pulsos"
+              }
+            },
+            {
+              "id": "reset",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Reset",
+                "es": "Reset"
+              }
+            },
+            {
+              "id": "count-reached",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Count reached",
+                "es": "Cuenta alcanzada"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Edges and pulse counter",
@@ -1254,7 +1352,7 @@
     },
     {
       "id": "scan-cycle-one-scan-memory",
-      "version": 1,
+      "version": 2,
       "order": 8,
       "module": 1,
       "level": "foundation",
@@ -1265,20 +1363,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson watches a value move one scan at a time, and a board gives no view of single scans.",
-            "es": "La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, where the trace shows each scan, then read the scan cycle page before you try a board.",
-            "es": "Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 10,
@@ -1300,7 +1388,59 @@
         "canonical": "{\"durationMs\":30,\"events\":[{\"atMs\":0,\"set\":{\"ScanSnapshot.Button\":false}},{\"atMs\":10,\"set\":{\"ScanSnapshot.Button\":true}},{\"atMs\":20,\"set\":{\"ScanSnapshot.Button\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"ScanSnapshot.Current\":false,\"ScanSnapshot.Delayed\":false,\"ScanSnapshot.RisingPulse\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"ScanSnapshot.Current\":true,\"ScanSnapshot.Delayed\":false,\"ScanSnapshot.RisingPulse\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"ScanSnapshot.Current\":false,\"ScanSnapshot.Delayed\":true,\"ScanSnapshot.RisingPulse\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"ScanSnapshot.Current\":false,\"ScanSnapshot.Delayed\":false,\"ScanSnapshot.RisingPulse\":false},\"kind\":\"AT\"},{\"condition\":{\"ScanSnapshot.RisingPulse\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"ScanSnapshot.RisingPulse\":false},\"fromMs\":20,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"ScanSnapshot.Delayed\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"ScanSnapshot.Delayed\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"ScanSnapshot.Delayed\":true,\"ScanSnapshot.RisingPulse\":true},\"kind\":\"NEVER\"}],\"id\":\"ScanSnapshot\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "button",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Button",
+                "es": "Pulsador"
+              }
+            },
+            {
+              "id": "current",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Current",
+                "es": "Actual"
+              }
+            },
+            {
+              "id": "delayed",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Delayed",
+                "es": "Retardado"
+              }
+            },
+            {
+              "id": "rising-pulse",
+              "kind": "led",
+              "channel": "DO2",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Rising pulse",
+                "es": "Pulso de flanco ascendente"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Scan cycle and one-scan memory",
@@ -1438,7 +1578,7 @@
     },
     {
       "id": "temporal-assertions-jam-fault",
-      "version": 1,
+      "version": 2,
       "order": 9,
       "module": 8,
       "level": "advanced",
@@ -1454,12 +1594,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson checks timed assertions to the millisecond, and a board adds timing jitter that would make those checks unreliable.",
-            "es": "La lección comprueba aserciones temporales al milisegundo, y una placa añade fluctuaciones de tiempo que harían poco fiables esas comprobaciones."
+            "en": "Module 8 teaches scenario tests and diagnosis, which run in simulation, and the lesson reads seven inputs where the learner boards have four.",
+            "es": "El módulo 8 enseña pruebas de escenario y diagnóstico, que se ejecutan en simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
           },
           "instead": {
-            "en": "Complete it in Simulation, where time is exact, then apply the same assertions to a board with the test tools.",
-            "es": "Complétela en Simulación, donde el tiempo es exacto, y luego aplique las mismas aserciones a una placa con las herramientas de pruebas."
+            "en": "Complete it in Simulation, where time is exact.",
+            "es": "Complétela en Simulación, donde el tiempo es exacto."
           }
         }
       },
@@ -1612,7 +1752,7 @@
     },
     {
       "id": "conveyor-two-parts-diagnosis",
-      "version": 1,
+      "version": 2,
       "order": 10,
       "module": 8,
       "level": "advanced",
@@ -1628,8 +1768,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson diagnoses a recorded two-part sequence by reading a trace, and no trace recorded from a board has been written for it.",
-            "es": "La lección diagnostica una secuencia registrada de dos piezas leyendo una traza, y no se ha escrito para ella una traza registrada desde una placa."
+            "en": "Module 8 teaches diagnosis from a trace of the simulation, and the lesson reads seven inputs where the learner boards have four.",
+            "es": "El módulo 8 enseña el diagnóstico a partir de una traza de la simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
           },
           "instead": {
             "en": "Complete it in Simulation, where the trace is the evidence you read.",
@@ -1796,7 +1936,7 @@
     },
     {
       "id": "first-blink-simulation",
-      "version": 1,
+      "version": 2,
       "order": 11,
       "module": 0,
       "level": "foundation",
@@ -1810,12 +1950,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson changes one value in a program that already blinks and checks the lamp in simulation; a board would need a recorded trace and wiring page that do not exist yet.",
-            "es": "La lección cambia un valor en un programa que ya parpadea y comprueba la lámpara en simulación; una placa necesitaría una traza registrada y una página de cableado que todavía no existen."
+            "en": "This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board.",
+            "es": "Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
           },
           "instead": {
-            "en": "Complete it in Simulation. The Raspberry Pi Pico blinky example shows the same idea on the on-board LED.",
-            "es": "Complétela en Simulación. El ejemplo de parpadeo de la Raspberry Pi Pico muestra la misma idea con el LED de la placa."
+            "en": "Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.",
+            "es": "Complétela en Simulación y luego haga la lección siguiente, Verificar mi placa, en la ruta de Hardware para verificar su placa."
           }
         }
       },
@@ -1966,7 +2106,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard",
-      "version": 1,
+      "version": 2,
       "order": 12,
       "module": 2,
       "level": "foundation",
@@ -1977,20 +2117,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson presses two inputs at scripted times to test AND, NOT and XOR; a board would need two wired buttons and a recorded trace that do not exist yet.",
-            "es": "La lección pulsa dos entradas en instantes definidos para probar AND, NOT y XOR; una placa necesitaría dos pulsadores cableados y una traza registrada que todavía no existen."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, where the scenario presses both inputs for you.",
-            "es": "Complétela en Simulación, donde el escenario pulsa ambas entradas por usted."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2012,7 +2142,77 @@
         "canonical": "{\"durationMs\":60,\"events\":[{\"atMs\":0,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}},{\"atMs\":10,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":false}},{\"atMs\":20,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":30,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":true,\"TwoHand.RightHand\":true}},{\"atMs\":40,\"set\":{\"TwoHand.GuardClosed\":true,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":true}},{\"atMs\":50,\"set\":{\"TwoHand.GuardClosed\":false,\"TwoHand.LeftHand\":false,\"TwoHand.RightHand\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TwoHand.GuardLamp\":false,\"TwoHand.OneHandWarning\":true,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.OneHandWarning\":false,\"TwoHand.PressEnable\":false},\"kind\":\"AT\"},{\"condition\":{\"TwoHand.PressEnable\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TwoHand.PressEnable\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"TwoHand.GuardLamp\":true,\"TwoHand.PressEnable\":true},\"kind\":\"NEVER\"}],\"id\":\"TwoHand\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "left-hand",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Left hand",
+                "es": "Mano izquierda"
+              }
+            },
+            {
+              "id": "right-hand",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Right hand",
+                "es": "Mano derecha"
+              }
+            },
+            {
+              "id": "guard-closed",
+              "kind": "jumper",
+              "channel": "DI2",
+              "label": {
+                "en": "Guard closed",
+                "es": "Protección cerrada"
+              }
+            },
+            {
+              "id": "press-enable",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Press enable",
+                "es": "Habilitación de la prensa"
+              }
+            },
+            {
+              "id": "guard-lamp",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Guard lamp",
+                "es": "Lámpara de la protección"
+              }
+            },
+            {
+              "id": "one-hand-warning",
+              "kind": "led",
+              "channel": "DO2",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "One-hand warning",
+                "es": "Advertencia de una sola mano"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Boolean logic: a two-hand control with a guard",
@@ -2138,7 +2338,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 1,
+      "version": 2,
       "order": 13,
       "module": 3,
       "level": "foundation",
@@ -2149,20 +2349,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson measures on-delay and off-delay times against the scan clock; real board timing is not reproducible enough for a deterministic check, and no recorded trace exists yet.",
-            "es": "La lección mide retardos a la conexión y a la desconexión contra el reloj de ciclo; el tiempo en una placa real no es lo bastante reproducible para una comprobación determinista y todavía no existe una traza registrada."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, where time is deterministic.",
-            "es": "Complétela en Simulación, donde el tiempo es determinista."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2184,7 +2374,57 @@
         "canonical": "{\"durationMs\":1000,\"events\":[{\"atMs\":0,\"set\":{\"Delays.Button\":false,\"Delays.Sensor\":false}},{\"atMs\":100,\"set\":{\"Delays.Button\":true,\"Delays.Sensor\":true}},{\"atMs\":140,\"set\":{\"Delays.Sensor\":false}},{\"atMs\":300,\"set\":{\"Delays.Button\":false}},{\"atMs\":500,\"set\":{\"Delays.Sensor\":true}},{\"atMs\":900,\"set\":{\"Delays.Sensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":200,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":450,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":true},\"kind\":\"AT\"},{\"atMs\":650,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":800,\"condition\":{\"Delays.Confirmed\":true,\"Delays.Light\":false},\"kind\":\"AT\"},{\"atMs\":950,\"condition\":{\"Delays.Confirmed\":false,\"Delays.Light\":false},\"kind\":\"AT\"},{\"condition\":{\"Delays.Light\":true},\"forMs\":470,\"fromMs\":110,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Confirmed\":false},\"forMs\":400,\"fromMs\":100,\"kind\":\"FOR\"},{\"condition\":{\"Delays.Light\":false},\"fromMs\":560,\"kind\":\"FALLING\",\"withinMs\":100},{\"condition\":{\"Delays.Confirmed\":true},\"fromMs\":600,\"kind\":\"RISING\",\"withinMs\":200}],\"id\":\"Delays\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "button",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Button",
+                "es": "Pulsador"
+              }
+            },
+            {
+              "id": "sensor",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Sensor",
+                "es": "Sensor"
+              }
+            },
+            {
+              "id": "light",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Light",
+                "es": "Luz"
+              }
+            },
+            {
+              "id": "confirmed",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Confirmed",
+                "es": "Confirmado"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Timers: an off-delay light and an on-delay filter",
@@ -2310,7 +2550,7 @@
     },
     {
       "id": "blink-structured-text",
-      "version": 1,
+      "version": 2,
       "order": 14,
       "module": 1,
       "level": "foundation",
@@ -2321,20 +2561,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The scenario checks the lamp at exact scan times with a script that gates the blinker; a board has no recorded trace for this lesson yet.",
-            "es": "El escenario comprueba la lámpara en instantes de ciclo exactos con un guion que habilita el parpadeo; una placa todavía no tiene traza registrada para esta lección."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, then try the Raspberry Pi Pico blinky example for the same timer on a real LED.",
-            "es": "Complétela en Simulación y pruebe después el ejemplo de parpadeo de la Raspberry Pi Pico con el mismo temporizador sobre un LED real."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2356,7 +2586,37 @@
         "canonical": "{\"durationMs\":1400,\"events\":[{\"atMs\":0,\"set\":{\"EnabledBlink.Enable\":false}},{\"atMs\":100,\"set\":{\"EnabledBlink.Enable\":true}},{\"atMs\":1150,\"set\":{\"EnabledBlink.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":350,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":550,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":850,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"atMs\":1100,\"condition\":{\"EnabledBlink.Lamp\":true},\"kind\":\"AT\"},{\"atMs\":1250,\"condition\":{\"EnabledBlink.Lamp\":false},\"kind\":\"AT\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":380,\"fromMs\":0,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"forMs\":260,\"fromMs\":420,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":false},\"forMs\":260,\"fromMs\":720,\"kind\":\"FOR\"},{\"condition\":{\"EnabledBlink.Lamp\":true},\"fromMs\":380,\"kind\":\"RISING\",\"withinMs\":60},{\"condition\":{\"EnabledBlink.Lamp\":false},\"fromMs\":1150,\"kind\":\"FALLING\",\"withinMs\":100}],\"id\":\"EnabledBlink\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "enable",
+              "kind": "jumper",
+              "channel": "DI0",
+              "label": {
+                "en": "Enable",
+                "es": "Habilitación"
+              }
+            },
+            {
+              "id": "lamp",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Lamp",
+                "es": "Lámpara"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Write a blinker in Structured Text",
@@ -2482,7 +2742,7 @@
     },
     {
       "id": "set-reset-alarm-latch",
-      "version": 1,
+      "version": 2,
       "order": 15,
       "module": 2,
       "level": "foundation",
@@ -2493,20 +2753,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson compares set-dominant and reset-dominant latches with inputs pressed at exact times; a board has no recorded trace for it yet.",
-            "es": "La lección compara biestables con prioridad al arranque y al reposo con entradas pulsadas en instantes exactos; una placa todavía no tiene traza registrada para ella."
-          },
-          "instead": {
-            "en": "Complete it in Simulation, where the scenario presses the inputs for you.",
-            "es": "Complétela en Simulación, donde el escenario pulsa las entradas por usted."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 15,
@@ -2528,7 +2778,57 @@
         "canonical": "{\"durationMs\":70,\"events\":[{\"atMs\":0,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":10,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":true}},{\"atMs\":20,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":30,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}},{\"atMs\":40,\"set\":{\"AlarmLatch.Ack\":false,\"AlarmLatch.Fault\":false}},{\"atMs\":50,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":true}},{\"atMs\":60,\"set\":{\"AlarmLatch.Ack\":true,\"AlarmLatch.Fault\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":true},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"AlarmLatch.ResetFirst\":false,\"AlarmLatch.SetFirst\":false},\"kind\":\"AT\"},{\"condition\":{\"AlarmLatch.SetFirst\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.SetFirst\":false},\"fromMs\":30,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"AlarmLatch.ResetFirst\":true,\"AlarmLatch.SetFirst\":false},\"kind\":\"NEVER\"}],\"id\":\"AlarmLatch\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "fault",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Fault",
+                "es": "Falla"
+              }
+            },
+            {
+              "id": "ack",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Acknowledge",
+                "es": "Reconocimiento"
+              }
+            },
+            {
+              "id": "set-first",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Set-dominant alarm",
+                "es": "Alarma con prioridad de set"
+              }
+            },
+            {
+              "id": "reset-first",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Reset-dominant alarm",
+                "es": "Alarma con prioridad de reset"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Latching an alarm: set and reset, and which one wins",
@@ -2654,7 +2954,7 @@
     },
     {
       "id": "seal-in-ladder",
-      "version": 1,
+      "version": 2,
       "order": 16,
       "module": 2,
       "level": "foundation",
@@ -2665,20 +2965,10 @@
         "LD"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on a Start and Stop pressed together at an exact 10 ms step, which a board cannot repeat the same way every run.",
-            "es": "La lección se califica con Start y Stop pulsados juntos en un paso exacto de 10 ms, que una placa no repite igual en cada ejecución."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -2700,7 +2990,46 @@
         "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}},{\"atMs\":10,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":20,\"set\":{\"SealIn.StartPB\":false}},{\"atMs\":40,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":50,\"set\":{\"SealIn.StopPB\":false}},{\"atMs\":60,\"set\":{\"SealIn.StartPB\":true}},{\"atMs\":70,\"set\":{\"SealIn.StopPB\":true}},{\"atMs\":80,\"set\":{\"SealIn.StartPB\":false,\"SealIn.StopPB\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"SealIn.Motor\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"SealIn.Motor\":false},\"kind\":\"AT\"},{\"condition\":{\"SealIn.Motor\":true},\"forMs\":10,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"SealIn.Motor\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"SealIn.Motor\":false},\"fromMs\":40,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"SealIn\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "start",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Start",
+                "es": "Arranque"
+              }
+            },
+            {
+              "id": "stop",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Stop",
+                "es": "Parada"
+              }
+            },
+            {
+              "id": "motor",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Motor",
+                "es": "Motor"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Seal-in in Ladder: a motor that holds itself on",
@@ -2826,7 +3155,7 @@
     },
     {
       "id": "counter-batch-fbd",
-      "version": 1,
+      "version": 2,
       "order": 17,
       "module": 3,
       "level": "foundation",
@@ -2837,20 +3166,10 @@
         "FBD"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson counts parts from a photocell signal that Studio replays exactly, and a board has no recorded trace of such a signal for it yet.",
-            "es": "La lección cuenta piezas a partir de una señal de fotocélula que Studio reproduce exactamente, y todavía no hay una traza registrada desde una placa de esa señal."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -2872,7 +3191,46 @@
         "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"BatchCount.PartSensor\":false,\"BatchCount.Reset\":false}},{\"atMs\":10,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":30,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":40,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":50,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":60,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":70,\"set\":{\"BatchCount.PartSensor\":false}},{\"atMs\":80,\"set\":{\"BatchCount.Reset\":true}},{\"atMs\":90,\"set\":{\"BatchCount.Reset\":false}},{\"atMs\":100,\"set\":{\"BatchCount.PartSensor\":true}},{\"atMs\":110,\"set\":{\"BatchCount.PartSensor\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"BatchCount.BatchFull\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"BatchCount.BatchFull\":false},\"kind\":\"AT\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"forMs\":10,\"fromMs\":60,\"kind\":\"FOR\"},{\"condition\":{\"BatchCount.BatchFull\":true},\"fromMs\":60,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"BatchCount.BatchFull\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"BatchCount\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "part-sensor",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Part sensor",
+                "es": "Sensor de pieza"
+              }
+            },
+            {
+              "id": "reset",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Reset",
+                "es": "Reset"
+              }
+            },
+            {
+              "id": "batch-full",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Batch full",
+                "es": "Lote completo"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Counters in Function Block Diagram: count parts to a batch",
@@ -2998,7 +3356,7 @@
     },
     {
       "id": "interlock-guard-permissive",
-      "version": 1,
+      "version": 2,
       "order": 18,
       "module": 6,
       "level": "intermediate",
@@ -3014,12 +3372,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson drops a guard input at an exact step and needs the motor plant model for its speed feedback, which a board without a motor cannot give.",
-            "es": "La lección abre una entrada de protección en un paso exacto y necesita el modelo de planta del motor para su realimentación de velocidad, que una placa sin motor no puede dar."
+            "en": "The run feedback comes from the simulated motor plant; a learner board has no motor to give it.",
+            "es": "La realimentación de marcha proviene de la planta simulada del motor; una placa del estudiante no tiene un motor que la dé."
           },
           "instead": {
             "en": "Complete it in Simulation, which provides the motor and its run feedback.",
-            "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+            "es": "Complétela en Simulación, que proporciona el motor y su realimentación de marcha."
           }
         }
       },
@@ -3179,7 +3537,7 @@
     },
     {
       "id": "types-arithmetic-comparison",
-      "version": 1,
+      "version": 2,
       "order": 19,
       "module": 4,
       "level": "intermediate",
@@ -3190,20 +3548,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on a total that depends on the exact number of presses replayed by Studio, and no board trace has been recorded for it.",
-            "es": "La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -3225,7 +3573,68 @@
         "canonical": "{\"durationMs\":100,\"events\":[{\"atMs\":0,\"set\":{\"TypedSteps.Reset\":false,\"TypedSteps.Step\":false}},{\"atMs\":10,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":30,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":40,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":50,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":60,\"set\":{\"TypedSteps.Step\":true}},{\"atMs\":70,\"set\":{\"TypedSteps.Step\":false}},{\"atMs\":80,\"set\":{\"TypedSteps.Reset\":true}},{\"atMs\":90,\"set\":{\"TypedSteps.Reset\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":false,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":true,\"TypedSteps.Low\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"TypedSteps.Exact\":false,\"TypedSteps.High\":false,\"TypedSteps.Low\":true},\"kind\":\"AT\"},{\"condition\":{\"TypedSteps.Exact\":true},\"forMs\":10,\"fromMs\":40,\"kind\":\"FOR\"},{\"condition\":{\"TypedSteps.Exact\":true},\"fromMs\":40,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"TypedSteps.Exact\":true,\"TypedSteps.High\":true},\"kind\":\"NEVER\"}],\"id\":\"TypedSteps\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "step",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Step",
+                "es": "Paso"
+              }
+            },
+            {
+              "id": "reset",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Reset",
+                "es": "Reset"
+              }
+            },
+            {
+              "id": "low",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Low",
+                "es": "Bajo"
+              }
+            },
+            {
+              "id": "exact",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Exact",
+                "es": "Exacto"
+              }
+            },
+            {
+              "id": "high",
+              "kind": "led",
+              "channel": "DO2",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "High",
+                "es": "Alto"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Types, arithmetic and comparison: a total and three bands",
@@ -3351,7 +3760,7 @@
     },
     {
       "id": "analog-scaling-integer",
-      "version": 1,
+      "version": 2,
       "order": 20,
       "module": 4,
       "level": "intermediate",
@@ -3362,20 +3771,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times.",
-            "es": "La lección avanza una cuenta cruda por ciclo, no una entrada analógica real, así que una placa no daría las mismas cuentas en los mismos momentos."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -3397,7 +3796,48 @@
         "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Scaling.Enable\":false}},{\"atMs\":10,\"set\":{\"Scaling.Enable\":true}},{\"atMs\":110,\"set\":{\"Scaling.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Scaling.Alarm\":false,\"Scaling.Warn\":false},\"kind\":\"AT\"},{\"condition\":{\"Scaling.Warn\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true},\"fromMs\":80,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Scaling.Alarm\":true,\"Scaling.Warn\":false},\"kind\":\"NEVER\"}],\"id\":\"Scaling\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "enable",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Enable",
+                "es": "Habilitación"
+              }
+            },
+            {
+              "id": "warn",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Warning",
+                "es": "Advertencia"
+              }
+            },
+            {
+              "id": "alarm",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Alarm",
+                "es": "Alarma"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Analog scaling: from raw counts to a percentage",
@@ -3523,7 +3963,7 @@
     },
     {
       "id": "function-block-pump-pair",
-      "version": 1,
+      "version": 2,
       "order": 21,
       "module": 7,
       "level": "intermediate",
@@ -3534,20 +3974,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson starts and stops two pumps at exact steps to compare two instances of one block, and no board trace has been recorded for it.",
-            "es": "La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 25,
@@ -3569,7 +3999,75 @@
         "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StartB\":false,\"PumpPair.StopA\":false,\"PumpPair.StopB\":false}},{\"atMs\":10,\"set\":{\"PumpPair.StartA\":true}},{\"atMs\":20,\"set\":{\"PumpPair.StartA\":false}},{\"atMs\":30,\"set\":{\"PumpPair.StartB\":true}},{\"atMs\":40,\"set\":{\"PumpPair.StartB\":false}},{\"atMs\":50,\"set\":{\"PumpPair.StopA\":true}},{\"atMs\":60,\"set\":{\"PumpPair.StopA\":false}},{\"atMs\":70,\"set\":{\"PumpPair.StopB\":true}},{\"atMs\":80,\"set\":{\"PumpPair.StopB\":false}},{\"atMs\":90,\"set\":{\"PumpPair.StartA\":true,\"PumpPair.StopA\":true}},{\"atMs\":100,\"set\":{\"PumpPair.StartA\":false,\"PumpPair.StopA\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"PumpPair.RunA\":true,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"PumpPair.RunA\":false,\"PumpPair.RunB\":false},\"kind\":\"AT\"},{\"condition\":{\"PumpPair.RunB\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunA\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"PumpPair.RunB\":true},\"forMs\":10,\"fromMs\":50,\"kind\":\"FOR\"}],\"id\":\"PumpPair\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "start-a",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Start pump A",
+                "es": "Arranque de la bomba A"
+              }
+            },
+            {
+              "id": "stop-a",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Stop pump A",
+                "es": "Parada de la bomba A"
+              }
+            },
+            {
+              "id": "start-b",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Start pump B",
+                "es": "Arranque de la bomba B"
+              }
+            },
+            {
+              "id": "stop-b",
+              "kind": "jumper",
+              "channel": "DI3",
+              "label": {
+                "en": "Stop pump B",
+                "es": "Parada de la bomba B"
+              }
+            },
+            {
+              "id": "run-a",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Pump A running",
+                "es": "Bomba A en marcha"
+              }
+            },
+            {
+              "id": "run-b",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Pump B running",
+                "es": "Bomba B en marcha"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Function blocks: one latch, two pumps",
@@ -3695,7 +4193,7 @@
     },
     {
       "id": "structures-arrays-call-panel",
-      "version": 1,
+      "version": 2,
       "order": 22,
       "module": 7,
       "level": "intermediate",
@@ -3706,20 +4204,10 @@
         "ST"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson replays three call buttons and an acknowledgement at exact steps, and a board has no recorded trace of that panel yet.",
-            "es": "La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 25,
@@ -3741,7 +4229,75 @@
         "canonical": "{\"durationMs\":110,\"events\":[{\"atMs\":0,\"set\":{\"CallPanel.Ack\":false,\"CallPanel.Call1\":false,\"CallPanel.Call2\":false,\"CallPanel.Call3\":false}},{\"atMs\":10,\"set\":{\"CallPanel.Call1\":true}},{\"atMs\":20,\"set\":{\"CallPanel.Call1\":false}},{\"atMs\":30,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":40,\"set\":{\"CallPanel.Call2\":false}},{\"atMs\":50,\"set\":{\"CallPanel.Call3\":true}},{\"atMs\":60,\"set\":{\"CallPanel.Call3\":false}},{\"atMs\":70,\"set\":{\"CallPanel.Ack\":true}},{\"atMs\":80,\"set\":{\"CallPanel.Ack\":false}},{\"atMs\":90,\"set\":{\"CallPanel.Call2\":true}},{\"atMs\":100,\"set\":{\"CallPanel.Call2\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"CallPanel.AllCalling\":false,\"CallPanel.Pending\":true},\"kind\":\"AT\"},{\"condition\":{\"CallPanel.Pending\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true},\"fromMs\":50,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"CallPanel.Pending\":false},\"fromMs\":70,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"CallPanel.AllCalling\":true,\"CallPanel.Pending\":false},\"kind\":\"NEVER\"}],\"id\":\"CallPanel\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "call-1",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Call 1",
+                "es": "Llamada 1"
+              }
+            },
+            {
+              "id": "call-2",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Call 2",
+                "es": "Llamada 2"
+              }
+            },
+            {
+              "id": "call-3",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Call 3",
+                "es": "Llamada 3"
+              }
+            },
+            {
+              "id": "ack",
+              "kind": "jumper",
+              "channel": "DI3",
+              "label": {
+                "en": "Acknowledge",
+                "es": "Reconocimiento"
+              }
+            },
+            {
+              "id": "pending",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Call pending",
+                "es": "Llamada pendiente"
+              }
+            },
+            {
+              "id": "all-calling",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "All calling",
+                "es": "Todas llaman"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Structures and arrays: a panel of three calls",
@@ -3867,7 +4423,7 @@
     },
     {
       "id": "sfc-fill-mix-sequence",
-      "version": 1,
+      "version": 2,
       "order": 23,
       "module": 5,
       "level": "intermediate",
@@ -3878,20 +4434,10 @@
         "SFC"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on step times of 50 ms counted by the scan, which a board cannot repeat to the same scan every run.",
-            "es": "La lección se califica con tiempos de paso de 50 ms contados por ciclo, que una placa no repite al mismo ciclo en cada ejecución."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 25,
@@ -3913,7 +4459,48 @@
         "canonical": "{\"durationMs\":200,\"events\":[{\"atMs\":0,\"set\":{\"FillMix.Start\":false}},{\"atMs\":10,\"set\":{\"FillMix.Start\":true}},{\"atMs\":20,\"set\":{\"FillMix.Start\":false}},{\"atMs\":160,\"set\":{\"FillMix.Start\":true}},{\"atMs\":170,\"set\":{\"FillMix.Start\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":20,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":140,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":false},\"kind\":\"AT\"},{\"atMs\":170,\"condition\":{\"FillMix.Mixer\":false,\"FillMix.Valve\":true},\"kind\":\"AT\"},{\"condition\":{\"FillMix.Valve\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"FillMix.Valve\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"FillMix.Mixer\":true},\"forMs\":50,\"fromMs\":80,\"kind\":\"FOR\"},{\"condition\":{\"FillMix.Mixer\":true,\"FillMix.Valve\":true},\"kind\":\"NEVER\"}],\"id\":\"FillMix\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "start",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Start",
+                "es": "Arranque"
+              }
+            },
+            {
+              "id": "valve",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Fill valve",
+                "es": "Válvula de llenado"
+              }
+            },
+            {
+              "id": "mixer",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Mixer",
+                "es": "Mezclador"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "A sequence in Sequential Function Chart: fill, then mix",
@@ -4039,7 +4626,7 @@
     },
     {
       "id": "instruction-list-door-alarm",
-      "version": 1,
+      "version": 2,
       "order": 24,
       "module": 9,
       "level": "advanced",
@@ -4050,20 +4637,10 @@
         "IL"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it.",
-            "es": "La lección se califica con una puerta y un botón de silencio reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -4085,7 +4662,55 @@
         "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"DoorAlarm.Armed\":true,\"DoorAlarm.DoorOpen\":false,\"DoorAlarm.Silence\":false}},{\"atMs\":10,\"set\":{\"DoorAlarm.DoorOpen\":true}},{\"atMs\":30,\"set\":{\"DoorAlarm.DoorOpen\":false}},{\"atMs\":50,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":60,\"set\":{\"DoorAlarm.Silence\":false}},{\"atMs\":70,\"set\":{\"DoorAlarm.Armed\":false,\"DoorAlarm.DoorOpen\":true}},{\"atMs\":90,\"set\":{\"DoorAlarm.Armed\":true}},{\"atMs\":100,\"set\":{\"DoorAlarm.Silence\":true}},{\"atMs\":110,\"set\":{\"DoorAlarm.Silence\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":40,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":60,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"DoorAlarm.Siren\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"DoorAlarm.Siren\":true},\"kind\":\"AT\"},{\"condition\":{\"DoorAlarm.Siren\":true},\"fromMs\":10,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":false},\"fromMs\":50,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"DoorAlarm.Siren\":true},\"forMs\":10,\"fromMs\":30,\"kind\":\"FOR\"}],\"id\":\"DoorAlarm\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "armed",
+              "kind": "jumper",
+              "channel": "DI0",
+              "label": {
+                "en": "Armed",
+                "es": "Armado"
+              }
+            },
+            {
+              "id": "door-open",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Door open",
+                "es": "Puerta abierta"
+              }
+            },
+            {
+              "id": "silence",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Silence",
+                "es": "Silenciar"
+              }
+            },
+            {
+              "id": "siren",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Siren",
+                "es": "Sirena"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Instruction List: the current result and the order of instructions",
@@ -4211,7 +4836,7 @@
     },
     {
       "id": "one-logic-five-languages",
-      "version": 1,
+      "version": 2,
       "order": 25,
       "module": 9,
       "level": "advanced",
@@ -4226,20 +4851,10 @@
         "IL"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson is graded on a request and a close command replayed at exact steps, and no board trace has been recorded for it.",
-            "es": "La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 30,
@@ -4261,7 +4876,46 @@
         "canonical": "{\"durationMs\":240,\"events\":[{\"atMs\":0,\"set\":{\"Gate.Close\":false,\"Gate.Request\":false}},{\"atMs\":20,\"set\":{\"Gate.Request\":true}},{\"atMs\":40,\"set\":{\"Gate.Request\":false}},{\"atMs\":80,\"set\":{\"Gate.Close\":true}},{\"atMs\":110,\"set\":{\"Gate.Close\":false}},{\"atMs\":130,\"set\":{\"Gate.Close\":true,\"Gate.Request\":true}},{\"atMs\":160,\"set\":{\"Gate.Close\":false,\"Gate.Request\":false}},{\"atMs\":180,\"set\":{\"Gate.Request\":true}},{\"atMs\":200,\"set\":{\"Gate.Request\":false}}],\"expectations\":[{\"atMs\":10,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":150,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":170,\"condition\":{\"Gate.Open\":false},\"kind\":\"AT\"},{\"atMs\":210,\"condition\":{\"Gate.Open\":true},\"kind\":\"AT\"},{\"condition\":{\"Gate.Open\":true},\"forMs\":20,\"fromMs\":50,\"kind\":\"FOR\"},{\"condition\":{\"Gate.Open\":true},\"fromMs\":20,\"kind\":\"RISING\",\"withinMs\":40},{\"condition\":{\"Gate.Open\":false},\"fromMs\":80,\"kind\":\"FALLING\",\"withinMs\":40}],\"id\":\"GateLatch\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "request",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Open request",
+                "es": "Solicitud de apertura"
+              }
+            },
+            {
+              "id": "close",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Close",
+                "es": "Cierre"
+              }
+            },
+            {
+              "id": "open",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Gate open",
+                "es": "Portón abierto"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "One logic in five languages: a gate that holds itself open",
@@ -4387,7 +5041,7 @@
     },
     {
       "id": "capstone-packing-station",
-      "version": 1,
+      "version": 2,
       "order": 26,
       "module": 11,
       "level": "advanced",
@@ -4403,12 +5057,12 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it.",
-            "es": "La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+            "en": "The station reads five digital inputs (Start, Stop, EStop, Part and Reset), and the learner boards have four.",
+            "es": "La estación lee cinco entradas digitales (Start, Stop, EStop, Part y Reset), y las placas del estudiante tienen cuatro."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita placa."
           }
         }
       },
@@ -4559,7 +5213,7 @@
     },
     {
       "id": "modbus-register-round-trip",
-      "version": 1,
+      "version": 2,
       "order": 27,
       "module": 10,
       "level": "advanced",
@@ -4575,8 +5229,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
-            "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+            "en": "The lesson talks to the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set.",
+            "es": "La lección se comunica con el servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
@@ -4733,7 +5387,7 @@
     },
     {
       "id": "mqtt-publish-subscribe",
-      "version": 1,
+      "version": 2,
       "order": 28,
       "module": 10,
       "level": "advanced",
@@ -4749,8 +5403,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson is graded against a broker that Studio starts inside the simulation session, and no trace of a real broker or device has been recorded for it.",
-            "es": "La lección se califica contra un broker que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un broker o un dispositivo reales para ella."
+            "en": "The lesson talks to the MQTT broker that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a broker in its firmware, which the course firmware does not set.",
+            "es": "La lección se comunica con el broker MQTT que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un broker en su firmware, que el firmware del curso no configura."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no broker or network.",

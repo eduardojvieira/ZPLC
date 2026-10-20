@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "structures-arrays-call-panel",
-  "version": 1,
+  "version": 2,
   "order": 22,
   "module": 7,
   "level": "intermediate",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson replays three call buttons and an acknowledgement at exact steps, and a board has no recorded trace of that panel yet.",
-        "es": "La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel."
-      },
-      "instead": {
-        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 25,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/call-panel.scenario.json",
     "sha256": "fa3731358167b95402748515fce755c6fcc0dcd4857ea019b3039d7b2d29747f"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

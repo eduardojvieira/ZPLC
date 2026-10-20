@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "scan-cycle-one-scan-memory",
-  "version": 1,
+  "version": 2,
   "order": 8,
   "module": 1,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson watches a value move one scan at a time, and a board gives no view of single scans.",
-        "es": "La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, where the trace shows each scan, then read the scan cycle page before you try a board.",
-        "es": "Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 10,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/scan-snapshot.scenario.json",
     "sha256": "3b92ab17ceffb8983942c1c5aae7efbf001afdadce99d7f8db02418c3f7797e2"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "capstone-packing-station",
-  "version": 1,
+  "version": 2,
   "order": 26,
   "module": 11,
   "level": "advanced",
@@ -17,12 +17,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it.",
-        "es": "La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
+        "en": "The station reads five digital inputs (Start, Stop, EStop, Part and Reset), and the learner boards have four.",
+        "es": "La estación lee cinco entradas digitales (Start, Stop, EStop, Part y Reset), y las placas del estudiante tienen cuatro."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita placa."
       }
     }
   },

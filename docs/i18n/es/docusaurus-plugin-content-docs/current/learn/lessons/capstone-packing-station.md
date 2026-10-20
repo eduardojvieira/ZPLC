@@ -42,7 +42,7 @@ Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no es
 
 ## En una placa
 
-La lección se califica con pulsadores, un sensor de piezas y un atasco reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+La estación lee cinco entradas digitales (Start, Stop, EStop, Part y Reset), y las placas del estudiante tienen cuatro. Complétela en Simulación: su calificación es la misma cada vez y no necesita placa.
 
 {/* <<< END GENERATED: learn/lessons/capstone-packing-station <<< */}
 

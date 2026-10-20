@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "edge-counter-pulses",
-  "version": 1,
+  "version": 2,
   "order": 7,
   "module": 3,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson counts pulses that the scenario sends at exact times; a board would need a pulse source and a recorded trace that has not been written yet.",
-        "es": "La lección cuenta pulsos que el escenario envía en instantes exactos; una placa necesitaría una fuente de pulsos y una traza registrada que todavía no se ha escrito."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, then try the Edge counter example on your board with a push button.",
-        "es": "Complétela en Simulación y luego pruebe el ejemplo Contador de flancos en su placa con un pulsador."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/edge-counter.scenario.json",
     "sha256": "113e7ec465e6bb596e31d2679ba513863e0e8695e12c6713aa5445e9588cdcc0"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

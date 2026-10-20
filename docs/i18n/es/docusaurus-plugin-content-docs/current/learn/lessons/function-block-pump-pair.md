@@ -18,7 +18,7 @@ Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arra
 - Nivel: Intermedio
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
@@ -39,10 +39,6 @@ Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arra
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.
-
-## En una placa
-
-La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/function-block-pump-pair <<< */}
 

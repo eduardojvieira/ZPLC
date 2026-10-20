@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "call-1",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Call 1",
+        "es": "Llamada 1"
+      }
+    },
+    {
+      "id": "call-2",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Call 2",
+        "es": "Llamada 2"
+      }
+    },
+    {
+      "id": "call-3",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Call 3",
+        "es": "Llamada 3"
+      }
+    },
+    {
+      "id": "ack",
+      "kind": "jumper",
+      "channel": "DI3",
+      "label": {
+        "en": "Acknowledge",
+        "es": "Reconocimiento"
+      }
+    },
+    {
+      "id": "pending",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Call pending",
+        "es": "Llamada pendiente"
+      }
+    },
+    {
+      "id": "all-calling",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "All calling",
+        "es": "Todas llaman"
+      }
+    }
+  ]
+}

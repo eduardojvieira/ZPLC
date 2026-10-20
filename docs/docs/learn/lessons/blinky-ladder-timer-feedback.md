@@ -18,7 +18,7 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 - Level: Foundation
 - Estimated time: 20 minutes
 - Languages: LD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 
@@ -39,10 +39,6 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 ## What the evidence covers
 
 Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.
-
-## On a board
-
-The lesson is graded on exact timer edges at 10 ms steps, which a board cannot repeat the same way every run. Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.
 
 {/* <<< END GENERATED: learn/lessons/blinky-ladder-timer-feedback <<< */}
 

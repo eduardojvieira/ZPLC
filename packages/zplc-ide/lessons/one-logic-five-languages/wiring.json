@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "request",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Open request",
+        "es": "Solicitud de apertura"
+      }
+    },
+    {
+      "id": "close",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Close",
+        "es": "Cierre"
+      }
+    },
+    {
+      "id": "open",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Gate open",
+        "es": "Portón abierto"
+      }
+    }
+  ]
+}

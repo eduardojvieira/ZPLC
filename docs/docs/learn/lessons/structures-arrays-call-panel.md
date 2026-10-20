@@ -18,7 +18,7 @@ Keep three call buttons in an array of structures and write one FOR loop that ho
 - Level: Intermediate
 - Estimated time: 25 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md)
 
@@ -39,10 +39,6 @@ Keep three call buttons in an array of structures and write one FOR loop that ho
 ## What the evidence covers
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time of a real call panel or tasks beyond the one 10 ms task, HIL, or certification.
-
-## On a board
-
-The lesson replays three call buttons and an acknowledgement at exact steps, and a board has no recorded trace of that panel yet. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/structures-arrays-call-panel <<< */}
 

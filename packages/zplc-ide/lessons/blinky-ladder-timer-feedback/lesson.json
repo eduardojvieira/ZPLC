@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "blinky-ladder-timer-feedback",
-  "version": 2,
+  "version": 3,
   "order": 5,
   "module": 1,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "LD"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson is graded on exact timer edges at 10 ms steps, which a board cannot repeat the same way every run.",
-        "es": "La lección se califica con flancos exactos de temporizador en pasos de 10 ms, que una placa no repite igual en cada ejecución."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, then blink an LED on your own board with the Pico blinky example.",
-        "es": "Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Blinky para Pico."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/blinky-visual.scenario.json",
     "sha256": "749042dfdb080b0b453a43655328f675208b4f809e7147b584748a4933b8ffac"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

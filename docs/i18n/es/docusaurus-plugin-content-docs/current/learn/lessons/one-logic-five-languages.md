@@ -18,7 +18,7 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 - Nivel: Avanzado
 - Tiempo estimado: 30 minutos
 - Lenguajes: ST, LD, FBD, SFC, IL
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
@@ -39,10 +39,6 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 ## Qué cubre la evidencia
 
 Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.
-
-## En una placa
-
-La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/one-logic-five-languages <<< */}
 

@@ -42,7 +42,7 @@ Tests provide deterministic native POSIX host evidence only; they are not physic
 
 ## On a board
 
-The lesson needs the conveyor plant with its sensors and a forced jam, which a board cannot reproduce without the machine. Complete it in Simulation, where the conveyor and the jam are part of the scenario.
+The parts and the jam come from the simulated conveyor plant, and the lesson reads seven inputs where the learner boards have four. Complete it in Simulation, where the conveyor and the jam are part of the scenario.
 
 {/* <<< END GENERATED: learn/lessons/conveyor-classification-jam <<< */}
 

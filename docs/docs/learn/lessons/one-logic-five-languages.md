@@ -18,7 +18,7 @@ Fix a Structured Text program so that a gate holds itself open and closes on com
 - Level: Advanced
 - Estimated time: 30 minutes
 - Languages: ST, LD, FBD, SFC, IL
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
@@ -39,10 +39,6 @@ Fix a Structured Text program so that a gate holds itself open and closes on com
 ## What the evidence covers
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish gate requirements, actuator timing or any real machine behaviour, HIL, or certification.
-
-## On a board
-
-The lesson is graded on a request and a close command replayed at exact steps, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/one-logic-five-languages <<< */}
 

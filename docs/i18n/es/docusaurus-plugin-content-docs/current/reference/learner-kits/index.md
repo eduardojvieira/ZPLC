@@ -7,10 +7,12 @@ tags: [learn, hardware, boards]
 
 # Kits del estudiante
 
-El curso ejecuta todas las lecciones en simulación. Las lecciones que incluyen la ruta **Hardware**
-también se ejecutan en una de dos placas del estudiante: la Raspberry Pi Pico (RP2040) o la
-ESP32-S3-DevKitC-1. Ambas placas usan las mismas piezas de protoboard, y cada lección de hardware tiene
-un solo archivo de cableado que sirve para las dos placas.
+El curso califica todas las lecciones de simulación en este equipo. Las lecciones que incluyen la ruta
+**Hardware** se escribieron para las placas del estudiante del curso, la Raspberry Pi Pico (RP2040) y la
+ESP32-S3-DevKitC-1: ambas usan las mismas piezas de protoboard, y cada lección de hardware tiene un solo
+archivo de cableado que sirve para ambas placas. Todavía no se ha registrado en una placa ninguna
+ejecución en hardware de una lección; hasta que exista una, la ruta de hardware es un plan respaldado
+por las verificaciones de cableado de esta página, no por una placa.
 
 ## Cómo una lección declara la ruta de hardware
 

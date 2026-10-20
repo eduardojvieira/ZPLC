@@ -42,7 +42,7 @@ Tests provide deterministic native POSIX host and discrete-plant evidence only; 
 
 ## On a board
 
-The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback. Complete it in Simulation, which provides the motor and its run feedback.
+The run feedback comes from the simulated motor plant, which answers your outputs; a learner board has no motor to give it. Complete it in Simulation, which provides the motor and its run feedback.
 
 {/* <<< END GENERATED: learn/lessons/motor-plant-feedback <<< */}
 

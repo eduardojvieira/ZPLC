@@ -42,7 +42,7 @@ La evidencia de Tests es determinística del host nativo POSIX; no es evidencia 
 
 ## En una placa
 
-La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina. Complétela en Simulación, donde la cinta y el atasco forman parte del escenario.
+Las piezas y el atasco provienen de la planta simulada del transportador, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro. Complétela en Simulación, donde el transportador y el atasco forman parte del escenario.
 
 {/* <<< END GENERATED: learn/lessons/conveyor-classification-jam <<< */}
 

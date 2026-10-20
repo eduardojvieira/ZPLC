@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "start",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Start",
+        "es": "Arranque"
+      }
+    },
+    {
+      "id": "valve",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Fill valve",
+        "es": "Válvula de llenado"
+      }
+    },
+    {
+      "id": "mixer",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Mixer",
+        "es": "Mezclador"
+      }
+    }
+  ]
+}

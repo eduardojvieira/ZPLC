@@ -42,7 +42,7 @@ La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el
 
 ## En una placa
 
-La lección comprueba aserciones temporales al milisegundo, y una placa añade fluctuaciones de tiempo que harían poco fiables esas comprobaciones. Complétela en Simulación, donde el tiempo es exacto, y luego aplique las mismas aserciones a una placa con las herramientas de pruebas.
+El módulo 8 enseña pruebas de escenario y diagnóstico, que se ejecutan en simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro. Complétela en Simulación, donde el tiempo es exacto.
 
 {/* <<< END GENERATED: learn/lessons/temporal-assertions-jam-fault <<< */}
 

@@ -18,7 +18,7 @@ Construya un parpadeador con un temporizador TON y una variable de memoria, y ha
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 
@@ -39,10 +39,6 @@ Construya un parpadeador con un temporizador TON y una variable de memoria, y ha
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.
-
-## En una placa
-
-El escenario comprueba la lámpara en instantes de ciclo exactos con un guion que habilita el parpadeo; una placa todavía no tiene traza registrada para esta lección. Complétela en Simulación y pruebe después el ejemplo de parpadeo de la Raspberry Pi Pico con el mismo temporizador sobre un LED real.
 
 {/* <<< END GENERATED: learn/lessons/blink-structured-text <<< */}
 

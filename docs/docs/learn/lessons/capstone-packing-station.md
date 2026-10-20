@@ -42,7 +42,7 @@ Tests provide native POSIX host evidence with one 10 ms task; they do not establ
 
 ## On a board
 
-The lesson is graded on buttons, a part sensor and a jam replayed at exact steps, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
+The station reads five digital inputs (Start, Stop, EStop, Part and Reset), and the learner boards have four. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/capstone-packing-station <<< */}
 

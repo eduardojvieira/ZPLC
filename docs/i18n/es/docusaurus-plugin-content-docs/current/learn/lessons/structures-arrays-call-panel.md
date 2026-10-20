@@ -18,7 +18,7 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle F
 - Nivel: Intermedio
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md)
 
@@ -39,10 +39,6 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle F
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.
-
-## En una placa
-
-La lección reproduce tres botones de llamada y un reconocimiento en pasos exactos, y todavía no hay una traza registrada desde una placa de ese panel. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/structures-arrays-call-panel <<< */}
 

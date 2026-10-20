@@ -11,7 +11,7 @@ import { LESSONS_DIRECTORY, buildIndex, loadCourse, loadLearnerBoards, loadLesso
 const temporary: string[] = [];
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }); });
 
-/** A copy of the lessons in which blink-structured-text (Enable on %I0.0, Lamp on %Q0.0) takes the hardware track. */
+/** A copy of the lessons in which blink-structured-text (Enable on %I0.0, Lamp on %Q0.0) has the hardware track with these parts. */
 function lessonsWithHardware(parts: unknown[] | null): string {
   const root = mkdtempSync(join(tmpdir(), 'zplc-hw-lessons-'));
   temporary.push(root);
@@ -20,6 +20,7 @@ function lessonsWithHardware(parts: unknown[] | null): string {
   const manifest = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
   writeFileSync(file, JSON.stringify({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {}, hardware: { wiring: 'wiring.json', tolerances: { timeMs: 50, analogPercent: 5 } } }));
   if (parts) writeFileSync(join(root, 'blink-structured-text', 'wiring.json'), JSON.stringify({ schemaVersion: 1, parts }));
+  else rmSync(join(root, 'blink-structured-text', 'wiring.json'), { force: true });
   return root;
 }
 const lamp = { id: 'lamp', kind: 'led', channel: 'DO0', color: 'red', resistorOhms: 330, label: { en: 'Lamp', es: 'Lámpara' } };
@@ -103,5 +104,43 @@ describe('the bill of materials covers every hardware lesson (LRN-014)', () => {
     const { kit, boards } = loadLearnerBoards();
     const lessons = loadLessonPackages().packages.flatMap((lesson) => (lesson.wiring ? [{ id: lesson.id, wiring: lesson.wiring }] : []));
     expect(bomProblems(kit!.bom, lessons, boards)).toEqual([]);
+  });
+});
+
+/**
+ * The modules that course.json offers on the hardware track but that have no lesson a learner board can run yet, each
+ * with the reason. The list is exact: a module that gains a hardware lesson must leave it.
+ */
+const MODULES_WITHOUT_A_HARDWARE_LESSON: Record<number, string> = {
+  6: 'every module 6 lesson needs the simulated motor or tank plant (feedback, level, faults); the curriculum says "hardware in part" and the planned Ladder lesson of the module may take the track',
+  10: 'the Raspberry Pi Pico has no network interface, and the ESP32-S3 firmware of the course configures no Wi-Fi credentials, Modbus TCP server or MQTT broker address',
+  11: 'the capstone reads five digital inputs (Start, Stop, EStop, Part, Reset) and the learner boards have four',
+};
+
+describe('the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)', () => {
+  it('has a hardware lesson in every module whose tracks include hardware, or a stated reason why not', () => {
+    const { course } = loadCourse();
+    const packages = loadLessonPackages().packages;
+    const missing = course!.modules
+      .filter((module) => module.tracks.includes('hardware'))
+      .filter((module) => !packages.some((lesson) => lesson.manifest.module === module.id && lesson.manifest.tracks.includes('hardware')))
+      .map((module) => module.id);
+    expect(missing).toEqual(Object.keys(MODULES_WITHOUT_A_HARDWARE_LESSON).map(Number));
+  });
+
+  it('gives each lesson without the hardware track a reason that says why, in both languages', () => {
+    for (const lesson of loadLessonPackages().packages.filter((item) => !item.manifest.tracks.includes('hardware'))) {
+      const reason = lesson.manifest.unsupported.hardware!.reason;
+      // "A recorded trace and a wiring page do not exist yet" stopped being true when the hardware track arrived.
+      expect({ lesson: lesson.id, stale: /yet|todavía|aún/i.test(`${reason.en} ${reason.es}`) }).toEqual({ lesson: lesson.id, stale: false });
+    }
+  });
+});
+
+describe('the tolerances of a board check (LRN-024)', () => {
+  it('never ask a board to be more precise than one scan of the scenario', () => {
+    for (const lesson of loadLessonPackages().packages.filter((item) => item.manifest.hardware)) {
+      expect({ lesson: lesson.id, atLeastOneScan: lesson.manifest.hardware!.tolerances.timeMs >= lesson.scenario.tickMs }).toEqual({ lesson: lesson.id, atLeastOneScan: true });
+    }
   });
 });

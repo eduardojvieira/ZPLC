@@ -18,7 +18,7 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 - Level: Advanced
 - Estimated time: 20 minutes
 - Languages: IL
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md)
 
@@ -39,10 +39,6 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 ## What the evidence covers
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.
-
-## On a board
-
-The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/instruction-list-door-alarm <<< */}
 

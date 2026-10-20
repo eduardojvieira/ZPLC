@@ -18,7 +18,7 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 - Nivel: Fundamentos
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 
@@ -39,10 +39,6 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.
-
-## En una placa
-
-La lección se califica con Start y Stop pulsados juntos en un paso exacto de 10 ms, que una placa no repite igual en cada ejecución. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/seal-in-ladder <<< */}
 

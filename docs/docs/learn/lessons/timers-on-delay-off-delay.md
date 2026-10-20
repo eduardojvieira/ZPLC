@@ -18,7 +18,7 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 - Level: Foundation
 - Estimated time: 15 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
@@ -39,10 +39,6 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 ## What the evidence covers
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.
-
-## On a board
-
-The lesson measures on-delay and off-delay times against the scan clock; real board timing is not reproducible enough for a deterministic check, and no recorded trace exists yet. Complete it in Simulation, where time is deterministic.
 
 {/* <<< END GENERATED: learn/lessons/timers-on-delay-off-delay <<< */}
 

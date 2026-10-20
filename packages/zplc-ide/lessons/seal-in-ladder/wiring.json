@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "start",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Start",
+        "es": "Arranque"
+      }
+    },
+    {
+      "id": "stop",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Stop",
+        "es": "Parada"
+      }
+    },
+    {
+      "id": "motor",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Motor",
+        "es": "Motor"
+      }
+    }
+  ]
+}

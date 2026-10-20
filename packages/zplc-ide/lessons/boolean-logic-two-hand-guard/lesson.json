@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "boolean-logic-two-hand-guard",
-  "version": 1,
+  "version": 2,
   "order": 12,
   "module": 2,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson presses two inputs at scripted times to test AND, NOT and XOR; a board would need two wired buttons and a recorded trace that do not exist yet.",
-        "es": "La lección pulsa dos entradas en instantes definidos para probar AND, NOT y XOR; una placa necesitaría dos pulsadores cableados y una traza registrada que todavía no existen."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, where the scenario presses both inputs for you.",
-        "es": "Complétela en Simulación, donde el escenario pulsa ambas entradas por usted."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/two-hand.scenario.json",
     "sha256": "960b79d6f460c148242199db15454c0d4be08bae5de73f200a4f2623f0e1b4d4"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

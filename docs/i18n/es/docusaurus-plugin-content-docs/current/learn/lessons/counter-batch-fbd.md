@@ -18,7 +18,7 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 - Nivel: Fundamentos
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -39,10 +39,6 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 ## Qué cubre la evidencia
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.
-
-## En una placa
-
-La lección cuenta piezas a partir de una señal de fotocélula que Studio reproduce exactamente, y todavía no hay una traza registrada desde una placa de esa señal. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/counter-batch-fbd <<< */}
 
