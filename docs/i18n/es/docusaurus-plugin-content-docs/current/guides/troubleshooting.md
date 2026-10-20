@@ -53,10 +53,10 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Conectar** falla en modo Simulate | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
+| **Conectar** falla en modo Simular | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
 | Un escenario falla con una aserción en un instante | El programa no hizo en ese instante lo que el escenario espera | Ejecute hasta ese ciclo con un punto de parada: [Simular y depurar](./simulate-and-debug.md) |
 | Un escenario se rechaza como inválido | Un instante no es múltiplo de `tickMs`, una señal no existe o se excede un límite | [Formato del archivo de escenario](../reference/scenario-file.md) |
-| `LED_Output` nunca cambia en Watch | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **En marcha** y la dirección de la variable |
+| `LED_Output` nunca cambia en Observación | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **En marcha** y la dirección de la variable |
 | Un valor retentivo volvió a su valor declarado | El programa se recompiló, o el almacén pertenece a otro programa | [Conservar valores entre reinicios](./retained-variables.md#3-qué-descarta-los-valores) |
 
 ## Conectar una placa y cargar

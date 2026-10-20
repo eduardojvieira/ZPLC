@@ -43,7 +43,7 @@ contra el presupuesto registrado. Las imágenes están en `$ZPLC_FW_WS/out/size/
 `zephyr.elf` y, para la Pico, `zephyr.uf2`. El ESP32-S3 necesita una vez sus blobs de HAL:
 `west blobs fetch hal_espressif`.
 
-El pipeline de versiones compila con el mismo comando, limpio y sin superposiciones:
+El canal de versiones compila con el mismo comando, limpio y sin superposiciones:
 
 ```bash
 west build -p always -b rpi_pico/rp2040 firmware/app

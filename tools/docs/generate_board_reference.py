@@ -62,7 +62,7 @@ def network_summary(board: dict[str, object], spanish: bool) -> str:
     network_class = str(board["network_class"])
     interface = str(board["network_interface"])
     if network_class == "serial-focused":
-        return "Enfoque serial" if spanish else "Serial-focused"
+        return "Orientada al puerto serie" if spanish else "Serial-focused"
     if interface == "wifi":
         return "Capacidad de red (Wi-Fi)" if spanish else "Network-capable (Wi-Fi)"
     if interface == "ethernet":
@@ -101,7 +101,7 @@ def watchdog_line(board: dict[str, object], spanish: bool) -> str:
         return (
             f"- **{label}:** "
             + (
-                "activo, timeout {t} ms (hasta {m} ms según las tareas); en STOP {s}, en pausa o breakpoint {p}, en falla enganchada {f}"
+                "activo, tiempo de espera {t} ms (hasta {m} ms según las tareas); en STOP {s}, en pausa o en un punto de parada {p}, en falla retenida {f}"
                 if spanish
                 else "on, timeout {t} ms (up to {m} ms for the task set); in STOP {s}, paused or at a breakpoint {p}, in a latched fault {f}"
             ).format(
@@ -123,7 +123,7 @@ def kib(value: object) -> str:
 
 
 def mermaid_diagram(boards: list[dict[str, object]], spanish: bool) -> list[str]:
-    serial_label = "Enfoque serial" if spanish else "Serial-focused"
+    serial_label = "Orientada al puerto serie" if spanish else "Serial-focused"
     network_label = "Capacidad de red" if spanish else "Network-capable"
     lines = [
         "```mermaid",
@@ -149,7 +149,7 @@ def cell(text: object) -> str:
 
 def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> str:
     budget = load_budget()
-    title = "Supported Boards" if not spanish else "Placas Soportadas"
+    title = "Supported Boards" if not spanish else "Placas soportadas"
     description = (
         "Generated board reference for the ZPLC 2.0 candidate."
         if not spanish
@@ -171,11 +171,11 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         ]
         if not spanish
         else [
-            "Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que el build verifica.",
-            "`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y el build comprueba; `profile` es un pin de header que este perfil eligió y que necesita el banco de lazo de HIL-010 para confirmarse.",
+            "Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que la compilación verifica.",
+            "`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y la compilación comprueba; `profile` es un pin del conector que este perfil eligió y que necesita el banco con lazo de retorno (loopback) de HIL-010 para confirmarse.",
             "Los textos que lee una persona (`pin`, `location`, `electrical`, `scaling`, y el `terminal` y la `reason` de un borne sin mapear) están en inglés, el texto que usan el firmware y sus registros. Una placa del estudiante del curso (`\"learner\": true`) da además cada uno en español, con la misma clave terminada en `_es`, y las páginas en español muestran ese texto; el validador rechaza una placa del estudiante sin él.",
-            "Para agregar un canal a una placa, agregue el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que ningún fuente C cambia, y el build falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.",
-            "La aplicación ZPLC lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; un build falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y un despliegue a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.",
+            "Para agregar un canal a una placa, agregue el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que no cambia ningún código fuente en C, y la compilación falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.",
+            "La aplicación ZPLC lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; una compilación falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y una carga a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.",
         ]
     )
     summary_title = "Board matrix" if not spanish else "Matriz de placas"
@@ -183,17 +183,17 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
     footprint_intro = (
         "Flash and RAM of `firmware/app` per board, from the linker memory table of the CI size report (`tools/firmware-test/size-budget.json`). They are host-build measurements, not hardware evidence. The last three columns are the memory regions the runtime configures for the board (work, retentive, code)."
         if not spanish
-        else "Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en el reporte de tamaño de CI (`tools/firmware-test/size-budget.json`). Son mediciones de compilación en host, no evidencia de hardware. Las últimas tres columnas son las regiones de memoria que el runtime configura para la placa (trabajo, retentiva, código)."
+        else "Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en el informe de tamaño de CI (`tools/firmware-test/size-budget.json`). Son mediciones de una compilación en el host, no evidencia de hardware. Las últimas tres columnas son las regiones de memoria que el runtime configura para la placa (trabajo, retentiva, código)."
     )
     details_title = "Board details" if not spanish else "Detalle por placa"
     topology_title = "Topology" if not spanish else "Topología"
-    assets_label = "Support assets" if not spanish else "Assets de soporte"
-    build_label = "Build command" if not spanish else "Comando de build"
+    assets_label = "Support assets" if not spanish else "Archivos de soporte"
+    build_label = "Build command" if not spanish else "Comando de compilación"
     docs_ref_label = "Reference anchor" if not spanish else "Ancla de referencia"
     board_col = "Display name" if not spanish else "Nombre visible"
-    zephyr_col = "Zephyr target" if not spanish else "Target Zephyr"
+    zephyr_col = "Zephyr target" if not spanish else "Destino de Zephyr"
     network_col = "Network" if not spanish else "Red"
-    validation_col = "Support level" if not spanish else "Nivel de soporte"
+    validation_col = "Support level" if not spanish else "Nivel de compatibilidad"
     evidence_col = "Evidence records" if not spanish else "Registros de evidencia"
     io_title = "I/O channels" if not spanish else "Canales de E/S"
     unmapped_title = "Not mapped" if not spanish else "Sin mapear"
@@ -425,7 +425,7 @@ def render_support_table(boards: list[dict[str, object]], spanish: bool) -> str:
     head = (
         "| Board | IDE ID | Zephyr target | Network | Support level | Evidence records |"
         if not spanish
-        else "| Placa | ID del IDE | Destino Zephyr | Red | Nivel de soporte | Registros de evidencia |"
+        else "| Placa | ID del IDE | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |"
     )
     none = "ninguno" if spanish else "none"
     lines = [head, "| --- | --- | --- | --- | --- | --- |"]

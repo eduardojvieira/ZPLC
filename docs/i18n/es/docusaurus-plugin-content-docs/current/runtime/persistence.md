@@ -315,7 +315,7 @@ biblioteca Arduino IoT Cloud (`kvs`) en las dos placas Arduino y el segundo slot
 STM32F746G, que este firmware no usa. Una ESP32-S3 que ejecutó una imagen anterior guardaba sus registros en
 `storage_partition`: después de la actualización no se conservan el programa guardado, los valores `RETAIN` ni las
 claves de configuración de esa imagen. Una Nucleo-H743ZI nunca guardó ninguno. En esas dos placas, despliegue el
-programa de nuevo e ingrese de nuevo la configuración.
+programa de nuevo y escriba de nuevo la configuración.
 
 ### Límites
 

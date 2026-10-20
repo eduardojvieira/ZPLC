@@ -177,7 +177,7 @@ inicio.
 
 1. Abra el DMG, arrastre **ZPLC** a Aplicaciones y ábralo.
 2. macOS indica que no pudo verificar la aplicación, porque no está notarizada: la notarización necesita una membresía de pago del Apple Developer Program, y este proyecto no usa ningún servicio de pago. Elija **Done**, no **Move to Trash**.
-3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC, confirme e ingrese su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
+3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC, confirme y escriba su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 Si macOS informa que la aplicación está dañada y ofrece solo **Move to Trash**, la
 causa es la marca de cuarentena que macOS puso en la descarga. Quitarla omite la
@@ -267,7 +267,7 @@ y lo que no, está en [Compatibilidad de hardware](../reference/capabilities-evi
 ## Actualizar
 
 ZPLC nunca se actualiza solo. Para saber si existe una versión más reciente,
-active **Check for a newer release when ZPLC starts** en Preferences, o presione
+active **Check for a newer release when ZPLC starts** en Preferences, o pulse
 **Buscar ahora**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
 usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe

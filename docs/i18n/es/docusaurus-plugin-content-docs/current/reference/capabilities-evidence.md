@@ -46,15 +46,15 @@ que pase se queda en `cross-build`.
 
 {/* >>> GENERATED (tools/docs/generate_board_reference.py): hardware-support-boards. Do not edit. >>> */}
 
-| Placa | ID del IDE | Destino Zephyr | Red | Nivel de soporte | Registros de evidencia |
+| Placa | ID del IDE | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |
 | --- | --- | --- | --- | --- | --- |
-| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | `cross-build` | ninguno |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | `cross-build` | ninguno |
+| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Orientada al puerto serie | `cross-build` | ninguno |
+| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Orientada al puerto serie | `cross-build` | ninguno |
 | ESP32-S3-DevKitC-1 (N8R8) | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | `cross-build` | ninguno |
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | `cross-build` | ninguno |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | `cross-build` | ninguno |
 | Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | `cross-build` | ninguno |
-| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Enfoque serial | `cross-build` | ninguno |
+| Waveshare RP2040-Zero | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Orientada al puerto serie | `cross-build` | ninguno |
 
 Ninguna placa tiene un registro de hardware: cada fila dice que el firmware compila para esa placa, y nada más.
 

@@ -104,9 +104,9 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simular**.
-2. Presione **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
+2. Pulse **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
-   conéctela y presione **Actualizar**. Elija su puerto y presione **Usar este puerto**:
+   conéctela y pulse **Actualizar**. Elija su puerto y pulse **Usar este puerto**:
    ZPLC usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC](../getting-started/install.md#linux-acceso-al-puerto-serie).
 3. La aplicación ZPLC lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
@@ -114,16 +114,16 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 ## 4. Despliegue y ejecute (lo hace una persona)
 
-1. Presione **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
+1. Pulse **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
    cantidad de tareas y la placa del dispositivo, y le pide confirmar. Un despliegue
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
-3. Presione **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
+3. Pulse **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
    el programa es el del ejemplo.
 
 ## 5. Observe
 
-Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED. Presione
+Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED. Pulse
 **Detener** (Shift+F5): en una placa una detención también lleva las salidas físicas a
 su estado seguro, apagado
 ([Planificador](../runtime/scheduler.md#pausa-reanudación-paso-y-parada)).

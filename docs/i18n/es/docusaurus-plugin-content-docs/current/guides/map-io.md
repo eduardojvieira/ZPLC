@@ -19,7 +19,7 @@ Cada placa tiene una descripción de E/S en `firmware/app/boards/boards.json`: s
 canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valor
 seguro de cada salida. La aplicación ZPLC, la compilación, el firmware y la documentación leen
 ese único archivo, por lo que la tabla de pines de [Placas soportadas](../reference/boards.md)
-son los mismos datos que comprueba la compilación. Ningún pin se ha medido en un
+contiene los mismos datos que comprueba la compilación. Ningún pin se ha medido en un
 banco: [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
@@ -55,8 +55,7 @@ pulsado: las notas eléctricas del canal dicen cómo se cablea el pin.
 
 ## 3. Vincúlelas en el proyecto
 
-La misma ubicación se registra en `zplc.json` bajo `io`. En ZPLC, abra **Project
-Settings**: la sección **I/O Mapping** enumera los canales de la placa seleccionada
+La misma ubicación se registra en `zplc.json` bajo `io`. En ZPLC, abra **Configuración del proyecto**: la sección **Mapeo de E/S** enumera los canales de la placa seleccionada
 con los nombres de pin impresos en ella, y cada fila ofrece solo los canales de esa
 placa, de modo que una fila no puede ponerse donde la placa no tiene nada.
 
@@ -91,9 +90,10 @@ bit de la imagen de proceso que solo lee una prueba o el depurador.
 - **En la compilación**, una variable ubicada donde la placa no tiene canal es un
   error que nombra la placa y la variable, salvo que la dirección esté enumerada en
   `io.virtual`.
-- **Al cargar**, se rechaza con un mensaje que nombra la placa un programa que
-  toca una dirección sin canal, y también un despliegue a un firmware que informa
-  una descripción distinta de aquella para la que se compiló el proyecto.
+- **Al cargar**, se rechaza un programa que toca una dirección sin canal, con un
+  mensaje que nombra la placa, y se rechaza también un despliegue a un firmware
+  que informa una descripción distinta de aquella para la que se compiló el
+  proyecto.
 
 ## 5. Agregue un canal a una placa
 

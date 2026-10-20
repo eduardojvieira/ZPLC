@@ -134,7 +134,7 @@ consola `emu`:
 
 | Comando | Efecto |
 |---|---|
-| `emu pin <gpio> <0\|1>` | fija el nivel de un pin de entrada (las entradas son activas en bajo: `0` es presionado) |
+| `emu pin <gpio> <0\|1>` | fija el nivel de un pin de entrada (las entradas son activas en bajo: `0` es pulsado) |
 | `emu adc <ch> <0..4095>` | fija una entrada del convertidor en esa fracción de 3,3 V |
 | `emu out` | los niveles de los pines de salida, como máscara de bits por número de GPIO |
 

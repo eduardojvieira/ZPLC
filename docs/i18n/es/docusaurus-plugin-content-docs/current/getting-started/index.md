@@ -43,7 +43,7 @@ activa y desactiva la salida `LED_Output` en `%Q0.0` aproximadamente cada
 
 1. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS). Los mensajes aparecen en las pestañas **Problemas** y **Salida** del panel inferior.
 2. En la barra de herramientas, seleccione **Simular** y pulse **Conectar**. ZPLC inicia el simulador incluido con la aplicación.
-3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** e ingrese `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
+3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
 4. Pulse **Detener** (Shift+F5) al terminar.
 
 El simulador es el runtime en C de ZPLC compilado para su equipo. Ejecuta el
@@ -69,8 +69,7 @@ programa.
 
 La versión rc.3 no incluye firmware precompilado. El canal de versiones compila
 una imagen por placa en cada versión que hace, y ZPLC muestra la imagen de la
-placa elegida, con su suma de verificación y los pasos para grabarla, en **Project
-settings**, **Destino**; no la graba. Para compilar el firmware usted mismo,
+placa elegida, con su suma de verificación y los pasos para grabarla, en **Configuración del proyecto**, **Destino**; no la graba. Para compilar el firmware usted mismo,
 siga la [configuración del espacio de trabajo Zephyr](../reference/zephyr-workspace-setup.md).
 Compilar el firmware, grabarlo, cargar un programa y ejecutarlo son acciones
 separadas que una persona inicia en ZPLC. Las herramientas de IA y MCP no

@@ -321,10 +321,10 @@ imagen no puede conservar RETAIN. La Pico y la RP2040-Zero tienen una partición
 de almacenamiento de 128 KB, que guarda las dos ranuras de programa, los dos
 registros de RETAIN y un sector de reserva (RT-029).
 
-La grabación la hace usted. La Pico: mantenga presionado BOOTSEL mientras
+La grabación la hace usted. La Pico: mantenga pulsado BOOTSEL mientras
 conecta el cable USB y copie `zephyr.uf2` a la unidad RPI-RP2. La ESP32-S3:
 `esptool --chip esp32s3 --port <puerto> write-flash 0x0 zephyr.bin` en el
-puerto marcado USB, y presione RST si la placa queda en modo de descarga.
+puerto marcado USB, y pulse RST si la placa queda en modo de descarga.
 
 | # | Paso | Qué hace la cadena | Pasa cuando | Hardware | Emulado |
 |---|------|--------------------|-------------|----------|---------|
