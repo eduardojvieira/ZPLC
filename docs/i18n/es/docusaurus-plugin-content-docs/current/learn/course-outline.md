@@ -17,9 +17,10 @@ cuando falta una lección aquí o cuando una fila no coincide con su lección.
 Cada módulo y cada lección tiene su propia página, generada de los paquetes de lecciones: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
 Toda lección se completa en la pista **Simulación**, en este equipo y sin placa.
-Una lección indica **Hardware** solo cuando existe para ella una verificación
-contra una traza registrada desde una placa. Hoy ninguna lección la ofrece, y una
-lección que no ofrece una pista dice por qué y qué hacer en su lugar.
+Una lección indica **Hardware** cuando tiene una página de cableado para cada placa
+del estudiante y su verificación en placa está definida; todavía no se ha registrado
+ninguna ejecución en hardware en una placa. Una lección que no ofrece una pista dice
+por qué y qué hacer en su lugar.
 
 Cada lección tiene seis etapas (Objetivo, Predicción, Edición, Ejecución,
 Observación y Reflexión), dos niveles de pista y una solución de referencia que
@@ -43,7 +44,7 @@ Quien llega por primera vez necesita ver que algo se mueve antes de cualquier te
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `first-blink-simulation` Su primer parpadeo en simulación | Disponible | ST | Simulación | - | 10 | - |
-| Verifique su placa (página de cableado por placa) | Planeada | ninguno | Hardware | - | 10 | - |
+| `verify-my-board` Verificar mi placa ([kits del estudiante](../reference/learner-kits/index.md)) | Disponible | ST | Hardware | - | 30 | `first-blink-simulation` |
 
 Objetivos de las lecciones disponibles:
 
@@ -58,9 +59,9 @@ Un PLC repite un ciclo: leer entradas, ejecutar el programa y escribir salidas. 
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `scan-cycle-one-scan-memory` Ciclo de scan y memoria de un ciclo | Disponible | ST | Simulación | - | 10 | `first-blink-simulation` |
-| `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida | Disponible | LD | Simulación | - | 20 | `scan-cycle-one-scan-memory` |
-| `blink-structured-text` Escriba un parpadeador en Structured Text | Disponible | ST | Simulación | - | 15 | `scan-cycle-one-scan-memory` |
+| `scan-cycle-one-scan-memory` Ciclo de scan y memoria de un ciclo | Disponible | ST | Simulación, Hardware | - | 10 | `first-blink-simulation` |
+| `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida | Disponible | LD | Simulación, Hardware | - | 20 | `scan-cycle-one-scan-memory` |
+| `blink-structured-text` Escriba un parpadeador en Structured Text | Disponible | ST | Simulación, Hardware | - | 15 | `scan-cycle-one-scan-memory` |
 
 Objetivos de las lecciones disponibles:
 
@@ -77,10 +78,10 @@ La lógica booleana es el vocabulario de todo programa. Los contactos y las bobi
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `motor-start-stop-safe` Arranque y parada seguros | Disponible | ST | Simulación | - | 20 | `blinky-ladder-timer-feedback` |
-| `boolean-logic-two-hand-guard` Lógica booleana: un mando a dos manos con protección | Disponible | ST | Simulación | - | 15 | `blinky-ladder-timer-feedback` |
-| `set-reset-alarm-latch` Enclavar una alarma: set y reset, y cuál gana | Disponible | ST | Simulación | - | 15 | `boolean-logic-two-hand-guard` |
-| `seal-in-ladder` Autorretención en Ladder: un motor que se mantiene encendido | Disponible | LD | Simulación | - | 20 | `blinky-ladder-timer-feedback` |
+| `motor-start-stop-safe` Arranque y parada seguros | Disponible | ST | Simulación, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
+| `boolean-logic-two-hand-guard` Lógica booleana: un mando a dos manos con protección | Disponible | ST | Simulación, Hardware | - | 15 | `blinky-ladder-timer-feedback` |
+| `set-reset-alarm-latch` Enclavar una alarma: set y reset, y cuál gana | Disponible | ST | Simulación, Hardware | - | 15 | `boolean-logic-two-hand-guard` |
+| `seal-in-ladder` Autorretención en Ladder: un motor que se mantiene encendido | Disponible | LD | Simulación, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
 
 Objetivos de las lecciones disponibles:
 
@@ -98,9 +99,9 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `edge-counter-pulses` Flancos y contador de pulsos | Disponible | ST | Simulación | - | 15 | `motor-start-stop-safe` |
-| `timers-on-delay-off-delay` Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | ST | Simulación | - | 15 | `motor-start-stop-safe` |
-| `counter-batch-fbd` Contadores en diagrama de bloques de función: contar piezas hasta un lote | Disponible | FBD | Simulación | - | 20 | `edge-counter-pulses` |
+| `edge-counter-pulses` Flancos y contador de pulsos | Disponible | ST | Simulación, Hardware | - | 15 | `motor-start-stop-safe` |
+| `timers-on-delay-off-delay` Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | ST | Simulación, Hardware | - | 15 | `motor-start-stop-safe` |
+| `counter-batch-fbd` Contadores en diagrama de bloques de función: contar piezas hasta un lote | Disponible | FBD | Simulación, Hardware | - | 20 | `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
@@ -117,8 +118,8 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas | Disponible | ST | Simulación | - | 20 | `edge-counter-pulses` |
-| `analog-scaling-integer` Escalado analógico: de cuentas crudas a un porcentaje | Disponible | ST | Simulación | - | 20 | `types-arithmetic-comparison` |
+| `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas | Disponible | ST | Simulación, Hardware | - | 20 | `edge-counter-pulses` |
+| `analog-scaling-integer` Escalado analógico: de cuentas crudas a un porcentaje | Disponible | ST | Simulación, Hardware | - | 20 | `types-arithmetic-comparison` |
 
 Objetivos de las lecciones disponibles:
 
@@ -135,7 +136,7 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `pedestrian-crossing-states` Cruce peatonal y estados seguros | Disponible | ST | Simulación | pedestrian-v1 | 25 | `edge-counter-pulses` |
-| `sfc-fill-mix-sequence` Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar | Disponible | SFC | Simulación | - | 25 | `edge-counter-pulses` |
+| `sfc-fill-mix-sequence` Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar | Disponible | SFC | Simulación, Hardware | - | 25 | `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
@@ -170,8 +171,8 @@ Los programas crecen. Las funciones, los bloques funcionales, las estructuras, l
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `function-block-pump-pair` Bloques de función: un enclavamiento, dos bombas | Disponible | ST | Simulación | - | 25 | `types-arithmetic-comparison` |
-| `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas | Disponible | ST | Simulación | - | 25 | `function-block-pump-pair` |
+| `function-block-pump-pair` Bloques de función: un enclavamiento, dos bombas | Disponible | ST | Simulación, Hardware | - | 25 | `types-arithmetic-comparison` |
+| `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas | Disponible | ST | Simulación, Hardware | - | 25 | `function-block-pump-pair` |
 
 Objetivos de las lecciones disponibles:
 
@@ -206,8 +207,8 @@ La misma lógica puede escribirse en cinco lenguajes. La lista de instrucciones 
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `instruction-list-door-alarm` Lista de instrucciones: el resultado actual y el orden de las instrucciones | Disponible | IL | Simulación | - | 20 | `function-block-pump-pair` |
-| `one-logic-five-languages` Una lógica en cinco lenguajes: un portón que se mantiene abierto | Disponible | ST, LD, FBD, SFC, IL | Simulación | - | 30 | `instruction-list-door-alarm` |
+| `instruction-list-door-alarm` Lista de instrucciones: el resultado actual y el orden de las instrucciones | Disponible | IL | Simulación, Hardware | - | 20 | `function-block-pump-pair` |
+| `one-logic-five-languages` Una lógica en cinco lenguajes: un portón que se mantiene abierto | Disponible | ST, LD, FBD, SFC, IL | Simulación, Hardware | - | 30 | `instruction-list-door-alarm` |
 
 Objetivos de las lecciones disponibles:
 

@@ -43,7 +43,7 @@ La evidencia de Tests es del runtime nativo POSIX host con inputs programados po
 
 ## En una placa
 
-La lección diagnostica una secuencia registrada de dos piezas leyendo una traza, y no se ha escrito para ella una traza registrada desde una placa. Complétela en Simulación, donde la traza es la evidencia que usted lee.
+El módulo 8 enseña el diagnóstico a partir de una traza de la simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro. Complétela en Simulación, donde la traza es la evidencia que usted lee.
 
 {/* <<< END GENERATED: learn/lessons/conveyor-two-parts-diagnosis <<< */}
 

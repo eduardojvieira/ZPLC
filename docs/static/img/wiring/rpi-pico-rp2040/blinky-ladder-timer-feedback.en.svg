@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 176" width="760" height="176" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-rpi-pico-rp2040-title">Wiring on Raspberry Pi Pico (RP2040)</title>
+<desc id="wiring-rpi-pico-rp2040-desc">LED output: red LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38).</desc>
+<rect width="760" height="176" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on Raspberry Pi Pico (RP2040)</text>
+<rect x="8" y="48" width="256" height="80" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP0</text>
+<text stroke="none" x="30" y="102" font-size="11">header pin 1 · DO0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">LED output</text>
+<polyline points="264,88 300,88" fill="none"/>
+<polyline points="300,88 306,80 318,96 330,80 342,96 354,80 360,88" fill="none"/>
+<text stroke="none" x="330" y="74" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,88 392,88" fill="none"/>
+<polygon points="392,78 392,98 412,88" fill="#d62828"/>
+<polyline points="412,78 412,98" fill="none"/>
+<polyline points="402,74 410,66" fill="none"/>
+<polyline points="408,76 416,68" fill="none"/>
+<text stroke="none" x="402" y="114" text-anchor="middle" font-size="11">red LED</text>
+<polyline points="412,88 712,88" fill="none"/>
+<polyline points="712,64 712,120" fill="none" stroke-width="3"/>
+<polyline points="700,120 724,120" fill="none"/>
+<polyline points="704,125 720,125" fill="none"/>
+<polyline points="708,130 716,130" fill="none"/>
+<text stroke="none" x="728" y="150" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+</svg>

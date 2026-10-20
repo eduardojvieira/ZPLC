@@ -18,7 +18,7 @@ Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas
 - Nivel: Fundamentos
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 
@@ -40,9 +40,10 @@ Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas
 
 La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con flancos exactos de temporizador en pasos de 10 ms, que una placa no repite igual en cada ejecución. Complétela en Simulación y luego haga parpadear un LED en su propia placa con el ejemplo Blinky para Pico.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/blinky-ladder-timer-feedback.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/blinky-ladder-timer-feedback.md)
 
 {/* <<< END GENERATED: learn/lessons/blinky-ladder-timer-feedback <<< */}
 

@@ -42,7 +42,7 @@ La evidencia de Tests es determinística del host nativo POSIX; no es evidencia 
 
 ## En una placa
 
-La lección llena y vacía un tanque simulado para provocar fallos, algo inseguro y lento de repetir en una placa. Complétela en Simulación, donde un fallo no cuesta nada y se puede repetir, y ensaye allí los pasos de rearme.
+La dinámica del nivel de la planta del tanque y sus fallas existen solo en simulación, y la lección lee seis entradas cuando las placas del estudiante tienen cuatro. Complétela en Simulación, donde una falla no cuesta nada y se puede repetir.
 
 {/* <<< END GENERATED: learn/lessons/tank-level-fault-reset <<< */}
 

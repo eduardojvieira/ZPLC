@@ -18,7 +18,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
@@ -40,9 +40,10 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección mide retardos a la conexión y a la desconexión contra el reloj de ciclo; el tiempo en una placa real no es lo bastante reproducible para una comprobación determinista y todavía no existe una traza registrada. Complétela en Simulación, donde el tiempo es determinista.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/timers-on-delay-off-delay.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/timers-on-delay-off-delay.md)
 
 {/* <<< END GENERATED: learn/lessons/timers-on-delay-off-delay <<< */}
 

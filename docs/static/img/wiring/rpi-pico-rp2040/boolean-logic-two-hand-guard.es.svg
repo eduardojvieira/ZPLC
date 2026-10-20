@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-rpi-pico-rp2040-title">Cableado en Raspberry Pi Pico (RP2040)</title>
+<desc id="wiring-rpi-pico-rp2040-desc">Mano izquierda: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa. Mano derecha: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa. Protección cerrada: cable puente desde GP13 (header pin 17, DI2) hasta GND (GND · pin 38); conectado significa activado. Habilitación de la prensa: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38). Lámpara de la protección: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38). Advertencia de una sola mano: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (header pin 4, DO2) hasta GND (GND · pin 38).</desc>
+<rect width="760" height="496" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en Raspberry Pi Pico (RP2040)</text>
+<rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP15</text>
+<text stroke="none" x="30" y="102" font-size="11">header pin 20 · DI0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Mano izquierda</text>
+<polyline points="264,88 334,88" fill="none"/>
+<circle cx="337" cy="88" r="3" fill="#ffffff"/>
+<circle cx="377" cy="88" r="3" fill="#ffffff"/>
+<polyline points="337,84 375,72" fill="none"/>
+<polyline points="356,78 356,64" fill="none"/>
+<polyline points="348,64 364,64" fill="none"/>
+<text stroke="none" x="357" y="110" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,88 712,88" fill="none"/>
+<rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GP14</text>
+<text stroke="none" x="30" y="166" font-size="11">header pin 19 · DI1</text>
+<text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Mano derecha</text>
+<polyline points="264,152 334,152" fill="none"/>
+<circle cx="337" cy="152" r="3" fill="#ffffff"/>
+<circle cx="377" cy="152" r="3" fill="#ffffff"/>
+<polyline points="337,148 375,136" fill="none"/>
+<polyline points="356,142 356,128" fill="none"/>
+<polyline points="348,128 364,128" fill="none"/>
+<text stroke="none" x="357" y="174" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,152 712,152" fill="none"/>
+<rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GP13</text>
+<text stroke="none" x="30" y="230" font-size="11">header pin 17 · DI2</text>
+<text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Protección cerrada</text>
+<polyline points="264,216 712,216" fill="none" stroke-dasharray="6 4"/>
+<text stroke="none" x="357" y="234" text-anchor="middle" font-size="11">cable puente a GND</text>
+<rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP0</text>
+<text stroke="none" x="30" y="294" font-size="11">header pin 1 · DO0</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Habilitación de la prensa</text>
+<polyline points="264,280 300,280" fill="none"/>
+<polyline points="300,280 306,272 318,288 330,272 342,288 354,272 360,280" fill="none"/>
+<text stroke="none" x="330" y="266" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,280 392,280" fill="none"/>
+<polygon points="392,270 392,290 412,280" fill="#2a9d3a"/>
+<polyline points="412,270 412,290" fill="none"/>
+<polyline points="402,266 410,258" fill="none"/>
+<polyline points="408,268 416,260" fill="none"/>
+<text stroke="none" x="402" y="306" text-anchor="middle" font-size="11">LED verde</text>
+<polyline points="412,280 712,280" fill="none"/>
+<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP1</text>
+<text stroke="none" x="30" y="358" font-size="11">header pin 2 · DO1</text>
+<text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Lámpara de la protección</text>
+<polyline points="264,344 300,344" fill="none"/>
+<polyline points="300,344 306,336 318,352 330,336 342,352 354,336 360,344" fill="none"/>
+<text stroke="none" x="330" y="330" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,344 392,344" fill="none"/>
+<polygon points="392,334 392,354 412,344" fill="#e9c300"/>
+<polyline points="412,334 412,354" fill="none"/>
+<polyline points="402,330 410,322" fill="none"/>
+<polyline points="408,332 416,324" fill="none"/>
+<text stroke="none" x="402" y="370" text-anchor="middle" font-size="11">LED amarillo</text>
+<polyline points="412,344 712,344" fill="none"/>
+<rect x="20" y="386" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GP2</text>
+<text stroke="none" x="30" y="422" font-size="11">header pin 4 · DO2</text>
+<text stroke="none" x="440" y="400" font-size="13" font-weight="bold">Advertencia de una sola mano</text>
+<polyline points="264,408 300,408" fill="none"/>
+<polyline points="300,408 306,400 318,416 330,400 342,416 354,400 360,408" fill="none"/>
+<text stroke="none" x="330" y="394" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,408 392,408" fill="none"/>
+<polygon points="392,398 392,418 412,408" fill="#d62828"/>
+<polyline points="412,398 412,418" fill="none"/>
+<polyline points="402,394 410,386" fill="none"/>
+<polyline points="408,396 416,388" fill="none"/>
+<text stroke="none" x="402" y="434" text-anchor="middle" font-size="11">LED rojo</text>
+<polyline points="412,408 712,408" fill="none"/>
+<polyline points="712,64 712,440" fill="none" stroke-width="3"/>
+<polyline points="700,440 724,440" fill="none"/>
+<polyline points="704,445 720,445" fill="none"/>
+<polyline points="708,450 716,450" fill="none"/>
+<text stroke="none" x="728" y="470" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+</svg>

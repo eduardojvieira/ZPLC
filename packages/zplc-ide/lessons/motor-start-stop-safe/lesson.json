@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "motor-start-stop-safe",
-  "version": 1,
+  "version": 2,
   "order": 1,
   "module": 2,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson tests a stop that must win over a start, using inputs a script presses at exact times; a board would need wired buttons and a recorded trace that does not exist yet.",
-        "es": "La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, where the scenario presses each input for you, and keep the stop contact wired normally closed on a real motor.",
-        "es": "Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/motor-start-stop.scenario.json",
     "sha256": "b000cb58ba0d0908eaeb7136f4d9030fb331b7f530787dca4b3287a15ff761f4"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

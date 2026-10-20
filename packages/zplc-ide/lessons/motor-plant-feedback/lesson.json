@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "motor-plant-feedback",
-  "version": 1,
+  "version": 2,
   "order": 6,
   "module": 6,
   "level": "intermediate",
@@ -17,12 +17,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson needs the motor plant model that answers your outputs, and a board has no motor attached to give that feedback.",
-        "es": "La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación."
+        "en": "The run feedback comes from the simulated motor plant, which answers your outputs; a learner board has no motor to give it.",
+        "es": "La realimentación de marcha proviene de la planta simulada del motor, que responde a sus salidas; una placa del estudiante no tiene un motor que la dé."
       },
       "instead": {
         "en": "Complete it in Simulation, which provides the motor and its run feedback.",
-        "es": "Complétela en Simulación, que aporta el motor y su realimentación de marcha."
+        "es": "Complétela en Simulación, que proporciona el motor y su realimentación de marcha."
       }
     }
   },

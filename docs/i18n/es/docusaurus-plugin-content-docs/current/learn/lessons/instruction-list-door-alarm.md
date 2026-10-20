@@ -18,7 +18,7 @@ Complete un programa en lista de instrucciones para que una alarma de puerta se 
 - Nivel: Avanzado
 - Tiempo estimado: 20 minutos
 - Lenguajes: IL
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md)
 
@@ -40,9 +40,10 @@ Complete un programa en lista de instrucciones para que una alarma de puerta se 
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con una puerta y un botón de silencio reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/instruction-list-door-alarm.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/instruction-list-door-alarm.md)
 
 {/* <<< END GENERATED: learn/lessons/instruction-list-door-alarm <<< */}
 

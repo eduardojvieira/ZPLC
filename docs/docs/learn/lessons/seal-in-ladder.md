@@ -18,7 +18,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 - Level: Foundation
 - Estimated time: 20 minutes
 - Languages: LD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 
@@ -40,9 +40,10 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson is graded on a Start and Stop pressed together at an exact 10 ms step, which a board cannot repeat the same way every run. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/seal-in-ladder.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/seal-in-ladder.md)
 
 {/* <<< END GENERATED: learn/lessons/seal-in-ladder <<< */}
 

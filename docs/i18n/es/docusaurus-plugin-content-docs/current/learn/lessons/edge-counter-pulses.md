@@ -18,7 +18,7 @@ Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
@@ -40,9 +40,10 @@ Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
 
 La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección cuenta pulsos que el escenario envía en instantes exactos; una placa necesitaría una fuente de pulsos y una traza registrada que todavía no se ha escrito. Complétela en Simulación y luego pruebe el ejemplo Contador de flancos en su placa con un pulsador.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/edge-counter-pulses.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/edge-counter-pulses.md)
 
 {/* <<< END GENERATED: learn/lessons/edge-counter-pulses <<< */}
 

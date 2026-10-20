@@ -18,7 +18,7 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 - Level: Advanced
 - Estimated time: 20 minutes
 - Languages: IL
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md)
 
@@ -40,9 +40,10 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/instruction-list-door-alarm.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/instruction-list-door-alarm.md)
 
 {/* <<< END GENERATED: learn/lessons/instruction-list-door-alarm <<< */}
 

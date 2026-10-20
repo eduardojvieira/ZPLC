@@ -18,7 +18,7 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 - Nivel: Fundamentos
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 
@@ -40,9 +40,10 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 
 La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.
 
-## En una placa
+## Cableado
 
-La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe. Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe.md)
 
 {/* <<< END GENERATED: learn/lessons/motor-start-stop-safe <<< */}
 

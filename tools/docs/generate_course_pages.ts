@@ -8,6 +8,7 @@
 // sidebar (there are 40 of them) and reached from the course outline, which links the module index.
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
+import { wiringSection } from './generate_hardware_pages';
 
 export const GENERATOR = 'tools/docs/generate_course_pages.ts';
 type Lesson = (typeof LESSON_INDEX.lessons)[number];
@@ -64,7 +65,7 @@ function lessonBody(lesson: Lesson, lang: Lang): string {
     `## ${T.objectives[lang]}`, text.objectives.map((objective: string) => `- ${prose(objective)}`).join('\n'),
     `## ${T.stages[lang]}`, text.stages.map((stage: { title: string; checkpoint: string }, index: number) => `${index + 1}. **${prose(stage.title)}**`).join('\n'),
     `## ${T.scope[lang]}`, prose(text.scope),
-    ...(hardware ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`] : []),
+    ...(hardware ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`] : wiringSection(lesson, lang)),
   ].join('\n\n');
 }
 

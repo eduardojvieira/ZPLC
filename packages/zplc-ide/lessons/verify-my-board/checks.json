@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "lights the LED with IF instead of OR",
+      "files": {
+        "src/VerifyBoard.st": "PROGRAM VerifyBoard\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Led AT %Q0.0 : BOOL; OnBoardLed AT %Q0.4 : BOOL; END_VAR\nVAR Clock : TON; Blink : BOOL := FALSE; END_VAR\n(* Blink changes state every half second. OnBoardLed is the on-board LED of the Raspberry Pi Pico (GP25); the ESP32-S3-DevKitC-1 has no pin behind it. *)\nClock(IN := TRUE, PT := T#500ms);\nIF Clock.Q THEN Blink := NOT Blink; Clock(IN := FALSE, PT := T#500ms); END_IF;\nIF Button THEN Led := TRUE; ELSE Led := Blink; END_IF;\nOnBoardLed := Led;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "lights the LED only while the button is pressed, with no blink",
+      "files": {
+        "src/VerifyBoard.st": "PROGRAM VerifyBoard\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Led AT %Q0.0 : BOOL; OnBoardLed AT %Q0.4 : BOOL; END_VAR\nVAR Clock : TON; Blink : BOOL := FALSE; END_VAR\n(* Blink changes state every half second. OnBoardLed is the on-board LED of the Raspberry Pi Pico (GP25); the ESP32-S3-DevKitC-1 has no pin behind it. *)\nClock(IN := TRUE, PT := T#500ms);\nIF Clock.Q THEN Blink := NOT Blink; Clock(IN := FALSE, PT := T#500ms); END_IF;\nLed := Button;\nOnBoardLed := Led;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "turns the LED off while the button is pressed",
+      "files": {
+        "src/VerifyBoard.st": "PROGRAM VerifyBoard\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Led AT %Q0.0 : BOOL; OnBoardLed AT %Q0.4 : BOOL; END_VAR\nVAR Clock : TON; Blink : BOOL := FALSE; END_VAR\n(* Blink changes state every half second. OnBoardLed is the on-board LED of the Raspberry Pi Pico (GP25); the ESP32-S3-DevKitC-1 has no pin behind it. *)\nClock(IN := TRUE, PT := T#500ms);\nIF Clock.Q THEN Blink := NOT Blink; Clock(IN := FALSE, PT := T#500ms); END_IF;\nLed := Blink AND NOT Button;\nOnBoardLed := Led;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "forgets the on-board LED of the Pico",
+      "files": {
+        "src/VerifyBoard.st": "PROGRAM VerifyBoard\nVAR_INPUT Button AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT Led AT %Q0.0 : BOOL; OnBoardLed AT %Q0.4 : BOOL; END_VAR\nVAR Clock : TON; Blink : BOOL := FALSE; END_VAR\n(* Blink changes state every half second. OnBoardLed is the on-board LED of the Raspberry Pi Pico (GP25); the ESP32-S3-DevKitC-1 has no pin behind it. *)\nClock(IN := TRUE, PT := T#500ms);\nIF Clock.Q THEN Blink := NOT Blink; Clock(IN := FALSE, PT := T#500ms); END_IF;\nLed := Blink OR Button;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

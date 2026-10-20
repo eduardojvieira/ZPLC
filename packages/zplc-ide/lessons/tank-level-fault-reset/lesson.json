@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tank-level-fault-reset",
-  "version": 1,
+  "version": 2,
   "order": 3,
   "module": 6,
   "level": "intermediate",
@@ -17,12 +17,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson fills and empties a simulated tank to provoke faults, which would be unsafe and slow to repeat on a board.",
-        "es": "La lección llena y vacía un tanque simulado para provocar fallos, algo inseguro y lento de repetir en una placa."
+        "en": "The tank plant's level dynamics and its faults exist only in simulation, and the lesson reads six inputs where the learner boards have four.",
+        "es": "La dinámica del nivel de la planta del tanque y sus fallas existen solo en simulación, y la lección lee seis entradas cuando las placas del estudiante tienen cuatro."
       },
       "instead": {
-        "en": "Complete it in Simulation, where a fault costs nothing and can be repeated, and rehearse the reset steps there.",
-        "es": "Complétela en Simulación, donde un fallo no cuesta nada y se puede repetir, y ensaye allí los pasos de rearme."
+        "en": "Complete it in Simulation, where a fault costs nothing and can be repeated.",
+        "es": "Complétela en Simulación, donde una falla no cuesta nada y se puede repetir."
       }
     }
   },

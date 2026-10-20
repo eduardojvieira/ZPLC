@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "conveyor-classification-jam",
-  "version": 1,
+  "version": 2,
   "order": 4,
   "module": 8,
   "level": "advanced",
@@ -18,12 +18,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson needs the conveyor plant with its sensors and a forced jam, which a board cannot reproduce without the machine.",
-        "es": "La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina."
+        "en": "The parts and the jam come from the simulated conveyor plant, and the lesson reads seven inputs where the learner boards have four.",
+        "es": "Las piezas y el atasco provienen de la planta simulada del transportador, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
       },
       "instead": {
         "en": "Complete it in Simulation, where the conveyor and the jam are part of the scenario.",
-        "es": "Complétela en Simulación, donde la cinta y el atasco forman parte del escenario."
+        "es": "Complétela en Simulación, donde el transportador y el atasco forman parte del escenario."
       }
     }
   },

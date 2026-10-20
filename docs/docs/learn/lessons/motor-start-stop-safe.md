@@ -18,7 +18,7 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 - Level: Foundation
 - Estimated time: 20 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 
@@ -40,9 +40,10 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 
 Tests provide native POSIX host evidence only; they are not hardware or HIL evidence.
 
-## On a board
+## Wiring
 
-The lesson tests a stop that must win over a start, using inputs a script presses at exact times; a board would need wired buttons and a recorded trace that does not exist yet. Complete it in Simulation, where the scenario presses each input for you, and keep the stop contact wired normally closed on a real motor.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe.md)
 
 {/* <<< END GENERATED: learn/lessons/motor-start-stop-safe <<< */}
 

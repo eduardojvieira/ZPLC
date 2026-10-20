@@ -18,7 +18,7 @@ Follow how one input produces the current output and a copy delayed by one scan.
 - Level: Foundation
 - Estimated time: 10 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [first-blink-simulation](./first-blink-simulation.md)
 
@@ -41,9 +41,10 @@ Follow how one input produces the current output and a copy delayed by one scan.
 
 Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson watches a value move one scan at a time, and a board gives no view of single scans. Complete it in Simulation, where the trace shows each scan, then read the scan cycle page before you try a board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory.md)
 
 {/* <<< END GENERATED: learn/lessons/scan-cycle-one-scan-memory <<< */}
 

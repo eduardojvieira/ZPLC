@@ -18,7 +18,7 @@ Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y ac
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
@@ -40,9 +40,10 @@ Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y ac
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección avanza una cuenta cruda por ciclo, no una entrada analógica real, así que una placa no daría las mismas cuentas en los mismos momentos. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/analog-scaling-integer.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/analog-scaling-integer.md)
 
 {/* <<< END GENERATED: learn/lessons/analog-scaling-integer <<< */}
 

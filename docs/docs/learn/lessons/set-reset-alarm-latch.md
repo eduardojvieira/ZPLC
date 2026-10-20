@@ -18,7 +18,7 @@ Keep a fault in memory with the SR and RS blocks and see what each one does when
 - Level: Foundation
 - Estimated time: 15 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [seal-in-ladder](./seal-in-ladder.md)
 
@@ -40,9 +40,10 @@ Keep a fault in memory with the SR and RS blocks and see what each one does when
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson compares set-dominant and reset-dominant latches with inputs pressed at exact times; a board has no recorded trace for it yet. Complete it in Simulation, where the scenario presses the inputs for you.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/set-reset-alarm-latch.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/set-reset-alarm-latch.md)
 
 {/* <<< END GENERATED: learn/lessons/set-reset-alarm-latch <<< */}
 

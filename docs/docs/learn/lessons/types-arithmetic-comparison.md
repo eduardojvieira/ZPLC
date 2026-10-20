@@ -18,7 +18,7 @@ Keep a running total in an INT variable, add to it on each press, and turn it in
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -40,9 +40,10 @@ Keep a running total in an INT variable, add to it on each press, and turn it in
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson is graded on a total that depends on the exact number of presses replayed by Studio, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison.md)
 
 {/* <<< END GENERATED: learn/lessons/types-arithmetic-comparison <<< */}
 

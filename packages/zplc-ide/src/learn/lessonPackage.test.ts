@@ -66,9 +66,31 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
     delete withoutReason.unsupported;
     expect(validateManifest(withoutReason)).toEqual(['manifest: missing key "unsupported"']);
     expect(validateManifest({ ...manifest, unsupported: {} })).toEqual(['manifest.unsupported: track "hardware" is not supported, so it needs a reason and an instead']);
-    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'] })).toEqual(['manifest.unsupported: track "hardware" is supported, so it must not have a reason']);
+    const hardware = { wiring: 'wiring.json', tolerances: { timeMs: 200, analogPercent: 5 } };
+    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'], hardware })).toEqual(['manifest.unsupported: track "hardware" is supported, so it must not have a reason']);
     expect(validateManifest({ ...manifest, unsupported: { hardware: { ...manifest.unsupported.hardware, instead: { en: 'x' } } } })[0]).toContain('manifest.unsupported.hardware.instead');
-    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {} })).toEqual([]);
+    expect(validateManifest({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {}, hardware })).toEqual([]);
+  });
+
+  it('LRN-013 requires the hardware block exactly when the lesson lists the hardware track, with its wiring file and tolerances', () => {
+    const hardware = { wiring: 'wiring.json', tolerances: { timeMs: 200, analogPercent: 5 } };
+    const onBoard = { ...manifest, tracks: ['simulation', 'hardware'], unsupported: {}, hardware };
+    expect(validateManifest(onBoard)).toEqual([]);
+    const withoutBlock: Record<string, unknown> = { ...onBoard };
+    delete withoutBlock.hardware;
+    expect(validateManifest(withoutBlock)).toEqual(['manifest.hardware: a lesson on the hardware track needs the hardware block (wiring and tolerances)']);
+    expect(validateManifest({ ...manifest, hardware })).toEqual(['manifest.hardware: only a lesson on the hardware track has a hardware block']);
+    expect(validateManifest({ ...onBoard, hardware: { ...hardware, wiring: 'pins.json' } })).toEqual(['manifest.hardware.wiring: must be "wiring.json"']);
+    expect(validateManifest({ ...onBoard, hardware: { ...hardware, tolerances: { timeMs: 0, analogPercent: 5 } } })).toEqual(['manifest.hardware.tolerances.timeMs: must be an integer from 1 to 1000']);
+    expect(validateManifest({ ...onBoard, hardware: { ...hardware, tolerances: { timeMs: 200, analogPercent: 120 } } })).toEqual(['manifest.hardware.tolerances.analogPercent: must be a number above 0 and at most 100']);
+    expect(validateManifest({ ...onBoard, hardware: { ...hardware, extra: 1 } })).toEqual(['manifest.hardware: unknown key "extra"']);
+  });
+
+  it('LRN-011 lets a hardware-only lesson say why it has no simulation grade, and what to do instead', () => {
+    const reason = { reason: { en: 'It checks a real board.', es: 'Verifica una placa real.' }, instead: { en: 'Use first blink.', es: 'Use el primer parpadeo.' } };
+    const hardwareOnly = { ...manifest, tracks: ['hardware'], unsupported: { simulation: reason }, hardware: { wiring: 'wiring.json', tolerances: { timeMs: 200, analogPercent: 5 } } };
+    expect(validateManifest(hardwareOnly)).toEqual([]);
+    expect(validateManifest({ ...hardwareOnly, unsupported: {} })).toEqual(['manifest.unsupported: track "simulation" is not supported, so it needs a reason and an instead']);
   });
 
   it('requires the six stages once each, two hint levels and at least two wrong programs', () => {

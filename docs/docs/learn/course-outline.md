@@ -17,9 +17,9 @@ when a row disagrees with its lesson.
 Each module and each lesson has its own page, generated from the lesson packages: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
 Every lesson is completed in the **Simulation** track, on this computer, with no
-board. A lesson lists **Hardware** only when a check against a trace recorded
-from a board exists for it. At present no lesson offers one, and a lesson that
-does not offer a track says why and what to do instead.
+board. A lesson lists **Hardware** when it has a wiring page for each learner board
+and its board check is defined; no hardware run has been recorded on a board yet.
+A lesson that does not offer a track says why and what to do instead.
 
 Each lesson has six stages (Objective, Predict, Edit, Run, Observe, Reflect), two
 levels of hint and a reference solution you may ask to see. Studio records that
@@ -43,7 +43,7 @@ A first-time user needs to see something move before any theory. This module is 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `first-blink-simulation` Your first blink in simulation | Available | ST | Simulation | - | 10 | - |
-| Check your board (wiring page per board) | Planned | none | Hardware | - | 10 | - |
+| `verify-my-board` Verify my board ([learner kits](../reference/learner-kits/index.md)) | Available | ST | Hardware | - | 30 | `first-blink-simulation` |
 
 Objectives of the available lessons:
 
@@ -58,9 +58,9 @@ A PLC repeats one cycle: read inputs, run the program, write outputs. The scan c
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory | Available | ST | Simulation | - | 10 | `first-blink-simulation` |
-| `blinky-ladder-timer-feedback` TON oscillator and output feedback | Available | LD | Simulation | - | 20 | `scan-cycle-one-scan-memory` |
-| `blink-structured-text` Write a blinker in Structured Text | Available | ST | Simulation | - | 15 | `scan-cycle-one-scan-memory` |
+| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory | Available | ST | Simulation, Hardware | - | 10 | `first-blink-simulation` |
+| `blinky-ladder-timer-feedback` TON oscillator and output feedback | Available | LD | Simulation, Hardware | - | 20 | `scan-cycle-one-scan-memory` |
+| `blink-structured-text` Write a blinker in Structured Text | Available | ST | Simulation, Hardware | - | 15 | `scan-cycle-one-scan-memory` |
 
 Objectives of the available lessons:
 
@@ -77,10 +77,10 @@ Boolean logic is the vocabulary of every program. Contacts and coils lead to the
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `motor-start-stop-safe` Safe motor start-stop | Available | ST | Simulation | - | 20 | `blinky-ladder-timer-feedback` |
-| `boolean-logic-two-hand-guard` Boolean logic: a two-hand control with a guard | Available | ST | Simulation | - | 15 | `blinky-ladder-timer-feedback` |
-| `set-reset-alarm-latch` Latching an alarm: set and reset, and which one wins | Available | ST | Simulation | - | 15 | `boolean-logic-two-hand-guard` |
-| `seal-in-ladder` Seal-in in Ladder: a motor that holds itself on | Available | LD | Simulation | - | 20 | `blinky-ladder-timer-feedback` |
+| `motor-start-stop-safe` Safe motor start-stop | Available | ST | Simulation, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
+| `boolean-logic-two-hand-guard` Boolean logic: a two-hand control with a guard | Available | ST | Simulation, Hardware | - | 15 | `blinky-ladder-timer-feedback` |
+| `set-reset-alarm-latch` Latching an alarm: set and reset, and which one wins | Available | ST | Simulation, Hardware | - | 15 | `boolean-logic-two-hand-guard` |
+| `seal-in-ladder` Seal-in in Ladder: a motor that holds itself on | Available | LD | Simulation, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
 
 Objectives of the available lessons:
 
@@ -98,9 +98,9 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `edge-counter-pulses` Edges and pulse counter | Available | ST | Simulation | - | 15 | `motor-start-stop-safe` |
-| `timers-on-delay-off-delay` Timers: an off-delay light and an on-delay filter | Available | ST | Simulation | - | 15 | `motor-start-stop-safe` |
-| `counter-batch-fbd` Counters in Function Block Diagram: count parts to a batch | Available | FBD | Simulation | - | 20 | `edge-counter-pulses` |
+| `edge-counter-pulses` Edges and pulse counter | Available | ST | Simulation, Hardware | - | 15 | `motor-start-stop-safe` |
+| `timers-on-delay-off-delay` Timers: an off-delay light and an on-delay filter | Available | ST | Simulation, Hardware | - | 15 | `motor-start-stop-safe` |
+| `counter-batch-fbd` Counters in Function Block Diagram: count parts to a batch | Available | FBD | Simulation, Hardware | - | 20 | `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
@@ -117,8 +117,8 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands | Available | ST | Simulation | - | 20 | `edge-counter-pulses` |
-| `analog-scaling-integer` Analog scaling: from raw counts to a percentage | Available | ST | Simulation | - | 20 | `types-arithmetic-comparison` |
+| `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands | Available | ST | Simulation, Hardware | - | 20 | `edge-counter-pulses` |
+| `analog-scaling-integer` Analog scaling: from raw counts to a percentage | Available | ST | Simulation, Hardware | - | 20 | `types-arithmetic-comparison` |
 
 Objectives of the available lessons:
 
@@ -135,7 +135,7 @@ A machine that does things in order is a state machine. Sequences are written as
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `pedestrian-crossing-states` Pedestrian crossing and safe states | Available | ST | Simulation | pedestrian-v1 | 25 | `edge-counter-pulses` |
-| `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix | Available | SFC | Simulation | - | 25 | `edge-counter-pulses` |
+| `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix | Available | SFC | Simulation, Hardware | - | 25 | `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
@@ -170,8 +170,8 @@ Programs grow. Functions, function blocks, structures, arrays and tasks keep the
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `function-block-pump-pair` Function blocks: one latch, two pumps | Available | ST | Simulation | - | 25 | `types-arithmetic-comparison` |
-| `structures-arrays-call-panel` Structures and arrays: a panel of three calls | Available | ST | Simulation | - | 25 | `function-block-pump-pair` |
+| `function-block-pump-pair` Function blocks: one latch, two pumps | Available | ST | Simulation, Hardware | - | 25 | `types-arithmetic-comparison` |
+| `structures-arrays-call-panel` Structures and arrays: a panel of three calls | Available | ST | Simulation, Hardware | - | 25 | `function-block-pump-pair` |
 
 Objectives of the available lessons:
 
@@ -206,8 +206,8 @@ The same logic can be written in five languages. Instruction List closes the set
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
-| `instruction-list-door-alarm` Instruction List: the current result and the order of instructions | Available | IL | Simulation | - | 20 | `function-block-pump-pair` |
-| `one-logic-five-languages` One logic in five languages: a gate that holds itself open | Available | ST, LD, FBD, SFC, IL | Simulation | - | 30 | `instruction-list-door-alarm` |
+| `instruction-list-door-alarm` Instruction List: the current result and the order of instructions | Available | IL | Simulation, Hardware | - | 20 | `function-block-pump-pair` |
+| `one-logic-five-languages` One logic in five languages: a gate that holds itself open | Available | ST, LD, FBD, SFC, IL | Simulation, Hardware | - | 30 | `instruction-list-door-alarm` |
 
 Objectives of the available lessons:
 

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "enable",
+      "kind": "jumper",
+      "channel": "DI0",
+      "label": {
+        "en": "Enable",
+        "es": "Habilitación"
+      }
+    },
+    {
+      "id": "lamp",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Lamp",
+        "es": "Lámpara"
+      }
+    }
+  ]
+}

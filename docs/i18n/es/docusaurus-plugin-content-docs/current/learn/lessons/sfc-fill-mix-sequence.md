@@ -18,7 +18,7 @@ Complete un diagrama funcional de secuencias de tres pasos agregando la transici
 - Nivel: Intermedio
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -40,9 +40,10 @@ Complete un diagrama funcional de secuencias de tres pasos agregando la transici
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece volúmenes de proceso, calidad de mezcla ni tiempos de válvula en equipos reales, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con tiempos de paso de 50 ms contados por ciclo, que una placa no repite al mismo ciclo en cada ejecución. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence.md)
 
 {/* <<< END GENERATED: learn/lessons/sfc-fill-mix-sequence <<< */}
 

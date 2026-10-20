@@ -43,7 +43,7 @@ Tests provide native POSIX host runtime evidence with scenario-scheduled inputs;
 
 ## On a board
 
-The lesson diagnoses a recorded two-part sequence by reading a trace, and no trace recorded from a board has been written for it. Complete it in Simulation, where the trace is the evidence you read.
+Module 8 teaches diagnosis from a trace of the simulation, and the lesson reads seven inputs where the learner boards have four. Complete it in Simulation, where the trace is the evidence you read.
 
 {/* <<< END GENERATED: learn/lessons/conveyor-two-parts-diagnosis <<< */}
 

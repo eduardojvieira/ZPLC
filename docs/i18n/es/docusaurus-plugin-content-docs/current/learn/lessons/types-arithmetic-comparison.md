@@ -18,7 +18,7 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -40,9 +40,10 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison.md)
 
 {/* <<< END GENERATED: learn/lessons/types-arithmetic-comparison <<< */}
 

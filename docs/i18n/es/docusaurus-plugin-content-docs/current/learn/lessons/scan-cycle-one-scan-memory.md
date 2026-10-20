@@ -18,7 +18,7 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 - Nivel: Fundamentos
 - Tiempo estimado: 10 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [first-blink-simulation](./first-blink-simulation.md)
 
@@ -41,9 +41,10 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 
 La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado. Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory.md)
 
 {/* <<< END GENERATED: learn/lessons/scan-cycle-one-scan-memory <<< */}
 

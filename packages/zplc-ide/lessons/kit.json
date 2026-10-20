@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "boards": [
+    {
+      "boardId": "rpi-pico-rp2040",
+      "supply": "3V3(OUT) · pin 36",
+      "ground": "GND · pin 38",
+      "analogGround": "AGND · pin 33"
+    },
+    {
+      "boardId": "esp32-s3-devkitc",
+      "supply": "3V3 · J1-1",
+      "ground": "GND · J1-22",
+      "analogGround": "GND · J1-22"
+    }
+  ],
+  "voltageLimit": {
+    "en": [
+      "The I/O pins of both learner boards work at 3.3 V logic only.",
+      "Never connect 5 V (including the 5V, VBUS and VSYS pins), a battery above 3.3 V or anything from mains to a GPIO, ADC or 3V3 pin.",
+      "Power the parts only from the 3V3 pin of the board, and join the grounds.",
+      "Keep each output under 10 mA: one LED with a 330 Ω resistor draws about 4 mA. On the Pico, keep the total of all pins under 50 mA.",
+      "Wire with the USB cable unplugged, and check the wiring twice before you plug it in."
+    ],
+    "es": [
+      "Los pines de E/S de las dos placas del estudiante funcionan solo con lógica de 3.3 V.",
+      "Nunca conecte 5 V (incluidos los pines 5V, VBUS y VSYS), una batería de más de 3.3 V ni nada que provenga de la red eléctrica a un pin GPIO, ADC o 3V3.",
+      "Alimente las piezas solo desde el pin 3V3 de la placa y una las tierras (GND).",
+      "Mantenga cada salida por debajo de 10 mA: un LED con una resistencia de 330 Ω consume unos 4 mA. En la Pico, mantenga el total de todos los pines por debajo de 50 mA.",
+      "Cablee con el cable USB desconectado y revise el cableado dos veces antes de conectarlo."
+    ]
+  },
+  "bom": [
+    {
+      "id": "board",
+      "kind": "board",
+      "quantity": 1,
+      "name": {
+        "en": "One learner board: a Raspberry Pi Pico or Pico H, or an ESP32-S3-DevKitC-1 N8R8",
+        "es": "Una placa del estudiante: una Raspberry Pi Pico o Pico H, o una ESP32-S3-DevKitC-1 N8R8"
+      },
+      "note": {
+        "en": "The Pico W and Pico 2 W are not supported: their on-board LED sits on the wireless chip.",
+        "es": "La Pico W y la Pico 2 W no son compatibles: su LED integrado está en el chip inalámbrico."
+      }
+    },
+    {
+      "id": "usb-cable",
+      "kind": "cable",
+      "quantity": 1,
+      "name": {
+        "en": "USB data cable that fits the connector of the board",
+        "es": "Cable USB de datos que encaje en el conector de la placa"
+      },
+      "note": {
+        "en": "A charge-only cable does not carry data, and Studio cannot reach the board through it.",
+        "es": "Un cable solo de carga no transmite datos, y Studio no puede comunicarse con la placa a través de él."
+      }
+    },
+    {
+      "id": "breadboard",
+      "kind": "breadboard",
+      "quantity": 1,
+      "name": {
+        "en": "Breadboard of 830 points",
+        "es": "Protoboard de 830 puntos"
+      },
+      "note": {
+        "en": "The DevKitC-1 is wide: two half breadboards side by side leave a free row on each side of it.",
+        "es": "La DevKitC-1 es ancha: dos medias protoboards una junto a otra dejan una fila libre a cada lado."
+      }
+    },
+    {
+      "id": "led",
+      "kind": "led",
+      "quantity": 6,
+      "name": {
+        "en": "5 mm LEDs: red, green and yellow",
+        "es": "LED de 5 mm: rojos, verdes y amarillos"
+      },
+      "note": {
+        "en": "Not blue or white: they need about 3 V and stay dim at 3.3 V.",
+        "es": "No azules ni blancos: necesitan unos 3 V y encienden poco con 3.3 V."
+      }
+    },
+    {
+      "id": "resistor-330",
+      "kind": "resistor",
+      "quantity": 6,
+      "ohms": 330,
+      "name": {
+        "en": "330 Ω resistors, one in series with each LED",
+        "es": "Resistencias de 330 Ω, una en serie con cada LED"
+      }
+    },
+    {
+      "id": "button",
+      "kind": "button",
+      "quantity": 3,
+      "name": {
+        "en": "6×6 mm tactile push buttons",
+        "es": "Pulsadores táctiles de 6×6 mm"
+      }
+    },
+    {
+      "id": "resistor-10k",
+      "kind": "resistor",
+      "quantity": 2,
+      "ohms": 10000,
+      "name": {
+        "en": "10 kΩ resistors",
+        "es": "Resistencias de 10 kΩ"
+      },
+      "note": {
+        "en": "Spare parts for experiments; no lesson needs them.",
+        "es": "Piezas de repuesto para experimentar; ninguna lección las necesita."
+      }
+    },
+    {
+      "id": "potentiometer",
+      "kind": "potentiometer",
+      "quantity": 1,
+      "ohms": 10000,
+      "name": {
+        "en": "10 kΩ linear potentiometer",
+        "es": "Potenciómetro lineal de 10 kΩ"
+      }
+    },
+    {
+      "id": "capacitor",
+      "kind": "capacitor",
+      "quantity": 1,
+      "name": {
+        "en": "100 nF capacitor",
+        "es": "Capacitor de 100 nF"
+      },
+      "note": {
+        "en": "Optional: from the wiper of the potentiometer to GND, it steadies the analog reading.",
+        "es": "Opcional: del cursor del potenciómetro a GND, estabiliza la lectura analógica."
+      }
+    },
+    {
+      "id": "jumper-wires",
+      "kind": "jumper",
+      "quantity": 20,
+      "name": {
+        "en": "Male-to-male jumper wires",
+        "es": "Cables puente macho-macho"
+      }
+    }
+  ]
+}

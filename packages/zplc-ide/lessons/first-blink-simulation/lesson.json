@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "first-blink-simulation",
-  "version": 1,
+  "version": 2,
   "order": 11,
   "module": 0,
   "level": "foundation",
@@ -15,12 +15,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson changes one value in a program that already blinks and checks the lamp in simulation; a board would need a recorded trace and wiring page that do not exist yet.",
-        "es": "La lección cambia un valor en un programa que ya parpadea y comprueba la lámpara en simulación; una placa necesitaría una traza registrada y una página de cableado que todavía no existen."
+        "en": "This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board.",
+        "es": "Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
       },
       "instead": {
-        "en": "Complete it in Simulation. The Raspberry Pi Pico blinky example shows the same idea on the on-board LED.",
-        "es": "Complétela en Simulación. El ejemplo de parpadeo de la Raspberry Pi Pico muestra la misma idea con el LED de la placa."
+        "en": "Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.",
+        "es": "Complétela en Simulación y luego haga la lección siguiente, Verificar mi placa, en la ruta de Hardware para verificar su placa."
       }
     }
   },

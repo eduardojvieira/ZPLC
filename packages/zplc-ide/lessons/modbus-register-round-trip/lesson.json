@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "modbus-register-round-trip",
-  "version": 1,
+  "version": 2,
   "order": 27,
   "module": 10,
   "level": "advanced",
@@ -17,8 +17,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
-        "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+        "en": "The lesson talks to the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set.",
+        "es": "La lección se comunica con el servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",

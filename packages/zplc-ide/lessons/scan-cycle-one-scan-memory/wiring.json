@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "button",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Button",
+        "es": "Pulsador"
+      }
+    },
+    {
+      "id": "current",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Current",
+        "es": "Actual"
+      }
+    },
+    {
+      "id": "delayed",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Delayed",
+        "es": "Retardado"
+      }
+    },
+    {
+      "id": "rising-pulse",
+      "kind": "led",
+      "channel": "DO2",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Rising pulse",
+        "es": "Pulso de flanco ascendente"
+      }
+    }
+  ]
+}

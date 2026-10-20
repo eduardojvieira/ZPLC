@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "blink-structured-text",
-  "version": 1,
+  "version": 2,
   "order": 14,
   "module": 1,
   "level": "foundation",
@@ -12,20 +12,10 @@
     "ST"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The scenario checks the lamp at exact scan times with a script that gates the blinker; a board has no recorded trace for this lesson yet.",
-        "es": "El escenario comprueba la lámpara en instantes de ciclo exactos con un guion que habilita el parpadeo; una placa todavía no tiene traza registrada para esta lección."
-      },
-      "instead": {
-        "en": "Complete it in Simulation, then try the Raspberry Pi Pico blinky example for the same timer on a real LED.",
-        "es": "Complétela en Simulación y pruebe después el ejemplo de parpadeo de la Raspberry Pi Pico con el mismo temporizador sobre un LED real."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/enabled-blink.scenario.json",
     "sha256": "6b8a15a20f414564c61901cafdf9514676ae6318b7995f1309bc0ac6db25dd62"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

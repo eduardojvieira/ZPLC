@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "instruction-list-door-alarm",
-  "version": 1,
+  "version": 2,
   "order": 24,
   "module": 9,
   "level": "advanced",
@@ -12,20 +12,10 @@
     "IL"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson is graded on a door and a silence button replayed at exact steps, and no board trace has been recorded for it.",
-        "es": "La lección se califica con una puerta y un botón de silencio reproducidos en pasos exactos, y no se ha registrado una traza de placa para ella."
-      },
-      "instead": {
-        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {
@@ -42,5 +32,12 @@
     "path": "tests/door-alarm.scenario.json",
     "sha256": "fff8cfd3a2aebda7a698c19f0846bd7f26214e0d8a35b987a1b2957dd87e408d"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

@@ -18,7 +18,7 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [seal-in-ladder](./seal-in-ladder.md)
 
@@ -40,9 +40,10 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.
 
-## En una placa
+## Cableado
 
-La lección compara biestables con prioridad al arranque y al reposo con entradas pulsadas en instantes exactos; una placa todavía no tiene traza registrada para ella. Complétela en Simulación, donde el escenario pulsa las entradas por usted.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/set-reset-alarm-latch.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/set-reset-alarm-latch.md)
 
 {/* <<< END GENERATED: learn/lessons/set-reset-alarm-latch <<< */}
 

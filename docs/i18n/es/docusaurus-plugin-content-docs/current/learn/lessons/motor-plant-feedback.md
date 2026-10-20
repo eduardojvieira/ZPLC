@@ -42,7 +42,7 @@ La evidencia de Tests es determinística del host nativo POSIX y de la planta di
 
 ## En una placa
 
-La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación. Complétela en Simulación, que aporta el motor y su realimentación de marcha.
+La realimentación de marcha proviene de la planta simulada del motor, que responde a sus salidas; una placa del estudiante no tiene un motor que la dé. Complétela en Simulación, que proporciona el motor y su realimentación de marcha.
 
 {/* <<< END GENERATED: learn/lessons/motor-plant-feedback <<< */}
 

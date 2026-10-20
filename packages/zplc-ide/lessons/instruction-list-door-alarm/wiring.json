@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "armed",
+      "kind": "jumper",
+      "channel": "DI0",
+      "label": {
+        "en": "Armed",
+        "es": "Armado"
+      }
+    },
+    {
+      "id": "door-open",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Door open",
+        "es": "Puerta abierta"
+      }
+    },
+    {
+      "id": "silence",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Silence",
+        "es": "Silenciar"
+      }
+    },
+    {
+      "id": "siren",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Siren",
+        "es": "Sirena"
+      }
+    }
+  ]
+}

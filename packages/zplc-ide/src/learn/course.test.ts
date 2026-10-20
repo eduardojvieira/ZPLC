@@ -64,7 +64,7 @@ describe('the course view', () => {
     const lessons = view.modules.flatMap((module) => module.lessons);
     expect(lessons.map((lesson) => lesson.id).sort()).toEqual(LESSON_INDEX.lessons.map((lesson) => lesson.id).sort());
     const second = lessons.find((lesson) => lesson.id === SECOND)!;
-    expect(second).toMatchObject({ state: 'locked', missing: [FIRST], tracks: ['simulation'] });
+    expect(second).toMatchObject({ state: 'locked', missing: [FIRST], tracks: ['simulation', 'hardware'] });
     expect(second.title.length).toBeGreaterThan(0);
   });
 

@@ -41,7 +41,7 @@ Tests provide native POSIX host evidence on your computer only; they are not evi
 
 ## On a board
 
-The lesson changes one value in a program that already blinks and checks the lamp in simulation; a board would need a recorded trace and wiring page that do not exist yet. Complete it in Simulation. The Raspberry Pi Pico blinky example shows the same idea on the on-board LED.
+This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board. Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.
 
 {/* <<< END GENERATED: learn/lessons/first-blink-simulation <<< */}
 

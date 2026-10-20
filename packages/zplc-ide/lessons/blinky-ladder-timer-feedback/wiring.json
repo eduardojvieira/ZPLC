@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "led",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "LED output",
+        "es": "Salida del LED"
+      }
+    }
+  ]
+}
