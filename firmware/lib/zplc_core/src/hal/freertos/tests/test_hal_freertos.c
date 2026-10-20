@@ -1,6 +1,6 @@
 /**
  * @file test_hal_freertos.c
- * @brief The HAL of the FreeRTOS port on the kernel: the clock, the sleep, the locks and the storage (IO-013, IO-016).
+ * @brief IO-016, IO-013: the HAL of the FreeRTOS port on the kernel: the clock, the sleep, the locks and the storage.
  *
  * SPDX-License-Identifier: MIT
  *

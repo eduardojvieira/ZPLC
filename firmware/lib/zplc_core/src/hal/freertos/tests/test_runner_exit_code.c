@@ -1,6 +1,6 @@
 /**
  * @file test_runner_exit_code.c
- * @brief A suite that fails must fail the run: the runner passes the result of main() to the process (IO-016).
+ * @brief IO-016: a suite that fails must fail the run, because the runner passes the result of main() to the process.
  *
  * SPDX-License-Identifier: MIT
  *

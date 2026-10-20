@@ -1,7 +1,7 @@
 /**
  * @file test_hal_freertos_io_table.c
- * @brief The I/O table of the FreeRTOS port: the simulated board reaches the process image through the shared
- *        accessors, and a channel the board lacks is a defined result (IO-001, IO-002, IO-007, IO-016).
+ * @brief IO-016, IO-007: the I/O table of the FreeRTOS port reaches the process image through the shared accessors, and a
+ *        channel the board lacks is a defined result.
  *
  * SPDX-License-Identifier: MIT
  *

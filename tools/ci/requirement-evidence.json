@@ -1279,6 +1279,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmPortSuites.test.ts","test":"the port conformance suite on WebAssembly: the C suites of the core on its HAL port (IO-013, RT-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the scheduler of the WebAssembly runtime decides what the native runtime decides (RT-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_freertos_scheduler.c","test":"IO-016, RT-008: the FreeRTOS adapter of the scheduler core decides what the other runtimes decide, and"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_equivalence.c","test":"The host runtime decides what the firmware decides (RT-008)."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by"},
@@ -1535,6 +1536,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"tells the user once when the board cannot serve some of its I/O channels (IO-007)"},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"CheckerTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. Every HAL function is implemented on the posix, zephyr and wasm ports.","partial":true},
     {"kind":"unit","ref":"tools/ci/test_check_hal_contract.py","test":"RepositoryTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The repository contract has no finding and the ledger in tools/ci/hal-contract.json is empty: every declared function has a caller and an implementation on the three ports; the 'not supported' result of an operation a board cannot perform reaches the user (test_io_unsupported.c, test_proto_session.c, serialAdapter.test.ts)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_hal_freertos_io_table.c","test":"IO-016, IO-007: the I/O table of the FreeRTOS port reaches the process image through the shared accessors, and a"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_shutdown.c","test":"Core shutdown releases the process-image mutex, and a later init creates it again (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hal_posix_io_table.c","test":"The POSIX port lists no channel and says so through the shared accessors (IO-007)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_io_table.c","test":"The I/O table accessors every port shares (IO-001, IO-002, IO-007)."},
@@ -1574,6 +1576,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmPortSuites.test.ts","test":"the storage of the WebAssembly port: the program store over the records of the host (IO-013)"},
     {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"port conformance suite: the legs name real checks (IO-013)"},
     {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_hal_freertos.c","test":"IO-016, IO-013: the HAL of the FreeRTOS port on the kernel: the clock, the sleep, the locks and the storage."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_port_timing.c","test":"The timing self-test of the port conformance suite on the POSIX port (IO-013)."},
     {"kind":"c-test","ref":"firmware/tests/port_timing/src/main.c","test":"IO-013: the timing self-test of the port conformance suite, on the clock of the Zephyr port."}
   ],
@@ -1586,7 +1589,15 @@
     {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"SupportLevelTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The level is derived from evidence records and no hand-set field exists; no record exists yet."}
   ],
   "IO-016": [
-    {"kind":"decided","ref":"docs/docs/runtime/port-interface.md","test":"Whether a second, non-Zephyr port ships in 2.0 is decision D-06","note":"Decided by D-06 with its default B: a second, non-Zephyr port is 2.x work, so IO-016 asks for no work in 2.0 (plan: recorded as decided). If the owner selects A, remove this record: IO-016 then needs a non-Zephyr port that builds in CI and passes the port conformance suite (a new package, L to XL, beside WP-91), and DOC-012 changes its wording."}
+    {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"lists in the FreeRTOS leg every suite that the FreeRTOS build registers, except the check of its runner (IO-016)"},
+    {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"runs on the FreeRTOS port the same C suites of the core that ctest runs on the POSIX host, in every category that has any (IO-016)"},
+    {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"gives the FreeRTOS port a row of checks in every category, in both languages (IO-016)"},
+    {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"says that the second port is decided and shipped, not pending, and states the tolerance of its timing (D-06, IO-016)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_freertos_scheduler.c","test":"IO-016, RT-008: the FreeRTOS adapter of the scheduler core decides what the other runtimes decide, and"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_hal_freertos.c","test":"IO-016, IO-013: the HAL of the FreeRTOS port on the kernel: the clock, the sleep, the locks and the storage."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_hal_freertos_io_table.c","test":"IO-016, IO-007: the I/O table of the FreeRTOS port reaches the process image through the shared accessors, and a"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_runner_exit_code.c","test":"IO-016: a suite that fails must fail the run, because the runner passes the result of main() to the process."},
+    {"kind":"gate","ref":"docs/docs/runtime/port-interface.md","test":"the `freertos-port` job of CI builds and runs it on Ubuntu","note":"Needs a green run of the freertos-port job of .github/workflows/ci.yml on GitHub (IO-016 says the port builds in CI). The suites pass on the FreeRTOS POSIX simulator on a Linux workstation with tools/freertos/test.sh, and the job runs that same command, but the workflow was written where a hosted run is not possible. Remove this record once a hosted run of the job is green."}
   ],
   "IO-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/exampleProjects.test.ts","test":"example projects (IO-017)"}

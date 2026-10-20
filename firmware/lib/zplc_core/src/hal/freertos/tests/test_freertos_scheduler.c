@@ -1,7 +1,7 @@
 /**
  * @file test_freertos_scheduler.c
- * @brief The FreeRTOS adapter of the scheduler core decides what the other runtimes decide, and releases on the kernel's
- *        timers (RT-008, IO-016).
+ * @brief IO-016, RT-008: the FreeRTOS adapter of the scheduler core decides what the other runtimes decide, and
+ *        releases on the kernel's timers.
  *
  * SPDX-License-Identifier: MIT
  *
