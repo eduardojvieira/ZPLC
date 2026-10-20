@@ -23,20 +23,20 @@ El kit del curso para la Raspberry Pi Pico (RP2040): su mapa de pines, las pieza
 
 | Canal | Dirección | Dirección IEC | Pin | Ubicación | Notas |
 | --- | --- | --- | --- | --- | --- |
-| `DO0` | salida, digital | `%QX0.0` | GP0 | header pin 1 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
-| `DO1` | salida, digital | `%QX0.1` | GP1 | header pin 2 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
-| `DO2` | salida, digital | `%QX0.2` | GP2 | header pin 4 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
-| `DO3` | salida, digital | `%QX0.3` | GP3 | header pin 5 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
-| `DO4` | salida, digital | `%QX0.4` | GP25 | on-board LED | On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image. |
-| `DI0` | entrada, digital | `%IX0.0` | GP15 | header pin 20 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `DI1` | entrada, digital | `%IX0.1` | GP14 | header pin 19 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `DI2` | entrada, digital | `%IX0.2` | GP13 | header pin 17 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `DI3` | entrada, digital | `%IX0.3` | GP12 | header pin 16 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | header pin 31 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin. |
-| `AI1` | entrada, analógica | `%IW5` | GP27 (ADC1) | header pin 32 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
-| `AI2` | entrada, analógica | `%IW6` | GP28 (ADC2) | header pin 34 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
-| `AI3` | entrada, analógica | `%IW7` | VSYS/3 (ADC3) | internal | Internal: the supply voltage divided by 3, no external connection. |
-| `AI4` | entrada, analógica | `%IW8` | Temperature sensor (ADC4) | internal | Internal die temperature sensor, no external connection. |
+| `DO0` | salida, digital | `%QX0.0` | GP0 | pin 1 del conector | Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA. |
+| `DO1` | salida, digital | `%QX0.1` | GP1 | pin 2 del conector | Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA. |
+| `DO2` | salida, digital | `%QX0.2` | GP2 | pin 4 del conector | Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA. |
+| `DO3` | salida, digital | `%QX0.3` | GP3 | pin 5 del conector | Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA. |
+| `DO4` | salida, digital | `%QX0.4` | GP25 | LED integrado en la placa | LED verde integrado en la placa, con su resistencia en serie; no es una salida de campo. Esta imagen es para la Raspberry Pi Pico (RP2040): la Pico W tiene el LED en su chip inalámbrico, y la Pico 2 (RP2350) necesita otra imagen. |
+| `DI0` | entrada, digital | `%IX0.0` | GP15 | pin 20 del conector | Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V. |
+| `DI1` | entrada, digital | `%IX0.1` | GP14 | pin 19 del conector | Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V. |
+| `DI2` | entrada, digital | `%IX0.2` | GP13 | pin 17 del conector | Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V. |
+| `DI3` | entrada, digital | `%IX0.3` | GP12 | pin 16 del conector | Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V. |
+| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | pin 31 del conector | De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3(OUT) (pin 36 del conector) y AGND (pin 33 del conector), con su cursor en este pin. |
+| `AI1` | entrada, analógica | `%IW5` | GP27 (ADC1) | pin 32 del conector | De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V. |
+| `AI2` | entrada, analógica | `%IW6` | GP28 (ADC2) | pin 34 del conector | De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V. |
+| `AI3` | entrada, analógica | `%IW7` | VSYS/3 (ADC3) | interno | Interno: la tensión de alimentación dividida por 3, sin conexión externa. |
+| `AI4` | entrada, analógica | `%IW8` | Sensor de temperatura (ADC4) | interno | Sensor de temperatura interno del chip, sin conexión externa. |
 
 Alimentación: 3V3 en 3V3(OUT) · pin 36, GND en GND · pin 38, la tierra de un potenciómetro en AGND · pin 33.
 

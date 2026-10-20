@@ -26,10 +26,10 @@ El cableado de la lección [Lista de instrucciones: el resultado actual y el ord
 
 ## Tarjeta de cableado
 
-1. Armado: cable puente desde GP15 (header pin 20, DI0) hasta GND (GND · pin 38); conectado significa activado.
-2. Puerta abierta: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-3. Silenciar: pulsador entre GP13 (header pin 17, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-4. Sirena: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
+1. Armado: cable puente desde GP15 (pin 20 del conector, DI0) hasta GND (GND · pin 38); conectado significa activado.
+2. Puerta abierta: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+3. Silenciar: pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+4. Sirena: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/instruction-list-door-alarm <<< */}
 

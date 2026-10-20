@@ -26,10 +26,10 @@ El cableado de la lección [Lista de instrucciones: el resultado actual y el ord
 
 ## Tarjeta de cableado
 
-1. Armado: cable puente desde GPIO5 (header J1 pin 5, DI0) hasta GND (GND · J1-22); conectado significa activado.
-2. Puerta abierta: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Silenciar: pulsador entre GPIO7 (header J1 pin 7, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-4. Sirena: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+1. Armado: cable puente desde GPIO5 (pin 5 del conector J1, DI0) hasta GND (GND · J1-22); conectado significa activado.
+2. Puerta abierta: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Silenciar: pulsador entre GPIO7 (pin 7 del conector J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+4. Sirena: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/instruction-list-door-alarm <<< */}
 

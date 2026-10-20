@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 432" width="760" height="432" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-rpi-pico-rp2040-title">Cableado en Raspberry Pi Pico (RP2040)</title>
-<desc id="wiring-rpi-pico-rp2040-desc">Paso: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Reset: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Bajo: LED amarillo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38). Exacto: LED verde con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38). Alto: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (header pin 4, DO2) hasta GND (GND · pin 38).</desc>
+<desc id="wiring-rpi-pico-rp2040-desc">Paso: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Reset: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Bajo: LED amarillo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38). Exacto: LED verde con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38). Alto: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (pin 4 del conector, DO2) hasta GND (GND · pin 38).</desc>
 <rect width="760" height="432" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en Raspberry Pi Pico (RP2040)</text>
 <rect x="8" y="48" width="256" height="336" rx="8" fill="#eef3f8"/>
 <rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP15</text>
-<text stroke="none" x="30" y="102" font-size="11">header pin 20 · DI0</text>
+<text stroke="none" x="30" y="102" font-size="11">pin 20 del conector · DI0</text>
 <text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Paso</text>
 <polyline points="264,88 334,88" fill="none"/>
 <circle cx="337" cy="88" r="3" fill="#ffffff"/>
@@ -18,7 +18,7 @@
 <polyline points="380,88 712,88" fill="none"/>
 <rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GP14</text>
-<text stroke="none" x="30" y="166" font-size="11">header pin 19 · DI1</text>
+<text stroke="none" x="30" y="166" font-size="11">pin 19 del conector · DI1</text>
 <text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Reset</text>
 <polyline points="264,152 334,152" fill="none"/>
 <circle cx="337" cy="152" r="3" fill="#ffffff"/>
@@ -30,7 +30,7 @@
 <polyline points="380,152 712,152" fill="none"/>
 <rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GP0</text>
-<text stroke="none" x="30" y="230" font-size="11">header pin 1 · DO0</text>
+<text stroke="none" x="30" y="230" font-size="11">pin 1 del conector · DO0</text>
 <text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Bajo</text>
 <polyline points="264,216 300,216" fill="none"/>
 <polyline points="300,216 306,208 318,224 330,208 342,224 354,208 360,216" fill="none"/>
@@ -44,7 +44,7 @@
 <polyline points="412,216 712,216" fill="none"/>
 <rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP1</text>
-<text stroke="none" x="30" y="294" font-size="11">header pin 2 · DO1</text>
+<text stroke="none" x="30" y="294" font-size="11">pin 2 del conector · DO1</text>
 <text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Exacto</text>
 <polyline points="264,280 300,280" fill="none"/>
 <polyline points="300,280 306,272 318,288 330,272 342,288 354,272 360,280" fill="none"/>
@@ -58,7 +58,7 @@
 <polyline points="412,280 712,280" fill="none"/>
 <rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP2</text>
-<text stroke="none" x="30" y="358" font-size="11">header pin 4 · DO2</text>
+<text stroke="none" x="30" y="358" font-size="11">pin 4 del conector · DO2</text>
 <text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Alto</text>
 <polyline points="264,344 300,344" fill="none"/>
 <polyline points="300,344 306,336 318,352 330,336 342,352 354,336 360,344" fill="none"/>

@@ -165,6 +165,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         [
             "Each board entry of the manifest has an `io` object that lists the channels of the board. A channel has an `id`, a `direction` (`input` or `output`), a `kind` (`digital` or `analog`), the IEC `address` of its place in the process image (`%QX0.0`, `%IW4`), the `pin` or terminal printed on the board, its `electrical` notes, the `safe` value of an output, and a `dt` object with the devicetree alias, GPIO controller and pin (or the converter and channel) that the build checks.",
             "`pin_status` says where the pin comes from: `devicetree` is a pin that the board's own devicetree or the profile overlay defines and the build proves; `profile` is a header pin this profile chose, which needs the loopback bench of HIL-010 to be confirmed.",
+            "The texts a reader sees (`pin`, `location`, `electrical`, `scaling`, and the `terminal` and `reason` of an unmapped terminal) are English, the text the firmware and its logs use. A learner board of the course (`\"learner\": true`) gives each of them in Spanish too, under the same key with `_es`, and the Spanish pages show that text; the validator refuses a learner board without it.",
             "To add a channel to a board, add the alias to its overlay and the entry to its description. The firmware I/O table is generated from the description at build time, so no C source changes, and the build fails when the description and the devicetree disagree. A word of the process image that no pin drives is not a channel: a project lists it under `io.virtual`.",
             "Studio reads the same file. The I/O mapping editor of the project settings lists the channels of the selected board with their pin names and marks a row on an address the board does not have; a build fails with an error that names the board and the variable when a variable is located where the board has no channel; and a hardware deploy is refused, with a message that names the board, when the firmware reports another description or the program touches an address without a channel.",
         ]
@@ -172,6 +173,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         else [
             "Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que el build verifica.",
             "`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y el build comprueba; `profile` es un pin de header que este perfil eligió y que necesita el banco de lazo de HIL-010 para confirmarse.",
+            "Los textos que lee una persona (`pin`, `location`, `electrical`, `scaling`, y el `terminal` y la `reason` de un borne sin mapear) están en inglés, el texto que usan el firmware y sus registros. Una placa del estudiante del curso (`\"learner\": true`) da además cada uno en español, con la misma clave terminada en `_es`, y las páginas en español muestran ese texto; el validador rechaza una placa del estudiante sin él.",
             "Para agregar un canal a una placa, agregue el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que ningún fuente C cambia, y el build falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.",
             "Studio lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; un build falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y un despliegue a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.",
         ]
@@ -365,7 +367,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             if spanish:
                 kind = {"digital": "digital", "analog": "analógico"}[kind]
                 direction = {"input": "entrada", "output": "salida"}[direction]
-            note = str(channel["electrical"])
+            note = boards_lib.text_in(channel, "electrical", spanish)
             scale = channel.get("range")
             if isinstance(scale, dict):
                 note += " {raw} -> {lo} {to} {hi} {unit}.".format(
@@ -376,15 +378,15 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                     to="a" if spanish else "to",
                 )
             if channel.get("scaling"):
-                note += f" {channel['scaling']}."
+                note += f" {boards_lib.text_in(channel, 'scaling', spanish)}."
             lines.append(
                 "| {id} | {direction} | {kind} | `{address}` | {pin} | {location} | {status} | {safe} | {note} |".format(
                     id=channel["id"],
                     direction=direction,
                     kind=kind,
                     address=channel["address"],
-                    pin=cell(channel["pin"]),
-                    location=cell(channel.get("location", "")),
+                    pin=cell(boards_lib.text_in(channel, "pin", spanish)),
+                    location=cell(boards_lib.text_in(channel, "location", spanish)),
                     status=channel["pin_status"],
                     safe=channel.get("safe", ""),
                     note=cell(note),
@@ -394,7 +396,9 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         if unmapped:
             lines.extend(["", f"#### {unmapped_title}", ""])
             for item in unmapped:
-                lines.append(f"- `{item['terminal']}`: {item['reason']}")
+                lines.append(
+                    f"- `{boards_lib.text_in(item, 'terminal', spanish)}`: {boards_lib.text_in(item, 'reason', spanish)}"
+                )
         ports = board.get("fieldbus", [])
         if ports:
             lines.extend(
@@ -411,7 +415,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             for port in ports:  # type: ignore[union-attr]
                 lines.append(
                     f"| {port['id']} | {port['protocol']} | `{port['uart']}` | {port['tx']} | {port['rx']} | "
-                    f"{cell(port['location'])} | {cell(port['electrical'])} |"
+                    f"{cell(boards_lib.text_in(port, 'location', spanish))} | {cell(boards_lib.text_in(port, 'electrical', spanish))} |"
                 )
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 

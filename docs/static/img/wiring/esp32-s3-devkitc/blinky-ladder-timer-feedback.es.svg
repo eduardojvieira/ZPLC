@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 176" width="760" height="176" role="img" aria-labelledby="wiring-esp32-s3-devkitc-title wiring-esp32-s3-devkitc-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-esp32-s3-devkitc-title">Cableado en ESP32-S3-DevKitC-1 (N8R8)</title>
-<desc id="wiring-esp32-s3-devkitc-desc">Salida del LED: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).</desc>
+<desc id="wiring-esp32-s3-devkitc-desc">Salida del LED: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).</desc>
 <rect width="760" height="176" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en ESP32-S3-DevKitC-1 (N8R8)</text>
 <rect x="8" y="48" width="256" height="80" rx="8" fill="#eef3f8"/>
 <rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GPIO15</text>
-<text stroke="none" x="30" y="102" font-size="11">header J1 pin 8 · DO0</text>
+<text stroke="none" x="30" y="102" font-size="11">pin 8 del conector J1 · DO0</text>
 <text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Salida del LED</text>
 <polyline points="264,88 300,88" fill="none"/>
 <polyline points="300,88 306,80 318,96 330,80 342,96 354,80 360,88" fill="none"/>

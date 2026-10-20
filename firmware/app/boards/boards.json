@@ -5,6 +5,7 @@
     "ide_id": "rpi_pico",
     "zephyr_board": "rpi_pico/rp2040",
     "variant": "rp2040",
+    "learner": true,
     "memory": {
       "work_size": 8192,
       "retain_size": 4096,
@@ -44,9 +45,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 1"
+          "location": "header pin 1",
+          "location_es": "pin 1 del conector"
         },
         {
           "id": "DO1",
@@ -61,9 +64,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 2"
+          "location": "header pin 2",
+          "location_es": "pin 2 del conector"
         },
         {
           "id": "DO2",
@@ -78,9 +83,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 4"
+          "location": "header pin 4",
+          "location_es": "pin 4 del conector"
         },
         {
           "id": "DO3",
@@ -95,9 +102,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. El RP2040 entrega 4 mA por defecto (hasta 12 mA, valor no calificado aquí): mantenga cada salida por debajo de 10 mA, como lo hace un LED con 330 Ω en serie (unos 4 mA), y el total de todos los pines por debajo de 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 5"
+          "location": "header pin 5",
+          "location_es": "pin 5 del conector"
         },
         {
           "id": "DO4",
@@ -112,9 +121,11 @@
           },
           "safe": 0,
           "electrical": "On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image.",
+          "electrical_es": "LED verde integrado en la placa, con su resistencia en serie; no es una salida de campo. Esta imagen es para la Raspberry Pi Pico (RP2040): la Pico W tiene el LED en su chip inalámbrico, y la Pico 2 (RP2350) necesita otra imagen.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "on-board LED"
+          "location": "on-board LED",
+          "location_es": "LED integrado en la placa"
         },
         {
           "id": "DI0",
@@ -128,9 +139,11 @@
             "pin": 15
           },
           "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 20"
+          "location": "header pin 20",
+          "location_es": "pin 20 del conector"
         },
         {
           "id": "DI1",
@@ -144,9 +157,11 @@
             "pin": 14
           },
           "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 19"
+          "location": "header pin 19",
+          "location_es": "pin 19 del conector"
         },
         {
           "id": "DI2",
@@ -160,9 +175,11 @@
             "pin": 13
           },
           "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 17"
+          "location": "header pin 17",
+          "location_es": "pin 17 del conector"
         },
         {
           "id": "DI3",
@@ -176,9 +193,11 @@
             "pin": 12
           },
           "electrical": "3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna del RP2040 activada por el perfil; conecte un interruptor a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 16"
+          "location": "header pin 16",
+          "location_es": "pin 16 del conector"
         },
         {
           "id": "AI0",
@@ -199,9 +218,11 @@
             "unit": "V"
           },
           "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin.",
+          "electrical_es": "De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3(OUT) (pin 36 del conector) y AGND (pin 33 del conector), con su cursor en este pin.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 31"
+          "location": "header pin 31",
+          "location_es": "pin 31 del conector"
         },
         {
           "id": "AI1",
@@ -222,9 +243,11 @@
             "unit": "V"
           },
           "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "electrical_es": "De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 32"
+          "location": "header pin 32",
+          "location_es": "pin 32 del conector"
         },
         {
           "id": "AI2",
@@ -245,9 +268,11 @@
             "unit": "V"
           },
           "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "electrical_es": "De 0 V a 3.3 V en la entrada del ADC; no supere 3.3 V.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
-          "location": "header pin 34"
+          "location": "header pin 34",
+          "location_es": "pin 34 del conector"
         },
         {
           "id": "AI3",
@@ -268,10 +293,13 @@
             "unit": "V"
           },
           "electrical": "Internal: the supply voltage divided by 3, no external connection.",
+          "electrical_es": "Interno: la tensión de alimentación dividida por 3, sin conexión externa.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "internal",
-          "scaling": "VSYS = 3 x the input voltage"
+          "location_es": "interno",
+          "scaling": "VSYS = 3 x the input voltage",
+          "scaling_es": "VSYS = 3 x la tensión de entrada"
         },
         {
           "id": "AI4",
@@ -279,6 +307,7 @@
           "kind": "analog",
           "address": "%IW8",
           "pin": "Temperature sensor (ADC4)",
+          "pin_es": "Sensor de temperatura (ADC4)",
           "dt": {
             "controller": "adc",
             "channel": 4
@@ -292,10 +321,13 @@
             "unit": "V"
           },
           "electrical": "Internal die temperature sensor, no external connection.",
+          "electrical_es": "Sensor de temperatura interno del chip, sin conexión externa.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "internal",
-          "scaling": "RP2040 datasheet: T [degC] = 27 - (V - 0.706) / 0.001721 with V = raw * 3.3 / 4095"
+          "location_es": "interno",
+          "scaling": "RP2040 datasheet: T [degC] = 27 - (V - 0.706) / 0.001721 with V = raw * 3.3 / 4095",
+          "scaling_es": "Hoja de datos del RP2040: T [°C] = 27 - (V - 0.706) / 0.001721 con V = raw * 3.3 / 4095"
         }
       ],
       "unmapped": []
@@ -308,7 +340,9 @@
         "tx": "GP4",
         "rx": "GP5",
         "location": "header pins 6 (TX) and 7 (RX), GND on header pin 8",
+        "location_es": "pines 6 (TX) y 7 (RX) del conector, GND en el pin 8 del conector",
         "electrical": "3.3 V logic UART, not RS-485 and not RS-232: connect an RS-485 transceiver for 3.3 V (a MAX3485 class module) for a bus, or a 3.3 V USB-serial adapter for a computer. Never connect 5 V or RS-232 levels to these pins.",
+        "electrical_es": "UART de lógica de 3.3 V, no RS-485 ni RS-232: para un bus, conecte un transceptor RS-485 de 3.3 V (un módulo de la clase MAX3485); para una computadora, un adaptador USB-serie de 3.3 V. Nunca conecte 5 V ni niveles RS-232 a estos pines.",
         "source": "firmware/app/boards/rpi_pico_rp2040.overlay"
       }
     ]
@@ -402,6 +436,7 @@
     "ide_id": "esp32s3_devkitc",
     "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
     "variant": "esp32s3/procpu",
+    "learner": true,
     "hardware": {
       "module": "ESP32-S3-WROOM-1-N8R8",
       "variant": "N8R8",
@@ -450,9 +485,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 8"
+          "location": "header J1 pin 8",
+          "location_es": "pin 8 del conector J1"
         },
         {
           "id": "DO1",
@@ -467,9 +504,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 9"
+          "location": "header J1 pin 9",
+          "location_es": "pin 9 del conector J1"
         },
         {
           "id": "DO2",
@@ -484,9 +523,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 10"
+          "location": "header J1 pin 10",
+          "location_es": "pin 10 del conector J1"
         },
         {
           "id": "DO3",
@@ -501,9 +542,11 @@
           },
           "safe": 0,
           "electrical": "3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA.",
+          "electrical_es": "Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 11"
+          "location": "header J1 pin 11",
+          "location_es": "pin 11 del conector J1"
         },
         {
           "id": "DI0",
@@ -517,9 +560,11 @@
             "pin": 5
           },
           "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 5"
+          "location": "header J1 pin 5",
+          "location_es": "pin 5 del conector J1"
         },
         {
           "id": "DI1",
@@ -533,9 +578,11 @@
             "pin": 6
           },
           "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 6"
+          "location": "header J1 pin 6",
+          "location_es": "pin 6 del conector J1"
         },
         {
           "id": "DI2",
@@ -549,9 +596,11 @@
             "pin": 7
           },
           "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 7"
+          "location": "header J1 pin 7",
+          "location_es": "pin 7 del conector J1"
         },
         {
           "id": "DI3",
@@ -565,9 +614,11 @@
             "pin": 8
           },
           "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "electrical_es": "Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "header J1 pin 12"
+          "location": "header J1 pin 12",
+          "location_es": "pin 12 del conector J1"
         },
         {
           "id": "DI4",
@@ -575,15 +626,18 @@
           "kind": "digital",
           "address": "%IX0.4",
           "pin": "GPIO0 (BOOT button)",
+          "pin_es": "GPIO0 (botón BOOT)",
           "dt": {
             "alias": "sw4",
             "controller": "gpio0",
             "pin": 0
           },
           "electrical": "On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode.",
+          "electrical_es": "Botón BOOT de la placa, activo en bajo con la resistencia de pull-up interna: una entrada adicional que no necesita cableado y no es una de las cuatro entradas del estudiante. Es un pin de configuración de arranque (strapping): no lo mantenga presionado mientras la placa se reinicia, o la placa arranca en modo de descarga.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-          "location": "on-board BOOT button"
+          "location": "on-board BOOT button",
+          "location_es": "botón BOOT de la placa"
         },
         {
           "id": "AI0",
@@ -607,16 +661,21 @@
             "unit": "V"
           },
           "electrical": "0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin.",
+          "electrical_es": "De 0 V a unos 3.1 V con atenuación de 12 dB (algunos chips llegan solo a unos 2.9 V); nunca aplique más de 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3 (pin 1 del conector J1) y GND (pin 22 del conector J1), con su cursor en este pin.",
           "pin_status": "profile",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
           "location": "header J1 pin 4",
-          "scaling": "The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends."
+          "location_es": "pin 4 del conector J1",
+          "scaling": "The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends.",
+          "scaling_es": "El driver ESP32 de Zephyr aplica la calibración de eFuse y devuelve la entrada en milivoltios dividida por 4 (ganancia 1/4) como cuentas de 4095 sobre su referencia de 1100 mV: V = raw x 4.4 / 4095, así que 3.1 V se lee como unas 2885 cuentas. ZPLC no lo calibra; el conversor no es lineal cerca de ambos extremos."
         }
       ],
       "unmapped": [
         {
           "terminal": "GPIO38 (RGB LED on v1.1) or GPIO48 (RGB LED on v1.0)",
-          "reason": "the on-board LED is an addressable RGB part that needs the LED-strip driver"
+          "terminal_es": "GPIO38 (LED RGB en la v1.1) o GPIO48 (LED RGB en la v1.0)",
+          "reason": "the on-board LED is an addressable RGB part that needs the LED-strip driver",
+          "reason_es": "el LED de la placa es un componente RGB direccionable que necesita el driver de tiras de LED"
         }
       ]
     }

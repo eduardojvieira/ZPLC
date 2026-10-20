@@ -151,6 +151,70 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(any("at most 64 channels" in text for text in errors), errors)
 
 
+class SpanishTextTests(unittest.TestCase):
+    """LRN-029: the human text of a learner board has a Spanish twin, the same key with `_es`; English stays the text
+    the firmware tables and logs use, and a board outside the course may give English only."""
+
+    def learner_errors(self, channels: list[dict[str, object]], unmapped: list[dict[str, object]] | None = None) -> list[str]:
+        entry = board(channels)
+        entry["learner"] = True
+        entry["io"]["unmapped"] = unmapped or []  # type: ignore[index]
+        return boards_lib.validate_io_description(entry, ROOT)
+
+    def test_lrn_029_a_learner_board_channel_without_its_spanish_notes_is_reported(self) -> None:
+        errors = self.learner_errors([channel()])
+        self.assertTrue(any("DO0" in text and "electrical_es" in text for text in errors), errors)
+
+    def test_lrn_029_a_learner_board_needs_the_spanish_location_scaling_and_unmapped_reason_it_has_in_english(self) -> None:
+        errors = self.learner_errors(
+            [
+                channel(electrical_es="Lógica de 3.3 V", location="header pin 1"),
+                analog_input(electrical_es="0 V a 3.3 V", scaling="V = raw x 3.3 / 4095"),
+            ],
+            [{"terminal": "GP25", "reason": "on the wireless chip"}],
+        )
+        for wanted in ("DO0: a learner board gives location in Spanish", "AI0: a learner board gives scaling in Spanish", "GP25: a learner board gives reason in Spanish"):
+            self.assertTrue(any(wanted in text for text in errors), (wanted, errors))
+
+    def test_lrn_029_a_learner_board_with_every_spanish_twin_is_valid(self) -> None:
+        errors = self.learner_errors(
+            [
+                channel(electrical_es="Lógica de 3.3 V", location="header pin 1", location_es="pin 1 del conector"),
+                analog_input(electrical_es="0 V a 3.3 V", scaling="V = raw x 3.3 / 4095", scaling_es="V = raw x 3.3 / 4095"),
+            ],
+            [{"terminal": "GP25", "reason": "on the wireless chip", "reason_es": "en el chip inalámbrico"}],
+        )
+        self.assertEqual([], errors)
+
+    def test_lrn_029_a_board_outside_the_course_may_give_english_only(self) -> None:
+        self.assertEqual([], errors_of([channel(location="header pin 1")]))
+
+    def test_lrn_029_an_empty_twin_or_a_twin_without_its_english_text_is_reported_on_any_board(self) -> None:
+        errors = errors_of([channel(electrical_es=" "), channel(id="DO1", address="%QX0.1", pin="GP1", dt={"alias": "led1", "controller": "gpio0", "pin": 1}, location_es="pin 2 del conector")])
+        self.assertTrue(any("DO0" in text and "electrical_es" in text for text in errors), errors)
+        self.assertTrue(any("DO1" in text and "location_es" in text for text in errors), errors)
+
+    def test_lrn_029_the_learner_flag_is_true_or_false(self) -> None:
+        entry = board([channel()])
+        entry["learner"] = "yes"
+        self.assertTrue(any("learner" in text for text in boards_lib.validate_io_description(entry, ROOT)))
+
+    def test_lrn_029_a_learner_fieldbus_port_needs_its_spanish_location_and_notes(self) -> None:
+        entry = board([channel()])
+        entry["learner"] = True
+        entry["fieldbus"] = [{"id": "RTU0", "protocol": "modbus-rtu", "uart": "uart1", "tx": "GP4", "rx": "GP5", "location": "header pins 6 and 7", "electrical": "3.3 V logic UART", "source": "board.overlay"}]
+        errors = boards_lib.validate_fieldbus(entry)
+        self.assertTrue(any("RTU0" in text and "location_es" in text for text in errors), errors)
+        self.assertTrue(any("RTU0" in text and "electrical_es" in text for text in errors), errors)
+
+    def test_lrn_029_text_in_gives_the_spanish_twin_when_asked_and_the_english_text_otherwise(self) -> None:
+        item = {"electrical": "3.3 V logic", "electrical_es": "Lógica de 3.3 V", "location": "header pin 1"}
+        self.assertEqual("Lógica de 3.3 V", boards_lib.text_in(item, "electrical", True))
+        self.assertEqual("3.3 V logic", boards_lib.text_in(item, "electrical", False))
+        self.assertEqual("header pin 1", boards_lib.text_in(item, "location", True))
+        self.assertEqual("", boards_lib.text_in(item, "scaling", True))
+
+
 OVERLAY = """
 / {
     leds {
@@ -383,6 +447,11 @@ class ManifestTests(unittest.TestCase):
             self.assertGreaterEqual(len(digital_out), 4, board_id)
             self.assertGreaterEqual(len(digital_in), 4, board_id)
             self.assertGreaterEqual(len(analog_in), 1, board_id)
+
+    def test_lrn_029_the_two_learner_boards_are_marked_learner_so_their_spanish_text_is_checked(self) -> None:
+        self.assertEqual(
+            {"rpi-pico-rp2040", "esp32-s3-devkitc"}, {entry["board_id"] for entry in self.boards if entry.get("learner") is True}
+        )
 
     def test_io_009_the_pico_maps_its_on_board_led_as_an_output(self) -> None:
         led = next(c for c in self.by_id("rpi-pico-rp2040")["io"]["channels"] if c["pin"] == "GP25")

@@ -26,9 +26,9 @@ El cableado de la lección [Verificar mi placa](../../../learn/lessons/verify-my
 
 ## Tarjeta de cableado
 
-1. LED: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
-2. LED integrado: GP25 (on-board LED, DO4) está en la placa; no necesita cableado.
-3. Pulsador de prueba: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+1. LED: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
+2. LED integrado: GP25 (LED integrado en la placa, DO4) está en la placa; no necesita cableado.
+3. Pulsador de prueba: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/verify-my-board <<< */}
 

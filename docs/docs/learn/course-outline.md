@@ -274,4 +274,4 @@ Objectives of the available lessons:
 
 ## Hardware wiring pages
 
-When the Hardware track exists, each supported board gets one wiring page that every lesson of the track points to. The pages are planned together with the board check of module 0; none is written yet.
+Each learner board has a kit page with its pin map, the bill of materials, the firmware and the voltage limit: the [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) and the [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Every lesson on the Hardware track has a wiring page for each board, with a diagram and a wiring card, linked from the kit page and from the page of the lesson. The pages are generated from `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` and the wiring file of each lesson; the [learner kits](../reference/learner-kits/index.md) page explains how a lesson declares its wiring. No hardware run has been recorded on a board yet.
