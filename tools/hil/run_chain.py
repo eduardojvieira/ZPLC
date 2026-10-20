@@ -220,12 +220,8 @@ class Chain(hil_steps.BenchSteps):
     def preflight(self):
         fixtures = self.fixtures()
         limit = self.board.get("memory", {}).get("code_size_max")
-        probe = LanguageTester(transport=open_fake("null"))
-        try:
-            for fixture in fixtures:
-                self.compiled[fixture["id"]] = probe.compile_st(str(Path(__file__).resolve().parent / fixture["source"]))
-        finally:
-            probe.close()
+        for fixture in fixtures:  # for the board's memory, as the step programs are: a single-file compile assumes 8 KB
+            self.compiled[fixture["id"]] = hil_steps.compile_file(Path(__file__).resolve().parent / fixture["source"], self.board["ide_id"])
         too_big = [f["id"] for f in fixtures if limit and len(self.compiled[f["id"]]) > limit]
         return f"{len(fixtures)} fixtures compile; {len(too_big)} exceed the {limit} bytes of this board and are skipped: {', '.join(too_big) or 'none'}"
 
@@ -236,6 +232,8 @@ class Chain(hil_steps.BenchSteps):
         else:
             transport = SerialTransport(self.bench.port())
         self.tester = LanguageTester(transport=transport, board=self.board["ide_id"])
+        # an emulator whose board clock runs behind the host's gives a program that much more host time to run
+        self.tester.pace *= getattr(self.bench, "pace", 1.0)
         if transport.kind == "serial":
             import time  # noqa: PLC0415
 

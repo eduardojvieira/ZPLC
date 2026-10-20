@@ -284,6 +284,13 @@ release image: the release collection (`scripts/release/firmware-images.ts`) ref
 a build whose configuration or options name it. `--no-watchdog-build` prints
 the plain command, and the watchdog step then fails and says why.
 
+The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`),
+which the shipped profiles keep off until a board has its hardware record, so
+that the RETAIN step can measure it. On an image without it the step fails and
+says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
+128 KB storage partition, which holds the two program slots, the two RETAIN
+records and a spare sector (RT-029).
+
 Flashing is yours. The Pico: hold BOOTSEL while you plug in the USB cable and
 copy `zephyr.uf2` to the RPI-RP2 drive. The ESP32-S3: `esptool --chip esp32s3
 --port <port> write-flash 0x0 zephyr.bin` on the port labelled USB, then press
@@ -306,14 +313,14 @@ RST if the board stays in download mode.
 | 13 | Analog read | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0 | Within 5 % of full scale at the ends, 10 % in the middle | Not run yet | Filled in from the emulated records |
 | 14 | Timer accuracy | Runs a TON of 3 s and times its output from RUN with the bench clock | Between 3000 ms minus one scan and 3000 ms plus one scan, 100 ms and two read round trips | Not run yet | Filled in from the emulated records |
 | 15 | Scan jitter, ten minutes | Runs a 10 ms task for ten minutes and reads the runtime's own measure of every scan: each task's shortest and longest period (`zplc status --json`, `tasks[]`) | No overrun, no deadline miss, every scan period within 20 % of the interval | Not run yet | Filled in from the emulated records |
-| 16 | Overrun | Runs a 1 ms task with a long loop that drives DO0 | The `deadline_miss` fault latches and the outputs are off | Not run yet | Filled in from the emulated records |
+| 16 | Overrun | Runs a 1 ms task that drives DO0 and loops for half of the image's VM instruction budget (a scan past the budget latches the VM watchdog fault instead) | The `deadline_miss` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
 | 17 | STOP and link loss with forces | Forces the outputs on and stops; then forces them from the console, in the session of its link, closes the port and opens it again, with a program that holds the outputs low | Outputs off after STOP, and the forces released when the link is lost: by DTR on the Pico, by the idle time (30 s by default) on the ESP32-S3 | Not run yet | Filled in from the emulated records |
 | 18 | Watchdog reset time | Runs a scan that never ends | Reset cause `watchdog`, the reset between 90 % of the timeout and the timeout plus 500 ms, back in STOP with outputs off | Not run yet | Filled in from the emulated records |
-| 19 | Fatal fault | Divides by zero after 20 scans of a program that drives DO0 | The `vm_fault` fault latches and the outputs are off | Not run yet | Filled in from the emulated records |
-| 20 | Power cycle and RETAIN | Counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board | STOP after power-up, the RETAIN value kept, the program still there | Not run yet | Filled in from the emulated records |
+| 19 | Fatal fault | Divides by zero after 20 scans of a program that drives DO0 | The `vm_fault` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
+| 20 | Power cycle and RETAIN | Checks that the image was built with RETAIN persistence, counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board | STOP after power-up, the RETAIN value kept, the program still there | Not run yet | Filled in from the emulated records |
 | 21 | 20 power cuts during deploy | Loads program A, sends a part of program B (from one twentieth to all of it) and asks you to unplug at once | After every cut the board is in STOP and runs A or B whole | Not run yet | Filled in from the emulated records |
 | 22 | Atomic write | Writes a four-byte value 100 times over the device link while the program counts torn values | No scan saw a half-written value | Not run yet | Filled in from the emulated records |
-| 23 | Fieldbus exchange | Pico: reads holding register 100 from a Modbus RTU server on this computer. ESP32-S3: writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address | The value read is 0x5A17, with no error | Not run yet | Filled in from the emulated records |
+| 23 | Fieldbus exchange | Pico: turns on the device's Modbus RTU client at 19200 baud, stores it and restarts the board (the client starts at boot only), then reads holding register 100 from a Modbus RTU server on this computer, on a line opened at 19200 baud. ESP32-S3: writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address | The value read is 0x5A17, with no error | Not run yet | Filled in from the emulated records |
 
 A person cannot cut the power at the exact moment the program is written to
 flash, so on a board step 21 tests the cuts at the points a hand can reach; the

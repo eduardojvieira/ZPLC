@@ -37,6 +37,19 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/watchdog.h>
 #endif
+
+#if defined(CONFIG_ZPLC_HARDWARE_WATCHDOG) && !defined(CONFIG_ZTEST)
+/* The watchdog the scheduler arms at START (RT-020): the devicetree's chosen zephyr,watchdog, else the board's
+ * watchdog0 alias, which the learner boards define and none of them chooses. An image without either refused every
+ * START (-ENODEV), so it does not build. */
+#if DT_HAS_CHOSEN(zephyr_watchdog)
+#define ZPLC_WATCHDOG_NODE DT_CHOSEN(zephyr_watchdog)
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
+#define ZPLC_WATCHDOG_NODE DT_ALIAS(watchdog0)
+#else
+#error "CONFIG_ZPLC_HARDWARE_WATCHDOG needs a watchdog in the devicetree (chosen zephyr,watchdog or alias watchdog0)"
+#endif
+#endif
 #include <zplc_bytes.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
@@ -509,9 +522,9 @@ static int watchdog_prepare(void) {
   k_timer_start(&test_watchdog_timer, K_MSEC(timeout_ms), K_NO_WAIT);
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
-#if DT_HAS_CHOSEN(zephyr_watchdog)
+#if defined(ZPLC_WATCHDOG_NODE)
   static const struct device *const watchdog =
-      DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog));
+      DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
   struct wdt_timeout_cfg timeout = {
       .window = {.min = 0U, .max = timeout_ms},
       .flags = WDT_FLAG_RESET_SOC,
@@ -556,9 +569,9 @@ static int watchdog_feed_hardware(void) {
   k_timer_start(&test_watchdog_timer, K_MSEC(test_watchdog_timeout_ms), K_NO_WAIT);
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
-#if DT_HAS_CHOSEN(zephyr_watchdog)
+#if defined(ZPLC_WATCHDOG_NODE)
   const struct device *const watchdog =
-      DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog));
+      DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
   return wdt_feed(watchdog, hardware_watchdog_channel);
 #else
   return -ENODEV;
@@ -590,8 +603,8 @@ static int watchdog_disarm(void) {
     test_watchdog_disarm_failure = 0;
   }
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
-#if DT_HAS_CHOSEN(zephyr_watchdog)
-  result = wdt_disable(DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog)));
+#if defined(ZPLC_WATCHDOG_NODE)
+  result = wdt_disable(DEVICE_DT_GET(ZPLC_WATCHDOG_NODE));
 #else
   result = -ENODEV;
 #endif

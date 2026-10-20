@@ -27,8 +27,9 @@
  *
  * Flash Layout (2MB total):
  *   0x000000 - 0x0000FF: second-stage bootloader
- *   0x000100 - 0x1EFFFF: Application code, code_partition (1984 KB less 256 bytes)
- *   0x1F0000 - 0x1FFFFF: NVS Storage (64 KB)
+ *   0x000100 - 0x1DFFFF: Application code, code_partition (1920 KB less 256 bytes)
+ *   0x1E0000 - 0x1FFFFF: NVS Storage (128 KB): two program slots of 24 KB, the two RETAIN records
+ *                        and a spare sector, which 64 KB cannot hold (RT-025, RT-029)
  * The upstream code_partition runs to the end of the flash; it ends here before
  * the NVS storage, so the linker refuses an image that would grow into it (IO-008).
  */
@@ -161,20 +162,19 @@
         #size-cells = <1>;
 
         /*
-         * Storage partition for NVS (Non-Volatile Storage)
-         * Located at the end of flash: 64KB for program persistence
-         * This allows storing ZPLC programs up to ~60KB
+         * Storage partition for NVS (Non-Volatile Storage), at the end of the flash: 128 KB for the two program
+         * slots of CONFIG_ZPLC_CODE_SIZE_MAX, the two RETAIN records and the device settings, with a spare sector
          */
-        storage_partition: partition@1f0000 {
+        storage_partition: partition@1e0000 {
             label = "storage";
-            reg = <0x1f0000 0x10000>;
+            reg = <0x1e0000 0x20000>;
         };
     };
 };
 
 /* The image slot ends where the NVS storage begins (IO-008). */
 &code_partition {
-    reg = <0x100 (0x1f0000 - 0x100)>;
+    reg = <0x100 (0x1e0000 - 0x100)>;
 };
 
 /* Enable USB and configure CDC ACM device */
