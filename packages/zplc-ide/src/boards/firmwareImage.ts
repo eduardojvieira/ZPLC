@@ -8,12 +8,14 @@
  */
 import type { FirmwareEvidenceLevel, FirmwareImage, FirmwareImagesResult } from '../../electron/firmwareImagesProtocol';
 import { RELEASE_URL_PREFIX } from '../../electron/updateCheckProtocol';
+import { t, type MessageKey } from '../i18n';
 
-export const NO_FLASH_NOTICE = 'Studio does not flash a board. You follow these steps yourself, on your computer.';
+/** The notice of the card, in the language of the interface (src/i18n/catalog/boards.ts). */
+export const noFlashNotice = (): string => t('boards.firmware.notice');
 
-const LEVEL_TEXT: Record<FirmwareEvidenceLevel, string> = {
-  'cross-build': 'cross-build: the firmware builds for this board and fits its flash and RAM budget. It has not been flashed or run on the board.',
-  'human-hil': 'human-hil: a person ran a recorded procedure on this board. The record names the firmware version and image it covers; check that it names this one.',
+const LEVEL_KEY: Record<FirmwareEvidenceLevel, MessageKey> = {
+  'cross-build': 'boards.firmware.level.crossBuild',
+  'human-hil': 'boards.firmware.level.humanHil',
 };
 
 export interface FirmwareFileView {
@@ -69,11 +71,12 @@ function releaseLink(version: string): string {
 
 function fileView(image: FirmwareImage, folder: string, version: string): FirmwareFileView {
   const offline = image.bundled === 'verified';
+  const path = `${folder}${separator(folder)}${image.file}`;
   const location = offline
-    ? `${folder}${separator(folder)}${image.file}`
+    ? path
     : image.bundled === 'changed'
-      ? `The copy in this installation (${folder}${separator(folder)}${image.file}) is not the file the manifest describes. Do not use it: download ${image.file} from ${releaseLink(version)}.`
-      : `Not inside this installation. Download ${image.file} from ${releaseLink(version)}.`;
+      ? t('boards.firmware.location.changed', { path, file: image.file, url: releaseLink(version) })
+      : t('boards.firmware.location.missing', { file: image.file, url: releaseLink(version) });
   return { file: image.file, format: image.format, sha256: image.sha256, bytes: image.bytes, offline, location };
 }
 
@@ -93,43 +96,45 @@ function checksumCommand(file: string, platform: string): string {
 export function flashSteps(image: FirmwareImage, platform: string, offline: boolean): string[] {
   const flash = image.flash;
   const steps: string[] = [];
-  steps.push(offline
-    ? `Open a terminal in the folder that holds ${image.file}.`
-    : `Download ${image.file} from the release into a folder, and open a terminal there.`);
-  steps.push(`Check the file: \`${checksumCommand(image.file, platform)}\` must print ${image.sha256}.`);
+  steps.push(offline ? t('boards.firmware.step.openFolder', { file: image.file }) : t('boards.firmware.step.download', { file: image.file }));
+  steps.push(t('boards.firmware.step.checksum', { command: checksumCommand(image.file, platform), sha256: image.sha256 }));
   if (flash === null) return steps;
   const arg = (name: string): string | undefined => flash.args[name];
+  const file = image.file;
   switch (flash.runner) {
     case 'uf2':
       steps.push(
-        `Unplug the board. Hold its BOOTSEL button (BOOT on the Waveshare RP2040-Zero), plug the USB cable in and release the button: a drive named ${arg('board-id') ?? 'RPI-RP2'} appears.`,
-        `Copy ${image.file} onto that drive with your file manager.`,
-        'The board restarts by itself and the drive disappears.',
+        t('boards.firmware.step.uf2.bootMode', { drive: arg('board-id') ?? 'RPI-RP2' }),
+        t('boards.firmware.step.uf2.copy', { file }),
+        t('boards.firmware.step.uf2.restart'),
       );
       break;
     case 'esp32':
+      // LRN-014: the port marked USB, BOOT and RST for the download mode, esptool v5, then RST (docs/docs/guides/flash-firmware.md).
       steps.push(
-        'Install Espressif\'s esptool (`pip install esptool`); Studio does not include it. If the board does not answer, hold BOOT, press RESET and release BOOT to enter the download mode.',
-        `Write the image at ${flash.address ?? '0x00000000'}: \`esptool --chip esp32s3 --port <port> write-flash --flash-mode ${arg('esp-flash-mode') ?? 'dio'} --flash-freq ${arg('esp-flash-freq') ?? '80m'} --flash-size ${arg('esp-flash-size') ?? 'detect'} ${flash.address ?? '0x0'} ${image.file}\` (esptool before version 5 spells it \`esptool.py\` and \`write_flash\`).`,
-        'Press RESET.',
+        t('boards.firmware.step.esp32.install'),
+        t('boards.firmware.step.esp32.port'),
+        t('boards.firmware.step.esp32.downloadMode'),
+        t('boards.firmware.step.esp32.write', { address: flash.address ?? '0x0', file }),
+        t('boards.firmware.step.esp32.reset'),
       );
       break;
     case 'dfu-util':
       steps.push(
-        'Put the board in its bootloader: double-tap the reset button.',
-        `Write the image at ${flash.address ?? '0x08040000'}: \`dfu-util -d ${arg('pid') ?? '<vendor:product>'} -a ${arg('alt') ?? '0'} -s ${flash.address ?? '0x08040000'}:leave -D ${image.file}\`.`,
+        t('boards.firmware.step.dfu.bootMode'),
+        t('boards.firmware.step.dfu.write', { address: flash.address ?? '0x08040000', device: arg('pid') ?? '<vendor:product>', alt: arg('alt') ?? '0', file }),
       );
       break;
     case 'stm32cubeprogrammer':
       steps.push(
-        'Connect the ST-LINK USB port of the board.',
-        `Write the image at ${flash.address ?? '0x08000000'} with STM32CubeProgrammer: \`STM32_Programmer_CLI -c port=SWD -w ${image.file} ${flash.address ?? '0x08000000'} -v -rst\`.`,
+        t('boards.firmware.step.stlink.connect'),
+        t('boards.firmware.step.stlink.write', { address: flash.address ?? '0x08000000', file }),
       );
       break;
     default:
-      steps.push(`Write the image at ${flash.address ?? 'the address of the board'} with your programmer (the build of this image names the \`${flash.runner}\` runner).`);
+      steps.push(t('boards.firmware.step.other.write', { address: flash.address ?? t('boards.firmware.step.other.address'), runner: flash.runner }));
   }
-  steps.push('Then connect Studio to the board over its serial port.');
+  steps.push(t('boards.firmware.step.connect'));
   return steps;
 }
 
@@ -139,16 +144,12 @@ export function presentFirmwareImage(
   studio: { version: string; platform: string },
 ): FirmwareImagePresentation {
   if (ideId === undefined || ideId === '' || ideId === 'custom') return { kind: 'no-board' };
-  if (result === null) return { kind: 'unavailable', message: 'The firmware images are not available in this application.' };
-  if (result.status === 'absent') {
-    return { kind: 'unavailable', message: 'This build of Studio holds no firmware image: images come with a release. Download them from the release page of this project, or build the runtime from source.' };
-  }
-  if (result.status === 'invalid') {
-    return { kind: 'unavailable', message: 'The firmware manifest of this installation could not be read, so no image is shown. Reinstall Studio from a release.' };
-  }
+  if (result === null) return { kind: 'unavailable', message: t('boards.firmware.unavailable.app') };
+  if (result.status === 'absent') return { kind: 'unavailable', message: t('boards.firmware.unavailable.absent') };
+  if (result.status === 'invalid') return { kind: 'unavailable', message: t('boards.firmware.unavailable.invalid') };
   const flash = orderedFlashImages(result.images);
   const image = flash.find((candidate) => candidate.board === ideId);
-  if (!image) return { kind: 'no-image', message: `The release ${result.version} has no firmware image for this board.` };
+  if (!image) return { kind: 'no-image', message: t('boards.firmware.noImage', { version: result.version }) };
   const debug = result.images.find((candidate) => candidate.board === ideId && candidate.role === 'debug');
   const main = fileView(image, result.folder, result.version);
   return {
@@ -158,13 +159,13 @@ export function presentFirmwareImage(
     learner: image.learner,
     version: result.version,
     commit: result.commit,
-    versionNote: result.version === studio.version ? null : `These images are from release ${result.version}; this Studio is ${studio.version}. Use the images of the release that your firmware tools and your Studio share.`,
+    versionNote: result.version === studio.version ? null : t('boards.firmware.versionNote', { version: result.version, studio: studio.version }),
     evidenceLevel: image.evidenceLevel,
-    evidence: LEVEL_TEXT[image.evidenceLevel],
+    evidence: t(LEVEL_KEY[image.evidenceLevel]),
     image: main,
     debug: debug ? fileView(debug, result.folder, result.version) : null,
     steps: flashSteps(image, studio.platform, main.offline),
     boards: flash.map((candidate) => ({ board: candidate.board, displayName: candidate.displayName, learner: candidate.learner, file: candidate.file, offline: candidate.bundled === 'verified' })),
-    notice: NO_FLASH_NOTICE,
+    notice: noFlashNotice(),
   };
 }

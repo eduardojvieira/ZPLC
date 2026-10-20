@@ -8,14 +8,6 @@
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
   },
   {
-    "file": "packages/zplc-ide/src/boards/firmwareImage.ts",
-    "rule": "hard-coded-message",
-    "count": 6,
-    "requirement": "UX-029",
-    "added": "2026-10-19",
-    "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."
-  },
-  {
     "file": "packages/zplc-ide/src/boards/ioAdmission.ts",
     "rule": "hard-coded-message",
     "count": 5,

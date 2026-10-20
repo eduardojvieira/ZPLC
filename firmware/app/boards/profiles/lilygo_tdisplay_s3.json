@@ -1,0 +1,168 @@
+{
+  "board_id": "lilygo-tdisplay-s3",
+  "display_name": "LilyGo T-Display S3 (ESP32-S3 profile)",
+  "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
+  "hardware": {
+    "module": "ESP32-S3R8",
+    "flash_mb": 16,
+    "psram_mb": 8,
+    "psram_mode": "octal",
+    "note": "Not a learner board and not in the board manifest: build it by hand with the overlay beside this file (its header says how). The pin map is the one the ESP32-S3 profile had before the DevKitC-1 learner pins (IO-009)."
+  },
+  "io": {
+    "schema_version": 1,
+    "channels": [
+      {
+        "id": "DO0",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.0",
+        "pin": "GPIO38",
+        "dt": {
+          "alias": "led0",
+          "controller": "gpio1",
+          "pin": 6
+        },
+        "safe": 0,
+        "electrical": "3.3 V logic. Not 5 V tolerant. External LED with a series resistor.",
+        "pin_status": "devicetree",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DO1",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.1",
+        "pin": "GPIO15",
+        "dt": {
+          "alias": "led1",
+          "controller": "gpio0",
+          "pin": 15
+        },
+        "safe": 0,
+        "electrical": "3.3 V logic. Not 5 V tolerant. The LCD power rail of the T-Display S3: this output switches the display.",
+        "pin_status": "devicetree",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DO2",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.2",
+        "pin": "GPIO16",
+        "dt": {
+          "alias": "led2",
+          "controller": "gpio0",
+          "pin": 16
+        },
+        "safe": 0,
+        "electrical": "3.3 V logic. Not 5 V tolerant.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DO3",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.3",
+        "pin": "GPIO17",
+        "dt": {
+          "alias": "led3",
+          "controller": "gpio0",
+          "pin": 17
+        },
+        "safe": 0,
+        "electrical": "3.3 V logic. Not 5 V tolerant.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DI0",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.0",
+        "pin": "GPIO0 (BOOT)",
+        "dt": {
+          "alias": "sw0",
+          "controller": "gpio0",
+          "pin": 0
+        },
+        "electrical": "BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset.",
+        "pin_status": "devicetree",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DI1",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.1",
+        "pin": "GPIO18",
+        "dt": {
+          "alias": "sw1",
+          "controller": "gpio0",
+          "pin": 18
+        },
+        "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DI2",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.2",
+        "pin": "GPIO8",
+        "dt": {
+          "alias": "sw2",
+          "controller": "gpio0",
+          "pin": 8
+        },
+        "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "DI3",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.3",
+        "pin": "GPIO9",
+        "dt": {
+          "alias": "sw3",
+          "controller": "gpio0",
+          "pin": 9
+        },
+        "electrical": "3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"
+      },
+      {
+        "id": "AI0",
+        "direction": "input",
+        "kind": "analog",
+        "address": "%IW4",
+        "pin": "GPIO4 (ADC1 channel 3)",
+        "dt": {
+          "controller": "adc0",
+          "channel": 3,
+          "gain": "ADC_GAIN_1_4",
+          "reference": "ADC_REF_INTERNAL",
+          "acquisition_time": "ADC_ACQ_TIME_DEFAULT"
+        },
+        "resolution_bits": 12,
+        "range": {
+          "raw_min": 0,
+          "raw_max": 4095,
+          "eng_min": 0.0,
+          "eng_max": 3.1,
+          "unit": "V"
+        },
+        "electrical": "0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V.",
+        "pin_status": "profile",
+        "source": "firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay",
+        "scaling": "Nominal and uncalibrated: the ESP32-S3 converter is nonlinear near both ends"
+      }
+    ],
+    "unmapped": []
+  }
+}

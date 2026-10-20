@@ -30,21 +30,23 @@ checked.
 
 ## What you need
 
-| | Raspberry Pi Pico | ESP32-S3 DevKitC-1 |
+| | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
 | --- | --- | --- |
 | Build target | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
 | Studio board | `rpi_pico` | `esp32s3_devkitc` |
 | Example project | `pico_blinky` | `esp32s3_blinky` |
-| First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1) | `DO0`, `%QX0.0`, pin GPIO38 (header J3) |
-| What to wire | An LED and a resistor from the pin to ground | An LED and a resistor from the pin to ground |
-| Interface to Studio | The USB cable of the board | The USB cable of the board |
+| First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1) | `DO0`, `%QX0.0`, pin GPIO15 (header J1 pin 8) |
+| What to wire | An LED and a 330 Ω resistor from the pin to GND (header pin 3) | An LED and a 330 Ω resistor from the pin to GND (header J1 pin 22) |
+| Interface to Studio | The USB cable of the board | The USB cable, on the port marked USB (not UART) |
 
 The channels and the safe value of every output, the electrical notes and which
 pins the board's devicetree proves are in [Supported boards](../reference/boards.md).
 Read the notes of your board before you wire anything: the pins are 3.3 V logic and
-are not 5 V tolerant. The `esp32s3_blinky` example says that the mapping of the
-DevKitC-1 pin is pending; check the pin of the example against the description of
-the board.
+are not 5 V tolerant. The inputs and the analog input are there too: on the Pico,
+`DI0` to `DI3` are GP15 to GP12 and `AI0` is GP26; on the DevKitC-1, `DI0` to `DI3`
+are GPIO5 to GPIO8 (header J1 pins 5 to 7 and 12) and `AI0` is GPIO4 (header J1
+pin 4). The BOOT button of the DevKitC-1 is the extra input `DI4`: do not hold it
+while the board resets, or the board starts in download mode.
 
 ## 1. Get the firmware
 
@@ -68,7 +70,7 @@ tools/firmware-test/run.sh size rpi-pico-rp2040
 
 The script runs `west build` for the board of the manifest and checks its flash and
 RAM against the recorded budget. The image is in `$ZPLC_FW_WS/out/size/rpi-pico-rp2040/zephyr/`
-(`zephyr.elf` and, for the Pico, `zephyr.uf2`). For the ESP32-S3 the board
+(`zephyr.elf` and, for the Pico, `zephyr.uf2`; for the ESP32-S3, `zephyr.bin`). For the ESP32-S3 the board
 identifier is `esp32-s3-devkitc`. To build one board without the script, run the
 command of its profile from the root of the Zephyr workspace:
 
@@ -87,8 +89,9 @@ board and the command line; in short, use the board's own Zephyr procedure:
 - **Raspberry Pi Pico:** the RP2040 boot loader accepts a UF2 file. Hold the BOOTSEL
   button while you plug the USB cable in, and copy `zephyr.uf2` to the drive that
   appears.
-- **ESP32-S3:** flash with `west flash` from the build directory, using the Zephyr
-  runner of the board.
+- **ESP32-S3:** hold BOOT, press and release RST, and release BOOT to enter the
+  download mode; then flash with `west flash` from the build directory, or write
+  `zephyr.bin` at `0x0` with `esptool`, and press RST.
 
 If a board does not come back, use the recovery procedure of its profile:
 [Recovery boundaries](../operations/recovery.md).

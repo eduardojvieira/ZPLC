@@ -248,7 +248,7 @@ Ninguna placa se midió.
 | Arduino GIGA R1 (STM32H747 M7) | 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
 | Arduino Opta WiFi (STM32H747 M7) | 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
 | STM32F746G Discovery | 15 MB de la NOR QSPI externa, subsectores de 4 KB supuestos | 4 KB | 100.000 | 15.700.000 | 60 s | más de 100 años |
-| ESP32-S3 DevKitC | 192 KB de la NOR SPI del módulo, 48 sectores de 4 KB | 1 KB | 100.000 | 184.000 | 60 s | 29,5 años |
+| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`: 192 KB de la NOR SPI del módulo a partir de 4 MB, 48 sectores de 4 KB | 1 KB | 100.000 | 184.000 | 60 s | 29,5 años |
 | STM32 Nucleo-H743ZI | 128 KB, un sector de la flash interna: NVS no puede montar | 4 KB | ninguno | ninguno | ninguno | no se persiste |
 | Una placa sin números | cualquiera | cualquiera | 10.000 | 40.000 | 3600 s | 10,3 años para 4 KB |
 
@@ -262,6 +262,27 @@ Un `STOP` de una región modificada es un guardado más y no forma parte del
 presupuesto: es una orden de una persona. Un script que detiene y arranca el
 controlador cada pocos segundos, con valores retenidos que cambian en cada
 ejecución, gasta el presupuesto de un año en días.
+
+### Qué almacén ocupa qué partición
+
+Una placa con firmware tiene hasta dos almacenes en la flash: los registros NVS de la HAL (los slots del
+programa, `RETAIN` y las claves de configuración) y, en las placas con red, el sistema de archivos de
+configuración (LittleFS, que también guarda las credenciales de Wi-Fi). Dos almacenes en una misma partición se
+sobrescriben entre sí, de modo que en las placas del curso cada uno tiene la suya (IO-008). La HAL ocupa
+`zplc_nvs_partition` cuando el devicetree de la placa la define, y `storage_partition` en otro caso; el sistema de
+archivos de configuración monta `storage_partition`.
+
+| Placa | Registros NVS | Sistema de archivos de configuración |
+|---|---|---|
+| Raspberry Pi Pico (RP2040) | `storage_partition`, 64 KB en 0x1f0000 | no incluido |
+| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`, 192 KB en 0x400000 | `storage_partition`, 192 KB en 0x3b0000 |
+
+Una prueba falla cuando dos almacenes de una placa del curso comparten una partición (lee los archivos Kconfig y
+overlay de la placa); las direcciones de arriba son las del devicetree del build, y no se midió ninguna placa. Una ESP32-S3 que ejecutó
+una imagen anterior guardaba sus registros NVS en `storage_partition`: después de la actualización no se
+conservan el programa guardado, los valores `RETAIN` ni las claves de configuración de esa imagen, y el sistema
+de archivos de configuración formatea su partición en el primer arranque cuando no puede montarla. Despliegue el
+programa de nuevo e ingrese de nuevo la configuración.
 
 ### Límites
 
