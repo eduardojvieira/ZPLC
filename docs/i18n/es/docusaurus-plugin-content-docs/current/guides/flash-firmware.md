@@ -97,9 +97,25 @@ esptool --chip esp32s3 --port <puerto serie> write-flash 0x0 zplc-runtime-<versi
 
 ### El grabador en el navegador
 
-Todavía no se ofrece un grabador que corra en el navegador sobre Web Serial: el ESP32-S3
-necesita una biblioteca que el sitio no incluye. Hasta entonces la línea de comandos de
-arriba es el camino, y la página de la placa no cambia cuando el grabador llegue.
+Si usa Chrome o Edge en una computadora, el grabador de abajo escribe la imagen del ESP32-S3
+desde el navegador, sobre Web Serial, con [ESP Web Tools](https://esphome.github.io/esp-web-tools/).
+Funciona solo en esos dos navegadores: Firefox y Safari no tienen Web Serial, y entonces la
+página muestra la línea de comandos de arriba como el camino. Usted hace cada paso. Descargue la
+imagen `zplc-runtime-<versión>-esp32-s3-devkitc.bin` y `SHA256SUMS` de la versión (el sitio no
+puede descargarla por usted: los archivos de las versiones de GitHub no llevan cabeceras de
+origen cruzado), ponga la placa en modo de descarga, elija el archivo, compare el SHA-256 que
+muestra la página con `SHA256SUMS` y pulse **Instalar**. El navegador le pide elegir el puerto
+serie, y el grabador escribe la imagen en la dirección `0x0`, la del manifiesto de la versión. La
+memoria flash no se borra salvo que usted marque la casilla del diálogo.
+
+import FirmwareFlasher from '@site/src/components/FirmwareFlasher';
+
+<FirmwareFlasher lang="es" />
+
+:::caution El grabador no ha escrito una placa
+Nadie ha registrado una grabación del ESP32-S3 con este grabador en una placa. La página y su
+manifiesto se prueban en el repositorio; la escritura sobre Web Serial no.
+:::
 
 ## 4. La línea de comandos para cada placa
 
