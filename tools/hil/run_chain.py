@@ -164,6 +164,7 @@ class Chain(hil_steps.BenchSteps):
         self.compiled: dict[str, list[int]] = {}
         self.programs: dict[str, int] = {}
         self.stop = False
+        self.port_wait_s, self.clock, self.sleep = 30.0, time.monotonic, time.sleep
 
     # steps -----------------------------------------------------------------------------------------
     def step(self, step_id, title, kind, function, requirement=None):
@@ -225,12 +226,23 @@ class Chain(hil_steps.BenchSteps):
         too_big = [f["id"] for f in fixtures if limit and len(self.compiled[f["id"]]) > limit]
         return f"{len(fixtures)} fixtures compile; {len(too_big)} exceed the {limit} bytes of this board and are skipped: {', '.join(too_big) or 'none'}"
 
+    def _open_serial(self):
+        """The port of a board that was just flashed appears late and under a new name: look it up again until it is there."""
+        deadline = self.clock() + self.port_wait_s
+        while True:
+            try:
+                return SerialTransport(self.bench.port())
+            except (PortError, DeviceError, OSError):
+                if self.clock() >= deadline:
+                    raise
+                self.sleep(1)
+
     def open_device(self):
         fake = self.args.device or ("host" if self.dry else None)
         if fake:
             transport = self.opener(fake)
         else:
-            transport = SerialTransport(self.bench.port())
+            transport = self._open_serial()
         self.tester = LanguageTester(transport=transport, board=self.board["ide_id"])
         # an emulator whose board clock runs behind the host's gives a program that much more host time to run
         self.tester.pace *= getattr(self.bench, "pace", 1.0)
@@ -388,9 +400,9 @@ class Chain(hil_steps.BenchSteps):
                 + ("; ten of them are the scan jitter step, which runs alone." if jitter else ".")
             )
         self.step("preflight", "Host checks: the fixtures compile and the board is known", "automatic", self.preflight, "HIL-005")
-        self.step("open", "Open the device link", "automatic", self.open_device, "HIL-007")
-        # the flash is the person's: asked for before the device is asked who it is
+        # the flash is the person's, and comes first: a blank board has no port, and a flashed one re-enumerates
         self.step("flash", "A person flashes the firmware image", "physical", self.flash_prompt, "HIL-010")
+        self.step("open", "Open the device link", "automatic", self.open_device, "HIL-007")
         self.step("handshake", "Identity handshake", "automatic", self.handshake, "HIL-010")
         self.step("io-description", "The image's I/O description is the one of boards.json", "automatic", self.io_step, "IO-004")
         self.step("trace-option", "The image's HIL trace option is what the run asked for", "automatic", self.trace_step, "HIL-013")

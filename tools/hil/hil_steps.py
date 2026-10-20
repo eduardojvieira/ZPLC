@@ -308,6 +308,7 @@ class BenchSteps:
         if getattr(self.tester.ser, "kind", "") != "serial":
             return
         from hil_devices import DeviceError, SerialTransport  # noqa: PLC0415
+        from hil_ports import PortError  # noqa: PLC0415
 
         try:
             self.tester.ser.close()
@@ -320,7 +321,7 @@ class BenchSteps:
                 time.sleep(1)
                 if self.status():
                     return
-            except (DeviceError, OSError):
+            except (DeviceError, PortError, OSError):  # the port is not there yet, or not usable yet
                 time.sleep(1)
         raise AssertionError(f"the board did not come back on its port within {seconds:.0f} s")
 
