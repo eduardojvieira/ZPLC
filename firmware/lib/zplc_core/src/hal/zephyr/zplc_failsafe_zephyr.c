@@ -32,6 +32,7 @@
 #include <zephyr/fatal.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zplc_failsafe.h>
 #include <zplc_hal.h>
@@ -47,6 +48,20 @@ static uint32_t next_sequence = 1U;
 
 #ifdef CONFIG_ZTEST
 static void (*test_reboot)(void);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_RP2040)
+/* WATCHDOG REASON of the RP2040 (rp2040 datasheet, 4.7.5): TIMER or FORCE after a watchdog reset, both zero after a
+ * power-on or the RUN pin. Zephyr's hwinfo reports a watchdog reset on the RP2350 only (hwinfo_rpi_pico.c).
+ * ponytail: the register is read-only and survives a later SYSRESETREQ, so a `zplc sys reboot` after a watchdog reset
+ * still reads as a watchdog reset until the next power-on or RUN-pin reset; a fault reboot is named by its record
+ * first. Upgrade: a scratch-register marker set by the reboot command, if a bench ever shows it matters. */
+#define ZPLC_RP2040_WATCHDOG_REASON 0x40058008UL
+static uint32_t rp2040_watchdog_bits(void) {
+  return zplc_reset_bits_from_rp2040_watchdog_reason(sys_read32(ZPLC_RP2040_WATCHDOG_REASON));
+}
+#else
+static uint32_t rp2040_watchdog_bits(void) { return 0U; }
 #endif
 
 /* The generic bits of zephyr/drivers/hwinfo.h, in the neutral bits of the portable decision. */
@@ -96,7 +111,7 @@ void zplc_failsafe_boot(void) {
   found = retained_record;
   boot_report.raw_bits = raw;
   boot_report.supported_bits = supported;
-  boot_report.cause = zplc_reset_cause_decide(neutral_bits(raw), &found);
+  boot_report.cause = zplc_reset_cause_decide(neutral_bits(raw) | rp2040_watchdog_bits(), &found);
   if (zplc_fault_record_valid(&found) != 0) {
     boot_report.has_fault = 1U;
     boot_report.fault = found;
