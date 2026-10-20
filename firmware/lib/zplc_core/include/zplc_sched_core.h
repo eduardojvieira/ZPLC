@@ -204,6 +204,8 @@ typedef struct {
   uint8_t registered;              /**< the slot holds a task */
   uint8_t pending;                 /**< a release is admitted and not yet run */
   uint8_t first_scan_interrupted;  /**< a breakpoint stopped the task's first scan: its rest is still the first */
+  uint8_t period_armed;            /**< last_start_us is the start of the task's previous scan in this run */
+  uint64_t last_start_us;          /**< where the scan period of the task is measured from (HIL-010) */
 } zplc_sched_slot_t;
 
 typedef struct zplc_sched_core {

@@ -93,6 +93,8 @@ typedef struct {
   uint32_t last_exec_time_us; /**< Last execution time in us */
   uint32_t max_exec_time_us;  /**< Maximum execution time seen */
   uint32_t avg_exec_time_us;  /**< Average execution time */
+  uint32_t min_period_us;     /**< Shortest time from one scan start to the next since RUN; 0 before two scans (HIL-010) */
+  uint32_t max_period_us;     /**< Longest time from one scan start to the next since RUN; their gap is the scan jitter */
 } zplc_task_stats_t;
 
 /**

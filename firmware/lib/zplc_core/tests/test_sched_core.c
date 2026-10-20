@@ -520,6 +520,36 @@ static void test_deadline_accounting(void) {
   CHECK(core.slot[0].task.stats.overrun_count == 0U && core.last_overrun_us == 0U, "a reload forgets the misses");
 }
 
+/* HIL-010: the period of a task, from the start of one of its scans to the start of the next: its shortest and longest
+ * since RUN, so the scan jitter of a long run is the runtime's own measure and not a mean over minutes. */
+static void test_scan_period_statistics(void) {
+  uint8_t order[1] = {0U};
+  zplc_sched_scan_report_t report;
+  const uint64_t starts[6] = {1000U, 11000U, 21500U, 30800U, 100000U, 110000U};
+  uint64_t times[2];
+  int i;
+
+  printf("\n=== Test: the scan period, shortest and longest (HIL-010) ===\n");
+  setup(3U, 0U);
+  run_all();
+  for (i = 0; i < 6; i++) {
+    if (i == 4) {
+      zplc_sched_core_begin_run(&core); /* STOP and RUN again: the time between is not a period */
+    }
+    zplc_sched_core_admit(&core, 0, starts[i], starts[i]);
+    times[0] = starts[i];
+    times[1] = starts[i] + 100U;
+    script(times, 2U);
+    (void)zplc_sched_core_scan(&core, &port, order, 1U, 0, &report);
+    if (i == 0) {
+      CHECK(core.slot[0].task.stats.min_period_us == 0U && core.slot[0].task.stats.max_period_us == 0U,
+            "one scan has no period yet");
+    }
+  }
+  CHECK(core.slot[0].task.stats.min_period_us == 9300U, "the shortest period is the shortest start to start");
+  CHECK(core.slot[0].task.stats.max_period_us == 10500U, "the longest, and a new RUN does not count the time stopped");
+}
+
 static void test_deadline_reference_is_separate_from_release(void) {
   uint8_t order[1] = {0U};
   uint64_t times[2];
@@ -731,6 +761,7 @@ int main(void) {
   test_scan_phases_are_ordered();
   test_idle_core_does_nothing();
   test_deadline_accounting();
+  test_scan_period_statistics();
   test_deadline_reference_is_separate_from_release();
   test_batch_start_reference_is_the_dispatch();
   test_vm_fault_latches_and_settles();
