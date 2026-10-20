@@ -20,18 +20,21 @@
 // live in tools/ci/requirement-evidence.json with a "note" and survive --write; everything else there is scanned.
 // A `decided` record is one of them: a requirement that a decision of the spec makes conditional, and whose default
 // asks for no work (IO-016 under D-06's default B). It has its own column and is never counted as covered by a check.
+// A `gate` record is one too: its note names the evidence that no test can give (a run on a physical board, a hardware
+// record, a hosted CI run, a study with people, a decision of the owner). While a requirement has one it is at most partial,
+// whatever its checks say, so that a new test that names it cannot turn it covered; --list prints the note.
 //
 // A requirement is covered when at least one of its checks is not partial and is not on the expected-failure list
 // (tools/ci/expected-failures.json): with the CI rule that any other failure turns the job red, "not listed" is "passing".
-// It is partial when it has checks but none of them qualifies, decided when its only record is a decision, and uncovered
-// when it has none.
+// It is partial when it has checks but none of them qualifies (or a gate holds it), decided when its only record is a
+// decision, and uncovered when it has none (a gate is not a check).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { ID_PATTERN, validateIndex, type Requirement } from './generate-requirement-index';
 import { TEST_FILE, type Inventory } from './test-inventory';
 
-export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware' | 'py-test' | 'decided';
+export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware' | 'py-test' | 'decided' | 'gate';
 export interface Check {
   kind: Kind;
   /** Repository-relative file that holds the check (or, for manual and hardware, its record). */
@@ -47,7 +50,7 @@ export type Evidence = Record<string, Check[]>;
 export type State = 'covered' | 'partial' | 'decided' | 'uncovered';
 export interface Counts { total: number; covered: number; partial: number; decided: number; uncovered: number }
 
-export const KINDS: Kind[] = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided'];
+export const KINDS: Kind[] = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided', 'gate'];
 const CONFORMANCE_RUNNER = 'packages/zplc-ide/src/conformance/conformance.test.ts';
 const JOURNEYS = 'packages/zplc-ide/scripts/journeys.ts';
 const RUN_JOURNEYS = 'packages/zplc-ide/scripts/run-journeys.ts';
@@ -205,12 +208,16 @@ export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 't
   const kinds = new Map<string, Kind[]>();
   /** Covered requirements that still have a check on the expected-failure list: covered, but not yet green. */
   const withFailures: string[] = [];
+  /** Requirements held by a gate record: never covered, whatever their checks. */
+  const gated: string[] = [];
   const empty = (): Counts => ({ total: 0, covered: 0, partial: 0, decided: 0, uncovered: 0 });
   const overall = empty();
   const byWorkstream: Record<string, Counts> = {};
   for (const { id, workstream } of index) {
-    const checks = evidence[id] ?? [];
-    const passing = checks.filter((check) => check.kind !== 'decided' && !check.partial && !isFailing(check, listed));
+    const all = evidence[id] ?? [];
+    const checks = all.filter((check) => check.kind !== 'gate');
+    if (checks.length < all.length) gated.push(id);
+    const passing = checks.length < all.length ? [] : checks.filter((check) => check.kind !== 'decided' && !check.partial && !isFailing(check, listed));
     const decided = checks.some((check) => check.kind === 'decided');
     const state: State = passing.length > 0 ? 'covered' : decided ? 'decided' : checks.length > 0 ? 'partial' : 'uncovered';
     states.set(id, state);
@@ -221,7 +228,7 @@ export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 't
       counts[state]++;
     }
   }
-  return { overall, byWorkstream, states, kinds, withFailures, errors };
+  return { overall, byWorkstream, states, kinds, withFailures, gated, errors };
 }
 
 /** Owning packages ranked by how many of their requirements have no passing complete check. */
@@ -265,8 +272,8 @@ function load() {
 /** For the CI summary: the counts, the errors that must turn a job red, and the line to print. */
 export function progress() {
   const { index, evidence, listed } = load();
-  const { overall, errors } = coverage(index, evidence, listed);
-  return { overall, errors, line: `requirements: ${overall.covered} of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered` };
+  const { overall, gated, errors } = coverage(index, evidence, listed);
+  return { overall, errors, line: `requirements: ${overall.covered} of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered, ${gated.length} gated on evidence no test gives` };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -286,7 +293,7 @@ if (import.meta.main) {
   const { index, evidence, listed, recorded } = load();
   const order = index.map((entry) => entry.id);
   const wanted = serializeEvidence(evidence, order);
-  const { overall, byWorkstream, states, kinds, withFailures, errors } = coverage(index, evidence, listed);
+  const { overall, byWorkstream, states, kinds, withFailures, gated, errors } = coverage(index, evidence, listed);
   const behind = serializeEvidence(recorded, order) !== wanted;
 
   if (values.write) {
@@ -294,28 +301,33 @@ if (import.meta.main) {
     console.log(`requirement-coverage: wrote ${Object.values(evidence).reduce((sum, checks) => sum + checks.length, 0)} checks for ${Object.keys(evidence).length} requirements to tools/ci/requirement-evidence.json`);
   } else if (values.check) {
     if (behind) errors.push('tools/ci/requirement-evidence.json is not what the tree generates; regenerate it with: bun tools/ci/requirement-coverage.ts --write');
-    if (errors.length === 0) console.log(`requirement-coverage: ${overall.covered} of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered`);
+    if (errors.length === 0) console.log(`requirement-coverage: ${overall.covered} of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered, ${gated.length} gated`);
   } else if (values.json) {
     const requirements = index.map((entry) => ({ ...entry, state: states.get(entry.id), coveredBy: kinds.get(entry.id), checks: evidence[entry.id] ?? [] }));
-    console.log(JSON.stringify({ overall, byWorkstream, withFailures, requirements, errors }, null, 2));
+    console.log(JSON.stringify({ overall, byWorkstream, withFailures, gated, requirements, errors }, null, 2));
   } else {
     const row = (name: string, counts: Counts) => `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.decided, 9)}${pad(counts.uncovered, 11)}`;
     console.log(`${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'decided'.padStart(9)}${'uncovered'.padStart(11)}`);
     for (const workstream of new Set(index.map((entry) => entry.workstream))) console.log(row(workstream, byWorkstream[workstream]!));
     console.log(row('overall', overall));
-    const byKind = KINDS.filter((kind) => kind !== 'decided').map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`).join(', ');
+    const byKind = KINDS.filter((kind) => kind !== 'decided' && kind !== 'gate').map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`).join(', ');
     console.log(`\ncovered by (a requirement with several kinds counts under each): ${byKind}`);
     console.log(`covered, but with a check still on the expected-failure list: ${withFailures.length}`);
+    console.log(`gated on evidence no test gives (counted as partial or uncovered; --list names what each still needs): ${gated.length}`);
     if (values.list) {
       for (const workstream of new Set(index.map((entry) => entry.workstream))) {
         const open = index.filter((entry) => entry.workstream === workstream && states.get(entry.id) !== 'covered');
         if (open.length === 0) continue;
         console.log(`\n${workstream}`);
-        const mark = (state: State | undefined) => (state === 'partial' ? '*' : state === 'decided' ? '=' : ' ');
-        for (const entry of open) console.log(`  ${entry.id}${mark(states.get(entry.id))} ${entry.title}`);
+        const mark = (id: string) => (gated.includes(id) ? '!' : states.get(id) === 'partial' ? '*' : states.get(id) === 'decided' ? '=' : ' ');
+        for (const entry of open) {
+          console.log(`  ${entry.id}${mark(entry.id)} ${entry.title}`);
+          for (const gate of (evidence[entry.id] ?? []).filter((check) => check.kind === 'gate')) console.log(`        gate: ${gate.note}`);
+        }
       }
       console.log('\n* has checks, none of them a passing complete one (a stopgap, or listed as an expected failure)');
       console.log('= decided: a decision of the spec makes it conditional and its default asks for no work; not covered by a check');
+      console.log('! gated: it needs evidence that no test can give, named under it; never covered while the gate stands, whatever its checks');
     }
     if (values.groups) {
       console.log('\nowning package  phase  uncovered  partial  total');
