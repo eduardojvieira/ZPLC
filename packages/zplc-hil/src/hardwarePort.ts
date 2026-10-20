@@ -19,7 +19,11 @@ const OPI_START = 0x1000;
 const OPI_END = 0x2000;
 
 export interface HardwarePortOptions {
-  /** How far past its tick, by the device's clock, a sample may be taken before the run is void. Declared, and written into the record. */
+  /**
+   * A lateness bound, not a window around the tick: a sample is taken once the device clock has reached its tick and is
+   * never early, and the run is void when a sample is more than this many ms late. Assertion windows are not widened by
+   * it. The bound, the void flag and every tick's lateness are written into the record (`measurements`).
+   */
   toleranceMs?: number;
   /** How often the device's clock is read while waiting. */
   pollMs?: number;
