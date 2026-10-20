@@ -123,7 +123,7 @@ profile: [Recovery boundaries](../operations/recovery.md).
 
 Open the serial console of the board and run `zplc version`: it prints the version,
 the commit, the board and the build options of the image. They must be the ones of the
-file you wrote. Then [connect Studio](../tutorials/first-board.md#3-connect-studio).
+file you wrote. Then [connect Studio](../tutorials/first-board.md#3-connect-zplc).
 
 ## What is verified, and what is not
 

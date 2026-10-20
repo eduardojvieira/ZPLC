@@ -127,7 +127,7 @@ procedimiento de recuperación de su perfil: [Límites de recuperación](../oper
 
 Abra la consola serie de la placa y ejecute `zplc version`: imprime la versión, el
 commit, la placa y las opciones de compilación de la imagen. Deben ser las del archivo
-que escribió. Luego [conecte Studio](../tutorials/first-board.md#3-conecte-studio).
+que escribió. Luego [conecte Studio](../tutorials/first-board.md#3-conecte-zplc).
 
 ## Qué está verificado y qué no
 

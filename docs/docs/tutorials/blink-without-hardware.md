@@ -3,7 +3,7 @@ slug: /tutorials/blink-without-hardware
 id: blink-without-hardware
 title: Blink without hardware
 sidebar_label: Blink without hardware
-description: "From a downloaded Studio to a toggling simulated output and a passing scenario test, with no board."
+description: "From a fresh download of ZPLC to a toggling simulated output and a passing scenario test, with no board."
 tags: [tutorial, simulation, structured-text]
 ---
 
@@ -15,14 +15,14 @@ the scenario test that comes with it. You need no PLC and no board: everything
 happens on your computer.
 
 :::note Before you start
-You need ZPLC Studio. If you have not installed it, follow
-[Install ZPLC Studio](../getting-started/install.md) first. This tutorial was
+You need ZPLC. If you have not installed it, follow
+[Install ZPLC](../getting-started/install.md) first. This tutorial was
 written for the 2.0 prerelease.
 :::
 
 ## What you will do
 
-1. Start Studio and look at the Welcome screen.
+1. Start ZPLC and look at the Welcome screen.
 2. Copy the example **Blinky (Structured Text)** into an empty folder.
 3. Read the program.
 4. Build it.
@@ -30,18 +30,18 @@ written for the 2.0 prerelease.
 6. Watch the output `LED_Output` change.
 7. Run the scenario test of the project.
 
-## 1. Start Studio
+## 1. Start ZPLC
 
-Open ZPLC Studio. The Welcome screen offers **Open project**, **New project** and
+Open ZPLC. The Welcome screen offers **Open project**, **New project** and
 **Learn**, and under **Examples** a list of example projects, grouped by what
 they teach.
 
-![The Welcome screen of ZPLC Studio, scrolled to the group Language tour, which holds Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
+![The Welcome screen of ZPLC, scrolled to the group Language tour, which holds Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
 
 ## 2. Copy the example
 
 1. Under **Examples**, in the group **Language tour**, choose **Blinky (Structured Text)**.
-2. Choose an empty folder as the destination. Studio copies the example there and
+2. Choose an empty folder as the destination. ZPLC copies the example there and
    opens it. If a file with the same name is already in the folder, the copy stops
    and writes nothing.
 
@@ -54,7 +54,7 @@ scenario test.
 Open `src/main.st` from the project tree, in the **Explorer** tab of the bottom
 panel. It opens in the editor:
 
-![The program Blinky open in the editor of Studio](/img/tutorials/blink-2-program.png)
+![The program Blinky open in the editor of ZPLC](/img/tutorials/blink-2-program.png)
 
 Without its comments, the program is this:
 
@@ -99,7 +99,7 @@ If the build fails, **Problems** lists each error with its line and column.
 ## 5. Run it in the simulator
 
 1. In the toolbar, check that **Simulate** is selected, and press **Connect**.
-   Studio starts the simulator that is bundled with the application.
+   ZPLC starts the simulator that is bundled with the application.
 2. Press **Run** (F5).
 
 The status line shows **Running** and the cycle count rises. The simulator is the
@@ -128,7 +128,7 @@ off for the first 490 ms, on until 1000 ms, off again, and so on for 2.1 seconds
 simulated time. The [scenario file format](../reference/scenario-file.md) lists
 every field, and its example is this project's scenario.
 
-1. Open the **Tests** tab. Studio links the `zplc.json` of the open project by itself.
+1. Open the **Tests** tab. ZPLC links the `zplc.json` of the open project by itself.
 2. Press **Run host scenarios**.
 
 The tab says **Host POSIX scenarios passed.** and `1 scenario passed.` This ran
@@ -137,7 +137,7 @@ a moment and does not wait 2.1 seconds.
 
 ![The Tests tab reporting Host POSIX scenarios passed](/img/tutorials/blink-6-scenario.png)
 
-You can run the same test without Studio, from a terminal at the root of a
+You can run the same test without the ZPLC application, from a terminal at the root of a
 checkout of the repository once `bun run setup` has built the runtime:
 
 ```bash
@@ -184,7 +184,7 @@ it passes again.
 | --- | --- | --- |
 | The program compiles, runs on the simulator and its output toggles | The documentation check runs the page's code | Host |
 | The seven steps work in the real application | The end-to-end journey `Blink without hardware (the tutorial)` of `bun run test:journeys` performs them, so this page cannot drift from the product | Host |
-| The scenario passes and fails as described | Studio runs `tests/blinky-visual.scenario.json` on the simulator's virtual clock | Host |
+| The scenario passes and fails as described | ZPLC runs `tests/blinky-visual.scenario.json` on the simulator's virtual clock | Host |
 | Anything about a board | Nothing on this page | Not yet verified on hardware: see [Hardware support](../reference/capabilities-evidence.md) |
 
 A pass here is a host result on the simulator's virtual clock.
@@ -192,7 +192,7 @@ A pass here is a host result on the simulator's virtual clock.
 ## Next steps
 
 - [Write and run scenario tests](../guides/scenario-tests.md): write a scenario of your own.
-- [Studio workbench](../ide/features.md): the editors, the Watch table, forcing and breakpoints.
+- [ZPLC workbench](../ide/features.md): the editors, the Watch table, forcing and breakpoints.
 - [Structured Text reference](../reference/language-st.md): what the language supports today.
 - [Learn](../learn/index.md): lessons that grade your program against a scenario.
 - [Safety and limitations](../safety-and-limitations.md): before you rely on ZPLC for anything real.
