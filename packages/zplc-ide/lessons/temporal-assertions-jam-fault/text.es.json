@@ -1,54 +1,54 @@
 {
   "schemaVersion": 1,
   "title": "Assertions temporales y falla por atasco",
-  "summary": "Enclave la falla por atasco y pruebe su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
+  "summary": "Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
   "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
   "objectives": [
-    "Enclave la falla por atasco y pruebe su temporización con assertions temporales.",
-    "Exija un Start nuevo antes de mover la cinta otra vez tras liberar la falla."
+    "Retenga la falla por atasco y compruebe su temporización con aserciones temporales.",
+    "Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Lea tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a {{t:0}} ms, un atasco aparece a {{t:30}} ms y se despeja a {{t:50}} ms, Reset se pulsa a {{t:40}} ms (atasco presente) y a {{t:60}} ms (atasco despejado), y Start se pulsa de nuevo a {{t:80}} ms.",
-      "checkpoint": "El starter debe enclavar la falla por atasco (a partir de la lección 4) antes de aprobar el escenario."
+      "body": "Lea tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a los {{t:0}} ms, un atasco aparece a los {{t:30}} ms y se despeja a los {{t:50}} ms, Reset se pulsa a los {{t:40}} ms (con el atasco presente) y a los {{t:60}} ms (con el atasco despejado), y Start se pulsa de nuevo a los {{t:80}} ms.",
+      "checkpoint": "El programa inicial debe retener la falla por atasco (a partir de lo visto en la lección 4) antes de que el escenario pueda pasar."
     },
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Antes de ejecutar, anticipe BeltCommand y FaultLamp a {{t:20}}, {{t:30}}, {{t:50}}, {{t:60}} y {{t:80}} ms.",
+      "body": "Antes de ejecutar, prediga BeltCommand y FaultLamp a los {{t:20}}, {{t:30}}, {{t:50}}, {{t:60}} y {{t:80}} ms.",
       "checkpoint": "Belt ON y FaultLamp OFF a {{t:20}}; Belt OFF y FaultLamp ON a {{t:30}} y todavía a {{t:50}} (Reset a {{t:40}} se ignora y despejar el atasco no libera la falla); ambos OFF a {{t:60}}; Belt ON de nuevo a {{t:80}} solo tras el nuevo Start."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y queda como chequeo de regresión.",
+      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y se mantiene como comprobación de regresión.",
       "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Contraste",
-      "body": "Relacione cada assertion con la traza: AT a {{t:20}}, {{t:50}} y {{t:60}} ms fija los estados exactos; WITHIN a {{t:30}} ms prueba que la falla aparece en el mismo scan que el atasco; FOR de {{t:30}} a {{t:50}} ms se sostiene a través del Reset temprano; FALLING a {{t:60}} ms muestra que Reset liberó la lámpara; UNTIL mantiene la cinta OFF hasta el nuevo Start; RISING a {{t:80}} ms encuentra el rearranque.",
+      "body": "Relacione cada aserción con la traza: AT a los {{t:20}}, {{t:50}} y {{t:60}} ms fija los estados exactos; WITHIN a los {{t:30}} ms prueba que la falla aparece en el mismo ciclo que el atasco; FOR de {{t:30}} a {{t:50}} ms se cumple a pesar del Reset prematuro; FALLING a los {{t:60}} ms muestra que Reset apagó la lámpara; UNTIL mantiene la cinta en OFF hasta el nuevo Start; RISING a los {{t:80}} ms detecta el rearranque.",
       "checkpoint": "La traza registrada muestra la secuencia discreta, no una medición física."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "NEVER prohíbe BeltCommand y FaultLamp ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe rearrancar la cinta.",
-      "checkpoint": "Un atasco inyectado no demuestra falla física, despeje físico, timing de target, HIL ni certificación."
+      "body": "NEVER prohíbe que BeltCommand y FaultLamp estén en ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe volver a arrancar la cinta.",
+      "checkpoint": "Un atasco inyectado no demuestra una falla física, el despeje físico, los tiempos en el dispositivo de destino, HIL ni certificación."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset solo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
+      "text": "Parta de la lección 4: JamDetected retiene Faulted, y un Reset solo cuenta cuando la entrada de atasco ya desapareció; lea los tiempos del escenario para ver qué Reset debe ignorarse."
     },
     {
       "level": 2,
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
+    "El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta."
   ]
 }

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Estructuras y arreglos: un panel de tres llamadas",
-  "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.",
+  "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms, HIL ni certificación.",
   "objectives": [
     "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
     "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+      "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres de ellas. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
       "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
     },
     {
@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama CallPanel y contiene {{assertions}} assertions."
     },
     {
@@ -41,14 +41,14 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué assertion falla; luego agregue una cuarta llamada y diga qué editaría.",
+      "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué aserción falla; luego agregue una cuarta llamada y diga qué editaría.",
       "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Un elemento del arreglo es Calls[i], y un miembro de él es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
+      "text": "Un elemento del arreglo es Calls[i], y uno de sus miembros es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
     },
     {
       "level": 2,

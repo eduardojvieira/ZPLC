@@ -24,8 +24,8 @@ Use el calendario versionado para distinguir una pieza metálica de una no metá
 
 ## Objetivos
 
-- Distinga una pieza metálica de una no metálica con una memoria que vive entre dos sensores.
-- Lea una línea de tiempo de entradas agendadas y anticipe las salidas antes de ejecutarla.
+- Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.
+- Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla.
 
 ## Etapas
 

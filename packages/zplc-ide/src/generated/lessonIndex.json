@@ -673,25 +673,25 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Conveyor.st, conserve Requested y MetalLatched y agregue Faulted; los sensores pertenecen a la plant.",
-              "checkpoint": "La lógica solo manda salidas a partir de sensores registrados por la plant."
+              "body": "En src/Conveyor.st, conserve Requested y MetalLatched y agregue Faulted; los sensores pertenecen a la planta.",
+              "checkpoint": "La lógica solo acciona salidas a partir de los sensores registrados por la planta."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe la cinta, desviador y lámpara de falla.",
+              "body": "Antes de ejecutar, prediga la cinta, el desviador y la lámpara de falla.",
               "checkpoint": "Belt ON 10–40; Diverter ON solo 30; FaultLamp ON y Belt OFF 50–80. Reset a 60 no libera mientras JamDetected sigue activo."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene el bloqueo determinista por atasco; detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected, y no deje que Reset libere el bloqueo mientras el atasco continúe.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente Conveyor01; el starter también incluye ConveyorJamTiming (lección 9), así que Tests-all calificaría dos escenarios.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo Conveyor01; el programa inicial también incluye ConveyorJamTiming (lección 9), así que ejecutar todas las pruebas calificaría dos escenarios.",
               "checkpoint": "El escenario requerido se llama Conveyor01 y contiene 6 assertions."
             },
             {
@@ -704,13 +704,13 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.",
-              "checkpoint": "No demuestra cinta física, despeje de atasco, temporización de hardware, HIL ni certificación."
+              "checkpoint": "No demuestra una cinta física, el despeje de un atasco, los tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Un atasco tiene que ganar sobre todo lo demás: con JamDetected en TRUE, enclave una memoria Faulted y suelte el pedido de cinta, así la cinta queda detenida aunque la entrada de atasco desaparezca."
+              "text": "Un atasco tiene prioridad sobre todo lo demás: con JamDetected en TRUE, active y retenga una memoria Faulted y anule la solicitud de la cinta, de modo que la cinta quede detenida aunque la entrada de atasco desaparezca."
             },
             {
               "level": 2,
@@ -718,7 +718,7 @@
             }
           ],
           "faultCases": [
-            "El starter no bloquea la cinta ante el atasco determinista; deténgala y encienda FaultLamp mientras la planta informa JamDetected, y evite que Reset la libere mientras el atasco siga."
+            "El programa inicial no tiene el bloqueo determinista por atasco; detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected, y no deje que Reset libere el bloqueo mientras el atasco continúe."
           ]
         }
       }
@@ -1541,54 +1541,54 @@
         },
         "es": {
           "title": "Assertions temporales y falla por atasco",
-          "summary": "Enclave la falla por atasco y pruebe su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
+          "summary": "Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
           "objectives": [
-            "Enclave la falla por atasco y pruebe su temporización con assertions temporales.",
-            "Exija un Start nuevo antes de mover la cinta otra vez tras liberar la falla."
+            "Retenga la falla por atasco y compruebe su temporización con aserciones temporales.",
+            "Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Lea tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a 0 ms, un atasco aparece a 30 ms y se despeja a 50 ms, Reset se pulsa a 40 ms (atasco presente) y a 60 ms (atasco despejado), y Start se pulsa de nuevo a 80 ms.",
-              "checkpoint": "El starter debe enclavar la falla por atasco (a partir de la lección 4) antes de aprobar el escenario."
+              "body": "Lea tests/conveyor-jam-timing.scenario.json junto a src/Conveyor.st. Start se pulsa a los 0 ms, un atasco aparece a los 30 ms y se despeja a los 50 ms, Reset se pulsa a los 40 ms (con el atasco presente) y a los 60 ms (con el atasco despejado), y Start se pulsa de nuevo a los 80 ms.",
+              "checkpoint": "El programa inicial debe retener la falla por atasco (a partir de lo visto en la lección 4) antes de que el escenario pueda pasar."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe BeltCommand y FaultLamp a 20, 30, 50, 60 y 80 ms.",
+              "body": "Antes de ejecutar, prediga BeltCommand y FaultLamp a los 20, 30, 50, 60 y 80 ms.",
               "checkpoint": "Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 solo tras el nuevo Start."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y queda como chequeo de regresión.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y se mantiene como comprobación de regresión.",
               "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene 9 assertions."
             },
             {
               "key": "observe",
               "title": "Contraste",
-              "body": "Relacione cada assertion con la traza: AT a 20, 50 y 60 ms fija los estados exactos; WITHIN a 30 ms prueba que la falla aparece en el mismo scan que el atasco; FOR de 30 a 50 ms se sostiene a través del Reset temprano; FALLING a 60 ms muestra que Reset liberó la lámpara; UNTIL mantiene la cinta OFF hasta el nuevo Start; RISING a 80 ms encuentra el rearranque.",
+              "body": "Relacione cada aserción con la traza: AT a los 20, 50 y 60 ms fija los estados exactos; WITHIN a los 30 ms prueba que la falla aparece en el mismo ciclo que el atasco; FOR de 30 a 50 ms se cumple a pesar del Reset prematuro; FALLING a los 60 ms muestra que Reset apagó la lámpara; UNTIL mantiene la cinta en OFF hasta el nuevo Start; RISING a los 80 ms detecta el rearranque.",
               "checkpoint": "La traza registrada muestra la secuencia discreta, no una medición física."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "NEVER prohíbe BeltCommand y FaultLamp ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe rearrancar la cinta.",
-              "checkpoint": "Un atasco inyectado no demuestra falla física, despeje físico, timing de target, HIL ni certificación."
+              "body": "NEVER prohíbe que BeltCommand y FaultLamp estén en ON a la vez en este escenario. Un Reset con el atasco presente no debe liberar la falla, y liberarla no debe volver a arrancar la cinta.",
+              "checkpoint": "Un atasco inyectado no demuestra una falla física, el despeje físico, los tiempos en el dispositivo de destino, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Parta de la lección 4: JamDetected enclava Faulted, y un Reset solo cuenta cuando la entrada de atasco ya no está; lea los tiempos del escenario para ver qué Reset debe ignorarse."
+              "text": "Parta de la lección 4: JamDetected retiene Faulted, y un Reset solo cuenta cuando la entrada de atasco ya desapareció; lea los tiempos del escenario para ver qué Reset debe ignorarse."
             },
             {
               "level": 2,
@@ -1596,7 +1596,7 @@
             }
           ],
           "faultCases": [
-            "El starter omite el enclavamiento del atasco; enclave la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset tras despejarse el atasco y exija un nuevo Start para volver a mover la cinta."
+            "El programa inicial no retiene la falla por atasco; retenga la falla con JamDetected, ignore Reset mientras el atasco esté presente, libérela solo con Reset después de que se despeje el atasco y exija un nuevo Start para volver a mover la cinta."
           ]
         }
       }
@@ -1721,15 +1721,15 @@
           "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.",
           "objectives": [
-            "Distinga una pieza metálica de una no metálica con una memoria que vive entre dos sensores.",
-            "Lea una línea de tiempo de entradas agendadas y anticipe las salidas antes de ejecutarla."
+            "Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.",
+            "Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Ubique",
               "body": "Use PartAtClassifier, MetalDetected y PartAtDiverter en src/Conveyor.st y agregue MetalLatched.",
-              "checkpoint": "MetalLatched se activa con clasificador+metal y se limpia al llegar al desviador."
+              "checkpoint": "MetalLatched se activa con clasificador+metal y se borra cuando la pieza llega al desviador."
             },
             {
               "key": "predict",
@@ -1740,32 +1740,32 @@
             {
               "key": "schedule",
               "title": "Lea el calendario",
-              "body": "El JSON agenda clasificador→desviador 20→30 ms y 50→70 ms, con tick de 10 ms hasta 80 ms. Start se pulsa solo a 0 ms, así que el programa debe retener el pedido de cinta.",
-              "checkpoint": "Las tres assertions son AT@30 Belt=true/Diverter=true, AT@70 Belt=true/Diverter=false y NEVER Diverter=true con Belt=false."
+              "body": "El JSON programa clasificador→desviador a 20→30 ms y 50→70 ms, con un tick de 10 ms hasta 80 ms. Start se pulsa solo a los 0 ms, así que el programa debe retener la solicitud de la cinta.",
+              "checkpoint": "Las tres aserciones son AT@30 Belt=true/Diverter=true, AT@70 Belt=true/Diverter=false y NEVER Diverter=true con Belt=false."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorTwoParts.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorTwoParts.",
               "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene 3 assertions."
             },
             {
               "key": "observe",
               "title": "Diagnostique",
-              "body": "La matriz de Tests prueba outputs host: compare las muestras de 30 y 70 ms.",
-              "checkpoint": "No prueba ni registra inputs, piezas físicas ni el estado interno MetalLatched."
+              "body": "La matriz de Pruebas demuestra las salidas del host: compare las muestras de 30 y 70 ms.",
+              "checkpoint": "No demuestra ni registra las entradas, las piezas físicas ni el estado interno MetalLatched."
             },
             {
               "key": "reflect",
               "title": "Límites",
-              "body": "Repita el mismo escenario para una decisión reproducible sobre outputs del host.",
-              "checkpoint": "No demuestra sensores o piezas físicas, timing de target, hardware, HIL ni certificación."
+              "body": "Repita el mismo escenario para tomar una decisión reproducible sobre las salidas del host.",
+              "checkpoint": "No demuestra sensores ni piezas físicas, los tiempos en el dispositivo de destino, hardware, HIL ni certificación."
             }
           ],
           "hints": [
@@ -1775,11 +1775,11 @@
             },
             {
               "level": 2,
-              "text": "Borre MetalLatched cuando la pieza llega al desviador, maneje DiverterCommand desde BeltCommand AND PartAtDiverter AND MetalLatched, y retenga el pedido de cinta tras la única pulsación de Start a 0 ms."
+              "text": "Borre MetalLatched cuando la pieza llegue al desviador, calcule DiverterCommand a partir de BeltCommand AND PartAtDiverter AND MetalLatched, y retenga la solicitud de la cinta tras la única pulsación de Start a los 0 ms."
             }
           ],
           "faultCases": [
-            "El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador."
+            "El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador."
           ]
         }
       }
@@ -3611,18 +3611,18 @@
           ]
         },
         "es": {
-          "title": "Bloques de función: un enclavamiento, dos bombas",
-          "summary": "Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arranque y parada, y úselo dos veces, una por bomba.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.",
+          "title": "Bloques de función: un biestable, dos bombas",
+          "summary": "Escriba el cuerpo de un bloque de función que implementa una retención de arranque y parada, y úselo dos veces, una para cada bomba.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.",
           "objectives": [
-            "Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas.",
+            "Escriba un bloque de función con entradas, una salida y una memoria que se conserva entre llamadas.",
             "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en otro caso, y Reset gana cuando ambas son TRUE.",
+              "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en los demás casos, y Reset tiene prioridad cuando ambas son TRUE.",
               "checkpoint": "Cada bomba arranca con su propio Start, se detiene con su propio Stop, y una bomba nunca mueve a la otra."
             },
             {
@@ -3640,7 +3640,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama PumpPair y contiene 9 assertions."
             },
             {
@@ -3652,7 +3652,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué assertion falla.",
+              "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué aserción falla.",
               "checkpoint": "Cada instancia tiene su propia copia de las variables del bloque, así que el mismo código sirve para cualquier número de bombas. El escenario muestra solo la lógica; no muestra la secuencia de arranque ni una falla de bomba."
             }
           ],
@@ -3783,8 +3783,8 @@
         },
         "es": {
           "title": "Estructuras y arreglos: un panel de tres llamadas",
-          "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.",
+          "summary": "Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms, HIL ni certificación.",
           "objectives": [
             "Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro.",
             "Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo."
@@ -3793,7 +3793,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
+              "body": "En src/CallPanel.st la estructura Call tiene los miembros Pressed y Held, y el arreglo Calls contiene tres de ellas. El programa copia los botones a Calls[1].Pressed hasta Calls[3].Pressed. Escriba un bucle FOR con i de 1 a 3 que ponga Held en TRUE cuando Pressed sea TRUE, lo borre cuando Ack sea TRUE, y active Pending si algún Held es TRUE y AllCalling si los tres lo son.",
               "checkpoint": "Una llamada queda retenida al soltar su botón, Ack las borra, y el bucle trata las tres de la misma manera."
             },
             {
@@ -3811,7 +3811,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama CallPanel y contiene 10 assertions."
             },
             {
@@ -3823,14 +3823,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué assertion falla; luego agregue una cuarta llamada y diga qué editaría.",
+              "body": "¿Qué cambiaría si el bucle fuera de 1 a 2? Pruébelo y vea qué aserción falla; luego agregue una cuarta llamada y diga qué editaría.",
               "checkpoint": "Con un arreglo y un bucle, agregar una llamada cambia los límites y una línea que copia el botón. El escenario muestra la lógica de una sola tarea; no muestra varias tareas ni sus prioridades."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Un elemento del arreglo es Calls[i], y un miembro de él es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
+              "text": "Un elemento del arreglo es Calls[i], y uno de sus miembros es Calls[i].Held. Ponga Pending en FALSE y AllCalling en TRUE antes del bucle, y deje que el bucle los cambie."
             },
             {
               "level": 2,
