@@ -60,7 +60,8 @@ const scale = (group: string, name: string, doc: string, value: string, compact?
 ramp('paper', 'Drawing Sheet neutral, from the page to the ink', { 50: '#ffffff', 100: '#f8faf7', 200: '#e7ece8', 300: '#d7dfda', 400: '#a8b5b0', 500: '#5f6d6b', 600: '#4c5a59', 800: '#273537', 900: '#172127' });
 ramp('graphite', 'Commissioning Spine neutral, from the ink to the canvas', { 50: '#e5edeb', 100: '#d3ddda', 200: '#b7c4c0', 400: '#8e9e9a', 600: '#52666e', 700: '#34464d', 800: '#19262c', 900: '#141e23', 950: '#0f171b' });
 ramp('pure', 'Neutral of the high-contrast theme, black to white', { 0: '#000000', 50: '#080808', 100: '#111111', 700: '#d7d7d7', 800: '#e5e5e5', 900: '#f2f2f2', 1000: '#ffffff' });
-ramp('cobalt', 'Cobalt, the reference and selection hue', { 200: '#55c8ff', 300: '#5ba7df', 700: '#245d8f' });
+// Step 500 is the frame of the mark (tools/brand/mark.svg, DOC-017): the brand draws only with colours of this palette.
+ramp('cobalt', 'Cobalt, the reference and selection hue', { 200: '#55c8ff', 300: '#5ba7df', 500: '#347bb6', 700: '#245d8f' });
 ramp('green', 'Confirmed green, TRUE and RUN only', { 200: '#7dff9a', 300: '#65c98e', 700: '#177344' });
 ramp('amber', 'Amber, forced values and warnings', { 200: '#ffe16b', 300: '#e0ae4f', 700: '#8a5800' });
 ramp('red', 'Fault red', { 200: '#ff9393', 300: '#ed7070', 700: '#a33838' });

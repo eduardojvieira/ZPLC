@@ -4,23 +4,30 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { declaredTokens } from '../../../packages/zplc-ide/src/theme/tokens';
-import { MARK, OUTPUTS, pngSize, staleOutputs } from './generate-icons';
+import { MARK, OUTPUTS, VARIANTS, pngSize, staleOutputs } from './generate-icons';
 
 const ROOT = join(import.meta.dir, '..', '..', '..');
 const read = (path: string) => readFileSync(join(ROOT, path));
 
-describe('the one vector mark', () => {
-  const mark = read(MARK).toString('utf8');
+describe('the one vector mark and its one-colour variants', () => {
+  const marks = [MARK, ...VARIANTS].map((path) => ({ path, text: read(path).toString('utf8') }));
 
-  it('holds no text, so it cannot carry the product name that decision D-03 still has open', () => {
-    expect(mark).not.toMatch(/<text|<tspan|font-family|ZPLC|Studio/i);
+  it('hold no text and name no font, so no font can change them', () => {
+    for (const { path, text } of marks) expect({ path, text: /<text|<tspan|font-family/i.test(text) }).toEqual({ path, text: false });
   });
 
-  it('uses only colours of the Studio palette', () => {
+  it('use only colours of the Studio palette', () => {
     const palette = new Set((['light', 'dark', 'high-contrast'] as const).flatMap((theme) => Object.values(declaredTokens(theme)).flatMap((value) => value.match(/#[0-9a-f]{6}\b/gi) ?? [])).map((colour) => colour.toLowerCase()));
-    const used = [...new Set(mark.match(/#[0-9a-f]{6}\b/gi)!.map((colour) => colour.toLowerCase()))];
-    expect(used.length).toBeGreaterThan(0);
-    expect(used.filter((colour) => !palette.has(colour))).toEqual([]);
+    for (const { path, text } of marks) {
+      const used = [...new Set((text.match(/#[0-9a-f]{6}\b/gi) ?? []).map((colour) => colour.toLowerCase()))];
+      expect({ path, outside: used.filter((colour) => !palette.has(colour)) }).toEqual({ path, outside: [] });
+    }
+    expect(read(MARK).toString('utf8').match(/#[0-9a-f]{6}\b/gi)!.length).toBeGreaterThan(0);
+  });
+
+  it('draws each variant as one compound path in one colour: dark, light, and the colour of the text around it', () => {
+    const fills = VARIANTS.map((path) => [...read(path).toString('utf8').matchAll(/<path [^>]*fill="([^"]+)"/g)].map((match) => match[1]));
+    expect(fills).toEqual([['#172127'], ['#E5EDEB'], ['currentColor']]);
   });
 });
 
@@ -38,7 +45,7 @@ describe('what is made from the mark', () => {
     expect(read('docs/static/img/logo.svg').equals(read(MARK))).toBe(true);
   });
 
-  it('is the favicon that the renderer page names, so Studio shows the mark and not a stale picture', () => {
+  it('is the favicon that the renderer page names, so ZPLC shows the mark and not a stale picture', () => {
     const html = readFileSync(join(ROOT, 'packages/zplc-ide/index.html'), 'utf8');
     expect(html).toContain('<link rel="icon" type="image/png" href="/icon.png" />');
     expect(OUTPUTS.map((output) => output.path)).toContain('packages/zplc-ide/public/icon.png');

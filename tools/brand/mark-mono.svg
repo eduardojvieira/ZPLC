@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ZPLC">
+  <!-- The mark of ZPLC (tools/brand/mark.svg) in the colour of the text around it: one compound path. -->
+  <path d="M 128 32 H 384 A 96 96 0 0 1 480 128 V 384 A 96 96 0 0 1 384 480 H 128 A 96 96 0 0 1 32 384 V 128 A 96 96 0 0 1 128 32 Z M 128 64 A 64 64 0 0 0 64 128 V 384 A 64 64 0 0 0 128 448 H 384 A 64 64 0 0 0 448 384 V 128 A 64 64 0 0 0 384 64 Z M 96 96 H 128 V 224 H 96 Z M 384 288 H 416 V 416 H 384 Z M 160 96 H 192 V 128 H 416 V 192 L 192 320 H 320 V 288 H 352 V 416 H 320 V 384 H 96 V 320 L 320 192 H 192 V 224 H 160 Z" fill="currentColor" fill-rule="evenodd"/>
+</svg>

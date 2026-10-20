@@ -1,16 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Ladder rung with a contact and a coil">
-  <!-- The one vector mark of the product (DOC-017): the rung of a ladder diagram: a normally open contact and a coil between the rails. It holds no
-       text, so no font and no product name can drift out of it (decision D-03 stays open). The two colours are the graphite
-       and the cobalt of the palette of the application (src/theme/tokens.ts of the IDE package).
-       tools/ci/brand/generate-icons.ts makes every icon and the social card from this file. -->
-  <rect width="1024" height="1024" rx="224" fill="#0f171b"/>
-  <g fill="none" stroke="#55c8ff" stroke-width="56" stroke-linecap="round">
-    <path d="M208 240V784M816 240V784"/>
-    <path d="M208 512H316M452 512H544M736 512H816"/>
-    <circle cx="640" cy="512" r="96"/>
-  </g>
-  <g fill="#55c8ff">
-    <rect x="316" y="372" width="48" height="280" rx="12"/>
-    <rect x="404" y="372" width="48" height="280" rx="12"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ZPLC">
+  <!-- The one vector mark of ZPLC (DOC-017, decision D-03): the letter Z between two contact bars, in a rounded frame.
+       It holds no text, so no font can change it. Its colours are the graphite, cobalt and ink of the palette of the
+       application (src/theme/tokens.ts of the IDE package). tools/ci/brand/generate-icons.ts makes every icon and the social
+       card from this file; mark-dark.svg, mark-light.svg and mark-mono.svg draw the same shape in one colour. -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="#0F171B"/>
+  <path d="M 128 32 H 384 A 96 96 0 0 1 480 128 V 384 A 96 96 0 0 1 384 480 H 128 A 96 96 0 0 1 32 384 V 128 A 96 96 0 0 1 128 32 Z M 128 64 A 64 64 0 0 0 64 128 V 384 A 64 64 0 0 0 128 448 H 384 A 64 64 0 0 0 448 384 V 128 A 64 64 0 0 0 384 64 Z" fill="#347BB6" fill-rule="evenodd"/>
+  <path d="M 96 96 H 128 V 224 H 96 Z M 384 288 H 416 V 416 H 384 Z" fill="#5BA7DF"/>
+  <path d="M 160 96 H 192 V 128 H 416 V 192 L 192 320 H 320 V 288 H 352 V 416 H 320 V 384 H 96 V 320 L 320 192 H 192 V 224 H 160 Z" fill="#E5EDEB"/>
 </svg>

@@ -14,6 +14,8 @@ import { join, resolve } from 'node:path';
 const ROOT = resolve(import.meta.dir, '..', '..', '..');
 export const MARK = 'tools/brand/mark.svg';
 export const MANIFEST = 'tools/brand/outputs.json';
+/** The mark in one colour, for a place that needs a single colour: drawn by hand from the same compound path, not generated. */
+export const VARIANTS = ['tools/brand/mark-dark.svg', 'tools/brand/mark-light.svg', 'tools/brand/mark-mono.svg'];
 
 export interface Output { path: string; kind: 'svg' | 'png' | 'icns'; width?: number; height?: number }
 
