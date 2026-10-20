@@ -19,12 +19,5 @@
     "added": "2026-10-10",
     "lines": 1079,
     "reason": "Ladder model types, validation and edit operations in one module; the visual-language work (WS-22a) is changing it. Split model, validation and operations after that lands. Recorded size raised from 1074 to 1080 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
-  },
-  {
-    "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 940,
-    "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
   }
 ]
