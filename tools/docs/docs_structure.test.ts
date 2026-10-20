@@ -8,7 +8,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterAll, describe, expect, it } from 'bun:test';
+import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test';
+
+// Each case runs the Python validator or reads the whole site; on a loaded machine that outgrows the 5 s default, which is not what these tests measure.
+setDefaultTimeout(60_000);
 
 import { markdownFiles } from './check_doc_claims';
 

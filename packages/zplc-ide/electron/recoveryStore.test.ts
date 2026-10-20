@@ -75,7 +75,7 @@ describe('recovery store (IDE-006)', () => {
     await expect(store.write(PROJECT, 'src/Extra.st', 'x')).rejects.toThrow('Recovery store full');
     await store.write(PROJECT, 'src/F0.st', 'updated');
     expect((await store.list(PROJECT)).find((entry) => entry.path === 'src/F0.st')?.content).toBe('updated');
-  });
+  }, 60_000); // It writes the store to its limit, one file at a time: a loaded disk outgrows the 5 s default, which is not what it measures.
 
   test('skips a file that is not exactly an entry and still lists the others', async () => {
     const userData = await fixture();
