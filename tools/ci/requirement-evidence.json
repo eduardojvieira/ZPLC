@@ -2683,7 +2683,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the first lesson leads to a blink with the controls Studio shows"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"},
-    {"kind":"gate","ref":"docs/docs/learn/index.md","test":"How long a person takes is not measured yet","note":"Needs a timed first-use test in which a first-time user reaches a blinking simulated output within ten minutes, following only what Studio shows. Journey 57 follows the same controls without a person, and the time estimates of the lessons do not stand in for it."}
+    {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output","note":"Owner decision 2026-10-20: journey 57, which reaches a blinking simulated output from a fresh profile by following only the controls Studio shows, is accepted as the first-use evidence of LRN-012; no timed study with a first-time user was run"}
   ],
   "LRN-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
@@ -3096,6 +3096,9 @@
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"},
     {"kind":"py-test","ref":"tools/hil/test_hil_trace_profile.py","test":"HIL-013: no shipped board profile turns the HIL trace on; it comes from the HIL overlay"}
+  ],
+  "HIL-014": [
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs the procedure of the bench guide executed on the Raspberry Pi Pico and the ESP32-S3, so that the guide describes the procedure actually executed; the guide, its wiring and its parts are written in English and Spanish"}
   ],
   "HIL-015": [
     {"kind":"c-test","ref":"firmware/tests/app_native_emulation/module/emu_shell.c","test":"same program can be compared with the emulated Pico (HIL-015). It is never compiled"},

@@ -313,11 +313,18 @@ describe('the committed evidence (VF-027)', () => {
   };
 
   it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
-    expectGated(['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004']);
+    expectGated(['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-014', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004']);
   });
 
   it('gates the requirements that need a hosted run, another operating system, a person or a decision of the owner', () => {
-    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'LRN-012', 'DOC-015', 'LRN-037', 'REL-031']);
+    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'DOC-015', 'LRN-037', 'REL-031']);
+  });
+
+  it('closes a gate only through a written decision of the owner that names the evidence it accepts instead', () => {
+    // LRN-012: the owner accepted journey 57 instead of a timed study with a person (2026-10-20).
+    const accepted = (evidence['LRN-012'] ?? []).filter((check) => check.kind === 'manual' && /Owner decision \d{4}-\d{2}-\d{2}/.test(check.note ?? ''));
+    expect(accepted.length).toBeGreaterThan(0);
+    expect((evidence['LRN-012'] ?? []).some((check) => check.kind === 'gate')).toBe(false);
   });
 
   it('lists every gated requirement with the evidence its gate still asks for', () => {
