@@ -48,7 +48,7 @@ Each of the five languages is introduced by a lesson whose objective names it, a
 | SFC | `sfc-fill-mix-sequence` | Sequential Function Chart |
 | IL | `instruction-list-door-alarm` | Instruction List |
 
-## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
+## Module 0: Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board
 
 Foundation. Requires module: none. Tracks: Simulation, Hardware.
 

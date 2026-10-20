@@ -1,12 +1,12 @@
 ---
-title: "Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
+title: "Módulo 0: Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa"
 sidebar_label: "Módulo 0"
 description: "Las lecciones del módulo 0 del curso, generadas de los paquetes de lecciones."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
+# Módulo 0: Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
 

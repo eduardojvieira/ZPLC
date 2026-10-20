@@ -66,7 +66,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'ZPLC 2.0',
+              label: '2.0',
             },
           },
         },
@@ -124,7 +124,7 @@ const config = {
               { label: 'Getting started', to: '/docs/getting-started' },
               { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
               { label: 'Reference', to: '/docs/reference' },
-              { label: 'Studio', to: '/docs/ide' },
+              { label: 'ZPLC application', to: '/docs/ide' },
             ],
           },
           {

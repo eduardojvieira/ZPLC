@@ -144,7 +144,7 @@ const sidebars = {
         'architecture/index',
         {
           type: 'category',
-          label: 'Studio',
+          label: 'ZPLC application',
           collapsed: true,
           items: [
             'ide/index',

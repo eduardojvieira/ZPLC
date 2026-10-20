@@ -1,12 +1,12 @@
 ---
-title: "Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board"
+title: "Module 0: Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board"
 sidebar_label: "Module 0"
 description: "The lessons of module 0 of the course, generated from the lesson packages."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
+# Module 0: Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
 
