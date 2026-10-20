@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
+import { checkManifest } from './capture-screenshots';
 import { PAGES as COURSE_PAGES } from './generate_course_pages';
 import { BOARDS, HARDWARE_LESSONS, KIT, KIT_PAGES, WIRING_PAGES, outputs } from './generate_hardware_pages';
 import { ROOT } from './reference-lib';
@@ -56,5 +57,17 @@ describe('LRN-014 the lesson pages link the wiring of their lesson on each board
 describe('the hardware pages and diagrams are in step with their sources (drift check)', () => {
   it('matches every committed page and diagram', () => {
     for (const { file, content } of outputs()) expect([file, readFileSync(`${ROOT}${file}`, 'utf8')]).toEqual([file, content]);
+  });
+});
+
+describe('DOC-013 the wiring diagrams are generated drawings, not pictures of the product', () => {
+  const manifest = { schemaVersion: 1 as const, commit: 'a'.repeat(40), images: [] };
+  const page = (reference: string) => [{ page: 'p.md', text: `![a diagram](${reference})` }];
+  const exists = (path: string) => (path.endsWith('/lesson.en.svg') ? new Uint8Array([60]) : undefined);
+
+  it('lets a page show a wiring diagram the generator wrote, and nothing else outside the manifest', () => {
+    expect(checkManifest(manifest, page('/img/wiring/board/lesson.en.svg'), exists, [])).toEqual([]);
+    expect(checkManifest(manifest, page('/img/wiring/board/missing.en.svg'), exists, [])).toEqual([{ where: 'p.md', message: 'shows /img/wiring/board/missing.en.svg, a wiring diagram that is not in docs/static/img/wiring: run bun tools/docs/generate_hardware_pages.ts' }]);
+    expect(checkManifest(manifest, page('/img/screen.png'), exists, [])).toEqual([{ where: 'p.md', message: 'shows /img/screen.png, which the manifest does not list' }]);
   });
 });
