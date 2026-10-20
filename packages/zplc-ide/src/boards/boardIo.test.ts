@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import manifest from '../../../../firmware/app/boards/boards.json';
-import { descriptionHash, fnv1a32, imageExtent, parseDirectAddress, readBoardIo } from './boardIo';
+import { channelIn, descriptionHash, fnv1a32, imageExtent, parseDirectAddress, readBoardIo } from './boardIo';
 
 const channel = (overrides: Record<string, unknown> = {}) => ({
   id: 'DO0', direction: 'output', kind: 'digital', address: '%QX0.0', pin: 'GP0', dt: { alias: 'led0', controller: 'gpio0', pin: 0 },
@@ -51,6 +51,26 @@ describe('the board I/O description (IO-001, IO-005)', () => {
     const a = channel(); const b = channel({ id: 'DO1', address: '%QX0.1' });
     expect(descriptionHash('t', io([a, b]))).toBe(descriptionHash('t', io([b, a])));
     expect(descriptionHash('t', io([a]))).not.toBe(descriptionHash('t', io([channel({ address: '%QX0.1' })])));
+  });
+});
+
+describe('LRN-029 the Spanish twins of the human text of a channel', () => {
+  const twins = { pin_es: 'GP0 (botón)', location: 'header pin 1', location_es: 'pin 1 del conector', electrical_es: 'Lógica de 3.3 V' };
+
+  test('a channel reads its Spanish twins and shows them in Spanish, English otherwise', () => {
+    const [read] = io([channel(twins)]).channels;
+    expect(channelIn(read!, 'es')).toMatchObject({ pin: 'GP0 (botón)', location: 'pin 1 del conector', electrical: 'Lógica de 3.3 V', address: '%QX0.0' });
+    expect(channelIn(read!, 'en')).toMatchObject({ pin: 'GP0', location: 'header pin 1', electrical: '3.3 V logic' });
+  });
+
+  test('a channel without twins keeps its English text in Spanish', () => {
+    const [read] = io([analog({ scaling: 'V = raw x 3.3 / 4095' })]).channels;
+    expect(channelIn(read!, 'es')).toMatchObject({ electrical: '0 V to 3.3 V', scaling: 'V = raw x 3.3 / 4095' });
+  });
+
+  test('an empty twin or a twin without its English text makes the description unreadable, as the Python validator says', () => {
+    expect(readBoardIo({ schema_version: 1, channels: [channel({ electrical_es: ' ' })], unmapped: [] })).toBeUndefined();
+    expect(readBoardIo({ schema_version: 1, channels: [channel({ location_es: 'pin 1 del conector' })], unmapped: [] })).toBeUndefined();
   });
 });
 

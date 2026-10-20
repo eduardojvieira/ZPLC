@@ -44,6 +44,12 @@ WATCHDOG_DEFAULT_POLICY = {"stop": "disarm", "pause": "feed", "fault": "expire"}
 NETWORK_CLASSES = ("serial-focused", "network-capable", "other")
 NETWORK_INTERFACES = ("none", "wifi", "ethernet")
 ADC_ENUM = re.compile(r"^ADC_(GAIN|REF|ACQ_TIME)_[A-Z0-9_]+$")
+TRANSLATED = ("pin", "location", "electrical", "scaling", "terminal", "reason")
+"""Human text a channel, an unmapped terminal or a fieldbus port may also give in Spanish, under the same key with
+`_es` (LRN-029). The English text stays the one the firmware tables and logs use; the docs and Studio show the twin."""
+SPANISH_REQUIRED = ("location", "electrical", "scaling", "reason")
+"""What a learner board (`"learner": true`) gives in Spanish too. A pin or terminal name is printed on the board and
+has a twin only when it holds words ("GPIO0 (BOOT button)")."""
 
 
 class Address(NamedTuple):
@@ -77,6 +83,27 @@ def _is_text(value: Any) -> bool:
 
 def _is_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def text_in(item: dict[str, Any], key: str, spanish: bool) -> str:
+    """The text of `key` in the language asked for: its Spanish twin when there is one, else the English text."""
+    if spanish and _is_text(item.get(f"{key}_es")):
+        return str(item[f"{key}_es"])
+    return str(item.get(key, ""))
+
+
+def _translation_errors(item: dict[str, Any], label: str, learner: bool) -> list[str]:
+    errors: list[str] = []
+    for key in TRANSLATED:
+        twin = f"{key}_es"
+        if twin in item:
+            if not _is_text(item[twin]):
+                errors.append(f"{label}: {twin} must be the Spanish text of {key}")
+            elif key not in item:
+                errors.append(f"{label}: {twin} has no English {key} to translate")
+        elif learner and key in SPANISH_REQUIRED and key in item:
+            errors.append(f"{label}: a learner board gives {key} in Spanish too, as {twin} (LRN-029)")
+    return errors
 
 
 def _source_exists(source: str, root: Path | None) -> bool:
@@ -224,6 +251,9 @@ def validate_io_description(board: dict[str, Any], root: Path | None = None) -> 
     if not isinstance(io, dict):
         return [f"{name}: io description is missing"]
     errors: list[str] = []
+    if "learner" in board and not isinstance(board["learner"], bool):
+        errors.append(f"{name}: learner must be true or false")
+    learner = board.get("learner") is True
     if io.get("schema_version") != SCHEMA_VERSION:
         errors.append(f"{name}: io.schema_version must be {SCHEMA_VERSION}")
     channels = io.get("channels")
@@ -234,6 +264,8 @@ def validate_io_description(board: dict[str, Any], root: Path | None = None) -> 
     ids: set[str] = set()
     for index, channel in enumerate(channels):
         errors.extend(f"{name}: {text}" for text in _validate_channel(channel, f"channels[{index}]", root))
+        if isinstance(channel, dict):
+            errors.extend(f"{name}: {text}" for text in _translation_errors(channel, f"channel {channel.get('id', index)}", learner))
         if isinstance(channel, dict) and isinstance(channel.get("id"), str):
             if channel["id"] in ids:
                 errors.append(f"{name}: duplicate channel id {channel['id']}")
@@ -244,6 +276,9 @@ def validate_io_description(board: dict[str, Any], root: Path | None = None) -> 
         isinstance(item, dict) and _is_text(item.get("terminal")) and _is_text(item.get("reason")) for item in unmapped
     ):
         errors.append(f"{name}: io.unmapped must list objects with a terminal and a reason")
+    else:
+        for item in unmapped:
+            errors.extend(f"{name}: {text}" for text in _translation_errors(item, f"unmapped {item['terminal']}", learner))
     return errors
 
 
@@ -412,6 +447,7 @@ def validate_fieldbus(board: dict[str, Any], root: Path | None = None) -> list[s
             errors.append(f"{name}: a fieldbus port needs {', '.join(FIELDBUS_REQUIRED)}")
             continue
         where = f"{name}: fieldbus port {port['id']}"
+        errors.extend(_translation_errors(port, where, board.get("learner") is True))
         if port["protocol"] not in FIELDBUS_PROTOCOLS:
             errors.append(f"{where}: protocol must be one of {', '.join(FIELDBUS_PROTOCOLS)}")
             continue
