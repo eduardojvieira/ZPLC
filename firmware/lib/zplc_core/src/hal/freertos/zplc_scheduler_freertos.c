@@ -39,7 +39,7 @@ static zplc_hal_mutex_t scan_lock;    /* a batch, or a change of the task table:
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 
 static uint64_t (*test_clock_us)(void);
-static volatile uint8_t test_force_miss;
+static volatile uint32_t test_force_miss;
 static volatile uint32_t batches_run;
 static uint8_t fault_kept;
 static uint8_t fault_reason;
@@ -183,7 +183,7 @@ static int port_probe(void *ctx, zplc_sched_probe_t point, uint16_t task_id)
     (void)ctx;
     (void)task_id;
     if (point == ZPLC_SCHED_PROBE_FORCE_MISS && test_force_miss != 0U) {
-        test_force_miss = 0U;
+        test_force_miss--;
         return 1;
     }
     return 0;
@@ -542,9 +542,22 @@ void zplc_fr_sched_test_stop_timers(void)
     stop_all_timers();
 }
 
-void zplc_fr_sched_test_force_next_deadline_miss(void)
+void zplc_fr_sched_test_force_deadline_misses(uint32_t count)
 {
-    test_force_miss = 1U;
+    test_force_miss = count;
+}
+
+uint32_t zplc_fr_sched_test_active_timers(void)
+{
+    uint32_t active = 0U;
+    int index;
+
+    for (index = 0; index < (int)MAX_TASKS; ++index) {
+        if (timers[index] != NULL && xTimerIsTimerActive(timers[index]) != pdFALSE) {
+            active++;
+        }
+    }
+    return active;
 }
 
 uint32_t zplc_fr_sched_test_batches_run(void)

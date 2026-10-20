@@ -76,8 +76,10 @@ int zplc_fr_sched_test_admit_release_at(int slot, uint64_t release_us);
 int zplc_fr_sched_test_run_batch(void);
 /** @brief Stop the timers of the tasks and leave the state as it is: releases then come from the test. */
 void zplc_fr_sched_test_stop_timers(void);
-/** @brief Make the next scan part miss its deadline, whatever the clock says. */
-void zplc_fr_sched_test_force_next_deadline_miss(void);
+/** @brief Make the next @p count scan parts miss their deadline, whatever the clock says. */
+void zplc_fr_sched_test_force_deadline_misses(uint32_t count);
+/** @brief Release timers that are running. */
+uint32_t zplc_fr_sched_test_active_timers(void);
 /** @brief Batches the scheduler task ran since init. */
 uint32_t zplc_fr_sched_test_batches_run(void);
 

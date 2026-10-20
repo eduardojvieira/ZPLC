@@ -102,3 +102,37 @@ zplc_freertos_suite(test_opcode_coverage test_opcode_coverage.c SOURCES ${ZPLC_V
 zplc_freertos_suite(test_loader_verify test_loader_verify.c SOURCES ${ZPLC_SRC}/zplc_loader.c
     DEFINES ZPLC_LOADER_FIXTURE_PATH="${ZPLC_TESTS}/fixtures/zplc-v1-code-task-tags.hex")
 zplc_freertos_suite(test_sandbox test_sandbox.c SOURCES ${ZPLC_VM} DEFINES ${TESTING})
+zplc_freertos_suite(test_sandbox_regions test_sandbox.c SOURCES ${ZPLC_VM}
+    DEFINES ${TESTING} CONFIG_ZPLC_WORK_MEMORY_SIZE=0x3000U CONFIG_ZPLC_RETAIN_MEMORY_SIZE=0x2000U)
+# scheduler
+zplc_freertos_suite(test_sched_core test_sched_core.c SOURCES ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_VM} DEFINES ${TESTING})
+zplc_freertos_suite(test_sched_equivalence test_sched_equivalence.c
+    SOURCES ${ZPLC_SESSION}/native_runtime_session.c ${ZPLC_SESSION}/native_program_store.c ${ZPLC_VM}
+        ${ZPLC_SRC}/zplc_retain.c ${ZPLC_SRC}/zplc_program_store.c ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_SRC}/zplc_exchange.c
+        ${ZPLC_SRC}/zplc_failsafe.c ${ZPLC_SRC}/zplc_io_trace.c)
+zplc_freertos_suite(test_single_task test_single_task.c
+    SOURCES ${ZPLC_SRC}/zplc_single_task.c ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_SRC}/zplc_exchange.c ${ZPLC_VM} DEFINES ${TESTING})
+zplc_freertos_suite(test_failsafe test_failsafe.c SOURCES ${ZPLC_SRC}/zplc_failsafe.c ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_VM})
+zplc_freertos_suite(test_native_runtime_session test_native_runtime_session.c
+    SOURCES ${ZPLC_SESSION}/native_runtime_session.c ${ZPLC_SESSION}/native_program_store.c ${ZPLC_SRC}/zplc_core.c
+    DEFINES ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}")
+target_link_libraries(test_native_runtime_session PRIVATE zplc_core)
+# timing
+zplc_freertos_suite(test_port_timing test_port_timing.c DEFINES ZPLC_TEST_PORT_NAME="FreeRTOS")
+# io-table
+zplc_freertos_suite(test_io_table test_io_table.c)
+# storage
+zplc_freertos_suite(test_program_store test_program_store.c SOURCES ${ZPLC_SRC}/zplc_program_store.c)
+zplc_freertos_suite(test_retain test_retain.c SOURCES ${ZPLC_SRC}/zplc_retain.c)
+
+# ---- suites of the FreeRTOS port itself --------------------------------------------------------------------------------
+# They test what only this port has: the adapter of the scheduler core on the kernel's timers and tasks, the simulated
+# board behind the I/O table, the clock, the locks and the storage of the HAL, and the runner.
+set(ZPLC_FR_TESTS ${ZPLC_FREERTOS_DIR}/tests)
+zplc_freertos_suite(test_freertos_scheduler ${ZPLC_FR_TESTS}/test_freertos_scheduler.c
+    SOURCES ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_VM})
+zplc_freertos_suite(test_hal_freertos ${ZPLC_FR_TESTS}/test_hal_freertos.c)
+zplc_freertos_suite(test_hal_freertos_io_table ${ZPLC_FR_TESTS}/test_hal_freertos_io_table.c SOURCES ${ZPLC_SRC}/zplc_sched_core.c ${ZPLC_VM})
+# The runner passes a failing suite's result on: this one fails on purpose, and the run is green only if it does.
+zplc_freertos_suite(test_runner_exit_code ${ZPLC_FR_TESTS}/test_runner_exit_code.c)
+set_tests_properties(test_runner_exit_code PROPERTIES WILL_FAIL TRUE)
