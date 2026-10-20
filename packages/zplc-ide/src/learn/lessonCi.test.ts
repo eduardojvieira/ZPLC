@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, wri
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { VOSEO_MARKERS } from '../../../../tools/ci/i18n-guard';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { lessonCheck } from './lessonCheck';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
@@ -22,9 +23,12 @@ import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPack
 const loaded = loadLessonPackages();
 const packages = loaded.packages;
 const LOCALES = ['en', 'es'] as const;
-/** Rioplatense voseo: a verb ending in a stressed -á, -é or -í (agregá, tené, elegí) or an -ás/-és/-ís form (necesitás), or "vos". */
-const VOSEO = /\b(?:vos|[A-Za-zñ]+(?:á|é|í|ás|és|ís))(?![A-Za-zñ])/gi;
-const NOT_VOSEO = new Set(['está', 'esté', 'así', 'además', 'demás', 'qué', 'través', 'después', 'más', 'país', 'sí', 'aquí', 'ahí', 'allí']);
+/**
+ * The voseo forms in one string, from the deny-list of actual voseo forms the catalog guard uses (UX-030): "vos", "tenés",
+ * "agregá". A rule on stressed endings would also reject correct Spanish such as "será" or "entre sí".
+ */
+const VOSEO = new RegExp(VOSEO_MARKERS.source, 'giu');
+const voseoIn = (value: string): string[] => value.match(VOSEO) ?? [];
 
 let workRoot = '';
 let previousBinary: string | undefined;
@@ -72,6 +76,13 @@ afterAll(() => {
     else process.env[name] = value;
   }
   rmSync(workRoot, { recursive: true, force: true });
+});
+
+describe('the voseo guard of the lesson text (LRN-029)', () => {
+  it('LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, "sí", "así"', () => {
+    expect(voseoIn('El resultado será el mismo, entre sí, y quedará así; la planta lo mostrará.')).toEqual([]);
+    expect(voseoIn('Agregá el contacto, guardá el archivo y tenés el resultado.')).toEqual(['Agregá', 'guardá', 'tenés']);
+  });
 });
 
 describe('lesson packages (LRN-009, LRN-010, LRN-027)', () => {
@@ -123,7 +134,7 @@ for (const lesson of packages) {
     it('LRN-029 es: addresses the learner as usted, never with voseo', () => {
       const { text } = expandText(lesson.texts.es, scenario);
       const strings = [text.title, text.summary, text.scope, ...text.objectives, ...text.faultCases, ...text.hints.map((hint) => hint.text), ...text.stages.flatMap((stage) => [stage.body, stage.checkpoint, stage.title])];
-      const voseo = strings.flatMap((value) => value.match(VOSEO) ?? []).filter((word) => !NOT_VOSEO.has(word.toLowerCase()));
+      const voseo = strings.flatMap(voseoIn);
       expect(voseo).toEqual([]);
     });
 

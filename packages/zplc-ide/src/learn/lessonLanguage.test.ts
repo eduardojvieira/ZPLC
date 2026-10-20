@@ -39,12 +39,12 @@ const word = (pattern: string): RegExp => new RegExp(`(?<![\\p{L}\\p{N}_/-])(?:$
 /**
  * Forms that the "usted" register of D-10 never uses: the "tú" pronouns and possessives, the second-person verbs a lesson
  * asks with, the voseo imperatives with a pronoun (llamalo, borralo; the usted forms are llámelo, bórrelo) and the
- * Rioplatense "recién" for "only then".
+ * Rioplatense "recién" for "only then". The other voseo forms (vos, tenés, agregá) are the deny-list of
+ * tools/ci/i18n-guard.ts, which lessonCi.test.ts applies to every lesson and the i18n guard to every catalog.
  */
 const REGISTER = word([
-  'tú', 'tu', 'tus', 'te', 'ti', 'contigo', 'vos',
+  'tú', 'tu', 'tus', 'te', 'ti', 'contigo',
   'tienes', 'puedes', 'debes', 'quieres', 'necesitas', 'sabes', 'eres', 'estás', 'haces', 'haz', 'pon',
-  'tenés', 'podés', 'querés', 'necesitás', 'sabés', 'hacés',
   'completalo', 'completala', 'llamalo', 'llamala', 'borralo', 'borrala', 'liberalo', 'liberala', 'agregalo', 'agregala', 'guardalo', 'guardala', 'ponelo', 'ponela', 'abrilo', 'abrila', 'probalo', 'probala',
   'recién (?:después|cuando|entonces|al|ahí)',
 ].join('|'));
