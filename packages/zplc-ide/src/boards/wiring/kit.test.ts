@@ -44,7 +44,7 @@ describe('the one bill of materials of the course (LRN-014)', () => {
 
   it('lists the kit of lrn-shared section D, the same for either board', () => {
     expect(bom.map((item) => [item.id, item.quantity])).toEqual([
-      ['board', 1], ['usb-cable', 1], ['breadboard', 1], ['led', 6], ['resistor-330', 6], ['button', 3], ['resistor-10k', 2], ['potentiometer', 1], ['capacitor', 1], ['jumper-wires', 20],
+      ['board', 1], ['usb-cable', 1], ['breadboard', 1], ['led', 6], ['resistor-330', 6], ['button', 4], ['resistor-10k', 2], ['potentiometer', 1], ['capacitor', 1], ['jumper-wires', 20],
     ]);
   });
 

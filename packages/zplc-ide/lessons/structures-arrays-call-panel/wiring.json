@@ -30,7 +30,7 @@
     },
     {
       "id": "ack",
-      "kind": "jumper",
+      "kind": "button",
       "channel": "DI3",
       "label": {
         "en": "Acknowledge",

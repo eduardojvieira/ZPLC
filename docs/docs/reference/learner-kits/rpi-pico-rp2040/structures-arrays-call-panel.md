@@ -29,7 +29,7 @@ The wiring of the lesson [Structures and arrays: a panel of three calls](../../.
 1. Call 1: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it.
 2. Call 2: push button between GP14 (header pin 19, DI1) and GND (GND · pin 38); the internal pull-up of the board reads it.
 3. Call 3: push button between GP13 (header pin 17, DI2) and GND (GND · pin 38); the internal pull-up of the board reads it.
-4. Acknowledge: jumper wire from GP12 (header pin 16, DI3) to GND (GND · pin 38); plugged in means on.
+4. Acknowledge: push button between GP12 (header pin 16, DI3) and GND (GND · pin 38); the internal pull-up of the board reads it.
 5. Call pending: yellow LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38).
 6. All calling: red LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38).
 

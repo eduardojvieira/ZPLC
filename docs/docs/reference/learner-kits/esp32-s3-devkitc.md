@@ -45,7 +45,7 @@ Power: 3V3 on 3V3 · J1-1, GND on GND · J1-22, the ground of a potentiometer on
 | Breadboard of 830 points | 1 | The DevKitC-1 is wide: two half breadboards side by side leave a free row on each side of it. |
 | 5 mm LEDs: red, green and yellow | 6 | Not blue or white: they need about 3 V and stay dim at 3.3 V. |
 | 330 Ω resistors, one in series with each LED | 6 |   |
-| 6×6 mm tactile push buttons | 3 |   |
+| 6×6 mm tactile push buttons | 4 |   |
 | 10 kΩ resistors | 2 | Spare parts for experiments; no lesson needs them. |
 | 10 kΩ linear potentiometer | 1 |   |
 | 100 nF capacitor | 1 | Optional: from the wiper of the potentiometer to GND, it steadies the analog reading. |
@@ -77,6 +77,8 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-
 | [Instruction List: the current result and the order of instructions](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Analog scaling in Function Block Diagram: a high level alarm](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
+| [Interlocks in Ladder: a reversing motor](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
+| [Your own function block in Function Block Diagram: two valves, one block](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verify my board](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}

@@ -48,7 +48,7 @@ una página de cableado para esa placa.
 ## Un solo kit para todo el curso
 
 El curso tiene una sola lista de materiales, la misma para cualquiera de las dos placas: una placa, un
-cable USB de datos, una protoboard, seis LED con seis resistencias de 330 Ω, tres pulsadores, dos
+cable USB de datos, una protoboard, seis LED con seis resistencias de 330 Ω, cuatro pulsadores, dos
 resistencias de 10 kΩ, un potenciómetro de 10 kΩ, un capacitor de 100 nF y veinte cables puente. Las
 piezas se reutilizan de una lección a otra: la CI de lecciones verifica que el kit contiene lo que cada
 lección de hardware necesita a la vez, en cada placa.

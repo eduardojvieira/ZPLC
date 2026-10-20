@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "forward-pb",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Forward button",
+        "es": "Botón de avance"
+      }
+    },
+    {
+      "id": "reverse-pb",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Reverse button",
+        "es": "Botón de retroceso"
+      }
+    },
+    {
+      "id": "stop-pb",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Stop button",
+        "es": "Botón de parada"
+      }
+    },
+    {
+      "id": "lube-ok",
+      "kind": "jumper",
+      "channel": "DI3",
+      "label": {
+        "en": "Lubrication OK (a held permissive: leave the jumper wire plugged in, and pull it out for a moment to simulate a lubrication fault)",
+        "es": "Lubricación correcta (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla de lubricación)"
+      }
+    },
+    {
+      "id": "forward",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Forward",
+        "es": "Avance"
+      }
+    },
+    {
+      "id": "reverse",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Reverse",
+        "es": "Retroceso"
+      }
+    }
+  ]
+}

@@ -18,7 +18,7 @@ Edite dos peldaños en diagrama de escalera para que un motor con inversión de 
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [interlock-guard-permissive](./interlock-guard-permissive.md), [seal-in-ladder](./seal-in-ladder.md)
 
@@ -40,9 +40,10 @@ Edite dos peldaños en diagrama de escalera para que un motor con inversión de 
 
 Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección necesita cuatro pulsadores a la vez (FwdPB, RevPB, StopPB y LubeOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/interlock-reversing-ladder.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/interlock-reversing-ladder.md)
 
 {/* <<< END GENERATED: learn/lessons/interlock-reversing-ladder <<< */}
 

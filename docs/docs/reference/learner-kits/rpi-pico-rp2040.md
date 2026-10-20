@@ -49,7 +49,7 @@ Power: 3V3 on 3V3(OUT) · pin 36, GND on GND · pin 38, the ground of a potentio
 | Breadboard of 830 points | 1 | The DevKitC-1 is wide: two half breadboards side by side leave a free row on each side of it. |
 | 5 mm LEDs: red, green and yellow | 6 | Not blue or white: they need about 3 V and stay dim at 3.3 V. |
 | 330 Ω resistors, one in series with each LED | 6 |   |
-| 6×6 mm tactile push buttons | 3 |   |
+| 6×6 mm tactile push buttons | 4 |   |
 | 10 kΩ resistors | 2 | Spare parts for experiments; no lesson needs them. |
 | 10 kΩ linear potentiometer | 1 |   |
 | 100 nF capacitor | 1 | Optional: from the wiper of the potentiometer to GND, it steadies the analog reading. |
@@ -81,6 +81,8 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-rpi-pi
 | [Instruction List: the current result and the order of instructions](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Analog scaling in Function Block Diagram: a high level alarm](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
+| [Interlocks in Ladder: a reversing motor](./rpi-pico-rp2040/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
+| [Your own function block in Function Block Diagram: two valves, one block](./rpi-pico-rp2040/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verify my board](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}

@@ -45,7 +45,7 @@ Alimentación: 3V3 en 3V3 · J1-1, GND en GND · J1-22, la tierra de un potenci�
 | Protoboard de 830 puntos | 1 | La DevKitC-1 es ancha: dos medias protoboards una junto a otra dejan una fila libre a cada lado. |
 | LED de 5 mm: rojos, verdes y amarillos | 6 | No azules ni blancos: necesitan unos 3 V y encienden poco con 3.3 V. |
 | Resistencias de 330 Ω, una en serie con cada LED | 6 |   |
-| Pulsadores táctiles de 6×6 mm | 3 |   |
+| Pulsadores táctiles de 6×6 mm | 4 |   |
 | Resistencias de 10 kΩ | 2 | Piezas de repuesto para experimentar; ninguna lección las necesita. |
 | Potenciómetro lineal de 10 kΩ | 1 |   |
 | Capacitor de 100 nF | 1 | Opcional: del cursor del potenciómetro a GND, estabiliza la lectura analógica. |
@@ -77,6 +77,8 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
+| [Enclavamientos en diagrama de escalera: un motor con inversión de giro](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
+| [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verificar mi placa](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}

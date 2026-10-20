@@ -18,7 +18,7 @@ Edit two Ladder rungs so that a reversing motor never closes its Forward and Rev
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: LD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [interlock-guard-permissive](./interlock-guard-permissive.md), [seal-in-ladder](./seal-in-ladder.md)
 
@@ -40,9 +40,10 @@ Edit two Ladder rungs so that a reversing motor never closes its Forward and Rev
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, mechanically interlocked contactors, wiring, hardware timing, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson needs four pushbuttons at the same time (FwdPB, RevPB, StopPB and LubeOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/interlock-reversing-ladder.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/interlock-reversing-ladder.md)
 
 {/* <<< END GENERATED: learn/lessons/interlock-reversing-ladder <<< */}
 

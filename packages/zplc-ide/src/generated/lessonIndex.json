@@ -3,7 +3,7 @@
   "lessons": [
     {
       "id": "motor-start-stop-safe",
-      "version": 2,
+      "version": 3,
       "order": 1,
       "module": 2,
       "level": "foundation",
@@ -72,11 +72,11 @@
             },
             {
               "id": "overload",
-              "kind": "jumper",
+              "kind": "button",
               "channel": "DI3",
               "label": {
-                "en": "Overload",
-                "es": "Sobrecarga"
+                "en": "Overload (press to simulate a trip)",
+                "es": "Sobrecarga (presione para simular un disparo)"
               }
             },
             {
@@ -3963,7 +3963,7 @@
     },
     {
       "id": "function-block-pump-pair",
-      "version": 3,
+      "version": 4,
       "order": 21,
       "module": 7,
       "level": "intermediate",
@@ -4032,7 +4032,7 @@
             },
             {
               "id": "stop-b",
-              "kind": "jumper",
+              "kind": "button",
               "channel": "DI3",
               "label": {
                 "en": "Stop pump B",
@@ -4193,7 +4193,7 @@
     },
     {
       "id": "structures-arrays-call-panel",
-      "version": 3,
+      "version": 4,
       "order": 22,
       "module": 7,
       "level": "intermediate",
@@ -4262,7 +4262,7 @@
             },
             {
               "id": "ack",
-              "kind": "jumper",
+              "kind": "button",
               "channel": "DI3",
               "label": {
                 "en": "Acknowledge",
@@ -5756,7 +5756,7 @@
     },
     {
       "id": "interlock-reversing-ladder",
-      "version": 2,
+      "version": 3,
       "order": 31,
       "module": 6,
       "level": "intermediate",
@@ -5768,20 +5768,10 @@
         "LD"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson needs four pushbuttons at the same time (FwdPB, RevPB, StopPB and LubeOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
-            "es": "La lección necesita cuatro pulsadores a la vez (FwdPB, RevPB, StopPB y LubeOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -5803,7 +5793,75 @@
         "canonical": "{\"durationMs\":150,\"events\":[{\"atMs\":0,\"set\":{\"Reversing.FwdPB\":false,\"Reversing.LubeOk\":true,\"Reversing.RevPB\":false,\"Reversing.StopPB\":false}},{\"atMs\":10,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":20,\"set\":{\"Reversing.FwdPB\":false}},{\"atMs\":30,\"set\":{\"Reversing.RevPB\":true}},{\"atMs\":40,\"set\":{\"Reversing.RevPB\":false}},{\"atMs\":50,\"set\":{\"Reversing.StopPB\":true}},{\"atMs\":60,\"set\":{\"Reversing.StopPB\":false}},{\"atMs\":70,\"set\":{\"Reversing.RevPB\":true}},{\"atMs\":80,\"set\":{\"Reversing.RevPB\":false}},{\"atMs\":90,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":100,\"set\":{\"Reversing.FwdPB\":false}},{\"atMs\":110,\"set\":{\"Reversing.LubeOk\":false}},{\"atMs\":120,\"set\":{\"Reversing.LubeOk\":true}},{\"atMs\":130,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":140,\"set\":{\"Reversing.FwdPB\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":true},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"condition\":{\"Reversing.Reverse\":false},\"fromMs\":110,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":true},\"kind\":\"NEVER\"}],\"id\":\"Reversing\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "forward-pb",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Forward button",
+                "es": "Botón de avance"
+              }
+            },
+            {
+              "id": "reverse-pb",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Reverse button",
+                "es": "Botón de retroceso"
+              }
+            },
+            {
+              "id": "stop-pb",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Stop button",
+                "es": "Botón de parada"
+              }
+            },
+            {
+              "id": "lube-ok",
+              "kind": "jumper",
+              "channel": "DI3",
+              "label": {
+                "en": "Lubrication OK (a held permissive: leave the jumper wire plugged in, and pull it out for a moment to simulate a lubrication fault)",
+                "es": "Lubricación correcta (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla de lubricación)"
+              }
+            },
+            {
+              "id": "forward",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Forward",
+                "es": "Avance"
+              }
+            },
+            {
+              "id": "reverse",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Reverse",
+                "es": "Retroceso"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 20,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Interlocks in Ladder: a reversing motor",
@@ -5929,7 +5987,7 @@
     },
     {
       "id": "function-block-valves-fbd",
-      "version": 2,
+      "version": 3,
       "order": 32,
       "module": 7,
       "level": "intermediate",
@@ -5941,20 +5999,10 @@
         "FBD"
       ],
       "tracks": [
-        "simulation"
+        "simulation",
+        "hardware"
       ],
-      "unsupported": {
-        "hardware": {
-          "reason": {
-            "en": "The lesson needs four pushbuttons at the same time (FillPB, DrainPB, StopPB and AirOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
-            "es": "La lección necesita cuatro pulsadores a la vez (FillPB, DrainPB, StopPB y AirOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
-          },
-          "instead": {
-            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-          }
-        }
-      },
+      "unsupported": {},
       "plant": null,
       "plantMap": null,
       "estimatedMinutes": 20,
@@ -5976,7 +6024,75 @@
         "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Valves.AirOk\":true,\"Valves.DrainPB\":false,\"Valves.FillPB\":false,\"Valves.StopPB\":false}},{\"atMs\":10,\"set\":{\"Valves.FillPB\":true}},{\"atMs\":20,\"set\":{\"Valves.FillPB\":false}},{\"atMs\":30,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":40,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":50,\"set\":{\"Valves.StopPB\":true}},{\"atMs\":60,\"set\":{\"Valves.StopPB\":false}},{\"atMs\":70,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":80,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":90,\"set\":{\"Valves.AirOk\":false}},{\"atMs\":100,\"set\":{\"Valves.AirOk\":true}},{\"atMs\":110,\"set\":{\"Valves.FillPB\":true}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Valves.DrainValve\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"condition\":{\"Valves.DrainValve\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Valves.DrainValve\":false},\"fromMs\":90,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"Valves\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
-      "hardware": null,
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "fill-pb",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Fill button",
+                "es": "Botón de llenado"
+              }
+            },
+            {
+              "id": "drain-pb",
+              "kind": "button",
+              "channel": "DI1",
+              "label": {
+                "en": "Drain button",
+                "es": "Botón de vaciado"
+              }
+            },
+            {
+              "id": "stop-pb",
+              "kind": "button",
+              "channel": "DI2",
+              "label": {
+                "en": "Stop button",
+                "es": "Botón de parada"
+              }
+            },
+            {
+              "id": "air-ok",
+              "kind": "jumper",
+              "channel": "DI3",
+              "label": {
+                "en": "Air supply OK (a held permissive: leave the jumper wire plugged in, and pull it out for a moment to simulate an air supply fault)",
+                "es": "Suministro de aire correcto (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla del suministro de aire)"
+              }
+            },
+            {
+              "id": "fill-valve",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "green",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Fill valve",
+                "es": "Válvula de llenado"
+              }
+            },
+            {
+              "id": "drain-valve",
+              "kind": "led",
+              "channel": "DO1",
+              "color": "yellow",
+              "resistorOhms": 330,
+              "label": {
+                "en": "Drain valve",
+                "es": "Válvula de vaciado"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 20,
+          "analogPercent": 5
+        }
+      },
       "text": {
         "en": {
           "title": "Your own function block in Function Block Diagram: two valves, one block",

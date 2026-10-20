@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-esp32-s3-devkitc-title wiring-esp32-s3-devkitc-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-esp32-s3-devkitc-title">Cableado en ESP32-S3-DevKitC-1 (N8R8)</title>
-<desc id="wiring-esp32-s3-devkitc-desc">Arranque de la bomba A: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada de la bomba A: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Arranque de la bomba B: pulsador entre GPIO7 (pin 7 del conector J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada de la bomba B: cable puente desde GPIO8 (pin 12 del conector J1, DI3) hasta GND (GND · J1-22); conectado significa activado. Bomba A en marcha: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22). Bomba B en marcha: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (pin 9 del conector J1, DO1) hasta GND (GND · J1-22).</desc>
+<desc id="wiring-esp32-s3-devkitc-desc">Arranque de la bomba A: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada de la bomba A: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Arranque de la bomba B: pulsador entre GPIO7 (pin 7 del conector J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada de la bomba B: pulsador entre GPIO8 (pin 12 del conector J1, DI3) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Bomba A en marcha: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22). Bomba B en marcha: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (pin 9 del conector J1, DO1) hasta GND (GND · J1-22).</desc>
 <rect width="760" height="496" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en ESP32-S3-DevKitC-1 (N8R8)</text>
 <rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
@@ -44,8 +44,14 @@
 <text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GPIO8</text>
 <text stroke="none" x="30" y="294" font-size="11">pin 12 del conector J1 · DI3</text>
 <text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Parada de la bomba B</text>
-<polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
-<text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">cable puente a GND</text>
+<polyline points="264,280 334,280" fill="none"/>
+<circle cx="337" cy="280" r="3" fill="#ffffff"/>
+<circle cx="377" cy="280" r="3" fill="#ffffff"/>
+<polyline points="337,276 375,264" fill="none"/>
+<polyline points="356,270 356,256" fill="none"/>
+<polyline points="348,256 364,256" fill="none"/>
+<text stroke="none" x="357" y="302" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,280 712,280" fill="none"/>
 <rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO15</text>
 <text stroke="none" x="30" y="358" font-size="11">pin 8 del conector J1 · DO0</text>

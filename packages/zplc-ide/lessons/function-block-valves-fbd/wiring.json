@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "fill-pb",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Fill button",
+        "es": "Botón de llenado"
+      }
+    },
+    {
+      "id": "drain-pb",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Drain button",
+        "es": "Botón de vaciado"
+      }
+    },
+    {
+      "id": "stop-pb",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Stop button",
+        "es": "Botón de parada"
+      }
+    },
+    {
+      "id": "air-ok",
+      "kind": "jumper",
+      "channel": "DI3",
+      "label": {
+        "en": "Air supply OK (a held permissive: leave the jumper wire plugged in, and pull it out for a moment to simulate an air supply fault)",
+        "es": "Suministro de aire correcto (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla del suministro de aire)"
+      }
+    },
+    {
+      "id": "fill-valve",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Fill valve",
+        "es": "Válvula de llenado"
+      }
+    },
+    {
+      "id": "drain-valve",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Drain valve",
+        "es": "Válvula de vaciado"
+      }
+    }
+  ]
+}

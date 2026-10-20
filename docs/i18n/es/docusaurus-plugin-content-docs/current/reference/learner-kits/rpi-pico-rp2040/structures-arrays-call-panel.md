@@ -29,7 +29,7 @@ El cableado de la lección [Estructuras y arreglos: un panel de tres llamadas](.
 1. Llamada 1: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 2. Llamada 2: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 3. Llamada 3: pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-4. Reconocimiento: cable puente desde GP12 (pin 16 del conector, DI3) hasta GND (GND · pin 38); conectado significa activado.
+4. Reconocimiento: pulsador entre GP12 (pin 16 del conector, DI3) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 5. Llamada pendiente: LED amarillo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 6. Todas llaman: LED rojo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).
 
