@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-1. Do not edit. >>> */}
 
+Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en Ladder y en texto estructurado.
+
 - Nivel: Fundamentos
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [0](./module-0.md)
@@ -18,8 +20,8 @@ unlisted: true
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Oscilador TON y realimentación de salida](../lessons/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` | LD | 20 |
 | [Ciclo de scan y memoria de un ciclo](../lessons/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` | ST | 10 |
+| [Oscilador TON y realimentación de salida](../lessons/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` | LD | 20 |
 | [Escriba un parpadeador en Structured Text](../lessons/blink-structured-text.md) | `blink-structured-text` | ST | 15 |
 
 {/* <<< END GENERATED: learn/modules/module-1 <<< */}

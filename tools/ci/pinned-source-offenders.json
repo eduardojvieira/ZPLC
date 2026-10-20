@@ -611,5 +611,15 @@
     ],
     "replacement": "dom",
     "reason": "UX-007 and UX-008 are properties of the kit style sheet (which rules cast a shadow, which sizes come from the density tokens) and the repository has no browser-free renderer for computed styles. Journeys 41 and 55 measure the same in a real window; replace the text match by computed-style assertions in the DOM environment (VF-007)."
+  },
+  {
+    "file": "packages/zplc-ide/scripts/welcomeBundle.test.ts",
+    "requirement": "LRN-030",
+    "added": "2026-10-20",
+    "reads": [
+      "packages/zplc-ide/electron/"
+    ],
+    "replacement": "behaviour",
+    "reason": "LRN-030 lists the main-process files whose source calls the network (fetch, net, http, WebSocket, autoUpdater), because the main process has no stand-in that records its requests. The renderer half of the test reads the production build, and the update default and gate are proven by behaviour. Replace by a journey of the packaged application with the main process kept off the network."
   }
 ]

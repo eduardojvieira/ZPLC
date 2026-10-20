@@ -33,6 +33,34 @@ which ones. If you would rather take them in any order, turn on **Unlock all
 lessons** in the home. The full description of
 what Learn does, and what it keeps, is in [Studio workbench](../ide/features.md#learn).
 
+## Your first blink, without hardware
+
+The first lesson ends in a blinking output in simulation, within ten minutes of
+the first launch. When **Start the course** has opened it, choose **Build** and
+then **Compile** on the toolbar, then **Connect** and **Run**: the program runs in
+the simulator on your computer. **Run** stays disabled until the program is built.
+Open the **Watch** tab: the [**Live I/O** faceplate](./faceplate.md) lists the outputs of the program, and the
+lamp of the lesson turns on and off.
+
+Every Foundation and Intermediate lesson can be completed in this way, with no
+board; the lesson index refuses one that cannot. A journey of the development host
+(journey 57) follows exactly these visible controls from a fresh profile and sees
+the output change. How long a person takes is not measured yet: that needs a
+timed test with first-time users.
+
+## Offline
+
+The simulation track needs no network. That includes module 10: its Modbus and
+MQTT blocks talk to a server and a broker that the simulation starts on your
+computer and stops with it. The window loads no font, script or stylesheet from
+another host, and the one request Studio can make on its own, the check for a
+newer release, is off until you turn it on in the preferences.
+
+The evidence is a journey of the development host on Linux (journey 58), which
+starts, runs and checks the first lesson and a Communications lesson while every
+request to another host is refused, and a test of the production build that finds
+no remote load in it. An installed package was not run without a network.
+
 ## Open an example project
 
 Studio bundles example projects on the Welcome screen, grouped by topic (first steps, motors, process control, the five languages and boards) and by level, each showing its language and, for a hardware example, its board. A hardware example either ships a scenario or says why it has none. They live in

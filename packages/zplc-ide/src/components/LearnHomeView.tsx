@@ -106,6 +106,11 @@ export function LearnHomeView(props: LearnHomeViewProps) {
             : <p role="status" className="font-medium text-[var(--color-surface-100)]">{loaded ? t('learn.home.continue.done') : ''}</p>}
         </div>
 
+        <section aria-labelledby="learn-order-title">
+          <h2 id="learn-order-title" className="font-semibold text-[var(--color-surface-100)]">{t('learn.home.whyOrder')}</h2>
+          <p data-learn-rationale className="mt-1 max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{view.rationale}</p>
+        </section>
+
         <section aria-labelledby="learn-tracks-title">
           <h2 id="learn-tracks-title" className="font-semibold text-[var(--color-surface-100)]">{t('learn.home.tracks')}</h2>
           <ul className="mt-2 space-y-1">
@@ -132,6 +137,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
               <li key={module.id} data-learn-module={module.id} className="border-b border-[var(--color-surface-700)] pb-4">
                 <h3 className="font-medium text-[var(--color-surface-100)]">{t('learn.home.module', { number: module.id, title: module.title })}</h3>
                 <p className="mt-1 text-xs text-[var(--color-surface-400)]">{moduleMeta(module)}</p>
+                <p data-learn-module-why={module.id} className="mt-1 max-w-[68ch] text-xs leading-5 text-[var(--color-surface-300)]">{module.why}</p>
                 {module.lessons.length === 0
                   ? <p className="mt-2 text-xs text-[var(--color-surface-400)]">{t('learn.home.moduleEmpty')}</p>
                   : (

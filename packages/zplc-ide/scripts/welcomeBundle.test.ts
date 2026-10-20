@@ -3,6 +3,9 @@
  * features Studio uses are bundled. The test builds Studio with the repository's own Vite configuration into a
  * temporary folder and reads the build output: the manifest says which chunks the entry page loads (its static
  * imports, followed transitively), and the source map of each chunk says which modules it holds.
+ *
+ * LRN-030: the same production build, the content security policy of the installed application and the main process
+ * fetch nothing from another host at start, in Learn or in the simulation; the update check runs only when turned on.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -10,6 +13,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { build } from 'vite';
 
+import { createContentSecurityPolicy } from '../electron/security';
+import { startUpdateCheck } from '../src/ipc/updateCheckBridge';
+import { DEFAULT_SETTINGS } from '../src/utils/appSettings';
 import { builderFilePatterns, packagedByPatterns } from './electronBuilderFiles';
 
 interface ManifestChunk { file: string; imports?: string[]; dynamicImports?: string[]; isEntry?: boolean }
@@ -113,5 +119,69 @@ describe('the Monaco that is bundled (IDE-015)', () => {
   it('ships the editor worker and no language worker', () => {
     const workers = readdirSync(join(outDir, 'assets')).filter((name) => /\.worker-[^.]+\.js$/.test(name));
     expect(workers.map((name) => name.replace(/-[^.-]+\.js$/, ''))).toEqual(['editor.worker']);
+  });
+});
+
+/**
+ * Hosts the production renderer may name without loading anything from them, each with the reason. A font, a CDN script
+ * or an analytics service is a new host here, and fails the check below until someone writes why it loads nothing.
+ */
+const INERT_HOSTS: Record<string, string> = {
+  'www.w3.org': 'XML and SVG namespace names',
+  'json-schema.org': 'JSON Schema identifiers',
+  'github.com': 'links a person opens in the browser: release notes and issues',
+  'react.dev': 'links in React error messages',
+  'reactjs.org': 'a link in a React warning message',
+  'code.visualstudio.com': 'strings inside Monaco',
+  'microsoft.com': 'strings inside Monaco',
+  'reactflow.dev': 'the attribution link of React Flow',
+  'cdn.jsdelivr.net': 'the default path of @monaco-editor/loader, unused: Studio gives the loader its bundled Monaco (src/components/monacoRuntime.ts), and the policy refuses the CDN',
+};
+/** Every host an absolute or protocol-relative URL in the text names. */
+const hostsIn = (text: string): string[] => [...new Set([...text.matchAll(/(?:https?:|wss?:|[("'`=\s])\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)+)/gi)].map((match) => match[1]!.toLowerCase()))];
+/** A remote stylesheet import or font, or a remote script or stylesheet of the page. */
+const REMOTE_LOAD = /@import\s+(?:url\()?["']?(?:https?:)?\/\/|url\(\s*["']?(?:https?:)?\/\/|<(?:script|link)\b[^>]*\b(?:src|href)=["']?(?:https?:)?\/\//i;
+
+describe('LRN-030 the simulation track needs no network: the installed application fetches nothing from another host', () => {
+  const shipped = (): Array<{ file: string; text: string }> => [
+    { file: 'index.html', text: readFileSync(join(outDir, 'index.html'), 'utf8') },
+    ...readdirSync(join(outDir, 'assets')).filter((name) => /\.(js|css)$/.test(name)).map((name) => ({ file: `assets/${name}`, text: readFileSync(join(outDir, 'assets', name), 'utf8') })),
+  ];
+
+  it('LRN-030 the production renderer loads no remote font, stylesheet or script, and names no host it could load from', () => {
+    const files = shipped();
+    expect(files.length).toBeGreaterThan(2);
+    expect(files.filter(({ text }) => REMOTE_LOAD.test(text)).map(({ file }) => file)).toEqual([]);
+    // A host that is not listed is reported with the place that names it, so its reason can be written or the load removed.
+    const unlisted = files.flatMap(({ file, text }) => hostsIn(text).filter((host) => !(host in INERT_HOSTS)).map((host) => `${host} in ${file}: ${/.{0,60}$/.exec(text.slice(0, text.indexOf(host)))?.[0] ?? ''}${host}`));
+    expect(unlisted).toEqual([]);
+    // The checks see what they look for: a web font, a CDN script and an analytics beacon are each caught.
+    expect(REMOTE_LOAD.test('@import url("https://fonts.googleapis.com/css2?family=Inter");')).toBe(true);
+    expect(REMOTE_LOAD.test('<script src="https://cdn.example.net/lib.js"></script>')).toBe(true);
+    expect(hostsIn('navigator.sendBeacon("https://www.google-analytics.com/g/collect")')).toEqual(['www.google-analytics.com']);
+  });
+
+  it('LRN-030 the policy of the installed window lets it load nothing from another host', () => {
+    const policy = createContentSecurityPolicy(false);
+    const sources = policy.split(';').flatMap((directive) => directive.trim().split(/\s+/).slice(1));
+    expect(sources.filter((source) => !["'self'", "'none'", "'unsafe-inline'", "'wasm-unsafe-eval'", 'data:', 'blob:'].includes(source))).toEqual([]);
+    expect(policy).toContain("connect-src 'self'");
+    expect(policy).toContain("font-src 'self' data:");
+  });
+
+  it('LRN-030 the main process reaches the network only in the update check, off until the user turns it on, and the opt-in assistant', () => {
+    // A pinned source check: the main process has no renderer to observe, so its network calls are found in its source.
+    const electron = join(packageRoot, 'electron');
+    const network = /\bfetch(?:er)?\(|net\.request|https?\.(?:get|request)\(|new WebSocket\(|createConnection\(|net\.connect\(|autoUpdater/;
+    const callers = readdirSync(electron).filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts') && network.test(readFileSync(join(electron, name), 'utf8'))).sort();
+    // updateCheck.ts fetches the release list; main.ts hands it `fetch` behind the update IPC handler; aiProvider.ts is the assistant, which needs a person to configure it.
+    expect(callers).toEqual(['aiProvider.ts', 'main.ts', 'updateCheck.ts']);
+    expect(DEFAULT_SETTINGS.checkForUpdates).toBe(false);
+    let asked = 0;
+    const bridge = { run: async () => { asked += 1; return { status: 'unavailable', current: '0.0.0' }; } };
+    startUpdateCheck(DEFAULT_SETTINGS.checkForUpdates, bridge, '0.0.0', () => undefined)();
+    expect(asked).toBe(0);
+    startUpdateCheck(true, bridge, '0.0.0', () => undefined)();
+    expect(asked).toBe(1);
   });
 });

@@ -5780,6 +5780,10 @@
   ],
   "course": {
     "schemaVersion": 1,
+    "rationale": {
+      "en": "You see a result first: the tour of module 0 ends in a blinking output in simulation. The scan cycle comes next, because seal-in, edges and timers cannot be understood without it, and a first blink in Ladder and in Structured Text follows at once. Every later module builds on the ones before it, and communications and the capstone come last because they need everything before them.",
+      "es": "Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera (Ladder) y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior."
+    },
     "tracks": [
       {
         "id": "simulation",
@@ -5836,6 +5840,10 @@
         "title": {
           "en": "Getting ready: a tour of Studio, the simulation and, for hardware, checking your board",
           "es": "Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
+        },
+        "why": {
+          "en": "You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
+          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la pista de hardware, una verificación de su placa."
         }
       },
       {
@@ -5849,6 +5857,10 @@
         "title": {
           "en": "How a PLC thinks: the scan cycle, then a first blink",
           "es": "Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo"
+        },
+        "why": {
+          "en": "A PLC repeats one cycle: read the inputs, run the program, write the outputs. Seal-in, edges and timers cannot be understood without the scan cycle, so it comes first, and a first blink in Ladder and in Structured Text follows at once.",
+          "es": "Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en Ladder y en texto estructurado."
         }
       },
       {
@@ -5862,6 +5874,10 @@
         "title": {
           "en": "Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop",
           "es": "Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura"
+        },
+        "why": {
+          "en": "Boolean logic is the vocabulary of every program. It is taught in Ladder beside Structured Text, because relay logic is how the subject is traditionally introduced and both views of the same logic reinforce each other: contacts and coils, then seal-in, set and reset, and a safe stop.",
+          "es": "La lógica booleana es el vocabulario de todo programa. Se enseña en Ladder junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura."
         }
       },
       {
@@ -5875,6 +5891,10 @@
         "title": {
           "en": "Timers, edges and counters",
           "es": "Temporizadores, flancos y contadores"
+        },
+        "why": {
+          "en": "Time and events come after logic: timers delay or hold a signal, edges turn a level into an event and counters remember events. Function Block Diagram arrives here, because timers and counters are blocks.",
+          "es": "El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques."
         }
       },
       {
@@ -5888,6 +5908,10 @@
         "title": {
           "en": "Data: types, arithmetic, comparison, analog scaling",
           "es": "Datos: tipos, aritmética, comparación y escalado analógico"
+        },
+        "why": {
+          "en": "Real signals are numbers, not only on and off. Types, arithmetic, comparison and analog scaling prepare for the processes that follow.",
+          "es": "Las señales reales son números, no solo encendido y apagado. Los tipos, la aritmética, la comparación y el escalado analógico preparan para los procesos que siguen."
         }
       },
       {
@@ -5901,6 +5925,10 @@
         "title": {
           "en": "State machines and sequences",
           "es": "Máquinas de estado y secuencias"
+        },
+        "why": {
+          "en": "A machine that does things in order is a state machine. Sequences are written as states in Structured Text, and Sequential Function Chart arrives with them, as steps.",
+          "es": "Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama de funciones secuenciales (SFC), como pasos."
         }
       },
       {
@@ -5914,6 +5942,10 @@
         "title": {
           "en": "Feedback, faults and interlocks",
           "es": "Realimentación, fallos e interbloqueos"
+        },
+        "why": {
+          "en": "A command is not a fact: the plant must confirm it. Once a program can run a sequence, feedback, faults and interlocks teach it to distrust what it asked for.",
+          "es": "Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya puede ejecutar una secuencia, la realimentación, las fallas y los enclavamientos le enseñan a desconfiar de lo que pidió."
         }
       },
       {
@@ -5927,6 +5959,10 @@
         "title": {
           "en": "Structuring programs: functions, function blocks, structures, arrays, tasks",
           "es": "Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas"
+        },
+        "why": {
+          "en": "Programs grow. Once you work with data, functions, function blocks, structures, arrays and tasks keep a program readable and reusable.",
+          "es": "Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques de función, las estructuras, los arreglos y las tareas mantienen un programa legible y reutilizable."
         }
       },
       {
@@ -5939,6 +5975,10 @@
         "title": {
           "en": "Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints",
           "es": "Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción"
+        },
+        "why": {
+          "en": "Testing comes once you have programs worth testing. Scenario tests, temporal assertions, traces and breakpoints turn a guess into evidence.",
+          "es": "Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia."
         }
       },
       {
@@ -5952,6 +5992,10 @@
         "title": {
           "en": "Instruction List, and one logic in five languages",
           "es": "Lista de instrucciones y una misma lógica en cinco lenguajes"
+        },
+        "why": {
+          "en": "Instruction List comes late, as a way to read low-level and legacy code. It closes the set of languages, and the same logic is then written in all five.",
+          "es": "La lista de instrucciones llega tarde, como una forma de leer código de bajo nivel y heredado. Completa el conjunto de lenguajes, y luego la misma lógica se escribe en los cinco."
         }
       },
       {
@@ -5965,6 +6009,10 @@
         "title": {
           "en": "Communications: Modbus and MQTT basics",
           "es": "Comunicaciones: fundamentos de Modbus y MQTT"
+        },
+        "why": {
+          "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.",
+          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan contra extremos que Studio inicia en este equipo, así que no se necesita red ni placa."
         }
       },
       {
@@ -5978,6 +6026,10 @@
         "title": {
           "en": "Capstone: a small machine from description to tested program",
           "es": "Proyecto final: una máquina pequeña, de la descripción al programa probado"
+        },
+        "why": {
+          "en": "The course ends with a small machine taken from a written description to a tested program, using everything before it.",
+          "es": "El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior."
         }
       }
     ]

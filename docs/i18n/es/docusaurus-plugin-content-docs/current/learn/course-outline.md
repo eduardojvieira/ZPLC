@@ -29,17 +29,31 @@ puede pedir ver. Studio registra que vio la solución.
 
 ## Por qué este orden
 
-El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
+Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera (Ladder) y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior.
+
+Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en Studio muestra las mismas palabras, tomadas del mismo archivo del curso.
 
 
 Disponibles hoy: **28**. Planeadas: **1**. En total: **29**.
 
 
+## Lenguajes
+
+Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nombra, y cada uno es el lenguaje del programa que usted edita, y que se califica, en al menos una lección. El primer parpadeo se ofrece dos veces en el módulo 1: en diagrama de escalera (Ladder) y en texto estructurado. Una prueba de los paquetes de lecciones (LRN-008) mantiene esta tabla al día.
+
+| Lenguaje | Se presenta en | Nombre |
+|---|---|---|
+| ST | `first-blink-simulation` | texto estructurado |
+| LD | `blinky-ladder-timer-feedback` | diagrama de escalera (Ladder) |
+| FBD | `counter-batch-fbd` | diagrama de bloques de función |
+| SFC | `sfc-fill-mix-sequence` | diagrama de funciones secuenciales |
+| IL | `instruction-list-door-alarm` | lista de instrucciones |
+
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
 
 Fundamentos. Requiere el módulo: ninguno. Pistas: Simulación, Hardware.
 
-Quien llega por primera vez necesita ver que algo se mueve antes de cualquier teoría. Este módulo es un recorrido por Studio y la simulación, y termina en una salida simulada que parpadea en diez minutos.
+Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la pista de hardware, una verificación de su placa.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -55,7 +69,7 @@ Objetivos de las lecciones disponibles:
 
 Fundamentos. Requiere el módulo: 0. Pistas: Simulación, Hardware.
 
-Un PLC repite un ciclo: leer entradas, ejecutar el programa y escribir salidas. El ciclo de escaneo explica todo comportamiento posterior, por eso va primero, seguido del primer parpadeo en Ladder y en Structured Text.
+Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en Ladder y en texto estructurado.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -74,39 +88,39 @@ Objetivos de las lecciones disponibles:
 
 Fundamentos. Requiere el módulo: 1. Pistas: Simulación, Hardware.
 
-La lógica booleana es el vocabulario de todo programa. Los contactos y las bobinas llevan a la autorretención, luego a set y reset, y por último a parar de forma segura.
+La lógica booleana es el vocabulario de todo programa. Se enseña en Ladder junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `motor-start-stop-safe` Arranque y parada seguros | Disponible | ST | Simulación, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
 | `boolean-logic-two-hand-guard` Lógica booleana: un mando a dos manos con protección | Disponible | ST | Simulación, Hardware | - | 15 | `blinky-ladder-timer-feedback` |
-| `set-reset-alarm-latch` Enclavar una alarma: set y reset, y cuál gana | Disponible | ST | Simulación, Hardware | - | 15 | `boolean-logic-two-hand-guard` |
-| `seal-in-ladder` Autorretención en Ladder: un motor que se mantiene encendido | Disponible | LD | Simulación, Hardware | - | 20 | `blinky-ladder-timer-feedback` |
+| `seal-in-ladder` Autorretención en Ladder: un motor que se mantiene encendido | Disponible | LD | Simulación, Hardware | - | 20 | `boolean-logic-two-hand-guard` |
+| `set-reset-alarm-latch` Enclavar una alarma: set y reset, y cuál gana | Disponible | ST | Simulación, Hardware | - | 15 | `seal-in-ladder` |
+| `motor-start-stop-safe` Arranque y parada seguros | Disponible | ST | Simulación, Hardware | - | 20 | `set-reset-alarm-latch` |
 
 Objetivos de las lecciones disponibles:
 
-- **Arranque y parada seguros**: Mantenga el motor encendido tras soltar Start con un seal-in. Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo.
 - **Lógica booleana: un mando a dos manos con protección**: Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez. Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas.
-- **Enclavar una alarma: set y reset, y cuál gana**: Mantenga una alarma después de que la falla desapareció, hasta que se reconozca. Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset.
 - **Autorretención en Ladder: un motor que se mantiene encendido**: Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina. Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane.
+- **Enclavar una alarma: set y reset, y cuál gana**: Mantenga una alarma después de que la falla desapareció, hasta que se reconozca. Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset.
+- **Arranque y parada seguros**: Mantenga el motor encendido tras soltar Start con un seal-in. Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo.
 
 
 ## Módulo 3: Temporizadores, flancos y contadores
 
 Fundamentos. Requiere el módulo: 2. Pistas: Simulación, Hardware.
 
-El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos.
+El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `edge-counter-pulses` Flancos y contador de pulsos | Disponible | ST | Simulación, Hardware | - | 15 | `motor-start-stop-safe` |
 | `timers-on-delay-off-delay` Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | ST | Simulación, Hardware | - | 15 | `motor-start-stop-safe` |
+| `edge-counter-pulses` Flancos y contador de pulsos | Disponible | ST | Simulación, Hardware | - | 15 | `timers-on-delay-off-delay` |
 | `counter-batch-fbd` Contadores en diagrama de bloques de función: contar piezas hasta un lote | Disponible | FBD | Simulación, Hardware | - | 20 | `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
-- **Flancos y contador de pulsos**: Cuente tres flancos ascendentes de PulseInput con un contador CTU. Resetee la cuenta y CountReached con Reset.
 - **Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF. Ignore una entrada que está en ON menos de un tiempo fijo, con TON.
+- **Flancos y contador de pulsos**: Cuente tres flancos ascendentes de PulseInput con un contador CTU. Resetee la cuenta y CountReached con Reset.
 - **Contadores en diagrama de bloques de función: contar piezas hasta un lote**: Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques. Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV.
 
 
@@ -114,7 +128,7 @@ Objetivos de las lecciones disponibles:
 
 Intermedio. Requiere el módulo: 3. Pistas: Simulación, Hardware.
 
-Las señales reales son números, no solo encendido y apagado. Los tipos, la aritmética, la comparación y el escalado analógico preparan para los procesos.
+Las señales reales son números, no solo encendido y apagado. Los tipos, la aritmética, la comparación y el escalado analógico preparan para los procesos que siguen.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -131,7 +145,7 @@ Objetivos de las lecciones disponibles:
 
 Intermedio. Requiere el módulo: 3. Pistas: Simulación, Hardware.
 
-Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en Structured Text y como pasos en diagrama funcional de secuencias.
+Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama de funciones secuenciales (SFC), como pasos.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -148,18 +162,18 @@ Objetivos de las lecciones disponibles:
 
 Intermedio. Requiere el módulo: 5. Pistas: Simulación, Hardware.
 
-Una orden no es un hecho: la planta debe confirmarla. La realimentación, las fallas y los enclavamientos enseñan a un programa a desconfiar de lo que pidió.
+Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya puede ejecutar una secuencia, la realimentación, las fallas y los enclavamientos le enseñan a desconfiar de lo que pidió.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
-| `tank-level-fault-reset` Nivel de tanque, fallas y reset | Disponible | ST | Simulación | tank-v1 | 25 | `pedestrian-crossing-states` |
 | `motor-plant-feedback` Comando, realimentación y velocidad | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
+| `tank-level-fault-reset` Nivel de tanque, fallas y reset | Disponible | ST | Simulación | tank-v1 | 25 | `motor-plant-feedback` |
 | `interlock-guard-permissive` Interbloqueos y permisivos: una protección que detiene el motor | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
 
 Objetivos de las lecciones disponibles:
 
-- **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla.
 - **Comando, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed.
+- **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla.
 - **Interbloqueos y permisivos: una protección que detiene el motor**: Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden. Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar.
 
 
@@ -167,7 +181,9 @@ Objetivos de las lecciones disponibles:
 
 Intermedio. Requiere el módulo: 4. Pistas: Simulación, Hardware.
 
-Los programas crecen. Las funciones, los bloques funcionales, las estructuras, los arreglos y las tareas los mantienen legibles y reutilizables. Las dos lecciones siguientes cubren bloques funcionales, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
+Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques de función, las estructuras, los arreglos y las tareas mantienen un programa legible y reutilizable.
+
+Las dos lecciones siguientes cubren bloques de función, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -184,7 +200,7 @@ Objetivos de las lecciones disponibles:
 
 Avanzado. Requiere el módulo: 6. Pistas: Simulación.
 
-Un programa vale lo que vale su prueba. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
+Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -203,7 +219,7 @@ Objetivos de las lecciones disponibles:
 
 Avanzado. Requiere el módulo: 7. Pistas: Simulación, Hardware.
 
-La misma lógica puede escribirse en cinco lenguajes. La lista de instrucciones completa el conjunto de lenguajes y muestra a qué se compilan los demás.
+La lista de instrucciones llega tarde, como una forma de leer código de bajo nivel y heredado. Completa el conjunto de lenguajes, y luego la misma lógica se escribe en los cinco.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -220,7 +236,7 @@ Objetivos de las lecciones disponibles:
 
 Avanzado. Requiere el módulo: 7. Pistas: Simulación, Hardware.
 
-Las máquinas se comunican entre sí. Los fundamentos de Modbus y MQTT se ejecutan contra extremos que Studio inicia en este equipo, así que la simulación no necesita red ni placa.
+Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan contra extremos que Studio inicia en este equipo, así que no se necesita red ni placa.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -239,7 +255,7 @@ Objetivos de las lecciones disponibles:
 
 Avanzado. Requiere el módulo: 8. Pistas: Simulación, Hardware.
 
-El curso termina con una máquina pequeña llevada de una descripción escrita a un programa probado, usando todo lo anterior.
+El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|

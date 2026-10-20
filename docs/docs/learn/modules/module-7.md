@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-7. Do not edit. >>> */}
 
+Programs grow. Once you work with data, functions, function blocks, structures, arrays and tasks keep a program readable and reusable.
+
 - Level: Intermediate
 - Tracks: Simulation, Hardware
 - Requires module: [4](./module-4.md)

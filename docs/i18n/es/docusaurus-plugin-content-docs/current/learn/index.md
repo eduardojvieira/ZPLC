@@ -34,6 +34,38 @@ inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
 descripción completa de lo que hace Aprender y de lo que guarda está en
 [Banco de trabajo de Studio](../ide/features.md#learn).
 
+## Su primer parpadeo, sin hardware
+
+La primera lección termina con una salida que parpadea en simulación, en menos de
+diez minutos desde el primer inicio. Cuando **Comenzar el curso** la haya abierto,
+elija **Compilación** y luego **Compilar** en la barra de herramientas, después
+**Conectar** y **Ejecutar**: el programa se ejecuta en el simulador de su equipo.
+**Ejecutar** permanece desactivado hasta que el programa se compila. Abra la
+pestaña **Observación**: el [panel **E/S en vivo**](./faceplate.md) enumera las salidas del programa, y la
+lámpara de la lección se enciende y se apaga.
+
+Toda lección de nivel Fundamentos o Intermedio se puede completar de esta manera,
+sin placa; el índice de lecciones rechaza una que no se pueda. Un recorrido del
+entorno de desarrollo (el recorrido 57) sigue exactamente estos controles visibles
+desde un perfil nuevo y ve cambiar la salida. Todavía no se mide cuánto tarda una
+persona: eso requiere una prueba cronometrada con usuarios que lo usan por
+primera vez.
+
+## Sin conexión
+
+La pista de simulación no necesita red. Eso incluye el módulo 10: sus bloques de
+Modbus y MQTT se comunican con un servidor y un broker que la simulación inicia en
+su equipo y detiene con ella. La ventana no carga ninguna fuente, script ni hoja de
+estilos de otro equipo, y la única solicitud que Studio puede hacer por su cuenta,
+la búsqueda de una versión más nueva, está desactivada hasta que usted la active en
+las preferencias.
+
+La evidencia es un recorrido del entorno de desarrollo en Linux (el recorrido 58),
+que inicia, ejecuta y comprueba la primera lección y una lección de Comunicaciones
+mientras se rechaza toda solicitud a otro equipo, y una prueba de la compilación de
+producción que no encuentra en ella ninguna carga remota. No se ejecutó un paquete
+instalado sin red.
+
 ## Abra un proyecto de ejemplo
 
 Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, y cada uno muestra su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta

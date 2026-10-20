@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-8. Do not edit. >>> */}
 
+Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
+
 - Nivel: Avanzado
 - Rutas: Simulación
 - Requiere el módulo: [6](./module-6.md)

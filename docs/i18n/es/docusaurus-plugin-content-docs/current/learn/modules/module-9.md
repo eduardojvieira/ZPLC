@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-9. Do not edit. >>> */}
 
+La lista de instrucciones llega tarde, como una forma de leer código de bajo nivel y heredado. Completa el conjunto de lenguajes, y luego la misma lógica se escribe en los cinco.
+
 - Nivel: Avanzado
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [7](./module-7.md)
