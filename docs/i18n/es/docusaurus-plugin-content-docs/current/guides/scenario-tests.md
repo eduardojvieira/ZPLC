@@ -79,7 +79,7 @@ arriba, de modo que es un escenario que pasa.
 
 ## 3. Ejecútelo
 
-**En ZPLC**, abra la pestaña **Pruebas** y presione **Ejecutar escenarios en el host**. Cada
+**En ZPLC**, abra la pestaña **Pruebas** y pulse **Ejecutar escenarios en el host**. Cada
 escenario aparece como aprobado o fallido, con sus aserciones y el instante de cada
 una. Una aserción fallida muestra el instante, el valor esperado y el valor
 observado.

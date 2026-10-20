@@ -1,21 +1,21 @@
 ---
 slug: /reference/runtime-api
 id: runtime-api
-title: API del Runtime
-sidebar_label: API del Runtime
-description: Referencia generada para los headers públicos del runtime ZPLC en ZPLC 2.0.
+title: API del runtime
+sidebar_label: API del runtime
+description: Referencia generada de los encabezados públicos del runtime de ZPLC 2.0.
 tags: [reference, runtime, generated]
 ---
 
-# API del Runtime
+# API del runtime
 
 :::note
-Esta página se genera a partir de los headers públicos en C bajo `firmware/lib/zplc_core/include/`. Edite los headers o vuelva a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente.
+Esta página se genera a partir de los encabezados públicos en C que están en `firmware/lib/zplc_core/include/`. Edite los encabezados o vuelva a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente.
 :::
 
-El texto envolvente está localizado al español, mientras que los nombres de API, las firmas y las descripciones derivadas del código se mantienen ancladas a los headers en inglés para evitar drift documental.
+El texto envolvente está localizado al español, mientras que los nombres de API, las firmas y las descripciones derivadas del código se mantienen anclados a los encabezados en inglés para que la documentación no se aparte del código.
 
-## Headers fuente
+## Encabezados fuente
 
 - `firmware/lib/zplc_core/include/zplc_bytes.h`
 - `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
@@ -58,7 +58,7 @@ Fuente: `firmware/lib/zplc_core/include/zplc_bytes.h`
 static inline uint16_t zplc_get_u16_le(const uint8_t *p);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -72,7 +72,7 @@ static inline uint16_t zplc_get_u16_le(const uint8_t *p);
 static inline uint32_t zplc_get_u32_le(const uint8_t *p);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -86,7 +86,7 @@ static inline uint32_t zplc_get_u32_le(const uint8_t *p);
 static inline void zplc_put_u16_le(uint8_t *p, uint16_t value);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -101,7 +101,7 @@ static inline void zplc_put_u16_le(uint8_t *p, uint16_t value);
 static inline void zplc_put_u32_le(uint8_t *p, uint32_t value);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -245,7 +245,7 @@ Fuente: `firmware/lib/zplc_core/include/zplc_comm_req.h`
 static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool, size_t index);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -260,7 +260,7 @@ static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool
 static inline void zplc_comm_req_lock(const zplc_comm_req_pool_t *pool);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -274,7 +274,7 @@ static inline void zplc_comm_req_lock(const zplc_comm_req_pool_t *pool);
 static inline void zplc_comm_req_unlock(const zplc_comm_req_pool_t *pool);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2082,7 +2082,7 @@ zplc_exchange_write_begin() reserves room for @p records writes of @p bytes byte
 int zplc_exchange_write_add(uint16_t addr, const uint8_t *bytes, uint16_t size);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2098,7 +2098,7 @@ int zplc_exchange_write_add(uint16_t addr, const uint8_t *bytes, uint16_t size);
 void zplc_exchange_write_end(void);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2146,7 +2146,7 @@ Between lock and unlock no scan publishes, so every read is of the same scan. Do
 int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2162,7 +2162,7 @@ int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size);
 void zplc_exchange_read_unlock(void);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2208,7 +2208,7 @@ void zplc_exchange_publish(void);
 void zplc_exchange_get_stats(zplc_exchange_stats_t *stats);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2947,7 +2947,7 @@ Fuente: `firmware/lib/zplc_core/include/zplc_hal_posix.h`
 void zplc_hal_posix_set_tick_override(uint32_t tick_ms);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -2961,7 +2961,7 @@ void zplc_hal_posix_set_tick_override(uint32_t tick_ms);
 void zplc_hal_posix_clear_tick_override(void);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -3063,7 +3063,7 @@ void zplc_io_trace_clear(zplc_io_trace_t *trace);
 void zplc_io_trace_get_status(const zplc_io_trace_t *trace, zplc_io_trace_status_t *status);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5002,7 +5002,7 @@ int zplc_sched_get_task_count(void);
 int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5019,7 +5019,7 @@ int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot);
 int zplc_sched_debug_add_breakpoint(int task_id, uint16_t pc);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5036,7 +5036,7 @@ int zplc_sched_debug_add_breakpoint(int task_id, uint16_t pc);
 int zplc_sched_debug_remove_breakpoint(int task_id, uint16_t pc);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5053,7 +5053,7 @@ int zplc_sched_debug_remove_breakpoint(int task_id, uint16_t pc);
 int zplc_sched_debug_clear_breakpoints(int task_id);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5135,7 +5135,7 @@ Fuente: `firmware/lib/zplc_core/include/zplc_sha256.h`
 void zplc_sha256_init(zplc_sha256_t *context);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5149,7 +5149,7 @@ void zplc_sha256_init(zplc_sha256_t *context);
 void zplc_sha256_update(zplc_sha256_t *context, const uint8_t *data, size_t length);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5180,7 +5180,7 @@ void zplc_sha256_final(zplc_sha256_t *context, uint8_t digest[ZPLC_SHA256_DIGEST
 void zplc_sha256(const uint8_t *data, size_t length, uint8_t digest[ZPLC_SHA256_DIGEST_BYTES]);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5196,7 +5196,7 @@ void zplc_sha256(const uint8_t *data, size_t length, uint8_t digest[ZPLC_SHA256_
 void zplc_hmac_sha256_init(zplc_hmac_sha256_t *context, const uint8_t *key, size_t key_length);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5212,7 +5212,7 @@ void zplc_hmac_sha256_init(zplc_hmac_sha256_t *context, const uint8_t *key, size
 void zplc_hmac_sha256_update(zplc_hmac_sha256_t *context, const uint8_t *data, size_t length);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5243,7 +5243,7 @@ void zplc_hmac_sha256_final(zplc_hmac_sha256_t *context, uint8_t mac[ZPLC_SHA256
 void zplc_hmac_sha256(const uint8_t *key, size_t key_length, const uint8_t *data, size_t length, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5315,7 +5315,7 @@ Fuente: `firmware/lib/zplc_core/include/zplc_sha512.h`
 void zplc_sha512_init(zplc_sha512_t *context);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 
@@ -5329,7 +5329,7 @@ void zplc_sha512_init(zplc_sha512_t *context);
 void zplc_sha512_update(zplc_sha512_t *context, const uint8_t *data, size_t length);
 ```
 
-**Resumen fuente:** No se encontró un resumen en el comentario del header.
+**Resumen fuente:** No se encontró un resumen en el comentario del encabezado.
 
 **Parámetros**
 

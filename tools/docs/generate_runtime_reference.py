@@ -595,7 +595,7 @@ def render_function_block(function: FunctionDoc, spanish: bool) -> list[str]:
     no_summary = (
         "No summary found in the header comment."
         if not spanish
-        else "No se encontró un resumen en el comentario del header."
+        else "No se encontró un resumen en el comentario del encabezado."
     )
 
     lines = [f"#### `{function.name}`", "", "```c", function.signature, "```", ""]
@@ -626,23 +626,23 @@ def render_contract_tables(spanish: bool) -> str:
 
 
 def render_runtime_reference(headers: list[HeaderDoc], spanish: bool) -> str:
-    title = "Runtime API" if not spanish else "API del Runtime"
+    title = "Runtime API" if not spanish else "API del runtime"
     description = (
         "Generated reference for the public ZPLC runtime headers in ZPLC 2.0."
         if not spanish
-        else "Referencia generada para los headers públicos del runtime ZPLC en ZPLC 2.0."
+        else "Referencia generada de los encabezados públicos del runtime de ZPLC 2.0."
     )
     intro = (
         "This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually."
         if not spanish
-        else "Esta página se genera a partir de los headers públicos en C bajo `firmware/lib/zplc_core/include/`. Edite los headers o vuelva a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente."
+        else "Esta página se genera a partir de los encabezados públicos en C que están en `firmware/lib/zplc_core/include/`. Edite los encabezados o vuelva a ejecutar `python3 tools/docs/generate_runtime_reference.py` en lugar de editar este archivo manualmente."
     )
     parity_note = (
         "The Spanish wrapper text is localized, while API names, signatures, and source-derived descriptions remain anchored to the English headers to avoid documentation drift."
         if not spanish
-        else "El texto envolvente está localizado al español, mientras que los nombres de API, las firmas y las descripciones derivadas del código se mantienen ancladas a los headers en inglés para evitar drift documental."
+        else "El texto envolvente está localizado al español, mientras que los nombres de API, las firmas y las descripciones derivadas del código se mantienen anclados a los encabezados en inglés para que la documentación no se aparte del código."
     )
-    headers_title = "Source headers" if not spanish else "Headers fuente"
+    headers_title = "Source headers" if not spanish else "Encabezados fuente"
     functions_title = "Functions" if not spanish else "Funciones"
     types_title = "Types" if not spanish else "Tipos"
     macros_title = "Constants and macros" if not spanish else "Constantes y macros"

@@ -294,8 +294,8 @@ config ZPLC_HIL_IMAGE
       off until that record exists, with the timeouts and the STOP, pause and
       fault policies of that entry (firmware/app/CMakeLists.txt checks them).
       It also turns RETAIN persistence on (ZPLC_RETAIN_PERSIST), which the
-      power cycle step of the record measures (RT-025) and which the shipped
-      profiles keep off until that record exists.
+      power cycle step of the record measures (RT-025); the shipped profiles
+      set it too.
       It says what it is: `zplc version` prints a line for it and its build
       options list HIL_IMAGE=y (`zplc sys build`). It is for the record run
       only and is never a release image. Build it with
@@ -428,13 +428,14 @@ config ZPLC_RETAIN_PERSIST
     bool "Persist the RETAIN region across power cycles"
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
-      Off by default: the flash write path has been exercised on native_sim and
-      QEMU only. The records have a partition of their own on every board
-      (zplc_nvs_partition, or storage_partition where no file system is built;
+      Off unless a board file turns it on, and the profile of every shipped
+      board does (RT-025: RETAIN survives a power cycle). The flash write path
+      has been exercised on native_sim and QEMU only. The records have a
+      partition of their own on every board (zplc_nvs_partition, or
+      storage_partition where no file system is built;
       tools/hil/check_storage_partitions.py checks every build), but no board
-      has been measured. Turn it on for a board once that board has passed its
-      hardware record (HIL-010). The HIL image (ZPLC_HIL_IMAGE), which that
-      record is made on, turns it on.
+      has been measured: the power cycle step of HIL-010 does that, on the HIL
+      image (ZPLC_HIL_IMAGE).
 
       Restores the RETAIN region when a program is loaded or restored at boot,
       before the first scan, and stores it on STOP and periodically while the

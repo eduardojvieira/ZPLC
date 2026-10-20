@@ -74,7 +74,7 @@ describe('UX-019 deploy comparison of the project and the device', () => {
     const declared = compareDeployFacts({ ...facts, declaredSafe: [{ address: '%QX0.1', value: true }, { address: '%QX0.3', value: false }] }, t);
     expect(declared.safeState).toContain('Declared by the project: %QX0.1: on, %QX0.3: off.');
     expect(declared.safeState).toContain('Every other output is off.');
-    expect(declared.scope).toBe('This is checked by host and simulator tests. Studio does not measure the pins of this board.');
+    expect(declared.scope).toBe('This is checked by host and simulator tests. The ZPLC application does not measure the pins of this board.');
   });
 
   it('UX-019 says how the program travels, and that the older text shell does not read it back (COM-028)', () => {

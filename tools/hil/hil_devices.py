@@ -18,6 +18,7 @@ import os
 import queue
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 from pathlib import Path
@@ -46,7 +47,7 @@ class SerialTransport:
         try:
             import serial  # noqa: PLC0415
         except ImportError as error:
-            raise DeviceError("pyserial is not installed: pip install pyserial") from error
+            raise DeviceError(f"pyserial is not installed for {sys.executable}: run this script with the Python of the firmware workspace (${{ZPLC_FW_WS:-~/zplc-zephyr-ws}}/.venv/bin/python3), which has it, or pip install pyserial") from error
         self.port = port
         self._serial = serial.Serial(port, baud, timeout=timeout)
 

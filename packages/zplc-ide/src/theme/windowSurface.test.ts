@@ -26,7 +26,7 @@ describe('window surface', () => {
   });
 
   it('titles the window with the product name, the same one the page declares', () => {
-    expect(PRODUCT_NAME).toBe('ZPLC Studio');
+    expect(PRODUCT_NAME).toBe('ZPLC');
     expect(main).toMatch(/import \{ PRODUCT_NAME as APP_WINDOW_TITLE \} from '\.\/productName\.js'/);
     expect(/<title>([^<]*)<\/title>/.exec(html)?.[1]).toBe(PRODUCT_NAME);
     expect(main).toMatch(/title:\s*APP_WINDOW_TITLE/);

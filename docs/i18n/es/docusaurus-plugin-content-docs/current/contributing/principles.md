@@ -22,7 +22,7 @@ reportar.
 ### 1. El núcleo es C99 portable y pasa por la HAL
 
 El núcleo del runtime, en `firmware/lib/zplc_core/src/core/`, es ANSI C99 estricto
-y nunca llama a un driver, a un registro ni a una función del sistema operativo.
+y nunca llama a un controlador, a un registro ni a una función del sistema operativo.
 Todo pasa por las funciones `zplc_hal_*`. Las herramientas de escritorio y el
 front end del lenguaje siguen la misma regla: ninguno llega al hardware esquivando
 la HAL. El núcleo se compila con `-std=c99 -pedantic -Werror`, y el código de
@@ -34,7 +34,7 @@ Antes de cambiar un comportamiento riesgoso, agregue o refuerce una prueba
 focalizada y luego ejecute las verificaciones de host, de destino o de banco que
 correspondan. Una prueba afirma comportamiento: ejecuta un programa en la VM o
 renderiza una pantalla. No lee texto fuente. CI ejecuta cada capa, y la lista de
-fallos esperados mantiene visibles los fallos conocidos en lugar de ocultarlos.
+fallas esperadas mantiene visibles las fallas conocidas en lugar de ocultarlas.
 
 ### 3. Todo lo que cruza un límite no es de confianza
 
@@ -66,17 +66,17 @@ hay shell genérico ni acceso genérico al sistema de archivos.
 ### 7. Las afirmaciones se gradúan por evidencia
 
 Los resultados de host, QEMU, compilación para el destino, banco
-(hardware-in-the-loop) y manuales son niveles distintos, y un nivel inferior
+(hardware en el lazo) y manuales son niveles distintos, y un nivel inferior
 nunca prueba uno superior. Indique qué nivel respalda cada afirmación en la
 documentación, en un mensaje de commit y en un pull request. Véase
-[Soporte de hardware](../reference/capabilities-evidence.md).
+[Compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 ### 8. Inglés y español avanzan juntos, y una dependencia necesita una razón
 
 La documentación pública existe en ambos idiomas y cambia en ambos a la vez. Una
 dependencia nueva necesita una necesidad concreta y una justificación
 arquitectónica registrada.
-Hasta ahora solo se revisaron las páginas en español de Aprender y del entorno de trabajo de ZPLC; ninguna persona con dominio del español ha leído todavía las demás páginas en español.
+Las páginas en español se revisaron contra el texto en inglés en la remediación de la versión 2.0, en el registro de la decisión D-10 (2026-10-20). Las páginas generadas citan el texto fuente en inglés por diseño.
 
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 
@@ -92,5 +92,5 @@ bruto ni ejecutar un shell. ZPLC funciona por completo sin IA.
   muestra las capas a las que se refieren.
 - **Al revisar uno,** la plantilla de pull request hace las preguntas que estas
   reglas plantean.
-- **Cuando una regla estorba,** abra un issue que nombre la regla y el motivo. Un
+- **Cuando una regla estorba,** abra una incidencia que nombre la regla y el motivo. Un
   cambio a la constitución es un pull request propio.

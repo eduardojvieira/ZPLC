@@ -1,19 +1,19 @@
 ---
-title: "Referencia de Texto Estructurado (ST)"
-sidebar_label: "Texto Estructurado"
-description: "Qué funciona de Texto Estructurado, según las pruebas de conformidad ejecutadas."
+title: "Referencia de texto estructurado (ST)"
+sidebar_label: "Texto estructurado"
+description: "Qué funciona del texto estructurado, según las pruebas de conformidad ejecutadas."
 tags: [reference, generated]
 ---
 
-# Referencia de Texto Estructurado (ST)
+# Referencia de texto estructurado (ST)
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-st. Do not edit. >>> */}
 
-El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallos conocidos. CI ejecuta toda la batería en cada cambio. Esta página cubre 87 elementos: 75 funcionan, 11 se rechazan a propósito y 1 aún no están probados.
+El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. Esta página cubre 87 elementos: 75 funcionan, 11 se rechazan a propósito y 1 aún no están probados.
 
 ## Editor
 
-Texto Estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.
+El texto estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.
 
 Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
@@ -148,7 +148,7 @@ Aquí se publica una captura de pantalla real de este editor, tomada de forma au
 
 ## Direccionamiento de E/S
 
-Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: Lista de Instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
+Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
 
 | Dirección | Contiene | Área | Desplazamiento en bytes | Base de la región |
 | --- | --- | --- | --- | --- |
@@ -186,7 +186,7 @@ Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o a
 
 ## Páginas relacionadas
 
-- [Guía de Texto Estructurado](../languages/st.md)
+- [Guía de texto estructurado](../languages/st.md)
 - [Referencia de funciones](./functions.md)
 - [Referencia de bloques de función](./function-blocks.md)
 

@@ -16,7 +16,7 @@ bloques de función. Esta página cubre ambos con el contrato que está document
 hoy.
 
 :::warning Estado de esta página
-Verificado solo en el host y en `native_sim`: el entramado y el mapeo del servidor,
+Verificado solo en el host y en `native_sim`: el entramado y la asignación del servidor,
 los manejadores de los bloques de función contra sustitutos y el cliente Modbus TCP
 contra un servidor escrito para la prueba sobre un socket de loopback. No se ha
 registrado ningún intercambio Modbus con un dispositivo real, un cable serie ni un
@@ -27,7 +27,7 @@ maestro de terceros, y el cliente RTU solo se comprobó en sus parámetros de in
 
 - Una placa con la interfaz que quiere: Modbus TCP necesita una interfaz de red
   (Wi-Fi o Ethernet), y Modbus RTU necesita una interfaz serie que ofrezca el perfil
-  de la placa. [Soporte de hardware](../reference/capabilities-evidence.md) enumera
+  de la placa. [Compatibilidad de hardware](../reference/capabilities-evidence.md) enumera
   las placas y su clase de red.
 - Un proyecto, en ZPLC o a mano. El simulador de ZPLC inicia el runtime nativo sin
   los bloques de comunicación, así que allí un bloque Modbus responde `STATUS` 3: el
@@ -175,7 +175,7 @@ El bloque sigue el único handshake de los doce bloques de comunicación
 ([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
 
 - Un flanco ascendente de `EN` hace una solicitud. Mientras `EN` sigue en TRUE después
-  del resultado, el resultado se mantiene y no se repite nada; deje caer `EN` durante un
+  del resultado, el resultado se mantiene y no se repite nada; deje que `EN` baje durante un
   ciclo para pedir de nuevo.
 - Una solicitud en curso se completa aunque `EN` caiga, y un flanco ascendente mientras
   `BUSY` es TRUE no inicia nada.
@@ -196,12 +196,12 @@ los extremos.
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Entramado y mapeo del servidor de cada código de función, longitudes erróneas, rangos sin mapear | Pruebas que ponen tramas frente al servidor | Host y `native_sim` |
+| Entramado y asignación del servidor de cada código de función, longitudes erróneas, rangos sin asignar | Pruebas que ponen tramas frente al servidor | Host y `native_sim` |
 | Una escritura de un maestro no puede cambiar el estado de ejecución, los forzados ni el programa cargado | Comprobación a nivel de enlace y una prueba de autoridad | Host y `native_sim` |
 | Una variable forzada conserva su valor ante una escritura de un maestro | Una prueba con un intercambio que registra | Host y `native_sim` |
 | Las cuatro áreas son cuatro espacios de direcciones, y se sirve todo WORK y RETAIN | Una prueba de firmware que carga un programa con las etiquetas de las cuatro áreas, los bordes de WORK y RETAIN y la dirección 65535, y las lee y escribe por las costuras en que terminan ambos servidores | `native_sim` |
 | Manejadores de los bloques de función: pines, handshake, códigos de estado, reinicio con una solicitud en curso | Pruebas con un cliente sustituto | Host y `native_sim` |
-| El cliente Modbus TCP: éxito, una respuesta en trozos, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con la solicitud en curso | Su código de transacción es un solo archivo compilado en el controlador y en el runtime de simulación, y se ejecuta contra un servidor escrito para la prueba en loopback en ambos | `native_sim` y host |
+| El cliente Modbus TCP: éxito, una respuesta en fragmentos, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con la solicitud en curso | Su código de transacción es un solo archivo compilado en el controlador y en el runtime de simulación, y se ejecuta contra un servidor escrito para la prueba en loopback en ambos | `native_sim` y host |
 | El cliente Modbus RTU | Solo se comprueban sus parámetros de interfaz (el tiempo de espera va en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | `native_sim` |
 | Un intercambio con un dispositivo real, un cable serie, un maestro de terceros | No probado | Ninguno |
 | Tiempos de una solicitud en una línea real, comportamiento ante errores de línea | No probado | Ninguno |

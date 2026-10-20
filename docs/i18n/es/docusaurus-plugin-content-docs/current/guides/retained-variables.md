@@ -47,8 +47,8 @@ cargar el mismo programa:
 
 1. Compile el proyecto y ejecútelo en el simulador, como en
    [Blink sin hardware](../tutorials/blink-without-hardware.md).
-2. Presione **Detener**. La región se guarda con los valores del último ciclo completo.
-3. Presione **Ejecutar** de nuevo, o cierre y vuelva a abrir ZPLC y ejecute el mismo
+2. Pulse **Detener**. La región se guarda con los valores del último ciclo completo.
+3. Pulse **Ejecutar** de nuevo, o cierre y vuelva a abrir ZPLC y ejecute el mismo
    programa. El contador continúa desde el valor que tenía.
 
 El simulador guarda su almacén en la carpeta `.zplc` de su directorio personal, salvo
@@ -66,7 +66,7 @@ detención y un apagado siguen guardando.
 | Una recompilación del programa, incluso una que solo mueve código | Se descartan: el programa tiene otra identidad |
 | Un comando de reinicio | Se descartan: es un reinicio en frío |
 | Se carga otro programa | Se descartan: el registro guardado pertenece al otro programa |
-| Un fallo | La detención de un runtime con fallo no guarda nada |
+| Una falla | La detención de un runtime con falla no guarda nada |
 
 El estado del runtime nativo indica cuál de estos ocurrió, con un `reason` como
 `restored`, `none`, `identity_mismatch` o `layout_mismatch`: el campo `retain` del
@@ -74,28 +74,28 @@ estado de sesión, y `zplc sched status` en una placa.
 
 ## 4. En una placa
 
-En el firmware la región retentiva se inicializa en cada arranque salvo que la
-compilación defina `CONFIG_ZPLC_RETAIN_PERSIST`. Está desactivada por defecto,
-porque la ruta de escritura se probó en `native_sim` y ninguna placa se ha medido:
-una escritura en flash puede detener la búsqueda de instrucciones en un componente
-que ejecuta código desde la misma flash, y el número de borrados por día está
-acotado por el presupuesto de flash de la placa.
+El perfil de cada placa distribuida establece `CONFIG_ZPLC_RETAIN_PERSIST=y`, de modo
+que la región retentiva se restaura tras un ciclo de energía. La ruta de escritura se
+probó en `native_sim` y ninguna placa se ha medido: una escritura en flash puede
+detener la búsqueda de instrucciones en un componente que ejecuta código desde la
+misma flash, y el número de borrados por día está acotado por el presupuesto de flash
+de la placa. Una compilación sin la opción inicializa la región en cada arranque.
 
 ```ini
-# firmware/app/boards/<board>.conf, once the board has a hardware record
+# firmware/app/boards/<board>.conf (establecida en cada placa distribuida)
 CONFIG_ZPLC_RETAIN_PERSIST=y
 ```
 
 [Persistencia y memoria retentiva](../runtime/persistence.md#presupuesto-de-desgaste-de-flash-por-placa)
-tiene el presupuesto de desgaste de cada placa. La Nucleo-H743ZI no puede montar su
-almacenamiento, por lo que su región retentiva se inicializa en cada arranque y el
-estado dice `io_error`.
+tiene el presupuesto de desgaste de cada placa. La Nucleo-H743ZI guarda sus registros
+en ZMS, que solo `native_sim` ha ejecutado; si el backend falla en una placa, la región
+se inicializa en cada arranque y el estado dice `io_error`.
 
 ## Qué está verificado y qué no
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallos inyectados en cada paso | Host y `native_sim` |
+| El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallas inyectadas en cada paso | Host y `native_sim` |
 | Los valores sobreviven a una detención y a un arranque del runtime nativo | Prueba de la sesión nativa | Host |
 | Un corte de energía en una placa | No probado | Ninguno |
 | Cuánto retrasa una escritura en flash a un ciclo | No medido | Ninguno |

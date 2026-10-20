@@ -1,9 +1,9 @@
 // The Homebrew cask and the AUR package of a release, rendered from the checksum file that the release published (REL-004,
 // REL-014):
 //
-//   bun tools/ci/release/render-channels.ts --version 2.0.0-rc.4 --sums SHA256SUMS --cask Casks/zplc-ide.rb --pkgbuild PKGBUILD
+//   bun tools/ci/release/render-channels.ts --version 2.0.0-rc.4 --sums SHA256SUMS --cask Casks/zplc.rb --pkgbuild PKGBUILD
 //
-// The templates are packaging/homebrew/zplc-ide.rb.in and packaging/aur/PKGBUILD.in. Every file name that a template needs
+// The templates are packaging/homebrew/zplc.rb.in and packaging/aur/PKGBUILD.in. Every file name that a template needs
 // is the one that installerName() gives, and every checksum is read from the line of that file in SHA256SUMS: a release
 // that lacks a file, or lists it twice, renders nothing.
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ import { installerName } from './verify-installers';
 export const REPOSITORY = 'eduardojvieira/ZPLC';
 /** The tap is github.com/eduardojvieira/homebrew-zplc (the owner creates it, OA-10); brew spells it without `homebrew-`. */
 export const TAP = 'eduardojvieira/zplc';
-export const CASK_TOKEN = 'zplc-ide';
+export const CASK_TOKEN = 'zplc';
 /** The one fully qualified command of the install page: it works before and after the tap has been added. */
 export const INSTALL_COMMAND = `brew install --cask ${TAP}/${CASK_TOKEN}`;
 
@@ -77,6 +77,6 @@ if (import.meta.main) {
     process.exit(2);
   }
   const sums = parseSums(readFileSync(values.sums, 'utf8'));
-  if (values.cask) writeFileSync(values.cask, renderCask(readFileSync(join(ROOT, 'packaging/homebrew/zplc-ide.rb.in'), 'utf8'), values.version, sums));
+  if (values.cask) writeFileSync(values.cask, renderCask(readFileSync(join(ROOT, 'packaging/homebrew/zplc.rb.in'), 'utf8'), values.version, sums));
   if (values.pkgbuild) writeFileSync(values.pkgbuild, renderPkgbuild(readFileSync(join(ROOT, 'packaging/aur/PKGBUILD.in'), 'utf8'), values.version, sums, values['base-url']));
 }

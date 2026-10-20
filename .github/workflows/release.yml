@@ -442,7 +442,7 @@ jobs:
           app="$install_dir/$(basename "${apps[0]}")"
           ditto "${apps[0]}" "$app"
           codesign --verify --deep --strict "$app"
-          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc" bun run smoke:desktop-packaged
           bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${images[0]}"
 
       - name: Unpack the ZIP and launch the application
@@ -461,7 +461,7 @@ jobs:
           apps=("$target"/*.app)
           [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the archive, found ${#apps[@]}"; exit 1; }
           codesign --verify --deep --strict "${apps[0]}"
-          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc-ide" bun run smoke:desktop-packaged
+          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc" bun run smoke:desktop-packaged
           bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${archives[0]}"
 
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
@@ -603,7 +603,7 @@ jobs:
           $target = Join-Path $env:RUNNER_TEMP 'zplc-installed'
           $install = Start-Process -FilePath $setup[0].FullName -ArgumentList '/S', "/D=$target" -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "The silent install exited with $($install.ExitCode)" }
-          $executable = Join-Path $target 'zplc-ide.exe'
+          $executable = Join-Path $target 'zplc.exe'
           if (-not (Test-Path $executable)) { throw "The installer left no $executable" }
           $env:ZPLC_PACKAGED_EXECUTABLE = $executable
           bun run smoke:desktop-packaged

@@ -36,11 +36,11 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 | Capa | Comando | Tiempo típico | Qué demuestra un resultado correcto |
 |---|---|---|---|
 | Preparación | `bun run setup` | unos 10 s | Dependencias instaladas, compilador construido, runtime nativo construido |
-| Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
-| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
+| Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizadores de direcciones y de comportamiento indefinido |
+| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y toda falla es una de los listados |
 | Aplicación, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de la aplicación y los casos de conformidad se comportan como está listado |
 | Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y la aplicación compila |
-| Estructura de la aplicación | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del store importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
+| Estructura de la aplicación | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del almacén importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
 | Análisis estático de C | `bun run lint:c` | unos 15 s | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa |
 | Fuentes de las pruebas | `bun run check:test-sources` | menos de 1 s | Ninguna prueba lee el texto del código del producto ni compara el ensamblador que emitió el compilador, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json` |
 | Contrato binario | `bun run contract:check` | unos 1 s | Los archivos generados coinciden con `contract.json` |
@@ -60,7 +60,7 @@ explica qué muestra cada modo del firmware y qué no.
 
 | Área | Práctica requerida |
 |---|---|
-| Runtime y hardware | Conserve los límites C99/HAL, los fallos safe/off y la recuperación. |
+| Runtime y hardware | Conserve los límites C99/HAL, las fallas hacia el estado seguro (apagado) y la recuperación. |
 | Fronteras de confianza | Valide bytecode, IPC, rutas y entrada externa antes de modificar estado. |
 | Electron | Mantenga el renderer sin privilegios y el IPC estrecho y validado. |
 | Evidencia | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales. |
@@ -78,15 +78,15 @@ aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, l
 el almacén de progreso y el recurso de curso de MCP leen un índice generado a partir de ellos, y CI
 falla ante una lista de identificadores escrita a mano (LRN-028).
 
-1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un starter que
+1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un proyecto inicial que
    compila y falla el escenario, y una solución que lo pasa.
 2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de abajo.
 3. Ejecute el generador y luego el CI de lecciones.
 
 | Archivo | Qué contiene |
 |---|---|
-| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos starter y solución, y el escenario de referencia con su hash de contenido. |
-| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del starter para que el alumno lo ejecute desde Tests; CI falla cuando la copia difiere. |
+| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos inicial y solución, y el escenario de referencia con su hash de contenido. |
+| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del proyecto inicial para que el alumno lo ejecute desde Pruebas; CI falla cuando la copia difiere. |
 | `text.en.json`, `text.es.json` | El texto: título, resumen, alcance, objetivos, las seis etapas (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), dos niveles de pista y la falla a corregir. Ambos archivos deben tener la misma estructura. |
 | `checks.json` | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar. |
 
@@ -107,10 +107,10 @@ bun tools/ci/generate-lesson-index.ts --check          # lo que corre CI: el arc
 bun run --cwd packages/zplc-ide test src/learn         # CI de lecciones; defina ZPLC_NATIVE_SIM_BIN para las pruebas con runtime
 ```
 
-El CI de lecciones ejecuta cada paquete en ambos idiomas: el starter falla el escenario de
+El CI de lecciones ejecuta cada paquete en ambos idiomas: el proyecto inicial falla el escenario de
 referencia porque una aserción falla, la solución lo pasa, cada programa incorrecto sigue en rojo,
 cada tiempo y valor que cita el texto existe en el escenario, y cada archivo que cita existe en el
-starter (LRN-025).
+proyecto inicial (LRN-025).
 
 ## Ejemplos de código ejecutables
 
@@ -140,10 +140,10 @@ END_PROGRAM
 | Palabra | Significado |
 |---|---|
 | `runnable` | El ejemplo se compila con el compilador del repositorio. Un ejemplo que no compila hace fallar `bun run check:docs`: corrija el ejemplo o quite la palabra. |
-| `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último scan. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
-| `scans=N`, `scan_ms=N` | Cuántos scans ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
+| `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último ciclo. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
+| `scans=N`, `scan_ms=N` | Cuántos ciclos ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
 | `fragment` | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo. |
-| `language=il` | El ejemplo es Instruction List, escrito en un cerco `iecst`. |
+| `language=il` | El ejemplo es lista de instrucciones (IL), escrita en un cerco `iecst`. |
 
 La página en inglés y su gemela en español marcan los mismos ejemplos de la misma manera, con el
 mismo resultado. El ejemplo está escrito en código y por eso es igual en ambos idiomas. La
@@ -158,7 +158,7 @@ aplicación se comprueba de la misma manera, según lo que dice el cerco:
 | Cerco | Qué hace la comprobación |
 |---|---|
 | `json zplc-fragment` | Las claves se combinan con un proyecto mínimo para el simulador del host, se contrastan con `packages/zplc-ide/zplc.schema.json` (una clave que el esquema no nombra es un error) y se compilan. Un fragmento con `board=<id del IDE>` se combina con un proyecto para esa placa, y toda dirección de `io.inputs` y `io.outputs` debe ser un canal de la placa, salvo que figure en `io.virtual`. |
-| `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de Structured Text de la misma página, y toda expectativa debe pasar en el runtime nativo. |
+| `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de texto estructurado de la misma página, y toda expectativa debe pasar en el runtime nativo. |
 | `json zplc-board` | La entrada la comprueba el validador del manifiesto de placas (`firmware/zephyr/scripts/zplc_boards.py`) junto con el manifiesto de este repositorio: una clave que falta, una dirección errónea, un canal que las reglas rechazan o un nombre que ya tiene otra placa es un error. |
 | `![alt](/img/...)` | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado. |
 
@@ -178,9 +178,9 @@ Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-scr
 
 ## Cambiar el contrato binario
 
-Los opcodes, el layout del contenedor, los tamaños, los códigos de error y los
+Los opcodes, la disposición del contenedor, los tamaños, los códigos de error y los
 identificadores del formato `.zplc` se definen una sola vez, en
-`tools/contract/contract.json`. Las cabeceras C, las tablas TypeScript, las
+`tools/contract/contract.json`. Los encabezados de C, las tablas TypeScript, las
 herramientas Python y las [tablas de referencia](../reference/runtime-api.md) se
 generan de ese archivo, y CI falla cuando un archivo generado quedó viejo.
 
@@ -188,7 +188,7 @@ generan de ese archivo, y CI falla cuando un archivo generado quedó viejo.
 
 Hasta que el contrato se congele, cada cambio incrementa un **contador de
 borrador** (`abi.draftCounter`). El compilador y el ensamblador lo escriben en
-la palabra 28 de la cabecera de cada artefacto (el campo que antes era
+la palabra 28 del encabezado de cada artefacto (el campo que antes era
 reservado), bajo el CRC, y cada runtime e imagen de firmware informa el suyo.
 Un número distinto se rechaza y el rechazo muestra los dos:
 
@@ -196,10 +196,10 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 
 | Dónde | Qué pasa ante una diferencia |
 |---|---|
-| Loader (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los flags y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
+| Cargador (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los indicadores y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
 | Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. La aplicación ZPLC la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
 | Carga al firmware | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`. |
-| Carga a hardware desde la aplicación ZPLC | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
+| Carga a hardware desde la aplicación ZPLC | La verificación previa compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
 | CLI | `zplc-cli compile` indica el contador de lo que construyó. |
 
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware
@@ -215,15 +215,15 @@ entero de versión final se asigna y congela al cerrar la matriz de conformidad.
 1. Edite `tools/contract/contract.json` y suba `abi.draftCounter` en uno.
 2. Ejecute `python3 tools/contract/generate.py --record-draft "por qué cambió"`.
    Escribe todos los archivos generados y agrega el contador, la huella del
-   contrato y el motivo a `tools/contract/golden/draft-ledger.json`.
+   contrato y el motivo al registro `tools/contract/golden/draft-ledger.json`.
 3. Actualice los números que cambiaron en
    `tools/contract/golden/contract.golden.json` (`python3
    tools/contract/test_contract.py` nombra cada uno), reconstruya los artefactos
    versionados en el repositorio (`examples/*.zplc`, los fixtures `.hex`) y
-   corrija cualquier test que arme una cabecera a mano.
-4. Ejecute `bun run contract:check` y deje el motivo en el mensaje del commit.
+   corrija cualquier prueba que arme un encabezado a mano.
+4. Ejecute `bun run contract:check` y deje el motivo en el mensaje de la confirmación.
 
 `generate.py --check` falla cuando el contrato ya no coincide con la huella
-registrada para su propio contador, así que un cambio no se puede commitear
+registrada para su propio contador, así que un cambio no se puede confirmar
 bajo el número viejo. La prosa (cadenas `doc`, títulos de grupo) no forma parte
-de la huella. Nunca edite ni quite una entrada del ledger que ya se commiteó.
+de la huella. Nunca edite ni quite una entrada de `draft-ledger.json` que ya se confirmó.

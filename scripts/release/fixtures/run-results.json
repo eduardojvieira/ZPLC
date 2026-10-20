@@ -13,7 +13,7 @@
   ],
   "assets": [
     {
-      "name": "ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg",
+      "name": "zplc-2.0.0-rc.4-mac-arm64.dmg",
       "platform": "macos",
       "job": "build-macos (arm64)",
       "runUrl": "https://github.com/example/zplc/actions/runs/1/job/10",
@@ -21,7 +21,7 @@
       "checks": { "signature": "passed", "launch": "passed", "install": "not-run" }
     },
     {
-      "name": "ZPLC IDE-2.0.0-rc.4-win-x64-setup-unsigned.exe",
+      "name": "zplc-2.0.0-rc.4-win-x64-setup-unsigned.exe",
       "platform": "windows",
       "job": "build-windows (x64)",
       "runUrl": "https://github.com/example/zplc/actions/runs/1/job/11",
@@ -29,7 +29,7 @@
       "checks": { "signature": "not-run", "launch": "passed", "install": "not-run" }
     },
     {
-      "name": "ZPLC IDE-2.0.0-rc.4-linux-x64.deb",
+      "name": "zplc-2.0.0-rc.4-linux-x64.deb",
       "platform": "linux",
       "job": "build-linux (x64)",
       "runUrl": "https://github.com/example/zplc/actions/runs/1/job/12",
@@ -57,10 +57,10 @@
     { "channel": "SignPath Foundation signing of the setup and portable executables", "state": "submitted" }
   ],
   "changes": [
-    "Studio shows the compiler message, line and column of a build error.",
+    "ZPLC shows the compiler message, line and column of a build error.",
     "The CLI and the MCP server are published as standalone executables."
   ],
   "knownIssues": [
-    "Studio cannot open a project folder whose path holds a newline."
+    "ZPLC cannot open a project folder whose path holds a newline."
   ]
 }

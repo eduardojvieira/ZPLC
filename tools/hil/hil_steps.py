@@ -38,6 +38,8 @@ JITTER_S = 600  # HIL-010: at least ten minutes
 JITTER_SAMPLE_S = 30
 JITTER_PERIOD_TOLERANCE = 0.2  # every scan period, shortest and longest, as a fraction of the interval (the bench's bound)
 ANALOG_POINTS = ((0.0, 0.05), (0.5, 0.10), (1.0, 0.05))  # (fraction of travel, tolerance as a fraction of full scale)
+ANALOG_SUPPLY_V = 3.3  # the bench wires the potentiometer between 3V3 and GND: its top is the supply, not the converter's full scale
+ANALOG_SATURATED_TOLERANCE = 0.07  # a converter driven past its range stops somewhere near 2.9 V of 3.1 V (0.935 of full scale)
 DEPLOY_CUTS = 20
 ATOMIC_WRITES = 100
 RTU_VALUE = 0x5A17
@@ -260,6 +262,19 @@ class ShellLink:
         self.request("SESSION_OPEN", bytes(33) + b"zplc-hil-chain".ljust(16, b"\0"))
 
 
+def analog_expectation(channel: dict, fraction: float, tolerance: float) -> tuple[float, float]:
+    """The reading, as a fraction of the channel's full scale, with the potentiometer at `fraction` of its travel.
+
+    The wiper voltage is `fraction` of the 3.3 V supply. A channel whose range ends below that (the ESP32-S3 spans 0 to
+    3.1 V, raw_max 2885) reads 3.3 V as full scale, so its top point saturates and gets a wider tolerance.
+    """
+    span = (channel.get("range") or {}).get("eng_max") or ANALOG_SUPPLY_V
+    volts = fraction * ANALOG_SUPPLY_V
+    if volts > span + 1e-9:
+        return 1.0, max(tolerance, ANALOG_SATURATED_TOLERANCE)
+    return volts / span, tolerance
+
+
 class BenchSteps:
     """The twelve HIL-010 steps the chain used to list as pending."""
 
@@ -404,8 +419,9 @@ class BenchSteps:
                 self.wait(0.3)
                 raw = self.tester.peek(IPI + address, 2)
                 value = raw[0] | raw[1] << 8 if len(raw) == 2 else None
-                ok = value is not None and abs(value / full - fraction) <= tolerance
-                points.append({"fraction": fraction, "raw": value, "full_scale": full, "tolerance": tolerance, "ok": ok})
+                expected, tolerance = analog_expectation(channel, fraction, tolerance)
+                ok = value is not None and abs(value / full - expected) <= tolerance
+                points.append({"fraction": fraction, "expected_fraction_of_full_scale": round(expected, 4), "raw": value, "full_scale": full, "tolerance": tolerance, "ok": ok})
                 if not ok:
                     problems.append(f"{channel['id']} at {fraction:.0%} reads {value} of {full}")
         finally:

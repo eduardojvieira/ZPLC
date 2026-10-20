@@ -27,7 +27,7 @@ pruebas de host del núcleo en C99, las pruebas con sanitizadores y de fuzzing, 
 pruebas de Zephyr Twister en `native_sim`, las pruebas de humo de la aplicación de
 escritorio empaquetada y la compilación cruzada de los seis perfiles de placa.
 
-Ninguna placa se ha probado en hardware: vea [Soporte de hardware](../reference/capabilities-evidence.md)
+Ninguna placa se ha probado en hardware: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md)
 y [Seguridad y limitaciones](../safety-and-limitations.md). Una afirmación sobre
 hardware requiere una prueba física trazable (HIL) para la Raspberry Pi Pico RP2040
 y la ESP32-S3-DevKitC-1-N8R8: compilación del SHA exacto, grabación, identidad y
@@ -65,5 +65,5 @@ seguridad física a partir de esta página ni de la presencia del código fuente
 
 - Use solo el SHA exacto de la versión y regístrelo en la evidencia de ambas placas.
 - Mantenga la grabación del firmware, la carga del programa y RUN/depuración como operaciones humanas separadas.
-- Conserve las salidas seguras en el arranque, ante un fallo, ante la admisión de un programa inválido y en la recuperación.
+- Conserve las salidas seguras en el arranque, ante una falla, ante la admisión de un programa inválido y en la recuperación.
 - No publique afirmaciones de producción, de tiempos ni de seguridad si falta cualquiera de los dos registros de placa.

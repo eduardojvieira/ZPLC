@@ -53,10 +53,10 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Conectar** falla en modo Simulate | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
+| **Conectar** falla en modo Simular | El runtime nativo no arrancó | Constrúyalo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN` |
 | Un escenario falla con una aserción en un instante | El programa no hizo en ese instante lo que el escenario espera | Ejecute hasta ese ciclo con un punto de parada: [Simular y depurar](./simulate-and-debug.md) |
 | Un escenario se rechaza como inválido | Un instante no es múltiplo de `tickMs`, una señal no existe o se excede un límite | [Formato del archivo de escenario](../reference/scenario-file.md) |
-| `LED_Output` nunca cambia en Watch | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **En marcha** y la dirección de la variable |
+| `LED_Output` nunca cambia en Observación | El programa no se está ejecutando, o la variable no es la que está ubicada | Compruebe que la línea de estado dice **En marcha** y la dirección de la variable |
 | Un valor retentivo volvió a su valor declarado | El programa se recompiló, o el almacén pertenece a otro programa | [Conservar valores entre reinicios](./retained-variables.md#3-qué-descarta-los-valores) |
 
 ## Conectar una placa y cargar
@@ -78,7 +78,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 | `STATUS` 2 | El par no respondió, o la solicitud superó su límite de tiempo: 8,8 s para Modbus con el tiempo de espera por defecto, 5 s para una publicación, 90 s para un aprovisionamiento | Compruebe el par y el enlace; un resultado tardío se descarta |
 | `STATUS` 4 | La sesión o el enlace no está conectado | Compruebe los ajustes con `zplc mqtt status` y `zplc net status` |
 | `STATUS` 5 | Todas las ranuras de solicitud están en uso | Espere a las solicitudes en curso: un `EN` ascendente mientras `BUSY` es TRUE no inicia nada |
-| `DONE` o `ERROR` sigue en TRUE | El resultado se mantiene mientras `EN` sigue en TRUE, y no se repite nada | Deje caer `EN` durante un ciclo para pedir de nuevo ([El handshake](../runtime/communication-function-blocks.md#el-handshake)) |
+| `DONE` o `ERROR` sigue en TRUE | El resultado se mantiene mientras `EN` sigue en TRUE, y no se repite nada | Deje que `EN` baje durante un ciclo para pedir de nuevo ([El handshake](../runtime/communication-function-blocks.md#el-handshake)) |
 | MQTT no hace nada en un dispositivo | MQTT está desactivado y no tiene broker hasta que un operador lo fija | [Valores seguros por defecto](../runtime/connectivity.md#valores-por-defecto-seguros) |
 | `zplc config set mqtt_security 1` se rechaza | Una imagen de versión no desactiva la verificación del certificado | Es a propósito; solo una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` lo acepta |
 

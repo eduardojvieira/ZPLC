@@ -2,11 +2,11 @@
 sidebar_position: 1
 ---
 
-# Structured Text (ST)
+# Texto estructurado (ST)
 
-Structured Text (ST) es la base semántica canónica de ZPLC.
+El texto estructurado (ST) es la base semántica canónica de ZPLC.
 
-Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia de Texto Estructurado](../reference/language-st.md) generada.
+Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia del texto estructurado](../reference/language-st.md) generada.
 
 ## Papel en ZPLC 2.0
 
@@ -20,7 +20,7 @@ La [suite histórica de lenguajes](./examples/v1-5-language-suite.md) es evidenc
 
 `packages/zplc-ide/src/compiler/index.ts` trata a ST distinto del resto:
 
-- `ST` evita la etapa de transpilation
+- `ST` evita la etapa de transpilación
 - los demás lenguajes se normalizan a ST antes de compilar
 
 Por eso ST es el mejor lugar para entender la semántica pública de automatización que el runtime debería ejecutar.
@@ -49,21 +49,21 @@ END_PROGRAM
 ```
 
 `Out1` es `FALSE` hasta que el temporizador cuenta 250 ms y `TRUE` desde entonces. CI compila este
-programa, lo ejecuta durante 30 scans de 10 ms y comprueba que `Out1` sea `TRUE`.
+programa, lo ejecuta durante 30 ciclos de 10 ms y comprueba que `Out1` sea `TRUE`.
 
-## Superficies ST visibles hoy en el repo
+## Superficies ST visibles hoy en el repositorio
 
 El compilador y la stdlib muestran uso de ST con:
 
 - cuerpos de programa y variables
 - temporizadores como `TON`, `TOF`, `TP`
 - contadores como `CTU`, `CTD`, `CTUD`
-- funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
-- llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
+- funciones de cadena como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
+- llamadas a bloques de función de comunicación cuando el contrato del compilador y del runtime los respalda
 
 ## Tipos numéricos
 
-El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallos esperados de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
+El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallas esperadas de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
 
 | Tipo | Bits | Rango | Se ordena como | Caso de conformidad |
 |---|---|---|---|---|
@@ -88,7 +88,7 @@ El caso que figura junto a una fila o una regla es un programa de conformidad de
 - **Ancho de un cálculo.** Los operandos de 8 y 16 bits se amplían a 32 bits para la operación, y el resultado se recorta a su ancho solo cuando se guarda. Con `i : INT := 32767`, `i + 1` vale 32768 dentro de una expresión y -32768 una vez guardado en un `INT`; `UINT` 65535 más 1 guardado en un `UINT` es 0 (`cmp-012-uint-65535`), y `SINT`, `USINT` y `BYTE` se comportan igual.
 - **32 y 64 bits dan la vuelta en complemento a dos.** `DINT` 2147483647 más 1 es -2147483648, y la resta y la multiplicación dan la vuelta del mismo modo. El `DINT` más negativo, negado, pasado a `ABS` o dividido por -1, sigue siendo el `DINT` más negativo, y ese valor `MOD` -1 es 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-sub-wraps`, `cmp-016-dint-mul-wraps`, `cmp-016-dint-negate-min`, `cmp-016-dint-abs-min`, `cmp-016-dint-min-divided-by-minus-one`, `cmp-016-dint-min-modulo-minus-one`). La suma de `LINT` da la vuelta del mismo modo (`cmp-015-lint-extreme-values`), y también su multiplicación, que son los 64 bits bajos del producto (`cmp-015-lint-multiplication-wraps-at-64-bits`, `cmp-015-ulint-multiplication-is-unsigned`).
 - **La división trunca hacia cero y `MOD` toma el signo del dividendo.** -8 / 2 es -4 (`cmp-011-int-divide-negative`) y -7 / 2 es -3, con -7 `MOD` 2 igual a -1, como en C. La división y el `MOD` de `UDINT` son sin signo en todo el rango (`cmp-012-udint-divide-and-modulo`), y también los de `ULINT` y `LWORD` (`cmp-015-ulint-division-above-2-63`). `LINT` sigue la misma regla: el `LINT` más negativo dividido por -1 sigue siendo el `LINT` más negativo y ese valor `MOD` -1 es 0 (`cmp-015-lint-division-truncates-toward-zero`).
-- **Una división o un `MOD` por cero termina el scan con la falla de VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03).** Lo mismo ocurre con una división de `REAL` o `LREAL` por 0.0 o -0.0, y con una división o un `MOD` de `LINT` o `ULINT` por cero (`cmp-015-lint-division-by-zero-faults`, `cmp-015-lint-modulo-by-zero-faults`, `cmp-015-ulint-division-by-zero-faults`, `cmp-015-ulint-modulo-by-zero-faults`, `cmp-015-lreal-division-by-zero-faults`). Las pruebas de la VM son `test_vm_arith_edges.c` y `test_vm_core.c` en `firmware/lib/zplc_core/tests/`; para saber qué hace una falla con las salidas, vea [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
+- **Una división o un `MOD` por cero termina el ciclo con la falla de VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03).** Lo mismo ocurre con una división de `REAL` o `LREAL` por 0.0 o -0.0, y con una división o un `MOD` de `LINT` o `ULINT` por cero (`cmp-015-lint-division-by-zero-faults`, `cmp-015-lint-modulo-by-zero-faults`, `cmp-015-ulint-division-by-zero-faults`, `cmp-015-ulint-modulo-by-zero-faults`, `cmp-015-lreal-division-by-zero-faults`). Las pruebas de la VM son `test_vm_arith_edges.c` y `test_vm_core.c` en `firmware/lib/zplc_core/tests/`; para saber qué hace una falla con las salidas, vea [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
 
 ### Desplazamientos, rotaciones y lógica de bits
 
@@ -125,7 +125,7 @@ El caso que figura junto a una fila o una regla es un programa de conformidad de
 | `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y negación de los enteros | Funciona con 64 bits | `cmp-015-lword-shifts-and-rotates-use-64-bits`, `cmp-015-lint-abs-and-negate` |
 | un contador de `FOR`, un selector de `CASE` con etiquetas y rangos de 64 bits | Funciona | `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-ulint-for-counter-up-to-the-top`, `cmp-015-lint-case-selector-and-labels`, `cmp-015-ulint-case-label-above-2-63` |
 | literales de todo el rango, en cualquier base, con tipo (`LINT#-9`) o sin él | Funciona | `cmp-015-lint-literals-over-the-full-range` |
-| `LREAL` `+`, `-`, `*`, `/`, negación, comparación | Funciona: IEEE 754 binary64, al más cercano par, el desbordamiento es un infinito, un NaN se propaga | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
+| `LREAL` `+`, `-`, `*`, `/`, negación, comparación | Funciona: IEEE 754 binary64, al par más cercano, el desbordamiento es un infinito, un NaN se propaga | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
 | literales `LREAL`, formas con exponente y valores iniciales | Funciona | `cmp-015-lreal-literals-with-exponent`, `cmp-015-lreal-double-precision` |
 | `LREAL` y `LINT` en arreglos, estructuras, parámetros y resultados de función, `RETAIN` | Funciona | `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`, `cmp-015-lreal-keeps-its-value-between-scans` |
 | `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND` | Funciona; exacto para un `LREAL` (`SQRT` está correctamente redondeada, 0.0 en 0.0 o menos) | `cmp-015-lreal-abs-sqrt-limit-select`, `cmp-015-lreal-trunc-and-round` |
@@ -149,7 +149,7 @@ Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisió
 
 - Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
 - Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Las unidades fuera de orden (`T#30m1h`) también se rechazan (`cmp-017-time-literal-units-out-of-order`).
-- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un preset de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
+- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un valor preestablecido de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
 - Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
 - El Watch de ZPLC muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
 - Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a un valor de 64 bits con signo, que permitiría duraciones negativas y rangos de más de 49 días, es una decisión abierta del propietario que se sigue bajo el requisito CMP-017. Esta página no anuncia ningún cambio.
@@ -189,26 +189,26 @@ Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cm
 - Una estructura toma un valor inicial de la forma `(x := 1, y := 2)`. Un campo omitido conserva el valor por defecto de su declaración (`x : INT := 7;` dentro del `TYPE`).
 - Una enumeración se guarda como `INT`. Un valor se puede escribir `Tipo#Valor`, que además distingue un nombre de valor que dos enumeraciones comparten.
 - Un arreglo tiene de una a tres dimensiones, límites inferiores negativos y límites que son expresiones constantes (`ARRAY[-N .. N * 2] OF INT`). Sus elementos pueden ser de cualquier tipo: una estructura, una cadena, `LINT`. Un valor inicial es una lista `[1, 2, 3]`, listas anidadas para más dimensiones y cuentas de repetición `[100(0)]`.
-- Un índice constante fuera de los límites es un error de compilación. Un índice variable fuera de los límites termina el scan con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El control está activo por defecto; la opción del compilador `arrayBoundsCheck: false` lo quita.
+- Un índice constante fuera de los límites es un error de compilación. Un índice variable fuera de los límites termina el ciclo con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El control está activo por defecto; la opción del compilador `arrayBoundsCheck: false` lo quita.
 
 ### Cadenas
 
 - `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`, `WSTRING[n]` tiene `n` caracteres de 16 bits.
 - Una asignación copia los caracteres, hasta la capacidad del destino. Un literal más largo que la capacidad de su variable es un error de compilación.
 - Una función de cadena nunca modifica sus argumentos: `LEFT`, `RIGHT`, `MID`, `CONCAT`, `INSERT`, `DELETE` y `REPLACE` devuelven una cadena nueva. `COPY(src, dst)` y `CLEAR(s)` escriben en su argumento, como dicen sus nombres.
-- `s := LEFT(s, n)` (y `RIGHT`, `MID`, `DELETE`, `CONCAT` de la propia variable) trabaja sobre la variable. Cualquier otra función que arma una cadena usa un buffer de la memoria WORK del programa, que cuenta contra los bytes del programa.
+- `s := LEFT(s, n)` (y `RIGHT`, `MID`, `DELETE`, `CONCAT` de la propia variable) trabaja sobre la variable. Cualquier otra función que arma una cadena usa un búfer de la memoria WORK del programa, que cuenta contra los bytes del programa.
 - `WSTRING` se puede declarar, inicializar, asignar y medir con `LEN`. Las demás funciones de cadena y la comparación la rechazan con un mensaje.
 
 ### Valores iniciales y constantes
 
-- En el primer scan toda variable tiene su valor inicial declarado, o el valor por defecto de su tipo: cero, `FALSE`, la cadena vacía, `NULL`. Eso cubre las variables de un programa, `VAR_GLOBAL`, cada miembro de cada instancia de bloque de función, los campos de estructura y los elementos de arreglo.
+- En el primer ciclo toda variable tiene su valor inicial declarado, o el valor por defecto de su tipo: cero, `FALSE`, la cadena vacía, `NULL`. Eso cubre las variables de un programa, `VAR_GLOBAL`, cada miembro de cada instancia de bloque de función, los campos de estructura y los elementos de arreglo.
 - Un local de función y un `VAR_TEMP` de un bloque de función vuelven a tener su valor declarado en cada llamada, de modo que una función no guarda estado. Un `VAR` de un bloque de función conserva su valor de una llamada a otra.
 - `VAR CONSTANT` y `VAR_GLOBAL CONSTANT` conservan su valor, y asignar a una constante es un error de compilación.
 
 ### VAR_IN_OUT y referencias
 
-- Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que el cuerpo cambia lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin enlazarlo termina el scan con una falla de VM.
-- `REF_TO`, `REF()` y `^` se controlan por tipo: `REF(x)` es una referencia al tipo de `x` y solo entra en un `REF_TO` de ese tipo. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el scan con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS`.
+- Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que el cuerpo cambia lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin enlazarlo termina el ciclo con una falla de VM.
+- `REF_TO`, `REF()` y `^` se controlan por tipo: `REF(x)` es una referencia al tipo de `x` y solo entra en un `REF_TO` de ese tipo. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el ciclo con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS`.
 
 ## Nombres y tipos
 
@@ -247,33 +247,33 @@ Cada regla de esta sección está cubierta por un caso de conformidad en `confor
 - **SUPER^.** `SUPER^.Metodo()` llama al método de la base del bloque que declara el código que se ejecuta, y `SUPER^();` ejecuta el cuerpo de ese bloque base, sobre la misma instancia. Un bloque derivado no ejecuta por sí solo el cuerpo de su base. Con tres niveles, cada `SUPER^` es el nivel de arriba, no la base de la instancia (`cmp-041-super-call`, `cmp-041-super-call-runs-the-base-body`, `cmp-041-super-call-through-three-levels`).
 - **ABSTRACT.** Un método declarado `ABSTRACT` no tiene cuerpo, y el bloque que declara uno es `FUNCTION_BLOCK ABSTRACT`. Un bloque abstracto no tiene instancias, y un bloque que no es abstracto implementa todos los métodos abstractos que hereda. Un método de la base puede llamar al método abstracto: el que se ejecuta es el del bloque de la instancia (`cmp-041-abstract-method-is-run-by-the-derived-block`, `cmp-041-abstract-block-cannot-be-instantiated`, `cmp-041-abstract-method-left-unimplemented-is-rejected`).
 - **Acceso.** Un método `PRIVATE` se llama solo dentro del bloque que lo declara, y uno `PROTECTED` dentro de ese bloque y de los bloques que lo extienden; `PUBLIC` es el valor por defecto. Una llamada desde un programa, una función u otro bloque es un error de compilación que nombra el método y dónde puede llamarse (`cmp-041-private-method-is-not-callable-from-outside`, `cmp-041-protected-method-is-not-callable-from-outside`, `cmp-041-protected-method-is-callable-from-a-derived-block`, `cmp-041-private-method-is-not-callable-from-a-derived-block`).
-- **Interfaces.** Una variable de tipo interfaz guarda una referencia a una instancia, `NULL` hasta que se le asigna una. Acepta una instancia de un bloque que declara `IMPLEMENTS` para la interfaz (o extiende uno que lo hace), otra variable de la interfaz o `NULL`; cualquier otra cosa es un error de compilación. `shape.Area()` ejecuta el método de la instancia a la que se refiere la variable, sea de cualquier bloque, incluido un elemento de un arreglo elegido en ejecución y una instancia de un bloque derivado (`cmp-041-interface-dispatch`, `cmp-041-interface-dispatch-by-the-instance-assigned`, `cmp-041-interface-variable-as-an-input-of-a-block`, `cmp-041-interface-through-inheritance-and-array-elements`). Una llamada por una variable que no guarda ninguna instancia termina el ciclo con un fallo de la VM (`cmp-041-interface-call-of-a-null-reference-faults`).
+- **Interfaces.** Una variable de tipo interfaz guarda una referencia a una instancia, `NULL` hasta que se le asigna una. Acepta una instancia de un bloque que declara `IMPLEMENTS` para la interfaz (o extiende uno que lo hace), otra variable de la interfaz o `NULL`; cualquier otra cosa es un error de compilación. `shape.Area()` ejecuta el método de la instancia a la que se refiere la variable, sea de cualquier bloque, incluido un elemento de un arreglo elegido en ejecución y una instancia de un bloque derivado (`cmp-041-interface-dispatch`, `cmp-041-interface-dispatch-by-the-instance-assigned`, `cmp-041-interface-variable-as-an-input-of-a-block`, `cmp-041-interface-through-inheritance-and-array-elements`). Una llamada por una variable que no guarda ninguna instancia termina el ciclo con una falla de la VM (`cmp-041-interface-call-of-a-null-reference-faults`).
 
-Cómo se construye una llamada por interfaz: un bloque de función se incorpora al código en cada lugar donde se llama, con las direcciones de su instancia. La referencia de una variable de interfaz es la dirección de la instancia en los 16 bits bajos y la etiqueta del tipo de su bloque en los 16 bits altos. Para cada llamada el compilador enumera todas las instancias del proyecto de un bloque que implementa la interfaz (variables, elementos de arreglo, instancias dentro de otros bloques y de estructuras), y escribe una comparación de la referencia con cada una, con el método incorporado sobre esa instancia detrás. Una referencia que no coincide con ninguna es un fallo de la VM. El costo es código, no tiempo de ejecución: una llamada por interfaz es tan grande como la suma de los métodos de todas las instancias que pueden responderla, de modo que una interfaz implementada por bloques de los que el proyecto tiene muchas instancias conviene llamarla desde un bloque de función y no desde muchos lugares.
+Cómo se construye una llamada por interfaz: un bloque de función se incorpora al código en cada lugar donde se llama, con las direcciones de su instancia. La referencia de una variable de interfaz es la dirección de la instancia en los 16 bits bajos y la etiqueta del tipo de su bloque en los 16 bits altos. Para cada llamada el compilador enumera todas las instancias del proyecto de un bloque que implementa la interfaz (variables, elementos de arreglo, instancias dentro de otros bloques y de estructuras), y escribe una comparación de la referencia con cada una, con el método incorporado sobre esa instancia detrás. Una referencia que no coincide con ninguna es una falla de la VM. El costo es código, no tiempo de ejecución: una llamada por interfaz es tan grande como la suma de los métodos de todas las instancias que pueden responderla, de modo que una interfaz implementada por bloques de los que el proyecto tiene muchas instancias conviene llamarla desde un bloque de función y no desde muchos lugares.
 
 ## Proyectos, archivos y memoria
 
 Cada regla de esta sección está cubierta por un caso de conformidad en `conformance/cmp` (CMP-042, CMP-043) y por `packages/zplc-compiler/src/compiler/unit.test.ts`.
 
-- **Una sola unidad.** Todos los archivos Structured Text de un proyecto (`src/*.st`) se compilan como una sola unidad, sin importar si una tarea ejecuta un programa que está en ellos. Un tipo, una función, un bloque de función, una interfaz o un `VAR_GLOBAL` declarado en cualquier archivo es visible para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`, `cmp-042-global-in-another-file`, `cmp-042-type-from-another-file-in-a-structure`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y Instruction List se compilan cuando una tarea los ejecuta.
+- **Una sola unidad.** Todos los archivos de texto estructurado de un proyecto (`src/*.st`) se compilan como una sola unidad, sin importar si una tarea ejecuta un programa que está en ellos. Un tipo, una función, un bloque de función, una interfaz o un `VAR_GLOBAL` declarado en cualquier archivo es visible para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`, `cmp-042-global-in-another-file`, `cmp-042-type-from-another-file-in-a-structure`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y la lista de instrucciones se compilan cuando una tarea los ejecuta.
 - **Una global es una sola variable.** Un `VAR_GLOBAL` tiene una dirección, compartida por todos los programas y todas las tareas, y un valor inicial que se aplica una vez, antes del primer ciclo de la tarea que se ejecute primero (`cmp-042-two-tasks-share-a-global`). Una función se compila una sola vez y los programas de ambas tareas la llaman (`cmp-042-function-from-another-file-in-two-programs`). Dos programas pueden declarar variables con el mismo nombre: cada uno conserva la suya.
 - **Una declaración repetida es un error en ambos lugares.** Un tipo, una función, un bloque de función o una interfaz declarados en dos archivos, o una global declarada dos veces, se informan en cada declaración, y el mensaje nombra ambos archivos y líneas (`cmp-042-function-block-declared-in-two-files-is-rejected`). Un error de un archivo se informa en ese archivo, sin importar qué programa use lo que el archivo declara.
-- **Una sola memoria.** Las variables de las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los buffers de trabajo de las funciones de cadena de todo el proyecto comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea (`cmp-043-programs-share-the-region`, `cmp-043-program-that-fills-the-region`). Un byte de ella, el último, es la bandera de inicialización.
-- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los buffers de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. Las direcciones que cambian porque se agregó otro archivo las informa el mapa de depuración, que lista cada una (véase [Modelo de Memoria](../runtime/memory-model.md)).
-- **Un fallo de asignación dice qué necesita.** Un proyecto que no cabe es un error de compilación en la declaración que cruza el final de la región, y el mensaje indica los bytes requeridos, los bytes disponibles y los tres mayores consumidores: `WORK allocation exceeds the target memory profile: 9005 bytes required, 8192 bytes available (...). Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)` (`cmp-043-allocation-failure-states-bytes-and-consumers`). Un destino con menos memoria WORK tiene un límite menor: el proyecto se compila contra el perfil de la placa que nombra.
+- **Una sola memoria.** Las variables de las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los búferes de trabajo de las funciones de cadena de todo el proyecto comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea (`cmp-043-programs-share-the-region`, `cmp-043-program-that-fills-the-region`). Un byte de ella, el último, es el indicador de inicialización.
+- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. Las direcciones que cambian porque se agregó otro archivo las informa el mapa de depuración, que lista cada una (véase [Modelo de memoria](../runtime/memory-model.md)).
+- **Una falla de asignación dice qué necesita.** Un proyecto que no cabe es un error de compilación en la declaración que cruza el final de la región, y el mensaje indica los bytes requeridos, los bytes disponibles y los tres mayores consumidores: `WORK allocation exceeds the target memory profile: 9005 bytes required, 8192 bytes available (...). Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)` (`cmp-043-allocation-failure-states-bytes-and-consumers`). Un destino con menos memoria WORK tiene un límite menor: el proyecto se compila contra el perfil de la placa que nombra.
 
 - **Dónde encuentran una global el mapa y las herramientas.** El mapa de depuración lista una global una sola vez, en el POU del archivo que la declara (un archivo sin programa es un POU con el nombre de su archivo, `globals.st`), marcada `scope: "global"`, con la única dirección que usan todos los programas. Una señal de un escenario la nombra como `Programa.Global`, para cualquier programa del proyecto, o solo por su nombre, que se lee como vista desde el primer programa; la traza y la evidencia la llaman `Programa.Global`. Un watch en ZPLC toma el nombre de la global y muestra esa dirección. Una variable que pertenece a otro programa no es una señal de este (`packages/zplc-ide/src/test-engine/globals.test.ts`, `packages/zplc-ide/src/hooks/globalWatch.test.ts`).
 
 ## Entrada a la biblioteca estándar
 
-Ver [Biblioteca Estándar](./stdlib.md).
+Véase [Biblioteca estándar](./stdlib.md).
 
 ## Límites conocidos
 
 Esta sección lista lo que el compilador, el cargador y el mapa de depuración no hacen como pide IEC 61131-3. La tabla se genera a partir de los casos de conformidad que se espera que fallen (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`: una fila existe mientras falle al menos un caso de su requisito, y desaparece cuando pasa el último. Los bloques y funciones estándar tienen su propia tabla en la [sección 11 de la referencia de la biblioteca estándar](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3).
 
 {/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-language. Do not edit. >>> */}
-Ningún caso de conformidad de esta área figura en la lista de fallos esperados: no hay un límite registrado.
+Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 No soportado en esta versión y rechazado con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` pasan: fijan el rechazo, de modo que un programa que usa uno de ellos no compila.

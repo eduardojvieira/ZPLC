@@ -77,7 +77,7 @@ export function checkProgramIo({ accesses, board, device }: {
     return {
       ok: false,
       code: 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH',
-      detail: `the firmware describes the I/O of board ${device.boardId} as ${device.hash}, Studio describes board ${identity.displayName} (${identity.boardId}) as ${identity.hash}`,
+      detail: `the firmware describes the I/O of board ${device.boardId} as ${device.hash}, the ZPLC application describes board ${identity.displayName} (${identity.boardId}) as ${identity.hash}`,
     };
   }
   const inputBytes = coveredBytes(channelsOf(board, 'I'));

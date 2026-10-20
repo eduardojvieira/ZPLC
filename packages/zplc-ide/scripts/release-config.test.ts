@@ -582,10 +582,10 @@ describe('the workflow reads no secret but the job token, and every platform ver
   });
 });
 
-describe('the Linux desktop identity of the package follows the executable (REL-011)', () => {
-  it('syncs the desktop name of the entry with the name of the executable, which the manifest sets', () => {
+describe('the Linux desktop identity of the package is the one of decision D-03 (REL-011)', () => {
+  it('names the desktop entry, its StartupWMClass and the window by the desktop name of the identity, which the manifest sets', () => {
     const manifest = JSON.parse(read('../package.json')) as { desktopName?: string };
-    expect(manifest.desktopName).toBe('zplc-ide');
+    expect(manifest.desktopName).toBe('com.zenithindustrialcloud.zplc');
     expect((builder as unknown as { linux: { syncDesktopName?: boolean } }).linux.syncDesktopName).toBe(true);
   });
 

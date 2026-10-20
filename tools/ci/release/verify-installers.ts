@@ -15,8 +15,8 @@ export type InstallerOs = 'mac' | 'win' | 'linux';
 export type InstallerArch = 'x64' | 'arm64';
 export type InstallerFormat = 'dmg' | 'zip' | 'setup' | 'portable' | 'appimage' | 'deb' | 'rpm';
 
-/** The product part of every name: the executable name, which decision D-03 does not rename (scripts/release/identity.json). */
-export const INSTALLER_PRODUCT = 'zplc-ide';
+/** The product part of every name: the executable name of decision D-03 (scripts/release/identity.json). */
+export const INSTALLER_PRODUCT = 'zplc';
 export const SCHEME = '<product>-<version>-<os>-<arch>[-<variant>].<ext>';
 
 const FORMATS: Record<InstallerFormat, { os: InstallerOs; ext: string; variant?: 'setup' | 'portable' }> = {

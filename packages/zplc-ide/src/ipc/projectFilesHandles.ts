@@ -37,7 +37,7 @@ const FAILURES: Record<ProjectFilesErrorCode, readonly [name: string, message: s
   failed: ['Error', 'The operation failed. Try again.'],
   // Project archives (IDE-022): the archive itself, never a path.
   'not-a-zip': ['TypeMismatchError', 'The file is not a project archive.'],
-  unsupported: ['NotSupportedError', 'The archive uses something Studio does not read (encryption, a link, or a very large archive).'],
+  unsupported: ['NotSupportedError', 'The archive uses something ZPLC does not read (encryption, a link, or a very large archive).'],
   'unsafe-path': ['OutsideProjectError', 'The archive holds a file whose path leaves the project folder.'],
   duplicate: ['InvalidModificationError', 'The archive holds two files with the same name.'],
   corrupt: ['DataError', 'The archive is damaged: a file does not match its checksum or size.'],

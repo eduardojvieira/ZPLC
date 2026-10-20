@@ -19,7 +19,7 @@ usted pueda elegir tareas o juzgar si ZPLC sirve hoy para su proyecto.
 Estos puntos están integrados y cubiertos por una verificación que ejecuta CI o
 un comando local repetible.
 
-- **CI en la línea 2.0 con una sola lista de fallos esperados.** Un test que
+- **CI en la línea 2.0 con una sola lista de fallas esperadas.** Un test que
   falla debe figurar en la lista con el requisito que lo corregirá, y la lista
   solo puede achicarse.
 - **Una suite de conformidad.** Los programas en Structured Text se compilan, se
@@ -76,4 +76,4 @@ un comando local repetible.
 
 Hasta que una fase se cierre, las afirmaciones de la versión preliminar actual
 siguen como las establecen las [notas de versión](../release-notes/index.md) y
-[Soporte de hardware](../reference/capabilities-evidence.md).
+[Compatibilidad de hardware](../reference/capabilities-evidence.md).

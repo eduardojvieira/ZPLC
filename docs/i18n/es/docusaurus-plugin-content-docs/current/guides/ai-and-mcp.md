@@ -32,7 +32,7 @@ otra carpeta el servidor imprime `ZPLC MCP workspace is unavailable` y termina c
 zplc-mcp --workspace /home/me/plants/line-3
 ```
 
-Desde un checkout, el mismo servidor se ejecuta desde el paquete de la aplicación ZPLC:
+Desde una copia del repositorio, el mismo servidor se ejecuta desde el paquete de la aplicación ZPLC:
 
 ```bash
 bun run --cwd=packages/zplc-ide mcp --workspace /home/me/plants/line-3
@@ -43,7 +43,7 @@ como ejecutable independiente, sin firmar, que se verifica como indica la
 [página de instalación](../getting-started/install.md#verificar-la-descarga). Dos opciones
 agregan lo que una carpeta de proyecto no puede contener:
 
-- `--repository <directorio>` es un checkout de ZPLC. Lo necesitan `boards_list`,
+- `--repository <directorio>` es una copia del repositorio de ZPLC. Lo necesitan `boards_list`,
   `toolchain_inspect` y `firmware_build`; sin ella responden `MCP_CAPABILITY_UNAVAILABLE`.
 - `--user-data <directorio>` es la carpeta donde ZPLC guarda el progreso de las
   lecciones, para el recurso `zplc://course/progress`.

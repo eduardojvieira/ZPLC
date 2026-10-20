@@ -3,7 +3,7 @@ slug: /guides/build-firmware
 id: build-firmware
 title: Build the firmware from source
 sidebar_label: Build the firmware
-description: "How to build the ZPLC runtime image for a board from the source with the script that continuous integration uses, and what a finished build proves."
+description: "How to build the ZPLC runtime image for a board from the source with the repository script, and what a finished build proves."
 tags: [how-to, hardware, firmware]
 ---
 
@@ -16,12 +16,13 @@ assistant and the MCP server never flash, deploy, force, start or stop a device.
 :::caution Authored, executed on a host only where stated
 The commands are the ones of the repository's scripts. The Zephyr builds were not run
 while writing this page (the Zephyr workspace is not installed on the machine that wrote it);
-continuous integration builds every board of the manifest and checks its flash and RAM budget.
+continuous integration builds every board of the manifest with `west build -p always` and checks its flash and RAM
+budget with `fwtest.py size`, the same checker that `run.sh size` calls.
 :::
 
 ## 1. Set up the workspace once
 
-About 15 GB free and network access the first time. The script creates or verifies the
+About 15 GB free and network access the first time (the workspace is about 6.6 GB; the Zephyr SDK, about 7 GB when installed whole, and the build outputs make up the rest). The script creates or verifies the
 Zephyr workspace outside the repository, in `~/zplc-zephyr-ws` (override with `ZPLC_FW_WS`):
 
 ```bash
@@ -43,7 +44,7 @@ use against the recorded budget. The images are in `$ZPLC_FW_WS/out/size/<board>
 `zephyr.elf` and, for the Pico, `zephyr.uf2`. The ESP32-S3 needs its HAL blobs once:
 `west blobs fetch hal_espressif`.
 
-The release pipeline builds with the same command, pristine and with no overlay:
+The CI jobs and the release pipeline do not call the script: they run `west build` directly, pristine and with no overlay:
 
 ```bash
 west build -p always -b rpi_pico/rp2040 firmware/app

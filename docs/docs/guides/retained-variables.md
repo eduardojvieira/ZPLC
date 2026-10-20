@@ -73,21 +73,22 @@ of the session status, and `zplc sched status` on a board.
 
 ## 4. On a board
 
-On firmware the retentive region is initialised at every start unless the build sets
-`CONFIG_ZPLC_RETAIN_PERSIST`. It is off by default, because the write path has been
-tested on `native_sim` and no board has been measured: a flash write can stall
-instruction fetch on a part that runs code from the same flash, and the number of
-erases per day is bounded by the flash budget of the board.
+The profile of every shipped board sets `CONFIG_ZPLC_RETAIN_PERSIST=y`, so the retentive
+region is restored after a power cycle. The write path has been tested on `native_sim`
+and no board has been measured: a flash write can stall instruction fetch on a part
+that runs code from the same flash, and the number of erases per day is bounded by the
+flash budget of the board. A build without the option initialises the region at every
+start.
 
 ```ini
-# firmware/app/boards/<board>.conf, once the board has a hardware record
+# firmware/app/boards/<board>.conf (set in every shipped board)
 CONFIG_ZPLC_RETAIN_PERSIST=y
 ```
 
 [Persistence and retained memory](../runtime/persistence.md#flash-wear-budget-per-board)
-has the wear budget of each board. The Nucleo-H743ZI cannot mount its storage
-backend, so its retentive region is initialised at every start and the status says
-`io_error`.
+has the wear budget of each board. The Nucleo-H743ZI keeps its records in ZMS, which
+only `native_sim` has run; if the backend fails on a board, the region is initialised at
+every start and the status says `io_error`.
 
 ## What is verified, and what is not
 

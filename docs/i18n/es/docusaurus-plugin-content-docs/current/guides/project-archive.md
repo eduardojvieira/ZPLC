@@ -15,13 +15,12 @@ mismo proyecto byte por byte.
 
 ## Exportar
 
-1. Guarde los archivos modificados del proyecto: el archivo contiene los ficheros
+1. Guarde los archivos modificados del proyecto: el archivo contiene los archivos
    como están en el disco, así que ZPLC le pide guardar antes.
-2. Abra el menú **Compilación** de la barra de herramientas y elija **Export Project
-   Archive**.
+2. Abra el menú **Compilación** de la barra de herramientas y elija **Exportar archivo del proyecto**.
 3. Elija dónde escribir el archivo en el diálogo de guardado del sistema.
 
-Output indica cuántos archivos se escribieron. El archivo omite lo que oculta el
+La pestaña **Salida** indica cuántos archivos se escribieron. El archivo omite lo que oculta el
 árbol del proyecto (`node_modules`, `.git`, `build`, `dist` y `.vscode`) y los
 enlaces.
 

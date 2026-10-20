@@ -6,12 +6,12 @@ import { discoverPackagedExecutable, installedExecutable } from './run-packaged-
 
 function unpacked(root: string, platform: NodeJS.Platform, name: string): string {
   const directory = platform === 'darwin'
-    ? join(root, name, 'ZPLC IDE.app')
+    ? join(root, name, 'ZPLC.app')
     : join(root, name);
   mkdirSync(directory, { recursive: true });
   const executable = platform === 'darwin'
-    ? join(directory, 'Contents', 'MacOS', 'zplc-ide')
-    : join(directory, platform === 'win32' ? 'zplc-ide.exe' : 'zplc-ide');
+    ? join(directory, 'Contents', 'MacOS', 'zplc')
+    : join(directory, platform === 'win32' ? 'zplc.exe' : 'zplc');
   mkdirSync(join(executable, '..'), { recursive: true });
   writeFileSync(executable, 'binary');
   if (platform !== 'win32') chmodSync(executable, 0o755);
@@ -25,8 +25,8 @@ test('discovers exactly one real platform executable and rejects unsafe candidat
       expect(() => discoverPackagedExecutable(root, platform)).toThrow('exactly one');
       const app = unpacked(root, platform, name);
       const executable = platform === 'darwin'
-        ? join(app, 'Contents', 'MacOS', 'zplc-ide')
-        : join(app, platform === 'win32' ? 'zplc-ide.exe' : 'zplc-ide');
+        ? join(app, 'Contents', 'MacOS', 'zplc')
+        : join(app, platform === 'win32' ? 'zplc.exe' : 'zplc');
       expect(discoverPackagedExecutable(root, platform)).toBe(executable);
       if (platform !== 'win32') {
         chmodSync(executable, 0o644);
@@ -53,7 +53,7 @@ test('discovers exactly one real platform executable and rejects unsafe candidat
 test('names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)', () => {
   const root = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   try {
-    const executable = join(root, 'zplc-ide');
+    const executable = join(root, 'zplc');
     writeFileSync(executable, 'binary');
     chmodSync(executable, 0o755);
     expect(installedExecutable(executable, 'linux')).toBe(executable);

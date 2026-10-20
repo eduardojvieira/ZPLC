@@ -10,14 +10,14 @@
     },
     {
       "pattern": "^Inter-Variable-latin(-[A-Za-z0-9_-]+)?\\.woff2$",
-      "name": "Inter (the interface typeface of ZPLC Studio)",
+      "name": "Inter (the interface typeface of ZPLC)",
       "licence": "OFL-1.1",
       "source": "https://github.com/rsms/inter",
       "copyright": "Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter). Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org. The licence text ships in the application as licenses/Inter-OFL.txt (in the repository: packages/zplc-ide/public/licenses/Inter-OFL.txt); the subset is described in packages/zplc-ide/src/assets/fonts/FONTS.md."
     },
     {
       "pattern": "^JetBrainsMono-(Regular|Bold)-latin(-[A-Za-z0-9_-]+)?\\.woff2$",
-      "name": "JetBrains Mono (the code typeface of ZPLC Studio)",
+      "name": "JetBrains Mono (the code typeface of ZPLC)",
       "licence": "OFL-1.1",
       "source": "https://github.com/JetBrains/JetBrainsMono",
       "copyright": "Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono). Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org. The licence text ships in the application as licenses/JetBrainsMono-OFL.txt (in the repository: packages/zplc-ide/public/licenses/JetBrainsMono-OFL.txt); the subset is described in packages/zplc-ide/src/assets/fonts/FONTS.md."

@@ -229,7 +229,7 @@ Multiplexer. Selects one of N inputs based on an integer index.
 
 ### Logical Operators
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operators on `BOOL`, `BYTE`, `WORD`, `DWORD` and `LWORD`, on the full declared width. The function forms `AND(a, b)`, `OR(a, b)` and `XOR(a, b)` do not parse.
-- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: The negation of AND and of OR of two `BOOL` values, 0 or 1 (`cmp-058-nand-and-nor-truth-tables`).
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: the negation of AND and of OR of two `BOOL` values, 0 or 1 (`cmp-058-nand-and-nor-truth-tables`).
 - **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** and **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: the same operations as functions on `WORD` and `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Shifting and Rotating

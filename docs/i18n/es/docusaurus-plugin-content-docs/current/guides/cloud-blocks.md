@@ -3,7 +3,7 @@ slug: /guides/cloud-blocks
 id: cloud-blocks
 title: Usar los bloques de nube
 sidebar_label: Bloques de nube
-description: "Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, con lo que cada bloque no ha sido probado contra."
+description: "Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, y qué es lo que no se ha probado de cada bloque."
 tags: [how-to, cloud, azure, aws, sparkplug]
 ---
 
@@ -30,7 +30,7 @@ fila lo diga.
 | --- | --- | --- |
 | `AZURE_DPS_PROV` | Registra el dispositivo en el Azure Device Provisioning Service y devuelve el hub asignado | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
 | `AZURE_C2D_RECV` | Recibe un mensaje de la nube al dispositivo de Azure IoT Hub | `azureC2dEnabled`, perfil `azure-iot-hub` |
-| `AZURE_EG_PUB` | Publica un evento en un tópico de Azure Event Grid | perfil `azure-event-grid-mqtt`, `azureEventGridTopic` |
+| `AZURE_EG_PUB` | Publica un evento en un tema de Azure Event Grid | perfil `azure-event-grid-mqtt`, `azureEventGridTopic` |
 | `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath` |
 | `SPB_REBIRTH` | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento | perfil `sparkplug-b` |
 
@@ -76,7 +76,7 @@ mensajes de la nube al dispositivo activados:
 ```
 
 Y un dispositivo que usa el aprovisionamiento de flota de AWS IoT con un
-certificado de reclamo:
+certificado de reclamación:
 
 ```json zplc-fragment
 {
@@ -146,7 +146,7 @@ Los bloques siguen el único handshake de los doce bloques de comunicación
 - Un flanco ascendente de `EN` es una operación. `AZURE_DPS_PROV`, `AZURE_EG_PUB`,
   `AWS_FLEET_PROV` y `SPB_REBIRTH` no se repiten mientras `EN` sigue en TRUE: el resultado
   (`DONE`, o `ERROR` con un código de estado) se mantiene mientras `EN` sigue en TRUE y se
-  borra cuando cae. Para hacerlo de nuevo, deje caer `EN` durante un ciclo.
+  borra cuando cae. Para hacerlo de nuevo, deje que `EN` baje durante un ciclo.
 - Una solicitud en curso se completa aunque `EN` caiga, y un flanco ascendente mientras
   `BUSY` es TRUE no inicia nada. `BUSY`, `DONE`, `ERROR` y `STATUS` los escribe solo el
   runtime.
@@ -164,7 +164,7 @@ Los bloques siguen el único handshake de los doce bloques de comunicación
 Un mensaje de nube no puede iniciar ni detener el programa, fijar un forzado ni
 descargar un programa. Un método directo de Azure se responde `501` (no
 implementado), y los mensajes de device twin, de shadow y de jobs de AWS solo se
-registran en el log
+registran en el registro
 ([Qué puede hacer un mensaje de la red](../runtime/connectivity.md#qué-puede-hacer-un-mensaje-de-la-red)).
 
 ## Qué está verificado, bloque por bloque
@@ -179,7 +179,7 @@ registran en el log
 
 Las herramientas manuales están en `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` e `inspect_event_grid.py` se ejecutan contra un broker local y
-responden los tópicos de aprovisionamiento. Comprueban el flujo de tópicos y las
+responden los temas de aprovisionamiento. Comprueban el flujo de temas y las
 transiciones de estado del dispositivo. No demuestran que un bloque funcione con el
 Azure DPS, el Event Grid o el AWS IoT Core reales, y las comprobaciones del proyecto
 no registran ninguna ejecución de ellas.

@@ -15,7 +15,7 @@ Esta página describe las funciones cubiertas hoy por la referencia. Valide el p
 
 ---
 
-## 1. Timers (Temporizadores)
+## 1. Temporizadores
 
 `PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
 
@@ -27,7 +27,7 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
 - **Salidas:**
   - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT` (`cmp-058-ton-delays-output`).
   - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo (`cmp-057-ton-elapsed-stops-at-preset`).
-- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo scan (`cmp-057-ton-zero-preset-follows-the-input`).
+- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo ciclo (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Temporizador Off-Delay)
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
@@ -54,7 +54,7 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
 
 `CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman el valor de preselección de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767. Las reglas de esta lista valen para los tres bloques, y cada bloque agrega las suyas más abajo.
 
-- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos scans, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
+- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos ciclos, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
 - **Reset y load son niveles y tienen prioridad.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana sobre `LD`.
 - **El detector de flancos sigue funcionando durante el reset y el load.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando `R` o `LD` se suelta. Un pulso que sube en la llamada en que `R` o `LD` se suelta sí se cuenta, siempre que la entrada fuera FALSE en la llamada anterior.
 - **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
@@ -96,7 +96,7 @@ Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
 
 `CV` y `PV` son valores de 16 bits con signo y toda comparación es con signo: un `PV` negativo es un preset negativo (un `CTU` con `PV := -3` tiene `Q` en TRUE desde la primera llamada, `cmp-058-ctu-with-a-negative-preset`), y `QU` y `QD` de `CTUD` comparan `CV` con `PV` y con 0 como números con signo por debajo de cero (`cmp-058-ctud-counts-down-through-zero-and-back`).
 
-Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado scan por scan, incluidas las detenciones en 32767 y en -32768.
+Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado ciclo por ciclo, incluidas las detenciones en 32767 y en -32768.
 
 ---
 
@@ -217,11 +217,11 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ---
 
-## 7. Funciones de Bits
+## 7. Funciones de bits
 
 ### Operadores lógicos
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
-- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: La negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: la negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
 - **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Rotación y desplazamiento
@@ -245,7 +245,7 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ## 8. Funciones de cadenas de texto
 
-Las cadenas son buffers acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
+Las cadenas son búferes acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
 
 Una función que arma una cadena (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) devuelve una cadena nueva y nunca modifica sus argumentos. Las posiciones empiezan en 1.
 
@@ -313,7 +313,7 @@ La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFEC
 La tabla se genera a partir de los casos de conformidad que esperan el comportamiento de IEC 61131-3 y fallan hoy (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`. Una fila desaparece cuando pasa el último caso de su requisito.
 
 {/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
-Ningún caso de conformidad de esta área figura en la lista de fallos esperados: no hay un límite registrado.
+Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
 {/* <<< END GENERATED: known-limits-library <<< */}
 
 Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/` (requisito CMP-058).
@@ -332,7 +332,7 @@ Genera un tren de pulsos con tiempos de ON y OFF separados.
   - `T_OFF` (TIME): Tiempo en que `Q` es FALSE en cada ciclo.
 - **Salidas:**
   - `Q` (BOOL): El tren de pulsos.
-- **Comportamiento:** El ciclo empieza con la fase ON en el scan en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer scan en que su tiempo transcurrió, así que con un período de scan mayor que `T_ON` o `T_OFF` la fase dura un scan.
+- **Comportamiento:** El ciclo empieza con la fase ON en el ciclo en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer ciclo en que su tiempo transcurrió, así que con un período de ciclo mayor que `T_ON` o `T_OFF` la fase dura un ciclo.
 
 ```text
 ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
@@ -386,12 +386,12 @@ Un controlador PID discreto.
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
 
-### FIFO (buffer primero en entrar, primero en salir)
+### FIFO (búfer primero en entrar, primero en salir)
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
 - **Entradas:**
   - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
   - `POP` (BOOL): Un flanco de subida mueve el valor más antiguo a `DATA_OUT`.
-  - `RST` (BOOL): Vacía el buffer.
+  - `RST` (BOOL): Vacía el búfer.
   - `DATA_IN` (DINT): El valor a guardar.
   - `SIZE` (DINT): Capacidad, de 1 a 8. Una llamada que lo omite recibe 8, igual que un valor fuera de 1 a 8: una instancia tiene lugar para 8 valores.
 - **Salidas:**
@@ -399,7 +399,7 @@ Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
   - `COUNT` (DINT): Valores guardados.
   - `EMPTY` (BOOL): TRUE cuando `COUNT` es 0.
   - `FULL` (BOOL): TRUE cuando `COUNT` llegó a la capacidad.
-- **Comportamiento:** Un push en un buffer lleno y un pop de uno vacío no hacen nada.
+- **Comportamiento:** Un push en un búfer lleno y un pop de uno vacío no hacen nada.
 
-### LIFO (buffer último en entrar, primero en salir)
+### LIFO (búfer último en entrar, primero en salir)
 Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.

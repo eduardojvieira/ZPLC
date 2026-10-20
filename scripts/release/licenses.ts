@@ -2,7 +2,7 @@
 //
 //   bun scripts/release/licenses.ts --out packages/zplc-ide/build/THIRD-PARTY-NOTICES.txt
 //
-// What the installer holds is what electron-builder copies: the production closure of the Studio package (its
+// What the installer holds is what electron-builder copies: the production closure of the IDE package (its
 // node_modules go into app.asar), the packages that Vite bundles into the renderer although they are declared as
 // development dependencies (the renderer sources import them), and the font files of the build. The closure comes
 // from bun.lock, the licence text from the installed package, and a package that is locked but not installed, one

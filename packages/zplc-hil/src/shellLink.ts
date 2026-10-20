@@ -98,8 +98,10 @@ export class ShellLink implements DeviceLink {
           await this.run(`${prefix} data ${hex.slice(at, at + CHUNK_HEX)}`, { waitFor: 'OK:', timeoutMs: 5_000, ok: true });
           break;
         } catch (error) {
+          // The device answered with a refusal (e.g. the loader's -13): that text is the finding, so it is not retried.
+          // Only silence (a transport timeout) is worth another try.
           attempt += 1;
-          if (attempt >= 3) throw error;
+          if (error instanceof DeviceCommandError || attempt >= 3) throw error;
         }
       }
     }

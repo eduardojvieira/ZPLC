@@ -1,6 +1,6 @@
 /**
  * @file useDebugController.ts
- * @brief Debug Controller Hook for ZPLC IDE
+ * @brief Debug Controller Hook for ZPLC
  *
  * This hook manages the lifecycle of debug adapters and provides a unified
  * interface for debug operations. It handles:

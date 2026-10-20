@@ -1,4 +1,4 @@
-# Modelo de Memoria
+# Modelo de memoria
 
 El contrato público de memoria está definido sobre todo por:
 
@@ -37,7 +37,7 @@ flowchart LR
 
 - IPI
 - OPI
-- espacio de direcciones work y retain
+- espacio de direcciones WORK y RETAIN
 - segmento de código cargado
 
 ### Privado por instancia VM
@@ -46,7 +46,7 @@ flowchart LR
 - `sp`
 - `bp`
 - profundidad de llamadas
-- banderas y error
+- indicadores y error
 - puntos de parada
 - pila de evaluación
 - pila de llamadas
@@ -56,9 +56,9 @@ flowchart LR
 `zplc_isa.h` reserva los últimos 16 bytes de IPI para datos de sistema como:
 
 - tiempo de ciclo
-- uptime
+- tiempo de actividad
 - identificador de la tarea actual
-- banderas del runtime
+- indicadores del runtime
 
 ## Inicio de un programa
 
@@ -69,16 +69,16 @@ variables del que reemplazó; un runtime que tiene un registro `RETAIN` almacena
 reinicio que conserva los valores retentivos. La región de código y las etiquetas son el programa y ninguna de las
 dos las toca.
 
-## Acceso desde fuera del scan (RT-010, RT-011)
+## Acceso desde fuera del ciclo (RT-010, RT-011)
 
-Mientras los scans corren, solo el scan escribe la imagen de proceso. Un hilo ajeno (el servidor y los
+Mientras los ciclos corren, solo el ciclo escribe la imagen de proceso. Un hilo ajeno (el servidor y los
 clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchange (`zplc_exchange.h`):
 
-- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el scan publica en su commit. Un valor es íntegro y de
-  un solo scan, y una lectura nunca espera a un scan;
-- una escritura se encola completa y el scan la aplica en el latch de entradas de su siguiente scan, por la interfaz
-  del core que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
-  Mientras no corre ningún scan (detenido, en pausa o con falla) no hay latch que esperar y la escritura se aplica
+- una lectura sale de la instantánea de IPI, OPI, WORK y RETAIN que el ciclo publica en su confirmación. Un valor es íntegro y de
+  un solo ciclo, y una lectura nunca espera a un ciclo;
+- una escritura se encola completa y el ciclo la aplica en la captura de entradas de su siguiente ciclo, por la interfaz
+  del núcleo que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
+  Mientras no corre ningún ciclo (detenido, en pausa o con falla) no hay captura que esperar y la escritura se aplica
   de inmediato;
 - una escritura que no cabe en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza
   completa y quien llama recibe un error; un cliente Modbus TCP recibe la excepción 6 (dispositivo servidor
@@ -86,7 +86,7 @@ clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchan
 - la escritura de una etiqueta Modbus de dos registros fija la mitad que es el registro, de modo que dos clientes que
   escriben las dos mitades nunca se pisan con un valor viejo de la otra mitad.
 
-El snapshot es una copia de las cuatro regiones, así que cuesta en RAM su tamaño total (20 KB con los tamaños por
+La instantánea es una copia de las cuatro regiones, así que cuesta en RAM su tamaño total (20 KB con los tamaños por
 defecto).
 
 ## Cómo coloca el compilador las variables
@@ -100,7 +100,7 @@ Los encabezados públicos también exponen límites como:
 - `ZPLC_STACK_MAX_DEPTH`
 - `ZPLC_CALL_STACK_MAX`
 - `ZPLC_MAX_BREAKPOINTS`
-- tamaños configurables para work, retain y code
+- tamaños configurables para WORK, RETAIN y CODE
 
 En Zephyr los tamaños se fijan con opciones de Kconfig. Estos son los valores por defecto de `firmware/zephyr/Kconfig`; el `prj.conf` de una placa puede reemplazarlos:
 

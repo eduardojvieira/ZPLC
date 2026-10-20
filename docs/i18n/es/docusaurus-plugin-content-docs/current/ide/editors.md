@@ -261,7 +261,7 @@ pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y
 
 ## Edición con el teclado
 
-Toda acción de edición de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial se puede hacer con el
+Toda acción de edición de los editores de diagrama de escalera, de diagrama de bloques de función y de diagrama funcional secuencial se puede hacer con el
 teclado (LNG-012): mover un cursor, insertar un elemento, enlazar una variable entre los símbolos declarados, conectar y
 borrar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera de la tabla de la
 que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.
@@ -312,15 +312,15 @@ componente que necesita cinco de 200 valores observados se vuelve a dibujar cuan
 cambia otro.
 
 `bun tools/ci/ide-structure.ts` (lo ejecuta `bun run lint:ide`) falla si un componente o hook fuera de `src/store/` se suscribe
-a todo el store o a su porción `debug`: cada región de la ventana nombra los campos que muestra
+a todo el almacén o a su porción `debug`: cada región de la ventana nombra los campos que muestra
 (`src/store/regionSubscriptions.ts`).
 
-Medido sobre el store con 200 valores observados leídos 100 veces y 50 pulsaciones en un archivo de 2.000 líneas: antes, cada
+Medido sobre el almacén con 200 valores observados leídos 100 veces y 50 pulsaciones en un archivo de 2.000 líneas: antes, cada
 uno de Explorador, barra de herramientas, Consola, área del editor y ajustes se dibujaba 150 veces y cada lector de valores
 observados 100 veces; ahora las regiones que no muestran ninguno de los dos se dibujan 0 veces, la barra de pestañas y el
 editor 50 veces (una por pulsación), y un lector de cinco valores 10 veces, por las 10 lecturas que los cambiaron.
 
-Nivel de evidencia: host, al nivel del store y de sus selectores (`src/store/regionSubscriptions.test.ts`). Este repositorio
+Nivel de evidencia: host, al nivel del almacén y de sus selectores (`src/store/regionSubscriptions.test.ts`). Este repositorio
 no tiene un entorno de pruebas con DOM, así que no se cuentan los dibujos de React; la Consola sigue dibujándose en cada
 pulsación, porque la pestaña Problemas muestra lo que escribir borra y sus comprobaciones comparan el contador de la
 compilación.

@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from '../../productName';
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `toolchain.*`. */
 export const toolchainEn = {
   // ToolchainCard.tsx
@@ -17,7 +18,7 @@ export const toolchainEn = {
   'toolchain.localRuntimeBuildIs': 'Local runtime build is available only for a catalogued target in this app on Linux or macOS.',
   'toolchain.buildWasNotStarted': 'Build was not started.',
   'toolchain.buildCancelledAfterLocal': 'Build cancelled after local cleanup.',
-  'toolchain.buildStoppedButTemporary': 'Build stopped, but temporary cleanup could not be confirmed. Restart Studio before trying again.',
+  'toolchain.buildStoppedButTemporary': `Build stopped, but temporary cleanup could not be confirmed. Restart ${PRODUCT_NAME} before trying again.`,
   'toolchain.firmwareBuildDidNot': 'Firmware build did not complete. Check the toolchain, then try again.',
   'toolchain.localCrossBuildCompleted': 'Local cross-build completed',
   'toolchain.cataloguedTarget': 'Catalogued target',
@@ -42,7 +43,7 @@ export const toolchainEs: Record<keyof typeof toolchainEn, string> = {
   'toolchain.localRuntimeBuildIs': 'La compilación local del runtime solo está disponible para un destino catalogado en esta aplicación, en Linux o macOS.',
   'toolchain.buildWasNotStarted': 'No se inició la compilación.',
   'toolchain.buildCancelledAfterLocal': 'Compilación cancelada tras la limpieza local.',
-  'toolchain.buildStoppedButTemporary': 'La compilación se detuvo, pero no se pudo confirmar la limpieza temporal. Reinicie Studio antes de intentarlo de nuevo.',
+  'toolchain.buildStoppedButTemporary': `La compilación se detuvo, pero no se pudo confirmar la limpieza temporal. Reinicie ${PRODUCT_NAME} antes de intentarlo de nuevo.`,
   'toolchain.firmwareBuildDidNot': 'La compilación del firmware no se completó. Compruebe la cadena de herramientas e inténtelo de nuevo.',
   'toolchain.localCrossBuildCompleted': 'Compilación cruzada local completada',
   'toolchain.cataloguedTarget': 'Destino catalogado',

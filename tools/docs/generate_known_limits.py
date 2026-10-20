@@ -57,7 +57,7 @@ HEADERS = {
 }
 EMPTY = {
     "en": "No conformance case of this area is on the expected-failures list: no limit is recorded.",
-    "es": "Ningún caso de conformidad de esta área figura en la lista de fallos esperados: no hay un límite registrado.",
+    "es": "Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.",
 }
 
 ID_RE = re.compile(r"^[A-Z]+-[0-9]{3}$")

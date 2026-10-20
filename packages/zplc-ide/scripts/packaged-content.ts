@@ -174,15 +174,21 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
       if (!notices.includes(file.slice(file.lastIndexOf('/') + 1))) problems.push(`font ${file} of app.asar has no entry in THIRD-PARTY-NOTICES.txt`);
     }
   }
-  // The Linux desktop identity (REL-011): electron-builder writes the name of the desktop entry into the manifest it packs,
-  // and the entry has to name the executable that the package holds, or the launcher and the taskbar do not match them.
-  // A Linux unpacked package is the one with Electron's chrome-sandbox beside the resources.
+  // The Linux desktop identity (REL-011, decision D-03): Electron gives the window the desktopName of the manifest it packs as
+  // its app_id, and electron-builder (syncDesktopName) names the desktop entry and its StartupWMClass after the same value,
+  // so the launcher and the taskbar match only when the packed manifest carries the desktop name of the identity; the
+  // package must also hold the executable that the entry starts. A Linux unpacked package is the one with Electron's
+  // chrome-sandbox beside the resources.
   const unpacked = dirname(resources);
   if (existsSync(join(unpacked, 'chrome-sandbox'))) {
+    const identityFile = 'scripts/release/identity.json';
+    const identity = JSON.parse(readFileSync(join(repoRoot, identityFile), 'utf8')) as { desktopName: string; executableName: string };
     const manifest = JSON.parse(Buffer.from(readAsarFile(asar, 'package.json')).toString('utf8')) as { desktopName?: unknown };
     const desktopName = typeof manifest.desktopName === 'string' ? manifest.desktopName.replace(/\.desktop$/, '') : '';
-    if (desktopName === '') problems.push('the package.json of app.asar has no desktopName: the desktop entry names no executable');
-    else if (!existsSync(join(unpacked, desktopName)) || !statSync(join(unpacked, desktopName)).isFile()) problems.push(`desktopName ${desktopName} of app.asar is not the executable of the unpacked package`);
+    if (desktopName === '') problems.push('the package.json of app.asar has no desktopName: the window and the desktop entry would not match');
+    else if (desktopName !== identity.desktopName) problems.push(`desktopName ${desktopName} of app.asar is not ${identity.desktopName}, the desktop name of ${identityFile}`);
+    const executable = join(unpacked, identity.executableName);
+    if (!existsSync(executable) || !statSync(executable).isFile()) problems.push(`the unpacked package has no executable ${identity.executableName}, the executable name of ${identityFile}`);
   }
   // Electron's own notices come with its distribution, beside the executable. Where a macOS bundle keeps them is not
   // something this check has been run against (it has only been run on Linux), so a bundle is not asked for them.

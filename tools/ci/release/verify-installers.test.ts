@@ -27,20 +27,20 @@ describe('the fourteen installer files', () => {
   it('are fourteen distinct names under one scheme, in lower case with no spaces', () => {
     const names = installerNames(VERSION).map((installer) => installer.name);
     expect(new Set(names).size).toBe(14);
-    for (const name of names) expect(name).toMatch(/^zplc-ide-2\.0\.0-rc\.4-(mac|win|linux)-[a-z0-9_]+(-(setup|portable)-unsigned)?\.(dmg|zip|exe|AppImage|deb|rpm)$/);
-    expect(names).toContain('zplc-ide-2.0.0-rc.4-win-x64-setup-unsigned.exe');
-    expect(names).toContain('zplc-ide-2.0.0-rc.4-mac-arm64.dmg');
+    for (const name of names) expect(name).toMatch(/^zplc-2\.0\.0-rc\.4-(mac|win|linux)-[a-z0-9_]+(-(setup|portable)-unsigned)?\.(dmg|zip|exe|AppImage|deb|rpm)$/);
+    expect(names).toContain('zplc-2.0.0-rc.4-win-x64-setup-unsigned.exe');
+    expect(names).toContain('zplc-2.0.0-rc.4-mac-arm64.dmg');
   });
 
   it('spell the architecture as the format of the Linux package does, which is what electron-builder writes', () => {
-    expect(installerName(VERSION, 'deb', 'x64')).toBe('zplc-ide-2.0.0-rc.4-linux-amd64.deb');
-    expect(installerName(VERSION, 'rpm', 'x64')).toBe('zplc-ide-2.0.0-rc.4-linux-x86_64.rpm');
-    expect(installerName(VERSION, 'rpm', 'arm64')).toBe('zplc-ide-2.0.0-rc.4-linux-aarch64.rpm');
-    expect(installerName(VERSION, 'appimage', 'arm64')).toBe('zplc-ide-2.0.0-rc.4-linux-arm64.AppImage');
+    expect(installerName(VERSION, 'deb', 'x64')).toBe('zplc-2.0.0-rc.4-linux-amd64.deb');
+    expect(installerName(VERSION, 'rpm', 'x64')).toBe('zplc-2.0.0-rc.4-linux-x86_64.rpm');
+    expect(installerName(VERSION, 'rpm', 'arm64')).toBe('zplc-2.0.0-rc.4-linux-aarch64.rpm');
+    expect(installerName(VERSION, 'appimage', 'arm64')).toBe('zplc-2.0.0-rc.4-linux-arm64.AppImage');
   });
 
   it('drop unsigned from the Windows names once a signed channel exists (REL-038)', () => {
-    expect(installerName(VERSION, 'setup', 'arm64', { windowsSigned: true })).toBe('zplc-ide-2.0.0-rc.4-win-arm64-setup.exe');
+    expect(installerName(VERSION, 'setup', 'arm64', { windowsSigned: true })).toBe('zplc-2.0.0-rc.4-win-arm64-setup.exe');
   });
 });
 
@@ -55,37 +55,37 @@ describe('the installers that were produced', () => {
 
   it('name the installers that a build did not produce', () => {
     const problems = verifyInstallers(produce('mac'), VERSION);
-    expect(problems).toContain('zplc-ide-2.0.0-rc.4-win-x64-setup-unsigned.exe was not produced');
-    expect(problems).toContain('zplc-ide-2.0.0-rc.4-linux-amd64.deb was not produced');
+    expect(problems).toContain('zplc-2.0.0-rc.4-win-x64-setup-unsigned.exe was not produced');
+    expect(problems).toContain('zplc-2.0.0-rc.4-linux-amd64.deb was not produced');
   });
 
   it('refuse the names electron-builder wrote before the scheme: spaces, capitals, the default zip name', () => {
     const root = produce('mac');
     const folder = join(root, 'mac-arm64');
     writeFileSync(join(folder, 'ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg'), sample('dmg', 'arm64'));
-    writeFileSync(join(folder, 'zplc-ide-2.0.0-rc.4-arm64-mac.zip'), sample('zip', 'arm64'));
+    writeFileSync(join(folder, 'zplc-2.0.0-rc.4-arm64-mac.zip'), sample('zip', 'arm64'));
     const problems = verifyInstallers(root, VERSION, { os: 'mac' });
     expect(problems).toContain('ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg is not named by <product>-<version>-<os>-<arch>[-<variant>].<ext>');
-    expect(problems).toContain('zplc-ide-2.0.0-rc.4-arm64-mac.zip is not named by <product>-<version>-<os>-<arch>[-<variant>].<ext>');
+    expect(problems).toContain('zplc-2.0.0-rc.4-arm64-mac.zip is not named by <product>-<version>-<os>-<arch>[-<variant>].<ext>');
   });
 
   it('refuse a file that is not the container its extension claims', () => {
     const root = produce('mac');
-    writeFileSync(join(root, 'mac-x64', 'zplc-ide-2.0.0-rc.4-mac-x64.dmg'), sample('zip', 'x64'));
-    expect(verifyInstallers(root, VERSION, { os: 'mac' })).toEqual(['zplc-ide-2.0.0-rc.4-mac-x64.dmg is not a disk image (no UDIF trailer)']);
+    writeFileSync(join(root, 'mac-x64', 'zplc-2.0.0-rc.4-mac-x64.dmg'), sample('zip', 'x64'));
+    expect(verifyInstallers(root, VERSION, { os: 'mac' })).toEqual(['zplc-2.0.0-rc.4-mac-x64.dmg is not a disk image (no UDIF trailer)']);
   });
 
   it('refuse an AppImage whose program is for the other architecture than its name says', () => {
     const root = produce('linux');
-    writeFileSync(join(root, 'linux-arm64', 'zplc-ide-2.0.0-rc.4-linux-arm64.AppImage'), sample('appimage', 'x64'));
-    expect(verifyInstallers(root, VERSION, { os: 'linux' })).toEqual(['zplc-ide-2.0.0-rc.4-linux-arm64.AppImage holds a x64 program, its name says arm64']);
+    writeFileSync(join(root, 'linux-arm64', 'zplc-2.0.0-rc.4-linux-arm64.AppImage'), sample('appimage', 'x64'));
+    expect(verifyInstallers(root, VERSION, { os: 'linux' })).toEqual(['zplc-2.0.0-rc.4-linux-arm64.AppImage holds a x64 program, its name says arm64']);
   });
 
   it('refuse the same name twice, which the release would merge into one file', () => {
     const root = produce('win');
     mkdirSync(join(root, 'again'));
-    writeFileSync(join(root, 'again', 'zplc-ide-2.0.0-rc.4-win-x64-portable-unsigned.exe'), sample('portable', 'x64'));
-    expect(verifyInstallers(root, VERSION, { os: 'win' })).toEqual(['zplc-ide-2.0.0-rc.4-win-x64-portable-unsigned.exe is produced twice']);
+    writeFileSync(join(root, 'again', 'zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe'), sample('portable', 'x64'));
+    expect(verifyInstallers(root, VERSION, { os: 'win' })).toEqual(['zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe is produced twice']);
   });
 
   it('ignore the files that are not installers: the standalone tools and the bill of materials', () => {

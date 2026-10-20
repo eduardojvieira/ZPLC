@@ -946,7 +946,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
   ],
   "LNG-001": [
-    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the table on the Languages page (EN and ES) is generated from tools/docs/language-capabilities.json: each of the 35 cells names a journey, a native-runtime test or a conformance case that must exist, or says it is not tested end to end, or says only a board can show it; the committed pages are drift-checked by this test. Gaps shown by the table: no end-to-end test for the Instruction List edit, watch and force, and for the Ladder force; deploy is board-only. The pass state of each named check comes from the CI job that runs it, not from this test."},
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the table on the Languages page (EN and ES) is generated from tools/docs/language-capabilities.json: each of the 40 cells names a journey, a native-runtime test or a conformance case that must exist, or says only a board can show it (deploy); no cell is left as not tested end to end, and the committed pages are drift-checked by this test. The pass state of each named check comes from the CI job that runs it, not from this test."},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
@@ -1218,7 +1218,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
   ],
   "LNG-027": [
-    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the debug row of each language names the journey that stops at a breakpoint of that language; pause, resume and cycle step have a journey for Structured Text only (journey 16), and the table says so for the other four"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/hooks/useDebugController.capabilities.test.ts","test":"maps native adapter capability profiles into controller capabilities","note":"the controls Studio enables come from the capability profile the runtime reports"},
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-027 names, for each of the five languages, a journey that pauses, steps one cycle and resumes in the native simulation, and a different one that stops at a breakpoint","note":"the capability table names, for ST, IL, LD, FBD and SFC, journey 53a to 53e (pause, Step one cycle, resume, with the cycle counter as witness) and a journey that stops at a breakpoint of that language; the CI job that runs the journeys gives the pass state"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
@@ -2371,6 +2372,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the main process and the renderer the same name"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 gives the page the same title as the window, before the renderer sets any"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 the product name has one home per process, and the homes agree"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/productName.test.ts","test":"UX-016 titles the window ZPLC with no project, and \"<project> — ZPLC\" with one open"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 follows the system mode only for the system theme"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 keeps a report for the next start, and says whether it changed anything"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"UX-016 replaces a corrupt file at the next report"},
@@ -2379,6 +2381,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"the stored preferences (UX-014, UX-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"what the window reports (UX-014, UX-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/shellPreferences.test.ts","test":"window colour from the stored theme (UX-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-016 names it neither \"ZPLC Studio\", \"ZPLC IDE\" nor \"Studio\", in English or in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/i18n/i18n.test.tsx","test":"UX-016 the catalogs call the application ZPLC (decision D-03)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/windowSurface.test.ts","test":"UX-016 gives the native window the canvas token of each theme until the renderer reports its own"}
   ],
   "UX-017": [
@@ -3023,11 +3027,14 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/memory.test.ts","test":"HIL cases: memory opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"a chunk the device refuses fails the deploy at once, with the text of the device (HIL-001.05)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
     {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
     {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a run of packages/zplc-hil on a flashed Raspberry Pi Pico or ESP32-S3 that compiles, deploys through the control protocol and observes the device with no mocked step, kept as a hardware run record (HIL-009). The describeCases tables only compile their cases, and the runner and shell-link tests and the emulated bench reach no physical device."}
   ],
   "HIL-002": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"a run voided by the timing tolerance still writes its record, with the void result, the tolerance and the ticks (HIL-002.03)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the image hash the device reports is in the record, without --firmware-image (HIL-002.07)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"},
     {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a scenario file run on a physical board through the hardware runtime port, with time taken from device timestamps, kept as a hardware run record (HIL-009). The port tests run against fake devices and the native runtime."}
@@ -3157,7 +3164,7 @@
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package follows the executable (REL-011)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package is the one of decision D-03 (REL-011)"}
   ],
   "REL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the AppImage stays published beside the .deb and the .rpm (REL-012)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021)"},
@@ -3281,10 +3288,9 @@
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the title of a release says how complete a prerelease is (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"compareVersions (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the changelog holds only tagged versions (REL-031)"},
-    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)","partial":true,"note":"decision D-03 is taken (the product is ZPLC) and scripts/release/identity.json records it, with the appId com.zenithindustrialcloud.zplc that electron-builder.yml and package.json carry; the reverse-DNS root com.zenithindustrialcloud still needs the owner's confirmation before the first signed or Store release, the alternative being io.github.eduardojvieira.zplc"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
-    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"},
-    {"kind":"gate","ref":"scripts/release/identity.json","test":"D-03 is open","note":"Needs the owner to take decision D-03, the product name and the appId, before the first Store or signed release. The tests check that the version and the identity each have one source, but the name itself is not decided."}
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
   ],
   "REL-032": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check, reads its result in the notes, and lets nothing else wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner. Authored in this run: the job publishes its verdict as an output (a job that continues on error reports success to its readers), the release notes read it and no other job waits for it; authored workflow, not executed in CI."}
@@ -3377,15 +3383,16 @@
   ],
   "DOC-015": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"DOC-015: no Spanish docs page or translation file uses a voseo form of the application deny-list"},
-    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)","partial":true},
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015)"},
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep one standard term for each concept (DOC-015)"},
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep the neutral usted register (DOC-015, D-10)"},
-    {"kind":"gate","ref":"docs/docs/contributing/principles.md","test":"no fluent reviewer has read the other Spanish pages yet","note":"Needs a fluent reviewer to read the Spanish pages beyond Learn and the Studio workbench, the only ones reviewed in the 2.0 remediation. The docs test checks the usted register, not a reading by a fluent person."}
+    {"kind":"manual","ref":"docs/docs/contributing/principles.md","test":"The Spanish pages were reviewed against the English text","note":"Owner decision 2026-10-20: the owner delegated the fluent review of the Spanish pages to the 2.0 remediation run, which read every Spanish page against its English twin in the register of decision D-10. Generated pages (the references built from source and test data, such as the runtime API, the function references and the language references) quote English source text by design and are not translated by hand; the docs test checks the usted register and the term deny-list, not a reading by a person."}
   ],
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
   ],
   "DOC-017": [
-    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark","partial":true,"note":"one text-free mark in the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums. The README and the GitHub description still need the same mark, and the name (D-03) is the owner's"},
+    {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark and its one-colour variants","partial":true,"note":"one text-free mark of decision D-03 (ZPLC), with one-colour variants, drawn only in colours of the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums, and the README shows it. The name ZPLC is used by the application, its catalogs (src/i18n/i18n.test.tsx), the installers (scripts/release/identity.json), the README and the site title; the GitHub description is set outside the repository and is not checked, and the prose of the documentation pages is renamed by its own pass"},
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"}
   ],
   "DOC-018": [

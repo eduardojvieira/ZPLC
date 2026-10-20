@@ -4,6 +4,7 @@
   "build",
   "simulate",
   "debug",
+  "pause",
   "watch",
   "force",
   "deploy"
@@ -24,7 +25,11 @@
    },
    "debug": {
     "kind": "journey",
-    "ref": "16 Debug details: stop, trace, resume mid-scan"
+    "ref": "7 Breakpoint stops execution"
+   },
+   "pause": {
+    "kind": "journey",
+    "ref": "53e Pause, step one cycle and resume a Structured Text program"
    },
    "watch": {
     "kind": "journey",
@@ -54,6 +59,10 @@
    "debug": {
     "kind": "journey",
     "ref": "28kc A breakpoint on an IL line stops execution"
+   },
+   "pause": {
+    "kind": "journey",
+    "ref": "53d Pause, step one cycle and resume an Instruction List program"
    },
    "watch": {
     "kind": "journey",
@@ -86,14 +95,18 @@
     "kind": "journey",
     "ref": "28 A breakpoint on a rung stops execution"
    },
+   "pause": {
+    "kind": "journey",
+    "ref": "53a Pause, step one cycle and resume a Ladder program"
+   },
    "watch": {
     "kind": "journey",
     "ref": "28b Online values of a rung come from the debug map"
    },
    "force": {
-        "kind": "journey",
-        "ref": "51d A forced variable is shown as forced in the Ladder"
-      },
+    "kind": "journey",
+    "ref": "51d A forced variable is shown as forced in the Ladder"
+   },
    "deploy": {
     "kind": "board"
    }
@@ -116,6 +129,10 @@
    "debug": {
     "kind": "journey",
     "ref": "28ka A breakpoint on an FBD block stops execution"
+   },
+   "pause": {
+    "kind": "journey",
+    "ref": "53b Pause, step one cycle and resume a function block diagram"
    },
    "watch": {
     "kind": "journey",
@@ -147,6 +164,10 @@
    "debug": {
     "kind": "journey",
     "ref": "28kb A breakpoint on an SFC step stops execution"
+   },
+   "pause": {
+    "kind": "journey",
+    "ref": "53c Pause, step one cycle and resume a sequential function chart"
    },
    "watch": {
     "kind": "journey",

@@ -1,14 +1,15 @@
-# ZPLC IDE - Electron Builder Configuration
+# ZPLC - Electron Builder Configuration
 # Cross-platform builds for Windows, macOS, and Linux
 #
 # IMPORTANT: Architecture (x64/arm64) is controlled EXCLUSIVELY by the CLI
 # flags (--x64 / --arm64) in the GitHub Actions workflow.
 # Do NOT hardcode arch arrays here — it causes double builds and wastes CI time.
 
-appId: com.zplc.ide
-productName: ZPLC IDE
+# The identity of decision D-03, recorded in scripts/release/identity.json (REL-031): change them together.
+appId: com.zenithindustrialcloud.zplc
+productName: ZPLC
 # executableName without spaces — rpmbuild chokes on spaces in .spec paths
-executableName: zplc-ide
+executableName: zplc
 
 # Directories
 directories:
@@ -44,7 +45,7 @@ extraResources:
   # The licence notices of every third-party package and font in the application (REL-019).
   - from: build/THIRD-PARTY-NOTICES.txt
     to: THIRD-PARTY-NOTICES.txt
-  # The manifest of the release firmware and the images of the two learner boards, so that Studio shows them with no
+  # The manifest of the release firmware and the images of the two learner boards, so that ZPLC shows them with no
   # network (REL-025). scripts/release/firmware-images.ts `stage` writes the folder in the release workflow; a local
   # build has none and the application then says that it holds no firmware image.
   - from: dist-firmware
@@ -67,7 +68,7 @@ mac:
   icon: ../../tools/brand/icon.icns
   darkModeSupport: true
   # REL-020: the ZIP follows the same scheme as the DMG (its default name would put the architecture before `mac`).
-  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
   # No paid certificate exists, so the bundle is signed ad hoc and sealed, never notarized (REL-001, REL-003).
   # The identity is explicit: electron-builder does not fall back to ad hoc by itself.
   identity: "-"
@@ -85,7 +86,7 @@ mac:
 
 dmg:
   sign: false
-  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
   contents:
     - x: 130
       y: 220
@@ -108,13 +109,13 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   # `unsigned` stays in the variant until a signed Windows channel is live (REL-038).
-  artifactName: "zplc-ide-${version}-${os}-${arch}-setup-unsigned.${ext}"
+  artifactName: "zplc-${version}-${os}-${arch}-setup-unsigned.${ext}"
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: ZPLC IDE
+  shortcutName: ZPLC
 
 portable:
-  artifactName: "zplc-ide-${version}-${os}-${arch}-portable-unsigned.${ext}"
+  artifactName: "zplc-${version}-${os}-${arch}-portable-unsigned.${ext}"
 
 # ============================================================================
 # Linux Configuration
@@ -130,21 +131,20 @@ linux:
     - rpm
 
 appImage:
-  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
+  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
 
 # No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
 # The udev rule (REL-013) is written by scripts/release/udev-rules.ts in the beforePack hook, from the USB identifiers of
 # tools/hil/usb-ids.json, and fpm installs it in the vendor rules folder of the package: `source=destination`.
 deb:
-  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
+  # The package name of decision D-03 (scripts/release/identity.json): electron-builder would take the product name.
+  packageName: zplc
+  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
   fpm:
     - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
 
 rpm:
-  artifactName: "zplc-ide-${version}-${os}-${arch}.${ext}"
-  # Override fpm --name to avoid spaces in .spec filename
-  # rpmbuild can't handle "ZPLC IDE.spec" — needs "zplc-ide.spec"
+  packageName: zplc
+  artifactName: "zplc-${version}-${os}-${arch}.${ext}"
   fpm:
-    - "--name"
-    - "zplc-ide"
     - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"

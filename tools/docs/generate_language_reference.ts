@@ -98,79 +98,79 @@ const STATE_LABEL: Record<State, L10n> = {
 
 const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L10n; editor: L10n; related: Array<{ href: string; text: L10n }> }> = {
   st: {
-    title: { en: 'Structured Text (ST) reference', es: 'Referencia de Texto Estructurado (ST)' },
-    label: { en: 'Structured Text', es: 'Texto Estructurado' },
-    description: { en: 'What of Structured Text works, from the executed conformance tests.', es: 'Qué funciona de Texto Estructurado, según las pruebas de conformidad ejecutadas.' },
+    title: { en: 'Structured Text (ST) reference', es: 'Referencia de texto estructurado (ST)' },
+    label: { en: 'Structured Text', es: 'Texto estructurado' },
+    description: { en: 'What of Structured Text works, from the executed conformance tests.', es: 'Qué funciona del texto estructurado, según las pruebas de conformidad ejecutadas.' },
     editor: {
       en: 'Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.',
-      es: 'Texto Estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.',
+      es: 'El texto estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.',
     },
     related: [
-      { href: '../languages/st.md', text: { en: 'Structured Text guide', es: 'Guía de Texto Estructurado' } },
+      { href: '../languages/st.md', text: { en: 'Structured Text guide', es: 'Guía de texto estructurado' } },
       { href: './functions.md', text: { en: 'Function reference', es: 'Referencia de funciones' } },
       { href: './function-blocks.md', text: { en: 'Function block reference', es: 'Referencia de bloques de función' } },
     ],
   },
   il: {
-    title: { en: 'Instruction List (IL) reference', es: 'Referencia de Lista de Instrucciones (IL)' },
-    label: { en: 'Instruction List', es: 'Lista de Instrucciones' },
-    description: { en: 'What of Instruction List works, from the executed conformance tests.', es: 'Qué funciona de Lista de Instrucciones, según las pruebas de conformidad ejecutadas.' },
+    title: { en: 'Instruction List (IL) reference', es: 'Referencia de lista de instrucciones (IL)' },
+    label: { en: 'Instruction List', es: 'Lista de instrucciones' },
+    description: { en: 'What of Instruction List works, from the executed conformance tests.', es: 'Qué funciona de la lista de instrucciones, según las pruebas de conformidad ejecutadas.' },
     editor: {
       en: 'Instruction List is written in a text editor. The source is parsed and translated to Structured Text before it is compiled, so the data types, functions and function blocks are those of Structured Text.',
-      es: 'Lista de Instrucciones se escribe en un editor de texto. El código se analiza y se traduce a Texto Estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los de Texto Estructurado.',
+      es: 'La lista de instrucciones se escribe en un editor de texto. El código se analiza y se traduce a texto estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los del texto estructurado.',
     },
     related: [
-      { href: '../languages/il.md', text: { en: 'Instruction List guide', es: 'Guía de Lista de Instrucciones' } },
-      { href: './language-st.md', text: { en: 'Structured Text reference', es: 'Referencia de Texto Estructurado' } },
+      { href: '../languages/il.md', text: { en: 'Instruction List guide', es: 'Guía de lista de instrucciones' } },
+      { href: './language-st.md', text: { en: 'Structured Text reference', es: 'Referencia de texto estructurado' } },
     ],
   },
   ld: {
-    title: { en: 'Ladder Diagram (LD) reference', es: 'Referencia de Diagrama de Escalera (LD)' },
-    label: { en: 'Ladder Diagram', es: 'Diagrama de Escalera' },
-    description: { en: 'What of Ladder Diagram works, from the executed conformance tests.', es: 'Qué funciona de Diagrama de Escalera, según las pruebas de conformidad ejecutadas.' },
+    title: { en: 'Ladder Diagram (LD) reference', es: 'Referencia de diagrama de escalera (LD)' },
+    label: { en: 'Ladder Diagram', es: 'Diagrama de escalera' },
+    description: { en: 'What of Ladder Diagram works, from the executed conformance tests.', es: 'Qué funciona del diagrama de escalera, según las pruebas de conformidad ejecutadas.' },
     editor: {
       en: 'Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.',
-      es: 'Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.',
+      es: 'El diagrama de escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
-      { href: './language-fbd.md', text: { en: 'Function Block Diagram reference', es: 'Referencia de Diagrama de Bloques de Función' } },
+      { href: './language-fbd.md', text: { en: 'Function Block Diagram reference', es: 'Referencia de diagrama de bloques de función' } },
       { href: './function-blocks.md', text: { en: 'Function block reference', es: 'Referencia de bloques de función' } },
     ],
   },
   fbd: {
-    title: { en: 'Function Block Diagram (FBD) reference', es: 'Referencia de Diagrama de Bloques de Función (FBD)' },
-    label: { en: 'Function Block Diagram', es: 'Diagrama de Bloques de Función' },
-    description: { en: 'What of Function Block Diagram works, from the executed conformance tests.', es: 'Qué funciona de Diagrama de Bloques de Función, según las pruebas de conformidad ejecutadas.' },
+    title: { en: 'Function Block Diagram (FBD) reference', es: 'Referencia de diagrama de bloques de función (FBD)' },
+    label: { en: 'Function Block Diagram', es: 'Diagrama de bloques de función' },
+    description: { en: 'What of Function Block Diagram works, from the executed conformance tests.', es: 'Qué funciona del diagrama de bloques de función, según las pruebas de conformidad ejecutadas.' },
     editor: {
       en: 'Function Block Diagram is drawn in the diagram editor of ZPLC: blocks with typed pins and connections, with undo and validation while you draw. The Structured Text that the build generates from the diagram is read-only output.',
-      es: 'Diagrama de Bloques de Función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
+      es: 'El diagrama de bloques de función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
-      { href: './language-ld.md', text: { en: 'Ladder Diagram reference', es: 'Referencia de Diagrama de Escalera' } },
+      { href: './language-ld.md', text: { en: 'Ladder Diagram reference', es: 'Referencia de diagrama de escalera' } },
       { href: './functions.md', text: { en: 'Function reference', es: 'Referencia de funciones' } },
       { href: './function-blocks.md', text: { en: 'Function block reference', es: 'Referencia de bloques de función' } },
     ],
   },
   sfc: {
-    title: { en: 'Sequential Function Chart (SFC) reference', es: 'Referencia de Diagrama Funcional Secuencial (SFC)' },
-    label: { en: 'Sequential Function Chart', es: 'Diagrama Funcional Secuencial' },
-    description: { en: 'What of Sequential Function Chart works, from the executed conformance tests.', es: 'Qué funciona de Diagrama Funcional Secuencial, según las pruebas de conformidad ejecutadas.' },
+    title: { en: 'Sequential Function Chart (SFC) reference', es: 'Referencia de diagrama funcional secuencial (SFC)' },
+    label: { en: 'Sequential Function Chart', es: 'Diagrama funcional secuencial' },
+    description: { en: 'What of Sequential Function Chart works, from the executed conformance tests.', es: 'Qué funciona del diagrama funcional secuencial, según las pruebas de conformidad ejecutadas.' },
     editor: {
       en: 'Sequential Function Chart is drawn in the chart editor of ZPLC: steps, transitions and actions, with undo and validation while you draw. The Structured Text that the build generates from the chart is read-only output.',
-      es: 'Diagrama Funcional Secuencial se dibuja en el editor de gráficos de ZPLC: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del gráfico es solo una salida de lectura.',
+      es: 'El diagrama funcional secuencial se dibuja en el editor de diagramas de ZPLC: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
-      { href: './language-st.md', text: { en: 'Structured Text reference', es: 'Referencia de Texto Estructurado' } },
+      { href: './language-st.md', text: { en: 'Structured Text reference', es: 'Referencia de texto estructurado' } },
     ],
   },
 };
 
 const PAGE_INTRO: L10n = {
   en: 'The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known failures. CI runs the whole suite on every change. {counts}',
-  es: 'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallos conocidos. CI ejecuta toda la batería en cada cambio. {counts}',
+  es: 'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. {counts}',
 };
 
 const HEADINGS: Record<string, L10n> = {
@@ -188,7 +188,7 @@ const SCREENSHOT: L10n = {
 
 const ADDRESSING_INTRO: L10n = {
   en: 'A variable is bound to a place of the process image with `AT`, or with an entry of `io` in the [project file](./project-file.md). An address is written `%`, the area, the size and the position; the short form `%I0.0` is `%IX0.0`, and addresses are not case sensitive. The same addresses are used in every language: Instruction List writes them in its declarations and the graphical languages declare them in the variable table of the program.',
-  es: 'Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: Lista de Instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.',
+  es: 'Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.',
 };
 
 const ADDRESS_HEAD: Record<Lang, string[]> = {
@@ -274,8 +274,8 @@ function evidenceCell(fact: RowFacts, lang: Lang): string {
 
 const NOT_SUPPORTED_NOTE: Record<State, L10n> = {
   works: { en: '', es: '' },
-  partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
-  broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
+  partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
+  broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
   unverified: { en: 'No conformance case that runs covers it yet, so nothing is claimed about its behaviour.', es: 'Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento.' },
   rejected: { en: 'Not supported: the build refuses it with a message that names the position.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición.' },
   decision: { en: 'Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta.' },
