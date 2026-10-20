@@ -189,7 +189,10 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
         self.assertIn(
             "#ifndef CONFIG_ZPLC_SCHEDULER\nstatic const char *state_name", shell
         )
-        self.assertIn(".storage_dev = (void *)PARTITION_DEVICE(storage_partition)", config)
+        # IO-008: LittleFS mounts by the flash-area identifier; the flash device it was handed before never mounted.
+        # The mount itself is exercised by firmware/tests/hal_persist_keys on native_sim.
+        self.assertIn(".storage_dev = (void *)PARTITION_ID(storage_partition)", config)
+        self.assertNotIn("PARTITION_DEVICE(storage_partition)", config)
         self.assertNotIn("copy_to_fb_str", cloud_handler)
         self.assertNotIn("static int json_extract_string(", aws_fleet)
         self.assertIn("json_extract_string_unescaped", aws_fleet)
