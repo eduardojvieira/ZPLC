@@ -18,14 +18,14 @@ una entrada de catálogo no son una calificación de hardware.
 
 ## Los niveles
 
-Se usa un solo vocabulario en todas partes: en la documentación, en Studio, en los
+Se usa un solo vocabulario en todas partes: en la documentación, en la aplicación ZPLC, en los
 mensajes de commit y en los pull requests. Un nivel superior nunca se deduce de uno
 inferior.
 
 | Nivel | Qué establece | Qué no establece | Dónde se ve |
 | --- | --- | --- | --- |
 | Host | Pasó una prueba unitaria, de conformidad o en C en el equipo de desarrollo. | Tiempos, E/S ni alimentación de un dispositivo. | Las líneas de evidencia de la documentación |
-| Simulación nativa | El runtime nativo del host ejecutó el escenario con un reloj virtual. | Equivalencia con el destino Zephyr ni con una placa. | El modo **Simulate** de Studio |
+| Simulación nativa | El runtime nativo del host ejecutó el escenario con un reloj virtual. | Equivalencia con el destino Zephyr ni con una placa. | El modo **Simulate** de ZPLC |
 | Host empaquetado | Un instalador de escritorio empaquetado se inició en su propio sistema en la ejecución de la versión. | Firma del instalador, notarización ni comportamiento del hardware. | Las notas de cada versión |
 | Destino emulado | Una suite de Zephyr pasó en `native_sim` o en un destino QEMU Cortex-M. | La placa exacta, su sonda, el cableado ni la salida eléctrica. | La página de pruebas de firmware |
 | `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de soporte** de una placa, más abajo |

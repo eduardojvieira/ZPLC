@@ -23,7 +23,7 @@ Structured Text (ST) es el frontend central de lenguaje de ZPLC. El repositorio 
 
 ## Qué puede hacer hoy cada lenguaje
 
-Cada fila nombra la prueba que muestra la capacidad: un recorrido de Studio, una prueba en el runtime nativo o un caso de conformidad, todos ejecutados por la integración continua y ninguno en una placa. Una fila que dice que aún no tiene prueba de extremo a extremo no cuenta con esa prueba todavía; no es una promesa de que la capacidad funcione. Todo lo que solo una placa puede mostrar lo dice así. La pausa, la reanudación, el paso de ciclo y los puntos de interrupción están en las filas de depuración; el perfil de capacidades que informa el runtime decide cuáles habilita Studio.
+Cada fila nombra la prueba que muestra la capacidad: un recorrido de la aplicación ZPLC, una prueba en el runtime nativo o un caso de conformidad, todos ejecutados por la integración continua y ninguno en una placa. Una fila que dice que aún no tiene prueba de extremo a extremo no cuenta con esa prueba todavía; no es una promesa de que la capacidad funcione. Todo lo que solo una placa puede mostrar lo dice así. La pausa, la reanudación, el paso de ciclo y los puntos de interrupción están en las filas de depuración; el perfil de capacidades que informa el runtime decide cuáles habilita la aplicación ZPLC.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 

@@ -65,7 +65,7 @@ cambia ningún fuente C.
 - Una placa que no está en el manifiesto (`native_sim`, una placa propia) usa el perfil de alias por defecto de
   `firmware/zephyr/io-default.json`: `led0` a `led3` son las salidas, `sw0` a `sw3` las entradas y el conversor con
   la etiqueta `adc` canales 0 a 4 las entradas analógicas, cada una enlazada cuando el devicetree la tiene.
-- Los puertos POSIX y WebAssembly no listan ningún canal: el runtime host intercambia la imagen de proceso con Studio.
+- Los puertos POSIX y WebAssembly no listan ningún canal: el runtime host intercambia la imagen de proceso con la aplicación ZPLC.
 - Ningún puerto maneja una salida analógica, así que ninguna descripción lista una (`zplc_hal_dac_write()` responde
   `ZPLC_HAL_NOT_IMPL`).
 - Los tamaños de imagen son los que necesitan los canales, con `CONFIG_ZPLC_IO_INPUT_IMAGE_BYTES` y
@@ -73,7 +73,7 @@ cambia ningún fuente C.
   conjunto de instrucciones: reducirla cambia el contrato binario y es un paso aparte.
 
 El firmware informa la identidad de su descripción con `sys io --json` (id de placa, hash, cantidad de canales
-y bytes de imagen; un comando aparte, para que las claves de `sys info --json` no cambien), y Studio se niega a cargar un programa que usa E/S en un firmware cuya descripción no es la
+y bytes de imagen; un comando aparte, para que las claves de `sys info --json` no cambien), y la aplicación ZPLC se niega a cargar un programa que usa E/S en un firmware cuya descripción no es la
 que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 
 ### No soportado

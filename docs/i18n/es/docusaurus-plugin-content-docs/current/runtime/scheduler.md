@@ -147,7 +147,7 @@ Las cinco reglas anteriores son las mismas en simulación y en un target. Lo sig
 | Velocidad y jitter | La VM corre en un procesador de host bajo un sistema operativo de propósito general. | La VM corre en el procesador de la placa. Un programa que cumple a tiempo en simulación puede incumplir en un target, y a la inversa. |
 | Informe de un incumplimiento | La bandera de advertencia, la cuenta, el último exceso, el límite configurable y la causa del fault de la tabla anterior. | Los mismos campos, del mismo núcleo (`deadline` y `fault` de `zplc sched status --json`), con la cuenta de cada tarea, el total y el estado `error` una vez latcheado. El límite es `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
-El runtime WebAssembly de Studio ejecuta el mismo núcleo del scheduler y la misma sesión que la simulación nativa, y una prueba compara sus decisiones con la traza compartida del núcleo (admisión, orden, latch de entradas, incumplimientos de plazo, latch de falla y commit, para tres tareas y para una). Su reloj es el de la página, en milisegundos enteros, así que las filas anteriores que nombran el reloj del host valen para el reloj del navegador, y una pestaña en segundo plano puede ir con retraso. Ver [Runtime del navegador](./browser-runtime.md).
+El runtime WebAssembly de la aplicación ZPLC ejecuta el mismo núcleo del scheduler y la misma sesión que la simulación nativa, y una prueba compara sus decisiones con la traza compartida del núcleo (admisión, orden, latch de entradas, incumplimientos de plazo, latch de falla y commit, para tres tareas y para una). Su reloj es el de la página, en milisegundos enteros, así que las filas anteriores que nombran el reloj del host valen para el reloj del navegador, y una pestaña en segundo plano puede ir con retraso. Ver [Runtime del navegador](./browser-runtime.md).
 
 ## Pausa, reanudación, paso y parada
 
@@ -198,13 +198,13 @@ Qué se verifica, y dónde:
 
 | Dónde | Qué se rechaza |
 |---|---|
-| La compilación (Studio, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`); uno en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
+| La compilación (la aplicación ZPLC, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`); uno en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
 | El loader | Un segmento que no son entradas completas, una entrada fuera de la imagen de salidas, un valor distinto de 0 o 1, una salida dos veces, o más de 64 entradas. |
 | El firmware, en la carga y en la restauración de arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa (un proyecto de otra placa). El programa no se guarda ni se ejecuta. |
 
 Los valores declarados rigen desde la carga que confirma el programa, antes del primer scan, y la carga los lleva a los pines: un programa restaurado espera en STOP con sus salidas declaradas encendidas. Reemplazarlo por un programa que no declara nada devuelve los pines al nivel de la placa en esa carga. La imagen de proceso de salidas es el estado lógico del programa y se pone en cero en STOP, sea cual sea el valor que muestre el pin.
 
-Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reset del componente, y una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)); la confirmación de carga que muestra a una persona los valores declarados antes de escribirlos en un dispositivo es una pantalla de Studio y no forma parte de esta página.
+Lo que esto no afirma: el tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reset del componente, y una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)); la confirmación de carga que muestra a una persona los valores declarados antes de escribirlos en un dispositivo es una pantalla de la aplicación ZPLC y no forma parte de esta página.
 
 ## Runtime a prueba de fallas: faults, causa de reset y watchdog
 

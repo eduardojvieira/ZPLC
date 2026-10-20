@@ -23,7 +23,7 @@ Structured Text (ST) is ZPLC's central language frontend. The repository also ha
 
 ## What each language can do today
 
-Every row names the check that shows the capability: a Studio journey, a test on the native runtime or a conformance case, all of them run by continuous integration, none of them on a board. A row that says it is not tested end to end has no such check yet; it is not a promise that the capability works. Anything only a board can show says so. Pause, resume, cycle step and breakpoints are in the debug rows; the capability profile that the runtime reports decides which of them Studio enables.
+Every row names the check that shows the capability: a journey of the ZPLC application, a test on the native runtime or a conformance case, all of them run by continuous integration, none of them on a board. A row that says it is not tested end to end has no such check yet; it is not a promise that the capability works. Anything only a board can show says so. Pause, resume, cycle step and breakpoints are in the debug rows; the capability profile that the runtime reports decides which of them the ZPLC application enables.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 

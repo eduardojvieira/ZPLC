@@ -81,7 +81,7 @@ changes no C source.
 - A board that is not in the manifest (`native_sim`, a custom board) uses the default alias profile of
   `firmware/zephyr/io-default.json`: `led0` to `led3` are the outputs, `sw0` to `sw3` the inputs and the converter
   labelled `adc` channels 0 to 4 the analog inputs, each bound when the devicetree has it.
-- The POSIX and WebAssembly ports list no channel: the host runtime exchanges the process image with Studio.
+- The POSIX and WebAssembly ports list no channel: the host runtime exchanges the process image with the ZPLC application.
 - No port drives an analog output, so no description lists one (`zplc_hal_dac_write()` answers
   `ZPLC_HAL_NOT_IMPL`).
 - The image sizes are what the channels need, with `CONFIG_ZPLC_IO_INPUT_IMAGE_BYTES` and
@@ -89,7 +89,7 @@ changes no C source.
   instruction set: shrinking it changes the binary contract and is a separate step.
 
 The firmware reports the identity of its description with `sys io --json` (board id, hash, channel count and
-image bytes; a command of its own, so that the keys of `sys info --json` do not change), and Studio refuses to deploy a program that uses I/O to firmware whose description is not the one it
+image bytes; a command of its own, so that the keys of `sys info --json` do not change), and the ZPLC application refuses to deploy a program that uses I/O to firmware whose description is not the one it
 holds, or to a board that has no channel for what the program touches.
 
 ### Not supported

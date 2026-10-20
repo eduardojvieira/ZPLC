@@ -77,5 +77,5 @@ El manifest de placas es `firmware/app/boards/boards.json`; reemplazó al nombre
 ## Regla de fuentes de verdad
 
 El manifiesto es solo un contrato de navegación. La verdad sobre las APIs del runtime, las placas,
-los flujos de Studio y el alcance del release vive en los archivos que nombra la
+los flujos de la aplicación ZPLC y el alcance del release vive en los archivos que nombra la
 [fuente de verdad](./source-of-truth.md).

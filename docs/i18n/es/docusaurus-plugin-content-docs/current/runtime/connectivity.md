@@ -20,7 +20,7 @@ El soporte de protocolos depende de las capacidades físicas de su placa objetiv
 
 Ningún intercambio por estas interfaces se ha probado en una placa; lo que se ha verificado está en las guías prácticas de [Modbus](../guides/modbus.md) y de [MQTT](../guides/mqtt-sparkplug.md).
 
-Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
+ZPLC muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
 ## Protocolos soportados
 
@@ -88,7 +88,7 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 
 ## Qué puede hacer un mensaje de la red
 
-Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en Studio, por el enlace serial.
+Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en la aplicación ZPLC, por el enlace serial.
 
 | Origen | Qué puede cambiar | Qué no alcanza |
 | --- | --- | --- |
