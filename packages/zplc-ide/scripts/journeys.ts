@@ -3209,6 +3209,56 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // LRN-013, LRN-014, LRN-015, LRN-024: a hardware lesson on the chosen board, by the keyboard only. The learner chooses the
+    // Raspberry Pi Pico, continues the course, and the lesson shows the Pico's wiring (the diagram draws, the list and the pin
+    // map name the parts); switching to the ESP32-S3-DevKitC-1 redraws it for that board. With no board connected, Check on
+    // board is disabled and says why, and nothing asks for a serial port. No board is attached; nothing physical is started.
+    name: '63 Learn hardware track: the wiring of each board and the check that waits for the learner', example: 'none', proves: [], partly: ['LRN-013', 'LRN-014', 'LRN-015', 'LRN-024'],
+    run: async (app, { root }) => {
+      const [FIRST] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string];
+      writeFileSync(join(root, 'profile', 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 4, last: null, lessons: { [FIRST]: { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null } } }));
+      await app.eval(`(() => { window.__serialUses = 0; const serial = navigator.serial; if (!serial) return; for (const name of ['requestPort', 'getPorts']) { const original = serial[name]?.bind(serial); serial[name] = (...args) => { window.__serialUses += 1; return original ? original(...args) : Promise.resolve([]); }; } })()`);
+      const focus = (selector: string) => app.eval(`document.querySelector(${JSON.stringify(selector)})?.focus()`);
+      const drawn = (board: string) => app.eval<boolean>(`(() => { const image = document.querySelector('[data-learn-wiring="${board}"] img'); return !!image && image.complete && image.naturalWidth > 0; })()`);
+      const pins = () => app.eval<string[]>(`[...document.querySelectorAll('[data-learn-pin-map] tr[data-learn-pin]')].map((row) => row.getAttribute('data-learn-pin'))`);
+
+      // 1. The Pico is chosen on the Learn home by the keyboard, and Enter on Continue opens the next lesson of the course.
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the hardware track strip', async () => await app.visible(css('[data-learn-hardware]')) || undefined);
+      await focus('[data-learn-hardware] [role="group"] button');
+      await app.press('Enter');
+      await app.until('the Pico to be chosen', async () => await app.eval<boolean>(`document.querySelector('[data-learn-hardware] [aria-pressed="true"]')?.textContent === 'Raspberry Pi Pico'`) || undefined);
+      await focus('[data-learn-continue]');
+      await app.press('Enter');
+      await app.until('the lesson on the board', async () => await app.visible(css('[data-learn-board-lesson]')) || undefined);
+
+      // 2. LRN-014: the Pico's wiring is drawn and written, and the pin map names its parts.
+      await app.until('the Pico wiring to be drawn', async () => await drawn('rpi-pico-rp2040') || undefined);
+      assert((await app.eval<number>(`document.querySelectorAll('[data-learn-wiring-list] li').length`)) > 0, 'The wiring is not listed in words.');
+      const picoPins = await pins();
+      assert(picoPins.length > 0, 'The pin map is empty.');
+
+      // 3. LRN-013: the board picker of the lesson switches to the ESP32-S3 by the keyboard, and the wiring is drawn for it.
+      await focus('[data-learn-board-lesson] [role="group"] button[aria-pressed="true"]');
+      await app.press('ArrowRight');
+      await app.press('Enter');
+      await app.until('the ESP32-S3 wiring to be drawn', async () => await drawn('esp32-s3-devkitc') || undefined);
+      assert((await pins()).length > 0, 'The pin map of the ESP32-S3 is empty.');
+
+      // 4. LRN-016: the voltage limit is one key press away.
+      await focus('[data-learn-voltage-link]');
+      await app.press('Enter');
+      await app.until('the voltage limit to take the focus', async () => await app.eval<boolean>(`document.activeElement?.hasAttribute('data-learn-voltage') === true`) || undefined);
+
+      // 5. LRN-015: with no board connected, Check on board is disabled and says what the learner has to do first.
+      assert(await app.eval<boolean>(`document.querySelector('[data-learn-board-check]')?.disabled === true`), 'Check on board can be pressed with no board connected.');
+      const reason = await app.eval<string>(`document.querySelector('[data-learn-board-check-reason]')?.textContent ?? ''`);
+      assert(reason === 'Connect Studio to your board first, from the toolbar.', `Check on board does not say why it is disabled: ${reason}`);
+      assert((await app.eval<number>('window.__serialUses ?? 0')) === 0, 'Learn used Web Serial.');
+      assert((await app.eval<string | null>(`document.querySelector('[data-connection]')?.getAttribute('data-connection') ?? null`)) !== 'connected', 'The window is connected to a device.');
+    },
+  },
+  {
     // DOC-003: the tutorial "Blink without hardware" (docs/docs/tutorials/blink-without-hardware.md), step for step: the
     // example is copied from the Welcome screen into an empty folder, read, built, run in the simulator with its output
     // watched while it toggles, and its scenario test run. With ZPLC_DOC_SHOTS=<folder> the picture of each step is
