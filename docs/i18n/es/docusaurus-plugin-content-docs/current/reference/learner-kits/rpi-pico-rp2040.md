@@ -23,16 +23,16 @@ El kit del curso para la Raspberry Pi Pico (RP2040): su mapa de pines, las pieza
 
 | Canal | Dirección | Dirección IEC | Pin | Ubicación | Notas |
 | --- | --- | --- | --- | --- | --- |
-| `DO0` | salida, digital | `%QX0.0` | GP0 | header pin 1 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO1` | salida, digital | `%QX0.1` | GP1 | header pin 2 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO2` | salida, digital | `%QX0.2` | GP2 | header pin 4 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO3` | salida, digital | `%QX0.3` | GP3 | header pin 5 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO4` | salida, digital | `%QX0.4` | GP25 | on-board LED | On-board green LED through its series resistor; not a field output. |
+| `DO0` | salida, digital | `%QX0.0` | GP0 | header pin 1 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO1` | salida, digital | `%QX0.1` | GP1 | header pin 2 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO2` | salida, digital | `%QX0.2` | GP2 | header pin 4 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO3` | salida, digital | `%QX0.3` | GP3 | header pin 5 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO4` | salida, digital | `%QX0.4` | GP25 | on-board LED | On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image. |
 | `DI0` | entrada, digital | `%IX0.0` | GP15 | header pin 20 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI1` | entrada, digital | `%IX0.1` | GP14 | header pin 19 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI2` | entrada, digital | `%IX0.2` | GP13 | header pin 17 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI3` | entrada, digital | `%IX0.3` | GP12 | header pin 16 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | header pin 31 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
+| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | header pin 31 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin. |
 | `AI1` | entrada, analógica | `%IW5` | GP27 (ADC1) | header pin 32 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
 | `AI2` | entrada, analógica | `%IW6` | GP28 (ADC2) | header pin 34 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
 | `AI3` | entrada, analógica | `%IW7` | VSYS/3 (ADC3) | internal | Internal: the supply voltage divided by 3, no external connection. |

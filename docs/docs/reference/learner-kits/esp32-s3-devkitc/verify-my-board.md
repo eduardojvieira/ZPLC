@@ -26,8 +26,8 @@ The wiring of the lesson [Verify my board](../../../learn/lessons/verify-my-boar
 
 ## Wiring card
 
-1. LED: red LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
-2. Test button: push button between GPIO0 (BOOT) (header J3 and BOOT button, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
+1. LED: red LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
+2. Test button: push button between GPIO5 (header J1 pin 5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/verify-my-board <<< */}
 

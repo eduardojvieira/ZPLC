@@ -26,12 +26,12 @@ El cableado de la lección [Estructuras y arreglos: un panel de tres llamadas](.
 
 ## Tarjeta de cableado
 
-1. Llamada 1: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Llamada 2: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Llamada 3: pulsador entre GPIO8 (header J1, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-4. Reconocimiento: cable puente desde GPIO9 (header J1, DI3) hasta GND (GND · J1-22); conectado significa activado.
-5. Llamada pendiente: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-6. Todas llaman: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
+1. Llamada 1: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Llamada 2: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Llamada 3: pulsador entre GPIO7 (header J1 pin 7, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+4. Reconocimiento: cable puente desde GPIO8 (header J1 pin 12, DI3) hasta GND (GND · J1-22); conectado significa activado.
+5. Llamada pendiente: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+6. Todas llaman: LED rojo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/structures-arrays-call-panel <<< */}
 

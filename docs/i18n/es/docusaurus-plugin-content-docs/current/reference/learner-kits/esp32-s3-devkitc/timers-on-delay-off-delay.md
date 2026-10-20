@@ -26,10 +26,10 @@ El cableado de la lección [Temporizadores: una luz con retardo a la desconexió
 
 ## Tarjeta de cableado
 
-1. Pulsador: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Sensor: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Luz: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-4. Confirmado: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
+1. Pulsador: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Sensor: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Luz: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+4. Confirmado: LED verde con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/timers-on-delay-off-delay <<< */}
 

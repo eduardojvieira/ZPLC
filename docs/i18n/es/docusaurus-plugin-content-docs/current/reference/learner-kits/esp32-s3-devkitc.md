@@ -23,15 +23,16 @@ El kit del curso para la ESP32-S3-DevKitC-1 (N8R8): su mapa de pines, las piezas
 
 | Canal | Dirección | Dirección IEC | Pin | Ubicación | Notas |
 | --- | --- | --- | --- | --- | --- |
-| `DO0` | salida, digital | `%QX0.0` | GPIO38 | header J3 | 3.3 V logic. Not 5 V tolerant. External LED with a series resistor. |
-| `DO1` | salida, digital | `%QX0.1` | GPIO15 | header J1 | 3.3 V logic. Not 5 V tolerant. |
-| `DO2` | salida, digital | `%QX0.2` | GPIO16 | header J1 | 3.3 V logic. Not 5 V tolerant. |
-| `DO3` | salida, digital | `%QX0.3` | GPIO17 | header J1 | 3.3 V logic. Not 5 V tolerant. |
-| `DI0` | entrada, digital | `%IX0.0` | GPIO0 (BOOT) | header J3 and BOOT button | BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset. |
-| `DI1` | entrada, digital | `%IX0.1` | GPIO18 | header J1 | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| `DI2` | entrada, digital | `%IX0.2` | GPIO8 | header J1 | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| `DI3` | entrada, digital | `%IX0.3` | GPIO9 | header J1 | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| `AI0` | entrada, analógica | `%IW4` | GPIO4 (ADC1 channel 3) | header J1 | 0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V. |
+| `DO0` | salida, digital | `%QX0.0` | GPIO15 | header J1 pin 8 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| `DO1` | salida, digital | `%QX0.1` | GPIO16 | header J1 pin 9 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| `DO2` | salida, digital | `%QX0.2` | GPIO17 | header J1 pin 10 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| `DO3` | salida, digital | `%QX0.3` | GPIO18 | header J1 pin 11 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| `DI0` | entrada, digital | `%IX0.0` | GPIO5 | header J1 pin 5 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| `DI1` | entrada, digital | `%IX0.1` | GPIO6 | header J1 pin 6 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| `DI2` | entrada, digital | `%IX0.2` | GPIO7 | header J1 pin 7 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| `DI3` | entrada, digital | `%IX0.3` | GPIO8 | header J1 pin 12 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| `DI4` | entrada, digital | `%IX0.4` | GPIO0 (BOOT button) | on-board BOOT button | On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
+| `AI0` | entrada, analógica | `%IW4` | GPIO4 (ADC1_CH3) | header J1 pin 4 | 0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin. |
 
 Alimentación: 3V3 en 3V3 · J1-1, GND en GND · J1-22, la tierra de un potenciómetro en GND · J1-22.
 

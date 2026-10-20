@@ -47,8 +47,10 @@ describe('flashing page: every board of the manifest has its image and its comma
     it(`${lang}: has the boot-mode steps of the Pico and of the ESP32-S3, and says that a person starts the flash`, () => {
       expect(page).toContain('RPI-RP2');
       expect(page).toMatch(/BOOTSEL/);
-      expect(page).toMatch(/esptool\.py --chip esp32s3 .* write_flash/);
-      expect(page).toMatch(/BOOT[\s\S]{0,80}RESET/);
+      // esptool v5 spelling (no .py, a hyphenated command), the one the Zephyr 4.4 runner calls.
+      expect(page).toMatch(/esptool --chip esp32s3 .* write-flash 0x0 /);
+      // The DevKitC-1 labels its reset button RST.
+      expect(page).toMatch(/BOOT[\s\S]{0,80}(RST|RESET)/);
       expect(page).toMatch(/MCP/);
     });
   }

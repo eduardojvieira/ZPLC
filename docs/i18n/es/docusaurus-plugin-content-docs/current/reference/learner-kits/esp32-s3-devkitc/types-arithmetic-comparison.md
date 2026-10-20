@@ -26,11 +26,11 @@ El cableado de la lección [Tipos, aritmética y comparación: un total y tres b
 
 ## Tarjeta de cableado
 
-1. Paso: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Reset: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Bajo: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-4. Exacto: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
-5. Alto: LED rojo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1, DO2) hasta GND (GND · J1-22).
+1. Paso: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Reset: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Bajo: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+4. Exacto: LED verde con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
+5. Alto: LED rojo con una resistencia de 330 Ω en serie, desde GPIO17 (header J1 pin 10, DO2) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison <<< */}
 

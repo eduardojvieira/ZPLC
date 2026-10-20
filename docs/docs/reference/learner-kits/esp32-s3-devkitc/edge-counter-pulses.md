@@ -26,9 +26,9 @@ The wiring of the lesson [Edges and pulse counter](../../../learn/lessons/edge-c
 
 ## Wiring card
 
-1. Pulse input: push button between GPIO0 (BOOT) (header J3 and BOOT button, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
-2. Reset: push button between GPIO18 (header J1, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
-3. Count reached: green LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
+1. Pulse input: push button between GPIO5 (header J1 pin 5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
+2. Reset: push button between GPIO6 (header J1 pin 6, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
+3. Count reached: green LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/edge-counter-pulses <<< */}
 
