@@ -2,6 +2,8 @@
 export const examplesEn = {
     'examples.first_blink.title': 'First blink',
   'examples.first_blink.summary': 'Reference solution of the first lesson: a lamp that changes state every half second.',
+  'examples.verify_my_board.title': 'Verify my board',
+  'examples.verify_my_board.summary': 'Reference solution of the board check: an LED that blinks every half second and stays lit while a push button is pressed.',
   'examples.enabled_blink.title': 'Enabled blinker',
   'examples.enabled_blink.summary': 'Reference solution of the blinker lesson: a timer and a memory, gated by an enable input.',
   'examples.two_hand.title': 'Two-hand guard',
@@ -89,6 +91,8 @@ export const examplesEn = {
 export const examplesEs: Record<keyof typeof examplesEn, string> = {
     'examples.first_blink.title': 'Primer parpadeo',
   'examples.first_blink.summary': 'Solución de referencia de la primera lección: una lámpara que cambia de estado cada medio segundo.',
+  'examples.verify_my_board.title': 'Verificar mi placa',
+  'examples.verify_my_board.summary': 'Solución de referencia de la verificación de la placa: un LED que parpadea cada medio segundo y queda encendido mientras se presiona un pulsador.',
   'examples.enabled_blink.title': 'Parpadeador habilitado',
   'examples.enabled_blink.summary': 'Solución de referencia de la lección del parpadeador: un temporizador y una memoria, condicionados por una entrada de habilitación.',
   'examples.two_hand.title': 'Mando a dos manos',

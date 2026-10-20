@@ -4906,6 +4906,222 @@
           ]
         }
       }
+    },
+    {
+      "id": "verify-my-board",
+      "version": 1,
+      "order": 33,
+      "module": 0,
+      "level": "foundation",
+      "prerequisites": [
+        "first-blink-simulation"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "hardware"
+      ],
+      "unsupported": {
+        "simulation": {
+          "reason": {
+            "en": "This lesson checks a real board: that it is the board you chose, that it blinks an LED and that it reads a push button. A simulation cannot show any of that.",
+            "es": "Esta lección verifica una placa real: que es la placa que usted eligió, que hace parpadear un LED y que lee un pulsador. Una simulación no puede mostrar nada de eso."
+          },
+          "instead": {
+            "en": "Without a board, go on to the scan cycle lesson: the Simulation track does not need this check.",
+            "es": "Sin una placa, continúe con la lección del ciclo de escaneo: la ruta de Simulación no necesita esta verificación."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 30,
+      "starter": {
+        "project": "verify_my_board_starter",
+        "program": "src/VerifyBoard.st"
+      },
+      "solution": {
+        "project": "verify_my_board",
+        "program": "src/VerifyBoard.st"
+      },
+      "scenario": {
+        "id": "VerifyBoard",
+        "path": "tests/verify-board.scenario.json",
+        "sha256": "b6284bfc0ea87f3d9c1586a9fdfa4b740f112c239ba1465a71e9e09cfbcf799e",
+        "tickMs": 10,
+        "durationMs": 1600,
+        "assertions": 8,
+        "canonical": "{\"durationMs\":1600,\"events\":[{\"atMs\":0,\"set\":{\"VerifyBoard.Button\":false}},{\"atMs\":1150,\"set\":{\"VerifyBoard.Button\":true}},{\"atMs\":1350,\"set\":{\"VerifyBoard.Button\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"atMs\":750,\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"kind\":\"AT\"},{\"atMs\":1100,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"forMs\":160,\"fromMs\":1170,\"kind\":\"FOR\"},{\"atMs\":1450,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"atMs\":1580,\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"VerifyBoard.Led\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200}],\"id\":\"VerifyBoard\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "led",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "LED",
+                "es": "LED"
+              }
+            },
+            {
+              "id": "onboard-led",
+              "kind": "led",
+              "channel": "DO4",
+              "boards": [
+                "rpi-pico-rp2040"
+              ],
+              "label": {
+                "en": "On-board LED",
+                "es": "LED integrado"
+              }
+            },
+            {
+              "id": "button",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Test button",
+                "es": "Pulsador de prueba"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 50,
+          "analogPercent": 5
+        }
+      },
+      "text": {
+        "en": {
+          "title": "Verify my board",
+          "summary": "Check that your board is the one you chose, that it blinks an LED and that it reads a push button.",
+          "scope": "The simulation check of this lesson proves the program. The hardware check grades a trace recorded from your board and is labelled a hardware run; it does not prove electrical limits.",
+          "objectives": [
+            "Check that the board Studio reaches is the board you chose.",
+            "See an LED blink on the board.",
+            "Read a push button on the board."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Check the board before the hardware lessons: Studio must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
+              "checkpoint": "You can say which board you use and which LED should blink."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "The LED blinks: on for half a second, off for half a second. What should the LED do while you hold the push button?",
+              "checkpoint": "Write down your prediction before you edit."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Open src/VerifyBoard.st. The starter ignores the button: while it is pressed, the LED keeps blinking. Change the line of Led so that the LED is also lit while Button is pressed, leave OnBoardLed := Led as it is, and save the file.",
+              "checkpoint": "The program builds without errors."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Every physical step is yours; Studio starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in Studio, after you check the SHA-256 of the file. Connect: connect Studio to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and Studio refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
+              "checkpoint": "The scenario is named VerifyBoard and contains 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch the LED blink about once a second, then hold the push button: the LED stays lit while you hold it, and it blinks again when you release it. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you press the button and grades the same scenario within the time tolerance of the lesson. Its result is labelled a hardware run, apart from any simulation pass.",
+              "checkpoint": "The hardware check passed on your board."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Which part of this lesson would fail if the board were not the one you chose, if the LED were wired backwards, or if the button were not connected to GND?",
+              "checkpoint": "You know what to check first when a later hardware lesson does not behave as you expect."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The LED must be lit in two cases: while Blink is TRUE, or while Button is TRUE. Which Boolean operator says \"or\"?"
+            },
+            {
+              "level": 2,
+              "text": "Write Led := Blink OR Button; and keep OnBoardLed := Led;"
+            }
+          ],
+          "faultCases": [
+            "The starter ignores the button: while it is pressed, the LED keeps blinking."
+          ]
+        },
+        "es": {
+          "title": "Verificar mi placa",
+          "summary": "Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un pulsador.",
+          "scope": "La verificación en simulación de esta lección prueba el programa. La verificación de hardware califica una traza registrada desde su placa y se identifica como una ejecución en hardware; no prueba límites eléctricos.",
+          "objectives": [
+            "Verificar que la placa con la que se comunica Studio es la que usted eligió.",
+            "Ver parpadear un LED en la placa.",
+            "Leer un pulsador en la placa."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Verifique la placa antes de las lecciones de hardware: Studio debe comunicarse con la placa que usted eligió, la placa debe hacer parpadear un LED y debe leer un pulsador. En la Raspberry Pi Pico, el LED integrado parpadea junto con el LED en DO0; en la ESP32-S3-DevKitC-1, parpadea el LED en DO0.",
+              "checkpoint": "Puede indicar qué placa usa y qué LED debe parpadear."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "El LED parpadea: medio segundo encendido y medio segundo apagado. ¿Qué debe hacer el LED mientras usted mantiene presionado el pulsador?",
+              "checkpoint": "Anote su predicción antes de editar."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Abra src/VerifyBoard.st. El programa inicial ignora el pulsador: mientras está presionado, el LED sigue parpadeando. Cambie la línea de Led para que el LED también se encienda mientras Button está presionado, deje OnBoardLed := Led como está y guarde el archivo.",
+              "checkpoint": "El programa se compila sin errores."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego presione RUN.",
+              "checkpoint": "El escenario se llama VerifyBoard y contiene 8 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Observe que el LED parpadea más o menos una vez por segundo; luego mantenga presionado el pulsador: el LED queda encendido mientras lo mantiene y vuelve a parpadear al soltarlo. En la Pico, el LED integrado hace lo mismo. Después ejecute la verificación de hardware de la lección: registra una traza de la placa mientras usted presiona el pulsador y califica el mismo escenario dentro de la tolerancia de tiempo de la lección. Su resultado se identifica como una ejecución en hardware, distinta de una aprobación en simulación.",
+              "checkpoint": "La verificación de hardware pasó en su placa."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué parte de esta lección fallaría si la placa no fuera la que usted eligió, si el LED estuviera conectado con la polaridad invertida o si el pulsador no estuviera conectado a GND?",
+              "checkpoint": "Sabe qué revisar primero cuando una lección de hardware posterior no se comporta como espera."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa \"o\"?"
+            },
+            {
+              "level": 2,
+              "text": "Escriba Led := Blink OR Button; y conserve OnBoardLed := Led;"
+            }
+          ],
+          "faultCases": [
+            "El programa inicial ignora el pulsador: mientras está presionado, el LED sigue parpadeando."
+          ]
+        }
+      }
     }
   ],
   "course": {

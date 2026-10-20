@@ -18,6 +18,7 @@ unlisted: true
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
 | [Your first blink in simulation](../lessons/first-blink-simulation.md) | `first-blink-simulation` | ST | 10 |
+| [Verify my board](../lessons/verify-my-board.md) | `verify-my-board` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-0 <<< */}
 

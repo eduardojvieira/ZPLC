@@ -114,7 +114,8 @@ export function continueTarget(view: CourseView, progress: LearnProgress | null)
   const resumable = (lesson: CourseLessonView) => lesson.state === 'available' || lesson.state === 'in-progress';
   const lastLesson = last ? all.find((lesson) => lesson.id === last) : undefined;
   if (lastLesson && resumable(lastLesson)) return lastLesson.id;
-  return all.find(resumable)?.id ?? null;
+  // A lesson without a simulation grade (verify my board) is opened on purpose, never offered by Continue (LRN-011).
+  return all.find((lesson) => resumable(lesson) && lesson.tracks.includes('simulation'))?.id ?? null;
 }
 
 export type TrackSupport = { supported: true } | { supported: false; reason: string; instead: string };

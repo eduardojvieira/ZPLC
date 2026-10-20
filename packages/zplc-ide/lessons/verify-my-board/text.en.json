@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "title": "Verify my board",
+  "summary": "Check that your board is the one you chose, that it blinks an LED and that it reads a push button.",
+  "scope": "The simulation check of this lesson proves the program. The hardware check grades a trace recorded from your board and is labelled a hardware run; it does not prove electrical limits.",
+  "objectives": [
+    "Check that the board Studio reaches is the board you chose.",
+    "See an LED blink on the board.",
+    "Read a push button on the board."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "Check the board before the hardware lessons: Studio must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
+      "checkpoint": "You can say which board you use and which LED should blink."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The LED blinks: on for half a second, off for half a second. What should the LED do while you hold the push button?",
+      "checkpoint": "Write down your prediction before you edit."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Open src/VerifyBoard.st. The starter ignores the button: while it is pressed, the LED keeps blinking. Change the line of Led so that the LED is also lit while Button is pressed, leave OnBoardLed := Led as it is, and save the file.",
+      "checkpoint": "The program builds without errors."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Every physical step is yours; Studio starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in Studio, after you check the SHA-256 of the file. Connect: connect Studio to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and Studio refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
+      "checkpoint": "The scenario is named VerifyBoard and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the LED blink about once a second, then hold the push button: the LED stays lit while you hold it, and it blinks again when you release it. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you press the button and grades the same scenario within the time tolerance of the lesson. Its result is labelled a hardware run, apart from any simulation pass.",
+      "checkpoint": "The hardware check passed on your board."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which part of this lesson would fail if the board were not the one you chose, if the LED were wired backwards, or if the button were not connected to GND?",
+      "checkpoint": "You know what to check first when a later hardware lesson does not behave as you expect."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The LED must be lit in two cases: while Blink is TRUE, or while Button is TRUE. Which Boolean operator says \"or\"?"
+    },
+    {
+      "level": 2,
+      "text": "Write Led := Blink OR Button; and keep OnBoardLed := Led;"
+    }
+  ],
+  "faultCases": [
+    "The starter ignores the button: while it is pressed, the LED keeps blinking."
+  ]
+}

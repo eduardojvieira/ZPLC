@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "led",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "LED",
+        "es": "LED"
+      }
+    },
+    {
+      "id": "onboard-led",
+      "kind": "led",
+      "channel": "DO4",
+      "boards": [
+        "rpi-pico-rp2040"
+      ],
+      "label": {
+        "en": "On-board LED",
+        "es": "LED integrado"
+      }
+    },
+    {
+      "id": "button",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Test button",
+        "es": "Pulsador de prueba"
+      }
+    }
+  ]
+}

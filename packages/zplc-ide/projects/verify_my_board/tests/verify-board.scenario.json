@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "VerifyBoard",
+  "tickMs": 10,
+  "durationMs": 1600,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "VerifyBoard.Button": false
+      }
+    },
+    {
+      "atMs": 1150,
+      "set": {
+        "VerifyBoard.Button": true
+      }
+    },
+    {
+      "atMs": 1350,
+      "set": {
+        "VerifyBoard.Button": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "VerifyBoard.Led": false,
+        "VerifyBoard.OnBoardLed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 750,
+      "condition": {
+        "VerifyBoard.Led": true,
+        "VerifyBoard.OnBoardLed": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1100,
+      "condition": {
+        "VerifyBoard.Led": false,
+        "VerifyBoard.OnBoardLed": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 1170,
+      "forMs": 160,
+      "condition": {
+        "VerifyBoard.Led": true,
+        "VerifyBoard.OnBoardLed": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1450,
+      "condition": {
+        "VerifyBoard.Led": false,
+        "VerifyBoard.OnBoardLed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1580,
+      "condition": {
+        "VerifyBoard.Led": true,
+        "VerifyBoard.OnBoardLed": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 380,
+      "condition": {
+        "VerifyBoard.Led": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 400,
+      "withinMs": 200,
+      "condition": {
+        "VerifyBoard.Led": true
+      }
+    }
+  ]
+}

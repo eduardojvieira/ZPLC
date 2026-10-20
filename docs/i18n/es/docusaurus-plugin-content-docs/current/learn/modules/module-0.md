@@ -18,6 +18,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Su primer parpadeo en simulación](../lessons/first-blink-simulation.md) | `first-blink-simulation` | ST | 10 |
+| [Verificar mi placa](../lessons/verify-my-board.md) | `verify-my-board` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-0 <<< */}
 

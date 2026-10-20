@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-my-board",
+  "version": 1,
+  "order": 33,
+  "module": 0,
+  "level": "foundation",
+  "prerequisites": [
+    "first-blink-simulation"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "hardware"
+  ],
+  "unsupported": {
+    "simulation": {
+      "reason": {
+        "en": "This lesson checks a real board: that it is the board you chose, that it blinks an LED and that it reads a push button. A simulation cannot show any of that.",
+        "es": "Esta lección verifica una placa real: que es la placa que usted eligió, que hace parpadear un LED y que lee un pulsador. Una simulación no puede mostrar nada de eso."
+      },
+      "instead": {
+        "en": "Without a board, go on to the scan cycle lesson: the Simulation track does not need this check.",
+        "es": "Sin una placa, continúe con la lección del ciclo de escaneo: la ruta de Simulación no necesita esta verificación."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "verify_my_board_starter",
+    "program": "src/VerifyBoard.st"
+  },
+  "solution": {
+    "project": "verify_my_board",
+    "program": "src/VerifyBoard.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "VerifyBoard",
+    "path": "tests/verify-board.scenario.json",
+    "sha256": "b6284bfc0ea87f3d9c1586a9fdfa4b740f112c239ba1465a71e9e09cfbcf799e"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 50,
+      "analogPercent": 5
+    }
+  }
+}
