@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/mqtt-publish-subscribe. Do not edit. >>> */}
 
-Únase al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve el registro del mensaje cuando vuelve durante un solo ciclo.
+Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.
 
 ## Datos
 
@@ -24,10 +24,10 @@ unlisted: true
 
 ## Objetivos
 
-- Distinguir un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.
-- Publicar solo cuando la suscripción ya se mantiene, porque un mensaje enviado antes no se le entrega.
-- Conservar un mensaje que VALID informa durante un solo ciclo y comparar su PAYLOAD.
-- Decir qué muestra un broker de loopback y qué no muestra.
+- Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.
+- Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.
+- Conserve un mensaje que VALID indica durante un solo ciclo, y compare su PAYLOAD.
+- Indique qué muestra un broker de loopback y qué no muestra.
 
 ## Etapas
 
@@ -44,7 +44,7 @@ El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro
 
 ## En una placa
 
-La lección se califica contra un broker que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un broker o un dispositivo reales para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita broker ni red.
+La lección se comunica con el broker MQTT que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un broker en su firmware, que el firmware del curso no configura. Complétela en Simulación: su calificación es la misma cada vez y no necesita broker ni red.
 
 {/* <<< END GENERATED: learn/lessons/mqtt-publish-subscribe <<< */}
 

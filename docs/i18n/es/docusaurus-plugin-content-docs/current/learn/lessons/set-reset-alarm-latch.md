@@ -1,12 +1,12 @@
 ---
-title: "Enclavar una alarma: set y reset, y cuál gana"
+title: "Retener una alarma: set y reset, y cuál tiene prioridad"
 sidebar_label: "set-reset-alarm-latch"
 description: "La lección set-reset-alarm-latch: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Enclavar una alarma: set y reset, y cuál gana
+# Retener una alarma: set y reset, y cuál tiene prioridad
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/set-reset-alarm-latch. Do not edit. >>> */}
 
@@ -18,13 +18,13 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 - Nivel: Fundamentos
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [seal-in-ladder](./seal-in-ladder.md)
 
 ## Objetivos
 
-- Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.
+- Mantenga una alarma después de que la falla haya desaparecido, hasta que se reconozca.
 - Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset.
 
 ## Etapas
@@ -38,11 +38,12 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de gestión de alarmas de una máquina real, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección compara biestables con prioridad al arranque y al reposo con entradas pulsadas en instantes exactos; una placa todavía no tiene traza registrada para ella. Complétela en Simulación, donde el escenario pulsa las entradas por usted.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/set-reset-alarm-latch.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/set-reset-alarm-latch.md)
 
 {/* <<< END GENERATED: learn/lessons/set-reset-alarm-latch <<< */}
 

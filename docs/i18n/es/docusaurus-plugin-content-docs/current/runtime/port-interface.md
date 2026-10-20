@@ -121,7 +121,7 @@ Cada opcode del conjunto de instrucciones da su resultado en el puerto, incluido
 | --- | --- | --- |
 | Host POSIX | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.isa`, `zplc.core.vm_core`, `zplc.core.vm_arith_edges` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (el núcleo que construye `tools/wasm-core`) |
+| WebAssembly | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ### Pruebas negativas del cargador
 
@@ -131,7 +131,7 @@ Un programa mal formado, fuera de límites o construido para otro contrato se re
 | --- | --- | --- |
 | Host POSIX | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.loader_verify`, `zplc.legacy_program_admission` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (el núcleo que construye `tools/wasm-core`) |
+| WebAssembly | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ### Pruebas de fases y fallos del planificador
 
@@ -141,7 +141,7 @@ La admisión, el orden, las fases de un scan, los incumplimientos de plazo, el e
 | --- | --- | --- |
 | Host POSIX | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.scheduler_admission`, `zplc.scheduler_equivalence`, `zplc.scheduler_run_control`, `zplc.scheduler_watchdog`, `zplc.single_task`, `zplc.failsafe` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | Abierta: El runtime WebAssembly todavía no usa el núcleo del planificador: su adaptador maneja la VM directamente, de modo que ninguna suite del planificador puede correr en él. Responsable: WP-92 (RT-008, RT-027, IDE-025). | - |
+| WebAssembly | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `packages/zplc-ide/src/runtime/wasmRuntime.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ### Autoprueba de tiempos
 
@@ -151,7 +151,7 @@ El reloj del puerto cuenta milisegundos, nunca retrocede, avanza durante una esp
 | --- | --- | --- |
 | Host POSIX | `test_port_timing` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.port_timing` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | Abierta: El módulo que construye CI enlaza el núcleo con un shim cuyo reloj fija el anfitrión (tools/wasm-core), no con la HAL de WebAssembly, y ninguna prueba del repositorio llama a esa HAL sin un motor de navegador. Responsable: WP-92 (IDE-025: the browser-engine test of the adapter). | - |
+| WebAssembly | `test_port_timing` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ### Tabla de E/S
 
@@ -161,7 +161,7 @@ Los canales de la descripción de la placa llegan a la imagen de proceso a trav�
 | --- | --- | --- |
 | Host POSIX | `test_io_table`, `test_hal_posix_io_table` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.io_table.base`, `zplc.io_table.extended`, `zplc.io_analog.ok`, `zplc.io_analog.missing` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | Abierta: La HAL de WebAssembly no lista ningún canal, de modo que su tabla está vacía por diseño (la página del contrato de la HAL), y ninguna suite llama a sus funciones de tabla: el módulo que construye CI enlaza el núcleo con un shim, no con esa HAL. Responsable: WP-92 (IDE-025, with the HAL of the module that is shipped). | - |
+| WebAssembly | `test_io_table`, `test_hal_posix_io_table` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ### Almacenamiento no volátil
 
@@ -171,13 +171,13 @@ El programa, la memoria retentiva, la configuración y las credenciales se guard
 | --- | --- | --- |
 | Host POSIX | `test_hal_posix_persist`, `test_program_store`, `test_retain` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.hal_persist_keys`, `zplc.program_store`, `zplc.program_store_nvs`, `zplc.retain_persist` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
-| WebAssembly | Abierta: Las reglas de retención no están enlazadas en la compilación WebAssembly y su almacenamiento es el almacenamiento local de la página, al que ninguna prueba del repositorio llega. Responsable: WP-92 (RT-027). | - |
+| WebAssembly | `packages/zplc-ide/src/runtime/wasmPortSuites.test.ts`, `packages/zplc-ide/src/runtime/wasmRetain.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
 
 ## Qué muestra la suite de los puertos hoy
 
 La autoprueba de tiempos informa el menor avance del tick que produce una espera de 1 ms. En el host POSIX es de 1 ms. En los destinos Zephyr de la suite (`native_sim` y QEMU Cortex-M3) el tick del kernel es de 10 ms (100 ticks por segundo, el valor por defecto del kernel) y una espera de 1 ms mueve el tick 20 ms, de modo que ni el reloj ni los temporizadores del kernel de estos destinos resuelven un intervalo menor que ese. La cifra pertenece a la configuración de compilación de la suite; no es una medición de una placa (HIL-010 es el banco).
 
-El runtime WebAssembly no ejecuta las etapas de planificador, tiempos y almacenamiento: maneja la máquina virtual directamente y no aplica las reglas de retención. Sus etapas se cierran con el núcleo compartido (RT-008, RT-027).
+El puerto WebAssembly ejecuta todas las categorías. Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `tools/wasm-core/suites.ts` con el puerto de la HAL del runtime que Studio entrega, y dan los mismos conteos (164 comprobaciones del núcleo del planificador, 2796 del sandbox). Se ejecutan en Bun, no en un motor de navegador: el reloj de la autoprueba de tiempos es `performance.now()` del anfitrión, con una resolución de 1 ms allí, y en un navegador ese reloj tiene la resolución, la fluctuación y la limitación de una pestaña en segundo plano que el navegador le da (IDE-025 es responsable de la prueba del adaptador en un motor de navegador). Un módulo no puede devolver su único hilo al anfitrión, de modo que la espera del puerto es una espera activa que lee el reloj del anfitrión; el runtime mismo nunca espera, porque el anfitrión lo consulta periódicamente. Su almacenamiento es el almacén de registros del anfitrión: Studio guarda la memoria retentiva con el proyecto abierto y el programa guardado en la memoria de la página. El puerto no tiene enlace con un dispositivo ni red, de modo que no tiene configuración ni credenciales que guardar.
 
 {/* <<< END GENERATED: runtime/port-interface <<< */}
 

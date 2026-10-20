@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison. Do not edit. >>> */}
 
-Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.
+Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.
 
 ## Datos
 
@@ -18,13 +18,13 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objetivos
 
-- Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL.
+- Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.
 - Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
 
 ## Etapas
@@ -38,11 +38,12 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con un total que depende del número exacto de pulsaciones que reproduce Studio, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison.md)
 
 {/* <<< END GENERATED: learn/lessons/types-arithmetic-comparison <<< */}
 

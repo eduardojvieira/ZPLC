@@ -18,7 +18,7 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 - Level: Foundation
 - Estimated time: 20 minutes
 - Languages: FBD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -40,9 +40,10 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson counts parts from a photocell signal that Studio replays exactly, and a board has no recorded trace of such a signal for it yet. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/counter-batch-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd.md)
 
 {/* <<< END GENERATED: learn/lessons/counter-batch-fbd <<< */}
 

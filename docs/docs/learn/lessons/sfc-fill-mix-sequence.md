@@ -18,7 +18,7 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 - Level: Intermediate
 - Estimated time: 25 minutes
 - Languages: SFC
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 
@@ -40,9 +40,10 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish process volumes, mixing quality, valve timing on real equipment, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson is graded on step times of 50 ms counted by the scan, which a board cannot repeat to the same scan every run. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence.md)
 
 {/* <<< END GENERATED: learn/lessons/sfc-fill-mix-sequence <<< */}
 

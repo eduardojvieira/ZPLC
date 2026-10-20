@@ -42,7 +42,7 @@ Tests provide native POSIX host evidence with one 10 ms task; they do not establ
 
 ## On a board
 
-The lesson presses Forward, Reverse and Stop at exact 10 ms steps to prove that the two contactors never close together, and no check against a trace recorded from a board has been written for it yet. Complete it in Simulation: its grade is the same each time and needs no board.
+The lesson needs four pushbuttons at the same time (FwdPB, RevPB, StopPB and LubeOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own. Complete it in Simulation: its grade is the same each time and needs no board.
 
 {/* <<< END GENERATED: learn/lessons/interlock-reversing-ladder <<< */}
 

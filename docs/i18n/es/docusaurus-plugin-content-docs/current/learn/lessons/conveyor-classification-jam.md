@@ -38,11 +38,11 @@ Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo C
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de una cinta física, del despeje de un atasco, hardware, HIL ni certificación.
 
 ## En una placa
 
-La lección necesita la planta de la cinta con sus sensores y un atasco forzado, que una placa no puede reproducir sin la máquina. Complétela en Simulación, donde la cinta y el atasco forman parte del escenario.
+Las piezas y el atasco provienen de la planta simulada del transportador, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro. Complétela en Simulación, donde el transportador y el atasco forman parte del escenario.
 
 {/* <<< END GENERATED: learn/lessons/conveyor-classification-jam <<< */}
 

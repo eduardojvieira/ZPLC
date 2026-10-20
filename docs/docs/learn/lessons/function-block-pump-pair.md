@@ -18,7 +18,7 @@ Write the body of a function block that holds a start and stop latch, then use i
 - Level: Intermediate
 - Estimated time: 25 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
@@ -40,9 +40,10 @@ Write the body of a function block that holds a start and stop latch, then use i
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson starts and stops two pumps at exact steps to compare two instances of one block, and no board trace has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/function-block-pump-pair.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair.md)
 
 {/* <<< END GENERATED: learn/lessons/function-block-pump-pair <<< */}
 

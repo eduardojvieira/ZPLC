@@ -3,7 +3,7 @@ slug: /learn/educators
 id: educators
 title: Docentes
 sidebar_label: Docentes
-description: "Lo que Aprender ofrece a un docente: un ajuste de aula que oculta las soluciones de referencia, un comando que verifica el progreso exportado de un estudiante contra los hash de las lecciones y un esquema imprimible del curso. Sin cuenta y sin servidor."
+description: "Lo que Aprender ofrece a un docente: un ajuste de aula que oculta las soluciones de referencia, un comando que verifica el progreso exportado de un estudiante contra los hashes de las lecciones y un esquema imprimible del curso. Sin cuenta y sin servidor."
 tags: [learn, lessons, educators, classroom]
 ---
 
@@ -36,7 +36,7 @@ El comando imprime una línea por lección:
 | Resultado | Significado |
 |---|---|
 | `verified` | La lección está aprobada y su registro de calificación se tomó en simulación contra el escenario actual de la lección: mismo id de escenario, mismo SHA-256 y mismo número de aserciones. |
-| `mismatch` | El registro de calificación se tomó contra otro escenario, otra pista u otro número de aserciones. La línea dice cuál. |
+| `mismatch` | El registro de calificación se tomó contra otro escenario, otra ruta u otro número de aserciones. La línea dice cuál. |
 | `unverified` | La lección está aprobada sin registro de calificación, como ocurre con el progreso migrado de la primera versión. |
 | `in-progress` | La lección se inició y no se aprobó. |
 | `unknown-lesson` | El archivo nombra una lección que esta versión no tiene; se conserva y se ignora. |
@@ -45,10 +45,10 @@ El código de salida es 0 cuando ninguna lección es `mismatch`, 1 cuando alguna
 es o cuando el archivo no es un archivo de progreso, y 2 para una línea de comandos
 incorrecta. Agregue `--strict` para fallar también con las lecciones `unverified`.
 
-Es una comprobación de coherencia contra los hash de las lecciones, no una defensa
+Es una comprobación de coherencia contra los hashes de las lecciones, no una defensa
 contra un estudiante que edita el archivo a mano: un registro de calificación es
-evidencia de lo que Studio registró en el equipo del estudiante. Pida que ejecute **Comprobar**
-en vivo cuando importe.
+evidencia de lo que Studio registró en el equipo del estudiante. Cuando sea importante, pida al
+estudiante que pulse **Comprobar** en su presencia.
 
 ## Imprimir el esquema del curso
 
@@ -57,7 +57,7 @@ bun tools/ci/learn-educator.ts outline --locale es --format html > curso.html
 ```
 
 El esquema enumera cada módulo y, debajo, cada lección en el orden del curso con su
-duración, lenguajes, pistas, lo que requiere y sus objetivos. `--locale` es `en` o
+duración, lenguajes, rutas, lo que requiere y sus objetivos. `--locale` es `en` o
 `es`; `--format` es `markdown` (el predeterminado) o `html`. La página HTML es
 autónoma, con estilos de impresión, sin scripts y sin archivos externos: ábrala en
 un navegador e imprímala.

@@ -1,16 +1,16 @@
 ---
-title: "Interbloqueos y permisivos: una protección que detiene el motor"
+title: "Enclavamientos y permisivos: una protección que detiene el motor"
 sidebar_label: "interlock-guard-permissive"
 description: "La lección interlock-guard-permissive: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Interbloqueos y permisivos: una protección que detiene el motor
+# Enclavamientos y permisivos: una protección que detiene el motor
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/interlock-guard-permissive. Do not edit. >>> */}
 
-Agregue un permisivo al arranque y parada de un motor para que funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.
+Agregue un permisivo al arranque y a la parada de un motor para que funcione solo con la protección cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.
 
 ## Datos
 
@@ -38,11 +38,11 @@ Agregue un permisivo al arranque y parada de un motor para que funcione solo con
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo integrado de planta de motor, con una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.
 
 ## En una placa
 
-La lección abre una entrada de protección en un paso exacto y necesita el modelo de planta del motor para su realimentación de velocidad, que una placa sin motor no puede dar. Complétela en Simulación, que aporta el motor y su realimentación de marcha.
+La realimentación de marcha proviene de la planta simulada del motor; una placa del estudiante no tiene un motor que la dé. Complétela en Simulación, que proporciona el motor y su realimentación de marcha.
 
 {/* <<< END GENERATED: learn/lessons/interlock-guard-permissive <<< */}
 

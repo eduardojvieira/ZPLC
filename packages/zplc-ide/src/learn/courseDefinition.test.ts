@@ -37,6 +37,13 @@ describe('the course definition file', () => {
     expect(problemsOf((value) => { (value.modules[1]!.tracks as string[]).push('cloud'); }).some((problem) => problem.includes('cloud'))).toBe(true);
   });
 
+  it('LRN-006 refuses a course with no rationale and a module that does not say why it sits where it does', () => {
+    expect(problemsOf((value) => { delete (value as Record<string, unknown>).rationale; }).some((problem) => problem.includes('rationale'))).toBe(true);
+    expect(problemsOf((value) => { (value.rationale as { es: string }).es = ' '; }).some((problem) => problem.includes('rationale') && problem.includes('es'))).toBe(true);
+    expect(problemsOf((value) => { delete (value.modules[4] as { why?: unknown }).why; }).some((problem) => problem.includes('module 4') && problem.includes('why'))).toBe(true);
+    expect(problemsOf((value) => { (value.modules[7]!.why as { en: string }).en = ''; }).some((problem) => problem.includes('module 7') && problem.includes('why'))).toBe(true);
+  });
+
   it('refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)', () => {
     expect(problemsOf((value) => { (value.tracks[1]!.unsupported.reason as { en: string }).en = ''; }).some((problem) => problem.includes('hardware') && problem.includes('reason'))).toBe(true);
     expect(problemsOf((value) => { (value.tracks[1]!.unsupported.instead as { es: string }).es = ''; }).some((problem) => problem.includes('hardware') && problem.includes('instead'))).toBe(true);
@@ -55,6 +62,16 @@ describe('the placement of lessons in the course', () => {
     expect(placed(lesson({ module: 40 })).some((problem) => problem.includes('a-lesson') && problem.includes('module 40'))).toBe(true);
     expect(placed(lesson({ level: 'advanced' })).some((problem) => problem.includes('level'))).toBe(true);
     expect(placed(lesson({ module: 8, level: 'advanced', tracks: ['simulation', 'hardware'] })).some((problem) => problem.includes('hardware'))).toBe(true);
+  });
+
+  it('LRN-012 refuses a Foundation or Intermediate lesson that cannot be done in simulation, except the board check of module 0', () => {
+    expect(placed(lesson({ tracks: ['hardware'] })).some((problem) => problem.includes('a-lesson') && problem.includes('simulation'))).toBe(true);
+    expect(placed(lesson({ module: 4, level: 'intermediate', tracks: ['hardware'] })).some((problem) => problem.includes('simulation'))).toBe(true);
+    expect(placed(lesson({ module: 1, tracks: ['simulation', 'hardware'] }))).toEqual([]);
+    // Module 0 is "a tour of Studio, simulation, and (hardware) verify my board": checking a board has nothing to simulate.
+    expect(placed(lesson({ module: 0, tracks: ['hardware'] }))).toEqual([]);
+    // An Advanced lesson may be hardware only (none is today).
+    expect(placed(lesson({ module: 9, level: 'advanced', tracks: ['hardware'] }))).toEqual([]);
   });
 
   it('refuses a prerequisite that sits in a later module than the lesson', () => {

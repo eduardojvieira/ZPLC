@@ -18,7 +18,7 @@ Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into 
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: FBD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [analog-scaling-integer](./analog-scaling-integer.md), [counter-batch-fbd](./counter-batch-fbd.md)
 
@@ -40,9 +40,10 @@ Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into 
 
 Tests provide native POSIX host evidence with one 10 ms task and a stand-in for the potentiometer; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson turns a stand-in potentiometer with a BOOL input at exact 10 ms steps, and no check against a trace recorded from a real potentiometer on AI0 has been written yet. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/analog-scaling-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/analog-scaling-fbd.md)
 
 {/* <<< END GENERATED: learn/lessons/analog-scaling-fbd <<< */}
 

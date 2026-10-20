@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/motor-start-stop-safe. Do not edit. >>> */}
 
-Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.
+Recorra un motor con autorretención, parada y protección por sobrecarga usando el ejemplo Motor Start Stop.
 
 ## Datos
 
@@ -18,14 +18,14 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 - Nivel: Fundamentos
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 
 ## Objetivos
 
-- Mantenga el motor encendido tras soltar Start con un seal-in.
-- Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo.
+- Mantenga el motor encendido tras soltar Start mediante una autorretención.
+- Detenga el motor con Stop, EStop y Overload, y evite que un Start mantenido lo vuelva a arrancar por sí solo.
 
 ## Etapas
 
@@ -38,11 +38,12 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.
+Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.
 
-## En una placa
+## Cableado
 
-La lección prueba una parada que debe imponerse a un arranque, con entradas que un guion pulsa en instantes exactos; una placa necesitaría pulsadores cableados y una traza registrada que todavía no existe. Complétela en Simulación, donde el escenario pulsa cada entrada por usted, y cablee el contacto de parada normalmente cerrado en un motor real.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe.md)
 
 {/* <<< END GENERATED: learn/lessons/motor-start-stop-safe <<< */}
 

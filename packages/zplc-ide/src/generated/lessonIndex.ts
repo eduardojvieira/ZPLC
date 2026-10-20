@@ -37,6 +37,7 @@ export const LESSON_IDS = [
   "analog-scaling-fbd",
   "interlock-reversing-ladder",
   "function-block-valves-fbd",
+  "verify-my-board",
   "modbus-coil-fbd",
 ] as const;
 

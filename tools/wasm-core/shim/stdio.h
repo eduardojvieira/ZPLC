@@ -15,4 +15,11 @@ int vsnprintf(char *out, size_t size, const char *format, va_list arguments);
 int snprintf(char *out, size_t size, const char *format, ...);
 int fprintf(FILE *stream, const char *format, ...);
 
+/* Only the C test suites call these; suite_libc.c defines them and is not linked into the runtime (suites.ts). */
+int vfprintf(FILE *stream, const char *format, va_list arguments);
+int printf(const char *format, ...);
+int puts(const char *text);
+int putchar(int c);
+int fputc(int c, FILE *stream);
+
 #endif

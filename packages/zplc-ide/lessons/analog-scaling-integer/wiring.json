@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "enable",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Enable",
+        "es": "Habilitación"
+      }
+    },
+    {
+      "id": "warn",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Warning",
+        "es": "Advertencia"
+      }
+    },
+    {
+      "id": "alarm",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Alarm",
+        "es": "Alarma"
+      }
+    }
+  ]
+}

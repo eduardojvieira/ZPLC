@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/one-logic-five-languages. Do not edit. >>> */}
 
-Corrija un programa en Texto Estructurado para que un portón se mantenga abierto y se cierre con una orden, lea después la misma lógica en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias, y compruebe que un solo escenario califica los cinco.
+Corrija un programa en texto estructurado para que un portón se mantenga abierto y se cierre con una orden; luego lea la misma lógica en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial, y compruebe que un solo escenario califica los cinco.
 
 ## Datos
 
@@ -18,14 +18,14 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 - Nivel: Avanzado
 - Tiempo estimado: 30 minutos
 - Lenguajes: ST, LD, FBD, SFC, IL
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
 ## Objetivos
 
-- Mantener una salida encendida después de soltar su orden, y dejar que la orden de cierre gane, en Texto Estructurado.
-- Reconocer la misma condición, (Request OR Open) AND NOT Close, en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias.
+- Mantenga una salida encendida después de soltar su solicitud, y deje que la orden de cierre tenga prioridad, en texto estructurado.
+- Reconozca la misma condición, (Request OR Open) AND NOT Close, en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial.
 
 ## Etapas
 
@@ -38,11 +38,12 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección se califica con una orden de abrir y una de cerrar reproducidas en pasos exactos, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/one-logic-five-languages.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/one-logic-five-languages.md)
 
 {/* <<< END GENERATED: learn/lessons/one-logic-five-languages <<< */}
 

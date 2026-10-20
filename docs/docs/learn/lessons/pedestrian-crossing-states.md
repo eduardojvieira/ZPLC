@@ -42,7 +42,7 @@ Tests provide deterministic native POSIX host evidence only; they are not physic
 
 ## On a board
 
-The lesson is graded against a simulated crossing with timed lights, and no board check has been written for that plant. Complete it in Simulation, which models the crossing and gives the same result each time.
+The crossing drives five lamps, and the learner boards have four LED outputs; its pedestrian requests come from the simulated crossing plant. Complete it in Simulation, which models the crossing and gives the same result each time.
 
 {/* <<< END GENERATED: learn/lessons/pedestrian-crossing-states <<< */}
 

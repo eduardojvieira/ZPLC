@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
 
+You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.
+
 - Level: Foundation
 - Tracks: Simulation, Hardware
 
@@ -18,6 +20,7 @@ unlisted: true
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
 | [Your first blink in simulation](../lessons/first-blink-simulation.md) | `first-blink-simulation` | ST | 10 |
+| [Verify my board](../lessons/verify-my-board.md) | `verify-my-board` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-0 <<< */}
 

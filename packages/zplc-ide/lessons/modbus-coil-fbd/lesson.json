@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "modbus-coil-fbd",
   "version": 1,
-  "order": 33,
+  "order": 34,
   "module": 10,
   "level": "advanced",
   "prerequisites": [
@@ -18,8 +18,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson writes and reads a coil of the Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway answering the same requests has been recorded.",
-        "es": "La lección escribe y lee una bobina del servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales que respondan las mismas solicitudes."
+        "en": "The lesson writes and reads a coil of the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and a server address in its firmware, which the course firmware does not set.",
+        "es": "La lección escribe y lee una bobina del servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
       },
       "instead": {
         "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",

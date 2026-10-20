@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "start-a",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Start pump A",
+        "es": "Arranque de la bomba A"
+      }
+    },
+    {
+      "id": "stop-a",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Stop pump A",
+        "es": "Parada de la bomba A"
+      }
+    },
+    {
+      "id": "start-b",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Start pump B",
+        "es": "Arranque de la bomba B"
+      }
+    },
+    {
+      "id": "stop-b",
+      "kind": "jumper",
+      "channel": "DI3",
+      "label": {
+        "en": "Stop pump B",
+        "es": "Parada de la bomba B"
+      }
+    },
+    {
+      "id": "run-a",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Pump A running",
+        "es": "Bomba A en marcha"
+      }
+    },
+    {
+      "id": "run-b",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Pump B running",
+        "es": "Bomba B en marcha"
+      }
+    }
+  ]
+}

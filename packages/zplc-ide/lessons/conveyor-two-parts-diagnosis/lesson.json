@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "conveyor-two-parts-diagnosis",
-  "version": 1,
+  "version": 2,
   "order": 10,
   "module": 8,
   "level": "advanced",
@@ -17,8 +17,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson diagnoses a recorded two-part sequence by reading a trace, and no trace recorded from a board has been written for it.",
-        "es": "La lección diagnostica una secuencia registrada de dos piezas leyendo una traza, y no se ha escrito para ella una traza registrada desde una placa."
+        "en": "Module 8 teaches diagnosis from a trace of the simulation, and the lesson reads seven inputs where the learner boards have four.",
+        "es": "El módulo 8 enseña el diagnóstico a partir de una traza de la simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
       },
       "instead": {
         "en": "Complete it in Simulation, where the trace is the evidence you read.",

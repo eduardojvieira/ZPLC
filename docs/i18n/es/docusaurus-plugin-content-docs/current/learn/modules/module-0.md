@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
 
+Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa.
+
 - Nivel: Fundamentos
 - Rutas: Simulación, Hardware
 
@@ -18,6 +20,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Su primer parpadeo en simulación](../lessons/first-blink-simulation.md) | `first-blink-simulation` | ST | 10 |
+| [Verificar mi placa](../lessons/verify-my-board.md) | `verify-my-board` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-0 <<< */}
 

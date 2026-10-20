@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "temporal-assertions-jam-fault",
-  "version": 1,
+  "version": 2,
   "order": 9,
   "module": 8,
   "level": "advanced",
@@ -17,12 +17,12 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "The lesson checks timed assertions to the millisecond, and a board adds timing jitter that would make those checks unreliable.",
-        "es": "La lección comprueba aserciones temporales al milisegundo, y una placa añade fluctuaciones de tiempo que harían poco fiables esas comprobaciones."
+        "en": "Module 8 teaches scenario tests and diagnosis, which run in simulation, and the lesson reads seven inputs where the learner boards have four.",
+        "es": "El módulo 8 enseña pruebas de escenario y diagnóstico, que se ejecutan en simulación, y la lección lee siete entradas cuando las placas del estudiante tienen cuatro."
       },
       "instead": {
-        "en": "Complete it in Simulation, where time is exact, then apply the same assertions to a board with the test tools.",
-        "es": "Complétela en Simulación, donde el tiempo es exacto, y luego aplique las mismas aserciones a una placa con las herramientas de pruebas."
+        "en": "Complete it in Simulation, where time is exact.",
+        "es": "Complétela en Simulación, donde el tiempo es exacto."
       }
     }
   },

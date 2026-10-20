@@ -2,8 +2,9 @@
 //
 //   bun tools/ci/generate-lesson-index.ts                  write packages/zplc-ide/src/generated/lessonIndex.ts and lessonIndex.json
 //   bun tools/ci/generate-lesson-index.ts --check          fail when those files are not what the packages produce
-//   bun tools/ci/generate-lesson-index.ts --update-hashes  after editing a scenario.json: pin its new hash in the
-//                                                          manifest and raise the lesson version by one
+//   bun tools/ci/generate-lesson-index.ts --update-hashes  after editing a package: pin the new hash of a changed
+//                                                          scenario, and raise by one the version of every lesson whose
+//                                                          learner-visible content differs from the committed index
 //
 // Exit 0 when the packages are valid and the file is (or was made) current, 1 otherwise. Every problem is printed.
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -26,7 +27,14 @@ const ROOT = resolve(import.meta.dir, '../..');
 export const INDEX_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.ts');
 export const INDEX_DATA_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json');
 
-/** Pins the hash of every changed scenario and raises its lesson version. Returns the ids it changed. */
+/** An index entry without its version, the way two entries are compared for a change a learner can see. */
+const content = (entry: { version?: number; hardware?: unknown }): string => canonicalJson({ ...entry, version: 0, hardware: entry.hardware ?? null });
+
+/**
+ * Pins the hash of every changed scenario and raises its lesson version; then raises by one the version of every other
+ * lesson whose entry differs from the committed index while its version is still the committed one. Returns the ids
+ * it changed.
+ */
 export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
   const changed: string[] = [];
   for (const id of readdirSync(lessonsDirectory)) {
@@ -40,7 +48,19 @@ export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
     writeFileSync(join(directory, 'lesson.json'), `${JSON.stringify(manifest, null, 2)}\n`);
     changed.push(id);
   }
-  return changed;
+  const { course } = loadCourse(lessonsDirectory);
+  if (!course || !existsSync(INDEX_DATA_FILE)) return changed;
+  const committed = new Map((JSON.parse(readFileSync(INDEX_DATA_FILE, 'utf8')) as { lessons: Array<{ id: string; version: number }> }).lessons.map((entry) => [entry.id, entry]));
+  for (const entry of buildIndex(loadLessonPackages(lessonsDirectory).packages, course).index.lessons) {
+    const before = committed.get(entry.id);
+    if (!before || changed.includes(entry.id) || entry.version !== before.version || content(entry) === content(before)) continue;
+    const file = join(lessonsDirectory, entry.id, 'lesson.json');
+    const manifest = JSON.parse(readFileSync(file, 'utf8')) as { version: number };
+    manifest.version += 1;
+    writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
+    changed.push(entry.id);
+  }
+  return changed.sort();
 }
 
 /** The problems of the packages and the text the two index files must hold. */
@@ -56,7 +76,7 @@ export function generate(lessonsDirectory = LESSONS_DIRECTORY): { problems: stri
 
 function main(): number {
   const { values } = parseArgs({ options: { check: { type: 'boolean' }, 'update-hashes': { type: 'boolean' } }, strict: true });
-  if (values['update-hashes']) for (const id of updateHashes()) console.log(`pinned the new scenario hash of ${id} and raised its version`);
+  if (values['update-hashes']) for (const id of updateHashes()) console.log(`raised the version of ${id} (a new scenario hash or a changed content)`);
   const { problems, source, data } = generate();
   if (problems.length > 0) {
     for (const problem of problems) console.error(`lesson packages: ${problem}`);

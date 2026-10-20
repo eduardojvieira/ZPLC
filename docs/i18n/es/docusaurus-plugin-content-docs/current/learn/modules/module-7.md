@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-7. Do not edit. >>> */}
 
+Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques de función, las estructuras, los arreglos y las tareas mantienen un programa legible y reutilizable.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [4](./module-4.md)
@@ -18,7 +20,7 @@ unlisted: true
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Bloques de función: un enclavamiento, dos bombas](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
+| [Bloques de función: un biestable, dos bombas](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
 | [Estructuras y arreglos: un panel de tres llamadas](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
 | [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](../lessons/function-block-valves-fbd.md) | `function-block-valves-fbd` | FBD | 20 |
 

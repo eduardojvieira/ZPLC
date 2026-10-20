@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "title": "Lógica booleana: un mando a dos manos con protección",
   "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que exige un dispositivo real de mando a dos manos, y no son evidencia de seguridad, de HIL ni de certificación.",
   "objectives": [
-    "Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez.",
+    "Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.",
     "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
   ],
   "stages": [
@@ -17,20 +17,20 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Antes de ejecutar, prediga las tres salidas en {{t:20}}, {{t:30}} y {{t:40}} ms. Las entradas cambian cada {{t:10}} ms, así que avance un paso a la vez.",
-      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|solo PressEnable en ON}} en {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|solo GuardLamp en ON}} en {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|solo OneHandWarning en ON}} en {{t:40}} ms."
+      "body": "Antes de ejecutar, prediga las tres salidas a los {{t:20}}, {{t:30}} y {{t:40}} ms. Las entradas cambian cada {{t:10}} ms, así que avance un paso a la vez.",
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|solo PressEnable en ON}} a los {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|solo GuardLamp en ON}} a los {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|solo OneHandWarning en ON}} a los {{t:40}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y mire el resultado.",
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y observe el resultado.",
       "checkpoint": "Cada salida sigue su propia condición y el archivo está guardado."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

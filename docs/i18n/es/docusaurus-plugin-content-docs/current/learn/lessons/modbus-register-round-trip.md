@@ -1,16 +1,16 @@
 ---
-title: "Modbus TCP: escribir un registro y leerlo de vuelta"
+title: "Modbus TCP: escribir un registro y volver a leerlo"
 sidebar_label: "modbus-register-round-trip"
 description: "La lección modbus-register-round-trip: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Modbus TCP: escribir un registro y leerlo de vuelta
+# Modbus TCP: escribir un registro y volver a leerlo
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/modbus-register-round-trip. Do not edit. >>> */}
 
-Escriba un registro de retención con un bloque Modbus TCP, léalo de vuelta cuando la escritura termine e informe si el valor que volvió es el que usted envió.
+Escriba un registro de retención con un bloque Modbus TCP, vuelva a leerlo cuando termine la escritura e informe si el valor recibido es el que usted envió.
 
 ## Datos
 
@@ -24,9 +24,9 @@ Escriba un registro de retención con un bloque Modbus TCP, léalo de vuelta cua
 
 ## Objetivos
 
-- Escribir un registro de retención con MB_WRITE_HREG y leerlo de vuelta con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.
-- Comparar el valor leído con el valor escrito e informar un ERROR de cualquiera de los dos bloques.
-- Decir qué muestra un doble de loopback y qué no muestra.
+- Escriba un registro de retención con MB_WRITE_HREG y vuelva a leerlo con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.
+- Compare el valor leído con el valor escrito, e informe un ERROR de cualquiera de los dos bloques.
+- Indique qué muestra un doble de loopback y qué no muestra.
 
 ## Etapas
 
@@ -43,7 +43,7 @@ El servidor Modbus de esta lección es un doble de loopback que Studio inicia de
 
 ## En una placa
 
-La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
+La lección se comunica con el servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
 
 {/* <<< END GENERATED: learn/lessons/modbus-register-round-trip <<< */}
 

@@ -1,16 +1,16 @@
 ---
-title: "Modbus en diagrama de bloques de función: escribir una bobina y leerla de vuelta"
+title: "Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla"
 sidebar_label: "modbus-coil-fbd"
 description: "La lección modbus-coil-fbd: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Modbus en diagrama de bloques de función: escribir una bobina y leerla de vuelta
+# Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/modbus-coil-fbd. Do not edit. >>> */}
 
-Edite un diagrama de bloques de función para que MB_READ_COIL lea de vuelta la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.
+Edite un diagrama de bloques de función para que MB_READ_COIL vuelva a leer la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.
 
 ## Datos
 
@@ -42,7 +42,7 @@ El servidor Modbus de esta lección es un doble de loopback que Studio inicia de
 
 ## En una placa
 
-La lección escribe y lee una bobina del servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales que respondan las mismas solicitudes. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
+La lección escribe y lee una bobina del servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura. Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red.
 
 {/* <<< END GENERATED: learn/lessons/modbus-coil-fbd <<< */}
 

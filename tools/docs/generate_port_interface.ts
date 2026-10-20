@@ -7,7 +7,8 @@
 //
 //   firmware/lib/zplc_core/include/zplc_hal.h          the functions of the HAL: clock, I/O table, storage, locks, services
 //   firmware/lib/zplc_core/include/zplc_sched_core.h   zplc_sched_port_t: what an adapter hands the scheduler core
-//   tools/ci/port-conformance.json                     the checks that run on each port, per category
+//   tools/ci/port-conformance.json                     the checks that run on each port, per category (the WebAssembly
+//                                                      legs name the C suites of tools/wasm-core/suites.ts)
 //
 // A function that the HAL header declares and that no group below claims fails the generator, so that the page cannot
 // miss a function of the interface, and tools/ci/port-conformance.test.ts holds the manifest to the names of the tree.
@@ -159,18 +160,18 @@ const FINDINGS: L10n = {
   en: [
     'The timing self-test reports the smallest advance of the tick that a sleep of 1 ms makes. On the POSIX host it is 1 ms. On the Zephyr targets of the suite (`native_sim` and QEMU Cortex-M3) the kernel tick is 10 ms (100 ticks per second, the default of the kernel) and a sleep of 1 ms moves the tick by 20 ms, so neither the clock nor the kernel timers of these targets resolve an interval shorter than that. The figure belongs to the build configuration of the suite; it is not a measurement of a board (HIL-010 holds the bench).',
     '',
-    'The WebAssembly runtime does not run the scheduler, timing and storage legs: it drives the virtual machine directly and does not apply the retain rules. Its legs close with the shared core (RT-008, RT-027).',
+    'The WebAssembly port runs every category. Its C suites are the files that ctest runs on the POSIX host, built by `tools/wasm-core/suites.ts` with the HAL port of the runtime that Studio ships, and they give the same counts (164 checks of the scheduler core, 2796 of the sandbox). They run under Bun, not in a browser engine: the clock of the timing self-test is the host\'s `performance.now()`, with a resolution of 1 ms there, and in a browser that clock has the resolution, the jitter and the throttling of a background tab that the browser gives it (IDE-025 owns the browser-engine test of the adapter). A module cannot hand its one thread back to the host, so the sleep of the port spins on the host\'s clock; the runtime itself never sleeps, because the host polls it. Its storage is the record store of the host: Studio keeps the retentive memory with the open project and the stored program in the memory of the page. The port has no device link and no network, so it has no configuration and no credentials to store.',
   ].join('\n'),
   es: [
     'La autoprueba de tiempos informa el menor avance del tick que produce una espera de 1 ms. En el host POSIX es de 1 ms. En los destinos Zephyr de la suite (`native_sim` y QEMU Cortex-M3) el tick del kernel es de 10 ms (100 ticks por segundo, el valor por defecto del kernel) y una espera de 1 ms mueve el tick 20 ms, de modo que ni el reloj ni los temporizadores del kernel de estos destinos resuelven un intervalo menor que ese. La cifra pertenece a la configuración de compilación de la suite; no es una medición de una placa (HIL-010 es el banco).',
     '',
-    'El runtime WebAssembly no ejecuta las etapas de planificador, tiempos y almacenamiento: maneja la máquina virtual directamente y no aplica las reglas de retención. Sus etapas se cierran con el núcleo compartido (RT-008, RT-027).',
+    'El puerto WebAssembly ejecuta todas las categorías. Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `tools/wasm-core/suites.ts` con el puerto de la HAL del runtime que Studio entrega, y dan los mismos conteos (164 comprobaciones del núcleo del planificador, 2796 del sandbox). Se ejecutan en Bun, no en un motor de navegador: el reloj de la autoprueba de tiempos es `performance.now()` del anfitrión, con una resolución de 1 ms allí, y en un navegador ese reloj tiene la resolución, la fluctuación y la limitación de una pestaña en segundo plano que el navegador le da (IDE-025 es responsable de la prueba del adaptador en un motor de navegador). Un módulo no puede devolver su único hilo al anfitrión, de modo que la espera del puerto es una espera activa que lee el reloj del anfitrión; el runtime mismo nunca espera, porque el anfitrión lo consulta periódicamente. Su almacenamiento es el almacén de registros del anfitrión: Studio guarda la memoria retentiva con el proyecto abierto y el programa guardado en la memoria de la página. El puerto no tiene enlace con un dispositivo ni red, de modo que no tiene configuración ni credenciales que guardar.',
   ].join('\n'),
 };
 
 interface Manifest {
   ports: Array<{ id: string; name: L10n; how: L10n }>;
-  categories: Array<{ id: string; title: L10n; what: L10n; legs: Record<string, { ctest?: string[]; twister?: string[]; bun?: Array<{ file: string; test: string }>; open?: L10n & { owner: string } }> }>;
+  categories: Array<{ id: string; title: L10n; what: L10n; legs: Record<string, { ctest?: string[]; twister?: string[]; wasm?: string[]; bun?: Array<{ file: string; test: string }>; open?: L10n & { owner: string } }> }>;
 }
 
 const COLUMNS = {
@@ -214,7 +215,7 @@ export function portInterfaceBody(lang: Lang): string {
       const open = leg.open;
       const checks = open
         ? `${lang === 'en' ? 'Open' : 'Abierta'}: ${prose(open[lang])} ${lang === 'en' ? 'Owner' : 'Responsable'}: ${prose(open.owner)}.`
-        : [...(leg.ctest ?? []), ...(leg.twister ?? []), ...(leg.bun ?? []).map((entry) => entry.file)].map((name) => code(name)).join(', ');
+        : [...new Set([...(leg.ctest ?? []), ...(leg.twister ?? []), ...(leg.wasm ?? []), ...(leg.bun ?? []).map((entry) => entry.file)])].map((name) => code(name)).join(', ');
       return [port.name[lang], checks, open ? '-' : port.how[lang]];
     });
     sections.push(`### ${category.title[lang]}`, prose(category.what[lang]), table([...COLUMNS.suite[lang]], rows));

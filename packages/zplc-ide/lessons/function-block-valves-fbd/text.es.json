@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque",
   "summary": "Edite un diagrama de bloques de función para que una segunda instancia del bloque de función ValveCtl del proyecto comande la válvula de vaciado, con sus entradas y su salida conectadas.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
   "objectives": [
     "Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración.",
     "Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia."
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama Valves y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Valves y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué el programa necesita dos instancias de ValveCtl y no un solo bloque conectado a las dos válvulas? Conecte DrainValve a Fill.Cmd y vea qué assertion falla.",
+      "body": "¿Por qué el programa necesita dos instancias de ValveCtl y no un solo bloque conectado a las dos válvulas? Conecte DrainValve a Fill.Cmd y vea qué aserción falla.",
       "checkpoint": "Cmd es la memoria de una instancia, así que una instancia puede mantener una sola válvula. Corregir ValveCtl una vez corrige todas las válvulas que lo usan. El escenario muestra solo la lógica; no muestra cómo se mueve una válvula real."
     }
   ],

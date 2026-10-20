@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "title": "Bloques de función: un enclavamiento, dos bombas",
-  "summary": "Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arranque y parada, y úselo dos veces, una por bomba.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.",
+  "title": "Bloques de función: un biestable, dos bombas",
+  "summary": "Escriba el cuerpo de un bloque de función que implementa una retención de arranque y parada, y úselo dos veces, una para cada bomba.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.",
   "objectives": [
-    "Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas.",
+    "Escriba un bloque de función con entradas, una salida y una memoria que se conserva entre llamadas.",
     "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en otro caso, y Reset gana cuando ambas son TRUE.",
+      "body": "En src/PumpPair.st el bloque de función Latch tiene las entradas Set y Reset y la salida Q, y el programa declara dos instancias, PumpA y PumpB. Escriba el cuerpo de Latch: Q pasa a ON con Set, pasa a OFF con Reset, conserva su valor en los demás casos, y Reset tiene prioridad cuando ambas son TRUE.",
       "checkpoint": "Cada bomba arranca con su propio Start, se detiene con su propio Stop, y una bomba nunca mueve a la otra."
     },
     {
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama PumpPair y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PumpPair y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué assertion falla.",
+      "body": "¿Qué cambiaría si las dos bombas compartieran una memoria global en lugar de una instancia cada una? Conecte a PumpB las entradas de la bomba A y vea qué aserción falla.",
       "checkpoint": "Cada instancia tiene su propia copia de las variables del bloque, así que el mismo código sirve para cualquier número de bombas. El escenario muestra solo la lógica; no muestra la secuencia de arranque ni una falla de bomba."
     }
   ],

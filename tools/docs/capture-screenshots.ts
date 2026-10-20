@@ -24,6 +24,11 @@ const ROOT = new URL('../../', import.meta.url).pathname;
 export const IMAGE_DIR = 'docs/static/img';
 export const PICTURE_DIR = `${IMAGE_DIR}/tutorials`;
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
+/**
+ * The wiring diagrams of the hardware lessons (LRN-014): drawings that tools/docs/generate_hardware_pages.ts writes from
+ * the lesson data and keeps in step with it, not pictures of the product, so they need no capture and no manifest entry.
+ */
+export const DIAGRAM_DIR = `${IMAGE_DIR}/wiring`;
 const PAGE_DIRS = ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current'];
 
 /** The pictures the journey takes, in the order of the steps. The journey and this list are checked against each other by a capture. */
@@ -99,6 +104,10 @@ export function checkManifest(manifest: Manifest, pages: Array<{ page: string; t
     for (const reference of imagesOf(text)) {
       const path = staticPathOf(reference);
       if (path === undefined) { problems.push({ where: page, message: `shows ${reference}, which is not an image of ${IMAGE_DIR}: product images are captured by automation and listed in ${MANIFEST}` }); continue; }
+      if (path.startsWith(`${DIAGRAM_DIR}/`)) {
+        if (!readImage(path)) problems.push({ where: page, message: `shows ${reference}, a wiring diagram that is not in ${DIAGRAM_DIR}: run bun tools/docs/generate_hardware_pages.ts` });
+        continue;
+      }
       if (!known.has(path)) problems.push({ where: page, message: `shows ${reference}, which the manifest does not list` });
     }
   }

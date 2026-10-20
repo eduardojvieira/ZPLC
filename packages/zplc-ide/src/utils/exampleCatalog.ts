@@ -111,6 +111,7 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   blinky_sfc: example('blinky_sfc', { group: 'languages', level: 'beginner', languages: ['SFC'], showOnWelcome: true }),
 
   // Boards and hardware
+  verify_my_board: example('verify_my_board', { group: 'boards', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   pico_blinky: example('pico_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
   pico_blinky_ton: example('pico_blinky_ton', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
   pico_blinky_blink: example('pico_blinky_blink', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),

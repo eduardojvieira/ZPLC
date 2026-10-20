@@ -18,7 +18,7 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
@@ -40,9 +40,10 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the accuracy, noise or calibration of a real analog input, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson steps a raw count by the scan, not by a real analog input, so a board would not give the same counts at the same times. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/analog-scaling-integer.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/analog-scaling-integer.md)
 
 {/* <<< END GENERATED: learn/lessons/analog-scaling-integer <<< */}
 

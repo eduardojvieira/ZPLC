@@ -43,7 +43,7 @@ The Modbus server in this lesson is a loopback double that Studio starts inside 
 
 ## On a board
 
-The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it. Complete it in Simulation: its grade is the same each time and needs no device or network.
+The lesson talks to the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set. Complete it in Simulation: its grade is the same each time and needs no device or network.
 
 {/* <<< END GENERATED: learn/lessons/modbus-register-round-trip <<< */}
 

@@ -69,7 +69,7 @@ describe('Learn lesson content modules', () => {
 
   it('names the recorded scenario and the title of the two lessons that share the conveyor, in both languages', () => {
     const lesson = (content: typeof learnLessonContentEsV1, id: string) => content.find((candidate) => candidate.id === id);
-    expect(lesson(learnLessonContentEsV1, 'temporal-assertions-jam-fault')?.title).toBe('Assertions temporales y falla por atasco');
+    expect(lesson(learnLessonContentEsV1, 'temporal-assertions-jam-fault')?.title).toBe('Aserciones temporales y falla por atasco');
     expect(lesson(learnLessonContentEnV1, 'temporal-assertions-jam-fault')?.title).toBe('Temporal assertions and jam fault');
     expect(lesson(learnLessonContentEsV1, 'conveyor-two-parts-diagnosis')).toMatchObject({ requiredScenario: 'ConveyorTwoParts', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Diagnóstico reproducible: dos piezas, una decisión' });
     expect(lesson(learnLessonContentEnV1, 'conveyor-two-parts-diagnosis')).toMatchObject({ requiredScenario: 'ConveyorTwoParts', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Reproducible diagnosis: two parts, one decision' });

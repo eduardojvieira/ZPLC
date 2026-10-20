@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 2,
+  "name": "Verify my board starter",
+  "version": "1.0.0",
+  "target": {
+    "board": "posix"
+  },
+  "io": {
+    "virtual": [
+      {
+        "name": "OnBoardLed",
+        "address": "%QX0.4",
+        "type": "BOOL",
+        "description": "The on-board LED of the Raspberry Pi Pico (GP25, channel DO4). The ESP32-S3-DevKitC-1 has no pin behind this bit."
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "VerifyBoard.st"
+      ]
+    }
+  ]
+}

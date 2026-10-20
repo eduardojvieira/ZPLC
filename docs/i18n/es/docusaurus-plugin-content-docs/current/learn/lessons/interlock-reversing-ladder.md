@@ -1,16 +1,16 @@
 ---
-title: "Enclavamientos en Ladder: un motor con inversión de giro"
+title: "Enclavamientos en diagrama de escalera: un motor con inversión de giro"
 sidebar_label: "interlock-reversing-ladder"
 description: "La lección interlock-reversing-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Enclavamientos en Ladder: un motor con inversión de giro
+# Enclavamientos en diagrama de escalera: un motor con inversión de giro
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/interlock-reversing-ladder. Do not edit. >>> */}
 
-Edite dos peldaños de Ladder para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.
+Edite dos peldaños en diagrama de escalera para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.
 
 ## Datos
 
@@ -38,11 +38,11 @@ Edite dos peldaños de Ladder para que un motor con inversión de giro nunca cie
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.
 
 ## En una placa
 
-La lección pulsa Forward, Reverse y Stop en pasos exactos de 10 ms para probar que los dos contactores nunca se cierran a la vez, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+La lección necesita cuatro pulsadores a la vez (FwdPB, RevPB, StopPB y LubeOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
 
 {/* <<< END GENERATED: learn/lessons/interlock-reversing-ladder <<< */}
 

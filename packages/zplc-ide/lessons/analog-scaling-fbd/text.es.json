@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "title": "Escalado analógico en diagrama de bloques de función: una alarma de nivel alto",
-  "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas crudas de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms y un sustituto del potenciómetro; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
+  "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas en bruto de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX, una tarea de 10 ms y un sustituto del potenciómetro; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
   "objectives": [
-    "Escale cuentas analógicas crudas a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
-    "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas crudas."
+    "Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
+    "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto."
   ],
   "stages": [
     {
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama LevelScale y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama LevelScale y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

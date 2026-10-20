@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-8. Do not edit. >>> */}
 
+Testing comes once you have programs worth testing. Scenario tests, temporal assertions, traces and breakpoints turn a guess into evidence.
+
 - Level: Advanced
 - Tracks: Simulation
 - Requires module: [6](./module-6.md)

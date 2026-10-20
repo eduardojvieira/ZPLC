@@ -7,6 +7,7 @@
  *   text.es.json    the same structure in Spanish                (`LessonText`)
  *   scenario.json   the reference scenario the lesson is graded by; its content hash is in the manifest
  *   plant-map.json  a lesson that names a plant: the explicit binding of the plant's signals to the starter's I/O (LRN-021)
+ *   wiring.json     a lesson on the hardware track: the parts and the board channels they connect to (src/boards/wiring)
  *   checks.json     optional: wrong programs that must stay RED and other correct programs that must be GREEN
  *
  * The starter and the reference solution are example projects of `projects/` that the manifest names, because the
@@ -25,6 +26,7 @@
  *                                  or a FOR or ALWAYS assertion that covers it)
  */
 import type { PlantMap } from '../plants/plantMap';
+import { WIRING_FILE, type WiringFile } from '../boards/wiring/wiring';
 import type { CourseDefinition } from './courseDefinition';
 
 export const LESSON_SCHEMA_VERSION = 1 as const;
@@ -43,6 +45,18 @@ export type LessonLocale = typeof LESSON_LOCALES[number];
 
 export type LessonLocalizedText = Record<LessonLocale, string>;
 export interface LessonUnsupportedTrack { reason: LessonLocalizedText; instead: LessonLocalizedText }
+
+/**
+ * The hardware block of a lesson on the hardware track (LRN-013, LRN-024). `timeMs` is how far, in either direction, a
+ * sample of a trace recorded from a board may sit from the scenario time an assertion names; `analogPercent` is the
+ * deviation an analog value may have, as a percentage of its full scale.
+ */
+export interface LessonHardware {
+  wiring: typeof WIRING_FILE;
+  tolerances: { timeMs: number; analogPercent: number };
+}
+/** The largest time tolerance a lesson may declare: a second is far beyond any scan, and a looser check proves nothing. */
+export const MAX_HARDWARE_TIME_TOLERANCE_MS = 1000;
 
 export interface LessonManifest {
   schemaVersion: typeof LESSON_SCHEMA_VERSION;
@@ -67,6 +81,8 @@ export interface LessonManifest {
   scenario: { file: string; id: string; path: string; sha256: string };
   /** Ids of other scenarios the starter ships that stay a regression check. */
   regressionScenarios: string[];
+  /** Present exactly when `tracks` lists hardware. */
+  hardware?: LessonHardware;
 }
 
 export interface LessonStageText { key: string; title: string; body: string; checkpoint: string }
@@ -142,11 +158,34 @@ function validateUnsupported(manifest: Json, problems: string[]): void {
   for (const key of Object.keys(unsupported)) if (!(LESSON_TRACKS as readonly string[]).includes(key)) problems.push(`manifest.unsupported: unknown track "${key}"`);
 }
 
+/** LRN-013: a lesson on the hardware track names its wiring and the tolerances of its board check; no other lesson does. */
+function validateHardware(manifest: Json, problems: string[]): void {
+  const listed = isStringArray(manifest.tracks) && manifest.tracks.includes('hardware');
+  const hardware = manifest.hardware;
+  if (hardware === undefined) {
+    if (listed) problems.push('manifest.hardware: a lesson on the hardware track needs the hardware block (wiring and tolerances)');
+    return;
+  }
+  if (!listed) { problems.push('manifest.hardware: only a lesson on the hardware track has a hardware block'); return; }
+  if (!isObject(hardware)) { problems.push('manifest.hardware: must be an object'); return; }
+  exactKeys(hardware, ['wiring', 'tolerances'], 'manifest.hardware', problems);
+  if ('wiring' in hardware && hardware.wiring !== WIRING_FILE) problems.push(`manifest.hardware.wiring: must be "${WIRING_FILE}"`);
+  const tolerances = hardware.tolerances;
+  if (!('tolerances' in hardware)) return;
+  if (!isObject(tolerances)) { problems.push('manifest.hardware.tolerances: must be an object'); return; }
+  exactKeys(tolerances, ['timeMs', 'analogPercent'], 'manifest.hardware.tolerances', problems);
+  if ('timeMs' in tolerances && (!isPositiveInt(tolerances.timeMs) || (tolerances.timeMs as number) > MAX_HARDWARE_TIME_TOLERANCE_MS)) problems.push(`manifest.hardware.tolerances.timeMs: must be an integer from 1 to ${MAX_HARDWARE_TIME_TOLERANCE_MS}`);
+  const percent = tolerances.analogPercent;
+  if ('analogPercent' in tolerances && (typeof percent !== 'number' || !Number.isFinite(percent) || percent <= 0 || percent > 100)) problems.push('manifest.hardware.tolerances.analogPercent: must be a number above 0 and at most 100');
+}
+
+const MANIFEST_KEYS = ['schemaVersion', 'id', 'version', 'order', 'module', 'level', 'prerequisites', 'languages', 'tracks', 'unsupported', 'plant', 'estimatedMinutes', 'starter', 'solution', 'scenario', 'regressionScenarios'];
+
 /** Every problem of a lesson manifest; an empty list means the manifest is valid. */
 export function validateManifest(value: unknown): string[] {
   const problems: string[] = [];
   if (!isObject(value)) return ['manifest: must be an object'];
-  exactKeys(value, ['schemaVersion', 'id', 'version', 'order', 'module', 'level', 'prerequisites', 'languages', 'tracks', 'unsupported', 'plant', 'estimatedMinutes', 'starter', 'solution', 'scenario', 'regressionScenarios'], 'manifest', problems);
+  exactKeys(value, value.hardware === undefined ? MANIFEST_KEYS : [...MANIFEST_KEYS, 'hardware'], 'manifest', problems);
   if (value.schemaVersion !== LESSON_SCHEMA_VERSION) problems.push('manifest.schemaVersion: must be 1');
   if (typeof value.id !== 'string' || !ID.test(value.id)) problems.push('manifest.id: must be a lowercase slug of 3 to 64 characters');
   if (!isPositiveInt(value.version)) problems.push('manifest.version: must be a positive integer');
@@ -157,6 +196,7 @@ export function validateManifest(value: unknown): string[] {
   if (!isStringArray(value.languages) || value.languages.length === 0 || value.languages.some((language) => !oneOf(LESSON_LANGUAGES, language))) problems.push(`manifest.languages: must list at least one of ${LESSON_LANGUAGES.join(', ')}`);
   if (!isStringArray(value.tracks) || value.tracks.length === 0 || value.tracks.some((track) => !oneOf(LESSON_TRACKS, track))) problems.push(`manifest.tracks: must list at least one of ${LESSON_TRACKS.join(', ')}`);
   validateUnsupported(value, problems);
+  validateHardware(value, problems);
   if (value.plant !== null && !oneOf(LESSON_PLANTS, value.plant)) problems.push(`manifest.plant: must be null or one of ${LESSON_PLANTS.join(', ')}`);
   if (!isPositiveInt(value.estimatedMinutes) || (value.estimatedMinutes as number) > 480) problems.push('manifest.estimatedMinutes: must be an integer from 1 to 480');
   for (const part of ['starter', 'solution'] as const) {
@@ -403,6 +443,8 @@ export interface LessonIndexEntry {
     readonly canonical: string;
   };
   regressionScenarios: readonly string[];
+  /** The wiring and the tolerances of the board check (LRN-013, LRN-024); null for a lesson without the hardware track. */
+  hardware: { readonly wiring: WiringFile; readonly tolerances: LessonHardware['tolerances'] } | null;
   text: Readonly<Record<LessonLocale, LessonTextExpanded>>;
 }
 

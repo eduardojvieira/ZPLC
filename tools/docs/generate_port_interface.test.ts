@@ -9,7 +9,7 @@ import { groupedFunctions, halFunctions, portInterfaceBody, schedulerPort } from
 const ROOT = new URL('../../', import.meta.url).pathname;
 const header = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 
-describe('port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013, stopgap: the WebAssembly runtime has no scheduler, timing or storage leg yet)', () => {
+describe('port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013)', () => {
   it('reads the declared functions of the HAL header, in declaration order, each with its first sentence', () => {
     const functions = halFunctions(header('firmware/lib/zplc_core/include/zplc_hal.h'));
     expect(functions.map((entry) => entry.name).slice(0, 2)).toEqual(['zplc_hal_tick', 'zplc_hal_sleep']);
@@ -34,6 +34,16 @@ describe('port interface page: every function of the HAL and every callback of t
     for (const lang of ['en', 'es'] as const) {
       const body = portInterfaceBody(lang);
       for (const name of ['test_port_timing', 'zplc.port_timing', 'test_sched_core', 'zplc.core.loader_verify', 'wasmParity.test.ts']) expect(body).toContain(name);
+    }
+  });
+
+  it('gives the WebAssembly port a row of checks in every category, in both languages', () => {
+    for (const lang of ['en', 'es'] as const) {
+      const rows = portInterfaceBody(lang).split('\n').filter((line) => line.startsWith('| WebAssembly |'));
+      expect(rows).toHaveLength(6);
+      expect(rows.filter((row) => /Open:|Abierta:/.test(row))).toEqual([]);
+      expect(rows.join('\n')).toContain('test_sched_core');
+      expect(rows.join('\n')).toContain('wasmPortSuites.test.ts');
     }
   });
 });

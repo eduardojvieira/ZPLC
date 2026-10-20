@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 432" width="760" height="432" role="img" aria-labelledby="wiring-esp32-s3-devkitc-title wiring-esp32-s3-devkitc-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-esp32-s3-devkitc-title">Wiring on ESP32-S3-DevKitC-1 (N8R8)</title>
+<desc id="wiring-esp32-s3-devkitc-desc">Step: push button between GPIO0 (BOOT) (header J3 and BOOT button, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it. Reset: push button between GPIO18 (header J1, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it. Low: yellow LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22). Exact: green LED with a 330 Ω resistor in series, from GPIO15 (header J1, DO1) to GND (GND · J1-22). High: red LED with a 330 Ω resistor in series, from GPIO16 (header J1, DO2) to GND (GND · J1-22).</desc>
+<rect width="760" height="432" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on ESP32-S3-DevKitC-1 (N8R8)</text>
+<rect x="8" y="48" width="256" height="336" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GPIO0 (BOOT)</text>
+<text stroke="none" x="30" y="102" font-size="11">header J3 and BOOT button · DI0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Step</text>
+<polyline points="264,88 334,88" fill="none"/>
+<circle cx="337" cy="88" r="3" fill="#ffffff"/>
+<circle cx="377" cy="88" r="3" fill="#ffffff"/>
+<polyline points="337,84 375,72" fill="none"/>
+<polyline points="356,78 356,64" fill="none"/>
+<polyline points="348,64 364,64" fill="none"/>
+<text stroke="none" x="357" y="110" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,88 712,88" fill="none"/>
+<rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GPIO18</text>
+<text stroke="none" x="30" y="166" font-size="11">header J1 · DI1</text>
+<text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Reset</text>
+<polyline points="264,152 334,152" fill="none"/>
+<circle cx="337" cy="152" r="3" fill="#ffffff"/>
+<circle cx="377" cy="152" r="3" fill="#ffffff"/>
+<polyline points="337,148 375,136" fill="none"/>
+<polyline points="356,142 356,128" fill="none"/>
+<polyline points="348,128 364,128" fill="none"/>
+<text stroke="none" x="357" y="174" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,152 712,152" fill="none"/>
+<rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GPIO38</text>
+<text stroke="none" x="30" y="230" font-size="11">header J3 · DO0</text>
+<text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Low</text>
+<polyline points="264,216 300,216" fill="none"/>
+<polyline points="300,216 306,208 318,224 330,208 342,224 354,208 360,216" fill="none"/>
+<text stroke="none" x="330" y="202" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,216 392,216" fill="none"/>
+<polygon points="392,206 392,226 412,216" fill="#e9c300"/>
+<polyline points="412,206 412,226" fill="none"/>
+<polyline points="402,202 410,194" fill="none"/>
+<polyline points="408,204 416,196" fill="none"/>
+<text stroke="none" x="402" y="242" text-anchor="middle" font-size="11">yellow LED</text>
+<polyline points="412,216 712,216" fill="none"/>
+<rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GPIO15</text>
+<text stroke="none" x="30" y="294" font-size="11">header J1 · DO1</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Exact</text>
+<polyline points="264,280 300,280" fill="none"/>
+<polyline points="300,280 306,272 318,288 330,272 342,288 354,272 360,280" fill="none"/>
+<text stroke="none" x="330" y="266" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,280 392,280" fill="none"/>
+<polygon points="392,270 392,290 412,280" fill="#2a9d3a"/>
+<polyline points="412,270 412,290" fill="none"/>
+<polyline points="402,266 410,258" fill="none"/>
+<polyline points="408,268 416,260" fill="none"/>
+<text stroke="none" x="402" y="306" text-anchor="middle" font-size="11">green LED</text>
+<polyline points="412,280 712,280" fill="none"/>
+<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO16</text>
+<text stroke="none" x="30" y="358" font-size="11">header J1 · DO2</text>
+<text stroke="none" x="440" y="336" font-size="13" font-weight="bold">High</text>
+<polyline points="264,344 300,344" fill="none"/>
+<polyline points="300,344 306,336 318,352 330,336 342,352 354,336 360,344" fill="none"/>
+<text stroke="none" x="330" y="330" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,344 392,344" fill="none"/>
+<polygon points="392,334 392,354 412,344" fill="#d62828"/>
+<polyline points="412,334 412,354" fill="none"/>
+<polyline points="402,330 410,322" fill="none"/>
+<polyline points="408,332 416,324" fill="none"/>
+<text stroke="none" x="402" y="370" text-anchor="middle" font-size="11">red LED</text>
+<polyline points="412,344 712,344" fill="none"/>
+<polyline points="712,64 712,376" fill="none" stroke-width="3"/>
+<polyline points="700,376 724,376" fill="none"/>
+<polyline points="704,381 720,381" fill="none"/>
+<polyline points="708,386 716,386" fill="none"/>
+<text stroke="none" x="728" y="406" text-anchor="end" font-size="12" font-weight="bold">GND · J1-22</text>
+</svg>

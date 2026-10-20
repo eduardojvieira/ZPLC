@@ -1,12 +1,12 @@
 ---
-title: "Comando, realimentación y velocidad"
+title: "Orden, realimentación y velocidad"
 sidebar_label: "motor-plant-feedback"
 description: "La lección motor-plant-feedback: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Comando, realimentación y velocidad
+# Orden, realimentación y velocidad
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/motor-plant-feedback. Do not edit. >>> */}
 
@@ -25,7 +25,7 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 ## Objetivos
 
 - Separe la orden al motor de la confirmación de que está en marcha.
-- Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed.
+- Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed.
 
 ## Etapas
 
@@ -38,11 +38,11 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.
 
 ## En una placa
 
-La lección necesita el modelo de planta del motor que responde a sus salidas, y una placa no tiene un motor conectado que dé esa realimentación. Complétela en Simulación, que aporta el motor y su realimentación de marcha.
+La realimentación de marcha proviene de la planta simulada del motor, que responde a sus salidas; una placa del estudiante no tiene un motor que la dé. Complétela en Simulación, que proporciona el motor y su realimentación de marcha.
 
 {/* <<< END GENERATED: learn/lessons/motor-plant-feedback <<< */}
 

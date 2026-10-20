@@ -1268,6 +1268,7 @@
     {"kind":"c-test","ref":"firmware/tests/single_task/src/main.c","test":"and the image safe (RT-014, RT-007);"}
   ],
   "RT-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmPortSuites.test.ts","test":"the port conformance suite on WebAssembly: the C suites of the core on its HAL port (IO-013, RT-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmRuntime.test.ts","test":"the scheduler of the WebAssembly runtime decides what the native runtime decides (RT-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8b Simulate on the WebAssembly runtime when the native one is off","partial":true},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"(RT-008, RT-014, RT-018)."},
@@ -1535,6 +1536,7 @@
     {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"}
   ],
   "IO-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"tells an on-board channel from a header pin, so the Pico LED needs no wiring while every input is on the header (IO-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)","partial":true,"note":"description and target-build level: the pins are proven by the loopback bench of HIL-010 (WP-85, WP-94)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
@@ -1551,10 +1553,12 @@
     {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ManifestTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. One unversioned manifest; validate_supported_boards.py and generate_board_reference.py read it."}
   ],
   "IO-013": [
-    {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"port conformance suite: the legs name real checks (IO-013, stopgap: the WebAssembly runtime has no scheduler, timing or storage leg yet)","partial":true,"note":"the port interface is documented (docs/docs/runtime/port-interface.md, generated from the HAL and scheduler headers, English and Spanish) and the conformance suite (tools/ci/port-conformance.json: per-opcode, loader negative, scheduler phase and fault, timing self-test, I/O table, storage) runs on POSIX and on Zephyr (native_sim 64 and 32 bits, qemu_cortex_m3); the WebAssembly leg is open for the scheduler, timing, I/O table and storage categories because the runtime does not use the scheduler core and the module that CI builds links a shim, not the WebAssembly HAL (WP-92, the WASM runtime package, RT-008 and RT-027); IO-013 asks for every port, so it stays partial until it closes"},
-    {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013, stopgap: the WebAssembly runtime has no scheduler, timing or storage leg yet)","partial":true,"note":"the port interface is documented (docs/docs/runtime/port-interface.md, generated from the HAL and scheduler headers, English and Spanish) and the conformance suite (tools/ci/port-conformance.json: per-opcode, loader negative, scheduler phase and fault, timing self-test, I/O table, storage) runs on POSIX and on Zephyr (native_sim 64 and 32 bits, qemu_cortex_m3); the WebAssembly leg is open for the scheduler, timing, I/O table and storage categories because the runtime does not use the scheduler core and the module that CI builds links a shim, not the WebAssembly HAL (WP-92, the WASM runtime package, RT-008 and RT-027); IO-013 asks for every port, so it stays partial until it closes"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_port_timing.c","test":"The timing self-test of the port conformance suite on the POSIX port (IO-013).","partial":true,"note":"the port interface is documented (docs/docs/runtime/port-interface.md, generated from the HAL and scheduler headers, English and Spanish) and the conformance suite (tools/ci/port-conformance.json: per-opcode, loader negative, scheduler phase and fault, timing self-test, I/O table, storage) runs on POSIX and on Zephyr (native_sim 64 and 32 bits, qemu_cortex_m3); the WebAssembly leg is open for the scheduler, timing, I/O table and storage categories because the runtime does not use the scheduler core and the module that CI builds links a shim, not the WebAssembly HAL (WP-92, the WASM runtime package, RT-008 and RT-027); IO-013 asks for every port, so it stays partial until it closes"},
-    {"kind":"c-test","ref":"firmware/tests/port_timing/src/main.c","test":"IO-013: the timing self-test of the port conformance suite, on the clock of the Zephyr port.","partial":true,"note":"the port interface is documented (docs/docs/runtime/port-interface.md, generated from the HAL and scheduler headers, English and Spanish) and the conformance suite (tools/ci/port-conformance.json: per-opcode, loader negative, scheduler phase and fault, timing self-test, I/O table, storage) runs on POSIX and on Zephyr (native_sim 64 and 32 bits, qemu_cortex_m3); the WebAssembly leg is open for the scheduler, timing, I/O table and storage categories because the runtime does not use the scheduler core and the module that CI builds links a shim, not the WebAssembly HAL (WP-92, the WASM runtime package, RT-008 and RT-027); IO-013 asks for every port, so it stays partial until it closes"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmPortSuites.test.ts","test":"the port conformance suite on WebAssembly: the C suites of the core on its HAL port (IO-013, RT-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmPortSuites.test.ts","test":"the storage of the WebAssembly port: the program store over the records of the host (IO-013)"},
+    {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"port conformance suite: the legs name real checks (IO-013)"},
+    {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_port_timing.c","test":"The timing self-test of the port conformance suite on the POSIX port (IO-013)."},
+    {"kind":"c-test","ref":"firmware/tests/port_timing/src/main.c","test":"IO-013: the timing self-test of the port conformance suite, on the clock of the Zephyr port."}
   ],
   "IO-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the generated reference prints the footprint of every board from the size budget (IO-014)"}
@@ -2541,6 +2545,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"UX-030 the Spanish of the whole application uses the glossary terms of the course"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or \"usted\"), and passes the neutral forms"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
@@ -2607,9 +2612,23 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"LRN-006 tells the learner why the course is in this order, and why each module sits where it does"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"LRN-006 refuses a course with no rationale and a module that does not say why it sits where it does"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 begins with the tour of module 0, then the scan cycle, then the first blink in Ladder and in Structured Text"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 has the modules of the table in order, each with its title intent, level, required module and tracks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 places in each module only lessons whose edited program is in a language the table gives it (module 0 is a tour and teaches none)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 states why the course is in this order, and why each module sits where it does, in both languages"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 the course follows the curriculum table of the spec, in its order"},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-006 lists the lessons of a module in course order, the order Learn shows, and says why the module sits where it does"}
+  ],
   "LRN-007": [
     {"kind":"unit","ref":"tools/ci/course-outline.test.ts","test":"course outline pages (LRN-007)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"}
+  ],
+  "LRN-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grades an edit in it, and offers the first blink in LD and in ST"}
   ],
   "LRN-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
@@ -2626,7 +2645,65 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"LRN-011 gives every lesson its own reason for a track it does not support, in both languages"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"the tracks a lesson supports (LRN-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 lets a hardware-only lesson say why it has no simulation grade, and what to do instead"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+  ],
+  "LRN-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"LRN-012 refuses a Foundation or Intermediate lesson that cannot be done in simulation, except the board check of module 0"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the first lesson leads to a blink with the controls Studio shows"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"}
+  ],
+  "LRN-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 keeps the Learn home above the strip"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 marks the chosen board as pressed and says which it is in words"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 offers both learner boards in one labelled group, none chosen until the learner chooses"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"the board of the hardware track in the Learn home (LRN-013)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 ignores a stored value that is not a learner board, and works without storage or with one that throws"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 offers the Raspberry Pi Pico and the ESP32-S3-DevKitC-1, by their ids in boards.json"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 starts with no board, keeps the one the learner chooses, and reads it back after a restart"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"the board of the hardware track (LRN-013)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-013 requires the hardware block exactly when the lesson lists the hardware track, with its wiring file and tolerances"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
+  ],
+  "LRN-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the one bill of materials of the course (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring card: the same wiring as a text list, part by part (LRN-014, LRN-037)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring diagram of a lesson on a learner board (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"a program and its wiring, on each learner board (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the bill of materials covers every hardware lesson (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-014 the lesson pages link the wiring of their lesson on each board"}
+  ],
+  "LRN-015": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 refuses a session that is not connected, and reads nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 refuses a session the learner has not started, and does not start it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 stops, keeping what it read, when the session stops running or a read fails, and never restarts it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"the hardware recorder starts no physical operation (LRN-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"LRN-015 drives every Learn control and no connect, deploy, RUN, STOP, force, raw serial or flash happens"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"Learn starts no physical operation by itself (LRN-015)"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds a call that connects, deploys, runs, stops, forces, writes, opens a port or flashes"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds an import of a module that reaches a device"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 guards the Learn modules and components, not their tests or other surfaces"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 holds for every Learn source of the repository"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"Learn starts no physical operation by itself (LRN-015)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
+  ],
+  "LRN-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"LRN-016 states the voltage limit in English and Spanish with the same facts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"LRN-016 hardware lessons use only logic-level I/O and low-voltage parts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"LRN-016 the course wires only logic-level I/O and low-voltage parts, and no mains"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-016 every wiring page states the voltage limit, in English and in Spanish"}
   ],
   "LRN-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
@@ -2674,6 +2751,28 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
   ],
+  "LRN-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps a passing hardware grade without passing the lesson, and a simulation pass without a hardware pass"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps the newest hardware grade on a merge, in either order"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 refuses a document that keeps a grade in the wrong place"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"a hardware run is kept apart from a simulation pass (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-024 has every string of the hardware track in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-024 lists the lessons passed on hardware under their own label, and says when there is none"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"a pass on hardware is shown apart from a pass in simulation (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 finds each scenario input event at the first sample, after the previous one, that holds what the event sets"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 holds a reaction exactly at the tolerance and refuses one a sample beyond it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 is deterministic: the same trace and tolerances give the same result"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes a program whose outputs follow the learner\\'s presses within the lesson tolerance, however late the presses were"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 records the run with track \"hardware\", and the progress store accepts the record"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"the grade of a hardware check is labelled a hardware run (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"the hardware check aligns the scenario on the input events the learner made (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-024 ends when the learner says the run is done, keeping what it read"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-024 samples the lesson signals at the interval, as whole ms since the start, BOOL as booleans"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"the hardware recorder (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the tolerances of a board check (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot produce a hardware grade: no tool takes a trace, a track or a board, no answer is a grade record, and a hardware run is no pass (LRN-024, LRN-034)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
+  ],
   "LRN-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
   ],
@@ -2682,20 +2781,58 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 fails a check on an empty trace instead of passing it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 fails, with nothing observed, every assertion that depends on an input event the learner never made"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 reports a late reaction with the time in the trace, the expected and observed values and the sample it read"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 reports the sample at which a FOR assertion stopped holding"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"a failed hardware check says which assertion, when, what was expected and what was observed (LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
   ],
   "LRN-027": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
   "LRN-028": [
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
+  "LRN-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 Learn follows the language of the application"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 draws the lessons and the Learn home in the language of the setting, and switches when the setting changes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 names the tracks of a lesson \"Rutas\" in Spanish, because \"Pistas\" are its hints"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 es: addresses the learner as usted, never with voseo"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 has the same structure in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, \"sí\", \"así\""},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"the voseo guard of the lesson text (LRN-029)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson and hint exists in English and Spanish with the same structure"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every part of the kit and every sentence of the voltage limit exists in both languages, in the register and the terms of the glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant label exists in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint addresses the learner with \"tú\" or voseo"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish of the Learn panel, the Lab, the plants and the faceplate uses the same register and glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the deny-lists catch the forms they name and leave the usted forms and the code tokens alone"},
+    {"kind":"unit","ref":"tools/ci/learn-educator.test.ts","test":"LRN-029 calls the tracks of a lesson \"Rutas\" in the Spanish outline, because \"Pistas\" are its hints"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"LRN-029 refuses English and Spanish texts that do not have the same structure"}
+  ],
+  "LRN-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the main process reaches the network only in the update check, off until the user turns it on, and the opt-in assistant"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the policy of the installed window lets it load nothing from another host"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the production renderer loads no remote font, stylesheet or script, and names no host it could load from"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the simulation track needs no network: the installed application fetches nothing from another host"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"58 The simulation track works offline: a lesson and a Communications lesson run and pass with every remote request refused"}
+  ],
   "LRN-031": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
@@ -2726,10 +2863,14 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-034": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot produce a hardware grade: no tool takes a trace, a track or a board, no answer is a grade record, and a hardware run is no pass (LRN-024, LRN-034)"}
   ],
   "LRN-035": [
-    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"}
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 stopgap, the faceplate leg: the faceplate page, in both languages, linked from Learn (the board kit pages are still to come)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 stopgap: says what the faceplate lists, how each input is operated and when a change reaches the program, in the words Studio shows","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-035 the kit page of each learner board, generated from boards.json and kit.json"}
   ],
   "LRN-036": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 carries the reason to the listing of the example that has none"},
@@ -2738,6 +2879,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
   ],
   "LRN-037": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring card: the same wiring as a text list, part by part (LRN-014, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
@@ -3054,6 +3196,7 @@
   ],
   "DOC-013": [
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"DOC-013 the wiring diagrams are generated drawings, not pictures of the product"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
   ],
   "DOC-014": [

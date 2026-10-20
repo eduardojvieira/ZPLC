@@ -1,16 +1,16 @@
 ---
-title: "Ciclo de scan y memoria de un ciclo"
+title: "Ciclo de escaneo y memoria de un ciclo"
 sidebar_label: "scan-cycle-one-scan-memory"
 description: "La lección scan-cycle-one-scan-memory: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Ciclo de scan y memoria de un ciclo
+# Ciclo de escaneo y memoria de un ciclo
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/scan-cycle-one-scan-memory. Do not edit. >>> */}
 
-Siga cómo una entrada produce una salida actual y una copia demorada un scan.
+Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 
 ## Datos
 
@@ -18,14 +18,14 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 - Nivel: Fundamentos
 - Tiempo estimado: 10 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [first-blink-simulation](./first-blink-simulation.md)
 
 ## Objetivos
 
-- Compruebe que una variable conserva su valor de un scan al siguiente.
-- Arme un retardo de un scan y un pulso de un scan con una única memoria.
+- Compruebe que una variable conserva su valor de un ciclo al siguiente.
+- Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria.
 
 ## Etapas
 
@@ -39,11 +39,12 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una única tarea de 10 ms; no demuestran los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas, el rebote eléctrico, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección observa cómo un valor avanza un ciclo de escaneo a la vez, y una placa no permite ver cada ciclo por separado. Complétela en Simulación, donde la traza muestra cada ciclo, y lea la página del ciclo de escaneo antes de probar con una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory.md)
 
 {/* <<< END GENERATED: learn/lessons/scan-cycle-one-scan-memory <<< */}
 

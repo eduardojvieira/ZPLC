@@ -23,8 +23,8 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 
 ## Objetivos
 
-- Ejecute un programa contra una salida simulada sin ningún hardware.
-- Cambie un valor en Structured Text y vea cambiar la salida en la traza.
+- Ejecute un programa sobre una salida simulada, sin ningún hardware.
+- Cambie un valor en texto estructurado y vea cómo cambia la salida en la traza.
 
 ## Etapas
 
@@ -37,11 +37,11 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su equipo; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.
 
 ## En una placa
 
-La lección cambia un valor en un programa que ya parpadea y comprueba la lámpara en simulación; una placa necesitaría una traza registrada y una página de cableado que todavía no existen. Complétela en Simulación. El ejemplo de parpadeo de la Raspberry Pi Pico muestra la misma idea con el LED de la placa.
+Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa. Complétela en Simulación y luego haga la lección siguiente, Verificar mi placa, en la ruta de Hardware para verificar su placa.
 
 {/* <<< END GENERATED: learn/lessons/first-blink-simulation <<< */}
 

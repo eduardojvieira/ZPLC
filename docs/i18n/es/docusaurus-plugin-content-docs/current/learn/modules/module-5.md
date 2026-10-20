@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-5. Do not edit. >>> */}
 
+Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama funcional secuencial (SFC), como pasos.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [3](./module-3.md)
@@ -19,7 +21,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Cruce peatonal y estados seguros](../lessons/pedestrian-crossing-states.md) | `pedestrian-crossing-states` | ST | 25 |
-| [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-5 <<< */}
 

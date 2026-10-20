@@ -7,7 +7,9 @@
 // packages/zplc-ide/lessons (tools/ci/generate-lesson-index.ts --check holds it fresh). The pages are unlisted from the
 // sidebar (there are 40 of them) and reached from the course outline, which links the module index.
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex.ts';
+import { courseOrder } from '../../packages/zplc-ide/src/learn/course.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
+import { wiringSection } from './generate_hardware_pages';
 
 export const GENERATOR = 'tools/docs/generate_course_pages.ts';
 type Lesson = (typeof LESSON_INDEX.lessons)[number];
@@ -20,7 +22,9 @@ const LEVEL: Record<string, L10n> = {
 };
 const TRACK: Record<string, L10n> = { simulation: { en: 'Simulation', es: 'Simulación' }, hardware: { en: 'Hardware', es: 'Hardware' } };
 const level = (id: string, lang: Lang) => LEVEL[id]?.[lang] ?? id;
-const lessonsOf = (module: Module): Lesson[] => LESSON_INDEX.lessons.filter((lesson) => lesson.module === module.id).sort((a, b) => a.order - b.order);
+// The order Learn shows (LRN-006): Kahn's order over modules, positions and prerequisites, not the `order` number alone.
+const ORDERED = courseOrder(LESSON_INDEX);
+const lessonsOf = (module: Module): Lesson[] => ORDERED.filter((lesson) => lesson.module === module.id);
 const titleOf = (lesson: Lesson, lang: Lang) => lesson.text[lang].title;
 const trackNames = (tracks: readonly string[], lang: Lang) => tracks.map((track) => TRACK[track]?.[lang] ?? track).join(', ');
 
@@ -64,13 +68,14 @@ function lessonBody(lesson: Lesson, lang: Lang): string {
     `## ${T.objectives[lang]}`, text.objectives.map((objective: string) => `- ${prose(objective)}`).join('\n'),
     `## ${T.stages[lang]}`, text.stages.map((stage: { title: string; checkpoint: string }, index: number) => `${index + 1}. **${prose(stage.title)}**`).join('\n'),
     `## ${T.scope[lang]}`, prose(text.scope),
-    ...(hardware ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`] : []),
+    ...(hardware ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`] : wiringSection(lesson, lang)),
   ].join('\n\n');
 }
 
 function moduleBody(module: Module, lang: Lang): string {
   const rows = lessonsOf(module).map((lesson) => [`[${prose(titleOf(lesson, lang))}](../lessons/${lesson.id}.md)`, code(lesson.id), lesson.languages.join(', '), String(lesson.estimatedMinutes)]);
   return [
+    prose(module.why[lang]),
     [`- ${T.level[lang]}: ${level(module.level, lang)}`, `- ${T.tracks[lang]}: ${trackNames(module.tracks, lang)}`,
       ...(module.requires === null ? [] : [`- ${T.requires[lang]}: [${module.requires}](./module-${module.requires}.md)`])].join('\n'),
     `## ${T.lessons[lang]}`,

@@ -105,14 +105,30 @@ uint32_t zplc_hal_tick(void)
     return zplc_host_clock_ms();
 }
 
+/* A sleep that never sees the host's clock move gives up after this many reads, so that a host whose clock stands still
+ * is found by the timing self-test of the port conformance suite instead of hanging the module. A clock that moves resets
+ * the count: a millisecond takes far fewer reads than this. */
+#define ZPLC_WASM_SLEEP_IDLE_READS 50000000U
+
 /**
  * @brief Sleep for the specified number of milliseconds.
  *
- * A module cannot block: the host calls the runtime again when the next release is due, so this does nothing.
+ * A module has one thread and cannot give it back to the host, so a sleep spins on the host's clock until the time has
+ * passed (the host's clock, not the logical clock of a scenario, as the POSIX port sleeps in real time). The runtime
+ * itself never sleeps: the host calls it again when the next release is due (zplc_wasm_poll_timeout_ms). The sleep is
+ * here so that the port keeps the contract of the HAL, which the timing self-test holds it to (IO-013).
  */
 void zplc_hal_sleep(uint32_t ms)
 {
-    (void)ms;
+    const uint32_t start = zplc_host_clock_ms();
+    uint32_t seen = start;
+    uint32_t idle = 0U;
+
+    while ((uint32_t)(seen - start) < ms && idle < ZPLC_WASM_SLEEP_IDLE_READS) {
+        const uint32_t now = zplc_host_clock_ms();
+        idle = (now == seen) ? idle + 1U : 0U;
+        seen = now;
+    }
 }
 
 /* ============================================================================

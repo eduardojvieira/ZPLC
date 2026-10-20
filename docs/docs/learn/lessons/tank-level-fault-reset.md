@@ -42,7 +42,7 @@ Tests provide deterministic native POSIX host evidence only; they are not physic
 
 ## On a board
 
-The lesson fills and empties a simulated tank to provoke faults, which would be unsafe and slow to repeat on a board. Complete it in Simulation, where a fault costs nothing and can be repeated, and rehearse the reset steps there.
+The tank plant's level dynamics and its faults exist only in simulation, and the lesson reads six inputs where the learner boards have four. Complete it in Simulation, where a fault costs nothing and can be repeated.
 
 {/* <<< END GENERATED: learn/lessons/tank-level-fault-reset <<< */}
 

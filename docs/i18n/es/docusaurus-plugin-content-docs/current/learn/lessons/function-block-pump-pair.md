@@ -1,16 +1,16 @@
 ---
-title: "Bloques de función: un enclavamiento, dos bombas"
+title: "Bloques de función: un biestable, dos bombas"
 sidebar_label: "function-block-pump-pair"
 description: "La lección function-block-pump-pair: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Bloques de función: un enclavamiento, dos bombas
+# Bloques de función: un biestable, dos bombas
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/function-block-pump-pair. Do not edit. >>> */}
 
-Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arranque y parada, y úselo dos veces, una por bomba.
+Escriba el cuerpo de un bloque de función que implementa una retención de arranque y parada, y úselo dos veces, una para cada bomba.
 
 ## Datos
 
@@ -18,13 +18,13 @@ Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arra
 - Nivel: Intermedio
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 
 ## Objetivos
 
-- Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas.
+- Escriba un bloque de función con entradas, una salida y una memoria que se conserva entre llamadas.
 - Vea que dos instancias del mismo bloque de función guardan memorias separadas.
 
 ## Etapas
@@ -38,11 +38,12 @@ Escriba el cuerpo de un bloque de función que mantiene un enclavamiento de arra
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el comportamiento de una bomba, la corriente de arranque ni requisitos de una máquina real, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección arranca y detiene dos bombas en pasos exactos para comparar dos instancias de un mismo bloque, y no se ha registrado una traza de placa para ella. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/function-block-pump-pair.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair.md)
 
 {/* <<< END GENERATED: learn/lessons/function-block-pump-pair <<< */}
 

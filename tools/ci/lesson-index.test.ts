@@ -64,6 +64,18 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     expect(after?.manifest.scenario.sha256).not.toBe(before.manifest.scenario.sha256);
   });
 
+  it('raises the version of a lesson whose learner-visible content changed, once, and leaves the others alone', () => {
+    const lessons = copyOfLessons();
+    const file = join(lessons, 'first-blink-simulation', 'lesson.json');
+    const manifest = JSON.parse(readFileSync(file, 'utf8')) as { version: number; unsupported: { hardware: { reason: { en: string } } } };
+    manifest.unsupported.hardware.reason.en = 'A changed reason.';
+    writeFileSync(file, JSON.stringify(manifest));
+    expect(updateHashes(lessons)).toEqual(['first-blink-simulation']);
+    expect(loadLessonPackages(lessons).packages.find((item) => item.id === 'first-blink-simulation')?.manifest.version).toBe(manifest.version + 1);
+    // Run again: the version is already raised over the committed index, so nothing changes.
+    expect(updateHashes(lessons)).toEqual([]);
+  });
+
   it('holds the course structure of lessons/course.json, and refuses a missing or broken course file (LRN-005)', () => {
     expect(LESSON_INDEX.course.modules).toHaveLength(12);
     const missing = copyOfLessons();
@@ -105,7 +117,7 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     expect(problems.some((problem) => problem.includes('objective, predict, edit, run, observe, reflect'))).toBe(true);
   });
 
-  it('refuses English and Spanish texts that do not have the same structure', () => {
+  it('LRN-029 refuses English and Spanish texts that do not have the same structure', () => {
     const lessons = copyOfLessons();
     const textFile = join(lessons, 'scan-cycle-one-scan-memory', 'text.es.json');
     const text = JSON.parse(readFileSync(textFile, 'utf8')) as { objectives: string[] };

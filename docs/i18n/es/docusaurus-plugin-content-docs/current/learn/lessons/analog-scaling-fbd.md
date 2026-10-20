@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/analog-scaling-fbd. Do not edit. >>> */}
 
-Edite un diagrama de bloques de función que escala cuentas analógicas crudas de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.
+Edite un diagrama de bloques de función que escala cuentas analógicas en bruto de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.
 
 ## Datos
 
@@ -18,14 +18,14 @@ Edite un diagrama de bloques de función que escala cuentas analógicas crudas d
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [analog-scaling-integer](./analog-scaling-integer.md), [counter-batch-fbd](./counter-batch-fbd.md)
 
 ## Objetivos
 
-- Escale cuentas analógicas crudas a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.
-- Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas crudas.
+- Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.
+- Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto.
 
 ## Etapas
 
@@ -38,11 +38,12 @@ Edite un diagrama de bloques de función que escala cuentas analógicas crudas d
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms y un sustituto del potenciómetro; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX, una tarea de 10 ms y un sustituto del potenciómetro; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección gira un potenciómetro sustituto con una entrada BOOL en pasos exactos de 10 ms, y todavía no se ha escrito una verificación contra una traza registrada desde un potenciómetro real en AI0. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/analog-scaling-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/analog-scaling-fbd.md)
 
 {/* <<< END GENERATED: learn/lessons/analog-scaling-fbd <<< */}
 

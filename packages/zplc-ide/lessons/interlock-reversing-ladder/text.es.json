@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Enclavamientos en Ladder: un motor con inversión de giro",
-  "summary": "Edite dos peldaños de Ladder para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.",
+  "title": "Enclavamientos en diagrama de escalera: un motor con inversión de giro",
+  "summary": "Edite dos peldaños en diagrama de escalera para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.",
   "objectives": [
     "Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione.",
     "Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo."
@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los {{t:30}} ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse. En el editor Ladder agregue en cada peldaño un contacto normalmente cerrado entre el contacto LubeOk y la bobina, y asígnele la bobina del otro peldaño.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los {{t:30}} ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse. En el editor de diagrama de escalera agregue en cada peldaño un contacto normalmente cerrado entre el contacto LubeOk y la bobina, y asígnele la bobina del otro peldaño.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama Reversing y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Reversing y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué el enclavamiento usa la otra bobina y no el otro pulsador? ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué assertion falla.",
+      "body": "¿Por qué el enclavamiento usa la otra bobina y no el otro pulsador? ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué aserción falla.",
       "checkpoint": "La bobina dice lo que hace el motor, un pulsador solo lo que alguien pide: un enclavamiento con RevPB dejaría cerrar Forward con Reverse retenido. Un permisivo solo en el camino de arranque deja que un motor en marcha lo ignore. El escenario muestra solo la lógica; los arrancadores reales con inversión de giro usan además contactores con enclavamiento mecánico, y esto no es una función de seguridad."
     }
   ],

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "start",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Start",
+        "es": "Arranque"
+      }
+    },
+    {
+      "id": "stop",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Stop",
+        "es": "Parada"
+      }
+    },
+    {
+      "id": "emergency-stop",
+      "kind": "button",
+      "channel": "DI2",
+      "label": {
+        "en": "Emergency stop (a practice button, not a safety device)",
+        "es": "Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad)"
+      }
+    },
+    {
+      "id": "overload",
+      "kind": "jumper",
+      "channel": "DI3",
+      "label": {
+        "en": "Overload",
+        "es": "Sobrecarga"
+      }
+    },
+    {
+      "id": "forward",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Forward",
+        "es": "Avance"
+      }
+    },
+    {
+      "id": "reverse",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Reverse",
+        "es": "Retroceso"
+      }
+    }
+  ]
+}

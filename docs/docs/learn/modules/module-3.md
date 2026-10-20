@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-3. Do not edit. >>> */}
 
+Time and events come after logic: timers delay or hold a signal, edges turn a level into an event and counters remember events. Function Block Diagram arrives here, because timers and counters are blocks.
+
 - Level: Foundation
 - Tracks: Simulation, Hardware
 - Requires module: [2](./module-2.md)
@@ -18,8 +20,8 @@ unlisted: true
 
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
-| [Edges and pulse counter](../lessons/edge-counter-pulses.md) | `edge-counter-pulses` | ST | 15 |
 | [Timers: an off-delay light and an on-delay filter](../lessons/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` | ST | 15 |
+| [Edges and pulse counter](../lessons/edge-counter-pulses.md) | `edge-counter-pulses` | ST | 15 |
 | [Counters in Function Block Diagram: count parts to a batch](../lessons/counter-batch-fbd.md) | `counter-batch-fbd` | FBD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-3 <<< */}

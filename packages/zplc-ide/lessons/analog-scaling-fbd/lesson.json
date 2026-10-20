@@ -13,20 +13,10 @@
     "FBD"
   ],
   "tracks": [
-    "simulation"
+    "simulation",
+    "hardware"
   ],
-  "unsupported": {
-    "hardware": {
-      "reason": {
-        "en": "The lesson turns a stand-in potentiometer with a BOOL input at exact 10 ms steps, and no check against a trace recorded from a real potentiometer on AI0 has been written yet.",
-        "es": "La lección gira un potenciómetro sustituto con una entrada BOOL en pasos exactos de 10 ms, y todavía no se ha escrito una verificación contra una traza registrada desde un potenciómetro real en AI0."
-      },
-      "instead": {
-        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
-        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
-      }
-    }
-  },
+  "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,
   "starter": {
@@ -43,5 +33,12 @@
     "path": "tests/level-scale.scenario.json",
     "sha256": "f825ce4b24aebf0db3fbe05bf9eef58b9a2ccfb8fba2c09849a8992e2c94b713"
   },
-  "regressionScenarios": []
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
 }

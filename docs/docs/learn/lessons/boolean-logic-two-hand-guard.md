@@ -18,7 +18,7 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 - Level: Foundation
 - Estimated time: 15 minutes
 - Languages: ST
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 
@@ -40,9 +40,10 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.
 
-## On a board
+## Wiring
 
-The lesson presses two inputs at scripted times to test AND, NOT and XOR; a board would need two wired buttons and a recorded trace that do not exist yet. Complete it in Simulation, where the scenario presses both inputs for you.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/boolean-logic-two-hand-guard.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/boolean-logic-two-hand-guard.md)
 
 {/* <<< END GENERATED: learn/lessons/boolean-logic-two-hand-guard <<< */}
 

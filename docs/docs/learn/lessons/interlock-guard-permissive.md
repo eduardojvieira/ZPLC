@@ -42,7 +42,7 @@ Tests provide native POSIX host evidence for a built-in motor plant model with o
 
 ## On a board
 
-The lesson drops a guard input at an exact step and needs the motor plant model for its speed feedback, which a board without a motor cannot give. Complete it in Simulation, which provides the motor and its run feedback.
+The run feedback comes from the simulated motor plant; a learner board has no motor to give it. Complete it in Simulation, which provides the motor and its run feedback.
 
 {/* <<< END GENERATED: learn/lessons/interlock-guard-permissive <<< */}
 

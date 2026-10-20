@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "title": "Autorretención en Ladder: un motor que se mantiene encendido",
-  "summary": "Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.",
+  "title": "Autorretención en diagrama de escalera: un motor que se mantiene encendido",
+  "summary": "Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.",
   "objectives": [
-    "Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.",
-    "Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane."
+    "Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.",
+    "Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad."
   ],
   "stages": [
     {
@@ -18,31 +18,31 @@
       "key": "predict",
       "title": "Prediga",
       "body": "Antes de ejecutar, prediga Motor a los {{t:30}} ms (Start se soltó a los {{t:20}} ms), a los {{t:50}} ms (se soltó Stop) y a los {{t:70}} ms (Start y Stop pulsados a la vez).",
-      "checkpoint": "{{v:SealIn.Motor=true@30|En ON}} a los {{t:30}} ms; {{v:SealIn.Motor=false@50|en OFF}} a los {{t:50}} ms, porque nadie pulsa Start; {{v:SealIn.Motor=false@70|en OFF}} a los {{t:70}} ms, porque Stop gana."
+      "checkpoint": "{{v:SealIn.Motor=true@30|En ON}} a los {{t:30}} ms; {{v:SealIn.Motor=false@50|en OFF}} a los {{t:50}} ms, porque nadie pulsa Start; {{v:SealIn.Motor=false@70|en OFF}} a los {{t:70}} ms, porque Stop tiene prioridad."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola. En el editor Ladder agregue un contacto en la segunda fila, bajo StartPB, y llámelo Motor.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma. En el editor de escalera, agregue un contacto en la segunda fila, debajo de StartPB, y asígnele la variable Motor.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama SealIn y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama SealIn y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:20}}, {{t:30}} y {{t:40}} ms: Motor sigue en ON a los {{t:30}} ms con Start suelto, y cae a los {{t:40}} ms al pulsar Stop.",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:40}} ms: Motor sigue en ON a los {{t:30}} ms con Start ya soltado, y cae a los {{t:40}} ms al pulsar Stop.",
       "checkpoint": "Motor sube una vez a los {{t:10}} ms y cae una vez a los {{t:40}} ms; no vuelve a arrancar a los {{t:50}} ms cuando se suelta Stop."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo al camino que se mantiene y vea qué assertion falla.",
-      "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los {{t:70}} ms para probar que Stop gana; no prueba una función de parada segura."
+      "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo a la rama de autorretención y vea qué aserción falla.",
+      "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los {{t:70}} ms para comprobar que Stop tiene prioridad; no demuestra una función de parada segura."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola."
+    "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los {{t:20}} ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma."
   ]
 }

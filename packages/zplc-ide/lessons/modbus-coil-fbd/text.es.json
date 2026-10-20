@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "title": "Modbus en diagrama de bloques de función: escribir una bobina y leerla de vuelta",
-  "summary": "Edite un diagrama de bloques de función para que MB_READ_COIL lea de vuelta la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.",
+  "title": "Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla",
+  "summary": "Edite un diagrama de bloques de función para que MB_READ_COIL vuelva a leer la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.",
   "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
   "objectives": [
     "Llame a un bloque cliente Modbus en un diagrama de bloques de función, con sus entradas alimentadas desde constantes que comparten los dos bloques, para que la escritura y la lectura nombren el mismo servidor y la misma bobina.",
@@ -11,8 +11,8 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de vuelta: Rd debe ejecutarse cuando la escritura termine.",
-      "checkpoint": "Written, Echo y Failed describen el intercambio: la bobina se escribió, la bobina leída de vuelta está en ON y nada falló."
+      "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de comprobación: Rd debe ejecutarse cuando la escritura termine.",
+      "checkpoint": "Written, Echo y Failed describen el intercambio: la bobina se escribió, la bobina que se volvió a leer está en ON y nada falló."
     },
     {
       "key": "predict",
@@ -29,8 +29,8 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
-      "checkpoint": "El escenario se llama CoilEcho y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+      "checkpoint": "El escenario se llama CoilEcho y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué mostraría el escenario si Rd leyera la bobina 5 en lugar de la 4, o si Wr escribiera FALSE? Conecte una constante nueva 5 a Rd.ADDR y vea qué assertion falla.",
+      "body": "¿Qué mostraría el escenario si Rd leyera la bobina 5 en lugar de la 4, o si Wr escribiera FALSE? Conecte una constante nueva 5 a Rd.ADDR y vea qué aserción falla.",
       "checkpoint": "La bobina 5 nunca se escribió y se lee en OFF, así que Echo nunca pasa a ON; escribir FALSE produce lo mismo. Compartir una constante entre los dos bloques es lo que los mantiene en la misma bobina. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso debe comprobarse contra ese dispositivo."
     }
   ],
