@@ -4,6 +4,7 @@
 Nothing here opens a serial port. A device is a fake: NullDevice shows nothing, HostRuntimeDevice is the native POSIX
 runtime of this tree behind the shell grammar (ZPLC_NATIVE_SIM_BIN names its binary; those tests are skipped without it).
 """
+# ---- HIL-006: compiled fixtures are produced at run time and never tracked ----
 import io
 import os
 import shutil

@@ -5,7 +5,7 @@ Each step runs against a fake board that behaves as the requirement says (the st
 matching defect (the step fails, and says why). The steps that do not need a bench also run on the native runtime of
 this tree. No serial port is opened: the RTU line is a pseudo-terminal, and the network endpoints are local.
 """
-# ---- HIL-010: every measuring step of the chain fails on a board with the matching defect ----
+# ---- HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect ----
 # ---- HIL-012: the chain says how long it takes, about 30 minutes on a person's bench ----
 import io
 import json

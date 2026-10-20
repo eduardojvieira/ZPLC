@@ -10,22 +10,28 @@
 // A check names its requirement in its own metadata, so adding a check needs no edit to a registry:
 //   conformance  the "requirement" of a conformance/**/*.expect.json (VF-002)
 //   unit         the title of a describe, it or test of a test file that a CI job runs, e.g. describe('session store (IDE-008)')
+//   unit         also the title of a describeCases table of packages/zplc-hil/tests, e.g. describeCases('HIL cases (HIL-001)', cases)
 //   c-test       a comment of a firmware test file, e.g. /* ---- RT-017: resume continues the scan ---- */
+//   py-test      a comment line of a Python file that a CI workflow command runs, e.g. # ---- HIL-015: what it proves ----
+//                (the files come from the commands in .github/workflows: `python3 path.py` and `unittest discover -s DIR -p GLOB`)
 //   journey      the `proves` and `partly` lists of a journey in packages/zplc-ide/scripts/journeys.ts
 // A title with "stopgap" covers only a leg of the requirement, and so does a journey's `partly`.
 // Records that a person writes (a manual run, a hardware record, or a note that says why a scanned check proves less)
 // live in tools/ci/requirement-evidence.json with a "note" and survive --write; everything else there is scanned.
+// A `decided` record is one of them: a requirement that a decision of the spec makes conditional, and whose default
+// asks for no work (IO-016 under D-06's default B). It has its own column and is never counted as covered by a check.
 //
 // A requirement is covered when at least one of its checks is not partial and is not on the expected-failure list
 // (tools/ci/expected-failures.json): with the CI rule that any other failure turns the job red, "not listed" is "passing".
-// It is partial when it has checks but none of them qualifies, and uncovered when it has none.
+// It is partial when it has checks but none of them qualifies, decided when its only record is a decision, and uncovered
+// when it has none.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { ID_PATTERN, validateIndex, type Requirement } from './generate-requirement-index';
 import { TEST_FILE, type Inventory } from './test-inventory';
 
-export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware';
+export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware' | 'py-test' | 'decided';
 export interface Check {
   kind: Kind;
   /** Repository-relative file that holds the check (or, for manual and hardware, its record). */
@@ -38,10 +44,10 @@ export interface Check {
   note?: string;
 }
 export type Evidence = Record<string, Check[]>;
-export type State = 'covered' | 'partial' | 'uncovered';
-export interface Counts { total: number; covered: number; partial: number; uncovered: number }
+export type State = 'covered' | 'partial' | 'decided' | 'uncovered';
+export interface Counts { total: number; covered: number; partial: number; decided: number; uncovered: number }
 
-export const KINDS: Kind[] = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware'];
+export const KINDS: Kind[] = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided'];
 const CONFORMANCE_RUNNER = 'packages/zplc-ide/src/conformance/conformance.test.ts';
 const JOURNEYS = 'packages/zplc-ide/scripts/journeys.ts';
 const RUN_JOURNEYS = 'packages/zplc-ide/scripts/run-journeys.ts';
@@ -65,7 +71,7 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
 // missing, so a title of either is a check that CI executes.
 // ponytail: a regex over the source, not a parser. A call counts when it starts its line, so a test source held in a string
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
-const TITLE = /^[ \t]*(?:describe|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
+const TITLE = /^[ \t]*(?:describe|describeCases|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
 export function unitChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
@@ -86,6 +92,30 @@ export function cChecks(ref: string, text: string): Array<[string, Check]> {
   return found;
 }
 
+/** The `# ---- ID: what it proves ----` comment lines of a Python test, the convention of the C tests. */
+export function pythonChecks(ref: string, text: string): Array<[string, Check]> {
+  const found: Array<[string, Check]> = [];
+  for (const [, comment = ''] of text.matchAll(/^[ \t]*#[ \t]*-{4}[ \t]*(.*?)[ \t]*-{4}[ \t]*$/gm)) {
+    for (const id of idsOf(comment)) found.push([id, { kind: 'py-test', ref, test: comment, ...(/\bstopgap\b/i.test(comment) && { partial: true }) }]);
+  }
+  return found;
+}
+
+/**
+ * The Python files that a CI workflow command runs: `python3 [-B] <file>.py` (a job that checks the repository out under
+ * zplc/ names it from there), and `python3 [-B] -m unittest discover -s <dir> -p <glob>` (the top level of <dir>).
+ */
+export function pythonFilesRunInCi(files: string[], workflows: string[]): Set<string> {
+  const runs = new Set<string>();
+  const text = workflows.join('\n');
+  for (const [, file = ''] of text.matchAll(/python3?(?:\s+-[A-Za-z])*\s+((?:[\w.-]+\/)*[\w.-]+\.py)\b/g)) runs.add(file.replace(/^zplc\//, ''));
+  for (const [, dir = '', , glob = ''] of text.matchAll(/-m unittest discover\s+-s\s+(\S+)\s+-p\s+(['"]?)([^'"\s]+)\2/g)) {
+    const pattern = new Bun.Glob(`${dir.replace(/\/$/, '')}/${glob}`);
+    for (const file of files) if (pattern.match(file) && !file.slice(dir.length + 1).includes('/')) runs.add(file);
+  }
+  return new Set(files.filter((file) => runs.has(file)));
+}
+
 export function journeyChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
   for (const [, name = '', proves = '', partly = ''] of text.matchAll(/name: '([^']+)',\s*example: '[^']*',\s*proves: \[([^\]]*)\],\s*partly: \[([^\]]*)\]/g)) {
@@ -96,12 +126,13 @@ export function journeyChecks(ref: string, text: string): Array<[string, Check]>
 }
 
 /** The scanned checks of every tracked file that counts. */
-export function scanFiles(files: string[], read: (file: string) => string, inventory: Inventory, prefixes?: Set<string>): Array<[string, Check]> {
+export function scanFiles(files: string[], read: (file: string) => string, inventory: Inventory, prefixes?: Set<string>, pythonRuns: Set<string> = new Set()): Array<[string, Check]> {
   const rules = [...inventory.runs, ...inventory.notRunInCi].map((rule) => ({ glob: new Bun.Glob(rule.pattern), runs: 'job' in rule }));
   const runsInCi = (file: string) => rules.find(({ glob }) => glob.match(file))?.runs === true;
   const found: Array<[string, Check]> = [];
   for (const file of files) {
     if (/^conformance\/.*\.expect\.json$/.test(file)) found.push(...conformanceChecks(file, read(file)));
+    else if (pythonRuns.has(file)) found.push(...pythonChecks(file, read(file)));
     else if (file === JOURNEYS) found.push(...journeyChecks(file, read(file)));
     else if (TEST_FILE.test(file) && runsInCi(file)) {
       if (/\.test\.(ts|tsx|mjs)$/.test(file)) found.push(...unitChecks(file, read(file)));
@@ -174,13 +205,14 @@ export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 't
   const kinds = new Map<string, Kind[]>();
   /** Covered requirements that still have a check on the expected-failure list: covered, but not yet green. */
   const withFailures: string[] = [];
-  const empty = (): Counts => ({ total: 0, covered: 0, partial: 0, uncovered: 0 });
+  const empty = (): Counts => ({ total: 0, covered: 0, partial: 0, decided: 0, uncovered: 0 });
   const overall = empty();
   const byWorkstream: Record<string, Counts> = {};
   for (const { id, workstream } of index) {
     const checks = evidence[id] ?? [];
-    const passing = checks.filter((check) => !check.partial && !isFailing(check, listed));
-    const state: State = passing.length > 0 ? 'covered' : checks.length > 0 ? 'partial' : 'uncovered';
+    const passing = checks.filter((check) => check.kind !== 'decided' && !check.partial && !isFailing(check, listed));
+    const decided = checks.some((check) => check.kind === 'decided');
+    const state: State = passing.length > 0 ? 'covered' : decided ? 'decided' : checks.length > 0 ? 'partial' : 'uncovered';
     states.set(id, state);
     kinds.set(id, [...new Set(passing.map((check) => check.kind))]);
     if (state === 'covered' && checks.some((check) => isFailing(check, listed))) withFailures.push(id);
@@ -225,7 +257,8 @@ function load() {
   const knownGaps = [...gaps.matchAll(/(['"])(.+?)\1\s*:/g)].map((match) => `${JOURNEYS} > ${match[2]}`);
   const recorded = JSON.parse(read('tools/ci/requirement-evidence.json')) as Evidence;
   const prefixes = new Set(index.map((entry) => entry.workstream));
-  const evidence = mergeEvidence(scanFiles(files, read, inventory, prefixes), handWritten(recorded));
+  const workflows = files.filter((file) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file)).map(read);
+  const evidence = mergeEvidence(scanFiles(files, read, inventory, prefixes, pythonFilesRunInCi(files, workflows)), handWritten(recorded));
   return { index, evidence, recorded, listed: [...entries.map((entry) => entry.test), ...knownGaps] };
 }
 
@@ -233,7 +266,7 @@ function load() {
 export function progress() {
   const { index, evidence, listed } = load();
   const { overall, errors } = coverage(index, evidence, listed);
-  return { overall, errors, line: `requirements: ${overall.covered} of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.uncovered} uncovered` };
+  return { overall, errors, line: `requirements: ${overall.covered} of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered` };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -261,16 +294,16 @@ if (import.meta.main) {
     console.log(`requirement-coverage: wrote ${Object.values(evidence).reduce((sum, checks) => sum + checks.length, 0)} checks for ${Object.keys(evidence).length} requirements to tools/ci/requirement-evidence.json`);
   } else if (values.check) {
     if (behind) errors.push('tools/ci/requirement-evidence.json is not what the tree generates; regenerate it with: bun tools/ci/requirement-coverage.ts --write');
-    if (errors.length === 0) console.log(`requirement-coverage: ${overall.covered} of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.uncovered} uncovered`);
+    if (errors.length === 0) console.log(`requirement-coverage: ${overall.covered} of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered`);
   } else if (values.json) {
     const requirements = index.map((entry) => ({ ...entry, state: states.get(entry.id), coveredBy: kinds.get(entry.id), checks: evidence[entry.id] ?? [] }));
     console.log(JSON.stringify({ overall, byWorkstream, withFailures, requirements, errors }, null, 2));
   } else {
-    const row = (name: string, counts: Counts) => `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.uncovered, 11)}`;
-    console.log(`${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'uncovered'.padStart(11)}`);
+    const row = (name: string, counts: Counts) => `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.decided, 9)}${pad(counts.uncovered, 11)}`;
+    console.log(`${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'decided'.padStart(9)}${'uncovered'.padStart(11)}`);
     for (const workstream of new Set(index.map((entry) => entry.workstream))) console.log(row(workstream, byWorkstream[workstream]!));
     console.log(row('overall', overall));
-    const byKind = KINDS.map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`).join(', ');
+    const byKind = KINDS.filter((kind) => kind !== 'decided').map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`).join(', ');
     console.log(`\ncovered by (a requirement with several kinds counts under each): ${byKind}`);
     console.log(`covered, but with a check still on the expected-failure list: ${withFailures.length}`);
     if (values.list) {
@@ -278,9 +311,11 @@ if (import.meta.main) {
         const open = index.filter((entry) => entry.workstream === workstream && states.get(entry.id) !== 'covered');
         if (open.length === 0) continue;
         console.log(`\n${workstream}`);
-        for (const entry of open) console.log(`  ${entry.id}${states.get(entry.id) === 'partial' ? '*' : ' '} ${entry.title}`);
+        const mark = (state: State | undefined) => (state === 'partial' ? '*' : state === 'decided' ? '=' : ' ');
+        for (const entry of open) console.log(`  ${entry.id}${mark(states.get(entry.id))} ${entry.title}`);
       }
       console.log('\n* has checks, none of them a passing complete one (a stopgap, or listed as an expected failure)');
+      console.log('= decided: a decision of the spec makes it conditional and its default asks for no work; not covered by a check');
     }
     if (values.groups) {
       console.log('\nowning package  phase  uncovered  partial  total');

@@ -5,6 +5,7 @@ and makes no compiled file in the tree (HIL-006). No serial port is opened here:
     null          shows nothing, so every check against it must fail
     host-runtime  the native POSIX runtime of this tree (ZPLC_NATIVE_SIM_BIN names it); the passing paths need it
 """
+# ---- HIL-004: every device script fails its run when a check fails, or is listed as a bench utility ----
 import importlib
 import io
 import json

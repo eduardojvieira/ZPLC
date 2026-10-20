@@ -4,6 +4,7 @@
 A report is evidence of a lead and never of a qualification: it is listed beside the hardware records of a board, it names
 the exact image it is about, and it never raises the support level of the board or turns its hardware watchdog on.
 """
+# ---- HIL-011: a report from a user is recorded at the community-reported level and never raises a support level ----
 import importlib.util
 import json
 import re

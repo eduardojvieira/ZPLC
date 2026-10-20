@@ -3,6 +3,8 @@
 
 No serial port is opened here. The chain runs against fake devices (`--dry-run --device null|host`) and scripted people.
 """
+# ---- HIL-003: the hardware chain exits with an error without an interactive terminal and needs the board identity typed for each physical step ----
+# ---- HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record ----
 import io
 import json
 import os

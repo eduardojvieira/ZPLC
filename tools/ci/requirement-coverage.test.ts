@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
+import { cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
+import type { Inventory } from './test-inventory';
 
 const REF = 'packages/zplc-ide/src/a.test.ts';
 
@@ -58,6 +59,15 @@ describe('unitChecks', () => {
   });
 });
 
+describe('describeCases titles', () => {
+  it('counts the title of a describeCases table of the HIL harness as a unit check', () => {
+    const ref = 'packages/zplc-hil/tests/blocks/timers.test.ts';
+    expect(unitChecks(ref, "describeCases('HIL cases: timer blocks (HIL-001)', timerTests);")).toEqual([
+      ['HIL-001', { kind: 'unit', ref, test: 'HIL cases: timer blocks (HIL-001)' }],
+    ]);
+  });
+});
+
 describe('cChecks', () => {
   const source = [
     '/**',
@@ -76,6 +86,41 @@ describe('cChecks', () => {
       'RT-017: RT-017: resume and step continue the scan',
       'RT-004: RT-004: the STATUS field is written byte by byte',
     ]);
+  });
+});
+
+describe('pythonChecks and the Python files CI runs', () => {
+  const PY = 'tools/hil/test_hil_a.py';
+
+  it('finds the requirement of a `# ---- ID: what it proves ----` comment line, and nothing else', () => {
+    const text = [
+      '"""HIL-001: a docstring is not a check."""',
+      '# ---- HIL-015: the reference projects run on both sides ----',
+      '    # ---- HIL-010 stopgap: the software leg ----',
+      '# HIL-007 a plain comment is not a check',
+      'x = "# ---- HIL-004: inside a string, but at the start of no line ----"',
+    ].join('\n');
+    expect(pythonChecks(PY, text)).toEqual([
+      ['HIL-015', { kind: 'py-test', ref: PY, test: 'HIL-015: the reference projects run on both sides' }],
+      ['HIL-010', { kind: 'py-test', ref: PY, test: 'HIL-010 stopgap: the software leg', partial: true }],
+    ]);
+  });
+
+  it('takes the files from the workflow commands: a script run by path and a unittest discover glob', () => {
+    const workflows = [
+      "        run: |\n          python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'\n          python3 -B tools/test_crc32_cross.py",
+      '        run: python3 zplc/tools/firmware-test/test_fwtest.py',
+      '          python3 tools/hil/test_board_io_description.py',
+    ];
+    const files = [PY, 'tools/hil/sub/test_hil_b.py', 'tools/hil/test_other.py', 'tools/test_crc32_cross.py', 'tools/firmware-test/test_fwtest.py', 'tools/hil/test_board_io_description.py', 'tools/hil/test_never.py'];
+    expect([...pythonFilesRunInCi(files, workflows)].sort()).toEqual(['tools/firmware-test/test_fwtest.py', 'tools/hil/test_board_io_description.py', PY, 'tools/test_crc32_cross.py']);
+  });
+
+  it('scans a Python file only when a CI command runs it', () => {
+    const text = '# ---- HIL-015: compared ----\n';
+    const inventory = { runs: [], notRunInCi: [] } as unknown as Inventory;
+    const scanned = scanFiles([PY, 'tools/hil/test_never.py'], () => text, inventory, undefined, new Set([PY]));
+    expect(scanned.map(([id, check]) => `${id} ${check.ref}`)).toEqual([`HIL-015 ${PY}`]);
   });
 });
 
@@ -178,9 +223,17 @@ describe('coverage', () => {
       'VF-003': [{ kind: 'unit', ref: REF, test: 'RETURN (VF-003 stopgap)', partial: true }],
     }, listed);
     expect(Object.fromEntries(states)).toEqual({ 'VF-001': 'covered', 'VF-002': 'partial', 'VF-003': 'partial', 'VF-004': 'uncovered', 'CMP-001': 'uncovered' });
-    expect(overall).toEqual({ total: 5, covered: 1, partial: 2, uncovered: 2 });
-    expect(byWorkstream.VF).toEqual({ total: 4, covered: 1, partial: 2, uncovered: 1 });
-    expect(byWorkstream.CMP).toEqual({ total: 1, covered: 0, partial: 0, uncovered: 1 });
+    expect(overall).toEqual({ total: 5, covered: 1, partial: 2, decided: 0, uncovered: 2 });
+    expect(byWorkstream.VF).toEqual({ total: 4, covered: 1, partial: 2, decided: 0, uncovered: 1 });
+    expect(byWorkstream.CMP).toEqual({ total: 1, covered: 0, partial: 0, decided: 0, uncovered: 1 });
+  });
+
+  it('counts a decided requirement in its own column, never as covered, until a passing check exists', () => {
+    const decided: Check = { kind: 'decided', ref: 'docs/docs/runtime/port-interface.md', test: 'decision D-06', note: 'D-06 default B' };
+    const { states, overall } = coverage(index, { 'VF-004': [decided], 'VF-001': [decided, conformance('VF-001', 'passes')] }, listed);
+    expect(states.get('VF-004')).toBe('decided');
+    expect(states.get('VF-001')).toBe('covered');
+    expect(overall).toEqual({ total: 5, covered: 1, partial: 0, decided: 1, uncovered: 3 });
   });
 
   it('lets a failing case sit beside a passing one: the passing one covers, and the requirement is named as still failing', () => {
@@ -199,8 +252,14 @@ describe('the committed evidence (VF-027)', () => {
   const root = new URL('../../', import.meta.url);
   const evidence = JSON.parse(readFileSync(new URL('tools/ci/requirement-evidence.json', root), 'utf8')) as Record<string, Check[]>;
   const index = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string }>;
-  const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware'];
+  const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided'];
   const records = Object.entries(evidence).flatMap(([id, checks]) => checks.map((check) => ({ id, check })));
+
+  it('records the second port as decided by D-06 (default B), not as covered by a check', () => {
+    const port = ['IO', '016'].join('-'); // not in the title: a title that names it would be a check of it
+    expect(evidence[port]?.map((check) => check.kind)).toEqual(['decided']);
+    expect(evidence[port]?.[0]?.note).toContain('D-06');
+  });
 
   it('names only requirements of the index', () => {
     const known = new Set(index.map((entry) => entry.id));
@@ -224,7 +283,7 @@ describe('the committed evidence (VF-027)', () => {
   });
 
   it('explains every record that a person wrote', () => {
-    const manual = records.filter(({ check }) => check.kind === 'manual' || check.kind === 'hardware');
+    const manual = records.filter(({ check }) => check.kind === 'manual' || check.kind === 'hardware' || check.kind === 'decided');
     expect(manual.filter(({ check }) => !check.note).map(({ id }) => id)).toEqual([]);
   });
 
@@ -233,8 +292,8 @@ describe('the committed evidence (VF-027)', () => {
     const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
     const { overall, byWorkstream, errors } = coverage(full, evidence, listed);
     expect(errors).toEqual([]);
-    expect(overall.covered + overall.partial + overall.uncovered).toBe(387);
-    for (const counts of Object.values(byWorkstream)) expect(counts.covered + counts.partial + counts.uncovered).toBe(counts.total);
+    expect(overall.covered + overall.partial + overall.decided + overall.uncovered).toBe(387);
+    for (const counts of Object.values(byWorkstream)) expect(counts.covered + counts.partial + counts.decided + counts.uncovered).toBe(counts.total);
     expect(Object.values(byWorkstream).reduce((sum, counts) => sum + counts.total, 0)).toBe(387);
   });
 });

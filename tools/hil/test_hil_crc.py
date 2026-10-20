@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """HIL-017: tools/test_crc32_cross.py compares the C implementation with the TypeScript one and fails when they differ."""
+# ---- HIL-017: the CRC cross-check compares the C implementation with the TypeScript one ----
 import importlib.util
 import io
 import shutil

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """HIL-009: the record of a run is machine-readable, bound to the firmware it tested, and refused when it does not fit its schema."""
+# ---- HIL-009: a run record is machine-readable, carries its evidence level, and is committed after the image it tested ----
 import copy
 import json
 import re

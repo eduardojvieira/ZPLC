@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """HIL-013: a shipped board profile does not turn the HIL trace on; the trace comes from the HIL overlay."""
+# ---- HIL-013: no shipped board profile turns the HIL trace on; it comes from the HIL overlay ----
 import io
 import json
 import tempfile
