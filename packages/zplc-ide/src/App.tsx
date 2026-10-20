@@ -39,6 +39,7 @@ import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
 import { startUpdateCheck } from './ipc/updateCheckBridge';
 import { UpdateNoticeBanner } from './components/UpdateNotice';
+import { WebBuildNotice } from './components/WebBuildNotice';
 import { useUpdateNotice } from './store/updateNotice';
 import { ZPLC_REPO_VERSION } from './version';
 import { Button, ErrorState, LoadingState } from './ui';
@@ -140,6 +141,7 @@ function App() {
   if (!isProjectOpen) {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+        <WebBuildNotice />
         <UpdateNoticeBanner />
         {learnHomeOpen ? <main aria-label={t('learn.home.title')} className="flex min-h-0 flex-1 flex-col"><LearnHome /></main> : <WelcomeScreen />}
         <CloseGuard />
@@ -180,7 +182,8 @@ function App() {
       <RecoveryOffer />
       <ExternalChangePrompt />
       <ActionConfirmHost />
-      <UpdateNoticeBanner />
+      <WebBuildNotice />
+        <UpdateNoticeBanner />
       {/* Unified Toolbar */}
       <ErrorBoundary region="Toolbar">
         <DevFaultProbe region="Toolbar" />

@@ -8,6 +8,7 @@ import { withShortcut } from '../commands/shortcutLabels';
 import { canRunCurrentProgram, type ProgramLoadState } from './debugSessionState';
 import { EXECUTION_MODE, type ExecutionMode } from './runtimeArtifactSelection';
 import { Button } from '../ui';
+import { deviceLinkRefusal, isWebBuild } from '../platform/webCapabilities';
 
 export function RunControls({ executionMode, isConnected, isConnecting, isUploading, controlsBusy, hasCurrentCompileResult, programLoadState, isRunning, isPaused, isIdle, mpeekEnabled, toggleMpeek, connectionButtonRef, executionButtonRef, onExecutionModeChange, onConnect, onUpload, onStart, onPause, onResume, onStep, onStop, onReset }: {
   executionMode: ExecutionMode;
@@ -34,7 +35,10 @@ export function RunControls({ executionMode, isConnected, isConnecting, isUpload
   onStop: () => Promise<void>;
   onReset: () => Promise<void>;
 }) {
-  const { t } = useT();
+  const translator = useT();
+  const { t } = translator;
+  // The web build never reaches a device (AGENTS.md rule 7): the hardware mode is off, with its reason in the label and the tooltip.
+  const hardwareRefusal = deviceLinkRefusal(isWebBuild(), translator);
   return (
     <>
     {/* Mode Toggle */}
@@ -57,14 +61,15 @@ export function RunControls({ executionMode, isConnected, isConnecting, isUpload
       <Button variant="bare"
           type="button"
           onClick={() => { void onExecutionModeChange(EXECUTION_MODE.HARDWARE); }}
-          disabled={controlsBusy}
+          disabled={controlsBusy || hardwareRefusal !== null}
+          data-web-unavailable={hardwareRefusal === null ? undefined : 'deviceLink'}
          className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.HARDWARE
           ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
           : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
           } disabled:opacity-50`}
-        aria-label={t('toolbar.hardware.label')}
+        aria-label={hardwareRefusal === null ? t('toolbar.hardware.label') : `${t('toolbar.hardware.label')}. ${hardwareRefusal}`}
         aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
-        tooltip={t('toolbar.hardware.title')}
+        tooltip={hardwareRefusal ?? t('toolbar.hardware.title')}
       >
         <Radio size={14} />
         <span className="hidden sm:inline">{t('toolbar.hardware.text')}</span>

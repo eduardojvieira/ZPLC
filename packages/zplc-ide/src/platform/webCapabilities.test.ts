@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
+import { requestPort } from '../uploader/webserial';
 import { translatorFor } from '../i18n';
 import { webContentSecurityPolicy } from './webCsp';
 import { WEB_INSTALL_URL, WEB_MISSING_FEATURES, deviceLinkRefusal, isWebBuild, webMissingFeatures } from './webCapabilities';
@@ -38,5 +39,21 @@ describe('the web build states what it lacks (REL-037)', () => {
     expect(policy).not.toContain("'unsafe-eval'");
     expect(policy).not.toMatch(/https?:/);
     expect(policy).not.toMatch(/script-src[^;]*'unsafe-inline'/);
+  });
+
+  describe('with the web flag set', () => {
+    const flags = globalThis as { __ZPLC_WEB_BUILD__?: boolean };
+    const nav = globalThis as unknown as { navigator?: unknown };
+    const original = nav.navigator;
+    afterEach(() => { delete flags.__ZPLC_WEB_BUILD__; Object.defineProperty(globalThis, 'navigator', { value: original, configurable: true }); });
+
+    test('REL-037: the serial port chooser is never asked for in the web build, even when the browser has Web Serial', async () => {
+      let asked = 0;
+      Object.defineProperty(globalThis, 'navigator', { value: { serial: { requestPort: async () => { asked += 1; return {}; } } }, configurable: true });
+      flags.__ZPLC_WEB_BUILD__ = true;
+      expect(isWebBuild()).toBe(true);
+      await expect(requestPort()).rejects.toThrow('desktop app');
+      expect(asked).toBe(0);
+    });
   });
 });
