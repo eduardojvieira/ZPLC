@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Interlocks in Ladder: a reversing motor",
+  "summary": "Edit two Ladder rungs so that a reversing motor never closes its Forward and Reverse contactors together, and a lost lubrication permissive drops either direction.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, mechanically interlocked contactors, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all.",
+    "Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Reversing.ld.json two rungs are drawn, one per direction. Each holds its coil on with a seal-in under its pushbutton, and has StopPB and the permissive LubeOk in series. Add the interlock: a normally closed contact on Reverse in the Forward rung, and a normally closed contact on Forward in the Reverse rung.",
+      "checkpoint": "Forward and Reverse are never ON together, a running direction ignores the other pushbutton, and losing LubeOk drops either one."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Forward starts at {{t:10}} ms. Predict Forward and Reverse at {{t:30}} ms, when RevPB is pressed while Forward runs, at {{t:90}} ms, when FwdPB is pressed while Reverse runs, and at {{t:110}} ms, when LubeOk drops.",
+      "checkpoint": "{{v:Reversing.Forward=true,Reversing.Reverse=false@30|Forward ON, Reverse OFF}} at {{t:30}} ms; {{v:Reversing.Forward=false,Reversing.Reverse=true@90|Forward OFF, Reverse ON}} at {{t:90}} ms; {{v:Reversing.Forward=false,Reversing.Reverse=false@110|both OFF}} at {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung. In the Ladder editor add a normally closed contact to each rung, between the LubeOk contact and the coil, and give it the coil of the other rung.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named Reversing and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:70}} ms: RevPB is ignored at {{t:30}} ms while Forward runs, Stop drops Forward at {{t:50}} ms, and only then does RevPB start Reverse at {{t:70}} ms.",
+      "checkpoint": "Reverse falls once at {{t:110}} ms when LubeOk drops, and does not restart at {{t:120}} ms when LubeOk returns; a new FwdPB press starts Forward at {{t:130}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why does the interlock use the other coil and not the other pushbutton? And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
+      "checkpoint": "The coil says what the motor is doing, a pushbutton only what someone asks: an interlock on RevPB would let Forward close while Reverse is held in. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "An interlock keeps a coil OFF while the other coil is ON. Which kind of contact passes power only while its variable is FALSE?"
+    },
+    {
+      "level": 2,
+      "text": "In the Forward rung add a normally closed contact on Reverse between LubeOk and the coil; in the Reverse rung add a normally closed contact on Forward in the same place. Leave StopPB, LubeOk and the seal-in contacts where they are."
+    }
+  ],
+  "faultCases": [
+    "The starter has no interlock, so pressing RevPB at {{t:30}} ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung."
+  ]
+}

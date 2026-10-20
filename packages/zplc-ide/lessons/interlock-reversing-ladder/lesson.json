@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-reversing-ladder",
+  "version": 1,
+  "order": 31,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "interlock-guard-permissive",
+    "seal-in-ladder"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet.",
+        "es": "La lección se califica con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "reversing_ladder_starter",
+    "program": "src/Reversing.ld.json"
+  },
+  "solution": {
+    "project": "reversing_ladder",
+    "program": "src/Reversing.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Reversing",
+    "path": "tests/reversing.scenario.json",
+    "sha256": "5b348e6316fdceca450886dada64c3e1d8cc40d12995bafc0b3999346a500c58"
+  },
+  "regressionScenarios": []
+}

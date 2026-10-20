@@ -31,7 +31,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **29**. Planeadas: **1**. En total: **30**.
+Disponibles hoy: **30**. Planeadas: **1**. En total: **31**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -156,12 +156,14 @@ Una orden no es un hecho: la planta debe confirmarla. La realimentación, las fa
 | `tank-level-fault-reset` Nivel de tanque, fallas y reset | Disponible | ST | Simulación | tank-v1 | 25 | `pedestrian-crossing-states` |
 | `motor-plant-feedback` Comando, realimentación y velocidad | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
 | `interlock-guard-permissive` Interbloqueos y permisivos: una protección que detiene el motor | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
+| `interlock-reversing-ladder` Enclavamientos en Ladder: un motor con inversión de giro | Disponible | LD | Simulación | - | 20 | `interlock-guard-permissive`, `seal-in-ladder` |
 
 Objetivos de las lecciones disponibles:
 
 - **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento. Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla.
 - **Comando, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed.
 - **Interbloqueos y permisivos: una protección que detiene el motor**: Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden. Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar.
+- **Enclavamientos en Ladder: un motor con inversión de giro**: Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione. Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo.
 
 
 ## Módulo 7: Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas

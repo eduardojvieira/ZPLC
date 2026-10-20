@@ -31,7 +31,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **29**. Planned: **1**. In all: **30**.
+Available today: **30**. Planned: **1**. In all: **31**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -156,12 +156,14 @@ A command is not a fact: the plant must confirm it. Feedback, faults and interlo
 | `tank-level-fault-reset` Tank level, faults, and reset | Available | ST | Simulation | tank-v1 | 25 | `pedestrian-crossing-states` |
 | `motor-plant-feedback` Command, feedback, and speed | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
 | `interlock-guard-permissive` Interlocks and permissives: a guard that stops the motor | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
+| `interlock-reversing-ladder` Interlocks in Ladder: a reversing motor | Available | LD | Simulation | - | 20 | `interlock-guard-permissive`, `seal-in-ladder` |
 
 Objectives of the available lessons:
 
 - **Tank level, faults, and reset**: Keep the pump on from LevelLow until LevelHigh with a latch. Latch the alarm on PumpFault or EStop and release it only with a fresh Reset after the fault has cleared.
 - **Command, feedback, and speed**: Separate the command to the motor from the confirmation that it runs. Keep the request until Stop and let Running follow the request only once AtSpeed arrives.
 - **Interlocks and permissives: a guard that stops the motor**: Tell a permissive, a condition that must be true for the output to be on, from a command. Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it.
+- **Interlocks in Ladder: a reversing motor**: Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all. Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive.
 
 
 ## Module 7: Structuring programs: functions, function blocks, structures, arrays, tasks

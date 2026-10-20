@@ -21,6 +21,7 @@ unlisted: true
 | [Nivel de tanque, fallas y reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
 | [Comando, realimentación y velocidad](../lessons/motor-plant-feedback.md) | `motor-plant-feedback` | ST | 20 |
 | [Interbloqueos y permisivos: una protección que detiene el motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
+| [Enclavamientos en Ladder: un motor con inversión de giro](../lessons/interlock-reversing-ladder.md) | `interlock-reversing-ladder` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-6 <<< */}
 
