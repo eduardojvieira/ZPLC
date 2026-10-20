@@ -1125,7 +1125,7 @@ export const JOURNEYS: Journey[] = [
       assert(!listed.some((id) => id!.endsWith('_starter') || id === 'kitchen_sink' || id === 'pico_persist_test'), `A starter or a test fixture is listed as an example: ${JSON.stringify(listed)}`);
       const card = (id: string) => app.eval<string>(`document.querySelector('[data-welcome-example="${id}"]')?.textContent ?? ''`);
       assert((await card('pico_blinky')).includes('Raspberry Pi Pico') && !(await card('pico_blinky')).includes('ESP32'), 'The card of pico_blinky should name the Raspberry Pi Pico it targets.');
-      assert((await card('esp32s3_blinky')).includes('ESP32-S3 DevKitC') && (await card('esp32s3_blinky')).includes('per the current overlay'), 'The card of esp32s3_blinky should name its board and say the pin is per the current overlay.');
+      assert((await card('esp32s3_blinky')).includes('ESP32-S3 DevKitC') && (await card('esp32s3_blinky')).includes('GPIO15, header J1 pin 8'), 'The card of esp32s3_blinky should name its board and the header pin of its LED (DO0, GPIO15, J1 pin 8).');
 
       // The page scrolls inside its own area: neither a horizontal nor a vertical scrollbar may appear on the window, at the size
       // the app asks for (1440 wide) and in the smaller windows a laptop gives.
