@@ -2,7 +2,9 @@
 
 **Feature Branch**: `003-comm-fb-vm`
 **Created**: 2026-03-10
-**Status**: In Progress
+**Status**: Superseded
+
+> **Note (2026-10-20):** Superseded by [`specs/011-zplc-2-0-remediation/spec.md`](../011-zplc-2-0-remediation/spec.md) (workstream COM), which is the contract for the communication function blocks and the device protocol in 2.0. This spec stays for history; its open tasks are not tracked here any more.
 
 ---
 

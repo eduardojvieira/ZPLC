@@ -3,6 +3,8 @@
 **Implementation branch**: `master` (short-lived work branches only)
 **Created**: 2026-08-21
 **Status**: Approved RFC
+
+> **Note (2026-10-20):** Spec 011 builds on this RFC and is the contract for 2.0: see [`specs/011-zplc-2-0-remediation/spec.md`](../011-zplc-2-0-remediation/spec.md), its plan and its research. This RFC stays as the approved direction; where the two differ, spec 011 wins (DOC-025).
 **Input**: Consolidated ZPLC Studio 2.0 master plan.
 
 ## Outcome

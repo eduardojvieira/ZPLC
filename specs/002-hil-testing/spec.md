@@ -2,7 +2,9 @@
 
 **Feature Branch**: `002-hil-testing`  
 **Created**: 2026-01-22  
-**Status**: In Progress  
+**Status**: Superseded  
+
+> **Note (2026-10-20):** Superseded by [`specs/011-zplc-2-0-remediation/spec.md`](../011-zplc-2-0-remediation/spec.md) (workstream HIL, HIL-001 to HIL-017), which is the contract for hardware-in-the-loop testing in 2.0. This spec stays for history; its open tasks are not tracked here any more.
 **Input**: Hardware-in-the-loop testing for ZPLC runtime validation using Raspberry Pi Pico with serial debug reporting. Full verification of runtime functions, function blocks, programs, tasks, and all instructions across all languages.
 
 ## User Scenarios & Testing

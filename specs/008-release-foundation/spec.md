@@ -2,7 +2,9 @@
 
 **Feature Branch**: `008-release-foundation`  
 **Created**: 2026-03-13  
-**Status**: Draft  
+**Status**: Superseded  
+
+> **Note (2026-10-20):** Superseded by [`specs/011-zplc-2-0-remediation/spec.md`](../011-zplc-2-0-remediation/spec.md) (workstream REL), which is the contract for releases from 2.0 on. This draft was never completed and stays for history.
 **Input**: User request to prepare a serious v1.5.0 that improves repository health,
 completes the intended IEC language and communication scope, verifies the IDE on
 desktop platforms, validates simulation and debugging, aligns supported boards with

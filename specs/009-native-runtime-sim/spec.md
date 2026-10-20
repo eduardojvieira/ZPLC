@@ -3,6 +3,8 @@
 **Feature Branch**: `009-native-runtime-sim`  
 **Created**: 2026-03-19  
 **Status**: Draft  
+
+> **Note (2026-10-20):** Continued by [`specs/011-zplc-2-0-remediation/spec.md`](../011-zplc-2-0-remediation/spec.md): the native simulation described here is in force, and spec 011 refers to it (for example HIL-015 and its capability profile, FR-009). Where the two differ, spec 011 wins.
 **Input**: User description: "Replace the limited IDE simulator with a full local runtime built from the same execution core used on hardware, and define a plan to match hardware features while preserving IDE compatibility."
 
 ## User Scenarios & Testing *(mandatory)*
