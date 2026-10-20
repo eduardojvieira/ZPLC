@@ -15,7 +15,7 @@ ZPLC incluye implementaciones de protocolos estándar de automatización industr
 El soporte de protocolos depende de las capacidades físicas de su placa objetivo. ZPLC categoriza las placas en tres niveles de conectividad:
 
 - **Solo serie**: tiene una interfaz serie para la que está construido Modbus RTU sobre UART o RS-485.
-- **Con capacidad Wi-Fi**: tiene una interfaz de red inalámbrica para la que están construidos Modbus TCP y MQTT (por ejemplo, el ESP32-S3).
+- **Con capacidad Wi-Fi**: tiene una interfaz de red inalámbrica para la que están construidos Modbus TCP y MQTT (por ejemplo, la ESP32-S3).
 - **Con capacidad Ethernet**: tiene una interfaz de red cableada para la que están construidos los protocolos TCP y UDP (por ejemplo, STM32 Nucleo y Discovery).
 
 Ningún intercambio por estas interfaces se ha probado en una placa; lo que se ha verificado está en las guías prácticas de [Modbus](../guides/modbus.md) y de [MQTT](../guides/mqtt-sparkplug.md).
@@ -78,7 +78,7 @@ El ajuste de seguridad solo significa algo sobre un transporte TLS. Con TCP plan
 
 ### TLS y el generador de números aleatorios
 
-TLS necesita números aleatorios que nadie pueda predecir. Una compilación de firmware que habilita TLS junto con `CONFIG_TEST_RANDOM_GENERATOR`, o sin una fuente aleatoria criptográfica, se detiene al configurar (`zplc_rule_tls_with_test_random_generator`). Las imágenes de la Nucleo-H743ZI y de la Arduino Opta tenían esa opción; ahora usan el generador de hardware del STM32 para la pila de red, y **TLS está apagado en ellas** hasta que el generador se verifique en la placa (HIL-011): MQTT en esas dos placas funciona solo sobre TCP plano, y un transporte TLS se rechaza en lugar de degradarse. La imagen del ESP32-S3 mantiene TLS, con su generador de hardware.
+TLS necesita números aleatorios que nadie pueda predecir. Una compilación de firmware que habilita TLS junto con `CONFIG_TEST_RANDOM_GENERATOR`, o sin una fuente aleatoria criptográfica, se detiene al configurar (`zplc_rule_tls_with_test_random_generator`). Las imágenes de la Nucleo-H743ZI y de la Arduino Opta tenían esa opción; ahora usan el generador de hardware del STM32 para la pila de red, y **TLS está apagado en ellas** hasta que el generador se verifique en la placa (HIL-011): MQTT en esas dos placas funciona solo sobre TCP plano, y un transporte TLS se rechaza en lugar de degradarse. La imagen de la ESP32-S3 mantiene TLS, con su generador de hardware.
 
 ## Credenciales
 

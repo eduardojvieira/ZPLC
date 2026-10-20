@@ -29,7 +29,7 @@ descritos en [Compatibilidad de hardware](../reference/capabilities-evidence.md)
   `gcc-multilib` en Debian y Ubuntu).
 - El SDK de Zephyr 1.0.1 con la toolchain `arm-zephyr-eabi` y las
   herramientas de host del SDK, que incluyen `qemu-system-arm`. La fila de
-  tamaño del ESP32-S3 requiere además la toolchain
+  tamaño de la ESP32-S3 requiere además la toolchain
   `xtensa-espressif_esp32s3_zephyr-elf`.
 - Acceso a la red la primera vez, para `west update`.
 
