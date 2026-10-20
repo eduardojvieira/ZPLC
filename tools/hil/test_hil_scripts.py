@@ -62,6 +62,7 @@ HOST_CHECKS = {
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
     "run_chain",  # the chain for a board: test_hil_chain.py runs it on fake devices
     "validate_hil_trace_profile",  # test_hil_trace_profile.py; docs-and-truth runs it on the repository
+    "check_storage_partitions",  # IO-008, test_hil_storage_partitions.py; `run.sh size` runs it on every board build
 }
 
 
