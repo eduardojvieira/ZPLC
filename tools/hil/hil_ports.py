@@ -7,6 +7,7 @@ only asks pyserial what is plugged in, and it is a parameter so tests give a fak
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Callable, Iterable, Mapping
 
@@ -25,7 +26,7 @@ def list_serial_ports() -> list[PortInfo]:
     try:
         from serial.tools import list_ports  # noqa: PLC0415
     except ImportError as error:
-        raise PortError(f"pyserial is not installed, so ports cannot be listed: pass --port or set {ENV_PORT}") from error
+        raise PortError(f"pyserial is not installed for {sys.executable}, so ports cannot be listed: run with the Python of the firmware workspace (${{ZPLC_FW_WS:-~/zplc-zephyr-ws}}/.venv/bin/python3), pass --port, or set {ENV_PORT}") from error
     return [(p.device, p.vid, p.pid, p.description or "") for p in list_ports.comports()]
 
 

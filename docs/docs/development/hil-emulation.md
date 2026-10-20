@@ -80,7 +80,7 @@ python3 tools/hil/run_chain.py rpi_pico --bench emulated
 python3 tools/hil/run_chain.py esp32s3_devkitc --bench emulated
 ```
 
-Use the Python of the firmware workspace (it has `pyserial`). The emulated bench
+Run these with the Python of the firmware workspace, `~/zplc-zephyr-ws/.venv/bin/python3` (it has `pyserial`; the system `python3` usually does not, and the chain then stops at the `open` step with the name of the interpreter that lacks it). The emulated bench
 needs no terminal and asks nobody: the steps that ask a person to confirm the
 board are recorded as skipped. Records go to `build/hil-records/`.
 

@@ -61,6 +61,16 @@ class ResolvePortTests(unittest.TestCase):
         with self.assertRaises(PortError):
             resolve_port(None, board="rpi_pico", env={}, lister=missing)
 
+    def test_the_missing_pyserial_message_names_the_interpreter_and_the_workspace_python(self):
+        import sys  # noqa: PLC0415
+        from unittest import mock  # noqa: PLC0415
+
+        with mock.patch.dict(sys.modules, {"serial": None, "serial.tools": None, "serial.tools.list_ports": None}):
+            with self.assertRaises(PortError) as caught:
+                hil_ports.list_serial_ports()
+        self.assertIn(sys.executable, str(caught.exception))
+        self.assertIn(".venv/bin/python3", str(caught.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

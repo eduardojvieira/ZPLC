@@ -87,7 +87,7 @@ python3 tools/hil/run_chain.py rpi_pico --bench emulated
 python3 tools/hil/run_chain.py esp32s3_devkitc --bench emulated
 ```
 
-Use el Python del espacio de trabajo del firmware (incluye `pyserial`). El banco
+Ejecute esto con el Python del espacio de trabajo del firmware, `~/zplc-zephyr-ws/.venv/bin/python3` (incluye `pyserial`; el `python3` del sistema normalmente no, y la cadena se detiene entonces en el paso `open` con el nombre del intérprete que no lo tiene). El banco
 emulado no necesita terminal y no le pregunta a nadie: los pasos en los que una
 persona confirma la placa se registran como omitidos. Los registros se guardan en
 `build/hil-records/`.
