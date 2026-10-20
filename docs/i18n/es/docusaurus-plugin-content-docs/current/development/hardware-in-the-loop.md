@@ -308,6 +308,16 @@ el watchdog desactivado; hasta que se permita la compilación HIL,
 `--no-watchdog-build` imprime el comando sin la opción, y el paso del watchdog
 falla y dice por qué.
 
+El paso de RETAIN necesita una imagen compilada con
+`-DCONFIG_ZPLC_RETAIN_PERSIST=y`. La persistencia de RETAIN está desactivada en
+cada perfil que se distribuye hasta que una placa tenga un registro de hardware,
+y el comando que se imprime todavía no agrega la opción, así que con esa imagen
+el paso falla y dice que la imagen no puede conservar RETAIN. En la Pico la
+opción ni siquiera compila con la partición de almacenamiento de 64 KB y el
+tamaño de código de 24 KB del perfil: la comprobación de almacenamiento de la
+compilación (RT-029) la detiene, porque no caben dos ranuras de programa, los
+dos registros de RETAIN y un sector de reserva.
+
 La grabación la hace usted. La Pico: mantenga presionado BOOTSEL mientras
 conecta el cable USB y copie `zephyr.uf2` a la unidad RPI-RP2. La ESP32-S3:
 `esptool --chip esp32s3 --port <puerto> write-flash 0x0 zephyr.bin` en el
@@ -330,14 +340,14 @@ puerto marcado USB, y presione RST si la placa queda en modo de descarga.
 | 13 | Lectura analógica | Le pide girar el potenciómetro a 0 %, 50 % y 100 % y lee AI0 | Dentro del 5 % de la escala completa en los extremos y del 10 % en el centro | Todavía no se ejecutó | Se completa con los registros emulados |
 | 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un scan y 3000 ms más un scan, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
 | 15 | Jitter de scan, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee las estadísticas del runtime cada 30 s | Ningún desborde, ningún plazo incumplido, el período medio de cada ventana dentro del 1 % | Todavía no se ejecutó | Se completa con los registros emulados |
-| 16 | Desborde | Ejecuta una tarea de 1 ms con un bucle largo que acciona DO0 | Se enclava la falla `deadline_miss` y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
+| 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un scan que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza en una sesión del enlace del dispositivo y guarda silencio durante el tiempo de inactividad de la sesión (30 s por omisión) | Salidas apagadas tras STOP, y fuerzas de la sesión liberadas tras el silencio | Todavía no se ejecutó | Se completa con los registros emulados |
 | 18 | Tiempo de reinicio del watchdog | Ejecuta un scan que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
-| 19 | Falla fatal | Divide por cero tras 20 scans de un programa que acciona DO0 | Se enclava la falla `vm_fault` y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
-| 20 | Ciclo de energía y RETAIN | Cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |
+| 19 | Falla fatal | Divide por cero tras 20 scans de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
+| 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |
 | 21 | 20 cortes de energía durante el despliegue | Carga el programa A, envía una parte del programa B (desde una vigésima parte hasta todo) y le pide desconectar de inmediato | Tras cada corte la placa está en STOP y ejecuta A o B completo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 22 | Escritura atómica | Escribe 100 veces un valor de cuatro bytes por el enlace del dispositivo mientras el programa cuenta valores partidos | Ningún scan vio un valor escrito a medias | Todavía no se ejecutó | Se completa con los registros emulados |
-| 23 | Intercambio de bus de campo | Pico: lee el registro de retención 100 de un servidor Modbus RTU en esta computadora. ESP32-S3: escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
+| 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en esta computadora, en una línea abierta a 19200 baudios. ESP32-S3: escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
 
 Una persona no puede cortar la energía en el instante exacto en que el
 programa se escribe en la flash, de modo que en una placa el paso 21 prueba los

@@ -116,8 +116,11 @@ Muestra la pty de la consola (`port`) y, para la Pico, la pty de UART1
   adelanta al reloj de pared, así que los programas del equipo (el enlace del
   dispositivo, un extremo Modbus) ven los mismos tiempos de espera que con una
   placa; cuando el emulador es más lento que el chip, el tiempo simulado se atrasa.
-  El reloj de QEMU sigue al del equipo, por lo que el banco de la ESP32-S3 usa el
-  tiempo del equipo.
+  El banco de la ESP32-S3 usa el tiempo del equipo, pero QEMU no mantiene el reloj
+  de la placa al paso del equipo: en las ejecuciones del 2026-10-20 la placa contó entre un sexto
+  y un tercio del tiempo del equipo, según la carga de la máquina. Un paso de
+  tiempo en QEMU (un TON de 3 s tardó 8 s) mide QEMU, no el firmware, y los pasos
+  de falla esperan la falla, no un tiempo fijo.
 
 ## native_sim con el mapa de canales de la Pico
 
@@ -147,6 +150,20 @@ cada uno detenía a Zephyr o daba lecturas erróneas. `tools/hil/emulator/README
 los enumera. Uno de ellos explica una lectura de "el canal 0 del ADC devuelve el
 canal 4" observada al probar el emulador: rp2040js mantenía START_ONCE activo, así
 que cada conversión leía la entrada seleccionada antes; la HAL de ZPLC era correcta.
+
+## Lo que encontraron las ejecuciones emuladas
+
+Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron en cinco
+pasos. Cada uno se rastreó hasta su causa, y el paso se volvió a ejecutar en el
+emulador después de la corrección.
+
+| Paso | Lo que dijo el registro | Causa | Corrección |
+|---|---|---|---|
+| Ciclo de energía y RETAIN (ambas placas) | RETAIN 102 antes del ciclo de energía, 0 después | Las imágenes no tenían persistencia de RETAIN: `CONFIG_ZPLC_RETAIN_PERSIST` está desactivada en cada perfil que se distribuye hasta que una placa tenga un registro de hardware, y en la Pico no cabe en la partición de almacenamiento de 64 KB (la compilación se detiene). Con la opción activada, la imagen de la ESP32-S3 conservó el valor (16 antes y después), y también una imagen de la Pico compilada para la prueba con una partición de almacenamiento de 128 KB (101 antes y después) | El paso comprueba la opción de la imagen y dice por qué no puede pasar. Pendiente: la compilación HIL debe activar la opción, y la Pico necesita una partición de almacenamiento más grande |
+| Desborde (ambas placas) | `vm_fault` con error de VM 8, no `deadline_miss`; salidas apagadas | El bucle del paso ejecutaba 104.000 instrucciones de la VM en un scan, más que el presupuesto de 100.000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), así que el runtime enclavó su falla de watchdog de la VM, como está diseñado | El paso ajusta el bucle a la mitad del presupuesto que informa la imagen; entonces ambas placas enclavan `deadline_miss` tras tres scans tardíos, con las salidas apagadas |
+| Intercambio de bus de campo (Pico) | Ninguna petición llegó al equipo, error 10 | El cliente Modbus RTU del dispositivo está desactivado por omisión y solo arranca al iniciar, así que el bloque fallaba de inmediato con `UNAVAILABLE`. Además, el lado del equipo de la línea se abría a 115200 baudios, mientras que el dispositivo usa 19200 | El paso activa el cliente a 19200 baudios, lo guarda y reinicia la placa; el intercambio emulado leyó 0x5A17 |
+| Despliegue (ESP32-S3) | "Not in loading state" tras volver a enviar un bloque | El cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13): la cadena compila los fixtures para 8 KB de memoria de trabajo, y la ESP32-S3 tiene 2 KB. Luego el probador volvió a enviar el último bloque a una carga que ya había terminado. Una placa hace lo mismo | Pendiente: la cadena debe compilar los fixtures para la placa, y el probador no debe reenviar un bloque rechazado |
+| Falla fatal (ESP32-S3) | Sigue en ejecución, sin falla, tras 1 s | La ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo del equipo no alcanzaba para los 21 scans que el programa necesita | Los pasos de falla esperan la falla, hasta 10 s; QEMU la enclavó tras 1,4 s de tiempo del equipo y 21 scans |
 
 ## Licencias
 
