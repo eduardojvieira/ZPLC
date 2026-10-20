@@ -131,7 +131,7 @@ describe('a check on the board grades a run on hardware (LRN-024, LRN-015)', () 
 
 describe('a check on a board that keeps a device trace: arm, then the learner presses Run (LRN-024, LRN-015)', () => {
   it('LRN-024 arms in STOP, waits for Run, grades from the first scan of the run at the declared tolerance, and keeps the deployed hash', async () => {
-    // SYNTHETIC device: once the learner presses Run (at 300 ms of the check), it scans every 10 ms; the button is held from
+    // SYNTHETIC device: once the learner presses Run (at 250 ms of the check), it scans every 10 ms; the button is held from
     // 220 ms to 420 ms of the run and the LED follows it a scan later.
     let now = 0;
     const scans: DeviceTraceSample[] = [];
@@ -143,7 +143,7 @@ describe('a check on a board that keeps a device trace: arm, then the learner pr
       read: async (from, count) => { calls.push('read'); const chunk = scans.slice(from, from + count); return { from, next: from + chunk.length, samples: chunk }; },
       clear: async () => { calls.push('clear'); return { available: true, armed: false, capacity: 0, inBytes: 0, outBytes: 0, written: 0, first: 0, maxIoBytes: 32 }; },
     };
-    const run = (at: number) => at - 300;
+    const run = (at: number) => at - 250; // Run is pressed between two reads: the first read finds several scans
     const waiting: boolean[] = [];
     const outcome = await runBoardCheck({
       lessonId: 'verify-my-board', lessonVersion: 1, scenario: SCENARIO, scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 20, analogPercent: 5 },
@@ -152,7 +152,7 @@ describe('a check on a board that keeps a device trace: arm, then the learner pr
       wait: async (ms) => {
         for (let step = 0; step < ms; step += 10) {
           now += 10;
-          if (now === 300) session.state = 'running'; // the learner presses Run in the toolbar
+          if (now === 250) session.state = 'running'; // the learner presses Run in the toolbar
           if (run(now) >= 0) {
             const t = run(now);
             const pressed = t >= 220 && t < 420;

@@ -152,9 +152,10 @@ export async function runBoardCheck(run: BoardCheckRun): Promise<BoardCheckOutco
   let step = -2;
   let anchored = awaitRun;
   let tolerances = run.tolerances;
-  if (awaitRun) run.onWaitingForRun?.(true);
+  let waiting = awaitRun;
+  if (waiting) run.onWaitingForRun?.(true);
   const onSample = (trace: readonly { atMs: number; values: Record<string, boolean | number> }[]) => {
-    if (awaitRun && trace.length === 1) run.onWaitingForRun?.(false);
+    if (waiting) { waiting = false; run.onWaitingForRun?.(false); }
     const observed = alignEvents(run.scenario, trace, anchored);
     const next = observed.findIndex((at) => at === null);
     if (next !== step) { step = next; run.onStep?.(next); }
