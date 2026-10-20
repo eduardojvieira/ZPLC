@@ -314,7 +314,7 @@ describe('the committed evidence (VF-027)', () => {
   });
 
   it('lists every gated requirement with the evidence its gate still asks for', () => {
-    const run = Bun.spawnSync(['bun', 'tools/ci/requirement-coverage.ts', '--list'], { cwd: root.pathname });
+    const run = Bun.spawnSync([process.execPath, 'tools/ci/requirement-coverage.ts', '--list'], { cwd: root.pathname });
     expect(run.exitCode).toBe(0);
     const out = run.stdout.toString();
     const gates = records.filter(({ check }) => check.kind === 'gate');
@@ -323,7 +323,7 @@ describe('the committed evidence (VF-027)', () => {
       expect(out).toContain(`  ${id}! `);
       expect(out).toContain(check.note!);
     }
-  });
+  }, 60_000); // a whole scan of the tree in a child process: slow on a loaded machine, and its time is not what this measures
 
   it('adds up: every requirement of the index is covered, partial or uncovered', () => {
     const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
