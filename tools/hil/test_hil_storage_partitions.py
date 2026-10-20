@@ -191,6 +191,23 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(found["a"], [])
         self.assertEqual(found["c"], ["NVS store (storage_partition) overlaps the image slot 0x100-0x200000 of flash0"])
 
+    def test_io_008_c_a_slot_the_linker_does_not_bound_is_held_to_the_flash_budget(self) -> None:
+        tree = dts(SLOT0 + "\n" + partition("storage_partition", 0x1e0000, 0x20000))
+        lines, found = check.check_build(tree, config("CONFIG_NVS=y", load_size="0"), flash_budget=0x100000)
+        self.assertEqual(found["c"], [])
+        self.assertEqual(lines[-1], "image slot 0x0-0x100000 of flash0 (the flash budget of the board: the linker does not bound it)")
+        found = self.failures_with_budget(tree, config("CONFIG_NVS=y", load_size="0"), 0x1f0000)
+        self.assertEqual(found["c"], ["NVS store (storage_partition) overlaps the image slot 0x0-0x1f0000 of flash0"])
+
+    def test_io_008_c_a_slot_the_linker_bounds_ignores_the_budget(self) -> None:
+        tree = dts(SLOT0 + "\n" + partition("storage_partition", 0x1e0000, 0x20000))
+        lines, found = check.check_build(tree, config("CONFIG_NVS=y"), flash_budget=0x1f0000)
+        self.assertEqual(found["c"], [])
+        self.assertEqual(lines[-1], "image slot 0x0-0x80000 of flash0")
+
+    def failures_with_budget(self, tree: str, cfg: str, budget: int) -> dict[str, list[str]]:
+        return check.check_build(tree, cfg, flash_budget=budget)[1]
+
 
 class ReportTest(unittest.TestCase):
     SHARED = dts(SLOT0, partition("storage_partition", 0x700000, 0x700000))
@@ -224,6 +241,23 @@ class ReportTest(unittest.TestCase):
         lines, status = self.run_report(self.SPLIT, {})
         self.assertEqual(status, 0)
         self.assertTrue(lines[0].startswith("PASS io-008 nucleo-h743zi: NVS store zplc_nvs_partition 1024 KB"))
+
+    def test_io_008_c_the_report_holds_an_unbounded_slot_to_the_budget_of_the_board(self) -> None:
+        tree = dts(partition("zplc_nvs_partition", 0x1a0000, 0x60000) + "\n" + partition("storage_partition", 0x100000, 0x80000))
+        with tempfile.TemporaryDirectory() as tmp:
+            build = Path(tmp) / "zplc-nucleo"
+            (build / "zephyr").mkdir(parents=True)
+            (build / "zephyr/zephyr.dts").write_text(tree)
+            (build / "zephyr/.config").write_text(config(*NVS_AND_LFS, load_size="0"))
+            lines, status = check.report([build], BOARDS, {}, {"nucleo-h743zi": 0xc0000})
+            self.assertEqual(status, 0, lines)
+            lines, status = check.report([build], BOARDS, {}, {})
+            self.assertEqual(status, 1, "without a budget the slot runs to the end of the flash")
+
+    def test_io_008_the_flash_budgets_are_those_of_the_size_check(self) -> None:
+        budgets = check.flash_budgets()
+        self.assertEqual(set(budgets), {board["board_id"] for board in BOARDS})
+        self.assertTrue(all(value > 0 for value in budgets.values()))
 
     def test_io_008_a_build_without_its_devicetree_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
