@@ -62,6 +62,18 @@ describe('the changelog holds only tagged versions (REL-031)', () => {
 });
 
 describe('the product identity is fixed (REL-031)', () => {
+  test('records decision D-03: the product is ZPLC, under the reverse-DNS root that the owner confirms', () => {
+    const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string; decision: string }>('scripts/release/identity.json');
+    expect({ productName: identity.productName, appId: identity.appId, executableName: identity.executableName, desktopName: identity.desktopName }).toEqual({
+      productName: 'ZPLC',
+      appId: 'com.zenithindustrialcloud.zplc',
+      executableName: 'zplc',
+      desktopName: 'com.zenithindustrialcloud.zplc',
+    });
+    expect(identity.decision).toContain('D-03 is decided');
+    expect(identity.decision).toContain('io.github.eduardojvieira.zplc');
+  });
+
   test('electron-builder.yml and the package carry the recorded product name and appId', () => {
     const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string }>('scripts/release/identity.json');
     const builder = Bun.YAML.parse(read('packages/zplc-ide/electron-builder.yml')) as { productName: string; appId: string; executableName: string };

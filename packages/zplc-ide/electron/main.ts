@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE - Electron Main Process
+ * ZPLC - Electron Main Process
  * 
  * Handles window management, WebSerial permissions, and native integration.
  * This is the entry point for the Electron desktop application.
@@ -26,6 +26,7 @@ import { checkForUpdate } from './updateCheck.js';
 import { loadFirmwareImages } from './firmwareImages.js';
 import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type MenuCategory, type MenuCommand } from './appMenu.js';
 import { createShellPreferencesStore, windowSurface, type ShellPreferences } from './shellPreferences.js';
+import { migrateUserData } from './userDataMigration.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
@@ -54,6 +55,10 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Before anything opens the userData folder or takes the single-instance lock in it: the folder of the release candidates
+// is copied over once (decision D-03).
+migrateUserData({ appData: app.getPath('appData'), userData: app.getPath('userData') });
+
 // Keep a global reference of the window object to prevent GC
 let mainWindow: BrowserWindow | null = null;
 let nativeSimulationSupervisor: NativeSimulationSupervisor | null = null;
@@ -78,7 +83,7 @@ const serialPorts = createSerialPortBroker({
   newRequestId: () => randomUUID(),
 });
 let recoveryStore: ReturnType<typeof createRecoveryStore> | null = null;
-// Changes made outside Studio reach only the window that owns the folder, as relative paths (IDE-004).
+// Changes made outside ZPLC reach only the window that owns the folder, as relative paths (IDE-004).
 const projectWatcher = createProjectWatcher({
   send: (ownerId, change) => {
     const target = mainWindow?.webContents;
@@ -570,7 +575,7 @@ app.whenReady().then(async () => {
   });
 }).catch((error: unknown) => {
   // Without the audit log, the stores and the IPC handlers there is nothing safe to show: leave instead of idling without a window.
-  console.error('ZPLC IDE failed to start', error);
+  console.error('ZPLC failed to start', error);
   app.exit(1);
 });
 

@@ -74,7 +74,7 @@ describe('command registry (UX-015)', () => {
 describe('application menu from the registry (UX-014, UX-015)', () => {
   const clicks: string[] = [];
   const template = buildMenuTemplate('linux', menuCommands, menuTranslator('en'), {
-    isPackaged: true, appName: 'ZPLC Studio', categories: menuCategories, run: (id) => { clicks.push(id); }, requestReload: () => undefined,
+    isPackaged: true, appName: 'ZPLC', categories: menuCategories, run: (id) => { clicks.push(id); }, requestReload: () => undefined,
   });
   const flat = (items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] => items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flat(item.submenu) : [])]);
 
@@ -86,7 +86,7 @@ describe('application menu from the registry (UX-014, UX-015)', () => {
   });
 
   it('UX-014 titles the menus and the commands in the language of the setting', () => {
-    const spanish = buildMenuTemplate('linux', menuCommands, menuTranslator('es'), { isPackaged: true, appName: 'ZPLC Studio', categories: menuCategories, run: () => undefined, requestReload: () => undefined });
+    const spanish = buildMenuTemplate('linux', menuCommands, menuTranslator('es'), { isPackaged: true, appName: 'ZPLC', categories: menuCategories, run: () => undefined, requestReload: () => undefined });
     expect(template.map((menu) => menu.label)).toEqual(['File', 'Edit', 'View', 'Project', 'Build', 'Online', 'Debug', 'Help']);
     expect(spanish.map((menu) => menu.label)).toEqual(['Archivo', 'Edición', 'Ver', 'Proyecto', 'Compilación', 'En línea', 'Depuración', 'Ayuda']);
   });

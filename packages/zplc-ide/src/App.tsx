@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE Main Application
+ * ZPLC main application
  *
  * Industrial-grade PLC development environment
  *
@@ -46,6 +46,7 @@ import { CommandPalette } from './commands/CommandPalette';
 import { ShortcutReference } from './commands/ShortcutReference';
 import { useCommandShortcuts, useMainProcessBridge, useShellCommands } from './commands/useCommandHost';
 import { useT } from './i18n';
+import { windowTitle } from './productName';
 import { useStatusAnnouncements } from './hooks/useStatusAnnouncements';
 
 interface WorkbenchParts {
@@ -82,6 +83,7 @@ function App() {
   useMainProcessBridge();
 
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
+  const projectName = useIDEStore((s) => s.projectName);
   const learnHomeOpen = useLearnUi((s) => s.homeOpen);
 
   const debugController = useDebugController();
@@ -96,7 +98,10 @@ function App() {
   // The declarations of the project's files and library folders, for the tree and the editors (IDE-023).
   useEffect(() => trackProjectSources(useIDEStore), []);
 
-  // A change made outside Studio reloads an unmodified file and asks about a modified one (IDE-004).
+  // The window takes the page title: the open project's name before the product's (UX-016).
+  useEffect(() => { document.title = windowTitle(projectName); }, [projectName]);
+
+  // A change made outside ZPLC reloads an unmodified file and asks about a modified one (IDE-004).
   useEffect(() => startExternalChangeWatch(), []);
 
   // Autosave (IDE-007): off unless the user chose an interval; it saves modified files after the typing stops.

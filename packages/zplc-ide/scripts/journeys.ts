@@ -45,6 +45,8 @@ export interface Journey {
 // ---------------------------------------------------------------------------------------------------------------------
 
 const toolbar = css('[role="toolbar"][aria-label="Project operations"]');
+/** The title of the Welcome screen: the product name of decision D-03, with no version (UX-016). */
+const WELCOME_TITLE = `document.querySelector('h1')?.textContent ?? null`;
 const treeItem = (id: string) => css(`[role="treeitem"][data-tree-node-id="${id}"]`);
 const disk = (path: string) => readFileSync(path, 'utf8');
 
@@ -1029,7 +1031,7 @@ export const JOURNEYS: Journey[] = [
       const future = join(root, 'future-progress.json');
       writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 5, last: null, lessons: {} }));
       await choose(future);
-      await app.until('the refusal', async () => (await homeText()).includes('The file is version 5, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
+      await app.until('the refusal', async () => (await homeText()).includes('The file is version 5, which this version of ZPLC cannot read. Your progress is unchanged.') || undefined);
       assert((await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`), 'A refused file changed the progress.');
 
       // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue, the
@@ -1565,7 +1567,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       const file = join(project, 'src', 'Motor.st'); const original = disk(file);
       const edit = async () => { await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT); await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined); };
-      const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
+      const welcome = async () => await app.until('the Welcome screen, titled ZPLC', async () => await app.eval<string | null>(WELCOME_TITLE) === 'ZPLC' && !await app.visible(toolbar) && await app.eval<string>('document.title') === 'ZPLC' || undefined);
       const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="alertdialog"] h2')?.textContent ?? null`);
       const choice = (label: string) => `[...document.querySelectorAll('[role="alertdialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
       const askToClose = async () => { await showExplorer(app); await app.click(button('Close project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
@@ -1577,6 +1579,9 @@ export const JOURNEYS: Journey[] = [
       await app.click(choice('Continue editing'), 'Continue editing');
       await app.until('the question to close', async () => await questionTitle() === null || undefined);
       assert(await app.visible(toolbar) && (await editorText(app)).includes(EDIT), 'Continue editing must keep the project and its changes.');
+      // UX-016: with a project open the window is titled "<project> — ZPLC".
+      const title = await app.eval<string>('document.title');
+      assert(/^\S.* — ZPLC$/.test(title), `The window of an open project must be titled "<project> — ZPLC": ${title}`);
       assert(disk(file) === original, 'Cancelling must not write the file.');
 
       // Save all and close writes the file, then closes: the user is offered save, discard or cancel.
@@ -2472,7 +2477,7 @@ export const JOURNEYS: Journey[] = [
       // 250 resources unless told otherwise, so it is told to keep every one and loaded again from a clean start.
       await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: 'performance.setResourceTimingBufferSize(100000);' });
       await app.cdp.command('Page.reload');
-      await app.until('the Welcome screen again', async () => (await app.text()).includes('ZPLC Studio 2.0') || undefined);
+      await app.until('the Welcome screen again', async () => await app.eval<string | null>(WELCOME_TITLE) === 'ZPLC' || undefined);
       const fetched = () => app.eval<string[]>(`performance.getEntriesByType('resource').map((entry) => entry.name)`);
       const has = async (pattern: RegExp) => (await fetched()).some((name) => pattern.test(name));
       const MONACO = /monaco-editor_esm_vs_editor_edcore__main\.js/;
@@ -3253,7 +3258,7 @@ export const JOURNEYS: Journey[] = [
       // 5. LRN-015: with no board connected, Check on board is disabled and says what the learner has to do first.
       assert(await app.eval<boolean>(`document.querySelector('[data-learn-board-check]')?.disabled === true`), 'Check on board can be pressed with no board connected.');
       const reason = await app.eval<string>(`document.querySelector('[data-learn-board-check-reason]')?.textContent ?? ''`);
-      assert(reason === 'Connect Studio to your board first, from the toolbar.', `Check on board does not say why it is disabled: ${reason}`);
+      assert(reason === 'Connect to your board first, from the toolbar.', `Check on board does not say why it is disabled: ${reason}`);
       assert((await app.eval<number>('window.__serialUses ?? 0')) === 0, 'Learn used Web Serial.');
       assert((await app.eval<string | null>(`document.querySelector('[data-connection]')?.getAttribute('data-connection') ?? null`)) !== 'connected', 'The window is connected to a device.');
     },

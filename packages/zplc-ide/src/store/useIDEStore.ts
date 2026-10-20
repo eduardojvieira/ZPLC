@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE Global State Store
+ * ZPLC global state store
  * 
  * Uses Zustand for state management.
  * Supports File System Access API for opening real folders.

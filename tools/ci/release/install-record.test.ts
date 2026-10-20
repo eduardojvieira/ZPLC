@@ -44,37 +44,37 @@ describe('the record that every published installer format was opened and launch
 
   it('names the installer that no run opened', () => {
     const { installers, records } = opened('mac');
-    rmSync(recordPath(records, 'zplc-ide-2.0.0-rc.4-mac-arm64.zip'));
-    expect(verifyInstallRecords(installers, records, VERSION, 'mac')).toEqual(['zplc-ide-2.0.0-rc.4-mac-arm64.zip has no record of being mounted or installed and launched']);
+    rmSync(recordPath(records, 'zplc-2.0.0-rc.4-mac-arm64.zip'));
+    expect(verifyInstallRecords(installers, records, VERSION, 'mac')).toEqual(['zplc-2.0.0-rc.4-mac-arm64.zip has no record of being mounted or installed and launched']);
   });
 
   it('refuses a record of another file with the same name, because the checksum no longer matches', () => {
     const { installers, records } = opened('win');
-    writeFileSync(join(installers, 'zplc-ide-2.0.0-rc.4-win-x64-portable-unsigned.exe'), 'MZ replaced after the launch');
-    expect(verifyInstallRecords(installers, records, VERSION, 'win')).toEqual(['zplc-ide-2.0.0-rc.4-win-x64-portable-unsigned.exe is not the file that was launched (checksum differs from its record)']);
+    writeFileSync(join(installers, 'zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe'), 'MZ replaced after the launch');
+    expect(verifyInstallRecords(installers, records, VERSION, 'win')).toEqual(['zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe is not the file that was launched (checksum differs from its record)']);
   });
 
   it('refuses an installer that was opened on the wrong system or the wrong architecture', () => {
     const { installers, records } = opened('mac');
-    const path = recordPath(records, 'zplc-ide-2.0.0-rc.4-mac-x64.dmg');
+    const path = recordPath(records, 'zplc-2.0.0-rc.4-mac-x64.dmg');
     const record = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
     writeFileSync(path, JSON.stringify({ ...record, runnerOs: 'Linux' }));
-    const other = recordPath(records, 'zplc-ide-2.0.0-rc.4-mac-arm64.dmg');
+    const other = recordPath(records, 'zplc-2.0.0-rc.4-mac-arm64.dmg');
     writeFileSync(other, JSON.stringify({ ...(JSON.parse(readFileSync(other, 'utf8')) as object), runnerArch: 'X64' }));
     expect(verifyInstallRecords(installers, records, VERSION, 'mac')).toEqual([
-      'zplc-ide-2.0.0-rc.4-mac-arm64.dmg was opened on X64, its name says arm64',
-      'zplc-ide-2.0.0-rc.4-mac-x64.dmg was opened on Linux, not on macOS',
+      'zplc-2.0.0-rc.4-mac-arm64.dmg was opened on X64, its name says arm64',
+      'zplc-2.0.0-rc.4-mac-x64.dmg was opened on Linux, not on macOS',
     ]);
   });
 
   it('refuses a package that was only run in place, and a record for a file that is not there', () => {
     const { installers, records } = opened('linux');
-    const path = recordPath(records, 'zplc-ide-2.0.0-rc.4-linux-amd64.deb');
+    const path = recordPath(records, 'zplc-2.0.0-rc.4-linux-amd64.deb');
     writeFileSync(path, JSON.stringify({ ...(JSON.parse(readFileSync(path, 'utf8')) as object), method: 'run-in-place' }));
-    writeFileSync(recordPath(records, 'zplc-ide-2.0.0-rc.4-linux-riscv.deb'), '{}');
+    writeFileSync(recordPath(records, 'zplc-2.0.0-rc.4-linux-riscv.deb'), '{}');
     expect(verifyInstallRecords(installers, records, VERSION, 'linux')).toEqual([
-      'install-record-zplc-ide-2.0.0-rc.4-linux-riscv.deb.json is the record of no installer of this system',
-      'zplc-ide-2.0.0-rc.4-linux-amd64.deb was opened by run-in-place, a .deb is installed-in-container',
+      'install-record-zplc-2.0.0-rc.4-linux-riscv.deb.json is the record of no installer of this system',
+      'zplc-2.0.0-rc.4-linux-amd64.deb was opened by run-in-place, a .deb is installed-in-container',
     ]);
   });
 

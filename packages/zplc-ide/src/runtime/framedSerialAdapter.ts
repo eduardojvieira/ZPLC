@@ -256,7 +256,7 @@ export class FramedSerialAdapter extends SerialAdapter {
     if (bytes.length > largest) {
       // Two writes are not one: a value that does not fit a frame is refused, not split.
       throw new Error(`A value of ${bytes.length} bytes at ${hex4(address)} does not fit one frame (${largest} bytes). `
-        + 'Studio does not write it in parts: the scan could run between them.');
+        + 'ZPLC does not write it in parts: the scan could run between them.');
     }
     await this.changing((link) => link.request('MEM_WRITE', { address, data: bytes }));
   }
@@ -421,7 +421,7 @@ export class FramedSerialAdapter extends SerialAdapter {
       if (this.link.info?.signatureRequired) {
         const signer = this.signer;
         if (signer === null) {
-          throw new Error('This device accepts only signed programs and Studio has no signing key for it.');
+          throw new Error('This device accepts only signed programs and ZPLC has no signing key for it.');
         }
         const signature = await signer(bytecode);
         trace?.({ kind: 'stage', message: t('link.signature') });

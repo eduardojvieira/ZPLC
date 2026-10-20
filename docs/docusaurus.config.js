@@ -15,8 +15,8 @@ const releaseTag = process.env.ZPLC_RELEASE_TAG || `v${JSON.parse(readFileSync(n
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'ZPLC 2.0',
-  tagline: 'An open-source IEC 61131-3 PLC runtime and desktop IDE.',
+  title: 'ZPLC',
+  tagline: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
   favicon: 'img/favicon.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -94,7 +94,7 @@ const config = {
       navbar: {
         title: 'ZPLC',
         logo: {
-          alt: 'ZPLC Logo',
+          alt: 'ZPLC',
           src: 'img/logo.svg',
         },
         items: [

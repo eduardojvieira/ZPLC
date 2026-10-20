@@ -29,13 +29,13 @@ function evidence(directory: string, platform: string, names: string[]): void {
 
 describe('classifyAsset (REL-027)', () => {
   test.each([
-    ['ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg', 'macos', 'adhoc'],
-    ['ZPLC IDE-2.0.0-rc.4-mac-x64.zip', 'macos', 'adhoc'],
-    ['ZPLC IDE-2.0.0-rc.4-win-x64-setup-unsigned.exe', 'windows', 'unsigned'],
-    ['ZPLC IDE-2.0.0-rc.4-win-x64-portable-unsigned.exe', 'windows', 'unsigned'],
-    ['ZPLC IDE-2.0.0-rc.4-win-x64-setup.exe', 'windows', 'signed'],
-    ['ZPLC IDE-2.0.0-rc.4-linux-x64.AppImage', 'linux', 'unsigned'],
-    ['ZPLC IDE-2.0.0-rc.4-linux-arm64.deb', 'linux', 'unsigned'],
+    ['zplc-2.0.0-rc.4-mac-arm64.dmg', 'macos', 'adhoc'],
+    ['zplc-2.0.0-rc.4-mac-x64.zip', 'macos', 'adhoc'],
+    ['zplc-2.0.0-rc.4-win-x64-setup-unsigned.exe', 'windows', 'unsigned'],
+    ['zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe', 'windows', 'unsigned'],
+    ['zplc-2.0.0-rc.4-win-x64-setup.exe', 'windows', 'signed'],
+    ['zplc-2.0.0-rc.4-linux-x64.AppImage', 'linux', 'unsigned'],
+    ['zplc-2.0.0-rc.4-linux-arm64.deb', 'linux', 'unsigned'],
     ['zplc-cli-2.0.0-rc.4-win-arm64.exe', 'cli', 'unsigned'],
     ['zplc-mcp-2.0.0-rc.4-linux-x64', 'cli', 'unsigned'],
     ['zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', 'firmware', 'unsigned'],
@@ -53,8 +53,8 @@ describe('countJunit (REL-027)', () => {
 
 describe('collectRunResults (REL-027)', () => {
   const directory = mkdtempSync(join(tmpdir(), 'zplc-run-results-'));
-  evidence(join(directory, 'release-bundle-macos'), 'macos', ['ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg']);
-  evidence(join(directory, 'release-bundle-linux'), 'linux', ['ZPLC IDE-2.0.0-rc.4-linux-x64.deb', 'zplc-cli-2.0.0-rc.4-linux-x64', 'ZPLC-2.0.0-rc.4-linux.cdx.json']);
+  evidence(join(directory, 'release-bundle-macos'), 'macos', ['zplc-2.0.0-rc.4-mac-arm64.dmg']);
+  evidence(join(directory, 'release-bundle-linux'), 'linux', ['zplc-2.0.0-rc.4-linux-x64.deb', 'zplc-cli-2.0.0-rc.4-linux-x64', 'ZPLC-2.0.0-rc.4-linux.cdx.json']);
   writeFileSync(join(directory, 'junit-compiler.xml'), JUNIT);
   const common = {
     version: '2.0.0-rc.4',
@@ -72,8 +72,8 @@ describe('collectRunResults (REL-027)', () => {
   test('lists the assets of every bundle with the checks that their job backs', () => {
     const results = collectRunResults({ ...common, needs: needs({ 'build-macos': 'success', 'build-linux': 'success', 'build-windows': 'failure', 'build-binaries': 'success' }) });
     const byName = Object.fromEntries(results.assets.map((asset) => [asset.name, asset]));
-    expect(byName['ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg']).toMatchObject({ platform: 'macos', signing: 'adhoc', job: 'build-macos (arm64)', checks: { signature: 'passed', launch: 'passed', install: 'not-run' } });
-    expect(byName['ZPLC IDE-2.0.0-rc.4-linux-x64.deb']).toMatchObject({ job: 'build-linux (x64)', checks: { signature: 'not-run', launch: 'passed', install: 'passed' } });
+    expect(byName['zplc-2.0.0-rc.4-mac-arm64.dmg']).toMatchObject({ platform: 'macos', signing: 'adhoc', job: 'build-macos (arm64)', checks: { signature: 'passed', launch: 'passed', install: 'not-run' } });
+    expect(byName['zplc-2.0.0-rc.4-linux-x64.deb']).toMatchObject({ job: 'build-linux (x64)', checks: { signature: 'not-run', launch: 'passed', install: 'passed' } });
     expect(byName['zplc-cli-2.0.0-rc.4-linux-x64']).toMatchObject({ platform: 'cli', job: 'build-binaries (linux-x64)', checks: { launch: 'passed' } });
     expect(results.assets.every((asset) => asset.runUrl === 'https://example.test/run/1')).toBe(true);
   });
@@ -94,7 +94,7 @@ describe('collectRunResults (REL-027)', () => {
     expect(byName['zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin']).toMatchObject({ evidenceLevel: 'human-hil' });
     // an image the manifest does not list, and a file that is not an image, carry no level
     expect(byName['zplc-runtime-2.0.0-rc.4.manifest.json']!.evidenceLevel).toBeUndefined();
-    expect(byName['ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg']!.evidenceLevel).toBeUndefined();
+    expect(byName['zplc-2.0.0-rc.4-mac-arm64.dmg']!.evidenceLevel).toBeUndefined();
   });
 
   test('records a failed job as a failed check, and a job that did not run as not run', () => {

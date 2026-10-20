@@ -39,10 +39,10 @@ describe('the signing state of every asset comes from the checks of the run (REL
   const notes = renderReleaseNotes(fixture());
 
   test('lists each asset with the job that built it and its signing state', () => {
-    expect(notes).toContain('| ZPLC IDE-2.0.0-rc.4-mac-arm64.dmg |');
-    expect(notes).toMatch(/\| ZPLC IDE-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; signature verified in this run\. Not notarized/);
-    expect(notes).toMatch(/\| ZPLC IDE-2\.0\.0-rc\.4-win-x64-setup-unsigned\.exe \|[^\n]*\| Unsigned\./);
-    expect(notes).toMatch(/\| ZPLC IDE-2\.0\.0-rc\.4-linux-x64\.deb \|[^\n]*\| Unsigned\.[^\n]*installed and launched in clean containers: passed/);
+    expect(notes).toContain('| zplc-2.0.0-rc.4-mac-arm64.dmg |');
+    expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; signature verified in this run\. Not notarized/);
+    expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-win-x64-setup-unsigned\.exe \|[^\n]*\| Unsigned\./);
+    expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-linux-x64\.deb \|[^\n]*\| Unsigned\.[^\n]*installed and launched in clean containers: passed/);
   });
 
   test('does not call an asset signed when the signature check did not pass in the run', () => {
@@ -111,7 +111,7 @@ describe('tests, known failures and changes (REL-027)', () => {
 
   test('lists the known failures and the known issues, and says when there are none', () => {
     expect(notes).toContain('an Instruction List jump to a label past a call lands one instruction late');
-    expect(notes).toContain('Studio cannot open a project folder whose path holds a newline.');
+    expect(notes).toContain('ZPLC cannot open a project folder whose path holds a newline.');
     const results = fixture();
     results.knownFailures = [];
     results.knownIssues = [];
@@ -119,7 +119,7 @@ describe('tests, known failures and changes (REL-027)', () => {
   });
 
   test('lists the user-facing changes, and says so when none is recorded', () => {
-    expect(notes).toContain('- Studio shows the compiler message, line and column of a build error.');
+    expect(notes).toContain('- ZPLC shows the compiler message, line and column of a build error.');
     const results = fixture();
     results.changes = [];
     expect(renderReleaseNotes(results)).toContain('No user-facing change is recorded for this version.');

@@ -1,9 +1,9 @@
 {
   "schema": 1,
   "comment": "The identity that installers, the Store and signed releases carry. It is permanent after the first Store or signed release (REL-031), so it changes only by owner decision D-03 and in this file, the test of scripts/release/release-records.test.ts, electron-builder.yml and package.json together.",
-  "productName": "ZPLC IDE",
-  "appId": "com.zplc.ide",
-  "executableName": "zplc-ide",
-  "desktopName": "zplc-ide",
-  "decision": "D-03 is open: the recommended default is the product name ZPLC Studio. No Store or signed release exists yet, so the name can still change."
+  "productName": "ZPLC",
+  "appId": "com.zenithindustrialcloud.zplc",
+  "executableName": "zplc",
+  "desktopName": "com.zenithindustrialcloud.zplc",
+  "decision": "D-03 is decided (owner, 2026-10-20): the product and the desktop application are called ZPLC. The reverse-DNS root com.zenithindustrialcloud assumes the project is published under the owner's company domain; the owner confirms it before the first signed or Store release, the alternative being io.github.eduardojvieira.zplc. No Store or signed release exists yet, so these identifiers can still change."
 }

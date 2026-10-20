@@ -258,6 +258,7 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 |---|---|---|---|---|
 | `--ramp-cobalt-200` | Cobalt, the reference and selection hue (step 200). | `#55c8ff` | `= light` | `= light` |
 | `--ramp-cobalt-300` | Cobalt, the reference and selection hue (step 300). | `#5ba7df` | `= light` | `= light` |
+| `--ramp-cobalt-500` | Cobalt, the reference and selection hue (step 500). | `#347bb6` | `= light` | `= light` |
 | `--ramp-cobalt-700` | Cobalt, the reference and selection hue (step 700). | `#245d8f` | `= light` | `= light` |
 
 #### Ramp: green

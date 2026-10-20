@@ -12,7 +12,7 @@ const source = readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8');
 describe('Welcome screen contract', () => {
   it('offers only folder-backed project starts: Open, New and Learn in one row, then the examples', () => {
     // The texts are in the catalog (UX-029); the screen writes them through t().
-    expect([en['welcome.title'], en['welcome.open.title'], en['welcome.new.title'], en['welcome.learn.title']]).toEqual(['ZPLC Studio 2.0', 'Open project', 'New project', 'Learn']);
+    expect([en['welcome.title'], en['welcome.open.title'], en['welcome.new.title'], en['welcome.learn.title']]).toEqual(['ZPLC', 'Open project', 'New project', 'Learn']);
     for (const key of ['welcome.title', 'welcome.open.title', 'welcome.new.title', 'welcome.learn.title']) expect(source).toContain(`t('${key}')`);
     expect(source.indexOf("t('welcome.open.title')")).toBeLessThan(source.indexOf("t('welcome.new.title')"));
     expect(source.indexOf("t('welcome.new.title')")).toBeLessThan(source.indexOf("t('welcome.learn.title')"));

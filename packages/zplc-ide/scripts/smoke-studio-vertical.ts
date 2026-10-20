@@ -145,7 +145,7 @@ async function captureWelcomeReviewScreens(cdp: Cdp, reviewDir: string): Promise
       const controls = [...document.querySelectorAll('button')];
       const matches = ['Open project', 'New project'].map((label) => controls.find((button) => button.textContent?.includes(label)));
       const exampleHeading = [...document.querySelectorAll('h2')].find((heading) => heading.textContent?.trim() === 'Examples');
-      const h1 = [...document.querySelectorAll('h1')].find((heading) => heading.textContent?.trim() === 'ZPLC Studio 2.0');
+      const h1 = [...document.querySelectorAll('h1')].find((heading) => heading.textContent?.trim() === 'ZPLC');
       const examples = [...document.querySelectorAll('button[data-welcome-example]')];
       const visible = [...matches, document.querySelector('select[data-theme-control]')].every((element) => {
         const rect = element?.getBoundingClientRect();

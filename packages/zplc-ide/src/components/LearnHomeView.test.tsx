@@ -113,7 +113,7 @@ describe('the Learn home', () => {
 
   it('shows the reason an import was refused, and that the progress is unchanged', () => {
     const out = render(emptyProgress(), { transfer: { error: 'unknown-version', version: 3 } });
-    expect(out).toContain('The file is version 3, which this version of Studio cannot read. Your progress is unchanged.');
+    expect(out).toContain('The file is version 3, which this version of ZPLC cannot read. Your progress is unchanged.');
     expect(render(emptyProgress(), { transfer: 'imported' })).toContain('Progress imported and merged.');
   });
 

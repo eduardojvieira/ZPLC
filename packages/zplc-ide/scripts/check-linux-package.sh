@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs a ZPLC IDE .deb or .rpm in a clean container and checks that the installed application starts
+# Installs a ZPLC .deb or .rpm in a clean container and checks that the installed application starts
 # (REL-011), or extracts an AppImage there and checks that it starts (REL-036). It installs packages and creates
 # a user, so it runs only in the CI container:
 #
@@ -19,25 +19,25 @@ user=zplcsmoke
 # The package alone first: the dependencies it declares must be enough for the libraries the application loads.
 case "$package" in
   *.deb)
-    cp "$package" /tmp/zplc-ide.deb && chmod 644 /tmp/zplc-ide.deb
+    cp "$package" /tmp/zplc.deb && chmod 644 /tmp/zplc.deb
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y /tmp/zplc-ide.deb
+    apt-get install -y /tmp/zplc.deb
     install_display() { apt-get install -y xvfb xauth; }
     ;;
   *.rpm)
-    cp "$package" /tmp/zplc-ide.rpm && chmod 644 /tmp/zplc-ide.rpm
-    dnf install -y /tmp/zplc-ide.rpm
+    cp "$package" /tmp/zplc.rpm && chmod 644 /tmp/zplc.rpm
+    dnf install -y /tmp/zplc.rpm
     install_display() { dnf install -y xorg-x11-server-Xvfb xorg-x11-xauth; }
     ;;
   *.AppImage)
     # An AppImage carries the application and not the system libraries: these are the ones that the .deb declares. It is
     # extracted rather than mounted, so that the container needs no FUSE; the Chromium sandbox stays on.
-    cp "$package" /tmp/zplc-ide.AppImage && chmod 755 /tmp/zplc-ide.AppImage
+    cp "$package" /tmp/zplc.AppImage && chmod 755 /tmp/zplc.AppImage
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
     apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
-    (cd /tmp && ./zplc-ide.AppImage --appimage-extract > /dev/null)
+    (cd /tmp && ./zplc.AppImage --appimage-extract > /dev/null)
     appimage_dir=/tmp/squashfs-root
     install_display() { apt-get install -y xvfb xauth; }
     ;;
@@ -55,9 +55,9 @@ if [ -z "${appimage_dir:-}" ]; then
 fi
 
 if [ -n "${appimage_dir:-}" ]; then
-  executable="$appimage_dir/zplc-ide"
+  executable="$appimage_dir/zplc"
 else
-  executable="$(readlink -f "$(command -v zplc-ide)")"
+  executable="$(readlink -f "$(command -v zplc)")"
 fi
 echo "Installed executable: $executable"
 unresolved="$(ldd "$executable" 2>&1 | awk '/not found/')"
@@ -67,7 +67,7 @@ unresolved="$(ldd "$executable" 2>&1 | awk '/not found/')"
 install_display
 useradd -m "$user"
 profile="$(runuser -u "$user" -- mktemp -d)"
-log=/tmp/zplc-ide.log
+log=/tmp/zplc.log
 runuser -u "$user" -- env HOME="/home/$user" xvfb-run -a "$executable" --headless --disable-gpu \
   --remote-debugging-port="$port" --user-data-dir="$profile" >"$log" 2>&1 &
 pid=$!

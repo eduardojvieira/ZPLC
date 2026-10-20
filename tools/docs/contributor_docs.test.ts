@@ -156,7 +156,7 @@ describe('README: what ZPLC is, what it does today, what it runs on and how to t
 
   it('says in its first lines what ZPLC is, gives one status line, a download link and the licence', () => {
     const firstScreen = readme.split('\n').slice(0, 20).join('\n');
-    expect(firstScreen).toContain('IEC 61131-3 PLC runtime and desktop IDE');
+    expect(firstScreen).toContain('Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.');
     expect(firstScreen.match(/^> \*\*Status:\*\*/gm)?.length).toBe(1);
     expect(firstScreen).toContain('/releases');
     expect(firstScreen).toContain('MIT');

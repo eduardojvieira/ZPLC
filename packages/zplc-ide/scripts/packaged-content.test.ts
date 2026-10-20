@@ -97,8 +97,10 @@ describe('the encodings of a string in a minified bundle (REL-034)', () => {
 });
 
 describe('the Linux desktop identity of the unpacked package (REL-011)', () => {
+  const IDENTITY = { productName: 'ZPLC', appId: 'com.zenithindustrialcloud.zplc', executableName: 'zplc', desktopName: 'com.zenithindustrialcloud.zplc' };
+
   /** A Linux unpacked package: the manifest of the archive replaced, Electron's chrome-sandbox and the executable beside the resources. */
-  function linux(manifest: string, executable: string) {
+  function linux(manifest: string, executable = IDENTITY.executableName) {
     const made = fixture();
     const archive = join(made.resources, 'app.asar');
     const original = readFileSync(archive);
@@ -108,24 +110,28 @@ describe('the Linux desktop identity of the unpacked package (REL-011)', () => {
     const root = join(made.resources, '..');
     writeFileSync(join(root, 'chrome-sandbox'), 'sandbox');
     writeFileSync(join(root, executable), 'executable');
+    mkdirSync(join(made.repo, 'scripts/release'), { recursive: true });
+    writeFileSync(join(made.repo, 'scripts/release/identity.json'), JSON.stringify(IDENTITY));
     return made;
   }
 
-  test('passes when the desktopName of the packaged manifest is the executable of the package', () => {
-    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"zplc-ide"}', 'zplc-ide');
+  test('passes when the packaged manifest carries the desktop name of the identity and the package holds its executable', () => {
+    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"com.zenithindustrialcloud.zplc"}');
     expect(checkPackagedContent({ resources, repoRoot: repo })).toEqual([]);
   });
 
   test('accepts the form that names the .desktop file of the entry', () => {
-    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"zplc-ide.desktop"}', 'zplc-ide');
+    const { repo, resources } = linux('{"name":"@zplc/ide","desktopName":"com.zenithindustrialcloud.zplc.desktop"}');
     expect(checkPackagedContent({ resources, repoRoot: repo })).toEqual([]);
   });
 
-  test('names a package whose desktop entry matches no executable, and one with no desktopName', () => {
-    const wrong = linux('{"name":"@zplc/ide","desktopName":"zplc-studio"}', 'zplc-ide');
-    expect(checkPackagedContent({ resources: wrong.resources, repoRoot: wrong.repo })).toContain('desktopName zplc-studio of app.asar is not the executable of the unpacked package');
-    const none = linux('{"name":"@zplc/ide"}', 'zplc-ide');
-    expect(checkPackagedContent({ resources: none.resources, repoRoot: none.repo })).toContain('the package.json of app.asar has no desktopName: the desktop entry names no executable');
+  test('names a package whose desktop name is not the identity, one with no desktopName, and one without the executable', () => {
+    const wrong = linux('{"name":"@zplc/ide","desktopName":"zplc-ide"}');
+    expect(checkPackagedContent({ resources: wrong.resources, repoRoot: wrong.repo })).toContain('desktopName zplc-ide of app.asar is not com.zenithindustrialcloud.zplc, the desktop name of scripts/release/identity.json');
+    const none = linux('{"name":"@zplc/ide"}');
+    expect(checkPackagedContent({ resources: none.resources, repoRoot: none.repo })).toContain('the package.json of app.asar has no desktopName: the window and the desktop entry would not match');
+    const renamed = linux('{"name":"@zplc/ide","desktopName":"com.zenithindustrialcloud.zplc"}', 'zplc-ide');
+    expect(checkPackagedContent({ resources: renamed.resources, repoRoot: renamed.repo })).toContain('the unpacked package has no executable zplc, the executable name of scripts/release/identity.json');
   });
 
   test('asks nothing of a package that is not a Linux one', () => {

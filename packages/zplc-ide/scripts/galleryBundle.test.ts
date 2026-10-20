@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { build } from 'vite';
 
 const packageRoot = join(import.meta.dir, '..');
-const MARKER = 'ZPLC Studio component gallery';
+const MARKER = 'ZPLC component gallery';
 const folders: string[] = [];
 let production = '';
 let development = '';
