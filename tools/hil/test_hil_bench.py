@@ -200,7 +200,7 @@ class FakeBoard(hil_devices.ShellDevice):
             _, name, values = text.split(":", 2) if text.startswith("PROG:") else ("", "fixture", "{}")
             self.program, self.values, self.staging, self.state = name, json.loads(values), None, "idle"
             return f"OK: Program loaded ({self.expected} bytes)\r\n"
-        if words[:3] == ["zplc", "status", "--json"] and "starved-shell" in self.defects and self.state == "running":
+        if "starved-shell" in self.defects and self.state == "running" and (words[:3] == ["zplc", "status", "--json"] or command == "zplc dbg peek"):
             return ""  # an overrunning scan at a higher priority than the shell (RT-013) leaves the shell no time to answer
         if words[:3] == ["zplc", "status", "--json"]:
             cycles = int((self.now() - self.started) // 10) if self.state == "running" else 0

@@ -469,7 +469,10 @@ class BenchSteps:
         self.tester.send("zplc start")
         try:
             self.wait(0.05)
-            driven = self.outputs()
+            try:
+                driven = self.outputs()
+            except AssertionError:  # the shell is starved already: the latch is what ends the wait, not this read
+                driven = None
             status = self.status()
             # an overrunning scan can starve the shell, whose answer is then missing: only a latched fault ends the wait
             while status.get("fault", {}).get("reason") in (None, "none") and self.now() - started < FAULT_WAIT_S * 1000:
@@ -697,12 +700,20 @@ class BenchSteps:
         return self._fieldbus_rtu()
 
     def _read_results(self, symbols: dict[str, int], names: tuple[str, ...]) -> dict[str, int]:
-        started = self.now()
+        """The program sets its results in one scan, but each peek is a shell command of its own: `done` is read first, the
+        values after it, and the result counts only when a second snapshot is identical (a torn read has no twin)."""
+        started, previous = self.now(), None
+        order = sorted(names, key=lambda name: name not in ("done", "heard"))  # the flags first, then the values they announce
         while True:
-            found = {name: self.dint(symbols[name]) for name in names}
-            if found.get("done", 0) > 0 and (len(names) < 4 or found.get("heard", 0) > 0) or self.now() - started > FIELDBUS_WAIT_S * 1000:
+            read = {name: self.dint(symbols[name]) for name in order}
+            found = {name: read[name] for name in names}
+            complete = found.get("done", 0) > 0 and (len(names) < 4 or found.get("heard", 0) > 0)
+            if complete and found == previous:
                 return found
-            self.wait(0.5)
+            if self.now() - started > FIELDBUS_WAIT_S * 1000:
+                return found
+            previous = found if complete else None
+            self.wait(0.1 if complete else 0.5)
 
     def _fieldbus_rtu(self):
         self.bench.confirm_wiring("modbus-rtu")

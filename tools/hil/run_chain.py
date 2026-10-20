@@ -312,9 +312,7 @@ class Chain(hil_steps.BenchSteps):
     def deploy(self):
         first = self.fixtures()[0]["id"]
         self.tester.upload_bytecode(self.compiled[first])
-        status = self.tester.send("zplc status --json")
-        if '"program_size"' in status and '"program_size":0' in status.replace(" ", ""):
-            raise AssertionError("the device reports an empty program after the upload")
+        # `zplc status --json` has no program size to check: upload_bytecode fails on a refused upload, and the run step proves the scan advances
         return f"{first}: {len(self.compiled[first])} bytes"
 
     def run_step(self):
