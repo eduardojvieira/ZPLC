@@ -1,6 +1,6 @@
-# Studio Architecture and Project Model
+# ZPLC Application Architecture and Project Model
 
-Studio presents a folder-backed project to editors and tools; the renderer does
+ZPLC presents a folder-backed project to editors and tools; the renderer does
 not own privileged filesystem, shell, or device access.
 
 ## Quick path
@@ -29,7 +29,7 @@ their channel names from it, so there is no second copy to drift.
   contract with exactly one handler, and refuses to start if a channel has none or
   a handler has no channel.
 - **Sender and message first.** Every call is checked before its handler runs: the
-  sender must be the trusted Studio document of the window, and the arguments must
+  sender must be the trusted ZPLC document of the window, and the arguments must
   fit the schema of that channel. Anything else is denied with one fixed message.
 - **A narrow preload.** The preload exposes one method per operation and nothing
   generic (no `send`, no raw channel access, no path of the machine). It is built
@@ -75,7 +75,7 @@ what its source says:
   the content security policy (`script-src 'self'` in a packaged build), and a
   request to another origin is refused by `connect-src`;
 - a permission other than serial (notifications, location, camera, microphone,
-  clipboard read, MIDI) is refused, while serial stays available to the Studio
+  clipboard read, MIDI) is refused, while serial stays available to the ZPLC
   document;
 - `window.open`, a link that opens a new window and navigation to another origin are
   refused, and the window keeps its document, its folder and its IPC afterwards;

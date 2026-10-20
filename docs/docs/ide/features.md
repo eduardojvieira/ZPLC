@@ -1,13 +1,13 @@
 ---
 slug: /ide/features
 id: features
-title: Studio Workbench
+title: ZPLC Workbench
 sidebar_label: Workbench
-description: The ZPLC Studio 2.0 editor, bottom panel, simulation, and test workflow.
+description: The ZPLC editor, bottom panel, simulation, and test workflow.
 tags: [ide, user-guide]
 ---
 
-# Studio Workbench
+# ZPLC Workbench
 
 The workbench keeps editing central. An activity rail and a primary sidebar on the
 left hold the project navigator, search, tests, and the lessons; an optional
@@ -108,7 +108,7 @@ The Welcome screen offers **Open project**, **New project**, **Learn** and the b
 
 The Welcome screen lists, under **Recent**, up to ten folders that you opened before, most recent first, each with its name and when it was last opened. Choosing one reopens it without a folder dialog. A folder that was moved, deleted or replaced by a link is shown as not found, with a **Forget** button that removes it from the list. Only a folder that you chose through the system folder dialog is ever remembered.
 
-For each project, Studio also remembers the open tabs, the active tab, the cursor and scroll position of each file, and the size of the editor and lower panels (and whether the lower panel was collapsed). It puts them back the next time that folder is opened, from **Recent** or with **Open project**. Only paths and positions are stored in the session: unsaved text is kept separately and offered back only after a crash (see Recovering unsaved work), and a tab whose file no longer exists is dropped without a message. The list and the sessions are kept in Studio's private user-data directory, never in the project folder, and the session of a project that leaves the list is deleted the next time Studio starts.
+For each project, ZPLC also remembers the open tabs, the active tab, the cursor and scroll position of each file, and the size of the editor and lower panels (and whether the lower panel was collapsed). It puts them back the next time that folder is opened, from **Recent** or with **Open project**. Only paths and positions are stored in the session: unsaved text is kept separately and offered back only after a crash (see Recovering unsaved work), and a tab whose file no longer exists is dropped without a message. The list and the sessions are kept in ZPLC's private user-data directory, never in the project folder, and the session of a project that leaves the list is deleted the next time ZPLC starts.
 
 Evidence level: host. The unit tests of requirement IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` and `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cover the list and the session format, and journey 12 (restore the session) and journey 14 (a recent project that is gone) of `bun run test:journeys` drive the real application on a display.
 
@@ -124,7 +124,7 @@ Preferences belong to you, not to a project: they apply to every project and are
 | Density | Comfortable, Compact | Comfortable; compact scales the spacing of the whole window |
 | Language | Automatic, English, Español | Automatic: it follows the language of the operating system, and sets the whole interface and the Learn lessons (see [Interface language](#interface-language)) |
 | Autosave | Off, or after 5, 15, 30 or 60 seconds without typing | Off |
-| Check for a newer release when Studio starts | On or off, and a **Check now** button | Off |
+| Check for a newer release when ZPLC starts | On or off, and a **Check now** button | Off |
 
 Autosave writes the modified files with the same save as **Save all**, without a line in Output for each save; a file that cannot be written stays modified and is reported. Together with the recovery copies, a crash costs at most the typing of the last second.
 
@@ -134,7 +134,7 @@ Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/st
 
 ## Interface language
 
-The **Language** preference chooses the language of Studio: **Automatic**, **English** or **Español**. Automatic, the default, follows the language of the operating system (`es`, `es-AR` and `es-MX` give Spanish; every other language gives English). The choice applies at once, without a restart, and also sets the language of the Learn lessons and the `lang` of the window. The Spanish text is neutral Latin American Spanish with impersonal or "usted" forms, as in an industrial manual.
+The **Language** preference chooses the language of ZPLC: **Automatic**, **English** or **Español**. Automatic, the default, follows the language of the operating system (`es`, `es-AR` and `es-MX` give Spanish; every other language gives English). The choice applies at once, without a restart, and also sets the language of the Learn lessons and the `lang` of the window. The Spanish text is neutral Latin American Spanish with impersonal or "usted" forms, as in an industrial manual.
 
 Every text of the interface is in two catalogs, `packages/zplc-ide/src/i18n/en.ts` (the source) and `es.ts`. The texts of one screen live in a module of their own, `packages/zplc-ide/src/i18n/catalog/<screen>.ts` (`console.ts`, `mqtt.ts`, `toolbarMsg.ts`, `examples.ts` and so on), which holds both languages side by side and which `en.ts` and `es.ts` merge. The name of the product is written once for the renderer (`src/productName.ts`) and once for the main process (`electron/productName.ts`); the catalogs and the window title interpolate it, and `electron/productName.test.ts` proves the two agree with the title of `index.html`. To add a text:
 
@@ -148,7 +148,7 @@ Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/i18n
 
 ## Application menu, command palette and shortcuts
 
-Studio keeps one list of commands, and every way to start a command reads it: the application menu, the command palette, the keyboard shortcuts, the shortcut hints in the tooltips and the shortcut reference. A command therefore does the same thing wherever you start it.
+ZPLC keeps one list of commands, and every way to start a command reads it: the application menu, the command palette, the keyboard shortcuts, the shortcut hints in the tooltips and the shortcut reference. A command therefore does the same thing wherever you start it.
 
 - **Application menu.** File, Edit, View, Project, Build, Online, Debug and Help, on Windows, Linux and macOS alike (macOS adds its application menu and a Window menu). The menu is in the language of the **Language** preference and changes with it. A packaged build has no reload or developer-tools item. The View menu keeps page zoom: Zoom in, Zoom out and Actual size, on Ctrl and plus, Ctrl and minus, and Ctrl and 0 (Cmd on macOS). The Edit menu holds the system clipboard and undo items that the editors and text fields use.
 - **Command palette.** Press Ctrl+Shift+P (Cmd+Shift+P on macOS), type a few letters of a command, choose with the arrow keys and press Enter. The palette lists every command, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now (for example Deploy without a connection) is listed as not available and does not run.
@@ -180,7 +180,7 @@ A loading indicator appears only when an operation takes longer than 300 ms, so 
 
 ## Window start
 
-Studio opens its window hidden and shows it once the page has painted, in the colour of the theme you chose, so a dark theme does not flash white on start. The window title is the product name. The language and the theme are reported to the main process whenever they change and kept in a small file in Studio's private user-data directory, so the next start already has the right menu language and window colour; a missing or damaged file falls back to English and the system theme.
+ZPLC opens its window hidden and shows it once the page has painted, in the colour of the theme you chose, so a dark theme does not flash white on start. The window title is the product name. The language and the theme are reported to the main process whenever they change and kept in a small file in ZPLC's private user-data directory, so the next start already has the right menu language and window colour; a missing or damaged file falls back to English and the system theme.
 
 Evidence level: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `src/components/panelStates.test.tsx`, `src/ui/kit.test.tsx` and `src/ui/logic/delay.test.ts` (requirements UX-016 and UX-021) cover the window colour, the stored preferences, the empty, loading and error states and the 300 ms delay. The window has not been observed on Windows or macOS.
 
@@ -196,11 +196,11 @@ In the Files mode of the navigator, the header has **New File** and **New Folder
 | **Delete** / **Delete folder** | Removes it from disk after a confirmation that names any file in it with unsaved changes. |
 | **New folder...** | On a folder: makes a folder inside it. |
 
-Studio refuses a name that is taken, or that the build reads as the same as another program (case differences, `main.ld` and `main.ld.json`, the same name in another folder), and says so in the dialog without changing anything. An empty folder is shown in the tree.
+ZPLC refuses a name that is taken, or that the build reads as the same as another program (case differences, `main.ld` and `main.ld.json`, the same name in another folder), and says so in the dialog without changing anything. An empty folder is shown in the tree.
 
-A change made outside Studio is picked up while a project is open. A file without unsaved changes reloads by itself, and one that was deleted closes; a file with unsaved changes asks **Keep my version** or **Load from disk** (for a deleted file, **Keep my version** or **Close file**) and nothing is overwritten before you answer. A save made by Studio is never taken for an outside change. New and removed files appear in the tree. Changes to `zplc.json` made outside Studio are not watched yet.
+A change made outside ZPLC is picked up while a project is open. A file without unsaved changes reloads by itself, and one that was deleted closes; a file with unsaved changes asks **Keep my version** or **Load from disk** (for a deleted file, **Keep my version** or **Close file**) and nothing is overwritten before you answer. A save made by ZPLC is never taken for an outside change. New and removed files appear in the tree. Changes to `zplc.json` made outside ZPLC are not watched yet.
 
-Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
+Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside ZPLC) of `bun run test:journeys` drive the real application.
 
 ## Declared interlock coverage
 
@@ -214,9 +214,9 @@ run. It checks the scenarios, not the machine: it does not establish physical sa
 Evidence level: host. `src/components/InterlockCoverage.test.tsx` renders the view, `workspaceSafetyPresentation.test.ts`
 covers the answer, and journey 33 of `bun run test:journeys` runs the check in the real application.
 
-## One result from Studio, the CLI and the MCP tools
+## One result from the ZPLC application, the CLI and the MCP tools
 
-A scenario test gives the same result wherever you run it. Studio's **Tests** tab, `zplc-cli test` and
+A scenario test gives the same result wherever you run it. The **Tests** tab of the ZPLC application, `zplc-cli test` and
 `zplc-cli scenario-run`, and the MCP tools `tests_run` and `scenario_run` all call the same Tool API, on the same
 native POSIX runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`,
 `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled
@@ -225,7 +225,7 @@ assertions and the sampled outputs are equal. A failing assertion fails the same
 with code 1.
 
 Evidence level: host. `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by itself, and a
-project with a failing assertion through the Tool API, the CLI, the MCP dispatcher and the Studio presenter, and
+project with a failing assertion through the Tool API, the CLI, the MCP dispatcher and the ZPLC presenter, and
 compares the results. It does not cover a board.
 
 ## Declarations and library folders
@@ -248,7 +248,7 @@ libraries. **Library folder...** in the Declarations section adds one (and write
 and the file tree marks the folder `library`. The declarations of a library appear in the Declarations list, in the
 palettes of the FBD and LD editors (the **Project** group) and in the completion and hover of the ST editor.
 
-A Structured Text file that is neither in `src` nor directly in a library folder is read by no build, and Studio says
+A Structured Text file that is neither in `src` nor directly in a library folder is read by no build, and ZPLC says
 so the way the build does: the file is marked `not compiled` in the tree, the section lists its folder with a **List as
 library** button, and **Build** reports `SOURCE_NOT_COMPILED`. A folder inside a library is not read either; list it as
 a library of its own. A library folder that is renamed or deleted stays in the list, marked "not in the project", until
@@ -270,10 +270,10 @@ system save dialog. **Import a project archive** (the Welcome screen) reads one 
 2. **Choose a folder and import** asks for an empty folder, writes the files there byte for byte, and opens the project.
    A folder that is not empty is refused, and an import that fails leaves the folder empty again.
 
-The archive holds the files as they are on disk, so Studio asks you to save modified files first. It leaves out what
+The archive holds the files as they are on disk, so ZPLC asks you to save modified files first. It leaves out what
 the project tree hides (`node_modules`, `.git`, `build`, `dist` and `.vscode`) and links. An archive made on one
 machine is the same bytes as one made on another: entries sorted by path, stored without compression, dated
-1980-01-01, names in UTF-8. Studio reads archives that other tools wrote (stored or deflated), and refuses one that
+1980-01-01, names in UTF-8. ZPLC reads archives that other tools wrote (stored or deflated), and refuses one that
 holds an absolute path, a `..`, a name two systems read differently, a link, an encrypted entry, two files that differ
 only by case, a file that does not match its checksum, more than 4096 files, a file over 16 MiB or more than 64 MiB in
 all. **Export Project** next to it keeps writing the JSON document of the files and the configuration (without its
@@ -285,15 +285,15 @@ real application and compares the two folders.
 
 ## Closing with unsaved changes
 
-Studio never drops a modified file without asking. Closing a modified tab, closing the project, closing the window and quitting the application each ask to save, discard or cancel; **Cancel** (and Escape) keep everything as it was, and a save that fails keeps the file open and modified. Closing the project offers **Save all and close**, **Discard changes and close** and **Continue editing**. Reload shortcuts (Ctrl+R, Ctrl+Shift+R, Cmd+R) are absent from a packaged build: the menu has no reload entry and the keys are swallowed. A development host reloads only through the same question.
+ZPLC never drops a modified file without asking. Closing a modified tab, closing the project, closing the window and quitting the application each ask to save, discard or cancel; **Cancel** (and Escape) keep everything as it was, and a save that fails keeps the file open and modified. Closing the project offers **Save all and close**, **Discard changes and close** and **Continue editing**. Reload shortcuts (Ctrl+R, Ctrl+Shift+R, Cmd+R) are absent from a packaged build: the menu has no reload entry and the keys are swallowed. A development host reloads only through the same question.
 
 Evidence level: host. Journey 10 (close with unsaved changes: tab and window) and journey 22 (Close Project asks before it closes) of `bun run test:journeys` drive the real application; `packages/zplc-ide/electron/appMenu.test.ts` and `closeGuardIpc.test.ts` pin the menu and the reload chords. The reload chord itself cannot be injected into the main process through the DevTools protocol that the journeys use, so the reload prompt is covered by unit tests and by reading the registered handler, not by a journey.
 
 ## Recovering unsaved work
 
-Studio keeps a copy of every modified file in its private user-data directory a second after you stop typing (and at least every few seconds while you keep typing). Saving a file, discarding it, closing it with **Discard**, or closing the project or the window and answering **Save** or **Discard** removes the copy, so a normal exit leaves nothing behind.
+ZPLC keeps a copy of every modified file in its private user-data directory a second after you stop typing (and at least every few seconds while you keep typing). Saving a file, discarding it, closing it with **Discard**, or closing the project or the window and answering **Save** or **Discard** removes the copy, so a normal exit leaves nothing behind.
 
-If Studio was killed or crashed, open the project again: a **Recover unsaved changes** dialog lists each file that had modified text, with its name and the time the copy was kept. **Restore** puts the text back in the editor, still unsaved; **Discard** removes the copy. Closing the dialog decides nothing, and the copies are offered again the next time. A copy that equals the file on disk, or whose file is gone, is removed without asking. Copies of projects that leave the Recent list are deleted when Studio starts.
+If ZPLC was killed or crashed, open the project again: a **Recover unsaved changes** dialog lists each file that had modified text, with its name and the time the copy was kept. **Restore** puts the text back in the editor, still unsaved; **Discard** removes the copy. Closing the dialog decides nothing, and the copies are offered again the next time. A copy that equals the file on disk, or whose file is gone, is removed without asking. Copies of projects that leave the Recent list are deleted when ZPLC starts.
 
 Limits: a project keeps copies of at most 64 files and about 64 MB of text. Changes to the project settings (`zplc.json`) are not copied yet.
 
@@ -380,7 +380,7 @@ stops its native runtime.
 
 A success goes by itself after a few seconds. A failure, a warning (for example a
 device that received an earlier build) and a cancellation stay until you dismiss
-them. The notification is a summary: every message that Studio wrote to the Output
+them. The notification is a summary: every message that ZPLC wrote to the Output
 panel before is still there.
 
 Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` covers the
@@ -393,13 +393,13 @@ device and is not covered by a journey.
 
 ## What loads at start
 
-The Welcome screen is the first thing Studio shows, and it loads without the code editor, the visual editors or the
+The Welcome screen is the first thing ZPLC shows, and it loads without the code editor, the visual editors or the
 project settings. Each of them loads the first time you open a file of its kind or the settings, and the editor area
-says "Loading editor..." for that moment. Studio bundles the part of Monaco it uses (the editor, search, folding,
+says "Loading editor..." for that moment. ZPLC bundles the part of Monaco it uses (the editor, search, folding,
 suggestions, hover, go to definition and references, and the difference view), and not its CSS, HTML, JSON and
 TypeScript language services or its other languages. The installer holds no source maps.
 
-Evidence level: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` builds Studio, reads the chunks the Welcome page
+Evidence level: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` builds ZPLC, reads the chunks the Welcome page
 loads at start and the files the installer packages; journey 29 (the Welcome screen loads no editor) of
 `bun run test:journeys` checks the same in the development host of the real application. No packaged installer was
 inspected.
@@ -429,10 +429,10 @@ Learn has two parts: the **Learn home**, a page that shows the course, and the *
 - 33 lessons, in Spanish and in English (the toggle is in the panel; by default it follows the language of the application). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
 - The lessons sit in a course: `packages/zplc-ide/lessons/course.json` lists the twelve modules of the curriculum in order, each with a level (Foundation, Intermediate, Advanced), the module it requires and the tracks it offers (Simulation, Hardware), and each lesson names its module, level, prerequisites and tracks in its own manifest. A lesson that does not support a track says why and what to do instead. The generator `bun tools/ci/generate-lesson-index.ts` validates the file and the placement of every lesson (module exists, same level, tracks the module offers, no prerequisite in a later module) and embeds the course in the generated lesson index. Every module has at least one lesson now; a module without one would be shown as empty, with no invented lesson. The lessons of module 10 (Modbus and MQTT) are graded in Simulation against a Modbus TCP server and an MQTT broker that the simulation session starts on this computer; these are protocol doubles, and they do not show that a real device, broker or cloud service accepts the same exchange.
 - Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, the expected checkpoint of each stage stays hidden until you ask for it, and the two hints open on request. Each hint you open is recorded in your progress. The reference solution opens only after you confirm, and the progress records that you looked at it.
-- **Open the workspace**, in the Learn view of the sidebar (or **Start** in the Learn home), makes the workspace of the lesson from its starter and opens it, with no copy step. The desktop app keeps the workspace in its own user-data folder, `learn-workspaces/<lesson id>`, so no folder dialog appears and nothing is copied by hand; every later start reopens it with your edits untouched. (A browser build that cannot give the app such a folder asks for one folder the first time, as before.) The lesson stays visible beside the editor: on the Learn rail it fills the primary sidebar, and when you switch the rail to Project, Search or Tests it moves to the secondary sidebar, next to the Inspector, which is one choice away. **Restore the starter** puts the starter's files back after you confirm; files you added stay. You edit your workspace, save it and press **Check**. Studio runs your saved program against the scenario of the lesson package, identified by its content hash, in a process of its own that **Cancel** stops; the scenario files of your folder are never read, so editing a scenario there does not produce a pass. A lesson counts as completed when every assertion of that scenario passed. A failed check lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace. The grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. You can still run the scenario of your folder from **Tests**; that run is not the grade.
-- Studio keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson (the panel opens it again), and each hint level shown (level 1 and level 2 are recorded separately) and whether the solution was shown (the reference solution opens on request). A progress file written by an earlier build, which kept only the highest hint level, is read and migrated the next time it is saved. The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress**, in the Learn home, move the whole document as a file; an import is validated, merged with the newest grade first, and keeps lessons this build does not know. A file that is refused says why (too large, not JSON, not a progress file, a version this Studio cannot read, or damaged) and leaves your progress as it was.
+- **Open the workspace**, in the Learn view of the sidebar (or **Start** in the Learn home), makes the workspace of the lesson from its starter and opens it, with no copy step. The desktop app keeps the workspace in its own user-data folder, `learn-workspaces/<lesson id>`, so no folder dialog appears and nothing is copied by hand; every later start reopens it with your edits untouched. (A browser build that cannot give the app such a folder asks for one folder the first time, as before.) The lesson stays visible beside the editor: on the Learn rail it fills the primary sidebar, and when you switch the rail to Project, Search or Tests it moves to the secondary sidebar, next to the Inspector, which is one choice away. **Restore the starter** puts the starter's files back after you confirm; files you added stay. You edit your workspace, save it and press **Check**. ZPLC runs your saved program against the scenario of the lesson package, identified by its content hash, in a process of its own that **Cancel** stops; the scenario files of your folder are never read, so editing a scenario there does not produce a pass. A lesson counts as completed when every assertion of that scenario passed. A failed check lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace. The grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. You can still run the scenario of your folder from **Tests**; that run is not the grade.
+- ZPLC keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson (the panel opens it again), and each hint level shown (level 1 and level 2 are recorded separately) and whether the solution was shown (the reference solution opens on request). A progress file written by an earlier build, which kept only the highest hint level, is read and migrated the next time it is saved. The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress**, in the Learn home, move the whole document as a file; an import is validated, merged with the newest grade first, and keeps lessons this build does not know. A file that is refused says why (too large, not JSON, not a progress file, a version this release of ZPLC cannot read, or damaged) and leaves your progress as it was.
 - The **Learn home** is a page of its own that opens with no project open and no network: from **Learn** on the Welcome screen, from the **Learn** item of the activity rail, and from **Open the Learn home** in the Help menu. It lists the tracks (Simulation, Hardware) and the twelve modules in order, each with its level, the module it requires and its estimated time, and under each module its lessons with their state in words, never by colour alone: Locked, Available, In progress or Passed. A lesson says which tracks it supports and, for a track it does not support, its own reason and what to do instead (written in the lesson package, in both languages). **Continue** resumes the last lesson you worked on, or starts the course for a new learner. Escape or **Close** returns to the editor, which stays as it was.
-- A lesson is locked until the lessons it requires are passed, and the home says which ones. **Unlock all lessons**, in the home, lifts the lock for every lesson: it is a saved setting and Studio announces the change. A lesson you have started or passed is never locked again. In the Learn view of the sidebar a locked lesson cannot be chosen.
+- A lesson is locked until the lessons it requires are passed, and the home says which ones. **Unlock all lessons**, in the home, lifts the lock for every lesson: it is a saved setting and ZPLC announces the change. A lesson you have started or passed is never locked again. In the Learn view of the sidebar a locked lesson cannot be chosen.
 - **Classroom: hide reference solutions**, in the Learn home, is a saved setting of this computer. While it is on, Learn offers no reference solution and says so. For educators, `bun tools/ci/learn-educator.ts` verifies an exported progress file against the lesson hashes and prints the course outline; see [Educators](../learn/educators.md). None of it needs an account or a server.
 - Learn never starts a physical operation: it only copies a project and opens **Tests**.
 - A result is host evidence from the native simulation, not hardware evidence.
@@ -464,12 +464,12 @@ A fault clears the image and the forces as Stop does. On a board, Pause, Step an
 
 ## Accessibility
 
-Studio is built so that its main path can be used with a keyboard and a screen reader. What the automated checks prove is stated here, and what they do not.
+ZPLC is built so that its main path can be used with a keyboard and a screen reader. What the automated checks prove is stated here, and what they do not.
 
 - **Names.** Every field of a form has a label that a screen reader reads with it, and every button that shows only an icon has a name. A CI rule (the component-kit guard) fails the build for a field or an icon-only button without one, and a check in the running application lists any control without a name on the main screens.
-- **Announcements.** Studio keeps two hidden live regions for the whole window: a polite one for results and an assertive one for faults. The result of a build, a save, a deploy, a test run and a connection change is announced through them, with its detail, and so is a variable that is forced or released. An error, and a force that is no longer confirmed, is announced at once. Whether the program is running or stopped is read from the status bar, which keeps its own persistent status.
+- **Announcements.** ZPLC keeps two hidden live regions for the whole window: a polite one for results and an assertive one for faults. The result of a build, a save, a deploy, a test run and a connection change is announced through them, with its detail, and so is a variable that is forced or released. An error, and a force that is no longer confirmed, is announced at once. Whether the program is running or stopped is read from the status bar, which keeps its own persistent status.
 - **Keyboard.** The path from opening a project to one Learn lesson can be completed with the keyboard alone: open, edit, build, simulate, watch, force, the deploy question and the lesson check. Tab and Shift+Tab walk the screen in reading order, and the command palette (Ctrl+Shift+P) reaches every command. A command that shows a panel, such as **Show watched variables**, leaves the focus on it. In the code editor Tab types a tab; press Ctrl+M to make Tab move the focus out instead, and press it again to go back. Escape closes a dialog, the palette and the shortcut reference and gives the focus back to the control that opened it, and Tab leaves a diagram after its last node.
-- **Controls and density.** Every button, field, menu, dialog, tooltip and tree of Studio comes from one owned component kit (including the combo box, tree, data grid and toast), shown in the gallery of development builds, and a CI rule fails the build for a raw control, a native tooltip, a stock colour or text under 11 pixels. The **Density** preference (Comfortable or Compact) resizes the controls, rows and spacing of the whole window. The evidence level is host: a window on Linux, not Windows or macOS.
+- **Controls and density.** Every button, field, menu, dialog, tooltip and tree of ZPLC comes from one owned component kit (including the combo box, tree, data grid and toast), shown in the gallery of development builds, and a CI rule fails the build for a raw control, a native tooltip, a stock colour or text under 11 pixels. The **Density** preference (Comfortable or Compact) resizes the controls, rows and spacing of the whole window. The evidence level is host: a window on Linux, not Windows or macOS.
 - **Zoom.** Ctrl and plus, Ctrl and minus, and Ctrl and 0 (Cmd on macOS) enlarge, shrink and reset the page. They are in the **View** menu.
 - **What is checked.** Contrast is computed from the colours of the light, dark and high-contrast themes. A check also runs in the real application, on Welcome, the editors (Structured Text, Ladder, function block diagram and sequential function chart), each tab of the results panel, the sidebars, the settings, the command palette, the shortcut reference and the deploy question, in each of the three themes. For every visible text it computes the contrast against what the text is drawn on (4.5 to 1, or 3 to 1 for large text), and it fails for a control without a name, a control that shows nothing when it has the keyboard focus, a repeated identifier, a reference to something that is not on the page, a screen without a main region, and a dialog without a name. These checks are structural and computed, not a test with a screen reader. Checking the main path with a screen reader on Windows and on macOS is a manual task that is done before the general release, and its result is recorded in the release checklist.
 
@@ -487,7 +487,7 @@ Evidence level: host. `packages/zplc-ide/src/components/consoleAttention.test.ts
 
 ## Creating a project
 
-**New project** (on the Welcome screen and in the File menu) asks for four things: the project name, the folder it goes in, the target (the simulation on this computer, or a board of the manifest) and the language of the first program (Structured Text, Instruction List, Ladder Diagram, Function Block Diagram or Sequential Function Chart). The name starts as the name of the folder you choose until you type another. The folder holds the project itself: Studio does not create a folder inside it, and it refuses a folder that already holds a `zplc.json`, a `.gitignore` or the first program. The project it makes has `src/main` in the chosen language, a global variable list, a main task that runs that program and the chosen target, and it builds without a change.
+**New project** (on the Welcome screen and in the File menu) asks for four things: the project name, the folder it goes in, the target (the simulation on this computer, or a board of the manifest) and the language of the first program (Structured Text, Instruction List, Ladder Diagram, Function Block Diagram or Sequential Function Chart). The name starts as the name of the folder you choose until you type another. The folder holds the project itself: ZPLC does not create a folder inside it, and it refuses a folder that already holds a `zplc.json`, a `.gitignore` or the first program. The project it makes has `src/main` in the chosen language, a global variable list, a main task that runs that program and the chosen target, and it builds without a change.
 
 Evidence level: host. `packages/zplc-ide/src/project/newProject.test.ts` builds the first program of every language and checks the task that runs it; journey 2b drives the dialog and builds the new project in the real application.
 

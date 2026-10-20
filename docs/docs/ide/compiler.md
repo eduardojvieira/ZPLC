@@ -68,7 +68,7 @@ CODE exceeds the target memory profile: 46012 bytes required, 45056 bytes availa
 
 A build that succeeds can still tell the author what deserves a look. Every
 warning has a stable code, a position and, in a project, the file it belongs to;
-Studio, the CLI (`Warning:`) and the Tool API show the same warnings for the
+the ZPLC application, the CLI (`Warning:`) and the Tool API show the same warnings for the
 same project.
 
 | Code | Reported when | Level |
@@ -125,7 +125,7 @@ debug map names the file of each library block in its `sourceRef`.
 ## Assembly listing
 
 The compiler turns Structured Text into assembly text and the assembler turns it
-into the bytecode. The text stays available for inspection: Studio shows it in
+into the bytecode. The text stays available for inspection: ZPLC shows it in
 the generated-code dialog, and the CLI gives it with `--emit asm`, printed or
 written to `--output`:
 
@@ -173,7 +173,7 @@ error that names it; it never reaches the assembler.
 ## Build identity
 
 An artifact carries a build identity, and the debug map of the same build records
-it as `buildId`: the same 8 hexadecimal digits. Studio and the CLI use it when a
+it as `buildId`: the same 8 hexadecimal digits. The ZPLC application and the CLI use it when a
 map is attached to a program: a map whose identity is not the one of the program
 is refused, with both identities, and a program or a map without one is said to
 have none rather than matched. The identity is a function of the code and the

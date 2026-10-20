@@ -1,15 +1,15 @@
 ---
 slug: /ide
 id: index
-title: ZPLC Studio 2.0
-sidebar_label: Studio
+title: La aplicación ZPLC
+sidebar_label: Aplicación ZPLC
 description: Creación de proyectos PLC en una carpeta, validación, simulación y flujos de hardware controlados por una persona.
 tags: [ide, tooling]
 ---
 
-# ZPLC Studio 2.0
+# La aplicación ZPLC
 
-Studio es el entorno de trabajo de escritorio para crear, compilar, probar,
+ZPLC es el entorno de trabajo de escritorio para crear, compilar, probar,
 simular y revisar proyectos PLC en una carpeta que usted elige.
 
 ## Camino rápido

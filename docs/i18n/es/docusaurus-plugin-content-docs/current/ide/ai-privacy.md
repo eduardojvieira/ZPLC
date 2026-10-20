@@ -3,13 +3,13 @@ slug: /ide/ai-privacy
 id: ai-privacy
 title: IA, privacidad y revisión humana
 sidebar_label: IA y privacidad
-description: Qué envía Studio a un proveedor con opt-in, qué redacta y qué no puede automatizar.
+description: Qué envía ZPLC a un proveedor con opt-in, qué redacta y qué no puede automatizar.
 tags: [ide, ia, privacidad]
 ---
 
 # IA, privacidad y revisión humana
 
-La IA es opcional en ZPLC Studio. Puede explicar, planificar y preparar un
+La IA es opcional en ZPLC. Puede explicar, planificar y preparar un
 cambio candidato; no aprueba su propio resultado ni opera equipos físicos.
 
 ## Camino rápido
@@ -21,11 +21,11 @@ cambio candidato; no aprueba su propio resultado ni opera equipos físicos.
 
 ## Límite de datos
 
-| Elemento | Comportamiento de Studio |
+| Elemento | Comportamiento de ZPLC |
 | --- | --- |
 | Clave del proveedor | Se guarda en el almacén seguro del sistema operativo. |
-| Contexto automático | Contexto ST acotado; si contiene un patrón sensible conocido, Studio rechaza la solicitud antes de llamar al proveedor. |
-| Aviso en la consulta | Studio advierte que no se peguen secretos. |
+| Contexto automático | Contexto ST acotado; si contiene un patrón sensible conocido, ZPLC rechaza la solicitud antes de llamar al proveedor. |
+| Aviso en la consulta | ZPLC advierte que no se peguen secretos. |
 | Cambio candidato | Permanece aislado hasta que una persona lo revisa y lo guarda. |
 | Mensaje de éxito | Se deriva de la evidencia del compilador, de las pruebas y de la simulación, no del texto del proveedor. |
 

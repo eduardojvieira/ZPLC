@@ -71,7 +71,7 @@ CODE exceeds the target memory profile: 46012 bytes required, 45056 bytes availa
 
 Una compilación que termina bien puede aun así avisar al autor de lo que merece
 una revisión. Cada advertencia tiene un código estable, una posición y, en un
-proyecto, el archivo al que pertenece; Studio, la CLI (`Warning:`) y la API de
+proyecto, el archivo al que pertenece; la aplicación ZPLC, la CLI (`Warning:`) y la API de
 herramientas muestran las mismas advertencias para el mismo proyecto.
 
 | Código | Se informa cuando | Nivel |
@@ -130,7 +130,7 @@ de cada bloque de biblioteca en su `sourceRef`.
 ## Listado de ensamblador
 
 El compilador convierte Structured Text en texto ensamblador y el ensamblador lo
-convierte en bytecode. El texto sigue disponible para inspección: Studio lo muestra
+convierte en bytecode. El texto sigue disponible para inspección: ZPLC lo muestra
 en el diálogo de código generado, y la CLI lo entrega con `--emit asm`, impreso o
 escrito en `--output`:
 
@@ -179,7 +179,7 @@ error interno del compilador que la nombra; nunca llega al ensamblador.
 ## Identidad de compilación
 
 Un artefacto lleva una identidad de compilación, y el mapa de depuración de la misma
-compilación la registra como `buildId`: los mismos 8 dígitos hexadecimales. Studio y la CLI
+compilación la registra como `buildId`: los mismos 8 dígitos hexadecimales. La aplicación ZPLC y la CLI
 la usan cuando un mapa se asocia a un programa: se rechaza un mapa cuya identidad no es la del
 programa, mostrando ambas identidades, y un programa o un mapa sin identidad se dice que no
 la tiene en lugar de darlos por coincidentes. La identidad es una función del código y de la

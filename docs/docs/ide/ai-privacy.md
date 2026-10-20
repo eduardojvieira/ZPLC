@@ -3,13 +3,13 @@ slug: /ide/ai-privacy
 id: ai-privacy
 title: AI, Privacy, and Human Review
 sidebar_label: AI and Privacy
-description: What Studio sends to an opted-in provider, what it redacts, and what automation cannot do.
+description: What ZPLC sends to an opted-in provider, what it redacts, and what automation cannot do.
 tags: [ide, ai, privacy]
 ---
 
 # AI, Privacy, and Human Review
 
-AI is optional in ZPLC Studio. It can explain, plan, and prepare a candidate
+AI is optional in ZPLC. It can explain, plan, and prepare a candidate
 change; it does not approve its own result or operate physical equipment.
 
 ## Quick path
@@ -21,11 +21,11 @@ change; it does not approve its own result or operate physical equipment.
 
 ## Data boundary
 
-| Item | Studio behavior |
+| Item | ZPLC behavior |
 | --- | --- |
 | Provider key | Stored through the operating system safe-storage/vault integration. |
 | Automatic context | Bounded Structured Text context; a known sensitive pattern rejects the request before any provider call. |
-| Prompt warning | Studio warns not to paste secrets. |
+| Prompt warning | ZPLC warns not to paste secrets. |
 | Candidate change | Kept isolated until the person reviews and saves it. |
 | Success message | Derived from compiler/test/simulation evidence, not provider prose. |
 

@@ -1,6 +1,6 @@
 # Editores de texto y visuales
 
-Studio tiene un solo entorno de trabajo para ST, IL, LD, FBD y SFC, pero cada
+ZPLC tiene un solo entorno de trabajo para ST, IL, LD, FBD y SFC, pero cada
 lenguaje visual conserva su propio modelo.
 
 ## Vías de edición actuales
@@ -35,7 +35,7 @@ llama al bloque con argumentos por nombre, de modo que el orden en que se conect
 
 ## Archivos visuales en disco
 
-Un archivo Ladder, FBD o SFC es JSON. Studio lo comprueba contra la forma que lee su editor cuando usted lo abre
+Un archivo Ladder, FBD o SFC es JSON. ZPLC lo comprueba contra la forma que lee su editor cuando usted lo abre
 (LNG-011): un archivo que no es JSON, o que es JSON de otra forma, muestra un panel de error que nombra el archivo y
 sus cinco primeras violaciones por ruta (`rungs[0].grid[1][2].element.type: ...`), cuenta las demás y deja la ventana y
 las otras pestañas como estaban. Corrija el archivo y ábralo de nuevo; la compilación rechaza el mismo archivo por el
@@ -43,7 +43,7 @@ mismo motivo.
 
 Abrir un archivo visual y guardarlo sin cambios lo deja byte por byte como estaba (LNG-014), con el formato en que se
 haya escrito. Un cambio que termina donde empezó, como arrastrar un elemento y devolverlo, tampoco reescribe el archivo.
-La primera edición real escribe el archivo completo en la única forma que usa Studio: JSON con dos espacios y un salto
+La primera edición real escribe el archivo completo en la única forma que usa ZPLC: JSON con dos espacios y un salto
 de línea al final (un número escrito `2.0` se escribe `2`; un peldaño escrito como lista de elementos se escribe como
 cuadrícula).
 
@@ -107,7 +107,7 @@ ella también se rechaza. Un cable puede iniciarse en cualquiera de sus dos extr
 
 El diagnóstico de un archivo visual o IL nombra el elemento del que trata (LNG-003, LNG-026), no una línea del
 Structured Text generado que usted nunca escribió. La compilación lo informa en el campo `element`, junto a `path`, y
-el panel Problems de Studio lo selecciona cuando usted activa el problema:
+el panel Problems de ZPLC lo selecciona cuando usted activa el problema:
 
 | Lenguaje | Elemento | Se selecciona |
 | --- | --- | --- |
@@ -152,7 +152,7 @@ placa no se ha comprobado aquí.
 
 ## Valores en línea desde el mapa de depuración
 
-Mientras un programa corre bajo Studio, cada editor muestra lo que el programa contiene (LNG-006), leído a través del mapa
+Mientras un programa corre bajo ZPLC, cada editor muestra lo que el programa contiene (LNG-006), leído a través del mapa
 de depuración de la compilación de su archivo. La compilación registra, para cada elemento de una fuente Ladder, FBD o
 SFC, qué variable del programa generado guarda su estado, de modo que ningún editor adivina un nombre a partir del que ve:
 un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
@@ -225,13 +225,13 @@ Nivel de evidencia: host. `src/editors/arrange.test.ts` comprueba la aritmética
 
 ## Foco en los editores visuales
 
-Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de Studio, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.
+Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de ZPLC, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.
 
 Nivel de evidencia: host. La prueba lee la hoja de estilos y los archivos fuente; un recorrido que llega con el tabulador a un nodo y lee su contorno calculado está en el recorrido de temas (UX-027).
 
 ## Temas, colores forzados y movimiento reducido en los editores
 
-Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido, como el resto de Studio. Un editor visual se dibuja solo con los tokens de `src/theme/tokens.ts`: ningún archivo de `src/editors` lleva un color de la paleta estándar, un color literal, un brillo ni una clase de foco propia, y la lista de infractores de la guardia del kit ya no tiene entradas para ellos. El contraste del texto, de las etiquetas atenuadas, de cada estado de señal y del cable que lleva TRUE está declarado para el lienzo y para un nodo, y `bun tools/ci/ux-tokens.ts` lo comprueba en los tres temas.
+Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido, como el resto de ZPLC. Un editor visual se dibuja solo con los tokens de `src/theme/tokens.ts`: ningún archivo de `src/editors` lleva un color de la paleta estándar, un color literal, un brillo ni una clase de foco propia, y la lista de infractores de la guardia del kit ya no tiene entradas para ellos. El contraste del texto, de las etiquetas atenuadas, de cada estado de señal y del cable que lleva TRUE está declarado para el lienzo y para un nodo, y `bun tools/ci/ux-tokens.ts` lo comprueba en los tres temas.
 
 Con movimiento reducido la hoja de estilos acorta toda transición y animación, y la cámara de un diagrama, que anima el código, toma su duración de `animationMs` en `src/theme/motion.ts`: cero cuando el sistema pide movimiento reducido. Un cable nunca se anima; un paso SFC activo es un cable más grueso en el color de TRUE.
 
@@ -305,7 +305,7 @@ las flechas).
 
 ## Qué se vuelve a dibujar cuando cambia un valor
 
-Un valor observado se lee diez veces por segundo mientras corre un programa. Studio vuelve a dibujar solo lo que lo muestra
+Un valor observado se lee diez veces por segundo mientras corre un programa. ZPLC vuelve a dibujar solo lo que lo muestra
 (IDE-013): la tabla Watch y el editor del archivo que tiene la variable. El Explorador, la barra de herramientas, los ajustes
 y la barra de pestañas no se suscriben a las lecturas, y una lectura que vale lo mismo que antes no publica nada. Un
 componente que necesita cinco de 200 valores observados se vuelve a dibujar cuando cambia uno de esos cinco, no cuando

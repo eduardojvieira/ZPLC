@@ -19,17 +19,17 @@ separate operations. They are never initiated by AI or MCP.
 | Deploy PLC program | Transfers a verified `.zplc` artifact to a compatible runtime. | Human confirmation with artifact evidence. |
 | Run / debug | Observes or changes operational state. | Human workflow and site procedure. |
 
-## What Studio is connected to
+## What ZPLC is connected to
 
-The status bar under the toolbar always says what Studio is attached to, with words, an icon and a colour. The colour is never the only signal.
+The status bar under the toolbar always says what ZPLC is attached to, with words, an icon and a colour. The colour is never the only signal.
 
 | Indicator | Icon and colour | Meaning |
 | --- | --- | --- |
 | Not connected | Unplugged, grey | Nothing is running. |
 | Simulation · native runtime | Monitor, blue | The program runs in the native simulator on this computer. |
 | Simulation · browser runtime | Globe, blue | The program runs in the browser runtime, which is degraded; the bar lists what it lacks. |
-| Connecting to hardware | Spinner, amber | Studio is opening the link to a device. |
-| Real hardware · board · link | Chip, amber | Studio is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |
+| Connecting to hardware | Spinner, amber | ZPLC is opening the link to a device. |
+| Real hardware · board · link | Chip, amber | ZPLC is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |
 | Hardware fault · board | Warning triangle, red | The attached device reports a fault. |
 
 An amber banner stays under the indicator while forces are active, and a red alert replaces it when a force cannot be confirmed (reconnect and verify before operating).
@@ -51,7 +51,7 @@ The dialog compares the project with the device, row by row:
 
 Every row has a verdict in words and an icon: Matches, Does not match, Not reported or Not compared. A row that does not match is highlighted and a sentence under the table says what is wrong and what to do. A device that does not match cannot be confirmed: the dialog is then called "Deploy blocked", nothing is sent, and its only button is Close.
 
-The dialog also states what the outputs do. The firmware keeps every output at its safe value while the old program stops, the new one is written and the PLC stays stopped: off, unless the project declares another value for that output, which the dialog then lists. Host and simulator tests check this; Studio does not measure the pins of a board, and only a hardware-in-the-loop record does.
+The dialog also states what the outputs do. The firmware keeps every output at its safe value while the old program stops, the new one is written and the PLC stays stopped: off, unless the project declares another value for that output, which the dialog then lists. Host and simulator tests check this; ZPLC does not measure the pins of a board, and only a hardware-in-the-loop record does.
 
 The action button is named by its effect: **Stop PLC and deploy** when the PLC is running or paused, and **Deploy** when it is stopped. Focus starts on Cancel, so pressing Enter or Space does not confirm by accident, and Escape cancels. The PLC stays stopped after a deploy; Run is a separate action.
 
@@ -62,7 +62,7 @@ Every destructive or physical action is confirmed in an alert dialog. Its action
 - Deleting a file or a folder, discarding unsaved changes, and closing a project or a window with unsaved changes.
 - On a real device only: Stop, Reset, forcing a variable, changing a forced value, releasing a force and releasing all forces. A simulation is not asked, because nothing physical is at stake.
 
-Run, pause and step are not confirmed: they are your own explicit action. Studio never flashes a board, so there is no flash dialog.
+Run, pause and step are not confirmed: they are your own explicit action. ZPLC never flashes a board, so there is no flash dialog.
 
 ## Evidence boundary
 
@@ -73,7 +73,7 @@ an HIL run before claiming target behavior. See
 [Hardware support](../reference/capabilities-evidence.md) and
 [Safety and limitations](../safety-and-limitations.md).
 
-No firmware build from Studio on macOS or Windows is recorded yet.
+No firmware build from the ZPLC application on macOS or Windows is recorded yet.
 
 ## On a failed connection or deploy
 
