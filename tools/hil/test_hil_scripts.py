@@ -62,6 +62,7 @@ HOST_CHECKS = {
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
     "run_chain",  # the chain for a board: test_hil_chain.py runs it on fake devices
     "validate_hil_trace_profile",  # test_hil_trace_profile.py; docs-and-truth runs it on the repository
+    "community_report",  # writes a community-reported record (HIL-011); test_hil_community.py checks it
 }
 
 
