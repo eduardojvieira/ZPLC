@@ -7,6 +7,7 @@
 import { t } from '../i18n';
 import type { DebugMap } from '../compiler';
 import { DEVICE_ADMISSION_CODE, DeviceAdmissionError } from '../runtime/deviceHandshake';
+import { useDeployedProgram } from '../store/deployedProgram';
 import { useNotifications } from '../store/notifications';
 import { confirmDeploy, showDeployRefusal } from './deployConfirm';
 import {
@@ -71,7 +72,9 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
     log({ type: 'info', message: description, source: 'runtime' });
     programSendStarted = true;
     deployOperation = notices.begin({ kind: 'deploy', title: t('notices.deploy.running'), detail: description, details: 'output' });
+    useDeployedProgram.getState().clear(); // LRN-023: the board may no longer hold the program a hash names
     await deps.loadProgram(dataToUpload, result.debugMap, started.board);
+    void useDeployedProgram.getState().publish(dataToUpload);
     if (nextProgramLoadStateAfterDeploy(deployedRevision, deps.compileRevision(), deployedCompilerRunId, deps.compilerRunId()) === PROGRAM_LOAD_STATE.LOADED) {
       deps.setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       log({ type: 'success', message: t('deploy.log.deployed'), source: 'runtime' });

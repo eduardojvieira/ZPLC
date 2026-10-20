@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { answerConfirmation, currentConfirmation, mountConfirmHost } from '../store/actionConfirm';
+import { useDeployedProgram } from '../store/deployedProgram';
 import { useNotifications } from '../store/notifications';
 import { PROGRAM_LOAD_STATE, type LastCompileResult } from './debugSessionState';
 import { performHardwareDeploy, type DeployDeps } from './deployFlow';
@@ -81,6 +82,10 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
     expect(calls).toEqual([`load:${ZPLC_CONSTANTS.HEADER_SIZE}:after-dialog`]);
     expect(states).toEqual([PROGRAM_LOAD_STATE.LOADED]);
     expect(logs.at(-1)).toBe('success: Program deployed and stopped.');
+    // LRN-023: the hardware grade's program hash is the SHA-256 of the artifact that was sent
+    const sent = new Uint8Array(await crypto.subtle.digest('SHA-256', artifact()));
+    for (let turns = 0; turns < 50 && useDeployedProgram.getState().sha256 === null; turns += 1) await new Promise((resolve) => setTimeout(resolve, 1));
+    expect(useDeployedProgram.getState().sha256).toBe([...sent].map((byte) => byte.toString(16).padStart(2, '0')).join(''));
   });
 
   it('UX-019 names the action "Stop PLC and deploy" when the PLC is running', async () => {
@@ -122,6 +127,7 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
     await answerWhenAsked(true);
     await flow;
     expect(logs.at(-1)).toBe(`error: ${t('deploy.unconfirmed')}`);
+    expect(useDeployedProgram.getState().sha256).toBeNull(); // LRN-023: no hash of a program the board may not hold
   });
 
   it('UX-019 never writes when no dialog can be shown, because nobody was asked', async () => {
