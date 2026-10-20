@@ -2860,6 +2860,8 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
   "LRN-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"LRN-029 the Spanish twins of the human text of a channel"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"LRN-029 refuses a kit board that boards.json does not mark as a learner board, whose Spanish text nothing checks"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 Learn follows the language of the application"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 draws the lessons and the Learn home in the language of the setting, and switches when the setting changes"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 names the tracks of a lesson \"Rutas\" in Spanish, because \"Pistas\" are its hints"},
@@ -2867,6 +2869,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 has the same structure in English and Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, \"sí\", \"así\""},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"the voseo guard of the lesson text (LRN-029)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every Spanish board text of a learner board is in the register and the terms of the glossary"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson and hint exists in English and Spanish with the same structure"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts"},
@@ -2875,6 +2878,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish learner-kit page, wiring page, wiring diagram or board reference section shows the English note of a learner board"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint addresses the learner with \"tú\" or voseo"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary"},
