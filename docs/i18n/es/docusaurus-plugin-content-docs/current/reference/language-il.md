@@ -1,11 +1,11 @@
 ---
-title: "Referencia de Lista de Instrucciones (IL)"
-sidebar_label: "Lista de Instrucciones"
-description: "Qué funciona de Lista de Instrucciones, según las pruebas de conformidad ejecutadas."
+title: "Referencia de lista de instrucciones (IL)"
+sidebar_label: "Lista de instrucciones"
+description: "Qué funciona de la lista de instrucciones, según las pruebas de conformidad ejecutadas."
 tags: [reference, generated]
 ---
 
-# Referencia de Lista de Instrucciones (IL)
+# Referencia de lista de instrucciones (IL)
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-il. Do not edit. >>> */}
 
@@ -13,7 +13,7 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 ## Editor
 
-Lista de Instrucciones se escribe en un editor de texto. El código se analiza y se traduce a Texto Estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los de Texto Estructurado.
+La lista de instrucciones se escribe en un editor de texto. El código se analiza y se traduce a texto estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los del texto estructurado.
 
 Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
@@ -29,7 +29,7 @@ Aquí se publica una captura de pantalla real de este editor, tomada de forma au
 
 ## Direccionamiento de E/S
 
-Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: Lista de Instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
+Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
 
 | Dirección | Contiene | Área | Desplazamiento en bytes | Base de la región |
 | --- | --- | --- | --- | --- |
@@ -56,8 +56,8 @@ Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o a
 
 ## Páginas relacionadas
 
-- [Guía de Lista de Instrucciones](../languages/il.md)
-- [Referencia de Texto Estructurado](./language-st.md)
+- [Guía de lista de instrucciones](../languages/il.md)
+- [Referencia de texto estructurado](./language-st.md)
 
 {/* <<< END GENERATED: reference/language-il <<< */}
 

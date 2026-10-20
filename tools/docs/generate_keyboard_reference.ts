@@ -13,9 +13,9 @@ import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type
 export const GENERATOR = 'tools/docs/generate_keyboard_reference.ts';
 
 const EDITOR_TITLE: Record<VisualEditor, L10n> = {
-  ld: { en: 'Ladder Diagram editor', es: 'Editor de Diagrama de Escalera' },
-  fbd: { en: 'Function Block Diagram editor', es: 'Editor de Diagrama de Bloques de Función' },
-  sfc: { en: 'Sequential Function Chart editor', es: 'Editor de Diagrama Funcional Secuencial' },
+  ld: { en: 'Ladder Diagram editor', es: 'Editor de diagrama de escalera' },
+  fbd: { en: 'Function Block Diagram editor', es: 'Editor de diagrama de bloques de función' },
+  sfc: { en: 'Sequential Function Chart editor', es: 'Editor de diagrama funcional secuencial' },
 };
 
 const EDITOR_CURSOR: Record<VisualEditor, L10n> = {
@@ -77,7 +77,7 @@ export const PAGES: ReferencePage[] = [
     label: { en: 'Visual editor keys', es: 'Teclas de los editores visuales' },
     description: {
       en: 'Every key of the Ladder, Function Block Diagram and Sequential Function Chart editors, generated from the table the editors read.',
-      es: 'Todas las teclas de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial, generadas de la tabla que leen los editores.',
+      es: 'Todas las teclas de los editores de diagrama de escalera, de diagrama de bloques de función y de diagrama funcional secuencial, generadas de la tabla que leen los editores.',
     },
     body: keyboardBody,
   },

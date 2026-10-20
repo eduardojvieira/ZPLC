@@ -1,7 +1,7 @@
 ---
 title: "Referencia de teclado de los editores visuales"
 sidebar_label: "Teclas de los editores visuales"
-description: "Todas las teclas de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial, generadas de la tabla que leen los editores."
+description: "Todas las teclas de los editores de diagrama de escalera, de diagrama de bloques de función y de diagrama funcional secuencial, generadas de la tabla que leen los editores."
 tags: [reference, generated]
 ---
 
@@ -13,7 +13,7 @@ Todas las acciones de edición de los tres editores gráficos se pueden hacer co
 
 `Ctrl` es `Cmd` en macOS. Una pregunta que hace una tecla (el elemento que se inserta, la variable que se enlaza, el cable que se dibuja) es una lista con búsqueda: se escribe para buscar, Arriba y Abajo eligen, Enter toma la elección y Escape sale. Donde la lista lo permite, escribir un nombre que no está en la lista lo ofrece tal como se escribió. Un comando que cambia el documento es un paso del historial de deshacer, y la selección vuelve con deshacer y rehacer.
 
-## Editor de Diagrama de Escalera
+## Editor de diagrama de escalera
 
 El cursor es una celda de un peldaño, dibujada como un marco azul. Hacer clic en una celda lo pone allí. Insertar, enlazar y borrar actúan sobre la celda que tiene debajo.
 
@@ -92,7 +92,7 @@ El cursor es una celda de un peldaño, dibujada como un marco azul. Hacer clic e
 | `F1` | Lista todos los comandos del editor con sus teclas, con búsqueda |
 | `Escape` | Quita la selección y cierra las propiedades |
 
-## Editor de Diagrama de Bloques de Función
+## Editor de diagrama de bloques de función
 
 El cursor es el bloque seleccionado. Las flechas sin modificador desplazan el bloque seleccionado en el lienzo, como hace el lienzo; Tab pasa de un bloque a otro en el orden del archivo.
 
@@ -167,7 +167,7 @@ El cursor es el bloque seleccionado. Las flechas sin modificador desplazan el bl
 | `Ctrl+Alt+0` | Ajusta todo el diagrama a la vista |
 | `F1` | Lista todos los comandos del editor con sus teclas, con búsqueda |
 
-## Editor de Diagrama Funcional Secuencial
+## Editor de diagrama funcional secuencial
 
 El cursor es el paso o la transición seleccionados. Las flechas sin modificador desplazan el elemento seleccionado en el lienzo, como hace el lienzo; Tab pasa de un elemento a otro en el orden del archivo.
 

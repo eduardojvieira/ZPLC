@@ -1,11 +1,11 @@
 ---
-title: "Referencia de Diagrama de Escalera (LD)"
-sidebar_label: "Diagrama de Escalera"
-description: "Qué funciona de Diagrama de Escalera, según las pruebas de conformidad ejecutadas."
+title: "Referencia de diagrama de escalera (LD)"
+sidebar_label: "Diagrama de escalera"
+description: "Qué funciona del diagrama de escalera, según las pruebas de conformidad ejecutadas."
 tags: [reference, generated]
 ---
 
-# Referencia de Diagrama de Escalera (LD)
+# Referencia de diagrama de escalera (LD)
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-ld. Do not edit. >>> */}
 
@@ -13,7 +13,7 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 ## Editor
 
-Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.
+El diagrama de escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.
 
 Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
@@ -31,7 +31,7 @@ Aquí se publica una captura de pantalla real de este editor, tomada de forma au
 
 ## Direccionamiento de E/S
 
-Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: Lista de Instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
+Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.
 
 | Dirección | Contiene | Área | Desplazamiento en bytes | Base de la región |
 | --- | --- | --- | --- | --- |
@@ -60,7 +60,7 @@ Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o a
 ## Páginas relacionadas
 
 - [Editores de texto y visuales](../ide/editors.md)
-- [Referencia de Diagrama de Bloques de Función](./language-fbd.md)
+- [Referencia de diagrama de bloques de función](./language-fbd.md)
 - [Referencia de bloques de función](./function-blocks.md)
 
 {/* <<< END GENERATED: reference/language-ld <<< */}
