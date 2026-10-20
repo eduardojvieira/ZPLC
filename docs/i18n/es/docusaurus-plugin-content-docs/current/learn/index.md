@@ -34,6 +34,23 @@ inicio dice cuáles. Si prefiere tomarlas en cualquier orden, active
 descripción completa de lo que hace Aprender y de lo que guarda está en
 [Banco de trabajo de Studio](../ide/features.md#learn).
 
+## Su primer parpadeo, sin hardware
+
+La primera lección termina con una salida que parpadea en simulación, en menos de
+diez minutos desde el primer inicio. Cuando **Comenzar el curso** la haya abierto,
+elija **Compilación** y luego **Compilar** en la barra de herramientas, después
+**Conectar** y **Ejecutar**: el programa se ejecuta en el simulador de su equipo.
+**Ejecutar** permanece desactivado hasta que el programa se compila. Abra la
+pestaña **Observación**: el panel **E/S en vivo** enumera las salidas del programa, y la
+lámpara de la lección se enciende y se apaga.
+
+Toda lección de nivel Fundamentos o Intermedio se puede completar de esta manera,
+sin placa; el índice de lecciones rechaza una que no se pueda. Un recorrido del
+entorno de desarrollo (el recorrido 57) sigue exactamente estos controles visibles
+desde un perfil nuevo y ve cambiar la salida. Todavía no se mide cuánto tarda una
+persona: eso requiere una prueba cronometrada con usuarios que lo usan por
+primera vez.
+
 ## Abra un proyecto de ejemplo
 
 Studio incluye proyectos de ejemplo en la pantalla de bienvenida, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, y cada uno muestra su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Para copiar uno a una carpeta

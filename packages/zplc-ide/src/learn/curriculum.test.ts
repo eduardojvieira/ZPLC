@@ -107,3 +107,22 @@ describe('LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grad
     expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([['blinky-ladder-timer-feedback', 'LD'], ['blink-structured-text', 'ST']]);
   });
 });
+
+describe('LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware', () => {
+  it('LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0', () => {
+    const early = LESSON_INDEX.lessons.filter((lesson) => lesson.level === 'foundation' || lesson.level === 'intermediate');
+    expect(early.length).toBeGreaterThan(0);
+    for (const lesson of early) {
+      const boardCheck = lesson.module === 0 && lesson.tracks.length === 1 && lesson.tracks[0] === 'hardware';
+      expect([lesson.id, boardCheck || lesson.tracks.includes('simulation')]).toEqual([lesson.id, true]);
+    }
+  });
+
+  it('LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes', () => {
+    // A first-time learner presses Continue on the Learn home: the first lesson of the course, the tour that ends in a blinking output.
+    const first = order.find((lesson) => lesson.tracks.includes('simulation'))!;
+    expect(first.id).toBe('first-blink-simulation');
+    const path = order.slice(0, order.indexOf(first) + 1).filter((lesson) => lesson.tracks.includes('simulation'));
+    expect(path.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0)).toBeLessThanOrEqual(10);
+  });
+});

@@ -3201,6 +3201,69 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // LRN-012: a first-time user reaches a blinking simulated output within ten minutes of first launch by following only
+    // what Studio shows. A fresh profile with no project and no progress: Learn on the Welcome screen, Start the course on
+    // the Learn home, the first lesson opens beside its workspace, the toolbar's simulation controls run its program, and
+    // the faceplate of the Watch tab shows the lesson's output turn on and off. Every step is a visible control with a name
+    // a person reads. The time from the first screen to the blink is recorded and must stay under ten minutes; the lessons
+    // on the path must not ask for more than ten minutes either. This proves the path exists and is short; how long people
+    // take is manual evidence (the spec asks for three first-time users), which no journey replaces.
+    name: '57 First launch to a blinking simulated output, following only what Studio shows', example: 'none', proves: ['LRN-012'], partly: [],
+    run: async (app, { root }) => {
+      const started = Date.now();
+      const steps: string[] = [];
+      // A step is a control the learner sees and can name (its text, else its aria-label); the journey never runs a command
+      // a person could not see, and never writes a file of the workspace.
+      const press = async (target: Target, what: string) => {
+        await app.until(`${what} to be shown`, async () => await app.visible(target) || undefined, 45_000);
+        const name = await app.eval<string>(`(() => { const element = ${target}; return ((element?.textContent || element?.getAttribute('aria-label')) ?? '').trim(); })()`);
+        assert(name.length > 0, `${what} has no name a person can read.`);
+        steps.push(name);
+        await app.click(target, what).catch(async (error: Error) => { throw new Error(`${error.message}; the toolbar offers ${await app.eval<string>(`JSON.stringify([...document.querySelectorAll('[role="toolbar"] button')].map((item) => [item.getAttribute('aria-label') || item.textContent?.trim(), item.disabled, item.title]))`)}`); });
+      };
+      // The path: the lessons Continue opens until the first one that runs in simulation, which is the tour ending in a blink.
+      const ordered = courseOrder(LESSON_INDEX);
+      const first = ordered.find((lesson) => lesson.tracks.includes('simulation'))!;
+      const onPath = ordered.slice(0, ordered.indexOf(first) + 1).filter((lesson) => lesson.tracks.includes('simulation'));
+      const minutes = onPath.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0);
+      assert(minutes <= 10, `The lessons before the first blink ask for ${minutes} minutes, more than ten.`);
+      assert(!existsSync(join(root, 'profile', 'zplc-learn-progress.v2.json')), 'The profile is not fresh: it holds a progress file.');
+      const program = first.starter.program.split('/').at(-1)!.replace(/\.[^.]+$/, '');
+
+      await press(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the Learn home', async () => await app.visible(css('[data-learn-home]')) || undefined);
+      const startText = await app.eval<string>(`document.querySelector('[data-learn-continue]')?.textContent ?? ''`);
+      assert(startText.startsWith('Start the course') && startText.includes(first.text.en.title), `Continue does not offer to start the course with "${first.text.en.title}": ${startText}`);
+      await press(css('[data-learn-continue]'), 'Start the course on the Learn home');
+      await app.until('the lesson beside its workspace', async () => await app.visible(toolbar) && (await app.eval<string>(`document.getElementById('learn-title')?.textContent?.trim() ?? ''`)) === first.text.en.title || undefined, 45_000);
+
+      // The toolbar: build the program, connect to the simulation, run. Run stays disabled until a build exists.
+      const builds = (await outputText(app)).match(BUILD_RESULT)?.length ?? 0;
+      await press(button('Build options'), 'Build options on the toolbar');
+      await press(menuItem('Compile'), 'Compile in the build menu');
+      const built = await app.until('a build result in Output', async () => { const found = (await outputText(app)).match(BUILD_RESULT) ?? []; return found.length > builds ? found.at(-1) : undefined; }, 45_000);
+      assert(buildKind(built) === 'built', `The starter of the first lesson does not build: ${built}`);
+      await press(button('Connect'), 'Connect on the toolbar');
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined, 45_000);
+      await press(button('Run (F5)', 'prefix'), 'Run on the toolbar');
+      await app.until('the program to run', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined, 45_000)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-900))}`); });
+
+      // The faceplate lists the program's outputs from its I/O map and shows them live: the output turns on, then off.
+      await press(tab('Watch', 'prefix'), 'the Watch tab');
+      await app.until('the faceplate', async () => await app.visible(css('[data-faceplate]')) || undefined, 45_000);
+      const output = `[data-output^="${program}."] [data-output-value]`;
+      const value = () => app.eval<string>(`document.querySelector(${JSON.stringify(output)})?.textContent?.trim() ?? ''`);
+      await app.until('an output of the lesson on the faceplate', async () => (await value()) !== '' || undefined, 45_000);
+      const seen = new Set<string>();
+      await app.until('the output to turn on and off', async () => { const now = await value(); if (/TRUE|FALSE/.test(now)) seen.add(now.includes('TRUE') ? 'TRUE' : 'FALSE'); return seen.size === 2 || undefined; }, 60_000);
+
+      const seconds = (Date.now() - started) / 1000;
+      assert(seconds < 600, `The blink took ${seconds.toFixed(0)} s from the first screen, more than ten minutes.`);
+      app.note(`first screen to a blinking output in ${seconds.toFixed(1)} s through ${steps.length} named controls (${steps.join(' > ')}); lessons on the path: ${minutes} min`);
+    },
+  },
+  {
     // IDE-018: choosing a port is a dialog of the application, not an operating-system message box. The journey only looks at it
     // and cancels: it never connects, and it does not depend on a port being plugged in (the list is empty on a build machine).
     name: '42 Choosing a serial port is a dialog of the application', example: 'motor_start_stop', proves: [], partly: ['IDE-018'],

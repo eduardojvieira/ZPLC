@@ -64,6 +64,16 @@ describe('the placement of lessons in the course', () => {
     expect(placed(lesson({ module: 8, level: 'advanced', tracks: ['simulation', 'hardware'] })).some((problem) => problem.includes('hardware'))).toBe(true);
   });
 
+  it('LRN-012 refuses a Foundation or Intermediate lesson that cannot be done in simulation, except the board check of module 0', () => {
+    expect(placed(lesson({ tracks: ['hardware'] })).some((problem) => problem.includes('a-lesson') && problem.includes('simulation'))).toBe(true);
+    expect(placed(lesson({ module: 4, level: 'intermediate', tracks: ['hardware'] })).some((problem) => problem.includes('simulation'))).toBe(true);
+    expect(placed(lesson({ module: 1, tracks: ['simulation', 'hardware'] }))).toEqual([]);
+    // Module 0 is "a tour of Studio, simulation, and (hardware) verify my board": checking a board has nothing to simulate.
+    expect(placed(lesson({ module: 0, tracks: ['hardware'] }))).toEqual([]);
+    // An Advanced lesson may be hardware only (none is today).
+    expect(placed(lesson({ module: 9, level: 'advanced', tracks: ['hardware'] }))).toEqual([]);
+  });
+
   it('refuses a prerequisite that sits in a later module than the lesson', () => {
     expect(placed(lesson({ id: 'early', module: 2, prerequisites: ['late'] }), lesson({ id: 'late', module: 3 })).some((problem) => problem.includes('early') && problem.includes('late'))).toBe(true);
   });

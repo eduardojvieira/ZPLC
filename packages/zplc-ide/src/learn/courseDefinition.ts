@@ -92,6 +92,10 @@ export function validateCoursePlacement(course: CourseDefinition, lessons: reado
     if (!module) { problems.push(`${lesson.id}: module ${lesson.module} is not in the course`); continue; }
     if (lesson.level !== module.level) problems.push(`${lesson.id}: level ${lesson.level} differs from the level ${module.level} of module ${module.id}`);
     for (const track of lesson.tracks) if (!module.tracks.includes(track)) problems.push(`${lesson.id}: track ${track} is not offered by module ${module.id}`);
+    // LRN-012: a Foundation or Intermediate lesson can be completed with no hardware. The one exception is the board check of
+    // module 0 ("verify my board" in the curriculum table), which checks a board and so has nothing to simulate.
+    const boardCheck = lesson.module === 0 && lesson.tracks.length === 1 && lesson.tracks[0] === 'hardware';
+    if ((lesson.level === 'foundation' || lesson.level === 'intermediate') && !lesson.tracks.includes('simulation') && !boardCheck) problems.push(`${lesson.id}: a ${lesson.level} lesson must offer the simulation track, so that it can be completed with no hardware (LRN-012)`);
     for (const prerequisite of lesson.prerequisites) {
       const there = moduleOf.get(prerequisite);
       if (there !== undefined && there > lesson.module) problems.push(`${lesson.id}: prerequisite ${prerequisite} is in module ${there}, later than module ${lesson.module}`);
