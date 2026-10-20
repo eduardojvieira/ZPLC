@@ -3392,6 +3392,9 @@
   "DOC-024": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"CONTRIBUTING.md: copy-and-paste commands per layer, and the files a contributor expects (DOC-024)"}
   ],
+  "DOC-025": [
+    {"kind":"unit","ref":"tools/ci/spec-tracking.test.ts","test":"spec folders (DOC-025)"}
+  ],
   "DOC-026": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"examples: the VM fixtures are labelled and the PLC projects are easy to find (DOC-026)"}
   ],
