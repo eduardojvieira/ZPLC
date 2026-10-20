@@ -44,6 +44,7 @@ class EvidenceTests(unittest.TestCase):
     def test_the_esp32s3_bench_names_qemu_and_refuses_what_qemu_cannot_model(self):
         with tempfile.TemporaryDirectory() as work:
             bench = emu.EmulatorBench("esp32s3_devkitc", workdir=Path(work))
+            self.addCleanup(bench.close)
             self.assertEqual((bench.level, bench.emulator["name"]), ("emulated", "espressif-qemu"))
             for wiring in ("digital-loopback", "analog", "network"):
                 with self.assertRaises(emu.Unsupported):

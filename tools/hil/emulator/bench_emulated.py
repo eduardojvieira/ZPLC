@@ -27,9 +27,12 @@ import json
 import os
 import queue
 import re
+import select
+import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import termios
 import threading
 import time
@@ -166,8 +169,8 @@ class PicoBench:
 
     # the process ---------------------------------------------------------------------------------------------
     def start(self, write_image: bool) -> None:
-        if self.image is None:
-            raise RuntimeError("no image: flash() first")
+        if self.image is None:  # the port is opened before a flash: the board runs the build of build.sh
+            self.image, write_image = self.default_image(None), True
         tsx = emu_dir() / "rp2040js/node_modules/tsx/dist/loader.mjs"
         if not tsx.exists():
             raise RuntimeError(f"rp2040js is not installed in {emu_dir()}: run tools/hil/emulator/setup.sh")
@@ -236,11 +239,14 @@ class PicoBench:
             self.start(write_image=False)
         return self.cdc[2]
 
+    @staticmethod
+    def default_image(image: Path | None) -> Path:
+        path = Path(image) if image else Path(os.environ.get("ZPLC_EMU_IMAGE") or fw_out() / "emu-pico/zephyr/zephyr.uf2")
+        return path if path.suffix == ".uf2" else path.with_name("zephyr.uf2")
+
     def flash(self, image: Path | None) -> None:
         self.kill()
-        self.image = Path(image) if image else Path(os.environ.get("ZPLC_EMU_IMAGE") or fw_out() / "emu-pico/zephyr/zephyr.uf2")
-        if self.image.suffix != ".uf2":
-            self.image = self.image.with_name("zephyr.uf2")
+        self.image = self.default_image(image)
         self.start(write_image=True)
 
     def confirm_wiring(self, bench: str) -> None:
@@ -304,30 +310,61 @@ class Esp32s3Bench:
         self.flash_file = workdir / "flash.bin"
         self.log_file = workdir / "qemu.log"
         self.process: subprocess.Popen | None = None
-        self.pty = ""
+        self.uart = open_pty()  # the device link's port: it outlives a power cycle, as the Pico's does
+        # a socket path has at most 107 bytes: a short directory of its own, not the bench's
+        self.socket_path = Path(tempfile.mkdtemp(prefix="zplc-qemu-")) / "uart0.sock"
 
     def alive(self) -> bool:
         return self.process is not None and self.process.poll() is None
 
+    @staticmethod
+    def default_image(image: Path | None) -> Path:
+        path = Path(image) if image else Path(os.environ.get("ZPLC_EMU_IMAGE") or fw_out() / "emu-esp32s3/zephyr/zephyr.bin")
+        return path if path.suffix == ".bin" else path.with_name("zephyr.bin")
+
     def start(self) -> None:
+        if not self.flash_file.exists():  # the port is opened before a flash: the board runs the build of build.sh
+            compose_esp_flash(self.flash_file, self.default_image(None).read_bytes())
         qemu = emu_dir() / "qemu-esp/qemu/bin/qemu-system-xtensa"
         if not qemu.exists():
             raise RuntimeError(f"Espressif QEMU is not installed in {emu_dir()}: run tools/hil/emulator/setup.sh")
+        termios.tcflush(self.uart[0], termios.TCIOFLUSH)  # nothing sent while the power was off reaches the new boot
+        self.socket_path.unlink(missing_ok=True)
         # -no-reboot: a reset of the chip ends QEMU, and the next port() boots it again on the same flash file
         self.process = subprocess.Popen(
             [str(qemu), "-nographic", "-machine", "esp32s3", "-m", "8M", "-global", "ssi_psram.is_octal=true",
-             "-drive", f"file={self.flash_file},if=mtd,format=raw", "-serial", "pty", "-monitor", "none", "-no-reboot"],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=self.log_file.open("a"), text=True,
+             "-drive", f"file={self.flash_file},if=mtd,format=raw", "-serial", f"unix:{self.socket_path},server=on,wait=on",
+             "-monitor", "none", "-no-reboot"],
+            stdin=subprocess.DEVNULL, stdout=self.log_file.open("a"), stderr=subprocess.STDOUT,
         )
-        self.pty = ""
-        for line in self.process.stdout:  # QEMU names the pty on stdout before it starts the guest
-            match = re.search(r"char device redirected to (/dev/pts/\d+)", line)
-            if match:
-                self.pty = match.group(1)
+        link = socket.socket(socket.AF_UNIX)
+        deadline = time.monotonic() + 30
+        while True:
+            try:
+                link.connect(str(self.socket_path))
                 break
-        if not self.pty:
-            raise RuntimeError(f"QEMU did not report the pty of its UART0 (see {self.log_file})")
-        threading.Thread(target=self.process.stdout.read, daemon=True).start()  # drain the rest
+            except OSError:
+                if time.monotonic() > deadline or not self.alive():
+                    raise RuntimeError(f"QEMU did not open its UART0 socket (see {self.log_file})") from None
+                time.sleep(0.05)
+        threading.Thread(target=self._bridge, args=(link,), daemon=True).start()
+
+    def _bridge(self, link: socket.socket) -> None:
+        """Copy bytes between the bench's pty and QEMU's UART0 until QEMU goes away."""
+        master = self.uart[0]
+        with link:
+            while True:
+                ready, _, _ = select.select([master, link], [], [], 0.5)
+                try:
+                    if link in ready:
+                        data = link.recv(4096)
+                        if not data:
+                            return
+                        os.write(master, data)
+                    if master in ready:
+                        link.sendall(os.read(master, 4096))
+                except OSError:
+                    return
 
     def kill(self) -> None:
         if self.process is not None:
@@ -338,14 +375,11 @@ class Esp32s3Bench:
     def port(self) -> str:
         if not self.alive():
             self.start()
-        return self.pty
+        return self.uart[2]
 
     def flash(self, image: Path | None) -> None:
         self.kill()
-        path = Path(image) if image else Path(os.environ.get("ZPLC_EMU_IMAGE") or fw_out() / "emu-esp32s3/zephyr/zephyr.bin")
-        if path.suffix != ".bin":
-            path = path.with_name("zephyr.bin")
-        compose_esp_flash(self.flash_file, path.read_bytes())
+        compose_esp_flash(self.flash_file, self.default_image(image).read_bytes())
         self.start()
 
     def confirm_wiring(self, bench: str) -> None:
@@ -366,6 +400,8 @@ class Esp32s3Bench:
 
     def close(self) -> None:
         self.kill()
+        os.close(self.uart[0])
+        os.close(self.uart[1])
 
 
 BACKENDS = {"rpi-pico-rp2040": PicoBench, "esp32-s3-devkitc": Esp32s3Bench}
