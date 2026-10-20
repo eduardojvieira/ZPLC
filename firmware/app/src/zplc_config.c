@@ -55,16 +55,31 @@ static void zplc_modbus_override_load_reset(void)
 }
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-/* LittleFS mount on external QSPI NOR flash (storage_partition).
+/* LittleFS on storage_partition: the settings file (CONFIG_SETTINGS_FILE), the certificate files and, where the
+ * Wi-Fi credentials go through the settings, those (IO-008). The mount names the flash area (PARTITION_ID). An
+ * earlier version passed the flash device, which is no flash area: the mount failed with -ENODEV on every board and
+ * none of that was ever kept.
+ * A mount that finds no file system formats the partition (CONFIG_FILE_SYSTEM_MKFS), so the NVS records of the HAL
+ * (program, RETAIN, settings keys, credentials) must be elsewhere: on zplc_nvs_partition, which the HAL takes when
+ * the board defines it. The build stops when a board would put both on the same flash.
  * Must be mounted before settings_subsys_init() when using SETTINGS_FILE.
  * Variable renamed to zplc_lfs_mount to avoid collision with lfs_mount()
  * function declared in lfs.h.
  */
-FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(qspi_lfs_data);
+#if !DT_NODE_EXISTS(DT_NODELABEL(zplc_nvs_partition))
+#error "LittleFS formats storage_partition, where the HAL keeps its NVS records on a board without zplc_nvs_partition: give the records a zplc_nvs_partition in the board overlay (IO-008)"
+#endif
+#define ZPLC_LFS_NODE DT_NODELABEL(storage_partition)
+#define ZPLC_NVS_NODE DT_NODELABEL(zplc_nvs_partition)
+BUILD_ASSERT(!DT_SAME_NODE(DT_GPARENT(ZPLC_LFS_NODE), DT_GPARENT(ZPLC_NVS_NODE)) ||
+                 DT_REG_ADDR(ZPLC_LFS_NODE) + DT_REG_SIZE(ZPLC_LFS_NODE) <= DT_REG_ADDR(ZPLC_NVS_NODE) ||
+                 DT_REG_ADDR(ZPLC_NVS_NODE) + DT_REG_SIZE(ZPLC_NVS_NODE) <= DT_REG_ADDR(ZPLC_LFS_NODE),
+             "storage_partition (LittleFS) overlaps zplc_nvs_partition (the NVS records of the HAL), IO-008");
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(zplc_lfs_data);
 static struct fs_mount_t zplc_lfs_mount = {
     .type = FS_LITTLEFS,
-    .fs_data = &qspi_lfs_data,
-    .storage_dev = (void *)PARTITION_DEVICE(storage_partition),
+    .fs_data = &zplc_lfs_data,
+    .storage_dev = (void *)PARTITION_ID(storage_partition),
     .mnt_point = "/lfs",
 };
 #endif

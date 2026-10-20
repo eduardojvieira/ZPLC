@@ -14,9 +14,13 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/ztest.h>
 #include <zplc_hal.h>
 #include <zplc_program_store.h>
+
+#include "zplc_config.h"
 
 static const char *const runtime_keys[] = {
     /* legacy program */
@@ -143,6 +147,53 @@ ZTEST(zplc_hal_persist_keys, test_the_program_chunks_and_the_device_settings_are
     zassert_equal(out, (uint8_t)(128U + index), "%s kept its own value", key);
     zassert_equal(zplc_hal_persist_delete(key), ZPLC_HAL_OK, "delete %s", key);
   }
+}
+
+/* ---- IO-008: the settings file system mounts on its own partition and the NVS records stay intact beside it ---- */
+ZTEST(zplc_hal_persist_keys, test_the_settings_file_system_and_the_records_keep_each_other) {
+  static const char probe[] = "/lfs/io008.bin";
+  struct fs_statvfs volume;
+  struct fs_dirent entry;
+  struct fs_file_t file;
+  uint8_t record[32];
+  uint8_t back[32];
+  uint8_t block[512];
+  size_t index;
+
+  for (index = 0U; index < sizeof(record); index++) {
+    record[index] = (uint8_t)(0xA5U ^ index);
+  }
+  zassert_equal(zplc_hal_persist_save("code", record, sizeof(record)), ZPLC_HAL_OK, "save before the mount");
+
+  zassert_ok(zplc_config_init(), "config init");
+  zassert_ok(fs_statvfs("/lfs", &volume), "zplc_config_init() mounts the settings file system");
+  zassert_equal((uint64_t)volume.f_frsize * volume.f_blocks, (uint64_t)PARTITION_SIZE(storage_partition),
+                "the settings file system is storage_partition");
+
+  memset(block, 0x5A, sizeof(block));
+  fs_file_t_init(&file);
+  zassert_ok(fs_open(&file, probe, FS_O_CREATE | FS_O_WRITE | FS_O_TRUNC), "open a file");
+  for (index = 0U; index < 8U; index++) {
+    zassert_equal(fs_write(&file, block, sizeof(block)), (ssize_t)sizeof(block), "write the file");
+  }
+  zassert_ok(fs_close(&file), "close the file");
+
+  memset(back, 0, sizeof(back));
+  zassert_equal(zplc_hal_persist_load("code", back, sizeof(back)), ZPLC_HAL_OK, "the record survives the file system");
+  zassert_mem_equal(back, record, sizeof(record), "and reads back unchanged");
+
+  record[0] ^= 0xFFU;
+  zassert_equal(zplc_hal_persist_save("code", record, sizeof(record)), ZPLC_HAL_OK, "a record written after the file");
+  zassert_ok(fs_stat(probe, &entry), "the file survives the record");
+  zassert_equal(entry.size, 8U * sizeof(block), "with its size");
+  fs_file_t_init(&file);
+  zassert_ok(fs_open(&file, probe, FS_O_READ), "reopen the file");
+  zassert_equal(fs_read(&file, back, sizeof(back)), (ssize_t)sizeof(back), "read the file");
+  zassert_ok(fs_close(&file), "close the file");
+  zassert_mem_equal(back, block, sizeof(back), "and its bytes");
+
+  zassert_ok(fs_unlink(probe), "remove the file");
+  zassert_equal(zplc_hal_persist_delete("code"), ZPLC_HAL_OK, "remove the record");
 }
 
 ZTEST_SUITE(zplc_hal_persist_keys, NULL, NULL, NULL, NULL, NULL);
