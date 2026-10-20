@@ -138,9 +138,9 @@ Boards must define a `storage_partition` in their DeviceTree overlay:
         #address-cells = <1>;
         #size-cells = <1>;
 
-        storage_partition: partition@1f0000 {
+        storage_partition: partition@1e0000 {
             label = "storage";
-            reg = <0x1f0000 0x10000>;  /* 64KB at end of flash */
+            reg = <0x1e0000 0x20000>;  /* 128KB at end of the 2 MB flash (Raspberry Pi Pico) */
         };
     };
 };
