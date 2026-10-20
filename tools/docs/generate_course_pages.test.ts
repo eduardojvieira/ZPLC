@@ -59,11 +59,11 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
   });
 });
 
-describe('LRN-035 the faceplate page, in both languages, linked from Learn', () => {
+describe('LRN-035 stopgap, the faceplate leg: the faceplate page, in both languages, linked from Learn (the board kit pages are still to come)', () => {
   const page = (lang: 'en' | 'es') => readFileSync(`${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/faceplate.md`, 'utf8');
   const learn = (lang: 'en' | 'es') => readFileSync(`${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/index.md`, 'utf8');
 
-  it('LRN-035 says what the faceplate lists, how each input is operated and when a change reaches the program, in the words Studio shows', () => {
+  it('LRN-035 stopgap: says what the faceplate lists, how each input is operated and when a change reaches the program, in the words Studio shows', () => {
     for (const [lang, catalog] of [['en', faceplateEn], ['es', faceplateEs]] as const) {
       // Markdown wraps lines, so the page is read with its whitespace folded.
       const text = page(lang).replace(/\s+/g, ' ');
