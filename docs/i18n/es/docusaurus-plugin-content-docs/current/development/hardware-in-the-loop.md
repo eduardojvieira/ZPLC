@@ -314,9 +314,8 @@ configuración u opciones la nombran. `--no-watchdog-build` imprime el comando
 sin la opción, y el paso del watchdog falla y dice por qué.
 
 La imagen HIL también activa la persistencia de RETAIN
-(`CONFIG_ZPLC_RETAIN_PERSIST`), que los perfiles que se distribuyen mantienen
-desactivada hasta que una placa tenga su registro de hardware, para que el paso
-de RETAIN pueda medirla. Con una imagen sin ella el paso falla y dice que la
+(`CONFIG_ZPLC_RETAIN_PERSIST`), que los perfiles que se distribuyen también
+establecen, para que el paso de RETAIN pueda medirla. Con una imagen sin ella el paso falla y dice que la
 imagen no puede conservar RETAIN. La Pico y la RP2040-Zero tienen una partición
 de almacenamiento de 128 KB, que guarda las dos ranuras de programa, los dos
 registros de RETAIN y un sector de reserva (RT-029).

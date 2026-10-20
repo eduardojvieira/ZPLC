@@ -220,7 +220,7 @@ Una falla del procesador, un desbordamiento de pila, una aserción o un kernel p
 
 ### Tras un reset el runtime espera en STOP (RT-022)
 
-Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y por defecto no lo está. Una carga detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
+Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es un comando de una persona**. El runtime nunca entra en RUN por sí solo a causa de un reset (la función `zplc_reset_may_run` vale 0 para toda causa; volver a ejecutar tras un encendido limpio de un dispositivo que una persona habilitó antes es una decisión del responsable del proyecto, D-13, y no se toma aquí). Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Una carga detiene el programa en ejecución antes de transferir un solo byte, de modo que una transferencia nunca corre junto a un programa que estaba en RUN.
 
 ### El watchdog de hardware (RT-020)
 

@@ -209,14 +209,17 @@ escenarios que lo comparan con el del host.
 
 ### Activarlo en una placa de firmware
 
-`CONFIG_ZPLC_RETAIN_PERSIST` está desactivado por defecto. La ruta de escritura está cubierta por la
-suite `retain_persist` en `native_sim` (ambos anchos de palabra) y por la aserción de desgaste en tiempo
-de compilación; ninguna placa fue medida: una escritura en flash puede detener la búsqueda de instrucciones
-en partes que ejecutan desde la misma flash. Se establece `CONFIG_ZPLC_RETAIN_PERSIST=y` en el archivo de la placa, con
-los números de resistencia de la sección siguiente, cuando esa placa haya superado su registro de hardware
-(HIL-010). Hasta entonces la región `RETAIN` se inicializa en cada arranque en el firmware y el estado no
-incluye el campo `retain`. La imagen HIL con la que se hace ese registro (`-DCONFIG_ZPLC_HIL_IMAGE=y`) lo
-activa, para que su paso de ciclo de energía pueda medirlo; nunca se distribuye.
+`CONFIG_ZPLC_RETAIN_PERSIST` está activado en el perfil de cada placa distribuida (RT-025: `RETAIN` sobrevive a un ciclo
+de energía), con los números de resistencia de la sección siguiente; la opción en sí es falsa por defecto, de modo que
+un archivo de placa propio debe establecer `CONFIG_ZPLC_RETAIN_PERSIST=y`. La ruta de escritura está cubierta por la
+suite `retain_persist` en `native_sim` (ambos anchos de palabra) y por la aserción de desgaste en tiempo de
+compilación; ninguna placa fue medida: una escritura en flash puede detener la búsqueda de instrucciones en partes que
+ejecutan desde la misma flash. La compilación falla cuando el intervalo de guardado de un perfil desgastaría su flash
+antes de `CONFIG_ZPLC_RETAIN_LIFE_YEARS`, así que la tabla siguiente se comprueba en cada compilación. Estar activado
+no es un registro de hardware: que un valor sobreviva a un ciclo de energía en una placa es lo que mide el paso de
+ciclo de energía de HIL-010, con la imagen HIL (`-DCONFIG_ZPLC_HIL_IMAGE=y`, que nunca se distribuye). La imagen
+cuesta unos 8,5 KB más de RAM en los perfiles RP2040, porque los dos registros de la región se mantienen en RAM
+mientras se escriben.
 
 ### Presupuesto de desgaste de flash por placa
 

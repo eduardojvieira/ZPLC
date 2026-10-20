@@ -219,7 +219,7 @@ A processor fault, a stack overflow, an assertion or a kernel panic does not lea
 
 ### After a reset the runtime waits in STOP (RT-022)
 
-Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**. The runtime never enters RUN on its own because of a reset (the function `zplc_reset_may_run` is 0 for every cause; running again after a clean power-on of a device a person enabled beforehand is a decision of the project owner, D-13, and is not made here). The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which is off by default. A deploy stops the running program before it transfers a byte, so that a transfer never runs beside a program that was in RUN.
+Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**. The runtime never enters RUN on its own because of a reset (the function `zplc_reset_may_run` is 0 for every cause; running again after a clean power-on of a device a person enabled beforehand is a decision of the project owner, D-13, and is not made here). The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which it is in the profile of every shipped board. A deploy stops the running program before it transfers a byte, so that a transfer never runs beside a program that was in RUN.
 
 ### The hardware watchdog (RT-020)
 

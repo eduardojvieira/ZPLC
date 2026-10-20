@@ -74,22 +74,22 @@ estado de sesión, y `zplc sched status` en una placa.
 
 ## 4. En una placa
 
-En el firmware la región retentiva se inicializa en cada arranque salvo que la
-compilación defina `CONFIG_ZPLC_RETAIN_PERSIST`. Está desactivada por defecto,
-porque la ruta de escritura se probó en `native_sim` y ninguna placa se ha medido:
-una escritura en flash puede detener la búsqueda de instrucciones en un componente
-que ejecuta código desde la misma flash, y el número de borrados por día está
-acotado por el presupuesto de flash de la placa.
+El perfil de cada placa distribuida establece `CONFIG_ZPLC_RETAIN_PERSIST=y`, de modo
+que la región retentiva se restaura tras un ciclo de energía. La ruta de escritura se
+probó en `native_sim` y ninguna placa se ha medido: una escritura en flash puede
+detener la búsqueda de instrucciones en un componente que ejecuta código desde la
+misma flash, y el número de borrados por día está acotado por el presupuesto de flash
+de la placa. Una compilación sin la opción inicializa la región en cada arranque.
 
 ```ini
-# firmware/app/boards/<board>.conf, once the board has a hardware record
+# firmware/app/boards/<board>.conf (establecida en cada placa distribuida)
 CONFIG_ZPLC_RETAIN_PERSIST=y
 ```
 
 [Persistencia y memoria retentiva](../runtime/persistence.md#presupuesto-de-desgaste-de-flash-por-placa)
-tiene el presupuesto de desgaste de cada placa. La Nucleo-H743ZI no puede montar su
-almacenamiento, por lo que su región retentiva se inicializa en cada arranque y el
-estado dice `io_error`.
+tiene el presupuesto de desgaste de cada placa. La Nucleo-H743ZI guarda sus registros
+en ZMS, que solo `native_sim` ha ejecutado; si el backend falla en una placa, la región
+se inicializa en cada arranque y el estado dice `io_error`.
 
 ## Qué está verificado y qué no
 

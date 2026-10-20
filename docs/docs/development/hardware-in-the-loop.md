@@ -285,9 +285,8 @@ a build whose configuration or options name it. `--no-watchdog-build` prints
 the plain command, and the watchdog step then fails and says why.
 
 The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`),
-which the shipped profiles keep off until a board has its hardware record, so
-that the RETAIN step can measure it. On an image without it the step fails and
-says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
+which the shipped profiles set too, so that the RETAIN step can measure it. On an
+image without it the step fails and says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
 128 KB storage partition, which holds the two program slots, the two RETAIN
 records and a spare sector (RT-029).
 
