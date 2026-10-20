@@ -6,11 +6,37 @@
  *   - led0..led3 = Status LEDs D0..D3
  *   - sw0 = User button
  *
- * This overlay adds:
- *   - Modbus RTU configuration on the RS485 port
+ * Storage (IO-008): the two stores of the firmware each have a partition of their own on the external QSPI NOR
+ * (Arduino layout of dts/vendor/arduino/partitions_qspi_h7_r3.dtsi; the part is erased in 4 KB sectors, which its
+ * driver reads from it). The HAL keeps its NVS records on zplc_nvs_partition and the settings file system of
+ * zplc_config.c (LittleFS) mounts storage_partition.
+ *   - zplc_nvs_partition, 7 MB at 0x700000: the NVS records (the two program slots, the RETAIN records, the settings
+ *     keys and the credentials). It is the area the records had as storage_partition before, so a board updated to
+ *     this layout keeps its stored program and settings, and the RETAIN wear figure of the .conf is unchanged.
+ *   - storage_partition, 1 MB at 0x600000: LittleFS, the settings file and the certificate files, which take a few
+ *     KB. It takes the place of kvs_partition, the provisioning store of the Arduino IoT Cloud library, which this
+ *     firmware does not run; the first mount formats it.
+ * The image runs from slot0_partition of the internal flash. tools/hil/check_storage_partitions.py checks this layout
+ * on every build (run.sh size); the flash of a board is HIL-010.
  */
 
 / {
 	/* The Opta has 4 status LEDs mapped to led0-led3 natively */
 };
 
+/delete-node/ &kvs_partition;
+/delete-node/ &storage_partition;
+
+&qspi_flash {
+	partitions {
+		storage_partition: partition@600000 {
+			label = "storage";
+			reg = <0x00600000 DT_SIZE_M(1)>;
+		};
+
+		zplc_nvs_partition: partition@700000 {
+			label = "zplc-nvs";
+			reg = <0x00700000 DT_SIZE_M(7)>;
+		};
+	};
+};
