@@ -1,26 +1,115 @@
 /*
- * ZPLC profile - LilyGo T-Display S3 on top of the ESP32-S3-DevKitC-1 profile
+ * ZPLC profile - LilyGo T-Display S3 (ESP32-S3R8, 16 MB flash, 8 MB octal PSRAM)
  * SPDX-License-Identifier: MIT
  *
- * The T-Display S3 carries the ESP32-S3R8 with 16 MB flash and 8 MB octal PSRAM.
- * Everything else is the ESP32-S3 profile of esp32s3_devkitc_esp32s3_procpu.overlay,
- * so this file only holds what is specific to the T-Display S3:
+ * The settings of the T-Display S3, kept apart from the ESP32-S3-DevKitC-1
+ * learner profile (IO-009). This file REPLACES the DevKitC-1 overlay
+ * (esp32s3_devkitc_esp32s3_procpu.overlay) and keeps the pin map the ESP32-S3
+ * profile had before the DevKitC-1 learner pins:
  *
- *   - the 16 MB flash (the base board DTS targets the 8 MB N8 module);
- *   - GPIO15 is the LCD power rail on this board: DO1 switches the display.
+ *   Outputs   GPIO38, GPIO15 (the LCD power rail of this board), GPIO16, GPIO17
+ *   Inputs    GPIO0 (BOOT button), GPIO18, GPIO8, GPIO9  -> switch -> GND
+ *   Analog    GPIO4 (ADC1 channel 3), 0 V to about 3.1 V
  *
- * Build with the DevKitC-1 profile and this one layered on it:
+ * Its I/O description is lilygo_tdisplay_s3.json beside this file. The Kconfig
+ * of the target (esp32s3_devkitc_esp32s3_procpu.conf, octal PSRAM) still
+ * applies. Build it with the overlay and the description in place of the
+ * DevKitC-1 ones, from the root of the repository:
  *
  *   west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine -- \
- *     -DEXTRA_DTC_OVERLAY_FILE=boards/profiles/lilygo_tdisplay_s3.overlay
+ *     -DDTC_OVERLAY_FILE=boards/profiles/lilygo_tdisplay_s3.overlay \
+ *     -DZPLC_IO_DESCRIPTION=$PWD/firmware/app/boards/profiles/lilygo_tdisplay_s3.json
  *
- * This profile is not in the board manifest and is not cross-built in CI.
+ * This profile is not in the board manifest, so CI and run.sh size do not
+ * build it, and no release image is made for it.
  */
 
+/* 16 MB flash; the base board DTS targets the 8 MB N8 module */
 &flash0 {
     reg = <0x0 DT_SIZE_M(16)>;
 };
 
-&led1 {
-    label = "ZPLC Output 1 (LCD power, GPIO15)";
+/* ESP32-S3R8: 8 MB octal PSRAM, needed for CONFIG_ESP_SPIRAM */
+&psram0 {
+    size = <DT_SIZE_M(8)>;
+};
+
+/ {
+    chosen {
+        zephyr,console = &usb_serial;
+        zephyr,shell-uart = &usb_serial;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        led0: led_0 {
+            gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;  /* GPIO38 = gpio1 pin 6 */
+            label = "ZPLC Output 0 (GPIO38)";
+        };
+
+        led1: led_1 {
+            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 1 (LCD power, GPIO15)";
+        };
+
+        led2: led_2 {
+            gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 2 (GPIO16)";
+        };
+
+        led3: led_3 {
+            gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 3 (GPIO17)";
+        };
+    };
+
+    zplc_inputs {
+        compatible = "gpio-keys";
+
+        /* The same pin as button0 of the base DTS, named here so that this file binds every channel */
+        button_boot: button_boot {
+            gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 0 (GPIO0, BOOT button)";
+            zephyr,code = <0>;
+        };
+
+        button1: button_1 {
+            gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 1 (GPIO18)";
+            zephyr,code = <1>;
+        };
+
+        button2: button_2 {
+            gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 2 (GPIO8)";
+            zephyr,code = <2>;
+        };
+
+        button3: button_3 {
+            gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 3 (GPIO9)";
+            zephyr,code = <3>;
+        };
+    };
+
+    aliases {
+        led0 = &led0;
+        led1 = &led1;
+        led2 = &led2;
+        led3 = &led3;
+        sw0 = &button_boot;
+        sw1 = &button1;
+        sw2 = &button2;
+        sw3 = &button3;
+    };
+};
+
+&usb_serial {
+    status = "okay";
+};
+
+/* ADC1 serves the analog input AI0 (GPIO4, channel 3) */
+&adc0 {
+    status = "okay";
 };

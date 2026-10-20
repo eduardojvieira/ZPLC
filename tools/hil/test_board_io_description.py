@@ -18,6 +18,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
 MANIFEST = ROOT / "firmware/app/boards/boards.json"
+TDISPLAY_PROFILE = ROOT / "firmware/app/boards/profiles/lilygo_tdisplay_s3.json"
 
 spec = importlib.util.spec_from_file_location("zplc_boards", LIBRARY)
 assert spec and spec.loader
@@ -376,6 +377,17 @@ class ManifestTests(unittest.TestCase):
     def test_the_support_level_is_not_set_by_hand(self) -> None:
         for entry in self.boards:
             self.assertNotIn("validation_level", entry, entry["board_id"])
+
+
+    def test_io_009_the_t_display_s3_settings_are_a_separate_profile_that_matches_its_overlay(self) -> None:
+        profile = json.loads(TDISPLAY_PROFILE.read_text())
+        self.assertEqual([], boards_lib.validate_io_description(profile, ROOT))
+        self.assertEqual([], boards_lib.devicetree_mismatches(profile, ROOT))
+        self.assertEqual({"firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"}, {c["source"] for c in profile["io"]["channels"]})
+        pins = {c["id"]: c["pin"].split()[0] for c in profile["io"]["channels"]}
+        self.assertEqual(("GPIO38", "GPIO15"), (pins["DO0"], pins["DO1"]))
+        devkitc = {c["pin"].split()[0] for c in self.by_id("esp32-s3-devkitc")["io"]["channels"]}
+        self.assertNotIn("GPIO38", devkitc)
 
 
 class WatchdogProfileTests(unittest.TestCase):
