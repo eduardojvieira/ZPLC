@@ -70,7 +70,7 @@ así que no los busque hoy.
   arquitectura, fijado por su SHA-256, con un solo comando completo:
 
   ```text
-  brew install --cask eduardojvieira/zplc/zplc-ide
+  brew install --cask eduardojvieira/zplc/zplc
   ```
 
   El cask quita de la aplicación instalada la marca de cuarentena de macOS
@@ -81,7 +81,7 @@ así que no los busque hoy.
   y sus pasos de arriba. Si el gestor de paquetes empieza a rechazar los cask que
   hacen esto, el cask ya no quitará la marca y valdrán los pasos del DMG.
 - **Arch Linux (todavía no activo).** Hasta que exista el paquete de AUR, no se
-  instala nada desde él. El paquete, `zplc-ide-bin`, reempaquetará el `.deb` de la
+  instala nada desde él. El paquete, `zplc-bin`, reempaquetará el `.deb` de la
   versión para `x86_64` y `aarch64`, con la suma de verificación de la versión y la
   regla udev de las placas. Se instalará con un ayudante de AUR o con `makepkg -si`,
   y solo cuando el proyecto lo cree. Sale del mismo archivo que el `.deb`, así que
@@ -123,10 +123,10 @@ antigua; desplácese hasta la versión preliminar 2.0.
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
 subieron a mano. Las versiones que hace el canal de publicación nombran los
 catorce archivos de instalación con una sola plantilla,
-`zplc-ide-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
+`zplc-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
 y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La variante es
 `setup` o `portable` en los dos archivos de Windows, y `unsigned` la sigue mientras
-esos archivos no lleven firma, por ejemplo `zplc-ide-<versión>-win-x64-setup-unsigned.exe`.
+esos archivos no lleven firma, por ejemplo `zplc-<versión>-win-x64-setup-unsigned.exe`.
 En macOS y Windows la arquitectura es `x64` o `arm64`; en Linux cada formato de
 paquete la escribe como lo hace su propia herramienta: `amd64` en el `.deb`, `x86_64`
 en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El canal comprueba
@@ -185,7 +185,7 @@ revisión de macOS sobre la aplicación, así que hágalo solo después de compr
 la suma de verificación coincide:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
+xattr -dr com.apple.quarantine "/Applications/ZPLC.app"
 ```
 
 ### Linux
@@ -288,8 +288,8 @@ actualización no las toca.
 | Windows, instalador | **Settings**, **Apps**, **Installed apps** y luego quite **ZPLC**. |
 | Windows, portable | Elimine el archivo `Portable.exe`. |
 | macOS | Arrastre **ZPLC** de Aplicaciones a la Papelera. |
-| Linux, RPM | `sudo dnf remove zplc-ide` |
-| Linux, DEB | `sudo apt remove zplc-ide` |
+| Linux, RPM | `sudo dnf remove zplc` |
+| Linux, DEB | `sudo apt remove zplc` |
 | Linux, AppImage | Elimine el archivo. |
 
 ZPLC guarda sus preferencias, los proyectos recientes, el progreso de las

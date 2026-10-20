@@ -68,7 +68,7 @@ today.
   architecture, pinned by its SHA-256, with one fully qualified command:
 
   ```text
-  brew install --cask eduardojvieira/zplc/zplc-ide
+  brew install --cask eduardojvieira/zplc/zplc
   ```
 
   The cask removes the macOS quarantine flag from the installed application
@@ -79,7 +79,7 @@ today.
   the package manager starts to reject casks that do this, the cask will no longer
   remove the flag and the steps of the DMG apply.
 - **Arch Linux (not yet live).** Until the AUR package exists, nothing installs
-  from it. The package, `zplc-ide-bin`, will repackage the `.deb` of the release
+  from it. The package, `zplc-bin`, will repackage the `.deb` of the release
   for `x86_64` and `aarch64`, with the checksum of the release and the udev rule of
   the boards. It will be installed with an AUR helper or `makepkg -si`, and only
   after the project creates it. It is built from the same file as the `.deb`, so
@@ -120,10 +120,10 @@ prerelease.
 
 The rc.3 files were built by a preview build and uploaded by hand. Releases that
 the release pipeline makes name all fourteen installer files from one template,
-`zplc-ide-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
+`zplc-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
 with no spaces (only the `AppImage` extension keeps its capitals). The variant is
 `setup` or `portable` for the two Windows files, and `unsigned` follows it while the
-Windows files carry no signature, for example `zplc-ide-<version>-win-x64-setup-unsigned.exe`.
+Windows files carry no signature, for example `zplc-<version>-win-x64-setup-unsigned.exe`.
 On macOS and Windows the architecture is `x64` or `arm64`; on Linux each package
 format spells it as its own tooling does: `amd64` for the `.deb`, `x86_64` for the
 `.rpm` and the AppImage, `aarch64` for the arm64 `.rpm`. The pipeline checks the
@@ -180,7 +180,7 @@ cause is the quarantine flag that macOS put on the download. Removing it skips
 macOS's check of the app, so do it only after the checksum matches:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
+xattr -dr com.apple.quarantine "/Applications/ZPLC.app"
 ```
 
 ### Linux
@@ -282,8 +282,8 @@ chose, so an update does not touch them.
 | Windows, setup | **Settings**, **Apps**, **Installed apps**, then remove **ZPLC**. |
 | Windows, portable | Delete the `Portable.exe` file. |
 | macOS | Drag **ZPLC** from Applications to the Trash. |
-| Linux, RPM | `sudo dnf remove zplc-ide` |
-| Linux, DEB | `sudo apt remove zplc-ide` |
+| Linux, RPM | `sudo dnf remove zplc` |
+| Linux, DEB | `sudo apt remove zplc` |
 | Linux, AppImage | Delete the file. |
 
 ZPLC keeps its preferences, recent projects, lesson progress and recovery

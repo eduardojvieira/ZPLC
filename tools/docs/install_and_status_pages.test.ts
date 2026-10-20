@@ -327,7 +327,7 @@ describe('the Homebrew cask and the AUR package are prepared and say so', () => 
 
   it('says the Homebrew cask, the quarantine flag and the single install command', () => {
     for (const [path, content] of page) {
-      expect({ path, command: content.includes('brew install --cask eduardojvieira/zplc/zplc-ide') }).toEqual({ path, command: true });
+      expect({ path, command: /brew install --cask eduardojvieira\/zplc\/zplc(?![\w-])/.test(content) }).toEqual({ path, command: true });
       expect({ path, quarantine: content.includes('com.apple.quarantine') || /cuarentena/.test(content) }).toEqual({ path, quarantine: true });
       expect({ path, d01: content.includes('D-01') }).toEqual({ path, d01: true });
     }
@@ -337,7 +337,7 @@ describe('the Homebrew cask and the AUR package are prepared and say so', () => 
     for (const [path, content] of page) {
       const section = content.slice(content.indexOf('(not live yet)') === -1 ? content.indexOf('(todavía no están activos)') : content.indexOf('(not live yet)'));
       expect({ path, says: /not live|no están activos|no existen|do not exist/.test(section) }).toEqual({ path, says: true });
-      expect({ path, aur: content.includes('zplc-ide-bin') }).toEqual({ path, aur: true });
+      expect({ path, aur: content.includes('`zplc-bin`') }).toEqual({ path, aur: true });
     }
   });
 });
