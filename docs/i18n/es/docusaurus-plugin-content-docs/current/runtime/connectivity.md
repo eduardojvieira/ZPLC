@@ -83,7 +83,7 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 ## Credenciales
 
 - Ningún comando imprime una contraseña, una clave, una clave SAS ni un certificado, y ninguna línea de log contiene alguno: `zplc config get` muestra `(set)` o `(not set)`, `zplc cert status` muestra solo presencia y tamaño, y el cliente MQTT registra códigos de error y rutas, no valores. La prueba del firmware fija un valor conocido para cada credencial y lo busca en la salida de todos los comandos que informan y en el log.
-- Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Trate la placa como si guardara el secreto, y usá en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
+- Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Trate la placa como si guardara el secreto, y use en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
 - `config set` por el enlace serial lleva el valor en claro por ese enlace; cargue las credenciales por un enlace de confianza.
 
 ## Qué puede hacer un mensaje de la red

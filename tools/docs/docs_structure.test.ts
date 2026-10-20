@@ -4,7 +4,7 @@
 // The sidebar is loaded as the site generator loads it (a module), not read as text, and the pair rules are run on
 // folders built for the test by the validator that CI runs (tools/docs/validate_docs_pages.py), so that the test fails
 // when the validator stops enforcing a rule and not when its code is rewritten.
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -13,6 +13,7 @@ import { afterAll, describe, expect, it, setDefaultTimeout } from 'bun:test';
 // Each case runs the Python validator or reads the whole site; on a loaded machine that outgrows the 5 s default, which is not what these tests measure.
 setDefaultTimeout(60_000);
 
+import { VOSEO_MARKERS } from '../ci/i18n-guard';
 import { markdownFiles } from './check_doc_claims';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
@@ -222,6 +223,31 @@ describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', ()
         if (allowed.has(word) || /(?:rá|ará|erá|irá)$/.test(word)) continue;
         found.push(`${page}: ${match[0]}`);
       }
+    }
+    expect(found).toEqual([]);
+  });
+
+  // The same deny-list of voseo forms as the application's Spanish catalogs (tools/ci/i18n-guard.ts), so that a short form
+  // the pattern above cannot see ("usá", two letters before the accent) fails too, in any file of the Spanish site:
+  // pages, partials and the translation files of the navigation. Code is not prose, so fenced blocks and code spans are left out,
+  // and so is a single word in italics: that is how a page cites a word as a word (the glossary names the register it avoids, *vos*).
+  it('DOC-015: no Spanish docs page or translation file uses a voseo form of the application deny-list', () => {
+    const files: string[] = [];
+    const walk = (directory: string) => {
+      for (const entry of readdirSync(join(ROOT, directory), { withFileTypes: true })) {
+        const path = `${directory}/${entry.name}`;
+        if (entry.isDirectory()) walk(path);
+        else if (/\.(?:mdx?|json)$/.test(entry.name)) files.push(path);
+      }
+    };
+    walk('docs/i18n/es');
+    const found: string[] = [];
+    for (const file of files) {
+      const lines = text(file).replace(/^```[\s\S]*?^```/gm, (block) => block.replace(/[^\n]/g, '')).split('\n');
+      lines.forEach((line, index) => {
+        const match = VOSEO_MARKERS.exec(line.replace(/`[^`]*`/g, '').replace(/(?<!\*)\*\p{L}+\*(?!\*)/gu, ''));
+        if (match) found.push(`${file}:${index + 1}: ${match[0]}`);
+      });
     }
     expect(found).toEqual([]);
   });
