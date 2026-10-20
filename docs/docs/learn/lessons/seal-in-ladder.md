@@ -20,7 +20,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 - Languages: LD
 - Tracks: Simulation
 - Plant: none
-- Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
+- Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 
 ## Objectives
 

@@ -8,7 +8,7 @@
       "module": 2,
       "level": "foundation",
       "prerequisites": [
-        "blinky-ladder-timer-feedback"
+        "set-reset-alarm-latch"
       ],
       "languages": [
         "ST"
@@ -363,7 +363,7 @@
       "module": 6,
       "level": "intermediate",
       "prerequisites": [
-        "pedestrian-crossing-states"
+        "motor-plant-feedback"
       ],
       "languages": [
         "ST"
@@ -1081,7 +1081,7 @@
       "module": 3,
       "level": "foundation",
       "prerequisites": [
-        "motor-start-stop-safe"
+        "timers-on-delay-off-delay"
       ],
       "languages": [
         "ST"
@@ -2473,7 +2473,7 @@
       "module": 2,
       "level": "foundation",
       "prerequisites": [
-        "boolean-logic-two-hand-guard"
+        "seal-in-ladder"
       ],
       "languages": [
         "ST"
@@ -2644,7 +2644,7 @@
       "module": 2,
       "level": "foundation",
       "prerequisites": [
-        "blinky-ladder-timer-feedback"
+        "boolean-logic-two-hand-guard"
       ],
       "languages": [
         "LD"

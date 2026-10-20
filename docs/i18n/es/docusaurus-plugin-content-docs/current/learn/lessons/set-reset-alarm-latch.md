@@ -20,7 +20,7 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 - Lenguajes: ST
 - Rutas: Simulación
 - Planta: ninguna
-- Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
+- Requisitos previos: [seal-in-ladder](./seal-in-ladder.md)
 
 ## Objetivos
 

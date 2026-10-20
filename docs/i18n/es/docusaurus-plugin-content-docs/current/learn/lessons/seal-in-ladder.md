@@ -20,7 +20,7 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 - Lenguajes: LD
 - Rutas: Simulación
 - Planta: ninguna
-- Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
+- Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 
 ## Objetivos
 

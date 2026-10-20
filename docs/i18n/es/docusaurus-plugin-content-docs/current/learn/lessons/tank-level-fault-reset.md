@@ -20,7 +20,7 @@ Recorra el control de nivel y los enclavamientos de falla y reset del ejemplo Ta
 - Lenguajes: ST
 - Rutas: Simulación
 - Planta: [`tank-v1`](../plants.md)
-- Requisitos previos: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
+- Requisitos previos: [motor-plant-feedback](./motor-plant-feedback.md)
 
 ## Objetivos
 

@@ -20,7 +20,7 @@ Walk through level control and the fault and reset latches in the Tank Level exa
 - Languages: ST
 - Tracks: Simulation
 - Plant: [`tank-v1`](../plants.md)
-- Prerequisites: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
+- Prerequisites: [motor-plant-feedback](./motor-plant-feedback.md)
 
 ## Objectives
 

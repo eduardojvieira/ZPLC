@@ -6,7 +6,7 @@
   "module": 3,
   "level": "foundation",
   "prerequisites": [
-    "motor-start-stop-safe"
+    "timers-on-delay-off-delay"
   ],
   "languages": [
     "ST"

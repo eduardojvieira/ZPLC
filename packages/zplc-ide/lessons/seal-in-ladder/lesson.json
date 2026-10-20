@@ -6,7 +6,7 @@
   "module": 2,
   "level": "foundation",
   "prerequisites": [
-    "blinky-ladder-timer-feedback"
+    "boolean-logic-two-hand-guard"
   ],
   "languages": [
     "LD"

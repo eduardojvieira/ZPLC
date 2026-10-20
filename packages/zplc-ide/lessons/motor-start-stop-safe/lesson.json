@@ -6,7 +6,7 @@
   "module": 2,
   "level": "foundation",
   "prerequisites": [
-    "blinky-ladder-timer-feedback"
+    "set-reset-alarm-latch"
   ],
   "languages": [
     "ST"

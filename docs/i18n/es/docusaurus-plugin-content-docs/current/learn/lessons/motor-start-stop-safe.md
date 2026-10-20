@@ -20,7 +20,7 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 - Lenguajes: ST
 - Rutas: Simulación
 - Planta: ninguna
-- Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
+- Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 
 ## Objetivos
 

@@ -6,7 +6,7 @@
   "module": 2,
   "level": "foundation",
   "prerequisites": [
-    "boolean-logic-two-hand-guard"
+    "seal-in-ladder"
   ],
   "languages": [
     "ST"

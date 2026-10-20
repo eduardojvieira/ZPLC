@@ -20,7 +20,7 @@ Keep a fault in memory with the SR and RS blocks and see what each one does when
 - Languages: ST
 - Tracks: Simulation
 - Plant: none
-- Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
+- Prerequisites: [seal-in-ladder](./seal-in-ladder.md)
 
 ## Objectives
 

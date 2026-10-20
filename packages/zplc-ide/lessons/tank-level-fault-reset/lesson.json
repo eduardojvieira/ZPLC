@@ -6,7 +6,7 @@
   "module": 6,
   "level": "intermediate",
   "prerequisites": [
-    "pedestrian-crossing-states"
+    "motor-plant-feedback"
   ],
   "languages": [
     "ST"

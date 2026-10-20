@@ -20,7 +20,7 @@ Use a CTU counter to count three discrete pulses and reset the count.
 - Languages: ST
 - Tracks: Simulation
 - Plant: none
-- Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
+- Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
 ## Objectives
 

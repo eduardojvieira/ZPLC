@@ -20,7 +20,7 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 - Languages: ST
 - Tracks: Simulation
 - Plant: none
-- Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
+- Prerequisites: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 
 ## Objectives
 

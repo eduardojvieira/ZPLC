@@ -20,7 +20,7 @@ Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
 - Lenguajes: ST
 - Rutas: Simulación
 - Planta: ninguna
-- Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
+- Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
 ## Objetivos
 
