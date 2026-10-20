@@ -36,6 +36,18 @@ Each module below says why it sits where it does. The Learn home of Studio shows
 Available today: **28**. Planned: **1**. In all: **29**.
 
 
+## Languages
+
+Each of the five languages is introduced by a lesson whose objective names it, and each is the language of the program you edit, and that is graded, in at least one lesson. The first blink is offered twice in module 1: in Ladder and in Structured Text. A test of the lesson packages (LRN-008) keeps this table true.
+
+| Language | Introduced by | Name |
+|---|---|---|
+| ST | `first-blink-simulation` | Structured Text |
+| LD | `blinky-ladder-timer-feedback` | Ladder |
+| FBD | `counter-batch-fbd` | Function Block Diagram |
+| SFC | `sfc-fill-mix-sequence` | Sequential Function Chart |
+| IL | `instruction-list-door-alarm` | Instruction List |
+
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
 
 Foundation. Requires module: none. Tracks: Simulation, Hardware.

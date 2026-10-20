@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
+import { getLanguageFromFilename } from '../../packages/zplc-ide/src/types';
 
 /**
  * The course outline (LRN-007) is a document, so it can drift from the lesson packages. This check ties each page of
@@ -14,8 +15,8 @@ import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
  */
 const ROOT = resolve(import.meta.dir, '../..');
 const PAGES = {
-  en: { file: 'docs/docs/learn/course-outline.md', module: 'Module', why: 'Why this order' },
-  es: { file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/course-outline.md', module: 'Módulo', why: 'Por qué este orden' },
+  en: { file: 'docs/docs/learn/course-outline.md', module: 'Module', why: 'Why this order', languages: 'Languages' },
+  es: { file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/course-outline.md', module: 'Módulo', why: 'Por qué este orden', languages: 'Lenguajes' },
 } as const;
 type Locale = keyof typeof PAGES;
 
@@ -29,9 +30,15 @@ function paragraphsUnder(markdown: string, heading: RegExp): string[] {
 }
 
 export function outlineProblems(markdown: string, locale: Locale): string[] {
-  const { module: moduleWord, why } = PAGES[locale];
+  const { module: moduleWord, why, languages } = PAGES[locale];
   const problems: string[] = [];
   if (paragraphsUnder(markdown, new RegExp(`^## ${why}$`, 'm'))[0] !== LESSON_INDEX.course.rationale[locale]) problems.push(`"${why}" is not the rationale of the course file`);
+  // LRN-008: the lesson that introduces each language is the first one, in course order, whose edited program is in it.
+  const table = paragraphsUnder(markdown, new RegExp(`^## ${languages}$`, 'm')).join('\n');
+  for (const language of ['ST', 'LD', 'FBD', 'SFC', 'IL']) {
+    const introducing = courseOrder(LESSON_INDEX).find((lesson) => getLanguageFromFilename(lesson.starter.program) === language);
+    if (!introducing || !table.includes(`| ${language} | \`${introducing.id}\` |`)) problems.push(`"${languages}" does not name ${introducing?.id ?? 'a lesson'} as the lesson that introduces ${language}`);
+  }
   for (const module of LESSON_INDEX.course.modules) {
     const heading = new RegExp(`^## ${moduleWord} ${module.id}: `, 'm');
     if (!heading.test(markdown)) { problems.push(`module ${module.id} has no heading`); continue; }

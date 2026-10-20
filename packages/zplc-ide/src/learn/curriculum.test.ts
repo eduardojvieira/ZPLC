@@ -75,3 +75,35 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     expect(course.modules[10]!.why.en).toMatch(/need everything before them/);
   });
 });
+
+/**
+ * How a lesson objective names each language, in English and in Spanish. A Spanish text may name a language by its
+ * Spanish name (the glossary of the course) or by its English name, which industrial manuals in Spanish also use.
+ */
+const NAMES: Record<string, { en: RegExp; es: RegExp }> = {
+  ST: { en: /Structured Text/, es: /texto estructurado|Structured Text/i },
+  LD: { en: /Ladder/, es: /Ladder|diagrama de escalera/i },
+  FBD: { en: /Function Block Diagram/, es: /diagrama de bloques de funci[oó]n|Function Block Diagram/i },
+  SFC: { en: /Sequential Function Chart/, es: /diagrama de funciones secuenciales|diagrama funcional de secuencias|Sequential Function Chart/i },
+  IL: { en: /Instruction List/, es: /lista de instrucciones|Instruction List/i },
+};
+
+describe('LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grades an edit in it, and offers the first blink in LD and in ST', () => {
+  for (const language of ALL) {
+    it(`LRN-008 ${language}: a graded lesson has the learner edit a program in ${language}, and the first one in course order names ${language} in an objective`, () => {
+      // The edited program is the starter file the reference scenario grades: the reference solution replaces exactly that file.
+      const editing = order.filter((lesson) => editedLanguageOf(lesson) === language);
+      expect([language, editing.length > 0]).toEqual([language, true]);
+      const introducing = editing[0]!;
+      for (const locale of ['en', 'es'] as const) {
+        const named = introducing.text[locale].objectives.some((objective) => NAMES[language]![locale].test(objective));
+        expect([introducing.id, locale, named]).toEqual([introducing.id, locale, true]);
+      }
+    });
+  }
+
+  it('LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits', () => {
+    const blinks = order.filter((lesson) => lesson.module === 1 && lesson.id !== 'scan-cycle-one-scan-memory');
+    expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([['blinky-ladder-timer-feedback', 'LD'], ['blink-structured-text', 'ST']]);
+  });
+});

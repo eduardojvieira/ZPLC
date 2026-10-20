@@ -36,6 +36,18 @@ Cada módulo indica a continuación por qué está donde está. La página de in
 Disponibles hoy: **28**. Planeadas: **1**. En total: **29**.
 
 
+## Lenguajes
+
+Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nombra, y cada uno es el lenguaje del programa que usted edita, y que se califica, en al menos una lección. El primer parpadeo se ofrece dos veces en el módulo 1: en diagrama de escalera (Ladder) y en texto estructurado. Una prueba de los paquetes de lecciones (LRN-008) mantiene esta tabla al día.
+
+| Lenguaje | Se presenta en | Nombre |
+|---|---|---|
+| ST | `first-blink-simulation` | texto estructurado |
+| LD | `blinky-ladder-timer-feedback` | diagrama de escalera (Ladder) |
+| FBD | `counter-batch-fbd` | diagrama de bloques de función |
+| SFC | `sfc-fill-mix-sequence` | diagrama de funciones secuenciales |
+| IL | `instruction-list-door-alarm` | lista de instrucciones |
+
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
 
 Fundamentos. Requiere el módulo: ninguno. Pistas: Simulación, Hardware.
