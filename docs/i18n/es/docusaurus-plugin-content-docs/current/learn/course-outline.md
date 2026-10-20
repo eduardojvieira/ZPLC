@@ -275,4 +275,4 @@ Objetivos de las lecciones disponibles:
 
 ## Páginas de cableado por placa
 
-Cuando exista la ruta Hardware, cada placa compatible tendrá una página de cableado a la que apuntan todas las lecciones de la ruta. Las páginas se planean junto con la verificación de placa del módulo 0; todavía no hay ninguna escrita.
+Cada placa del estudiante tiene una página de kit con su mapa de pines, la lista de materiales, el firmware y el límite de tensión: la [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) y la [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Cada lección de la ruta Hardware tiene una página de cableado para cada placa, con un diagrama y una tarjeta de cableado, enlazada desde la página del kit y desde la página de la lección. Las páginas se generan a partir de `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` y el archivo de cableado de cada lección; la página [kits del estudiante](../reference/learner-kits/index.md) explica cómo una lección declara su cableado. Todavía no se ha registrado ninguna ejecución en hardware en una placa.
