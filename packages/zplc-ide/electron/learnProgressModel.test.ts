@@ -65,7 +65,8 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
       { ...lesson, hardware: { ...failed(), track: 'hardware' } },
       { ...lesson, hardware: hardware({ lessonId: 'edge-counter-pulses' }) },
     ]) expect(parseProgress(JSON.stringify({ ...document, lessons: { [ID]: broken } }))).toBeUndefined();
-    const { hardware: _dropped, ...withoutHardware } = lesson;
+    const withoutHardware = { ...lesson };
+    delete withoutHardware.hardware;
     expect(parseProgress(JSON.stringify({ ...document, lessons: { [ID]: withoutHardware } }))).toBeUndefined();
   });
 
