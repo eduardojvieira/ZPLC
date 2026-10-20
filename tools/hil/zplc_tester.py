@@ -242,34 +242,30 @@ class ZPLCTester:
         self.send("zplc stop")
         self.send("zplc reset")
 
+        self._upload_command(f"zplc load {len(bytecode)}", "zplc load failed")
+        hex_data = binascii.hexlify(bytearray(bytecode)).decode()
+        chunk_size = 32  # 16 bytes a command, the size the shell line buffer takes
+        for at in range(0, len(hex_data), chunk_size):
+            self._upload_command(f"zplc data {hex_data[at : at + chunk_size]}", f"zplc data failed at byte {at // 2}")
+            self.settle(0.05)
+        self.send("")
+
+    def _upload_command(self, command: str, failure: str) -> None:
+        """Send one command of an upload. Only an answer that never came is asked again: an `ERROR:` is the device's
+        verdict (a refused program ends the load, so a chunk sent again only hears "Not in loading state")."""
         response = ""
         for attempt in range(3):
             while self.ser.in_waiting:
                 self.ser.read(self.ser.in_waiting)
-            response = self.send(f"zplc load {len(bytecode)}", wait_for="OK:", timeout=5.0)
+            response = self.send(command, timeout=5.0)
             if "OK:" in response:
-                break
-            print(f"WARN: zplc load retry {attempt + 1}")
+                return
+            refusal = next((line.strip() for line in response.splitlines() if "ERROR:" in line), None)
+            if refusal is not None:
+                raise UploadError(f"{failure}: the device refused it: {refusal}")
+            print(f"WARN: {command.split()[1]} retry {attempt + 1}")
             self.settle(0.5)
-        else:
-            raise UploadError(f"zplc load failed: {response.strip()}")
-
-        hex_data = binascii.hexlify(bytearray(bytecode)).decode()
-        chunk_size = 32  # 16 bytes a command, the size the shell line buffer takes
-        for at in range(0, len(hex_data), chunk_size):
-            chunk = hex_data[at : at + chunk_size]
-            for attempt in range(3):
-                while self.ser.in_waiting:
-                    self.ser.read(self.ser.in_waiting)
-                response = self.send(f"zplc data {chunk}", wait_for="OK:", timeout=5.0)
-                if "OK:" in response:
-                    break
-                print(f"WARN: chunk {at} retry {attempt + 1}")
-                self.settle(0.5)
-            else:
-                raise UploadError(f"zplc data failed at byte {at // 2}: {response.strip()}")
-            self.settle(0.05)
-        self.send("")
+        raise UploadError(f"{failure}: {response.strip()}")
 
     # observation --------------------------------------------------------------------------------------
     def start_and_capture(self, duration=1.0):

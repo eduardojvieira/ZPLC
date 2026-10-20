@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hil_devices import ShellDevice  # noqa: E402
-from zplc_tester import PROMPT, ZPLCTester  # noqa: E402
+from zplc_tester import PROMPT, UploadError, ZPLCTester  # noqa: E402
 
 NVS = "[00:00:01.100,000] <inf> fs_nvs: 8 Sectors of 4096 bytes"
 DROPPED = "--- 3 messages dropped ---"
@@ -84,6 +84,57 @@ class TesterAndLogLines(unittest.TestCase):
     def test_a_read_between_log_lines(self):
         self.tester.send("zplc status --json")
         self.assertEqual(self.tester.peek(0x1000, 1), [0x0F])
+
+
+class RefusingLoader(ShellDevice):
+    """A loader that refuses what it was sent, as the ESP32-S3 refused a program for 8 KB of work memory: the refusal
+    ends the load, and every chunk after it is answered with "Not in loading state"."""
+
+    def __init__(self, refuse_load=False):
+        super().__init__()
+        self.refuse_load, self.loading, self.expected, self.received, self.sent = refuse_load, False, 0, 0, []
+
+    def handle(self, line):
+        self.sent.append(line)
+        words = line.split()
+        if words[:2] == ["zplc", "load"]:
+            if self.refuse_load:
+                return "ERROR: Runtime faulted; use 'zplc reset' before loading\r\n"
+            self.loading, self.expected, self.received = True, int(words[2]), 0
+            return f"OK: Ready to receive {self.expected} bytes\r\n"
+        if words[:2] == ["zplc", "data"]:
+            if not self.loading:
+                return "ERROR: Not in loading state (use 'zplc sched load' first)\r\n"
+            self.received += len(words[2]) // 2
+            if self.received < self.expected:
+                return f"OK: Received {len(words[2]) // 2} bytes ({self.received}/{self.expected})\r\n"
+            self.loading = False
+            return "ERROR: Program validation failed (-13)\r\n"
+        return "OK: done\r\n"
+
+
+class UploadRefusal(unittest.TestCase):
+    """A refusal is the device's verdict on the program: sending the chunk again only hides it (the emulated ESP32-S3
+    record said "Not in loading state" where the loader had said ZPLC_LOADER_ERR_MEMORY)."""
+
+    def test_a_refused_program_raises_with_the_devices_text_and_is_not_sent_again(self):
+        board = RefusingLoader()
+        tester = ZPLCTester(transport=board)
+        tester.settle_scale = 0
+        with self.assertRaises(UploadError) as raised:
+            tester.upload_bytecode(list(range(40)))
+        self.assertIn("Program validation failed (-13)", str(raised.exception))
+        self.assertNotIn("Not in loading state", str(raised.exception))
+        self.assertEqual(sum(line.startswith("zplc data") for line in board.sent), 3, "three chunks, the last one once")
+
+    def test_a_refused_load_is_not_asked_again(self):
+        board = RefusingLoader(refuse_load=True)
+        tester = ZPLCTester(transport=board)
+        tester.settle_scale = 0
+        with self.assertRaises(UploadError) as raised:
+            tester.upload_bytecode(list(range(8)))
+        self.assertIn("Runtime faulted", str(raised.exception))
+        self.assertEqual(sum(line.startswith("zplc load") for line in board.sent), 1)
 
 
 class EvidenceHint(unittest.TestCase):
