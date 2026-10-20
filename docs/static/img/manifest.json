@@ -61,7 +61,7 @@
       "bytes": 128418,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/st-es.png",
@@ -70,7 +70,7 @@
       "bytes": 147386,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/il-en.png",
@@ -79,7 +79,7 @@
       "bytes": 130470,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/il-es.png",
@@ -88,7 +88,7 @@
       "bytes": 153178,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/ld-en.png",
@@ -97,7 +97,7 @@
       "bytes": 127351,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/ld-es.png",
@@ -106,7 +106,7 @@
       "bytes": 141301,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/fbd-en.png",
@@ -115,7 +115,7 @@
       "bytes": 113480,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/fbd-es.png",
@@ -124,7 +124,7 @@
       "bytes": 120219,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/sfc-en.png",
@@ -133,7 +133,7 @@
       "bytes": 109760,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     },
     {
       "file": "editors/sfc-es.png",
@@ -142,7 +142,7 @@
       "bytes": 119529,
       "width": 1366,
       "height": 768,
-      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+      "commit": "c679cf14024d80b91d4c5dd64372e5ebd4977034"
     }
   ]
 }

@@ -174,9 +174,17 @@ async function main(): Promise<void> {
           if (attempt === 3) throw new Error(`${String(error)}${cdp.errors.length ? `; ${cdp.errors.slice(0, 2).join(' | ')}` : ''}`);
         }
       }
-      const shot = await cdp.command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }) as { data?: string };
-      assert(typeof shot.data === 'string' && shot.data.length > 0, `no screenshot for ${example.language} in ${locale}`);
-      writeFileSync(join(folder, `${example.language}-${locale}.png`), Buffer.from(shot.data, 'base64'));
+      // Under load an animation (the fit-view of a diagram, a theme transition) can still be running: take the picture when two
+      // consecutive ones are the same.
+      let previous = '';
+      let data = '';
+      for (let attempt = 0; attempt < 30 && data !== previous || attempt === 0; attempt++) {
+        previous = data;
+        await Bun.sleep(400);
+        data = ((await cdp.command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })) as { data?: string }).data ?? '';
+      }
+      assert(data.length > 0 && data === previous, `the window of ${example.language} in ${locale} did not settle`);
+      writeFileSync(join(folder, `${example.language}-${locale}.png`), Buffer.from(data, 'base64'));
     }
   } finally {
     cdp?.close();
