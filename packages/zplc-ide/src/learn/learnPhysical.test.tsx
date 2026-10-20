@@ -21,6 +21,9 @@ const { useIDEStore } = await import('../store/useIDEStore');
 const { openLearnHome, useLearnUi } = await import('./learnUi');
 const { useLearnProgress } = await import('./progressState');
 const { useLessonCheck } = await import('./useLessonCheck');
+const { boardSessionOf } = await import('../runtime/boardSession');
+const { runBoardCheck } = await import('./boardCheck');
+const { chooseLearnerBoard } = await import('../components/learnBoardWords');
 
 const LESSON = LESSON_INDEX.lessons[0]!.id;
 const PHYSICAL = ['connect', 'disconnect', 'start', 'stop', 'reset', 'sendRaw', 'enablePassthrough', 'triggerNetworkBringUp', 'setModbusAddress', 'clearModbusAddress'] as const;
@@ -101,6 +104,16 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
     const recorded = await recordHardwareTrace(session, [{ name: 'Lamp', address: 0x1000, bitOffset: 0, type: 'BOOL', forceable: false }], { durationMs: 100, intervalMs: 50, now: () => now, wait: async (ms) => { now += ms; } });
     expect(recorded.ok).toBe(true);
     evaluateHardwareTrace({ schemaVersion: 1, id: 'S', tickMs: 50, durationMs: 100, events: [], expectations: [{ kind: 'ALWAYS', condition: { Lamp: false } }] }, recorded.trace, { timeMs: 200, analogPercent: 5 }, 'c'.repeat(64));
+    // The lesson on the board: its board picker, the read-only view of the session, and a whole check on the board.
+    chooseLearnerBoard('esp32-s3-devkitc', ((key: string) => key) as never);
+    expect(boardSessionOf()).toBeNull();
+    let clock = 0;
+    const checked = await runBoardCheck({
+      lessonId: LESSON, lessonVersion: 1, scenario: { schemaVersion: 1, id: 'S', tickMs: 50, durationMs: 300, events: [], expectations: [{ kind: 'ALWAYS', condition: { Lamp: false } }] },
+      scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 130, analogPercent: 5 }, debugMap: { pou: {} } as never, view: { session, boardId: 'esp32-s3-devkitc', runtimeVersion: '2.0.0' },
+      variables: [{ name: 'Lamp', address: 0x1000, bitOffset: 0, type: 'BOOL', forceable: false }], now: () => clock, wait: async (ms) => { clock += ms; }, time: () => new Date('2026-10-20T10:00:00.000Z'),
+    });
+    expect(checked.kind).toBe('graded');
 
     // The check reached the lesson check of the bridge, so the controls above were really driven.
     expect(bridgeCalls).toContain('workspaceTests.lessonCheck');

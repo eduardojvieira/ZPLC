@@ -60,9 +60,9 @@ describe('what the check asks the learner to do (LRN-013)', () => {
   it('LRN-013 turns each input event of the scenario into a step on the part and channel the wiring names', () => {
     const steps = boardCheckSteps(SCENARIO, DEBUG_MAP, learnerBoardOf('rpi-pico-rp2040')!, WIRING, 'en');
     expect(steps).toEqual([
-      { atMs: 0, signals: [{ signal: 'VerifyBoard.Button', value: false, channel: 'DI0', part: 'Test button' }] },
-      { atMs: 200, signals: [{ signal: 'VerifyBoard.Button', value: true, channel: 'DI0', part: 'Test button' }] },
-      { atMs: 400, signals: [{ signal: 'VerifyBoard.Button', value: false, channel: 'DI0', part: 'Test button' }] },
+      { atMs: 0, signals: [{ signal: 'VerifyBoard.Button', value: false, channel: 'DI0', part: 'Test button', kind: 'button' }] },
+      { atMs: 200, signals: [{ signal: 'VerifyBoard.Button', value: true, channel: 'DI0', part: 'Test button', kind: 'button' }] },
+      { atMs: 400, signals: [{ signal: 'VerifyBoard.Button', value: false, channel: 'DI0', part: 'Test button', kind: 'button' }] },
     ]);
     expect(boardCheckSteps(SCENARIO, DEBUG_MAP, learnerBoardOf('rpi-pico-rp2040')!, WIRING, 'es')[1]!.signals[0]!.part).toBe('Pulsador de prueba');
   });

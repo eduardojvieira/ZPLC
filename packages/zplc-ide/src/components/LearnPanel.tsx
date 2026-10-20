@@ -16,6 +16,7 @@ import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
 import { announce } from '../utils/announce';
 import { AlertDialog, Button, ToggleGroup } from '../ui';
+import { LearnBoardLesson } from './LearnBoardLesson';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const { t, tn } = useT();
@@ -201,6 +202,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             : <Button variant="secondary" size="sm" className="mt-2" data-learn-show-solution onClick={() => setConfirm('solution')}>{t('learn.showTheReferenceSolution')}</Button>}
         </section>
 
+        <LearnBoardLesson lessonId={lesson.id} />
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
             {workspaceOpen

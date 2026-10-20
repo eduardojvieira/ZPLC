@@ -61,7 +61,7 @@ export function lessonWatchVariables(scenario: ScenarioFile, debugMap: DebugMap)
   return { variables, missing };
 }
 
-export interface BoardCheckSignal { signal: string; value: boolean; channel: string | null; part: string | null }
+export interface BoardCheckSignal { signal: string; value: boolean; channel: string | null; part: string | null; kind: string | null }
 export interface BoardCheckStep { atMs: number; signals: BoardCheckSignal[] }
 
 /** The IEC address of a BOOL of the process image, as the board I/O description writes its channels. */
@@ -82,7 +82,7 @@ export function boardCheckSteps(scenario: ScenarioFile, debugMap: DebugMap, boar
       const address = addressOf(debugMap, signal);
       const channel = board.io.channels.find((candidate) => candidate.address === address)?.id ?? null;
       const part = channel === null ? undefined : parts.find((candidate) => candidate.channel === channel);
-      return { signal, value, channel, part: part ? part.label[locale] : null };
+      return { signal, value, channel, part: part ? part.label[locale] : null, kind: part ? part.kind : null };
     }),
   }));
 }

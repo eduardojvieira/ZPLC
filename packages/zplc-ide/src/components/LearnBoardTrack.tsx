@@ -5,14 +5,26 @@
  */
 import type { ReactNode } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { useT, type MessageKey } from '../i18n';
+import { useT } from '../i18n';
 import { buildCourseView } from '../learn/course';
 import { LEARNER_BOARDS, isLearnerBoard, useLearnBoard, type LearnerBoard } from '../learn/learnBoard';
 import { useLearnProgress } from '../learn/progressState';
 import { ToggleGroup } from '../ui';
-import { announce } from '../utils/announce';
+import { BOARD_LABEL, chooseLearnerBoard } from './learnBoardWords';
 
-const BOARD_LABEL: Record<LearnerBoard, MessageKey> = { 'rpi-pico-rp2040': 'learn.hardware.board.pico', 'esp32-s3-devkitc': 'learn.hardware.board.esp32s3' };
+/** The two learner boards as one group of the kit (LRN-013): keyboard operable, the chosen one pressed. */
+export function LearnBoardPicker({ board, onChoose, className }: { board: LearnerBoard | null; onChoose(board: LearnerBoard): void; className?: string }) {
+  const { t } = useT();
+  return (
+    <ToggleGroup
+      label={t('learn.hardware.board')}
+      className={className}
+      value={board ?? ''}
+      onValueChange={(value) => { if (isLearnerBoard(value)) onChoose(value); }}
+      options={LEARNER_BOARDS.map((id) => ({ value: id, label: t(BOARD_LABEL[id]) }))}
+    />
+  );
+}
 
 export interface LearnBoardTrackViewProps {
   board: LearnerBoard | null;
@@ -31,13 +43,7 @@ export function LearnBoardTrackView({ board, passedOnHardware, onChoose, childre
         <div className="mx-auto max-w-4xl">
           <h2 id="learn-hardware-title" className="font-semibold text-[var(--color-surface-100)]">{t('learn.hardware.title')}</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--color-surface-300)]">{t('learn.hardware.intro')}</p>
-          <ToggleGroup
-            label={t('learn.hardware.board')}
-            className="mt-2 flex-wrap"
-            value={board ?? ''}
-            onValueChange={(value) => { if (isLearnerBoard(value)) onChoose(value); }}
-            options={LEARNER_BOARDS.map((id) => ({ value: id, label: t(BOARD_LABEL[id]) }))}
-          />
+          <LearnBoardPicker board={board} onChoose={onChoose} className="mt-2 flex-wrap" />
           <p data-learn-hardware-board className="mt-2 text-xs leading-5 text-[var(--color-surface-300)]">{board ? t('learn.hardware.board.chosen', { board: t(BOARD_LABEL[board]) }) : t('learn.hardware.board.none')}</p>
           <p data-learn-hardware-passed className="mt-1 text-xs leading-5 text-[var(--color-surface-300)]">{passedOnHardware.length > 0 ? t('learn.hardware.passedList', { lessons: passedOnHardware.join(', ') }) : t('learn.hardware.passedNone')}</p>
         </div>
@@ -53,9 +59,5 @@ export function LearnBoardTrack({ children }: { children: ReactNode }) {
   const document = useLearnProgress((state) => state.document);
   const { titles } = buildCourseView(LESSON_INDEX, document, { locale, unlockAll: false });
   const passedOnHardware = Object.keys(document?.lessons ?? {}).sort().filter((id) => document!.lessons[id]!.hardware !== null && titles[id] !== undefined).map((id) => titles[id]!);
-  const choose = (chosen: LearnerBoard): void => {
-    useLearnBoard.getState().choose(chosen);
-    announce(t('learn.hardware.board.chosen', { board: t(BOARD_LABEL[chosen]) }));
-  };
-  return <LearnBoardTrackView board={board} passedOnHardware={passedOnHardware} onChoose={choose}>{children}</LearnBoardTrackView>;
+  return <LearnBoardTrackView board={board} passedOnHardware={passedOnHardware} onChoose={(chosen) => chooseLearnerBoard(chosen, t)}>{children}</LearnBoardTrackView>;
 }
