@@ -1,20 +1,20 @@
-<p align="center"><img src="tools/brand/mark.svg" alt="ZPLC mark: a ladder rung with a contact and a coil" width="96" height="96"></p>
+<p align="center"><img src="tools/brand/mark.svg" alt="ZPLC mark" width="96" height="96"></p>
 
 # ZPLC
 
-**An open-source IEC 61131-3 PLC runtime and desktop IDE.**
+**Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.**
 
 ZPLC compiles Structured Text, Ladder Diagram, Function Block Diagram,
 Sequential Function Chart and Instruction List to one bytecode format. A small
 C99 runtime executes it: on microcontroller boards as a Zephyr module, and on
-your computer as a simulator. ZPLC Studio, the desktop app, edits, compiles,
+your computer as a simulator. The ZPLC desktop application edits, compiles,
 tests and simulates projects.
 
 > **Status:** 2.0.0-rc.3 is a preview for evaluation. Seven boards cross-build in
 > CI and none has been tested on hardware yet. It is not a safety PLC and must
 > not be used to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
 
-[Download ZPLC Studio](https://github.com/eduardojvieira/ZPLC/releases) ·
+[Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
 [Getting started](docs/docs/getting-started/index.md) ·
 [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
 
@@ -27,7 +27,7 @@ tests and simulates projects.
 
 Installers are files of a [GitHub release](https://github.com/eduardojvieira/ZPLC/releases),
 the only channel that exists today. Check the file against `SHA256SUMS`, then open it
-([Install ZPLC Studio](docs/docs/getting-started/install.md)):
+([Install ZPLC](docs/docs/getting-started/install.md)):
 
 - **Windows:** the `setup-unsigned.exe` installer. It is unsigned: choose **More info**,
   then **Run anyway** when SmartScreen warns; Smart App Control blocks it outright.
@@ -38,25 +38,25 @@ the only channel that exists today. Check the file against `SHA256SUMS`, then op
 
 ## What you can do today
 
-- Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in Studio.
+- Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in ZPLC.
 - Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
-- Test them with scenarios: scripted inputs and timed checks on outputs, run from Studio's Tests tab.
-- Start from one of 21 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on Studio's Welcome screen.
+- Test them with scenarios: scripted inputs and timed checks on outputs, run from the Tests tab.
+- Start from one of 21 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
 - Build the runtime for seven Zephyr boards.
 
 ## What it runs on
 
 | Part | Runs on |
 | --- | --- |
-| Studio | Windows, macOS and Linux. The rc.3 installers are unsigned. |
-| Simulator | Your computer, as a host build of the same C runtime. Studio bundles it. |
+| Desktop application | Windows, macOS and Linux. The rc.3 installers are unsigned. |
+| Simulator | Your computer, as a host build of the same C runtime. The desktop application bundles it. |
 | Boards | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI, Arduino Opta WiFi and Waveshare RP2040-Zero. All seven cross-build only: the firmware builds in CI and has not been run on a board ([Hardware support](docs/docs/reference/capabilities-evidence.md)). |
 
 ## Try it
 
-1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) and check it: [Install ZPLC Studio](docs/docs/getting-started/install.md).
+1. Download the installer for your system from [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) and check it: [Install ZPLC](docs/docs/getting-started/install.md).
 2. Open it. Windows and macOS warn about unsigned apps; the install page shows how to continue.
-3. In Studio, copy the **Blinky (Structured Text)** example, compile it, choose **Simulate**, press **Connect** and then **Run**. The tutorial [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md) walks through it, ending in a passing scenario test.
+3. In ZPLC, copy the **Blinky (Structured Text)** example, compile it, choose **Simulate**, press **Connect** and then **Run**. The tutorial [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md) walks through it, ending in a passing scenario test.
 
 ## How it compares
 
@@ -65,7 +65,7 @@ what each project says about itself; we did not install or test the others.
 
 | Project | Licence and cost | Languages | Where it runs |
 | --- | --- | --- | --- |
-| ZPLC | MIT ([LICENSE](LICENSE)) | ST, IL, LD, FBD, SFC | Studio on Windows, macOS, Linux. Runtime on seven Zephyr boards (cross-build only) and as a host simulator. |
+| ZPLC | MIT ([LICENSE](LICENSE)) | ST, IL, LD, FBD, SFC | Desktop application on Windows, macOS, Linux. Runtime on seven Zephyr boards (cross-build only) and as a host simulator. |
 | [OpenPLC](https://github.com/Autonomy-Logic/openplc-runtime) (Editor and Runtime v4) | [Editor](https://github.com/Autonomy-Logic/openplc-editor): GPL-3.0. Runtime: MIT. The v3 runtime repository is [marked end of life](https://github.com/thiagoralves/OpenPLC_v3). | Ladder, Structured Text, Function Block Diagram and other IEC 61131-3 languages | Editor: desktop app for macOS, Windows and Linux. Runtime: Linux on x86_64, ARM64 and ARMv7, or Docker. |
 | [Beremiz](https://github.com/beremiz/beremiz) | IDE: GPL v2 or later. Python runtime: LGPL v2 or later. C++ runtime: GPL v3 or later. | LD, FBD, SFC, IL, ST ([Beremiz](https://beremiz.org/)) | Compiles PLC programs to C and then to native code, for a bare-metal microcontroller, an industrial controller or a Linux PC. IDE: Windows installer and Linux Snap package. |
 | [CODESYS](https://store.codesys.com/en/codesys.html) | [Development System: free of charge in the CODESYS Store](https://store.codesys.com/en/engineering/ide.html); a licence agreement applies. | FBD, LD, IL, ST, SFC editors (IL is no longer maintained but can be enabled) | Integrated compilers for many CPU platforms. A web-based CODESYS 4 is available for Windows x64, Linux x64 and Linux ARM64. |
@@ -84,7 +84,7 @@ language references, is on the **[documentation site](https://eduardojvieira.git
 - [System architecture](https://eduardojvieira.github.io/ZPLC/docs/architecture)
 - [Runtime and hardware abstraction layer (HAL)](https://eduardojvieira.github.io/ZPLC/docs/runtime)
 - [Languages and Structured Text reference](https://eduardojvieira.github.io/ZPLC/docs/languages)
-- [Studio](https://eduardojvieira.github.io/ZPLC/docs/ide)
+- [Desktop application](https://eduardojvieira.github.io/ZPLC/docs/ide)
 - [Integration and deployment](https://eduardojvieira.github.io/ZPLC/docs/integration)
 - [Release notes](docs/docs/release-notes/index.md)
 
@@ -92,10 +92,10 @@ language references, is on the **[documentation site](https://eduardojvieira.git
 
 ## Build from source
 
-### Studio (Linux and macOS)
+### Desktop application (Linux and macOS)
 
-You need Bun 1.3.14, CMake and a C compiler. Studio's simulator is a separate
-program: build it first and point Studio to it.
+You need Bun 1.3.14, CMake and a C compiler. The simulator of the desktop
+application is a separate program: build it first and point the application to it.
 
 ```bash
 cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
@@ -142,7 +142,7 @@ a separate step that a person does with the board's own Zephyr procedure.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Development Host (Studio)                 │
+│                    Development Host (ZPLC)                   │
 │  ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────────┐ │
 │  │ ST/LD/  │───▶│ Compiler │───▶│ Linker │───▶│  .zplc   │ │
 │  │ FBD/SFC │    │          │    │        │    │ bytecode │ │
@@ -189,7 +189,7 @@ ZPLC/
 │   └── zephyr/                    # Kconfig and module.yml
 ├── packages/                      # Monorepo packages
 │   ├── zplc-compiler/             # Compiler & code generator
-│   ├── zplc-ide/                  # Studio (React + Electron)
+│   ├── zplc-ide/                  # Desktop application (React + Electron)
 │   └── zplc-hil/                  # Hardware-in-the-loop test runner
 ├── docs/                          # Documentation (Docusaurus)
 └── AGENTS.md                      # Guide for AI-assisted contributions

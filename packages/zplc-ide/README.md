@@ -1,6 +1,8 @@
-# ZPLC Studio 2.0
+# ZPLC
 
-ZPLC Studio is the Electron desktop workbench for folder-backed PLC projects.
+Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.
+
+This package is the ZPLC desktop application: the Electron workbench for folder-backed PLC projects.
 It shares compiler, test, simulation, evidence, and restricted-tool contracts
 with the CLI and local MCP adapter.
 
@@ -28,7 +30,7 @@ bun run build
 
 ## Boundaries
 
-Examples are copied to a folder selected by the user; Studio does not keep a
+Examples are copied to a folder selected by the user; ZPLC does not keep a
 temporary project mode. AI and MCP cannot flash, deploy to hardware, force values,
 change RUN/STOP, recover devices, open raw serial, or invoke a shell.
 
