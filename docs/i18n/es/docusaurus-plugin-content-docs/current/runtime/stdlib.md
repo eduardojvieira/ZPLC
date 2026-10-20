@@ -313,7 +313,7 @@ La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFEC
 La tabla se genera a partir de los casos de conformidad que esperan el comportamiento de IEC 61131-3 y fallan hoy (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`. Una fila desaparece cuando pasa el último caso de su requisito.
 
 {/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
-Ningún caso de conformidad de esta área figura en la lista de fallos esperados: no hay un límite registrado.
+Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
 {/* <<< END GENERATED: known-limits-library <<< */}
 
 Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/` (requisito CMP-058).

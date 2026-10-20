@@ -170,7 +170,7 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
 
 const PAGE_INTRO: L10n = {
   en: 'The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known failures. CI runs the whole suite on every change. {counts}',
-  es: 'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallos conocidos. CI ejecuta toda la batería en cada cambio. {counts}',
+  es: 'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. {counts}',
 };
 
 const HEADINGS: Record<string, L10n> = {
@@ -274,8 +274,8 @@ function evidenceCell(fact: RowFacts, lang: Lang): string {
 
 const NOT_SUPPORTED_NOTE: Record<State, L10n> = {
   works: { en: '', es: '' },
-  partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
-  broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallos conocidos.' },
+  partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
+  broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
   unverified: { en: 'No conformance case that runs covers it yet, so nothing is claimed about its behaviour.', es: 'Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento.' },
   rejected: { en: 'Not supported: the build refuses it with a message that names the position.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición.' },
   decision: { en: 'Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta.' },

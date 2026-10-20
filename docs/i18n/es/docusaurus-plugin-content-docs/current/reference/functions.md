@@ -31,7 +31,7 @@ Result := MAX(3, 7);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `7`.
+Resultado tras un ciclo: `Result` = `7`.
 
 ### MIN
 
@@ -49,7 +49,7 @@ Result := MIN(3, 7);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3`.
+Resultado tras un ciclo: `Result` = `3`.
 
 ### LIMIT
 
@@ -67,7 +67,7 @@ Result := LIMIT(0, 15, 10);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `10`.
+Resultado tras un ciclo: `Result` = `10`.
 
 ### SEL
 
@@ -86,7 +86,7 @@ Result := SEL(Choice, 10, 20);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `20`.
+Resultado tras un ciclo: `Result` = `20`.
 
 ### MUX
 
@@ -104,7 +104,7 @@ Result := MUX(2, 10, 20, 30);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `30`.
+Resultado tras un ciclo: `Result` = `30`.
 
 ## Lógica
 
@@ -124,7 +124,7 @@ Result := NAND(TRUE, TRUE);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `FALSE`.
+Resultado tras un ciclo: `Result` = `FALSE`.
 
 ### NOR
 
@@ -142,7 +142,7 @@ Result := NOR(FALSE, FALSE);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `TRUE`.
+Resultado tras un ciclo: `Result` = `TRUE`.
 
 ## Desplazamientos y lógica de bits
 
@@ -163,7 +163,7 @@ Result := ROL(Value, 1);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3`.
+Resultado tras un ciclo: `Result` = `3`.
 
 ### ROR
 
@@ -181,7 +181,7 @@ Result := ROR(16#00000003, 1);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `2147483649`.
+Resultado tras un ciclo: `Result` = `2147483649`.
 
 ### SHL
 
@@ -199,7 +199,7 @@ Result := SHL(16#0001, 4);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `16`.
+Resultado tras un ciclo: `Result` = `16`.
 
 ### SHR
 
@@ -217,7 +217,7 @@ Result := SHR(16#0010, 4);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1`.
+Resultado tras un ciclo: `Result` = `1`.
 
 ### AND_WORD
 
@@ -235,7 +235,7 @@ Result := AND_WORD(16#FF0F, 16#0FF0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3840`.
+Resultado tras un ciclo: `Result` = `3840`.
 
 ### OR_WORD
 
@@ -253,7 +253,7 @@ Result := OR_WORD(16#F000, 16#000F);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `61455`.
+Resultado tras un ciclo: `Result` = `61455`.
 
 ### XOR_WORD
 
@@ -271,7 +271,7 @@ Result := XOR_WORD(16#FF00, 16#0FF0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `61680`.
+Resultado tras un ciclo: `Result` = `61680`.
 
 ### NOT_WORD
 
@@ -289,7 +289,7 @@ Result := NOT_WORD(16#00FF);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `65280`.
+Resultado tras un ciclo: `Result` = `65280`.
 
 ### AND_DWORD
 
@@ -307,7 +307,7 @@ Result := AND_DWORD(16#FFFF0000, 16#0FF00FF0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `267386880`.
+Resultado tras un ciclo: `Result` = `267386880`.
 
 ### OR_DWORD
 
@@ -325,7 +325,7 @@ Result := OR_DWORD(16#00FF0000, 16#000000FF);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `16711935`.
+Resultado tras un ciclo: `Result` = `16711935`.
 
 ### XOR_DWORD
 
@@ -343,7 +343,7 @@ Result := XOR_DWORD(16#0000FFFF, 16#00FF00FF);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `16776960`.
+Resultado tras un ciclo: `Result` = `16776960`.
 
 ### NOT_DWORD
 
@@ -361,7 +361,7 @@ Result := NOT_DWORD(16#0000FFFF);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `4294901760`.
+Resultado tras un ciclo: `Result` = `4294901760`.
 
 ## Aritmética
 
@@ -381,7 +381,7 @@ Result := ABS(-5);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `5`.
+Resultado tras un ciclo: `Result` = `5`.
 
 ### ABSF
 
@@ -399,7 +399,7 @@ Result := ABSF(-2.5);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `2.5`.
+Resultado tras un ciclo: `Result` = `2.5`.
 
 ### NEG
 
@@ -417,7 +417,7 @@ Result := NEG(5);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `-5`.
+Resultado tras un ciclo: `Result` = `-5`.
 
 ### NEGF
 
@@ -435,7 +435,7 @@ Result := NEGF(2.5);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `-2.5`.
+Resultado tras un ciclo: `Result` = `-2.5`.
 
 ### MOD
 
@@ -453,7 +453,7 @@ Result := 17 MOD 5;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `2`.
+Resultado tras un ciclo: `Result` = `2`.
 
 ### SQRT
 
@@ -471,7 +471,7 @@ Result := SQRT(16.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `4`.
+Resultado tras un ciclo: `Result` = `4`.
 
 ### EXPT
 
@@ -489,7 +489,7 @@ Result := EXPT(2.0, 10.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1024`.
+Resultado tras un ciclo: `Result` = `1024`.
 
 ## Redondeo
 
@@ -509,7 +509,7 @@ Result := TRUNC(2.7);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `2`.
+Resultado tras un ciclo: `Result` = `2`.
 
 ### ROUND
 
@@ -527,7 +527,7 @@ Result := ROUND(2.5);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3`.
+Resultado tras un ciclo: `Result` = `3`.
 
 ## Trigonometría
 
@@ -548,7 +548,7 @@ Result := REAL_TO_INT(SIN(1.5707964) * 1000.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1000`.
+Resultado tras un ciclo: `Result` = `1000`.
 
 ### COS
 
@@ -566,7 +566,7 @@ Result := COS(0.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1`.
+Resultado tras un ciclo: `Result` = `1`.
 
 ### TAN
 
@@ -584,7 +584,7 @@ Result := TAN(0.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `0`.
+Resultado tras un ciclo: `Result` = `0`.
 
 ### ASIN
 
@@ -603,7 +603,7 @@ Result := REAL_TO_INT(ASIN(1.0) * 1000.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1571`.
+Resultado tras un ciclo: `Result` = `1571`.
 
 ### ACOS
 
@@ -621,7 +621,7 @@ Result := ACOS(1.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `0`.
+Resultado tras un ciclo: `Result` = `0`.
 
 ### ATAN
 
@@ -640,7 +640,7 @@ Result := REAL_TO_INT(ATAN(1.0) * 1000.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `785`.
+Resultado tras un ciclo: `Result` = `785`.
 
 ### ATAN2
 
@@ -658,7 +658,7 @@ Result := REAL_TO_INT(ATAN2(1.0, 1.0) * 1000.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `785`.
+Resultado tras un ciclo: `Result` = `785`.
 
 ## Logaritmos y exponenciales
 
@@ -678,7 +678,7 @@ Result := LN(1.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `0`.
+Resultado tras un ciclo: `Result` = `0`.
 
 ### LOG
 
@@ -696,7 +696,7 @@ Result := REAL_TO_INT(LOG(1000.0));
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3`.
+Resultado tras un ciclo: `Result` = `3`.
 
 ### EXP
 
@@ -714,7 +714,7 @@ Result := EXP(0.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1`.
+Resultado tras un ciclo: `Result` = `1`.
 
 ## Escalado
 
@@ -734,7 +734,7 @@ Result := NORM_X(0.0, 25.0, 100.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `0.25`.
+Resultado tras un ciclo: `Result` = `0.25`.
 
 ### SCALE_X
 
@@ -752,7 +752,7 @@ Result := SCALE_X(0.0, 0.5, 200.0);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `100`.
+Resultado tras un ciclo: `Result` = `100`.
 
 ## Cadenas
 
@@ -772,7 +772,7 @@ Result := LEN('HELLO');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `5`.
+Resultado tras un ciclo: `Result` = `5`.
 
 ### CONCAT
 
@@ -792,7 +792,7 @@ Same := EQ_STRING(Text, 'ABCD');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### LEFT
 
@@ -812,7 +812,7 @@ Same := EQ_STRING(Text, 'HE');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### RIGHT
 
@@ -832,7 +832,7 @@ Same := EQ_STRING(Text, 'LO');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### MID
 
@@ -852,7 +852,7 @@ Same := EQ_STRING(Text, 'ELL');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### FIND
 
@@ -870,7 +870,7 @@ Result := FIND('HELLO', 'L');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `3`.
+Resultado tras un ciclo: `Result` = `3`.
 
 ### INSERT
 
@@ -890,7 +890,7 @@ Same := EQ_STRING(Text, 'AXB');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### DELETE
 
@@ -910,7 +910,7 @@ Same := EQ_STRING(Text, 'HLO');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### REPLACE
 
@@ -930,7 +930,7 @@ Same := EQ_STRING(Text, 'HABO');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### STRCMP
 
@@ -948,7 +948,7 @@ Result := STRCMP('A', 'B');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `-1`.
+Resultado tras un ciclo: `Result` = `-1`.
 
 ### COPY
 
@@ -968,7 +968,7 @@ Same := EQ_STRING(Text, 'HI');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Same` = `TRUE`.
+Resultado tras un ciclo: `Same` = `TRUE`.
 
 ### CLEAR
 
@@ -988,7 +988,7 @@ Result := LEN(Text);
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `0`.
+Resultado tras un ciclo: `Result` = `0`.
 
 ### EQ_STRING
 
@@ -1006,7 +1006,7 @@ Result := EQ_STRING('A', 'A');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `TRUE`.
+Resultado tras un ciclo: `Result` = `TRUE`.
 
 ### NE_STRING
 
@@ -1024,7 +1024,7 @@ Result := NE_STRING('A', 'B');
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `TRUE`.
+Resultado tras un ciclo: `Result` = `TRUE`.
 
 ## Sistema
 
@@ -1046,7 +1046,7 @@ Running := Up >= 100;
 END_PROGRAM
 ```
 
-Resultado tras 30 scans de 10 ms: `Running` = `TRUE`.
+Resultado tras 30 ciclos de 10 ms: `Running` = `TRUE`.
 
 ### CYCLE_TIME
 
@@ -1066,7 +1066,7 @@ Valid := Last >= 0;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Valid` = `TRUE`.
+Resultado tras 3 ciclos de 10 ms: `Valid` = `TRUE`.
 
 ### WATCHDOG_RESET
 
@@ -1085,7 +1085,7 @@ Count := Count + 1;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Count` = `1`.
+Resultado tras un ciclo: `Count` = `1`.
 
 ## Conversiones de tipo
 
@@ -1145,7 +1145,7 @@ Is_LREAL := BOOL_TO_LREAL(Source) = 1.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `1` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `1` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde SINT
 
@@ -1190,7 +1190,7 @@ Is_LREAL := SINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde USINT
 
@@ -1235,7 +1235,7 @@ Is_LREAL := USINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde BYTE
 
@@ -1280,7 +1280,7 @@ Is_LREAL := BYTE_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde INT
 
@@ -1325,7 +1325,7 @@ Is_LREAL := INT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde UINT
 
@@ -1370,7 +1370,7 @@ Is_LREAL := UINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde WORD
 
@@ -1415,7 +1415,7 @@ Is_LREAL := WORD_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde DINT
 
@@ -1460,7 +1460,7 @@ Is_LREAL := DINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde UDINT
 
@@ -1505,7 +1505,7 @@ Is_LREAL := UDINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde DWORD
 
@@ -1550,7 +1550,7 @@ Is_LREAL := DWORD_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde TIME
 
@@ -1595,7 +1595,7 @@ Is_LREAL := TIME_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde LINT
 
@@ -1640,7 +1640,7 @@ Is_LREAL := LINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde ULINT
 
@@ -1685,7 +1685,7 @@ Is_LREAL := ULINT_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde LWORD
 
@@ -1730,7 +1730,7 @@ Is_LREAL := LWORD_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde REAL
 
@@ -1775,7 +1775,7 @@ Is_LREAL := REAL_TO_LREAL(Source) = 5.0;
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 ### Desde LREAL
 
@@ -1820,7 +1820,7 @@ To_REAL := LREAL_TO_REAL(Source);
 END_PROGRAM
 ```
 
-Resultado tras un scan: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
+Resultado tras un ciclo: cada variable `To_*` vale `5` (`To_BOOL` vale `TRUE`) y cada variable `Is_*` vale `TRUE`.
 
 {/* <<< END GENERATED: reference/functions <<< */}
 
