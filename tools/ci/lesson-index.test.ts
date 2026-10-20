@@ -105,7 +105,7 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     expect(problems.some((problem) => problem.includes('objective, predict, edit, run, observe, reflect'))).toBe(true);
   });
 
-  it('refuses English and Spanish texts that do not have the same structure', () => {
+  it('LRN-029 refuses English and Spanish texts that do not have the same structure', () => {
     const lessons = copyOfLessons();
     const textFile = join(lessons, 'scan-cycle-one-scan-memory', 'text.es.json');
     const text = JSON.parse(readFileSync(textFile, 'utf8')) as { objectives: string[] };

@@ -120,14 +120,14 @@ for (const lesson of packages) {
       });
     }
 
-    it('es: addresses the learner as usted, never with voseo', () => {
+    it('LRN-029 es: addresses the learner as usted, never with voseo', () => {
       const { text } = expandText(lesson.texts.es, scenario);
       const strings = [text.title, text.summary, text.scope, ...text.objectives, ...text.faultCases, ...text.hints.map((hint) => hint.text), ...text.stages.flatMap((stage) => [stage.body, stage.checkpoint, stage.title])];
       const voseo = strings.flatMap((value) => value.match(VOSEO) ?? []).filter((word) => !NOT_VOSEO.has(word.toLowerCase()));
       expect(voseo).toEqual([]);
     });
 
-    it('has the same structure in English and Spanish', () => {
+    it('LRN-029 has the same structure in English and Spanish', () => {
       expect(textShape(lesson.texts.es)).toBe(textShape(lesson.texts.en));
     });
 
