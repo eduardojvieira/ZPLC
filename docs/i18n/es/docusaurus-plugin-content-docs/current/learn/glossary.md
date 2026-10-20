@@ -5,7 +5,6 @@ title: Glosario del curso
 sidebar_label: Glosario del curso
 description: "Los términos en inglés y en español que usa el curso de Aprender para los conceptos de PLC, y el registro del español de sus lecciones, pistas y etiquetas de planta."
 tags: [learn, lessons, glossary, spanish]
-unlisted: true
 ---
 
 # Glosario del curso

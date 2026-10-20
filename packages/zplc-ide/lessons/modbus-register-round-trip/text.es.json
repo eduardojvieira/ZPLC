@@ -31,7 +31,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
-      "checkpoint": "El escenario se llama ModbusRegister y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario se llama ModbusRegister y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

@@ -30,12 +30,12 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario PedestrianCrossing.",
-      "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
+      "body": "Revise la matriz registrada en Pruebas y compare cada muestra con la predicción.",
       "checkpoint": "La traza muestra WALK solo durante el estado en rojo."
     },
     {

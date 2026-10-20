@@ -30,7 +30,7 @@ La barra de estado bajo la barra de herramientas indica siempre a qué está con
 | Simulación · runtime del navegador | Globo, azul | El programa se ejecuta en el runtime del navegador, que es limitado; la barra indica qué le falta. |
 | Conectando con el hardware | Indicador de carga, ámbar | Studio está abriendo el enlace con un dispositivo. |
 | Hardware real · placa · enlace | Chip, ámbar | Studio está conectado a un dispositivo real. La placa es la que informó el dispositivo, y el enlace es el enlace con tramas o la shell de texto anterior. |
-| Fallo del hardware · placa | Triángulo de advertencia, rojo | El dispositivo conectado informa un fallo. |
+| Falla del hardware · placa | Triángulo de advertencia, rojo | El dispositivo conectado informa una falla. |
 
 Mientras haya forzados activos se mantiene un aviso ámbar bajo el indicador, y una alerta roja lo reemplaza cuando no se puede confirmar un forzado (reconecte y verifique antes de operar).
 

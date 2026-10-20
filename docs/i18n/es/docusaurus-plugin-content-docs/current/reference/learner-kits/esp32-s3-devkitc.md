@@ -1,7 +1,7 @@
 ---
 title: "Kit del estudiante: ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "ESP32-S3-DevKitC-1 (N8R8)"
-description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la ESP32-S3-DevKitC-1 (N8R8) para el curso, generados del manifiesto de E/S de la placa y del kit."
+description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la ESP32-S3-DevKitC-1 (N8R8) para el curso, generados a partir del manifiesto de E/S de la placa y del kit."
 tags: [learn, hardware, generated]
 ---
 
@@ -61,7 +61,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Arranque y parada seguros](./esp32-s3-devkitc/motor-start-stop-safe.md) | `motor-start-stop-safe` |
 | [Oscilador TON y realimentación de salida](./esp32-s3-devkitc/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
 | [Flancos y contador de pulsos](./esp32-s3-devkitc/edge-counter-pulses.md) | `edge-counter-pulses` |
-| [Ciclo de scan y memoria de un ciclo](./esp32-s3-devkitc/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
+| [Ciclo de escaneo y memoria de un ciclo](./esp32-s3-devkitc/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
 | [Escriba un parpadeador en texto estructurado](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |

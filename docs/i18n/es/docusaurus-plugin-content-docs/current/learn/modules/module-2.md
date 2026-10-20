@@ -1,16 +1,16 @@
 ---
-title: "Módulo 2: Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura"
+title: "Módulo 2: Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura"
 sidebar_label: "Módulo 2"
 description: "Las lecciones del módulo 2 del curso, generadas de los paquetes de lecciones."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Módulo 2: Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura
+# Módulo 2: Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-2. Do not edit. >>> */}
 
-La lógica booleana es el vocabulario de todo programa. Se enseña en Ladder junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura.
+La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama de escalera junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura.
 
 - Nivel: Fundamentos
 - Rutas: Simulación, Hardware

@@ -37,4 +37,11 @@ describe('LRN-029 Learn follows the language of the application', () => {
     expect(english).toContain('>Learn<');
     expect(spanish).toContain('>Aprender<');
   });
+
+  it('LRN-029 names the tracks of a lesson "Rutas" in Spanish, because "Pistas" are its hints', () => {
+    setLanguage('es');
+    const spanish = renderToStaticMarkup(<LearnHome />);
+    expect(spanish).toContain('Rutas: ');
+    expect(spanish).not.toContain('Pistas');
+  });
 });

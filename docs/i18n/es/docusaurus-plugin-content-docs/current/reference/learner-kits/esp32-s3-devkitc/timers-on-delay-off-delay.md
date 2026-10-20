@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "timers-on-delay-off-delay"
-description: "Cómo cablear la lección timers-on-delay-off-delay en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección timers-on-delay-off-delay en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/timers-on-delay-off-delay. Do not edit. >>> */}
 
-El cableado de la lección [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](../../../learn/lessons/timers-on-delay-off-delay.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](../../../learn/lessons/timers-on-delay-off-delay.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,8 +26,8 @@ El cableado de la lección [Temporizadores: una luz con retardo a la desconexió
 
 ## Tarjeta de cableado
 
-1. Pulsador: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-2. Sensor: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
+1. Pulsador: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Sensor: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
 3. Luz: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
 4. Confirmado: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
 

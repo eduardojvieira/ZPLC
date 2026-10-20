@@ -200,7 +200,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorStartStop.",
-              "checkpoint": "El escenario requerido se llama MotorStartStop y contiene 27 assertions."
+              "checkpoint": "El escenario requerido se llama MotorStartStop y contiene 27 aserciones."
             },
             {
               "key": "observe",
@@ -385,12 +385,12 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario PedestrianCrossing.",
-              "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene 15 assertions."
+              "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene 15 aserciones."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
+              "body": "Revise la matriz registrada en Pruebas y compare cada muestra con la predicción.",
               "checkpoint": "La traza muestra WALK solo durante el estado en rojo."
             },
             {
@@ -540,7 +540,7 @@
         "es": {
           "title": "Nivel de tanque, fallas y reset",
           "summary": "Recorra el control de nivel y las memorias de falla y de reset del ejemplo Tank Level.",
-          "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
+          "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de un proceso físico, hardware, HIL ni certificación.",
           "objectives": [
             "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una retención.",
             "Retenga la alarma con PumpFault o EStop y libérela solo con un nuevo Reset, después de que la falla haya desaparecido."
@@ -568,7 +568,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario TankLevel.",
-              "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 assertions."
+              "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 aserciones."
             },
             {
               "key": "observe",
@@ -726,7 +726,7 @@
         "es": {
           "title": "Cinta de clasificación y atasco seguro",
           "summary": "Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo Conveyor 01.",
-          "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.",
+          "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de una cinta física, del despeje de un atasco, hardware, HIL ni certificación.",
           "objectives": [
             "Detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected.",
             "Evite que Reset libere la falla mientras el atasco siga presente."
@@ -754,7 +754,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo Conveyor01; el programa inicial también incluye ConveyorJamTiming (lección 9), así que ejecutar todas las pruebas calificaría dos escenarios.",
-              "checkpoint": "El escenario requerido se llama Conveyor01 y contiene 6 assertions."
+              "checkpoint": "El escenario requerido se llama Conveyor01 y contiene 6 aserciones."
             },
             {
               "key": "observe",
@@ -765,7 +765,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.",
+              "body": "La aserción NEVER cubre DiverterCommand ON con BeltCommand OFF solo en este escenario.",
               "checkpoint": "No demuestra una cinta física, el despeje de un atasco, los tiempos del hardware, HIL ni certificación."
             }
           ],
@@ -909,7 +909,7 @@
         "es": {
           "title": "Oscilador TON y realimentación de salida",
           "summary": "Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con aserciones FOR y AT.",
-          "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
+          "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un LED físico, de los tiempos del hardware, de HIL ni de certificación.",
           "objectives": [
             "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
             "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
@@ -925,7 +925,7 @@
               "key": "predict",
               "title": "Prediga",
               "body": "Antes de ejecutar, prediga LED_Output a los 250, 750, 1250 y 1750 ms.",
-              "checkpoint": "OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms."
+              "checkpoint": "En OFF a los 250 ms, en ON a los 750, en OFF a los 1250, en ON a los 1750; el primer flanco ascendente llega entre los 400 y los 600 ms."
             },
             {
               "key": "edit",
@@ -937,7 +937,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario BlinkyVisual.",
-              "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene 11 assertions."
+              "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene 11 aserciones."
             },
             {
               "key": "observe",
@@ -1088,9 +1088,9 @@
           ]
         },
         "es": {
-          "title": "Comando, realimentación y velocidad",
+          "title": "Orden, realimentación y velocidad",
           "summary": "Separe la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
-          "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
+          "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.",
           "objectives": [
             "Separe la orden al motor de la confirmación de que está en marcha.",
             "Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed."
@@ -1118,7 +1118,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorPlant.",
-              "checkpoint": "El escenario requerido se llama MotorPlant y contiene 7 assertions."
+              "checkpoint": "El escenario requerido se llama MotorPlant y contiene 7 aserciones."
             },
             {
               "key": "observe",
@@ -1290,8 +1290,8 @@
         },
         "es": {
           "title": "Flancos y contador de pulsos",
-          "summary": "Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
-          "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
+          "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
+          "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.",
           "objectives": [
             "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
             "Ponga a cero la cuenta y CountReached con Reset."
@@ -1306,8 +1306,8 @@
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe cuándo el contador alcanza PV=3.",
-              "checkpoint": "CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset."
+              "body": "Antes de ejecutar, prediga cuándo el contador alcanza PV=3.",
+              "checkpoint": "CountReached permanece en OFF a los 0, 10 y 30 ms; pasa a ON a los 50, tras el tercer flanco, y vuelve a OFF a los 70 con Reset."
             },
             {
               "key": "edit",
@@ -1319,7 +1319,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
-              "checkpoint": "El escenario requerido se llama EdgeCounter y contiene 7 assertions."
+              "checkpoint": "El escenario requerido se llama EdgeCounter y contiene 7 aserciones."
             },
             {
               "key": "observe",
@@ -1330,8 +1330,8 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.",
-              "checkpoint": "No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación."
+              "body": "Las aserciones AT/RISING/FALLING cubren esta secuencia lógica discreta.",
+              "checkpoint": "No demuestran rebotes, pulsos eléctricos, tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
@@ -1509,9 +1509,9 @@
           ]
         },
         "es": {
-          "title": "Ciclo de scan y memoria de un ciclo",
-          "summary": "Siga cómo una entrada produce una salida actual y una copia demorada un scan.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.",
+          "title": "Ciclo de escaneo y memoria de un ciclo",
+          "summary": "Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una única tarea de 10 ms; no demuestran los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas, el rebote eléctrico, HIL ni certificación.",
           "objectives": [
             "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
             "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
@@ -1533,13 +1533,13 @@
               "key": "edit",
               "title": "Edite",
               "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario ScanSnapshot.",
-              "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene 9 assertions."
+              "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene 9 aserciones."
             },
             {
               "key": "observe",
@@ -1689,9 +1689,9 @@
           ]
         },
         "es": {
-          "title": "Assertions temporales y falla por atasco",
+          "title": "Aserciones temporales y falla por atasco",
           "summary": "Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
+          "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX y entradas discretas; el atasco programado no es evidencia de una falla física, del despeje físico, de los tiempos en el dispositivo de destino, de HIL ni de certificación.",
           "objectives": [
             "Retenga la falla por atasco y compruebe su temporización con aserciones temporales.",
             "Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla."
@@ -1719,7 +1719,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y se mantiene como comprobación de regresión.",
-              "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene 9 assertions."
+              "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene 9 aserciones."
             },
             {
               "key": "observe",
@@ -1869,7 +1869,7 @@
         "es": {
           "title": "Diagnóstico reproducible: dos piezas, una decisión",
           "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y entradas programadas por el escenario; no son evidencia de sensores ni de piezas físicas, de los tiempos en el dispositivo de destino, de hardware, de HIL ni de certificación.",
           "objectives": [
             "Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.",
             "Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla."
@@ -1903,7 +1903,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorTwoParts.",
-              "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene 3 assertions."
+              "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene 3 aserciones."
             },
             {
               "key": "observe",
@@ -2012,7 +2012,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Build the program: on the toolbar, open Build and choose Compile. Press Connect to start the simulation, then Run (F5); Run stays disabled until a build exists. Open the Watch tab and see Lamp turn on and off. Then press Check: Studio runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; Studio lists every one that failed."
             },
             {
@@ -2072,8 +2072,8 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama FirstBlink y contiene 10 assertions; Studio enumera cada una de las que fallaron."
+              "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FirstBlink y contiene 10 aserciones; Studio enumera cada una de las que fallaron."
             },
             {
               "key": "observe",
@@ -2305,7 +2305,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama TwoHand y contiene 9 assertions."
+              "checkpoint": "El escenario se llama TwoHand y contiene 9 aserciones."
             },
             {
               "key": "observe",
@@ -2517,7 +2517,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama Delays y contiene 10 assertions."
+              "checkpoint": "El escenario se llama Delays y contiene 10 aserciones."
             },
             {
               "key": "observe",
@@ -2709,7 +2709,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama EnabledBlink y contiene 11 assertions."
+              "checkpoint": "El escenario se llama EnabledBlink y contiene 11 aserciones."
             },
             {
               "key": "observe",
@@ -2921,7 +2921,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama AlarmLatch y contiene 10 assertions."
+              "checkpoint": "El escenario se llama AlarmLatch y contiene 10 aserciones."
             },
             {
               "key": "observe",
@@ -3122,7 +3122,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama SealIn y contiene 11 assertions."
+              "checkpoint": "El escenario se llama SealIn y contiene 11 aserciones."
             },
             {
               "key": "observe",
@@ -3323,7 +3323,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama BatchCount y contiene 10 assertions."
+              "checkpoint": "El escenario se llama BatchCount y contiene 10 aserciones."
             },
             {
               "key": "observe",
@@ -3504,7 +3504,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
-              "checkpoint": "El escenario se llama MotorInterlock y contiene 12 assertions."
+              "checkpoint": "El escenario se llama MotorInterlock y contiene 12 aserciones."
             },
             {
               "key": "observe",
@@ -3727,7 +3727,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama TypedSteps y contiene 8 assertions."
+              "checkpoint": "El escenario se llama TypedSteps y contiene 8 aserciones."
             },
             {
               "key": "observe",
@@ -3930,7 +3930,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama Scaling y contiene 9 assertions."
+              "checkpoint": "El escenario se llama Scaling y contiene 9 aserciones."
             },
             {
               "key": "observe",
@@ -4160,7 +4160,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama PumpPair y contiene 9 assertions."
+              "checkpoint": "El escenario se llama PumpPair y contiene 9 aserciones."
             },
             {
               "key": "observe",
@@ -4390,7 +4390,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama CallPanel y contiene 10 assertions."
+              "checkpoint": "El escenario se llama CallPanel y contiene 10 aserciones."
             },
             {
               "key": "observe",
@@ -4593,7 +4593,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama FillMix y contiene 12 assertions."
+              "checkpoint": "El escenario se llama FillMix y contiene 12 aserciones."
             },
             {
               "key": "observe",
@@ -4803,7 +4803,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama DoorAlarm y contiene 12 assertions."
+              "checkpoint": "El escenario se llama DoorAlarm y contiene 12 aserciones."
             },
             {
               "key": "observe",
@@ -5008,7 +5008,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama GateLatch y contiene 11 assertions."
+              "checkpoint": "El escenario se llama GateLatch y contiene 11 aserciones."
             },
             {
               "key": "observe",
@@ -5180,7 +5180,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
-              "checkpoint": "El escenario se llama PackingStation y contiene 16 assertions."
+              "checkpoint": "El escenario se llama PackingStation y contiene 16 aserciones."
             },
             {
               "key": "observe",
@@ -5354,7 +5354,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
-              "checkpoint": "El escenario se llama ModbusRegister y contiene 6 assertions."
+              "checkpoint": "El escenario se llama ModbusRegister y contiene 6 aserciones."
             },
             {
               "key": "observe",
@@ -5530,7 +5530,7 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
-              "checkpoint": "El escenario se llama MqttLoop y contiene 7 assertions."
+              "checkpoint": "El escenario se llama MqttLoop y contiene 7 aserciones."
             },
             {
               "key": "observe",
@@ -5716,12 +5716,12 @@
         },
         "es": {
           "title": "Verificar mi placa",
-          "summary": "Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un pulsador.",
+          "summary": "Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea un pulsador.",
           "scope": "La verificación en simulación de esta lección prueba el programa. La verificación de hardware califica una traza registrada desde su placa y se identifica como una ejecución en hardware; no prueba límites eléctricos.",
           "objectives": [
-            "Verificar que la placa con la que se comunica Studio es la que usted eligió.",
-            "Ver parpadear un LED en la placa.",
-            "Leer un pulsador en la placa."
+            "Verifique que la placa con la que se comunica Studio sea la que usted eligió.",
+            "Vea parpadear un LED en la placa.",
+            "Lea el estado de un pulsador en la placa."
           ],
           "stages": [
             {
@@ -5745,8 +5745,8 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego presione RUN.",
-              "checkpoint": "El escenario se llama VerifyBoard y contiene 8 assertions."
+              "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego pulse RUN.",
+              "checkpoint": "El escenario se llama VerifyBoard y contiene 8 aserciones."
             },
             {
               "key": "observe",
@@ -5764,7 +5764,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa \"o\"?"
+              "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa “o”?"
             },
             {
               "level": 2,
@@ -5782,7 +5782,7 @@
     "schemaVersion": 1,
     "rationale": {
       "en": "You see a result first: the tour of module 0 ends in a blinking output in simulation. The scan cycle comes next, because seal-in, edges and timers cannot be understood without it, and a first blink in Ladder and in Structured Text follows at once. Every later module builds on the ones before it, and communications and the capstone come last because they need everything before them.",
-      "es": "Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera (Ladder) y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior."
+      "es": "Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior."
     },
     "tracks": [
       {
@@ -5793,7 +5793,7 @@
         },
         "summary": {
           "en": "Run your program against a simulated plant on this computer. Every lesson can be graded here, with the same result each time.",
-          "es": "Ejecute su programa contra una planta simulada en este equipo. Todas las lecciones se pueden calificar aquí, con el mismo resultado cada vez."
+          "es": "Ejecute su programa con una planta simulada en este equipo. Todas las lecciones se pueden calificar aquí, con el mismo resultado cada vez."
         },
         "unsupported": {
           "reason": {
@@ -5802,7 +5802,7 @@
           },
           "instead": {
             "en": "Choose a lesson that lists Simulation among its tracks.",
-            "es": "Elija una lección que incluya Simulación entre sus pistas."
+            "es": "Elija una lección que incluya Simulación entre sus rutas."
           }
         }
       },
@@ -5819,11 +5819,11 @@
         "unsupported": {
           "reason": {
             "en": "No check against a trace recorded from a board has been written for this lesson yet.",
-            "es": "Todavía no se ha escrito para esta lección una verificación contra una traza registrada desde una placa."
+            "es": "Todavía no se ha escrito para esta lección una verificación con una traza registrada en una placa."
           },
           "instead": {
             "en": "Do the lesson in the Simulation track. Its grade is the same each time and does not need a board.",
-            "es": "Haga la lección en la pista de Simulación. Su calificación es la misma cada vez y no necesita una placa."
+            "es": "Haga la lección en la ruta de Simulación. Su calificación es la misma cada vez y no necesita una placa."
           }
         }
       }
@@ -5843,7 +5843,7 @@
         },
         "why": {
           "en": "You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
-          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la pista de hardware, una verificación de su placa."
+          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
         }
       },
       {
@@ -5860,7 +5860,7 @@
         },
         "why": {
           "en": "A PLC repeats one cycle: read the inputs, run the program, write the outputs. Seal-in, edges and timers cannot be understood without the scan cycle, so it comes first, and a first blink in Ladder and in Structured Text follows at once.",
-          "es": "Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en Ladder y en texto estructurado."
+          "es": "Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado."
         }
       },
       {
@@ -5873,11 +5873,11 @@
         ],
         "title": {
           "en": "Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop",
-          "es": "Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura"
+          "es": "Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura"
         },
         "why": {
           "en": "Boolean logic is the vocabulary of every program. It is taught in Ladder beside Structured Text, because relay logic is how the subject is traditionally introduced and both views of the same logic reinforce each other: contacts and coils, then seal-in, set and reset, and a safe stop.",
-          "es": "La lógica booleana es el vocabulario de todo programa. Se enseña en Ladder junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura."
+          "es": "La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama de escalera junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura."
         }
       },
       {
@@ -5894,7 +5894,7 @@
         },
         "why": {
           "en": "Time and events come after logic: timers delay or hold a signal, edges turn a level into an event and counters remember events. Function Block Diagram arrives here, because timers and counters are blocks.",
-          "es": "El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques."
+          "es": "El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o mantienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques."
         }
       },
       {
@@ -5928,7 +5928,7 @@
         },
         "why": {
           "en": "A machine that does things in order is a state machine. Sequences are written as states in Structured Text, and Sequential Function Chart arrives with them, as steps.",
-          "es": "Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama de funciones secuenciales (SFC), como pasos."
+          "es": "Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama funcional secuencial (SFC), como pasos."
         }
       },
       {
@@ -5941,7 +5941,7 @@
         ],
         "title": {
           "en": "Feedback, faults and interlocks",
-          "es": "Realimentación, fallos e interbloqueos"
+          "es": "Realimentación, fallas y enclavamientos"
         },
         "why": {
           "en": "A command is not a fact: the plant must confirm it. Once a program can run a sequence, feedback, faults and interlocks teach it to distrust what it asked for.",
@@ -5978,7 +5978,7 @@
         },
         "why": {
           "en": "Testing comes once you have programs worth testing. Scenario tests, temporal assertions, traces and breakpoints turn a guess into evidence.",
-          "es": "Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia."
+          "es": "Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas de escenario, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia."
         }
       },
       {
@@ -6012,7 +6012,7 @@
         },
         "why": {
           "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.",
-          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan contra extremos que Studio inicia en este equipo, así que no se necesita red ni placa."
+          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa."
         }
       },
       {

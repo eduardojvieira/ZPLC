@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/verify-my-board. Do not edit. >>> */}
 
-Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un pulsador.
+Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea un pulsador.
 
 ## Datos
 
@@ -24,9 +24,9 @@ Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un
 
 ## Objetivos
 
-- Verificar que la placa con la que se comunica Studio es la que usted eligió.
-- Ver parpadear un LED en la placa.
-- Leer un pulsador en la placa.
+- Verifique que la placa con la que se comunica Studio sea la que usted eligió.
+- Vea parpadear un LED en la placa.
+- Lea el estado de un pulsador en la placa.
 
 ## Etapas
 

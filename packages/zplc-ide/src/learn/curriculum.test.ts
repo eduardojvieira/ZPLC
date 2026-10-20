@@ -84,7 +84,7 @@ const NAMES: Record<string, { en: RegExp; es: RegExp }> = {
   ST: { en: /Structured Text/, es: /texto estructurado|Structured Text/i },
   LD: { en: /Ladder/, es: /Ladder|diagrama de escalera/i },
   FBD: { en: /Function Block Diagram/, es: /diagrama de bloques de funci[oó]n|Function Block Diagram/i },
-  SFC: { en: /Sequential Function Chart/, es: /diagrama de funciones secuenciales|diagrama funcional de secuencias|Sequential Function Chart/i },
+  SFC: { en: /Sequential Function Chart/, es: /diagrama funcional secuencial|diagrama de funciones secuenciales|diagrama funcional de secuencias|Sequential Function Chart/i },
   IL: { en: /Instruction List/, es: /lista de instrucciones|Instruction List/i },
 };
 

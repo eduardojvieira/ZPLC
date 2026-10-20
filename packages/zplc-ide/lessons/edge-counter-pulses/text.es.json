@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "title": "Flancos y contador de pulsos",
-  "summary": "Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.",
-  "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
+  "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
+  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.",
   "objectives": [
     "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
     "Ponga a cero la cuenta y CountReached con Reset."
@@ -17,8 +17,8 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Antes de ejecutar, anticipe cuándo el contador alcanza PV=3.",
-      "checkpoint": "CountReached permanece OFF a {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} y {{v:EdgeCounter.CountReached=false@30|30}} ms; enciende a {{v:EdgeCounter.CountReached=true@50|50}} tras el tercer flanco; vuelve OFF a {{v:EdgeCounter.CountReached=false@70|70}} con Reset."
+      "body": "Antes de ejecutar, prediga cuándo el contador alcanza PV=3.",
+      "checkpoint": "CountReached permanece en OFF a los {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} y {{v:EdgeCounter.CountReached=false@30|30}} ms; pasa a ON a los {{v:EdgeCounter.CountReached=true@50|50}}, tras el tercer flanco, y vuelve a OFF a los {{v:EdgeCounter.CountReached=false@70|70}} con Reset."
     },
     {
       "key": "edit",
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
-      "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -41,8 +41,8 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Las assertions AT/RISING/FALLING cubren esta secuencia lógica discreta.",
-      "checkpoint": "No demuestran rebote, pulsos eléctricos, timing de hardware, HIL ni certificación."
+      "body": "Las aserciones AT/RISING/FALLING cubren esta secuencia lógica discreta.",
+      "checkpoint": "No demuestran rebotes, pulsos eléctricos, tiempos del hardware, HIL ni certificación."
     }
   ],
   "hints": [

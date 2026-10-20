@@ -38,7 +38,7 @@ Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos tempori
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un LED físico, de los tiempos del hardware, de HIL ni de certificación.
 
 ## Cableado
 

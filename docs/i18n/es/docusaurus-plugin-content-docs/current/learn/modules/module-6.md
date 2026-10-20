@@ -1,12 +1,12 @@
 ---
-title: "Módulo 6: Realimentación, fallos e interbloqueos"
+title: "Módulo 6: Realimentación, fallas y enclavamientos"
 sidebar_label: "Módulo 6"
 description: "Las lecciones del módulo 6 del curso, generadas de los paquetes de lecciones."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Módulo 6: Realimentación, fallos e interbloqueos
+# Módulo 6: Realimentación, fallas y enclavamientos
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-6. Do not edit. >>> */}
 
@@ -20,7 +20,7 @@ Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya pued
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Comando, realimentación y velocidad](../lessons/motor-plant-feedback.md) | `motor-plant-feedback` | ST | 20 |
+| [Orden, realimentación y velocidad](../lessons/motor-plant-feedback.md) | `motor-plant-feedback` | ST | 20 |
 | [Nivel de tanque, fallas y reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
 | [Enclavamientos y permisivos: una protección que detiene el motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
 

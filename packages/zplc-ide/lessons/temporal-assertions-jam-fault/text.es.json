@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Assertions temporales y falla por atasco",
+  "title": "Aserciones temporales y falla por atasco",
   "summary": "Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.",
+  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX y entradas discretas; el atasco programado no es evidencia de una falla física, del despeje físico, de los tiempos en el dispositivo de destino, de HIL ni de certificación.",
   "objectives": [
     "Retenga la falla por atasco y compruebe su temporización con aserciones temporales.",
     "Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla."
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorJamTiming; Conveyor01 es el escenario de la lección 4 y se mantiene como comprobación de regresión.",
-      "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama ConveyorJamTiming y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

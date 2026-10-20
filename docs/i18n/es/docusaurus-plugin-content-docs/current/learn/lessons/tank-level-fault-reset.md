@@ -38,7 +38,7 @@ Recorra el control de nivel y las memorias de falla y de reset del ejemplo Tank 
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de un proceso físico, hardware, HIL ni certificación.
 
 ## En una placa
 
