@@ -92,7 +92,6 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía falta
 
-Cada lección enumera las rutas que admite y, para una ruta que no admite, dice por qué y qué hacer en su lugar. Una ruta para una placa de aprendizaje y las lecciones de cinco módulos que todavía
-están vacíos son trabajo futuro. El [esquema del curso](course-outline.md) dice cuáles. Las
+Cada lección enumera las rutas que admite y, para una ruta que no admite, dice por qué y qué hacer en su lugar. La [ruta de hardware](hardware-track.md) explica cómo elegir su placa y cómo se comprueba una ejecución en ella, y cada lección de hardware tiene una página de cableado por placa; la comprobación de una ejecución desde el panel de la lección es trabajo futuro. El [esquema del curso](course-outline.md) indica las rutas de cada lección. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.

@@ -87,7 +87,6 @@ what works today.
 
 ## What is not here yet
 
-Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. A track for a learner board, and the lessons of five modules that are still empty,
-are future work. The [course outline](course-outline.md) says which. The lessons and the
+Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. The [hardware track](hardware-track.md) says how to choose your board and how a run on it is checked, and each hardware lesson has a wiring page per board; the check of a run from the lesson panel is future work. The [course outline](course-outline.md) gives the tracks of every lesson. The lessons and the
 examples are host and simulation exercises: they do not show how a program
 behaves on a physical board.
