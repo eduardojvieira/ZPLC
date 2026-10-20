@@ -113,16 +113,16 @@ pasado por un corte de energía bajo prueba.
 
 | Momento | Qué ocurre |
 |---|---|
-| Carga de programa y restore al arrancar | La región se restaura desde los registros guardados antes del primer scan, o se inicializa en cero cuando ningún registro coincide. El estado dice cuál. |
-| `STOP` (comandado) | La región se guarda con los valores del último scan completo. Un stop de un runtime en falla no guarda nada. |
-| Mientras corre | La región se guarda como máximo una vez por intervalo, en un límite de scan, y solo si cambió desde el último registro guardado. |
+| Carga de programa y restore al arrancar | La región se restaura desde los registros guardados antes del primer ciclo, o se inicializa en cero cuando ningún registro coincide. El estado dice cuál. |
+| `STOP` (comandado) | La región se guarda con los valores del último ciclo completo. Un stop de un runtime en falla no guarda nada. |
+| Mientras corre | La región se guarda como máximo una vez por intervalo, en un límite de ciclo, y solo si cambió desde el último registro guardado. |
 | Apagado limpio del runtime host | Se guarda como un `STOP`. |
 | Reset (`execution.reset`) | Un reinicio en frío: la región se inicializa y esa región inicializada se guarda, de modo que los valores anteriores no vuelven. |
 
 En el firmware un guardado periódico corre en su propia cola de trabajo, fuera
-del scan, y mantiene el bloqueo de memoria solo durante la copia de la región,
+del ciclo, y mantiene el bloqueo de memoria solo durante la copia de la región,
 nunca durante la escritura al almacenamiento. En el host corre en el bucle
-principal entre dos scans. Un corte de energía entre dos guardados pierde los
+principal entre dos ciclos. Un corte de energía entre dos guardados pierde los
 cambios desde el último registro; esa es la razón del intervalo, que el
 presupuesto de flash de abajo acota desde el otro lado.
 
@@ -328,7 +328,7 @@ programa de nuevo e ingrese de nuevo la configuración.
 - No medido: cuánto tiempo detiene al procesador una escritura de flash. En
   piezas que ejecutan código desde la misma flash una escritura puede retener
   la captura de instrucciones durante un borrado; el guardado periódico corre en
-  su propia cola de trabajo, pero que un scan se retrase depende del driver de
+  su propia cola de trabajo, pero que un ciclo se retrase depende del driver de
   flash y no se ha medido en ninguna placa.
 - No demostrado en una placa: que los dos almacenes de una placa conserven los
   datos del otro en su flash. Sus particiones están separadas en cada

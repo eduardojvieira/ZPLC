@@ -47,7 +47,7 @@ usted la fija de nuevo.
 | Un mensaje Modbus, MQTT o de nube escribe la variable | El valor forzado permanece |
 | Pausa, paso y reanudación | Se conservan |
 | Detención | Se borran, y la imagen de salida se pone en cero |
-| Un fallo del runtime | Se borran, como con la detención |
+| Una falla del runtime | Se borran, como con la detención |
 | Carga de un programa nuevo | Se borran: una carga es un arranque en frío |
 
 Un forzado admite los tipos de hasta 32 bits. Liberarlo devuelve la variable al
@@ -91,7 +91,7 @@ programa.
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | Un forzado mantiene un valor frente al programa y frente a una escritura externa | Pruebas en C y Zephyr, y un recorrido en la aplicación real | Host y `native_sim` |
-| Los forzados se conservan con pausa y paso, y se borran con detención y con un fallo | Pruebas del planificador | Host y `native_sim`, QEMU |
+| Los forzados se conservan con pausa y paso, y se borran con detención y con una falla | Pruebas del planificador | Host y `native_sim`, QEMU |
 | Una fuerza de la consola termina con su sesión: cierre, toma, tiempo de inactividad, caída de la línea; la salida sigue al programa | Pruebas del motor y del núcleo; la prueba del enlace del dispositivo con la imagen real (allí no se puede bajar DTR) | Host y `native_sim` |
 | DTR en el puerto USB de la Pico termina la sesión | No se ejecutó en una placa | Ninguno |
 | Una entrada de un programa puede fijarse o forzarse por su propio nombre | Recorrido 37 en la aplicación real | Host |

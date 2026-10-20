@@ -91,7 +91,7 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Comunicación | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET` | ejecución de FBs de comunicación |
 
 Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos
-contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el scan con
+contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el ciclo con
 `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El compilador se apoya en esa falla:
 una variable `REF_TO` empieza en `0xFFFF`, así que desreferenciar una referencia nula falla, y
 un índice de arreglo fuera de los límites en ejecución lee desde la dirección base de CODE
@@ -262,7 +262,7 @@ puede dejar el programa de una compilación con los valores seguros de otra.
   se ejecuta con un estado seguro que no existe.
 - Un valor declarado para una salida reemplaza el nivel que la descripción de la placa le da
   en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes
-  del primer scan.
+  del primer ciclo.
 
 ## Páginas relacionadas
 

@@ -71,14 +71,14 @@ dos las toca.
 
 ## Acceso desde fuera del scan (RT-010, RT-011)
 
-Mientras los scans corren, solo el scan escribe la imagen de proceso. Un hilo ajeno (el servidor y los
+Mientras los ciclos corren, solo el ciclo escribe la imagen de proceso. Un hilo ajeno (el servidor y los
 clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchange (`zplc_exchange.h`):
 
-- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el scan publica en su commit. Un valor es íntegro y de
-  un solo scan, y una lectura nunca espera a un scan;
-- una escritura se encola completa y el scan la aplica en el latch de entradas de su siguiente scan, por la interfaz
+- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el ciclo publica en su commit. Un valor es íntegro y de
+  un solo ciclo, y una lectura nunca espera a un ciclo;
+- una escritura se encola completa y el ciclo la aplica en el latch de entradas de su siguiente ciclo, por la interfaz
   del core que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
-  Mientras no corre ningún scan (detenido, en pausa o con falla) no hay latch que esperar y la escritura se aplica
+  Mientras no corre ningún ciclo (detenido, en pausa o con falla) no hay latch que esperar y la escritura se aplica
   de inmediato;
 - una escritura que no cabe en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza
   completa y quien llama recibe un error; un cliente Modbus TCP recibe la excepción 6 (dispositivo servidor

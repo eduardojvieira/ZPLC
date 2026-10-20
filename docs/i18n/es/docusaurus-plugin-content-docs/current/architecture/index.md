@@ -77,7 +77,7 @@ Como todo pasa por la HAL, ZPLC garantiza una portabilidad profunda.
 ## Principios de trabajo
 
 1. **El código de plataforma queda fuera del núcleo.** El núcleo nunca debe hablar directamente con los registros del microcontrolador ni con los controladores de Zephyr. Toda petición de hardware pasa por la HAL genérica.
-2. **Ejecución acotada.** La memoria se asigna de forma estática en la compilación, y el runtime analiza y ejecuta el bytecode dentro de límites de memoria fijos. La temporización es otro asunto: no se ha medido ningún tiempo de scan en una placa.
+2. **Ejecución acotada.** La memoria se asigna de forma estática en la compilación, y el runtime analiza y ejecuta el bytecode dentro de límites de memoria fijos. La temporización es otro asunto: no se ha medido ningún tiempo de ciclo en una placa.
 3. **Ejecución de varias tareas.** El sistema aísla el contexto de ejecución de cada programa y expone de forma segura los bloques de datos globales compartidos (como las etiquetas de Modbus o las entradas físicas).
 
 ## Siguientes pasos

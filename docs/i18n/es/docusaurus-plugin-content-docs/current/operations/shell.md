@@ -52,9 +52,9 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg force clear_all` - Quita todos los forzados, de modo que el programa vuelve a controlar todas las direcciones.
 
 ### Control de la ejecución
-- `zplc dbg pause` - Pausa el scheduler entre scans. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
-- `zplc dbg resume` - Reanuda. Un scan detenido en un breakpoint continúa desde donde se detuvo, y el primer commit de scan vuelve a energizar las salidas desde la imagen conservada.
-- `zplc dbg step` - Termina el scan detenido en un breakpoint, o ejecuta un scan completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el scan ejecutado; las salidas quedan seguras.
+- `zplc dbg pause` - Pausa el scheduler entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
+- `zplc dbg resume` - Reanuda. Un ciclo detenido en un breakpoint continúa desde donde se detuvo, y el primer commit de ciclo vuelve a energizar las salidas desde la imagen conservada.
+- `zplc dbg step` - Termina el ciclo detenido en un breakpoint, o ejecuta un ciclo completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el ciclo ejecutado; las salidas quedan seguras.
 
 `zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Ver [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
 
@@ -67,10 +67,10 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 
 Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
-Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el scan publicó en su último commit, de modo que un
-valor es entero y de un solo scan, y una lectura nunca espera a un scan. Un `poke` se encola y se aplica en el latch
-de entradas del siguiente scan por la interfaz que respeta los forces: una dirección forzada conserva su valor
-forzado. Mientras el runtime está detenido no hay scan y la escritura se aplica de inmediato.
+Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el ciclo publicó en su último commit, de modo que un
+valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en el latch
+de entradas del siguiente ciclo por la interfaz que respeta los forces: una dirección forzada conserva su valor
+forzado. Mientras el runtime está detenido no hay ciclo y la escritura se aplica de inmediato.
 
 ### Ticks, tareas y temporizadores
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.

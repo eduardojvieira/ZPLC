@@ -58,7 +58,7 @@ cambia ningún fuente C.
   el alias, que el alias está en el pin descrito y que el pin pertenece al controlador descrito; un desacuerdo detiene
   el build con un mensaje que nombra el canal.
 - Los periféricos se configuran en `zplc_hal_init()`, antes de que el runtime pueda entrar en RUN: cada GPIO y cada
-  entrada analógica de la descripción, no en el primer scan. Un canal obligatorio que no se puede configurar hace
+  entrada analógica de la descripción, no en el primer ciclo. Un canal obligatorio que no se puede configurar hace
   fallar la inicialización.
 - Las salidas digitales se numeran primero y luego las entradas digitales; las entradas analógicas tienen su propia
   numeración, en el orden de la imagen.
@@ -80,7 +80,7 @@ que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 
 Una operación que una placa no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`; ese es el resultado definido de "no
 soportado". El scheduler lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
-función que un puerto no implementa es un fallo de build o de test, no un stub silencioso.
+función que un puerto no implementa es una falla de build o de test, no un stub silencioso.
 
 ## Persistencia
 

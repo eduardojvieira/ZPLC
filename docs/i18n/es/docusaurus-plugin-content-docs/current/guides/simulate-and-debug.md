@@ -84,7 +84,7 @@ estado seguro.
 
 Una ejecución manual muestra un camino. Una [prueba de escenario](./scenario-tests.md)
 dice qué debe hacer el programa y descubre cuándo un cambio lo rompe. Use el depurador
-para entender un escenario que falla: el fallo da el instante, y usted puede ejecutar
+para entender un escenario que falla: la falla da el instante, y usted puede ejecutar
 hasta ese ciclo.
 
 ## Qué está verificado y qué no

@@ -34,7 +34,7 @@ Antes de cambiar un comportamiento riesgoso, agregue o refuerce una prueba
 focalizada y luego ejecute las verificaciones de host, de destino o de banco que
 correspondan. Una prueba afirma comportamiento: ejecuta un programa en la VM o
 renderiza una pantalla. No lee texto fuente. CI ejecuta cada capa, y la lista de
-fallos esperados mantiene visibles los fallos conocidos en lugar de ocultarlos.
+fallas esperadas mantiene visibles las fallas conocidas en lugar de ocultarlas.
 
 ### 3. Todo lo que cruza un límite no es de confianza
 

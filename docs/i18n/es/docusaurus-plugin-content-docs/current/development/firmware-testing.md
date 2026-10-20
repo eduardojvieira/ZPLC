@@ -15,7 +15,7 @@ repositorio.
 
 Todo lo que se describe aquí es evidencia de host, de simulador o de
 compilación. Una ejecución correcta no demuestra que una placa arranque, que
-sus pines se comporten ni que un ciclo de scan mantenga su período en silicio
+sus pines se comporten ni que un ciclo de escaneo mantenga su período en silicio
 real. Esas afirmaciones requieren los procedimientos de hardware en el lazo
 descritos en [Soporte de hardware](../reference/capabilities-evidence.md).
 
@@ -80,7 +80,7 @@ tools/firmware-test/run.sh all
 ```
 
 Cada modo compila lo que necesita, lo ejecuta sin pedir confirmación y termina
-con estado distinto de cero ante cualquier fallo. Las últimas líneas son una
+con estado distinto de cero ante cualquier falla. Las últimas líneas son una
 línea de resumen por escenario o por placa. Toda la salida queda bajo
 `$ZPLC_FW_WS/out`, con un registro por modo.
 
@@ -117,7 +117,7 @@ cd ~/zplc-zephyr-ws && west twister -T zplc/firmware/tests -p qemu_cortex_m3 -s 
 ```
 
 Un escenario que Twister marca como `skipped`, por ejemplo por un desborde de
-RAM, se informa aquí como fallo. Un escenario filtrado, que no lista la
+RAM, se informa aquí como falla. Un escenario filtrado, que no lista la
 plataforma, no se cuenta.
 
 ## Qué cubren las suites
@@ -159,8 +159,8 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
   valor forzado;
-- `scheduler_admission` retiene un scan en el commit y en la escritura de salidas, para mostrar que una escritura de
-  fuera espera al latch de entradas y nunca al scan, y que el lock de la imagen está libre mientras se escriben los
+- `scheduler_admission` retiene un ciclo en el commit y en la escritura de salidas, para mostrar que una escritura de
+  fuera espera al latch de entradas y nunca al ciclo, y que el lock de la imagen está libre mientras se escriben los
   pines;
 - `scheduler_equivalence` conduce el scheduler Zephyr por los escenarios del núcleo común del scheduler y compara sus
   decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
@@ -170,7 +170,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
   fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
-  alimentación desde la finalización de un scan, el tiempo de espera tomado del conjunto de tareas, un scan detenido que lo
+  alimentación desde la finalización de un ciclo, el tiempo de espera tomado del conjunto de tareas, un ciclo detenido que lo
   deja expirar, y la política en STOP, en pausa y en un fault (RT-020);
 - `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
   Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma
@@ -180,7 +180,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
 (un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
 decisiones del núcleo del scheduler y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
-scan se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
+ciclo se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
 un fault y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
 pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
 `test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
@@ -193,7 +193,7 @@ declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en u
 `zplc.io_table.base` y `zplc.io_table.extended` compilan el firmware desde dos descripciones sintéticas de placa
 (`firmware/tests/io_table/io_base.json` e `io_extended.json`) sobre el emulador de GPIO de `native_sim` y ejecutan el
 mismo código de prueba en ambas. La prueba lee la tabla generada, maneja cada pin de entrada emulado, ejecuta un
-scan y comprueba que una entrada descrita llega a la imagen de entrada en su dirección, que una salida descrita
+ciclo y comprueba que una entrada descrita llega a la imagen de entrada en su dirección, que una salida descrita
 llega a su pin, y que un pin que el devicetree tiene pero la descripción no lista nunca se configura ni se maneja. La
 descripción extendida lista tres salidas y una entrada más que la base, una de ellas en un segundo y otra en un
 tercer byte de imagen, y ningún fuente del firmware las nombra.
@@ -364,7 +364,7 @@ requiere el banco de HIL-010.
   de GPIO y el alias de LED de `native_sim`.
 - `scheduler_run_control` observa el nivel físico del canal de salida 0 con el
   mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno de
-  los dos, solo comprueba la imagen de salidas, la tabla de forzados y los scans
+  los dos, solo comprueba la imagen de salidas, la tabla de forzados y los ciclos
   de las tareas, así que "salidas seguras durante la pausa" se observa solo en
   `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún

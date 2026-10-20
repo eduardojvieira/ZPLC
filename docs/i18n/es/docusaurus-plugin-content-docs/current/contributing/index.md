@@ -37,7 +37,7 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 |---|---|---|---|
 | Preparación | `bun run setup` | unos 10 s | Dependencias instaladas, compilador construido, runtime nativo construido |
 | Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
-| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
+| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y toda falla es una de los listados |
 | Aplicación, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de la aplicación y los casos de conformidad se comportan como está listado |
 | Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y la aplicación compila |
 | Estructura de la aplicación | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del store importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
@@ -60,7 +60,7 @@ explica qué muestra cada modo del firmware y qué no.
 
 | Área | Práctica requerida |
 |---|---|
-| Runtime y hardware | Conserve los límites C99/HAL, los fallos safe/off y la recuperación. |
+| Runtime y hardware | Conserve los límites C99/HAL, las fallas safe/off y la recuperación. |
 | Fronteras de confianza | Valide bytecode, IPC, rutas y entrada externa antes de modificar estado. |
 | Electron | Mantenga el renderer sin privilegios y el IPC estrecho y validado. |
 | Evidencia | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales. |
@@ -78,15 +78,15 @@ aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, l
 el almacén de progreso y el recurso de curso de MCP leen un índice generado a partir de ellos, y CI
 falla ante una lista de identificadores escrita a mano (LRN-028).
 
-1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un starter que
+1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un proyecto inicial que
    compila y falla el escenario, y una solución que lo pasa.
 2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de abajo.
 3. Ejecute el generador y luego el CI de lecciones.
 
 | Archivo | Qué contiene |
 |---|---|
-| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos starter y solución, y el escenario de referencia con su hash de contenido. |
-| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del starter para que el alumno lo ejecute desde Tests; CI falla cuando la copia difiere. |
+| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos proyecto inicial y solución, y el escenario de referencia con su hash de contenido. |
+| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del proyecto inicial para que el alumno lo ejecute desde Tests; CI falla cuando la copia difiere. |
 | `text.en.json`, `text.es.json` | El texto: título, resumen, alcance, objetivos, las seis etapas (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), dos niveles de pista y la falla a corregir. Ambos archivos deben tener la misma estructura. |
 | `checks.json` | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar. |
 
@@ -107,10 +107,10 @@ bun tools/ci/generate-lesson-index.ts --check          # lo que corre CI: el arc
 bun run --cwd packages/zplc-ide test src/learn         # CI de lecciones; defina ZPLC_NATIVE_SIM_BIN para las pruebas con runtime
 ```
 
-El CI de lecciones ejecuta cada paquete en ambos idiomas: el starter falla el escenario de
+El CI de lecciones ejecuta cada paquete en ambos idiomas: el proyecto inicial falla el escenario de
 referencia porque una aserción falla, la solución lo pasa, cada programa incorrecto sigue en rojo,
 cada tiempo y valor que cita el texto existe en el escenario, y cada archivo que cita existe en el
-starter (LRN-025).
+proyecto inicial (LRN-025).
 
 ## Ejemplos de código ejecutables
 
@@ -127,7 +127,7 @@ Count := Count + 1;
 END_PROGRAM
 ```
 
-```st runnable expect="Count=3" scans=3 scan_ms=10
+```st runnable expect="Count=3" ciclos=3 scan_ms=10
 PROGRAM Counting
 VAR
     Count : INT;
@@ -140,8 +140,8 @@ END_PROGRAM
 | Palabra | Significado |
 |---|---|
 | `runnable` | El ejemplo se compila con el compilador del repositorio. Un ejemplo que no compila hace fallar `bun run check:docs`: corrija el ejemplo o quite la palabra. |
-| `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último scan. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
-| `scans=N`, `scan_ms=N` | Cuántos scans ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
+| `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último ciclo. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
+| `scans=N`, `scan_ms=N` | Cuántos ciclos ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
 | `fragment` | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo. |
 | `language=il` | El ejemplo es Instruction List, escrito en un cerco `iecst`. |
 

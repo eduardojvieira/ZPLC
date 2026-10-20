@@ -31,9 +31,9 @@ PROGRAM Main
 END_PROGRAM
 ```
 
-Cada scan suma 1 a `Counter`, y `Output_LED` sigue en `FALSE` hasta que `Counter` llega a `Threshold`.
-Después de tres scans `Counter` vale 3 y `Output_LED` es `FALSE`; CI ejecuta el ejemplo durante tres
-scans y comprueba ambos valores.
+Cada ciclo suma 1 a `Counter`, y `Output_LED` sigue en `FALSE` hasta que `Counter` llega a `Threshold`.
+Después de tres ciclos `Counter` vale 3 y `Output_LED` es `FALSE`; CI ejecuta el ejemplo durante tres
+ciclos y comprueba ambos valores.
 
 ## Tipos de datos
 

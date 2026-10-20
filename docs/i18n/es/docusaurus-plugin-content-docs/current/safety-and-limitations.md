@@ -70,17 +70,17 @@ estiman; cada fila indica de dónde sale el número.
 Las funciones del lenguaje que todavía no funcionan se enumeran, con los casos
 que fallan, en la [página de Structured Text](./languages/st.md) y en la
 [página de la biblioteca estándar](./runtime/stdlib.md); ambas se generan a partir
-de la lista de fallos esperados, de modo que un límite sale de la lista cuando su
+de la lista de fallas esperadas, de modo que un límite sale de la lista cuando su
 caso se corrige.
 
-## Salidas y fallos
+## Salidas y fallas
 
 - Cada salida tiene un valor seguro documentado, normalmente apagado, y ese valor
-  es el predeterminado. Un reinicio, un tiempo de espera agotado, un fallo o un
+  es el predeterminado. Un reinicio, un tiempo de espera agotado, una falla o un
   programa inválido nunca deben llevar a una reanudación automática del control
   ([Principios de ingeniería](./contributing/principles.md)).
 - En una placa, una pausa, un paso y una detención también llevan las salidas
-  físicas a su valor seguro. Un fallo borra la imagen de proceso y los forzados,
+  físicas a su valor seguro. Una falla borra la imagen de proceso y los forzados,
   igual que una detención. El [Planificador](./runtime/scheduler.md#pausa-reanudación-paso-y-parada)
   tiene la tabla de lo que cada acción conserva y borra, con las pruebas que la
   respaldan.

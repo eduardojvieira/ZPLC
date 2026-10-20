@@ -27,7 +27,7 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
 - **Salidas:**
   - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT` (`cmp-058-ton-delays-output`).
   - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo (`cmp-057-ton-elapsed-stops-at-preset`).
-- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo scan (`cmp-057-ton-zero-preset-follows-the-input`).
+- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo ciclo (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Temporizador Off-Delay)
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
@@ -54,7 +54,7 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
 
 `CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman el valor de preselección de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767. Las reglas de esta lista valen para los tres bloques, y cada bloque agrega las suyas más abajo.
 
-- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos scans, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
+- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos ciclos, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
 - **Reset y load son niveles y tienen prioridad.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana sobre `LD`.
 - **El detector de flancos sigue funcionando durante el reset y el load.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando `R` o `LD` se suelta. Un pulso que sube en la llamada en que `R` o `LD` se suelta sí se cuenta, siempre que la entrada fuera FALSE en la llamada anterior.
 - **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
@@ -96,7 +96,7 @@ Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
 
 `CV` y `PV` son valores de 16 bits con signo y toda comparación es con signo: un `PV` negativo es un preset negativo (un `CTU` con `PV := -3` tiene `Q` en TRUE desde la primera llamada, `cmp-058-ctu-with-a-negative-preset`), y `QU` y `QD` de `CTUD` comparan `CV` con `PV` y con 0 como números con signo por debajo de cero (`cmp-058-ctud-counts-down-through-zero-and-back`).
 
-Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado scan por scan, incluidas las detenciones en 32767 y en -32768.
+Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado ciclo por ciclo, incluidas las detenciones en 32767 y en -32768.
 
 ---
 
@@ -332,7 +332,7 @@ Genera un tren de pulsos con tiempos de ON y OFF separados.
   - `T_OFF` (TIME): Tiempo en que `Q` es FALSE en cada ciclo.
 - **Salidas:**
   - `Q` (BOOL): El tren de pulsos.
-- **Comportamiento:** El ciclo empieza con la fase ON en el scan en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer scan en que su tiempo transcurrió, así que con un período de scan mayor que `T_ON` o `T_OFF` la fase dura un scan.
+- **Comportamiento:** El ciclo empieza con la fase ON en el ciclo en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer ciclo en que su tiempo transcurrió, así que con un período de ciclo mayor que `T_ON` o `T_OFF` la fase dura un ciclo.
 
 ```text
 ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____

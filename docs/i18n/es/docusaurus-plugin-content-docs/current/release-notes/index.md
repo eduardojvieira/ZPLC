@@ -65,5 +65,5 @@ seguridad física a partir de esta página ni de la presencia del código fuente
 
 - Use solo el SHA exacto de la versión y regístrelo en la evidencia de ambas placas.
 - Mantenga la grabación del firmware, la carga del programa y RUN/depuración como operaciones humanas separadas.
-- Conserve las salidas seguras en el arranque, ante un fallo, ante la admisión de un programa inválido y en la recuperación.
+- Conserve las salidas seguras en el arranque, ante una falla, ante la admisión de un programa inválido y en la recuperación.
 - No publique afirmaciones de producción, de tiempos ni de seguridad si falta cualquiera de los dos registros de placa.

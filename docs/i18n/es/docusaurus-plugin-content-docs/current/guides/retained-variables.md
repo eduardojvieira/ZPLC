@@ -66,7 +66,7 @@ detención y un apagado siguen guardando.
 | Una recompilación del programa, incluso una que solo mueve código | Se descartan: el programa tiene otra identidad |
 | Un comando de reinicio | Se descartan: es un reinicio en frío |
 | Se carga otro programa | Se descartan: el registro guardado pertenece al otro programa |
-| Un fallo | La detención de un runtime con fallo no guarda nada |
+| Una falla | La detención de un runtime con falla no guarda nada |
 
 El estado del runtime nativo indica cuál de estos ocurrió, con un `reason` como
 `restored`, `none`, `identity_mismatch` o `layout_mismatch`: el campo `retain` del
@@ -95,7 +95,7 @@ estado dice `io_error`.
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallos inyectados en cada paso | Host y `native_sim` |
+| El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallas inyectadas en cada paso | Host y `native_sim` |
 | Los valores sobreviven a una detención y a un arranque del runtime nativo | Prueba de la sesión nativa | Host |
 | Un corte de energía en una placa | No probado | Ninguno |
 | Cuánto retrasa una escritura en flash a un ciclo | No medido | Ninguno |

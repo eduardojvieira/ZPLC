@@ -81,7 +81,7 @@ Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran y un `PAYLOAD` recibido se 
 | Una solicitud Modbus | El cliente espera como máximo el doble del tiempo configurado (para conectar y luego por la respuesta); el bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo + 100 ms) x 8` después de la solicitud, es decir 8,8 s con el tiempo por defecto de 500 ms. |
 | `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH` | El hilo del cliente envía el mensaje en una pasada de su bucle; `ERROR` con `STATUS` 2 a los 5 s. |
 | Un aprovisionamiento (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | El servicio espera al broker 30 s en cada paso; `ERROR` con `STATUS` 2 a los 90 s. |
-| Pérdida de la sesión con el broker | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` informan `ERROR` con `STATUS` 4 (o el código del fallo) en el ciclo siguiente a que el cliente lo nota: de inmediato si la conexión se cierra o se reinicia, y dentro del intervalo de keep-alive si la pérdida es silenciosa. Un mensaje que estaba en cola y no se había enviado se falla, no se envía en la sesión siguiente. |
+| Pérdida de la sesión con el broker | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` informan `ERROR` con `STATUS` 4 (o el código de la falla) en el ciclo siguiente a que el cliente lo nota: de inmediato si la conexión se cierra o se reinicia, y dentro del intervalo de keep-alive si la pérdida es silenciosa. Un mensaje que estaba en cola y no se había enviado se falla, no se envía en la sesión siguiente. |
 | Reconexión | Un intento a la vez. El cliente espera hasta 5 s la respuesta del broker y luego espera 2 s, duplicando hasta 60 s, antes del intento siguiente. |
 
 ## Bloques de función soportados
