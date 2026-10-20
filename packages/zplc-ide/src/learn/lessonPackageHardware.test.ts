@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { programWiringProblems } from '../boards/wiring/wiring';
+import { programWiringProblems, wiringSafetyProblems } from '../boards/wiring/wiring';
 import { BOARDS, WIRING } from '../boards/wiring/wiring.fixtures';
 import { LESSONS_DIRECTORY, buildIndex, loadCourse, loadLearnerBoards, loadLessonPackages, programAddresses, PROJECTS_DIRECTORY } from './lessonPackageFiles';
 
@@ -80,5 +80,19 @@ describe('a program and its wiring, on each learner board (LRN-014)', () => {
     const wiring = { schemaVersion: 1 as const, parts: [onboard] };
     expect(programWiringProblems(wiring, BOARDS, ['%QX0.4'], [])).toEqual(['the program uses %QX0.4, which ESP32-S3-DevKitC-1 (N8R8) has no channel for; declare it in io.virtual of the project if no pin drives it there']);
     expect(programWiringProblems(wiring, BOARDS, ['%QX0.4'], ['%QX0.4'])).toEqual([]);
+  });
+});
+
+describe('LRN-016 the course wires only logic-level I/O and low-voltage parts, and no mains', () => {
+  it('refuses a lesson whose wiring has a part outside the low-voltage kinds or an LED without its resistor', () => {
+    expect(problemsOf(lessonsWithHardware([{ ...lamp, kind: 'relay', color: undefined, resistorOhms: undefined }, enable]))).toContain('blink-structured-text/wiring.json: part "lamp": kind "relay" is not a low-voltage part of the course (led, resistor, button, potentiometer, capacitor, jumper)');
+    expect(problemsOf(lessonsWithHardware([{ ...lamp, resistorOhms: 100 }, enable]))).toContain('blink-structured-text/wiring.json: part "lamp": an LED needs a series resistor of at least 330 ohms, it has 100');
+  });
+
+  it('holds for every lesson of the course on the hardware track', () => {
+    const { boards } = loadLearnerBoards();
+    for (const lesson of loadLessonPackages().packages.filter((item) => item.manifest.tracks.includes('hardware'))) {
+      expect({ lesson: lesson.id, problems: wiringSafetyProblems(lesson.wiring!, boards) }).toEqual({ lesson: lesson.id, problems: [] });
+    }
   });
 });

@@ -171,3 +171,30 @@ export function programWiringProblems(wiring: WiringFile, boards: readonly Wirin
   }
   return problems;
 }
+
+const VOLTS = /(\d+(?:[.,]\d+)?)\s*V\b/g;
+const MAINS = /\bmains\b|red eléctrica|tensión de red|\bV?AC\b/i;
+
+/**
+ * LRN-016: the parts are low-voltage kinds only; every LED a learner wires to a header pin is red, green or yellow and has
+ * a series resistor of at least 330 ohms (an on-board LED has its own); no label names a voltage above 3.3 V or mains.
+ */
+export function wiringSafetyProblems(wiring: WiringFile, boards: readonly WiringBoard[]): string[] {
+  const problems: string[] = [];
+  for (const part of wiring.parts) {
+    const here = `part "${part.id}"`;
+    if (!(LOW_VOLTAGE_KINDS as readonly string[]).includes(part.kind)) problems.push(`${here}: kind "${part.kind}" is not a low-voltage part of the course (${LOW_VOLTAGE_KINDS.join(', ')})`);
+    const onHeader = boards.some((board) => externalParts(wiring, board).includes(part));
+    if (part.kind === 'led' && onHeader) {
+      if (!(LED_COLORS as readonly string[]).includes(part.color ?? '')) problems.push(`${here}: an LED must be ${LED_COLORS.slice(0, -1).join(', ')} or ${LED_COLORS.at(-1)}, not ${part.color ?? 'unnamed'}`);
+      if ((part.resistorOhms ?? 0) < MIN_LED_RESISTOR_OHMS) problems.push(`${here}: an LED needs a series resistor of at least ${MIN_LED_RESISTOR_OHMS} ohms, it has ${part.resistorOhms ?? 'none'}`);
+    }
+    for (const locale of WIRING_LOCALES) {
+      const label = part.label[locale];
+      const volts = [...label.matchAll(VOLTS)].map((match) => Number(match[1]!.replace(',', '.'))).filter((value) => value > MAX_VOLTS);
+      for (const value of volts) problems.push(`${here}: the ${locale} label names ${value} V, above the ${MAX_VOLTS} V of the learner boards`);
+      if (MAINS.test(label)) problems.push(`${here}: the ${locale} label names mains wiring`);
+    }
+  }
+  return problems;
+}

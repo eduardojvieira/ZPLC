@@ -30,6 +30,26 @@ A lesson on the hardware track lists it in `lesson.json` and adds a `hardware` b
   English and Spanish. A lesson that only runs on a board, such as "verify my board", lists
   `tracks: ["hardware"]` and says in `unsupported.simulation` why it has no simulation grade.
 
+## Safe parts only
+
+Every hardware lesson uses logic-level inputs and outputs and low-voltage parts, and the course contains
+no mains wiring. The lesson CI enforces it (LRN-016):
+
+- a part is an LED, a resistor, a button, a potentiometer, a capacitor or a jumper wire, and nothing
+  else: no relay, motor or buzzer is ever driven from a pin;
+- every LED on a header pin is red, green or yellow, with a series resistor of at least 330 Ω;
+- no part names a voltage above 3.3 V, and nothing names mains.
+
+Every wiring page states the voltage limit of the kit:
+
+- The I/O pins work at 3.3 V logic only.
+- Never connect 5 V (including the 5V, VBUS and VSYS pins), a battery above 3.3 V or anything from
+  mains to a GPIO, ADC or 3V3 pin.
+- Power the parts only from the 3V3 pin, and join the grounds.
+- Keep each output under 10 mA (one LED with 330 Ω draws about 4 mA). On the Pico, keep the total
+  under 50 mA.
+- Wire with the USB cable unplugged, and check twice before plugging it in.
+
 ## The wiring file
 
 `wiring.json` lists the parts on the breadboard and the board channel each one connects to. It names

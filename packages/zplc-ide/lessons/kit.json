@@ -13,5 +13,21 @@
       "ground": "GND · J1-22",
       "analogGround": "GND · J1-22"
     }
-  ]
+  ],
+  "voltageLimit": {
+    "en": [
+      "The I/O pins of both learner boards work at 3.3 V logic only.",
+      "Never connect 5 V (including the 5V, VBUS and VSYS pins), a battery above 3.3 V or anything from mains to a GPIO, ADC or 3V3 pin.",
+      "Power the parts only from the 3V3 pin of the board, and join the grounds.",
+      "Keep each output under 10 mA: one LED with a 330 Ω resistor draws about 4 mA. On the Pico, keep the total of all pins under 50 mA.",
+      "Wire with the USB cable unplugged, and check the wiring twice before you plug it in."
+    ],
+    "es": [
+      "Los pines de E/S de las dos placas del estudiante funcionan solo con lógica de 3.3 V.",
+      "Nunca conecte 5 V (incluidos los pines 5V, VBUS y VSYS), una batería de más de 3.3 V ni nada que provenga de la red eléctrica a un pin GPIO, ADC o 3V3.",
+      "Alimente las piezas solo desde el pin 3V3 de la placa y una las tierras (GND).",
+      "Mantenga cada salida por debajo de 10 mA: un LED con una resistencia de 330 Ω consume unos 4 mA. En la Pico, mantenga el total de todos los pines por debajo de 50 mA.",
+      "Cablee con el cable USB desconectado y revise el cableado dos veces antes de conectarlo."
+    ]
+  }
 }

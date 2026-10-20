@@ -33,6 +33,27 @@ Una lección de la ruta de hardware la incluye en `lesson.json` y agrega un bloq
   incluye `tracks: ["hardware"]` e indica en `unsupported.simulation` por qué no tiene calificación en
   simulación.
 
+## Solo piezas seguras
+
+Todas las lecciones de hardware usan entradas y salidas de nivel lógico y piezas de baja tensión, y el
+curso no incluye cableado a la red eléctrica. La CI de lecciones lo verifica (LRN-016):
+
+- una pieza es un LED, una resistencia, un pulsador, un potenciómetro, un capacitor o un cable puente,
+  y nada más: nunca se maneja un relé, un motor ni un zumbador desde un pin;
+- todo LED en un pin del conector es rojo, verde o amarillo, con una resistencia en serie de al menos
+  330 Ω;
+- ninguna pieza nombra una tensión mayor que 3.3 V, y nada nombra la red eléctrica.
+
+Cada página de cableado indica el límite de tensión del kit:
+
+- Los pines de E/S funcionan solo con lógica de 3.3 V.
+- Nunca conecte 5 V (incluidos los pines 5V, VBUS y VSYS), una batería de más de 3.3 V ni nada que
+  provenga de la red eléctrica a un pin GPIO, ADC o 3V3.
+- Alimente las piezas solo desde el pin 3V3 y una las tierras (GND).
+- Mantenga cada salida por debajo de 10 mA (un LED con 330 Ω consume unos 4 mA). En la Pico, mantenga
+  el total por debajo de 50 mA.
+- Cablee con el cable USB desconectado y revise dos veces antes de conectarlo.
+
 ## El archivo de cableado
 
 `wiring.json` enumera las piezas de la protoboard y el canal de la placa al que se conecta cada una.

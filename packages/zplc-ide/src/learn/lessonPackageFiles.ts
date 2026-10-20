@@ -6,9 +6,9 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { readBoardIo } from '../boards/boardIo';
 import { normalizeAddress } from '../boards/boardIoMapping';
-import { WIRING_FILE, programWiringProblems, validateWiring, wiringBoardProblems, type WiringBoard, type WiringFile } from '../boards/wiring/wiring';
+import { joinLearnerBoards, validateKit, type LearnerKit } from '../boards/wiring/kit';
+import { WIRING_FILE, programWiringProblems, validateWiring, wiringBoardProblems, wiringSafetyProblems, type WiringBoard, type WiringFile } from '../boards/wiring/wiring';
 import { validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
@@ -56,20 +56,14 @@ export interface LessonPackage {
  * The learner boards of the course: the boards `kit.json` beside the lessons names, with the pins of their supply and
  * ground, and their I/O description from boards.json. A broken kit or board entry is reported and leaves no board.
  */
-export function loadLearnerBoards(lessonsDirectory = LESSONS_DIRECTORY, boardsFile = BOARDS_FILE): { boards: WiringBoard[]; problems: string[] } {
+export function loadLearnerBoards(lessonsDirectory = LESSONS_DIRECTORY, boardsFile = BOARDS_FILE): { kit?: LearnerKit; boards: WiringBoard[]; problems: string[] } {
   const problems: string[] = [];
-  const kit = readJson(join(lessonsDirectory, 'kit.json'), problems) as { boards?: Array<{ boardId: string; supply: string; ground: string; analogGround: string }> } | undefined;
-  const manifest = readJson(boardsFile, problems) as Array<{ board_id: string; display_name: string; io: unknown }> | undefined;
-  if (!kit || !manifest) return { boards: [], problems };
-  const boards: WiringBoard[] = [];
-  for (const entry of kit.boards ?? []) {
-    const board = manifest.find((candidate) => candidate.board_id === entry.boardId);
-    const io = board ? readBoardIo(board.io) : undefined;
-    if (!board || !io) { problems.push(`kit.json: board "${entry.boardId}" has no valid I/O description in boards.json`); continue; }
-    boards.push({ boardId: entry.boardId, displayName: board.display_name, io, supply: entry.supply, ground: entry.ground, analogGround: entry.analogGround });
-  }
-  if (boards.length === 0 && problems.length === 0) problems.push('kit.json: names no learner board');
-  return { boards, problems };
+  const kit = readJson(join(lessonsDirectory, 'kit.json'), problems);
+  const manifest = readJson(boardsFile, problems);
+  if (problems.length > 0) return { boards: [], problems };
+  const invalid = validateKit(kit).map((problem) => `kit.json: ${problem}`);
+  if (invalid.length > 0) return { boards: [], problems: invalid };
+  return { kit: kit as LearnerKit, ...joinLearnerBoards(kit as LearnerKit, manifest) };
 }
 
 /** `AT %QX0.0` of Structured Text and Instruction List, `"address": "%I0.0"` of the Ladder, FBD and SFC documents. */
@@ -167,7 +161,7 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
       if (shape.length === 0 && learnerBoards.problems.length === 0) {
         wiring = raw as WiringFile;
         const solution = join(projectsDirectory, typed.solution.project);
-        const fits = wiringBoardProblems(wiring, learnerBoards.boards);
+        const fits = [...wiringBoardProblems(wiring, learnerBoards.boards), ...wiringSafetyProblems(wiring, learnerBoards.boards)];
         const program = existsSync(join(solution, 'zplc.json')) ? programAddresses(solution) : undefined;
         const used = fits.length === 0 && program ? programWiringProblems(wiring, learnerBoards.boards, program.addresses, program.virtual) : [];
         here.push(...[...fits, ...used].map((problem) => `${id}/${WIRING_FILE}: ${problem}`));
