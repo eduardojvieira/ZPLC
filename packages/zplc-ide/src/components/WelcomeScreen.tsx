@@ -10,6 +10,7 @@ import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useWelcomeState } from '../store/regionSubscriptions';
 import { boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
+import { isWebBuild } from '../platform/webCapabilities';
 import { ZPLC_REPO_VERSION } from '../version';
 import { openLearnHome } from '../learn/learnUi';
 import { ImportArchive } from './ImportArchive';
@@ -189,7 +190,7 @@ export function WelcomeScreen() {
           <section aria-labelledby="examples-heading" className="pt-8">
             <h2 id="examples-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">{t('welcome.examples.heading')}</h2>
             <p className="mt-2 text-sm leading-5 text-[var(--text-secondary)]">
-              {t('welcome.examples.hint')}
+              {isWebBuild() ? t('web.examples.hint') : t('welcome.examples.hint')}
             </p>
             {exampleSections.map((section) => (
               <section key={section.id} aria-labelledby={`examples-${section.id}`} data-example-group={section.id} className="mt-6">

@@ -38,6 +38,7 @@
     "smoke:desktop": "bun run scripts/run-desktop-smoke.ts",
     "smoke:desktop-packaged": "bun run scripts/run-packaged-desktop-smoke.ts",
     "smoke:journeys": "bun run scripts/run-journeys.ts",
+    "smoke:web": "bun run scripts/smoke-web.ts",
     "smoke:studio-vertical": "bun run scripts/smoke-studio-vertical.ts",
     "smoke:desktop-builds": "bun run scripts/smoke-desktop-builds.ts",
     "cli:build": "bun build --compile --minify src/cli/index.ts --outfile dist/zplc-cli",
