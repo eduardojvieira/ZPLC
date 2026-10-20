@@ -139,7 +139,7 @@ typedef struct {
     uint32_t (*clock_ms)(void);
     /*
      * LRN-024: the per-scan trace of the I/O images a board keeps, fed by the core at the end of each scan and read
-     * with trace.read, so that Studio's device-trace recorder can be tested against this runtime. Timestamps come
+     * with trace.read, so that the device-trace recorder of the ZPLC application can be tested against this runtime. Timestamps come
      * from the clock above.
      */
     zplc_io_trace_t io_trace;

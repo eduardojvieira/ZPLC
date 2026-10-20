@@ -1,7 +1,7 @@
 """Ed25519 as RFC 8032 section 6 writes it, in Python integers. A reference for the test vectors (COM-026).
 
 It is slow and not constant-time: it is never used to protect anything. It produces the signatures that the C
-verifier of the firmware and the WebCrypto of Studio have to accept, and the damaged ones they have to refuse.
+verifier of the firmware and the WebCrypto of the ZPLC application have to accept, and the damaged ones they have to refuse.
 """
 import hashlib
 

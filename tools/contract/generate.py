@@ -33,7 +33,7 @@ To add an opcode
 To change the contract (any opcode, layout, size, code or identifier)
   Until the freeze every such change MUST increment the draft counter (CMP-052):
   the compiler records it in each artifact (header word at offset 28), the
-  loader and Studio refuse an artifact whose counter differs from their own.
+  loader and the ZPLC application refuse an artifact whose counter differs from their own.
   1. Edit contract.json and increase abi.draftCounter by one.
   2. Run `python3 tools/contract/generate.py --record-draft "why it changed"`.
      It writes every generated file and appends the new counter, the
@@ -1245,7 +1245,7 @@ DOC_TEXT = {
         "container": "Container constants",
         "constant": "Constant", "value": "Value", "notes": "Notes",
         "magic": "Magic number", "abi": "ISA version (major.minor)",
-        "draft": "Draft contract counter", "draftNote": "Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze.",
+        "draft": "Draft contract counter", "draftNote": "Written in header word 28 of every artifact. The loader and the ZPLC application refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze.",
         "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
@@ -1274,7 +1274,7 @@ DOC_TEXT = {
         "container": "Constantes del contenedor",
         "constant": "Constante", "value": "Valor", "notes": "Notas",
         "magic": "Número mágico", "abi": "Versión del ISA (mayor.menor)",
-        "draft": "Contador de borrador del contrato", "draftNote": "Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y Studio rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento.",
+        "draft": "Contador de borrador del contrato", "draftNote": "Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y la aplicación ZPLC rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento.",
         "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",

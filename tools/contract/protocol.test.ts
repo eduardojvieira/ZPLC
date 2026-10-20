@@ -143,7 +143,7 @@ describe('parseFrame names why a buffer is not a frame (COM-019)', () => {
 });
 
 describe('the signatures the generator wrote, against the runtime Ed25519 (COM-026)', () => {
-  // The vectors are computed by a Python reference of RFC 8032. The runtime's own Ed25519 (the one Studio signs with)
+  // The vectors are computed by a Python reference of RFC 8032. The runtime's own Ed25519 (the one the ZPLC application signs with)
   // has to agree with it on every case, so the C verifier of the firmware, which the same vectors hold, is held to
   // the standard and not to one implementation.
   for (const [index, vector] of vectors.signatures.entries()) {

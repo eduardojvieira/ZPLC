@@ -90,7 +90,7 @@ void zplc_host_modbus_redirect(uint16_t port);
 /**
  * Register what the environment of the session asks for: ZPLC_NATIVE_COMM=1 turns the blocks on,
  * ZPLC_NATIVE_MODBUS_TIMEOUT_MS sets the Modbus timeout and ZPLC_NATIVE_MQTT_BROKER=host:port names the broker.
- * ZPLC_NATIVE_LOOPBACK=1 (what Studio sets) starts the loopback endpoints instead, unless a broker is named.
+ * ZPLC_NATIVE_LOOPBACK=1 (what the ZPLC application sets) starts the loopback endpoints instead, unless a broker is named.
  * Returns 0, also when nothing was asked for.
  */
 int zplc_host_comm_init_from_environment(void);

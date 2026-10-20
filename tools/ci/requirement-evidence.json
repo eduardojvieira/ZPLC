@@ -2114,7 +2114,7 @@
   ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
-    {"kind":"gate","ref":"docs/docs/ide/deployment.md","test":"No firmware build from Studio on macOS or Windows is recorded yet","note":"Needs a recorded firmware build from Studio on macOS, and on Windows either a build or the message that says why it cannot and points to the prebuilt image, for example a hosted CI run on each system. The IPC test proves the toolchain inspection and the build path on Linux only."}
+    {"kind":"gate","ref":"docs/docs/ide/deployment.md","test":"No firmware build from ZPLC on macOS or Windows is recorded yet","note":"Needs a recorded firmware build from ZPLC on macOS, and on Windows either a build or the message that says why it cannot and points to the prebuilt image, for example a hosted CI run on each system. The IPC test proves the toolchain inspection and the build path on Linux only."}
   ],
   "IDE-028": [
     {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
