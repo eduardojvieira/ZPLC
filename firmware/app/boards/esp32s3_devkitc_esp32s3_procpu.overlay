@@ -34,8 +34,24 @@
  * Console: the Zephyr console and shell use the native USB-Serial/JTAG
  * controller, the port marked "USB", the one used for flashing.
  *
- * NVS storage: the storage partition of the base devicetree.
+ * Storage: the NVS records of the HAL take zplc_nvs_partition (below) and the
+ * settings file system takes storage_partition of the base DTS (IO-008).
  */
+
+/*
+ * IO-008: the NVS records of the HAL (program, RETAIN, settings keys) get their
+ * own 192 KB partition in the upper 4 MB of the 8 MB flash, which the 4 MB
+ * partition table of the base DTS leaves free; the settings file system
+ * (LittleFS, zplc_config.c) keeps storage_partition (0x3b0000, 192 KB).
+ */
+&flash0 {
+    partitions {
+        zplc_nvs_partition: partition@400000 {
+            label = "zplc-nvs";
+            reg = <0x400000 DT_SIZE_K(192)>;
+        };
+    };
+};
 
 /* ESP32-S3R8 class module: 8 MB octal PSRAM, needed for CONFIG_ESP_SPIRAM */
 &psram0 {

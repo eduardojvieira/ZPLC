@@ -346,6 +346,38 @@ def parse_overlay(text: str) -> dict[str, Any]:
     return {"aliases": aliases, "gpios": gpios, "okay": set(_OKAY_REFERENCE.findall(text))}
 
 
+_KCONFIG = re.compile(r"^(?:(CONFIG_\w+)=(.*)|# (CONFIG_\w+) is not set)$")
+
+
+def _kconfig(paths: Iterable[Path]) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for path in paths:
+        for line in path.read_text().splitlines():
+            match = _KCONFIG.match(line.strip())
+            if match:
+                values[match.group(1) or match.group(3)] = match.group(2) if match.group(1) else "n"
+    return values
+
+
+def storage_users(board: dict[str, Any], root: Path) -> dict[str, str]:
+    """The flash partition each persistent store of a board's firmware takes (IO-008).
+
+    `nvs` is the HAL's record store (program, RETAIN, settings keys): zplc_hal_zephyr.c opens zplc_nvs_partition when
+    the devicetree defines one and storage_partition otherwise. `littlefs` is the settings file system that
+    firmware/app/src/zplc_config.c mounts on storage_partition. The Kconfig is firmware/app/prj.conf and then the
+    board's .conf files; the partition labels come from the board's overlays.
+    """
+    assets = [root / asset for asset in board.get("support_assets", [])]
+    conf = _kconfig([root / "firmware/app/prj.conf"] + [path for path in assets if path.suffix == ".conf"])
+    labels = {label for path in assets if path.suffix == ".overlay" for label, _ in _LABELED_NODE.findall(_COMMENT.sub("", path.read_text()))}
+    users: dict[str, str] = {}
+    if conf.get("CONFIG_NVS") == "y":
+        users["nvs"] = "zplc_nvs_partition" if "zplc_nvs_partition" in labels else "storage_partition"
+    if conf.get("CONFIG_FILE_SYSTEM_LITTLEFS") == "y":
+        users["littlefs"] = "storage_partition"
+    return users
+
+
 def _overlay_of(channel: dict[str, Any], root: Path) -> dict[str, Any] | None:
     source = channel.get("source")
     if not isinstance(source, str) or not source.endswith(".overlay") or not (root / source).is_file():

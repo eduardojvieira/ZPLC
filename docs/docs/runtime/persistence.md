@@ -233,7 +233,7 @@ part and from the partition layout of the board file. No board was measured.
 | Arduino GIGA R1 (STM32H747 M7) | 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
 | Arduino Opta WiFi (STM32H747 M7) | 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
 | STM32F746G Discovery | 15 MB of the external QSPI NOR, 4 KB sub-sectors assumed | 4 KB | 100,000 | 15,700,000 | 60 s | more than 100 years |
-| ESP32-S3 DevKitC | 192 KB of the module SPI NOR, 48 sectors of 4 KB | 1 KB | 100,000 | 184,000 | 60 s | 29.5 years |
+| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`: 192 KB of the module SPI NOR at 4 MB, 48 sectors of 4 KB | 1 KB | 100,000 | 184,000 | 60 s | 29.5 years |
 | STM32 Nucleo-H743ZI | 128 KB, one sector of the internal flash: NVS cannot mount | 4 KB | none | none | none | not persisted |
 | A board with no numbers | any | any | 10,000 | 40,000 | 3600 s | 10.3 years for 4 KB |
 
@@ -246,6 +246,25 @@ A `STOP` of a changed region is one more save and is not part of the budget: it
 is a person's command. A script that stops and starts the controller every few
 seconds, with retained values that change in every run, spends the budget of a
 year in days.
+
+### Which store takes which partition
+
+A firmware board has up to two stores in flash: the NVS records of the HAL (the program slots, `RETAIN` and the
+settings keys) and, on the network boards, the settings file system (LittleFS, which also holds the Wi-Fi
+credentials). Two stores on one partition overwrite each other, so on the learner boards each one has its own
+(IO-008). The HAL takes `zplc_nvs_partition` when the board's devicetree defines it, and `storage_partition`
+otherwise; the settings file system mounts `storage_partition`.
+
+| Board | NVS records | Settings file system |
+|---|---|---|
+| Raspberry Pi Pico (RP2040) | `storage_partition`, 64 KB at 0x1f0000 | not built in |
+| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`, 192 KB at 0x400000 | `storage_partition`, 192 KB at 0x3b0000 |
+
+A test fails when two stores of a learner board share a partition (it reads the Kconfig and overlay files of the
+board); the addresses above are those of the build's devicetree, and no board was measured. An ESP32-S3 that ran an earlier image kept its NVS records in
+`storage_partition`: after the update the stored program, the `RETAIN` values and the settings keys of that image
+are not carried over, and the settings file system formats its partition at the first start when it cannot mount
+it. Deploy the program again and enter the settings again.
 
 ### Limits
 

@@ -224,6 +224,31 @@ class DevicetreeCrossCheckTests(unittest.TestCase):
         self.assertIn("GPIO_ACTIVE_LOW", binding["flags"])
 
 
+class StorageUsersTests(unittest.TestCase):
+    """IO-008: the persistent stores of a board's firmware, and the flash partition each one takes."""
+
+    def users(self, conf: str, overlay: str) -> dict[str, str]:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "firmware/app").mkdir(parents=True)
+            (root / "firmware/app/prj.conf").write_text("CONFIG_NVS=y\n")
+            (root / "board.conf").write_text(conf)
+            (root / "board.overlay").write_text(overlay)
+            return boards_lib.storage_users({"support_assets": ["board.conf", "board.overlay"]}, root)
+
+    def test_io_008_nvs_alone_takes_the_storage_partition(self) -> None:
+        self.assertEqual({"nvs": "storage_partition"}, self.users("", "/ { };\n"))
+
+    def test_io_008_littlefs_and_nvs_share_the_storage_partition_unless_the_overlay_gives_nvs_its_own(self) -> None:
+        conf = "CONFIG_FILE_SYSTEM_LITTLEFS=y\n"
+        self.assertEqual({"nvs": "storage_partition", "littlefs": "storage_partition"}, self.users(conf, "/ { };\n"))
+        overlay = "&flash0 { partitions { zplc_nvs_partition: partition@400000 { reg = <0x400000 0x30000>; }; }; };\n"
+        self.assertEqual({"nvs": "zplc_nvs_partition", "littlefs": "storage_partition"}, self.users(conf, overlay))
+
+    def test_io_008_a_store_switched_off_takes_no_partition(self) -> None:
+        self.assertEqual({}, self.users("# CONFIG_NVS is not set\n", "/ { };\n"))
+
+
 class DerivedValuesTests(unittest.TestCase):
     def test_image_extent_is_what_the_channels_need(self) -> None:
         description = board([
@@ -378,6 +403,12 @@ class ManifestTests(unittest.TestCase):
         for entry in self.boards:
             self.assertNotIn("validation_level", entry, entry["board_id"])
 
+
+    def test_io_008_no_two_storage_users_share_a_partition_on_a_learner_board(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            users = boards_lib.storage_users(self.by_id(board_id), ROOT)
+            self.assertIn("nvs", users, board_id)
+            self.assertEqual(len(users), len(set(users.values())), f"{board_id}: {users}")
 
     def test_io_009_the_t_display_s3_settings_are_a_separate_profile_that_matches_its_overlay(self) -> None:
         profile = json.loads(TDISPLAY_PROFILE.read_text())
