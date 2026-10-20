@@ -177,6 +177,13 @@ zplc_wdt_action_t zplc_wdt_action(const zplc_wdt_policy_t *policy, zplc_wdt_stat
  */
 uint32_t zplc_wdt_timeout_for(uint32_t profile_ms, uint32_t hardware_max_ms, uint32_t longest_interval_us);
 
+/**
+ * @brief The hold value of one stage of an Espressif main-system watchdog for @p timeout_ms: its tick is 500 us
+ *        (80 MHz APB divided by 40000), so two ticks to the millisecond.
+ * @return the ticks, or 0 for no timeout or one the 32-bit register cannot hold
+ */
+uint32_t zplc_wdt_mwdt_ticks_for(uint32_t timeout_ms);
+
 /* ============================================================================
  * The adapter: what a platform provides
  * ============================================================================

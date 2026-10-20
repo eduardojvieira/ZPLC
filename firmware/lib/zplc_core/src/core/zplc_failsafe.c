@@ -152,3 +152,5 @@ uint32_t zplc_wdt_timeout_for(uint32_t profile_ms, uint32_t hardware_max_ms, uin
   }
   return timeout_ms > UINT32_MAX ? 0U : (uint32_t)timeout_ms;
 }
+
+uint32_t zplc_wdt_mwdt_ticks_for(uint32_t timeout_ms) { return timeout_ms > 0x7FFFFFFFU ? 0U : timeout_ms * 2U; }
