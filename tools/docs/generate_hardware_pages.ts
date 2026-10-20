@@ -97,7 +97,7 @@ function wiringBody(board: WiringBoard, lesson: Lesson, lang: Lang): string {
   const wiring = lesson.hardware!.wiring;
   const intro: L10n = {
     en: `The wiring of the lesson [${prose(lesson.text.en.title)}](../../../learn/lessons/${lesson.id}.md) on the [${board.displayName}](../${board.boardId}.md). Wire it with the USB cable unplugged.`,
-    es: `El cableado de la lección [${prose(lesson.text.es.title)}](../../../learn/lessons/${lesson.id}.md) en la [${board.displayName}](../${board.boardId}.md). Cabléela con el cable USB desconectado.`,
+    es: `El cableado de la lección [${prose(lesson.text.es.title)}](../../../learn/lessons/${lesson.id}.md) en la [${board.displayName}](../${board.boardId}.md). Haga el cableado con el cable USB desconectado.`,
   };
   const heading = { en: `Wiring of ${lesson.text.en.title} on ${board.displayName}`, es: `Cableado de ${lesson.text.es.title} en ${board.displayName}` };
   return [
@@ -118,7 +118,7 @@ export const KIT_PAGES: ReferencePage[] = BOARDS.map((board) => ({
   path: kitPath(board),
   title: { en: `Learner kit: ${board.displayName}`, es: `Kit del estudiante: ${board.displayName}` },
   label: { en: board.displayName, es: board.displayName },
-  description: { en: `The pin map, parts, firmware and voltage limit of the ${board.displayName} for the course, generated from the board I/O manifest and the kit.`, es: `El mapa de pines, las piezas, el firmware y el límite de tensión de la ${board.displayName} para el curso, generados del manifiesto de E/S de la placa y del kit.` },
+  description: { en: `The pin map, parts, firmware and voltage limit of the ${board.displayName} for the course, generated from the board I/O manifest and the kit.`, es: `El mapa de pines, las piezas, el firmware y el límite de tensión de la ${board.displayName} para el curso, generados a partir del manifiesto de E/S de la placa y del kit.` },
   body: (lang) => kitBody(board, lang),
 }));
 
@@ -126,7 +126,7 @@ export const WIRING_PAGES: ReferencePage[] = BOARDS.flatMap((board) => HARDWARE_
   path: wiringPath(board, lesson),
   title: { en: `Wiring: ${lesson.text.en.title} on ${board.displayName}`, es: `Cableado: ${lesson.text.es.title} en ${board.displayName}` },
   label: { en: lesson.id, es: lesson.id },
-  description: { en: `How to wire the lesson ${lesson.id} on the ${board.displayName}, generated from its wiring file.`, es: `Cómo cablear la lección ${lesson.id} en la ${board.displayName}, generado de su archivo de cableado.` },
+  description: { en: `How to wire the lesson ${lesson.id} on the ${board.displayName}, generated from its wiring file.`, es: `Cómo cablear la lección ${lesson.id} en la ${board.displayName}, generado a partir de su archivo de cableado.` },
   body: (lang) => wiringBody(board, lesson, lang),
 })));
 

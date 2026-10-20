@@ -21,7 +21,7 @@
   "es": {
     "heading": "Cableado en {board}",
     "led": "{label}: LED {color} con una resistencia de {ohms} en serie, desde {pin} hasta GND ({ground}).",
-    "button": "{label}: pulsador entre {pin} y GND ({ground}); lo lee la resistencia de pull-up interna de la placa.",
+    "button": "{label}: pulsador entre {pin} y GND ({ground}); la placa lo lee con su resistencia de pull-up interna.",
     "jumper": "{label}: cable puente desde {pin} hasta GND ({ground}); conectado significa activado.",
     "potentiometer": "{label}: potenciómetro de {ohms}, extremos a 3V3 ({supply}) y GND ({analogGround}), cursor a {pin}.",
     "capacitor": "{label}: capacitor desde {pin} hasta GND ({ground}).",

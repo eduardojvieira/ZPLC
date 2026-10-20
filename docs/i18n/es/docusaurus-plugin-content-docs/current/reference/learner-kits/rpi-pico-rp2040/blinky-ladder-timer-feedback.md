@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Oscilador TON y realimentación de salida en Raspberry Pi Pico (RP2040)"
 sidebar_label: "blinky-ladder-timer-feedback"
-description: "Cómo cablear la lección blinky-ladder-timer-feedback en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección blinky-ladder-timer-feedback en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/blinky-ladder-timer-feedback. Do not edit. >>> */}
 
-El cableado de la lección [Oscilador TON y realimentación de salida](../../../learn/lessons/blinky-ladder-timer-feedback.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Oscilador TON y realimentación de salida](../../../learn/lessons/blinky-ladder-timer-feedback.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 

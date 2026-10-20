@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Escriba un parpadeador en texto estructurado en Raspberry Pi Pico (RP2040)"
 sidebar_label: "blink-structured-text"
-description: "Cómo cablear la lección blink-structured-text en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección blink-structured-text en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/blink-structured-text. Do not edit. >>> */}
 
-El cableado de la lección [Escriba un parpadeador en texto estructurado](../../../learn/lessons/blink-structured-text.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Escriba un parpadeador en texto estructurado](../../../learn/lessons/blink-structured-text.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 

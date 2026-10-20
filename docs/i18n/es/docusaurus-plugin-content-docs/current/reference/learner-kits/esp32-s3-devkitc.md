@@ -1,7 +1,7 @@
 ---
 title: "Kit del estudiante: ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "ESP32-S3-DevKitC-1 (N8R8)"
-description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la ESP32-S3-DevKitC-1 (N8R8) para el curso, generados del manifiesto de E/S de la placa y del kit."
+description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la ESP32-S3-DevKitC-1 (N8R8) para el curso, generados a partir del manifiesto de E/S de la placa y del kit."
 tags: [learn, hardware, generated]
 ---
 

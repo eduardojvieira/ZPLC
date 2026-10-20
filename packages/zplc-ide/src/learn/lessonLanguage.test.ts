@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'bun:test';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+import kit from '../../lessons/kit.json';
+import phrases from '../boards/wiring/phrases.json';
 
 import { faceplateEs } from '../i18n/catalog/faceplate';
 import { interlockEs } from '../i18n/catalog/interlock';
@@ -74,6 +79,17 @@ const WRONG_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
   [/(?<![\p{L}])Ladder(?![\p{L}])/gu, 'diagrama de escalera'],
 ];
 
+/**
+ * Every form the patterns find in labelled texts. The texts are scanned joined first, so the usual case, nothing found,
+ * costs one pass per pattern instead of one per text: the whole Spanish catalog has over two thousand texts, and the
+ * per-text scan took seconds on a loaded machine.
+ */
+function findAll(texts: ReadonlyArray<readonly [string, string]>, patterns: ReadonlyArray<readonly [RegExp, string]>): Array<{ at: string; found: string; use: string }> {
+  const joined = texts.map(([, text]) => text).join('\n');
+  return patterns.flatMap(([pattern, use]) => !new RegExp(pattern.source, pattern.flags.replace('g', '')).test(joined) ? [] : texts.flatMap(([at, text]) => [...text.matchAll(pattern)].map((match) => ({ at, found: match[0], use }))));
+}
+const lessonTexts = (): Array<readonly [string, string]> => spanish.flatMap(({ id, strings }) => strings.map((value) => [id, value] as const));
+
 describe('LRN-029 every lesson and hint exists in English and Spanish with the same structure', () => {
   it('LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts', () => {
     expect(problems).toEqual([]);
@@ -87,28 +103,22 @@ describe('LRN-029 every lesson and hint exists in English and Spanish with the s
 
 describe('LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary', () => {
   it('LRN-029 no Spanish lesson or hint addresses the learner with "tú" or voseo', () => {
-    const found = spanish.flatMap(({ id, strings }) => strings.flatMap((value) => [...value.matchAll(REGISTER)].map((match) => ({ id, form: match[0] }))));
-    expect(found).toEqual([]);
+    expect(findAll(lessonTexts(), [[REGISTER, 'usted or an impersonal form']])).toEqual([]);
   });
 
   it('LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term', () => {
-    const found = spanish.flatMap(({ id, strings }) => WRONG_VARIANTS.flatMap(([pattern, use]) => strings.flatMap((value) => [...value.matchAll(pattern)].map((match) => ({ id, found: match[0], use })))));
-    expect(found).toEqual([]);
+    expect(findAll(lessonTexts(), WRONG_VARIANTS)).toEqual([]);
   });
 
   it('LRN-029 the Spanish of the Learn panel, the Lab, the plants and the faceplate uses the same register and glossary', () => {
     const catalogs = { learn: learnEs, learnHome: learnHomeEs, lab: labEs, labScene: labSceneEs, faceplate: faceplateEs, interlock: interlockEs };
-    const found = Object.entries(catalogs).flatMap(([catalog, messages]) => Object.entries(messages).flatMap(([key, value]) => [
-      ...[...value.matchAll(REGISTER)].map((match) => ({ catalog, key, found: match[0], use: 'usted or an impersonal form' })),
-      ...WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.matchAll(pattern)].map((match) => ({ catalog, key, found: match[0], use }))),
-    ]));
-    expect(found).toEqual([]);
+    const texts = Object.entries(catalogs).flatMap(([catalog, messages]) => Object.entries(messages).map(([key, value]) => [`${catalog} ${key}`, value] as const));
+    expect(findAll(texts, [[REGISTER, 'usted or an impersonal form'], ...WRONG_VARIANTS])).toEqual([]);
   });
 
   it('UX-030 the Spanish of the whole application uses the glossary terms of the course', () => {
     // A {placeholder} is a name in code, not Spanish: `{rung}` is not the word "rung".
-    const found = Object.entries(es).flatMap(([key, value]) => WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.replace(/\{\w+\}/g, '0').matchAll(pattern)].map((match) => ({ key, found: match[0], use }))));
-    expect(found).toEqual([]);
+    expect(findAll(Object.entries(es).map(([key, value]) => [key, value.replace(/\{\w+\}/g, '0')] as const), WRONG_VARIANTS)).toEqual([]);
   });
 
   it('LRN-029 the deny-lists catch the forms they name and leave the usted forms and the code tokens alone', () => {
@@ -118,6 +128,58 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
     expect(variants('El ciclo de scan del starter, un rung en Ladder y un fallo.')).toEqual(['ciclo de scan', 'rung', 'fallo', 'starter', 'Ladder']);
     expect(variants('Un ciclo de escaneo, un peldaño en diagrama de escalera (LD) y una falla del programa inicial; src/ScanSnapshot.st y tests/scan-snapshot.scenario.json.')).toEqual([]);
     expect(variants('La copia queda demorada un scan.')).toEqual(['scan']);
+  });
+});
+
+/** The forms the register and the glossary refuse in one Spanish string, with its {placeholders} taken out. */
+const refused = (value: string): string[] => {
+  const bare = value.replace(/\{\w+\}/g, '0');
+  return [...[...bare.matchAll(REGISTER)], ...WRONG_VARIANTS.flatMap(([pattern]) => [...bare.matchAll(pattern)])].map((match) => match[0]);
+};
+const placeholdersOf = (text: string): string[] => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!).sort();
+
+/** The structure of a Markdown page: its heading levels in order and how many list items, table rows and images it has. */
+function pageShape(markdown: string): { headings: string; listItems: number; tableRows: number; images: number } {
+  const body = markdown.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/```[\s\S]*?```/g, '');
+  return {
+    headings: (body.match(/^#{1,6} /gm) ?? []).map((heading) => heading.trim()).join(' '),
+    listItems: (body.match(/^\s*(?:[-*]|\d+\.) /gm) ?? []).length,
+    tableRows: (body.match(/^\|.*\|\s*$/gm) ?? []).length,
+    images: (body.match(/!\[/g) ?? []).length,
+  };
+}
+const markdownFiles = (directory: string): string[] => readdirSync(directory).flatMap((name) => {
+  const path = join(directory, name);
+  return statSync(path).isDirectory() ? markdownFiles(path) : name.endsWith('.md') ? [path] : [];
+});
+const DOCS = join(import.meta.dir, '../../../../docs');
+const KIT_PAGES = { en: join(DOCS, 'docs/reference/learner-kits'), es: join(DOCS, 'i18n/es/docusaurus-plugin-content-docs/current/reference/learner-kits') };
+
+describe('LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure', () => {
+  it('LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary', () => {
+    expect(Object.keys(phrases.es).sort()).toEqual(Object.keys(phrases.en).sort());
+    for (const key of Object.keys(phrases.en) as Array<keyof typeof phrases.en>) {
+      const spanish = phrases.es[key];
+      expect({ key, empty: spanish.trim() === '', placeholders: placeholdersOf(spanish), refused: refused(spanish) }).toEqual({ key, empty: false, placeholders: placeholdersOf(phrases.en[key]), refused: [] });
+    }
+  });
+
+  it('LRN-029 every part of the kit and every sentence of the voltage limit exists in both languages, in the register and the terms of the glossary', () => {
+    expect(kit.voltageLimit.es.length).toBe(kit.voltageLimit.en.length);
+    for (const sentence of kit.voltageLimit.es) expect({ sentence, refused: refused(sentence) }).toEqual({ sentence, refused: [] });
+    for (const item of kit.bom as Array<{ id: string; name: { en: string; es: string }; note?: { en: string; es: string } }>) {
+      expect({ id: item.id, name: item.name.es.trim() !== '', note: item.note === undefined || (item.note.en.trim() !== '' && item.note.es.trim() !== '') }).toEqual({ id: item.id, name: true, note: true });
+      for (const text of [item.name.es, item.note?.es ?? '']) expect({ id: item.id, refused: refused(text) }).toEqual({ id: item.id, refused: [] });
+    }
+  });
+
+  it('LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams', () => {
+    const english = markdownFiles(KIT_PAGES.en).map((file) => relative(KIT_PAGES.en, file)).sort();
+    expect(english.length).toBeGreaterThan(10);
+    expect(markdownFiles(KIT_PAGES.es).map((file) => relative(KIT_PAGES.es, file)).sort()).toEqual(english);
+    for (const page of english) {
+      expect({ page, shape: pageShape(readFileSync(join(KIT_PAGES.es, page), 'utf8')) }).toEqual({ page, shape: pageShape(readFileSync(join(KIT_PAGES.en, page), 'utf8')) });
+    }
   });
 });
 

@@ -31,7 +31,7 @@ Una lección de la ruta de hardware la incluye en `lesson.json` y agrega un bloq
 - `analogPercent` es la desviación que puede tener un valor analógico, como porcentaje de su escala
   completa.
 - Una lección sin la ruta de hardware conserva `unsupported.hardware`, con un motivo y una alternativa
-  en inglés y en español. Una lección que solo se ejecuta en una placa, como "verificar mi placa",
+  en inglés y en español. Una lección que solo se ejecuta en una placa, como “Verificar mi placa”,
   incluye `tracks: ["hardware"]` e indica en `unsupported.simulation` por qué no tiene calificación en
   simulación.
 
@@ -59,7 +59,7 @@ Todas las lecciones de hardware usan entradas y salidas de nivel lógico y pieza
 curso no incluye cableado a la red eléctrica. La CI de lecciones lo verifica (LRN-016):
 
 - una pieza es un LED, una resistencia, un pulsador, un potenciómetro, un capacitor o un cable puente,
-  y nada más: nunca se maneja un relé, un motor ni un zumbador desde un pin;
+  y nada más: nunca se acciona un relé, un motor ni un zumbador desde un pin;
 - todo LED en un pin del conector es rojo, verde o amarillo, con una resistencia en serie de al menos
   330 Ω;
 - ninguna pieza nombra una tensión mayor que 3.3 V, y nada nombra la red eléctrica.
@@ -94,7 +94,7 @@ firmware cambia en todos los diagramas.
 | Tipo | Cómo se cablea |
 |---|---|
 | `led` | Desde el pin, a través de su resistencia en serie (`resistorOhms`), hasta GND. |
-| `button` | Entre el pin y GND. La resistencia de pull-up interna de la placa lo lee. |
+| `button` | Entre el pin y GND. La placa lo lee con su resistencia de pull-up interna. |
 | `jumper` | Un cable que el estudiante conecta entre el pin y GND para mantener activa una entrada. |
 | `potentiometer` | Extremos en 3V3 y GND, cursor en el pin analógico. |
 

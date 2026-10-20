@@ -1,7 +1,7 @@
 ---
 title: "Kit del estudiante: Raspberry Pi Pico (RP2040)"
 sidebar_label: "Raspberry Pi Pico (RP2040)"
-description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la Raspberry Pi Pico (RP2040) para el curso, generados del manifiesto de E/S de la placa y del kit."
+description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la Raspberry Pi Pico (RP2040) para el curso, generados a partir del manifiesto de E/S de la placa y del kit."
 tags: [learn, hardware, generated]
 ---
 

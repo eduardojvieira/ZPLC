@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Oscilador TON y realimentación de salida en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "blinky-ladder-timer-feedback"
-description: "Cómo cablear la lección blinky-ladder-timer-feedback en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección blinky-ladder-timer-feedback en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/blinky-ladder-timer-feedback. Do not edit. >>> */}
 
-El cableado de la lección [Oscilador TON y realimentación de salida](../../../learn/lessons/blinky-ladder-timer-feedback.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Oscilador TON y realimentación de salida](../../../learn/lessons/blinky-ladder-timer-feedback.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
