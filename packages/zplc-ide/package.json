@@ -16,6 +16,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:web": "tsc -b && vite build --config vite.web.config.ts",
     "build:wasm": "bun ../../tools/wasm-core/build.ts --out build/wasm/zplc-runtime.wasm --manifest build/wasm/zplc-runtime.json",
     "build:assets": "bun run scripts/prepare-build-assets.mjs",
     "lint": "eslint . && bun ../../tools/ci/ide-structure.ts && bun ../../tools/ci/ux-tokens.ts && bun ../../tools/ci/ui-kit-guard.ts && bun ../../tools/ci/i18n-guard.ts",
