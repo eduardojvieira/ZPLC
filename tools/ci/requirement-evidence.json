@@ -1535,6 +1535,7 @@
     {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"}
   ],
   "IO-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"tells an on-board channel from a header pin, so the Pico LED needs no wiring while every input is on the header (IO-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)","partial":true,"note":"description and target-build level: the pins are proven by the loopback bench of HIL-010 (WP-85, WP-94)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
@@ -2626,7 +2627,33 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"LRN-011 gives every lesson its own reason for a track it does not support, in both languages"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/course.test.ts","test":"the tracks a lesson supports (LRN-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 lets a hardware-only lesson say why it has no simulation grade, and what to do instead"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+  ],
+  "LRN-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-013 requires the hardware block exactly when the lesson lists the hardware track, with its wiring file and tolerances"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+  ],
+  "LRN-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the one bill of materials of the course (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring card: the same wiring as a text list, part by part (LRN-014, LRN-037)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring diagram of a lesson on a learner board (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"a program and its wiring, on each learner board (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the bill of materials covers every hardware lesson (LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-014 the lesson pages link the wiring of their lesson on each board"}
+  ],
+  "LRN-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"LRN-016 states the voltage limit in English and Spanish with the same facts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"LRN-016 hardware lessons use only logic-level I/O and low-voltage parts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"LRN-016 the course wires only logic-level I/O and low-voltage parts, and no mains"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-016 every wiring page states the voltage limit, in English and in Spanish"}
   ],
   "LRN-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
@@ -2674,6 +2701,9 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
   ],
+  "LRN-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the tolerances of a board check (LRN-024)"}
+  ],
   "LRN-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
   ],
@@ -2688,6 +2718,7 @@
   "LRN-027": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
   "LRN-028": [
@@ -2729,7 +2760,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
   ],
   "LRN-035": [
-    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"}
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-035 the kit page of each learner board, generated from boards.json and kit.json"}
   ],
   "LRN-036": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 carries the reason to the listing of the example that has none"},
@@ -2738,6 +2770,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
   ],
   "LRN-037": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring card: the same wiring as a text list, part by part (LRN-014, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
@@ -3054,6 +3087,7 @@
   ],
   "DOC-013": [
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"DOC-013 the wiring diagrams are generated drawings, not pictures of the product"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
   ],
   "DOC-014": [
