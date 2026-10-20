@@ -1,14 +1,14 @@
 ---
 id: structured-text
-title: Structured Text (ST)
-sidebar_label: Sintaxis de Structured Text
-description: Escribir lógica PLC con Structured Text en ZPLC.
+title: Texto estructurado (ST)
+sidebar_label: Sintaxis del texto estructurado (ST)
+description: Escribir lógica PLC con texto estructurado en ZPLC.
 tags: [languages, st, iec61131-3]
 ---
 
-# Structured Text (ST)
+# Texto estructurado (ST)
 
-Structured Text (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de la aplicación ZPLC y del compilador.
+El texto estructurado (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de la aplicación ZPLC y del compilador.
 
 ## Sintaxis básica
 
@@ -37,7 +37,7 @@ ciclos y comprueba ambos valores.
 
 ## Tipos de datos
 
-ZPLC soporta estos tipos elementales. [Structured Text (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
+ZPLC soporta estos tipos elementales. [Texto estructurado (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
 
 *   `BOOL`
 *   `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
