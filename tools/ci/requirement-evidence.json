@@ -2585,6 +2585,9 @@
   ],
   "UX-030": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"UX-030 the Spanish of the whole application uses the glossary terms of the course"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 DOC-017 the messages that reach a person name the product ZPLC"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 the browser capability profile says which process image ZPLC reads and writes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 the firmware report speaks of ZPLC in the three answers a device can give"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or \"usted\"), and passes the neutral forms"},
     {"kind":"unit","ref":"tools/ci/product-name.test.ts","test":"UX-030 DOC-017 REL-031 names the product ZPLC in every catalog, page, config label and release text"},
     {"kind":"unit","ref":"tools/ci/product-name.test.ts","test":"UX-030 DOC-017 REL-031 product name guard: the repository"},
@@ -3394,6 +3397,7 @@
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
   ],
   "DOC-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 DOC-017 the messages that reach a person name the product ZPLC"},
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"the one vector mark and its one-colour variants","partial":true,"note":"one text-free mark of decision D-03 (ZPLC), with one-colour variants, drawn only in colours of the palette of the application; the site logo, favicon, 1200 by 630 social card, the application icons (png, icns) and the favicon of the renderer (packages/zplc-ide/public/icon.png) are generated from it and checked against recorded checksums, and the README shows it. The name ZPLC is used by the application, its catalogs (src/i18n/i18n.test.tsx), the installers (scripts/release/identity.json), the README and the site title; the GitHub description is set outside the repository and is not checked, and the prose of the documentation pages is renamed by its own pass"},
     {"kind":"unit","ref":"tools/ci/brand/generate-icons.test.ts","test":"what is made from the mark","partial":true,"note":"the outputs are current and sized as the site and electron-builder name them"},
     {"kind":"unit","ref":"tools/ci/product-name.test.ts","test":"UX-030 DOC-017 REL-031 names the product ZPLC in every catalog, page, config label and release text"},
