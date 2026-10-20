@@ -41,7 +41,7 @@ Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su e
 
 ## En una placa
 
-Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa. Complétela en Simulación y luego haga la lección siguiente, Verificar mi placa, en la ruta de Hardware para verificar su placa.
+Esta lección es el recorrido por ZPLC y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa. Complétela en Simulación y luego haga la lección siguiente, Verificar mi placa, en la ruta de Hardware para verificar su placa.
 
 {/* <<< END GENERATED: learn/lessons/first-blink-simulation <<< */}
 

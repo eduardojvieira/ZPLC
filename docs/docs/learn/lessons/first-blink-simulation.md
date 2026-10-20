@@ -41,7 +41,7 @@ Tests provide native POSIX host evidence on your computer only; they are not evi
 
 ## On a board
 
-This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board. Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.
+This lesson is the tour of ZPLC and its simulator: the blink it grades runs in the simulation, with no board. Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.
 
 {/* <<< END GENERATED: learn/lessons/first-blink-simulation <<< */}
 

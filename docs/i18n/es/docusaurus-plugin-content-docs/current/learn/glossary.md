@@ -11,7 +11,7 @@ tags: [learn, lessons, glossary, spanish]
 
 El curso existe en inglés y en español. Esta página fija la palabra que cada
 idioma usa para cada concepto que enseñan las lecciones, de modo que una
-lección, sus pistas, las etiquetas de las plantas y los controles de Studio que
+lección, sus pistas, las etiquetas de las plantas y los controles de ZPLC que
 nombra una lección digan lo mismo.
 
 ## El registro del español
@@ -32,12 +32,12 @@ quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 | Inglés | Español | Nota |
 |---|---|---|
 | scan cycle | ciclo de escaneo | Una pasada del programa es "un ciclo". |
-| rung | peldaño | El editor de diagrama de escalera de Studio usa la misma palabra. |
+| rung | peldaño | El editor de diagrama de escalera de ZPLC usa la misma palabra. |
 | contact, normally open, normally closed | contacto, normalmente abierto (NA), normalmente cerrado (NC) | |
 | coil | bobina | |
 | seal-in | autorretención | |
 | latch (un bloque SR o RS) | biestable | Mantener un valor memorizado es "retenerlo". |
-| interlock | enclavamiento | La pestaña Interlocks de Studio es "Enclavamientos". |
+| interlock | enclavamiento | La pestaña Interlocks de ZPLC es "Enclavamientos". |
 | permissive | permisivo | |
 | set, reset | set, reset (activar, desactivar) | Las bobinas SET y RESET conservan su nombre. |
 | on-delay timer | temporizador con retardo a la conexión (TON) | |
@@ -72,8 +72,8 @@ quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 | bill of materials | lista de materiales | |
 | breadboard | protoboard | |
 
-Los controles de Studio que nombra una lección se escriben como los muestra
-Studio en español: **Check** es **Comprobar**, y el panel Tests es **Pruebas**.
+Los controles de ZPLC que nombra una lección se escriben como los muestra
+ZPLC en español: **Check** es **Comprobar**, y el panel Tests es **Pruebas**.
 
 ## Cómo se mantiene
 

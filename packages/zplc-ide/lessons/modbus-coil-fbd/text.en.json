@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modbus in Function Block Diagram: write a coil and read it back",
   "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
-  "scope": "The Modbus server of this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+  "scope": "The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
   "objectives": [
     "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
     "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
+      "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The ZPLC simulation answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
       "checkpoint": "Written, Echo and Failed describe the exchange: the coil was written, the coil read back is ON, and nothing failed."
     },
     {
@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
       "checkpoint": "The scenario is named CoilEcho and contains {{assertions}} assertions."
     },
     {
@@ -42,7 +42,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "What would the scenario show if Rd read coil 5 instead of coil 4, or if Wr wrote FALSE? Wire a new constant 5 to Rd.ADDR and see which assertion fails.",
-      "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+      "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that ZPLC starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
     }
   ],
   "hints": [

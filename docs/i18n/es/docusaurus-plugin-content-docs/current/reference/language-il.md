@@ -15,7 +15,7 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 Lista de Instrucciones se escribe en un editor de texto. El código se analiza y se traduce a Texto Estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los de Texto Estructurado.
 
-Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de Studio, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
+Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
 ## Elementos
 

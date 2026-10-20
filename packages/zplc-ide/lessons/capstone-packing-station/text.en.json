@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
       "checkpoint": "The scenario is named PackingStation and contains {{assertions}} assertions."
     },
     {

@@ -12,7 +12,7 @@ tags: [learn, lessons, educators, classroom]
 Everything on this page works on a teacher's own computer. Learn needs no account
 and no server, and nothing here sends a student's data anywhere. The commands run
 from a checkout of the repository with [Bun](https://bun.sh), and they read the
-lesson index that ships with Studio.
+lesson index that ships with ZPLC.
 
 ## Hide the reference solutions
 
@@ -45,7 +45,7 @@ is not a progress file, and 2 for a wrong command line. Add `--strict` to also f
 on `unverified` lessons.
 
 This is a consistency check against the lesson hashes, not a defence against a
-student who edits the file by hand: a grade record is evidence of what Studio
+student who edits the file by hand: a grade record is evidence of what ZPLC
 recorded on the student's computer. Ask for a live **Check** when it matters.
 
 ## Print the course outline

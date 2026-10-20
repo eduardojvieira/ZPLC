@@ -46,7 +46,7 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   deploy: { en: 'Deploy to a board', es: 'Cargar en una placa' },
 };
 const KIND: Record<'journey' | 'test' | 'conformance', L10n> = {
-  journey: { en: 'Studio journey in the native simulation', es: 'Recorrido de Studio en la simulación nativa' },
+  journey: { en: 'ZPLC application journey in the native simulation', es: 'Recorrido de la aplicación ZPLC en la simulación nativa' },
   test: { en: 'Test on the native runtime', es: 'Prueba en el runtime nativo' },
   conformance: { en: 'Conformance case on the host runtime', es: 'Caso de conformidad en el runtime del equipo' },
 };

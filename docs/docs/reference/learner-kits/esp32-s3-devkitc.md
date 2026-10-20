@@ -41,7 +41,7 @@ Power: 3V3 on 3V3 · J1-1, GND on GND · J1-22, the ground of a potentiometer on
 | Part | Quantity | Notes |
 | --- | --- | --- |
 | One learner board: a Raspberry Pi Pico or Pico H, or an ESP32-S3-DevKitC-1 N8R8 | 1 | The Pico W and Pico 2 W are not supported: their on-board LED sits on the wireless chip. |
-| USB data cable that fits the connector of the board | 1 | A charge-only cable does not carry data, and Studio cannot reach the board through it. |
+| USB data cable that fits the connector of the board | 1 | A charge-only cable does not carry data, and ZPLC cannot reach the board through it. |
 | Breadboard of 830 points | 1 | The DevKitC-1 is wide: two half breadboards side by side leave a free row on each side of it. |
 | 5 mm LEDs: red, green and yellow | 6 | Not blue or white: they need about 3 V and stay dim at 3.3 V. |
 | 330 Ω resistors, one in series with each LED | 6 |   |
@@ -53,7 +53,7 @@ Power: 3V3 on 3V3 · J1-1, GND on GND · J1-22, the ground of a potentiometer on
 
 ## Firmware
 
-Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-s3-devkitc.bin`. Its SHA-256 is published in the `SHA256SUMS` file of the release, and the firmware card of Studio shows it next to the file. [Flash the firmware](../../guides/flash-firmware.md) gives the steps. You perform each of them: Studio never flashes a board.
+Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-s3-devkitc.bin`. Its SHA-256 is published in the `SHA256SUMS` file of the release, and the firmware card of the ZPLC application shows it next to the file. [Flash the firmware](../../guides/flash-firmware.md) gives the steps. You perform each of them: ZPLC never flashes a board.
 
 ## Lessons on the hardware track
 

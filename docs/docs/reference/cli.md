@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/cli. Do not edit. >>> */}
 
-`zplc-cli` is the command line of the ZPLC tool API, the same operations that Studio and the [MCP server](./mcp.md) use: 12 commands. It never flashes, deploys, forces or runs a device. Every command takes a workspace folder (or, for a build, a repository root); `--json` prints one line of JSON, with the evidence of the operation, instead of text. Each diagnostic of a failed build has a `code` (the list is the [diagnostic codes](./diagnostic-codes.md)), its message, where it starts (`line`, `column`), where it ends (`endLine`, `endColumn`) and its file (`path`); the text output ends the line with the code in brackets.
+`zplc-cli` is the command line of the ZPLC tool API, the same operations that the ZPLC application and the [MCP server](./mcp.md) use: 12 commands. It never flashes, deploys, forces or runs a device. Every command takes a workspace folder (or, for a build, a repository root); `--json` prints one line of JSON, with the evidence of the operation, instead of text. Each diagnostic of a failed build has a `code` (the list is the [diagnostic codes](./diagnostic-codes.md)), its message, where it starts (`line`, `column`), where it ends (`endLine`, `endColumn`) and its file (`path`); the text output ends the line with the code in brackets.
 
 This table is read off the source file `packages/zplc-ide/src/cli/index.ts`; its text is the source's own, so it is the same in English and in Spanish.
 

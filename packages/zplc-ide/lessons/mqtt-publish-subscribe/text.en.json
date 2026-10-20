@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "MQTT: publish a message and receive it",
   "summary": "Join the broker of the simulation, subscribe to a topic, publish a message on it, and keep a record of the message when it comes back for a single scan.",
-  "scope": "The MQTT broker in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
+  "scope": "The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
   "objectives": [
     "Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE), which reports its state on every scan, from a request block (MQTT_PUBLISH), which sends once for each rising edge of EN.",
     "Publish only after the subscription holds, because a message sent earlier is not delivered to it.",
@@ -13,7 +13,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/MqttLoop.st the program joins the broker with MQTT_CONNECT and, once it has joined, subscribes to the topic plant/cmd with MQTT_SUBSCRIBE. Add the publisher and the receiver: when Send is ON and the subscription holds, publish the payload START to plant/cmd; turn Heard ON when the subscription delivers the payload START, and keep it ON afterwards. Failed reports an ERROR from any of the three blocks. Studio starts a broker for the simulation on this computer, so no installed broker and no network are needed.",
+      "body": "In src/MqttLoop.st the program joins the broker with MQTT_CONNECT and, once it has joined, subscribes to the topic plant/cmd with MQTT_SUBSCRIBE. Add the publisher and the receiver: when Send is ON and the subscription holds, publish the payload START to plant/cmd; turn Heard ON when the subscription delivers the payload START, and keep it ON afterwards. Failed reports an ERROR from any of the three blocks. ZPLC starts a broker for the simulation on this computer, so no installed broker and no network are needed.",
       "checkpoint": "Joined, Subscribed, Published and Heard follow the exchange in that order, and Failed stays OFF."
     },
     {
@@ -31,7 +31,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the broker of the simulation running.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the broker of the simulation running.",
       "checkpoint": "The scenario is named MqttLoop and contains {{assertions}} assertions."
     },
     {
@@ -44,7 +44,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "What happens if the program publishes to plant/cmd but subscribes to another topic, or compares the payload with another text? Try each one.",
-      "checkpoint": "Each one leaves Heard OFF: the broker delivers a message only to a subscription on the same topic, and the program ignores a payload it does not compare equal. The scenario shows how the blocks behave against the broker double that Studio starts. It does not show that a real broker accepts the same session, topics or quality of service: that has to be checked against that broker."
+      "checkpoint": "Each one leaves Heard OFF: the broker delivers a message only to a subscription on the same topic, and the program ignores a payload it does not compare equal. The scenario shows how the blocks behave against the broker double that ZPLC starts. It does not show that a real broker accepts the same session, topics or quality of service: that has to be checked against that broker."
     }
   ],
   "hints": [

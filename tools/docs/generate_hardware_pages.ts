@@ -80,8 +80,8 @@ function kitBody(board: WiringBoard, lang: Lang): string {
   const format = plannedFormats(zephyrBoardOf(board.boardId)).find((entry) => entry.role === 'flash')!.format;
   const image = `zplc-runtime-${T.version[lang]}-${board.boardId}.${format}`;
   const firmware: L10n = {
-    en: `Each release has a prebuilt image for this board, ${code(image)}. Its SHA-256 is published in the \`SHA256SUMS\` file of the release, and the firmware card of Studio shows it next to the file. [Flash the firmware](../../guides/flash-firmware.md) gives the steps. You perform each of them: Studio never flashes a board.`,
-    es: `Cada versión publicada tiene una imagen precompilada para esta placa, ${code(image)}. Su SHA-256 se publica en el archivo \`SHA256SUMS\` de la versión, y la tarjeta de firmware de Studio lo muestra junto al archivo. [Grabar el firmware](../../guides/flash-firmware.md) da los pasos. Usted realiza cada uno: Studio nunca graba una placa.`,
+    en: `Each release has a prebuilt image for this board, ${code(image)}. Its SHA-256 is published in the \`SHA256SUMS\` file of the release, and the firmware card of the ZPLC application shows it next to the file. [Flash the firmware](../../guides/flash-firmware.md) gives the steps. You perform each of them: ZPLC never flashes a board.`,
+    es: `Cada versión publicada tiene una imagen precompilada para esta placa, ${code(image)}. Su SHA-256 se publica en el archivo \`SHA256SUMS\` de la versión, y la tarjeta de firmware de la aplicación ZPLC lo muestra junto al archivo. [Grabar el firmware](../../guides/flash-firmware.md) da los pasos. Usted realiza cada uno: ZPLC nunca graba una placa.`,
   };
   const lessons = HARDWARE_LESSONS.map((lesson) => [`[${prose(lesson.text[lang].title)}](./${board.boardId}/${lesson.id}.md)`, code(lesson.id)]);
   return [

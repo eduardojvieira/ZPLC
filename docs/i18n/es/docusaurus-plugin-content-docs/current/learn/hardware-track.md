@@ -19,7 +19,7 @@ Todavía no se registró ninguna comprobación en ninguna de las dos placas: vea
 Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con
 las dos placas, y cada lección de hardware repite ese grupo al principio de su sección **En su
 placa**. Elija la que tiene. Con el teclado, llegue al grupo con Tab, pase de una placa a otra
-con las flechas y pulse Intro o Espacio. Studio dice qué placa eligió y la guarda en esta
+con las flechas y pulse Intro o Espacio. ZPLC dice qué placa eligió y la guarda en esta
 computadora.
 
 ## Qué muestra una lección para su placa
@@ -31,17 +31,17 @@ En el panel de la lección, **En su placa** muestra, para la placa que eligió:
 - el límite de tensión, al que lleva un botón encima del diagrama;
 - la lista de materiales de todo el curso;
 - la imagen de firmware de la placa con su SHA-256, y los pasos de grabación que usted sigue:
-  Studio no graba una placa;
+  ZPLC no graba una placa;
 - **Comprobar en la placa**.
 
 ## Usted inicia cada operación física
 
 Aprender nunca se conecta a una placa, carga un programa, ejecuta, detiene, fuerza un valor ni
 graba firmware por sí mismo. Usted hace cada una de estas cosas con los controles habituales de
-Studio. **Comprobar en la placa** permanece desactivado, y dice qué falta, hasta que:
+ZPLC. **Comprobar en la placa** permanece desactivado, y dice qué falta, hasta que:
 
 1. usted eligió una placa;
-2. Studio está conectado a ella;
+2. ZPLC está conectado a ella;
 3. el programa de la lección está compilado y cargado en la placa, y está detenido o en marcha;
 4. la placa indica qué placa es, y es la placa que usted eligió. Una placa que indica otra placa,
    o ninguna, se nombra como el problema.
@@ -84,7 +84,7 @@ Una placa grabada con el firmware de aprendizaje guarda una traza de sus propios
 (`zplc dbg trace`, véanse los [comandos de la consola](../reference/shell-commands.md)): al final
 de cada escaneo guarda el momento en que el escaneo leyó sus entradas, el número del escaneo desde
 **Ejecutar** y los bytes de las imágenes de entradas y salidas que contienen las señales de la
-lección, en un anillo de 2048 bytes. Studio lee el anillo cada 100 ms aproximadamente, no en cada
+lección, en un anillo de 2048 bytes. ZPLC lee el anillo cada 100 ms aproximadamente, no en cada
 escaneo, y califica una muestra por escaneo. Guardar la traza nunca cambia el programa: no escribe memoria, no fuerza
 un valor y no pone en marcha ni detiene nada.
 
@@ -94,7 +94,7 @@ lenta del proyecto inicial de la lección más un margen de fluctuación supuest
 hasta un escaneo después de su entrada, y el margen cubre la resolución de 1 ms de las marcas de
 tiempo de la traza, el tick del núcleo que libera un escaneo y el tiempo que tarda un escaneo
 antes de escribir sus salidas. Todas las lecciones de hardware ejecutan una tarea de 10 ms, así
-que cada una declara 20 ms, y Studio rechaza una lección que declare menos.
+que cada una declara 20 ms, y ZPLC rechaza una lección que declare menos.
 
 Una placa cuyo firmware no tiene traza del dispositivo se lee como antes: con la misma lectura que
 llena la tabla Watch, cada 100 ms. Una lectura son a lo sumo dos comandos `zplc dbg peek` de unos
@@ -156,8 +156,8 @@ lección que se puede calificar en simulación, y una aprobación en simulación
 en hardware. La única excepción es verify-my-board, que solo tiene la ruta de hardware: su
 comprobación en la placa es su aprobación. Su progreso guarda la aprobación en hardware más
 reciente de cada lección aparte de su calificación en simulación, con el hash del programa (el
-SHA-256 del artefacto que Studio cargó en la placa en esta sesión, o el de su mapa de depuración
-cuando Studio no lo cargó) y la versión de ZPLC que informó la placa. Un archivo de progreso de
+SHA-256 del artefacto que ZPLC cargó en la placa en esta sesión, o el de su mapa de depuración
+cuando ZPLC no lo cargó) y la versión de ZPLC que informó la placa. Un archivo de progreso de
 una versión anterior se lee y se convierte.
 
 ## Antes de cablear
@@ -175,7 +175,7 @@ una versión anterior se lee y se convierte.
 - La comprobación está probada en el equipo de desarrollo con trazas sintéticas: trazas que las
   pruebas construyen para que se parezcan a lo que informa una placa. El registrador y los pasos
   de la comprobación están probados con sesiones simuladas. La elección de placa, el cableado de
-  cada placa, las etiquetas y la comprobación desactivada con su motivo están probados en Studio
+  cada placa, las etiquetas y la comprobación desactivada con su motivo están probados en ZPLC
   en Linux.
 - Esta evidencia no incluye ninguna traza de una placa real ni ninguna ejecución en una placa
   física. Las ejecuciones en las dos placas son evidencia de hardware en el lazo que todavía falta

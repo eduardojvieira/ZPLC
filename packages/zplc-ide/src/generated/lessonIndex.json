@@ -1936,7 +1936,7 @@
     },
     {
       "id": "first-blink-simulation",
-      "version": 2,
+      "version": 3,
       "order": 11,
       "module": 0,
       "level": "foundation",
@@ -1950,8 +1950,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board.",
-            "es": "Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
+            "en": "This lesson is the tour of ZPLC and its simulator: the blink it grades runs in the simulation, with no board.",
+            "es": "Esta lección es el recorrido por ZPLC y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
           },
           "instead": {
             "en": "Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.",
@@ -2012,8 +2012,8 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Build the program: on the toolbar, open Build and choose Compile. Press Connect to start the simulation, then Run (F5); Run stays disabled until a build exists. Open the Watch tab and see Lamp turn on and off. Then press Check: Studio runs your saved program against the scenario of this lesson.",
-              "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; Studio lists every one that failed."
+              "body": "Build the program: on the toolbar, open Build and choose Compile. Press Connect to start the simulation, then Run (F5); Run stays disabled until a build exists. Open the Watch tab and see Lamp turn on and off. Then press Check: ZPLC runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; ZPLC lists every one that failed."
             },
             {
               "key": "observe",
@@ -2072,8 +2072,8 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: Studio ejecuta el programa guardado con el escenario de esta lección.",
-              "checkpoint": "El escenario se llama FirstBlink y contiene 10 aserciones; Studio enumera cada una de las que fallaron."
+              "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FirstBlink y contiene 10 aserciones; ZPLC enumera cada una de las que fallaron."
             },
             {
               "key": "observe",
@@ -2106,7 +2106,7 @@
     },
     {
       "id": "boolean-logic-two-hand-guard",
-      "version": 2,
+      "version": 3,
       "order": 12,
       "module": 2,
       "level": "foundation",
@@ -2244,7 +2244,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named TwoHand and contains 9 assertions."
             },
             {
@@ -2304,7 +2304,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama TwoHand y contiene 9 aserciones."
             },
             {
@@ -2338,7 +2338,7 @@
     },
     {
       "id": "timers-on-delay-off-delay",
-      "version": 2,
+      "version": 3,
       "order": 13,
       "module": 3,
       "level": "foundation",
@@ -2456,7 +2456,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named Delays and contains 10 assertions."
             },
             {
@@ -2516,7 +2516,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Delays y contiene 10 aserciones."
             },
             {
@@ -2550,7 +2550,7 @@
     },
     {
       "id": "blink-structured-text",
-      "version": 2,
+      "version": 3,
       "order": 14,
       "module": 1,
       "level": "foundation",
@@ -2648,7 +2648,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named EnabledBlink and contains 11 assertions."
             },
             {
@@ -2708,7 +2708,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama EnabledBlink y contiene 11 aserciones."
             },
             {
@@ -2742,7 +2742,7 @@
     },
     {
       "id": "set-reset-alarm-latch",
-      "version": 2,
+      "version": 3,
       "order": 15,
       "module": 2,
       "level": "foundation",
@@ -2860,7 +2860,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named AlarmLatch and contains 10 assertions."
             },
             {
@@ -2920,7 +2920,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama AlarmLatch y contiene 10 aserciones."
             },
             {
@@ -2954,7 +2954,7 @@
     },
     {
       "id": "seal-in-ladder",
-      "version": 2,
+      "version": 3,
       "order": 16,
       "module": 2,
       "level": "foundation",
@@ -3061,7 +3061,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named SealIn and contains 11 assertions."
             },
             {
@@ -3121,7 +3121,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama SealIn y contiene 11 aserciones."
             },
             {
@@ -3155,7 +3155,7 @@
     },
     {
       "id": "counter-batch-fbd",
-      "version": 2,
+      "version": 3,
       "order": 17,
       "module": 3,
       "level": "foundation",
@@ -3262,7 +3262,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named BatchCount and contains 10 assertions."
             },
             {
@@ -3322,7 +3322,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama BatchCount y contiene 10 aserciones."
             },
             {
@@ -3356,7 +3356,7 @@
     },
     {
       "id": "interlock-guard-permissive",
-      "version": 2,
+      "version": 3,
       "order": 18,
       "module": 6,
       "level": "intermediate",
@@ -3443,7 +3443,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
               "checkpoint": "The scenario is named MotorInterlock and contains 12 assertions."
             },
             {
@@ -3503,7 +3503,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
               "checkpoint": "El escenario se llama MotorInterlock y contiene 12 aserciones."
             },
             {
@@ -3537,7 +3537,7 @@
     },
     {
       "id": "types-arithmetic-comparison",
-      "version": 2,
+      "version": 3,
       "order": 19,
       "module": 4,
       "level": "intermediate",
@@ -3666,7 +3666,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named TypedSteps and contains 8 assertions."
             },
             {
@@ -3726,7 +3726,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama TypedSteps y contiene 8 aserciones."
             },
             {
@@ -3760,7 +3760,7 @@
     },
     {
       "id": "analog-scaling-integer",
-      "version": 2,
+      "version": 3,
       "order": 20,
       "module": 4,
       "level": "intermediate",
@@ -3869,7 +3869,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named Scaling and contains 9 assertions."
             },
             {
@@ -3929,7 +3929,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Scaling y contiene 9 aserciones."
             },
             {
@@ -3963,7 +3963,7 @@
     },
     {
       "id": "function-block-pump-pair",
-      "version": 2,
+      "version": 3,
       "order": 21,
       "module": 7,
       "level": "intermediate",
@@ -4099,7 +4099,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named PumpPair and contains 9 assertions."
             },
             {
@@ -4159,7 +4159,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama PumpPair y contiene 9 aserciones."
             },
             {
@@ -4193,7 +4193,7 @@
     },
     {
       "id": "structures-arrays-call-panel",
-      "version": 2,
+      "version": 3,
       "order": 22,
       "module": 7,
       "level": "intermediate",
@@ -4329,7 +4329,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named CallPanel and contains 10 assertions."
             },
             {
@@ -4389,7 +4389,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama CallPanel y contiene 10 aserciones."
             },
             {
@@ -4423,7 +4423,7 @@
     },
     {
       "id": "sfc-fill-mix-sequence",
-      "version": 2,
+      "version": 3,
       "order": 23,
       "module": 5,
       "level": "intermediate",
@@ -4532,7 +4532,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named FillMix and contains 12 assertions."
             },
             {
@@ -4592,7 +4592,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama FillMix y contiene 12 aserciones."
             },
             {
@@ -4626,7 +4626,7 @@
     },
     {
       "id": "instruction-list-door-alarm",
-      "version": 2,
+      "version": 3,
       "order": 24,
       "module": 9,
       "level": "advanced",
@@ -4742,7 +4742,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named DoorAlarm and contains 12 assertions."
             },
             {
@@ -4802,7 +4802,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama DoorAlarm y contiene 12 aserciones."
             },
             {
@@ -4836,7 +4836,7 @@
     },
     {
       "id": "one-logic-five-languages",
-      "version": 2,
+      "version": 3,
       "order": 25,
       "module": 9,
       "level": "advanced",
@@ -4947,7 +4947,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named GateLatch and contains 11 assertions."
             },
             {
@@ -5007,7 +5007,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama GateLatch y contiene 11 aserciones."
             },
             {
@@ -5041,7 +5041,7 @@
     },
     {
       "id": "capstone-packing-station",
-      "version": 2,
+      "version": 3,
       "order": 26,
       "module": 11,
       "level": "advanced",
@@ -5119,7 +5119,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value.",
               "checkpoint": "The scenario is named PackingStation and contains 16 assertions."
             },
             {
@@ -5179,7 +5179,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
               "checkpoint": "El escenario se llama PackingStation y contiene 16 aserciones."
             },
             {
@@ -5213,7 +5213,7 @@
     },
     {
       "id": "modbus-register-round-trip",
-      "version": 2,
+      "version": 3,
       "order": 27,
       "module": 10,
       "level": "advanced",
@@ -5229,8 +5229,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson talks to the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set.",
-            "es": "La lección se comunica con el servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
+            "en": "The lesson talks to the Modbus TCP server that ZPLC starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set.",
+            "es": "La lección se comunica con el servidor Modbus TCP que ZPLC inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
@@ -5264,7 +5264,7 @@
         "en": {
           "title": "Modbus TCP: write a register and read it back",
           "summary": "Write one holding register through a Modbus TCP block, read it back once the write is done, and report whether the value that came back is the one you sent.",
-          "scope": "The Modbus server in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
+          "scope": "The Modbus server in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
           "objectives": [
             "Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second.",
             "Compare the value read with the value written, and report an ERROR from either block.",
@@ -5274,7 +5274,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
+              "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The ZPLC simulation answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
               "checkpoint": "Written, Match and Failed describe the exchange: the write is done, the value came back unchanged, and nothing failed."
             },
             {
@@ -5292,7 +5292,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
               "checkpoint": "The scenario is named ModbusRegister and contains 6 assertions."
             },
             {
@@ -5305,7 +5305,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "What would the scenario show if the program read register 9 instead of register 8? Try it, and then try writing 1235 while still comparing with 1234.",
-              "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+              "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that ZPLC starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
             }
           ],
           "hints": [
@@ -5325,7 +5325,7 @@
         "es": {
           "title": "Modbus TCP: escribir un registro y volver a leerlo",
           "summary": "Escriba un registro de retención con un bloque Modbus TCP, vuelva a leerlo cuando termine la escritura e informe si el valor recibido es el que usted envió.",
-          "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+          "scope": "El servidor Modbus de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
           "objectives": [
             "Escriba un registro de retención con MB_WRITE_HREG y vuelva a leerlo con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
             "Compare el valor leído con el valor escrito, e informe un ERROR de cualquiera de los dos bloques.",
@@ -5335,7 +5335,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de comprobación: lea el registro 8 cuando termine la escritura, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de Studio responde a cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
+              "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de comprobación: lea el registro 8 cuando termine la escritura, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de ZPLC responde a cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
               "checkpoint": "Written, Match y Failed describen el intercambio: la escritura terminó, el valor volvió sin cambios y nada falló."
             },
             {
@@ -5353,7 +5353,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
               "checkpoint": "El escenario se llama ModbusRegister y contiene 6 aserciones."
             },
             {
@@ -5366,7 +5366,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿Qué mostraría el escenario si el programa leyera el registro 9 en lugar del registro 8? Pruébelo, y luego pruebe a escribir 1235 sin dejar de comparar con 1234.",
-              "checkpoint": "El registro 9 nunca se escribió y vale 0, así que Match nunca pasa a ON; escribir 1235 y comparar con 1234 produce lo mismo. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso hay que comprobarlo con ese dispositivo."
+              "checkpoint": "El registro 9 nunca se escribió y vale 0, así que Match nunca pasa a ON; escribir 1235 y comparar con 1234 produce lo mismo. El escenario muestra cómo se comportan los bloques frente al doble que ZPLC inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso hay que comprobarlo con ese dispositivo."
             }
           ],
           "hints": [
@@ -5387,7 +5387,7 @@
     },
     {
       "id": "mqtt-publish-subscribe",
-      "version": 2,
+      "version": 3,
       "order": 28,
       "module": 10,
       "level": "advanced",
@@ -5403,8 +5403,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson talks to the MQTT broker that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a broker in its firmware, which the course firmware does not set.",
-            "es": "La lección se comunica con el broker MQTT que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un broker en su firmware, que el firmware del curso no configura."
+            "en": "The lesson talks to the MQTT broker that ZPLC starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a broker in its firmware, which the course firmware does not set.",
+            "es": "La lección se comunica con el broker MQTT que ZPLC inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un broker en su firmware, que el firmware del curso no configura."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no broker or network.",
@@ -5438,7 +5438,7 @@
         "en": {
           "title": "MQTT: publish a message and receive it",
           "summary": "Join the broker of the simulation, subscribe to a topic, publish a message on it, and keep a record of the message when it comes back for a single scan.",
-          "scope": "The MQTT broker in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
+          "scope": "The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.",
           "objectives": [
             "Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE), which reports its state on every scan, from a request block (MQTT_PUBLISH), which sends once for each rising edge of EN.",
             "Publish only after the subscription holds, because a message sent earlier is not delivered to it.",
@@ -5449,7 +5449,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/MqttLoop.st the program joins the broker with MQTT_CONNECT and, once it has joined, subscribes to the topic plant/cmd with MQTT_SUBSCRIBE. Add the publisher and the receiver: when Send is ON and the subscription holds, publish the payload START to plant/cmd; turn Heard ON when the subscription delivers the payload START, and keep it ON afterwards. Failed reports an ERROR from any of the three blocks. Studio starts a broker for the simulation on this computer, so no installed broker and no network are needed.",
+              "body": "In src/MqttLoop.st the program joins the broker with MQTT_CONNECT and, once it has joined, subscribes to the topic plant/cmd with MQTT_SUBSCRIBE. Add the publisher and the receiver: when Send is ON and the subscription holds, publish the payload START to plant/cmd; turn Heard ON when the subscription delivers the payload START, and keep it ON afterwards. Failed reports an ERROR from any of the three blocks. ZPLC starts a broker for the simulation on this computer, so no installed broker and no network are needed.",
               "checkpoint": "Joined, Subscribed, Published and Heard follow the exchange in that order, and Failed stays OFF."
             },
             {
@@ -5467,7 +5467,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the broker of the simulation running.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the broker of the simulation running.",
               "checkpoint": "The scenario is named MqttLoop and contains 7 assertions."
             },
             {
@@ -5480,7 +5480,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "What happens if the program publishes to plant/cmd but subscribes to another topic, or compares the payload with another text? Try each one.",
-              "checkpoint": "Each one leaves Heard OFF: the broker delivers a message only to a subscription on the same topic, and the program ignores a payload it does not compare equal. The scenario shows how the blocks behave against the broker double that Studio starts. It does not show that a real broker accepts the same session, topics or quality of service: that has to be checked against that broker."
+              "checkpoint": "Each one leaves Heard OFF: the broker delivers a message only to a subscription on the same topic, and the program ignores a payload it does not compare equal. The scenario shows how the blocks behave against the broker double that ZPLC starts. It does not show that a real broker accepts the same session, topics or quality of service: that has to be checked against that broker."
             }
           ],
           "hints": [
@@ -5500,7 +5500,7 @@
         "es": {
           "title": "MQTT: publicar un mensaje y recibirlo",
           "summary": "Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.",
-          "scope": "El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
+          "scope": "El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
           "objectives": [
             "Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
             "Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.",
@@ -5511,7 +5511,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
+              "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. ZPLC inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
               "checkpoint": "Joined, Subscribed, Published y Heard siguen el intercambio en ese orden, y Failed sigue en OFF."
             },
             {
@@ -5529,7 +5529,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
               "checkpoint": "El escenario se llama MqttLoop y contiene 7 aserciones."
             },
             {
@@ -5542,7 +5542,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿Qué ocurre si el programa publica en plant/cmd pero se suscribe a otro tema, o compara el contenido con otro texto? Pruebe cada caso.",
-              "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
+              "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que ZPLC inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
             }
           ],
           "hints": [
@@ -5563,7 +5563,7 @@
     },
     {
       "id": "analog-scaling-fbd",
-      "version": 1,
+      "version": 2,
       "order": 30,
       "module": 4,
       "level": "intermediate",
@@ -5662,7 +5662,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named LevelScale and contains 9 assertions."
             },
             {
@@ -5722,7 +5722,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama LevelScale y contiene 9 aserciones."
             },
             {
@@ -5756,7 +5756,7 @@
     },
     {
       "id": "interlock-reversing-ladder",
-      "version": 1,
+      "version": 2,
       "order": 31,
       "module": 6,
       "level": "intermediate",
@@ -5835,7 +5835,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named Reversing and contains 11 assertions."
             },
             {
@@ -5895,7 +5895,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Reversing y contiene 11 aserciones."
             },
             {
@@ -5929,7 +5929,7 @@
     },
     {
       "id": "function-block-valves-fbd",
-      "version": 1,
+      "version": 2,
       "order": 32,
       "module": 7,
       "level": "intermediate",
@@ -6008,7 +6008,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named Valves and contains 10 assertions."
             },
             {
@@ -6068,7 +6068,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Valves y contiene 10 aserciones."
             },
             {
@@ -6102,7 +6102,7 @@
     },
     {
       "id": "verify-my-board",
-      "version": 1,
+      "version": 2,
       "order": 33,
       "module": 0,
       "level": "foundation",
@@ -6197,7 +6197,7 @@
           "summary": "Check that your board is the one you chose, that it blinks an LED and that it reads a push button.",
           "scope": "The simulation check of this lesson proves the program. The hardware check grades a trace recorded from your board and is labelled a hardware run; it does not prove electrical limits.",
           "objectives": [
-            "Check that the board Studio reaches is the board you chose.",
+            "Check that the board ZPLC reaches is the board you chose.",
             "See an LED blink on the board.",
             "Read a push button on the board."
           ],
@@ -6205,7 +6205,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "Check the board before the hardware lessons: Studio must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
+              "body": "Check the board before the hardware lessons: ZPLC must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
               "checkpoint": "You can say which board you use and which LED should blink."
             },
             {
@@ -6223,7 +6223,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Every physical step is yours; Studio starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in Studio, after you check the SHA-256 of the file. Connect: connect Studio to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and Studio refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
+              "body": "Every physical step is yours; ZPLC starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in the ZPLC application, after you check the SHA-256 of the file. Connect: connect the ZPLC application to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and ZPLC refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
               "checkpoint": "The scenario is named VerifyBoard and contains 8 assertions."
             },
             {
@@ -6258,7 +6258,7 @@
           "summary": "Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea un pulsador.",
           "scope": "La verificación en simulación de esta lección prueba el programa. La verificación de hardware califica una traza registrada desde su placa y se identifica como una ejecución en hardware; no prueba límites eléctricos.",
           "objectives": [
-            "Verifique que la placa con la que se comunica Studio sea la que usted eligió.",
+            "Verifique que la placa con la que se comunica ZPLC sea la que usted eligió.",
             "Vea parpadear un LED en la placa.",
             "Lea el estado de un pulsador en la placa."
           ],
@@ -6266,7 +6266,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Verifique la placa antes de las lecciones de hardware: Studio debe comunicarse con la placa que usted eligió, la placa debe hacer parpadear un LED y debe leer un pulsador. En la Raspberry Pi Pico, el LED integrado parpadea junto con el LED en DO0; en la ESP32-S3-DevKitC-1, parpadea el LED en DO0.",
+              "body": "Verifique la placa antes de las lecciones de hardware: ZPLC debe comunicarse con la placa que usted eligió, la placa debe hacer parpadear un LED y debe leer un pulsador. En la Raspberry Pi Pico, el LED integrado parpadea junto con el LED en DO0; en la ESP32-S3-DevKitC-1, parpadea el LED en DO0.",
               "checkpoint": "Puede indicar qué placa usa y qué LED debe parpadear."
             },
             {
@@ -6284,7 +6284,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego pulse RUN.",
+              "body": "Cada paso físico lo realiza usted; ZPLC no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de la aplicación ZPLC, después de verificar el SHA-256 del archivo. Conectar: conecte la aplicación ZPLC a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y ZPLC rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego pulse RUN.",
               "checkpoint": "El escenario se llama VerifyBoard y contiene 8 aserciones."
             },
             {
@@ -6318,7 +6318,7 @@
     },
     {
       "id": "modbus-coil-fbd",
-      "version": 1,
+      "version": 2,
       "order": 34,
       "module": 10,
       "level": "advanced",
@@ -6335,8 +6335,8 @@
       "unsupported": {
         "hardware": {
           "reason": {
-            "en": "The lesson writes and reads a coil of the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and a server address in its firmware, which the course firmware does not set.",
-            "es": "La lección escribe y lee una bobina del servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
+            "en": "The lesson writes and reads a coil of the Modbus TCP server that ZPLC starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and a server address in its firmware, which the course firmware does not set.",
+            "es": "La lección escribe y lee una bobina del servidor Modbus TCP que ZPLC inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
           },
           "instead": {
             "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
@@ -6370,7 +6370,7 @@
         "en": {
           "title": "Modbus in Function Block Diagram: write a coil and read it back",
           "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
-          "scope": "The Modbus server of this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+          "scope": "The Modbus server of this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
           "objectives": [
             "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
             "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
@@ -6379,7 +6379,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
+              "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The ZPLC simulation answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
               "checkpoint": "Written, Echo and Failed describe the exchange: the coil was written, the coil read back is ON, and nothing failed."
             },
             {
@@ -6397,7 +6397,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+              "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
               "checkpoint": "The scenario is named CoilEcho and contains 6 assertions."
             },
             {
@@ -6410,7 +6410,7 @@
               "key": "reflect",
               "title": "Reflect",
               "body": "What would the scenario show if Rd read coil 5 instead of coil 4, or if Wr wrote FALSE? Wire a new constant 5 to Rd.ADDR and see which assertion fails.",
-              "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+              "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that ZPLC starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
             }
           ],
           "hints": [
@@ -6430,7 +6430,7 @@
         "es": {
           "title": "Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla",
           "summary": "Edite un diagrama de bloques de función para que MB_READ_COIL vuelva a leer la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.",
-          "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+          "scope": "El servidor Modbus de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
           "objectives": [
             "Llame a un bloque cliente Modbus en un diagrama de bloques de función, con sus entradas alimentadas desde constantes que comparten los dos bloques, para que la escritura y la lectura nombren el mismo servidor y la misma bobina.",
             "Encadene dos solicitudes con un cable desde la salida DONE del primer bloque hasta la entrada EN del segundo."
@@ -6439,7 +6439,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de comprobación: Rd debe ejecutarse cuando la escritura termine.",
+              "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de ZPLC responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de comprobación: Rd debe ejecutarse cuando la escritura termine.",
               "checkpoint": "Written, Echo y Failed describen el intercambio: la bobina se escribió, la bobina que se volvió a leer está en ON y nada falló."
             },
             {
@@ -6457,7 +6457,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
               "checkpoint": "El escenario se llama CoilEcho y contiene 6 aserciones."
             },
             {
@@ -6470,7 +6470,7 @@
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿Qué mostraría el escenario si Rd leyera la bobina 5 en lugar de la 4, o si Wr escribiera FALSE? Conecte una constante nueva 5 a Rd.ADDR y vea qué aserción falla.",
-              "checkpoint": "La bobina 5 nunca se escribió y se lee en OFF, así que Echo nunca pasa a ON; escribir FALSE produce lo mismo. Compartir una constante entre los dos bloques es lo que los mantiene en la misma bobina. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso debe comprobarse contra ese dispositivo."
+              "checkpoint": "La bobina 5 nunca se escribió y se lee en OFF, así que Echo nunca pasa a ON; escribir FALSE produce lo mismo. Compartir una constante entre los dos bloques es lo que los mantiene en la misma bobina. El escenario muestra cómo se comportan los bloques frente al doble que ZPLC inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso debe comprobarse contra ese dispositivo."
             }
           ],
           "hints": [
@@ -6554,8 +6554,8 @@
           "es": "Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
         },
         "why": {
-          "en": "You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
-          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
+          "en": "You see something move before any theory: a tour of ZPLC and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
+          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por ZPLC y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
         }
       },
       {
@@ -6723,8 +6723,8 @@
           "es": "Comunicaciones: fundamentos de Modbus y MQTT"
         },
         "why": {
-          "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.",
-          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa."
+          "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that ZPLC starts on this computer, so no network or board is needed.",
+          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que ZPLC inicia en este equipo, así que no se necesita red ni placa."
         }
       },
       {

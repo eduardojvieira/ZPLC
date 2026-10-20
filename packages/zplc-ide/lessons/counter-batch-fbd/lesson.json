@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "counter-batch-fbd",
-  "version": 2,
+  "version": 3,
   "order": 17,
   "module": 3,
   "level": "foundation",

@@ -4,7 +4,7 @@
   "summary": "Check that your board is the one you chose, that it blinks an LED and that it reads a push button.",
   "scope": "The simulation check of this lesson proves the program. The hardware check grades a trace recorded from your board and is labelled a hardware run; it does not prove electrical limits.",
   "objectives": [
-    "Check that the board Studio reaches is the board you chose.",
+    "Check that the board ZPLC reaches is the board you chose.",
     "See an LED blink on the board.",
     "Read a push button on the board."
   ],
@@ -12,7 +12,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "Check the board before the hardware lessons: Studio must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
+      "body": "Check the board before the hardware lessons: ZPLC must reach the board you chose, the board must blink an LED, and it must read a push button. On the Raspberry Pi Pico the on-board LED blinks together with the LED on DO0; on the ESP32-S3-DevKitC-1 the LED on DO0 blinks.",
       "checkpoint": "You can say which board you use and which LED should blink."
     },
     {
@@ -30,7 +30,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Every physical step is yours; Studio starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in Studio, after you check the SHA-256 of the file. Connect: connect Studio to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and Studio refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
+      "body": "Every physical step is yours; ZPLC starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in the ZPLC application, after you check the SHA-256 of the file. Connect: connect the ZPLC application to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and ZPLC refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
       "checkpoint": "The scenario is named VerifyBoard and contains {{assertions}} assertions."
     },
     {

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "first-blink-simulation",
-  "version": 2,
+  "version": 3,
   "order": 11,
   "module": 0,
   "level": "foundation",
@@ -15,8 +15,8 @@
   "unsupported": {
     "hardware": {
       "reason": {
-        "en": "This lesson is the tour of Studio and its simulator: the blink it grades runs in the simulation, with no board.",
-        "es": "Esta lección es el recorrido por Studio y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
+        "en": "This lesson is the tour of ZPLC and its simulator: the blink it grades runs in the simulation, with no board.",
+        "es": "Esta lección es el recorrido por ZPLC y su simulador: el parpadeo que califica se ejecuta en la simulación, sin placa."
       },
       "instead": {
         "en": "Complete it in Simulation, then take the next lesson, Verify my board, on the Hardware track to check your board.",

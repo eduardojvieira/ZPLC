@@ -13,9 +13,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 ## Editor
 
-Diagrama de Bloques de Función se dibuja en el editor de diagramas de ZPLC Studio: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.
+Diagrama de Bloques de Función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.
 
-Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de Studio, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
+Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
 ## Elementos
 

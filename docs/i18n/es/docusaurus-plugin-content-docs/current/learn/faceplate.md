@@ -64,7 +64,7 @@ Los controles se desactivan, y el panel dice por qué con palabras, cuando:
 - la simulación no está conectada o no está en ejecución: iníciela;
 - la simulación está en pausa: reanúdela o cambie un valor desde la tabla de observación;
 - la simulación se detuvo por una falla: reiníciela;
-- Studio está en modo hardware: el panel opera entradas solo en simulación; en una
+- ZPLC está en modo hardware: el panel opera entradas solo en simulación; en una
   placa, fuerce una entrada desde la tabla de observación;
 - el simulador no aplica los cambios en el límite del ciclo: entonces las entradas
   son de solo lectura.

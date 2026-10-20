@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Modbus TCP: write a register and read it back",
   "summary": "Write one holding register through a Modbus TCP block, read it back once the write is done, and report whether the value that came back is the one you sent.",
-  "scope": "The Modbus server in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
+  "scope": "The Modbus server in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.",
   "objectives": [
     "Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second.",
     "Compare the value read with the value written, and report an ERROR from either block.",
@@ -12,7 +12,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
+      "body": "In src/ModbusRegister.st the program already writes the value 1234 to holding register 8 of a Modbus TCP server when Send turns ON. Add the read-back: read register 8 once the write is done, turn Match ON when the value read equals 1234, and turn Failed ON when either block reports ERROR. The ZPLC simulation answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed.",
       "checkpoint": "Written, Match and Failed describe the exchange: the write is done, the value came back unchanged, and nothing failed."
     },
     {
@@ -30,7 +30,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
       "checkpoint": "The scenario is named ModbusRegister and contains {{assertions}} assertions."
     },
     {
@@ -43,7 +43,7 @@
       "key": "reflect",
       "title": "Reflect",
       "body": "What would the scenario show if the program read register 9 instead of register 8? Try it, and then try writing 1235 while still comparing with 1234.",
-      "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+      "checkpoint": "Register 9 was never written and holds 0, so Match never turns ON; writing 1235 and comparing with 1234 does the same. The scenario shows how the blocks behave against the double that ZPLC starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
     }
   ],
   "hints": [

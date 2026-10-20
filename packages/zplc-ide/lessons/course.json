@@ -62,8 +62,8 @@
         "es": "Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
       },
       "why": {
-        "en": "You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
-        "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
+        "en": "You see something move before any theory: a tour of ZPLC and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
+        "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por ZPLC y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
       }
     },
     {
@@ -231,8 +231,8 @@
         "es": "Comunicaciones: fundamentos de Modbus y MQTT"
       },
       "why": {
-        "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.",
-        "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa."
+        "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that ZPLC starts on this computer, so no network or board is needed.",
+        "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que ZPLC inicia en este equipo, así que no se necesita red ni placa."
       }
     },
     {

@@ -13,9 +13,9 @@ The status of every element on this page is read off the executed conformance te
 
 ## Editor
 
-Ladder Diagram is drawn in the rung editor of ZPLC Studio: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.
+Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.
 
-A real screenshot of this editor, captured by automation from the current version of Studio, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
+A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
 
 ## Elements
 

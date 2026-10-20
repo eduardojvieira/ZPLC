@@ -102,8 +102,8 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
     label: { en: 'Structured Text', es: 'Texto Estructurado' },
     description: { en: 'What of Structured Text works, from the executed conformance tests.', es: 'Qué funciona de Texto Estructurado, según las pruebas de conformidad ejecutadas.' },
     editor: {
-      en: 'Structured Text is written in the primary text editor of ZPLC Studio, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.',
-      es: 'Texto Estructurado se escribe en el editor de texto principal de ZPLC Studio, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.',
+      en: 'Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.',
+      es: 'Texto Estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.',
     },
     related: [
       { href: '../languages/st.md', text: { en: 'Structured Text guide', es: 'Guía de Texto Estructurado' } },
@@ -129,8 +129,8 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
     label: { en: 'Ladder Diagram', es: 'Diagrama de Escalera' },
     description: { en: 'What of Ladder Diagram works, from the executed conformance tests.', es: 'Qué funciona de Diagrama de Escalera, según las pruebas de conformidad ejecutadas.' },
     editor: {
-      en: 'Ladder Diagram is drawn in the rung editor of ZPLC Studio: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.',
-      es: 'Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC Studio: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.',
+      en: 'Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.',
+      es: 'Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -143,8 +143,8 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
     label: { en: 'Function Block Diagram', es: 'Diagrama de Bloques de Función' },
     description: { en: 'What of Function Block Diagram works, from the executed conformance tests.', es: 'Qué funciona de Diagrama de Bloques de Función, según las pruebas de conformidad ejecutadas.' },
     editor: {
-      en: 'Function Block Diagram is drawn in the diagram editor of ZPLC Studio: blocks with typed pins and connections, with undo and validation while you draw. The Structured Text that the build generates from the diagram is read-only output.',
-      es: 'Diagrama de Bloques de Función se dibuja en el editor de diagramas de ZPLC Studio: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
+      en: 'Function Block Diagram is drawn in the diagram editor of ZPLC: blocks with typed pins and connections, with undo and validation while you draw. The Structured Text that the build generates from the diagram is read-only output.',
+      es: 'Diagrama de Bloques de Función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -158,8 +158,8 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
     label: { en: 'Sequential Function Chart', es: 'Diagrama Funcional Secuencial' },
     description: { en: 'What of Sequential Function Chart works, from the executed conformance tests.', es: 'Qué funciona de Diagrama Funcional Secuencial, según las pruebas de conformidad ejecutadas.' },
     editor: {
-      en: 'Sequential Function Chart is drawn in the chart editor of ZPLC Studio: steps, transitions and actions, with undo and validation while you draw. The Structured Text that the build generates from the chart is read-only output.',
-      es: 'Diagrama Funcional Secuencial se dibuja en el editor de gráficos de ZPLC Studio: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del gráfico es solo una salida de lectura.',
+      en: 'Sequential Function Chart is drawn in the chart editor of ZPLC: steps, transitions and actions, with undo and validation while you draw. The Structured Text that the build generates from the chart is read-only output.',
+      es: 'Diagrama Funcional Secuencial se dibuja en el editor de gráficos de ZPLC: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir del gráfico es solo una salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -182,8 +182,8 @@ const HEADINGS: Record<string, L10n> = {
 };
 
 const SCREENSHOT: L10n = {
-  en: 'A real screenshot of this editor, captured by automation from the current version of Studio, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.',
-  es: 'Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de Studio, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.',
+  en: 'A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.',
+  es: 'Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.',
 };
 
 const ADDRESSING_INTRO: L10n = {

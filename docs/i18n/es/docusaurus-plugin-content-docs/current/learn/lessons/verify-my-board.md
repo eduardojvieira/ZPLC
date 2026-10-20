@@ -24,7 +24,7 @@ Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea u
 
 ## Objetivos
 
-- Verifique que la placa con la que se comunica Studio sea la que usted eligió.
+- Verifique que la placa con la que se comunica ZPLC sea la que usted eligió.
 - Vea parpadear un LED en la placa.
 - Lea el estado de un pulsador en la placa.
 

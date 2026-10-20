@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-0. Do not edit. >>> */}
 
-You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.
+You see something move before any theory: a tour of ZPLC and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.
 
 - Level: Foundation
 - Tracks: Simulation, Hardware

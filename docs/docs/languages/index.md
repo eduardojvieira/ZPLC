@@ -29,40 +29,40 @@ Every row names the check that shows the capability: a Studio journey, a test on
 
 | Language | Capability | Evidence | Check that shows it |
 | --- | --- | --- | --- |
-| Structured Text | Edit | Studio journey in the native simulation | `3 Edit Structured Text, save, reopen` |
-| Structured Text | Build | Studio journey in the native simulation | `5 Build successfully` |
-| Structured Text | Simulate | Studio journey in the native simulation | `6 Simulate: connect, run, watch a value change` |
-| Structured Text | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `16 Debug details: stop, trace, resume mid-scan` |
-| Structured Text | Watch online values | Studio journey in the native simulation | `28e Inline values in Structured Text come from the debug map` |
-| Structured Text | Force | Studio journey in the native simulation | `8 Force an input and release it` |
+| Structured Text | Edit | ZPLC application journey in the native simulation | `3 Edit Structured Text, save, reopen` |
+| Structured Text | Build | ZPLC application journey in the native simulation | `5 Build successfully` |
+| Structured Text | Simulate | ZPLC application journey in the native simulation | `6 Simulate: connect, run, watch a value change` |
+| Structured Text | Debug (breakpoint, pause, step) | ZPLC application journey in the native simulation | `16 Debug details: stop, trace, resume mid-scan` |
+| Structured Text | Watch online values | ZPLC application journey in the native simulation | `28e Inline values in Structured Text come from the debug map` |
+| Structured Text | Force | ZPLC application journey in the native simulation | `8 Force an input and release it` |
 | Structured Text | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
-| Instruction List | Edit | Studio journey in the native simulation | `54 Instruction List is edited, saved and reopened` |
+| Instruction List | Edit | ZPLC application journey in the native simulation | `54 Instruction List is edited, saved and reopened` |
 | Instruction List | Build | Conformance case on the host runtime | `lng-018-il-jump-runs-every-scan` |
 | Instruction List | Simulate | Conformance case on the host runtime | `lng-018-il-jump-runs-every-scan` |
-| Instruction List | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28kc A breakpoint on an IL line stops execution` |
-| Instruction List | Watch online values | Studio journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
-| Instruction List | Force | Studio journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
+| Instruction List | Debug (breakpoint, pause, step) | ZPLC application journey in the native simulation | `28kc A breakpoint on an IL line stops execution` |
+| Instruction List | Watch online values | ZPLC application journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
+| Instruction List | Force | ZPLC application journey in the native simulation | `54b Instruction List values are watched and a variable is forced and released` |
 | Instruction List | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
-| Ladder Diagram | Edit | Studio journey in the native simulation | `28f A rung is built from the keyboard` |
+| Ladder Diagram | Edit | ZPLC application journey in the native simulation | `28f A rung is built from the keyboard` |
 | Ladder Diagram | Build | Test on the native runtime | `Blinky visual languages on native POSIX` |
 | Ladder Diagram | Simulate | Test on the native runtime | `Blinky visual languages on native POSIX` |
-| Ladder Diagram | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28 A breakpoint on a rung stops execution` |
-| Ladder Diagram | Watch online values | Studio journey in the native simulation | `28b Online values of a rung come from the debug map` |
-| Ladder Diagram | Force | Studio journey in the native simulation | `51d A forced variable is shown as forced in the Ladder` |
+| Ladder Diagram | Debug (breakpoint, pause, step) | ZPLC application journey in the native simulation | `28 A breakpoint on a rung stops execution` |
+| Ladder Diagram | Watch online values | ZPLC application journey in the native simulation | `28b Online values of a rung come from the debug map` |
+| Ladder Diagram | Force | ZPLC application journey in the native simulation | `51d A forced variable is shown as forced in the Ladder` |
 | Ladder Diagram | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
-| Function Block Diagram | Edit | Studio journey in the native simulation | `28g A function block diagram is edited from the keyboard` |
+| Function Block Diagram | Edit | ZPLC application journey in the native simulation | `28g A function block diagram is edited from the keyboard` |
 | Function Block Diagram | Build | Test on the native runtime | `Blinky visual languages on native POSIX` |
 | Function Block Diagram | Simulate | Test on the native runtime | `Blinky visual languages on native POSIX` |
-| Function Block Diagram | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28ka A breakpoint on an FBD block stops execution` |
-| Function Block Diagram | Watch online values | Studio journey in the native simulation | `28c Online values of an FBD come from the debug map` |
-| Function Block Diagram | Force | Studio journey in the native simulation | `51 A forced variable is shown as forced in the function block diagram` |
+| Function Block Diagram | Debug (breakpoint, pause, step) | ZPLC application journey in the native simulation | `28ka A breakpoint on an FBD block stops execution` |
+| Function Block Diagram | Watch online values | ZPLC application journey in the native simulation | `28c Online values of an FBD come from the debug map` |
+| Function Block Diagram | Force | ZPLC application journey in the native simulation | `51 A forced variable is shown as forced in the function block diagram` |
 | Function Block Diagram | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
-| Sequential Function Chart | Edit | Studio journey in the native simulation | `28h A sequential function chart is edited from the keyboard` |
+| Sequential Function Chart | Edit | ZPLC application journey in the native simulation | `28h A sequential function chart is edited from the keyboard` |
 | Sequential Function Chart | Build | Test on the native runtime | `Blinky visual languages on native POSIX` |
 | Sequential Function Chart | Simulate | Test on the native runtime | `Blinky visual languages on native POSIX` |
-| Sequential Function Chart | Debug (breakpoint, pause, step) | Studio journey in the native simulation | `28kb A breakpoint on an SFC step stops execution` |
-| Sequential Function Chart | Watch online values | Studio journey in the native simulation | `28d Online state of an SFC comes from the debug map` |
-| Sequential Function Chart | Force | Studio journey in the native simulation | `51b A forced variable is shown as forced in the sequential function chart` |
+| Sequential Function Chart | Debug (breakpoint, pause, step) | ZPLC application journey in the native simulation | `28kb A breakpoint on an SFC step stops execution` |
+| Sequential Function Chart | Watch online values | ZPLC application journey in the native simulation | `28d Online state of an SFC comes from the debug map` |
+| Sequential Function Chart | Force | ZPLC application journey in the native simulation | `51b A forced variable is shown as forced in the sequential function chart` |
 | Sequential Function Chart | Deploy to a board | Board only | A person deploys and runs it on a board; the hardware evidence page lists the records |
 
 {/* <<< END GENERATED: language-capabilities <<< */}

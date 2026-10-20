@@ -13,9 +13,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 ## Editor
 
-Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC Studio: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.
+Diagrama de Escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El Texto Estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.
 
-Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de Studio, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
+Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
 ## Elementos
 

@@ -61,7 +61,7 @@ The controls are disabled, and the faceplate says why in words, when:
 - the simulation is not connected or not running: start it;
 - the simulation is paused: resume it, or change a value from the watch table;
 - the simulation stopped with a fault: reset it;
-- Studio is in hardware mode: the faceplate operates inputs in simulation only; on
+- ZPLC is in hardware mode: the faceplate operates inputs in simulation only; on
   a board, force an input from the watch table;
 - the simulator does not apply changes at a scan boundary: the inputs are then
   read-only.
