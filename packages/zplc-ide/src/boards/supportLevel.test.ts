@@ -48,7 +48,7 @@ describe('support level derived from evidence records (IO-015)', () => {
     for (const level of [null, 'community-reported', 'Hardware']) {
       expect(supportLevelFromRecords('b', [['records/e.json', record({ evidence_level: level })]]).level).toBe('cross-build');
     }
-    const { evidence_level: _level, ...older } = record();
+    const older = Object.fromEntries(Object.entries(record()).filter(([key]) => key !== 'evidence_level'));
     expect(supportLevelFromRecords('b', [['records/e.json', { ...older, evidence: 'emulated' }]]).level).toBe('cross-build');
     expect(supportLevelFromRecords('b', [['records/h.json', { ...older, evidence: 'hardware' }]]).level).toBe('human-hil');
   });
