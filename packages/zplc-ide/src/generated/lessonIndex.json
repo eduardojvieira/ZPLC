@@ -5782,7 +5782,7 @@
     "schemaVersion": 1,
     "rationale": {
       "en": "You see a result first: the tour of module 0 ends in a blinking output in simulation. The scan cycle comes next, because seal-in, edges and timers cannot be understood without it, and a first blink in Ladder and in Structured Text follows at once. Every later module builds on the ones before it, and communications and the capstone come last because they need everything before them.",
-      "es": "Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera (Ladder) y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior."
+      "es": "Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior."
     },
     "tracks": [
       {
@@ -5793,7 +5793,7 @@
         },
         "summary": {
           "en": "Run your program against a simulated plant on this computer. Every lesson can be graded here, with the same result each time.",
-          "es": "Ejecute su programa contra una planta simulada en este equipo. Todas las lecciones se pueden calificar aquí, con el mismo resultado cada vez."
+          "es": "Ejecute su programa con una planta simulada en este equipo. Todas las lecciones se pueden calificar aquí, con el mismo resultado cada vez."
         },
         "unsupported": {
           "reason": {
@@ -5802,7 +5802,7 @@
           },
           "instead": {
             "en": "Choose a lesson that lists Simulation among its tracks.",
-            "es": "Elija una lección que incluya Simulación entre sus pistas."
+            "es": "Elija una lección que incluya Simulación entre sus rutas."
           }
         }
       },
@@ -5819,11 +5819,11 @@
         "unsupported": {
           "reason": {
             "en": "No check against a trace recorded from a board has been written for this lesson yet.",
-            "es": "Todavía no se ha escrito para esta lección una verificación contra una traza registrada desde una placa."
+            "es": "Todavía no se ha escrito para esta lección una verificación con una traza registrada en una placa."
           },
           "instead": {
             "en": "Do the lesson in the Simulation track. Its grade is the same each time and does not need a board.",
-            "es": "Haga la lección en la pista de Simulación. Su calificación es la misma cada vez y no necesita una placa."
+            "es": "Haga la lección en la ruta de Simulación. Su calificación es la misma cada vez y no necesita una placa."
           }
         }
       }
@@ -5843,7 +5843,7 @@
         },
         "why": {
           "en": "You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",
-          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la pista de hardware, una verificación de su placa."
+          "es": "Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa."
         }
       },
       {
@@ -5860,7 +5860,7 @@
         },
         "why": {
           "en": "A PLC repeats one cycle: read the inputs, run the program, write the outputs. Seal-in, edges and timers cannot be understood without the scan cycle, so it comes first, and a first blink in Ladder and in Structured Text follows at once.",
-          "es": "Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en Ladder y en texto estructurado."
+          "es": "Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado."
         }
       },
       {
@@ -5873,11 +5873,11 @@
         ],
         "title": {
           "en": "Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop",
-          "es": "Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura"
+          "es": "Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura"
         },
         "why": {
           "en": "Boolean logic is the vocabulary of every program. It is taught in Ladder beside Structured Text, because relay logic is how the subject is traditionally introduced and both views of the same logic reinforce each other: contacts and coils, then seal-in, set and reset, and a safe stop.",
-          "es": "La lógica booleana es el vocabulario de todo programa. Se enseña en Ladder junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura."
+          "es": "La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama de escalera junto al texto estructurado, porque la lógica de relés es la forma tradicional de introducir el tema y las dos vistas de la misma lógica se refuerzan entre sí: contactos y bobinas, luego autorretención, set y reset, y una parada segura."
         }
       },
       {
@@ -5894,7 +5894,7 @@
         },
         "why": {
           "en": "Time and events come after logic: timers delay or hold a signal, edges turn a level into an event and counters remember events. Function Block Diagram arrives here, because timers and counters are blocks.",
-          "es": "El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques."
+          "es": "El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o mantienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques."
         }
       },
       {
@@ -5928,7 +5928,7 @@
         },
         "why": {
           "en": "A machine that does things in order is a state machine. Sequences are written as states in Structured Text, and Sequential Function Chart arrives with them, as steps.",
-          "es": "Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama de funciones secuenciales (SFC), como pasos."
+          "es": "Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama funcional secuencial (SFC), como pasos."
         }
       },
       {
@@ -5941,7 +5941,7 @@
         ],
         "title": {
           "en": "Feedback, faults and interlocks",
-          "es": "Realimentación, fallos e interbloqueos"
+          "es": "Realimentación, fallas y enclavamientos"
         },
         "why": {
           "en": "A command is not a fact: the plant must confirm it. Once a program can run a sequence, feedback, faults and interlocks teach it to distrust what it asked for.",
@@ -5978,7 +5978,7 @@
         },
         "why": {
           "en": "Testing comes once you have programs worth testing. Scenario tests, temporal assertions, traces and breakpoints turn a guess into evidence.",
-          "es": "Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia."
+          "es": "Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas de escenario, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia."
         }
       },
       {
@@ -6012,7 +6012,7 @@
         },
         "why": {
           "en": "Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.",
-          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan contra extremos que Studio inicia en este equipo, así que no se necesita red ni placa."
+          "es": "Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa."
         }
       },
       {
