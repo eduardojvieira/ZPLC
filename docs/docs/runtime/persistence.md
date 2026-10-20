@@ -73,7 +73,7 @@ A flash key-value store keeps an entry inside one erase sector, so a payload is 
 number, `CONFIG_ZPLC_CODE_SIZE_MAX`: it is the code region, the largest artifact the loader accepts, the size of the
 staging and restore buffers, the size `zplc sys info` reports (`max_artifact_size`) and the size the IDE is told for
 the board (RT-028). The build fails when two slots of that size, in chunks, do not fit the storage partition. The
-Raspberry Pi Pico profile therefore sets 24576 bytes (its 64 KB partition), the STM32F746G Discovery
+Raspberry Pi Pico profile therefore sets 24576 bytes (its 128 KB partition also holds the RETAIN records), the STM32F746G Discovery
 profile 16384 and the Arduino Opta WiFi profile 32768 (their RAM), and the ESP32-S3 profile keeps its 8192; the
 other profiles keep 45056. The upload staging buffer and the VM each hold one program in RAM, so a profile spends
 twice its code size. There is no third, resident copy: the staging buffer keeps the loaded artifact, and `zplc reset`
@@ -204,7 +204,8 @@ on `native_sim` (both word sizes) and the build-time wear assertion, and no boar
 flash write can stall instruction fetch on parts that execute from the same flash. Set `CONFIG_ZPLC_RETAIN_PERSIST=y` in the board
 file, with the endurance numbers of the next section, once that board has passed its hardware record
 (HIL-010). Until then the `RETAIN` region is initialised at every start on firmware and the status has no
-`retain` field.
+`retain` field. The HIL image that record is made on (`-DCONFIG_ZPLC_HIL_IMAGE=y`) turns it on, so that
+its power cycle step can measure it; it never ships.
 
 ### Flash wear budget per board
 
@@ -214,8 +215,9 @@ that changes in every interval. For a board:
 - one save writes the record plus the entry overhead of each chunk (about 64
   bytes each, an estimate that covers a 32-byte write block);
 - the storage partition takes in the wear bytes of the table per erase of every
-  sector: the sectors minus the one NVS keeps free, minus about 8300 bytes of the
-  two program slots that garbage collection copies at every rotation;
+  sector: the sectors minus the one NVS keeps free, minus the live data that
+  garbage collection copies at every rotation (the two program slots and the
+  RETAIN record not being written; on the Pico about 59,000 bytes);
 - the flash is rated for a number of erase cycles per sector.
 
 Saves the flash takes = erase cycles x wear bytes / bytes per save. Life =
@@ -228,7 +230,7 @@ part and from the partition layout of the board file. No board was measured.
 
 | Board | Storage partition | RETAIN | Rated cycles | Wear bytes | Interval | Estimated worst-case life |
 |---|---|---|---|---|---|---|
-| Raspberry Pi Pico (RP2040) | 64 KB of the on-board QSPI NOR, 16 sectors of 4 KB | 4 KB | 100,000 | 53,000 | 300 s | 11.3 years |
+| Raspberry Pi Pico (RP2040) | 128 KB of the on-board QSPI NOR, 32 sectors of 4 KB | 4 KB | 100,000 | 67,000 | 300 s | 14.3 years |
 | Arduino GIGA R1 (STM32H747 M7) | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
 | Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
 | STM32F746G Discovery | `zplc_nvs_partition`: 15 MB of the external QSPI NOR, 4 KB sub-sectors assumed | 4 KB | 100,000 | 15,700,000 | 60 s | more than 100 years |
@@ -237,7 +239,7 @@ part and from the partition layout of the board file. No board was measured.
 | A board with no numbers | any | any | 10,000 | 40,000 | 3600 s | 10.3 years for 4 KB |
 
 The Pico row is the one to read twice: at 30 seconds, the host default, the same
-board would wear its storage out in about 1.1 years. The interval is a minimum:
+board would wear its storage out in about 1.4 years. The interval is a minimum:
 a region that does not change is never written, so a program whose retained
 values change rarely wears the flash far less than this table says.
 
@@ -262,8 +264,8 @@ link to the TLS stack.
 
 | Board | Records of the HAL | Settings file system | Image slot |
 |---|---|---|---|
-| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1f0000 |
-| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1f0000 |
+| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1e0000 |
+| Waveshare RP2040-Zero | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1e0000 |
 | ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB at 0x400000 of the module SPI NOR | `storage_partition`, 192 KB at 0x3b0000 | 0 to 0x101c00, the flash budget of the board |
 | Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
 | Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |

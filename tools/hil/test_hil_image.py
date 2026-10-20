@@ -7,6 +7,8 @@ watchdog off until its record exists):
   refused   a build that turns the watchdog on by itself stops at configure time, and says to build the HIL image
   accepted  the HIL image (-DCONFIG_ZPLC_HIL_IMAGE=y) builds, with the watchdog on, and says what it is: HIL_IMAGE=y in
             the build options `zplc sys build` reports, and the line `zplc version` prints, in the image itself
+  RETAIN    the HIL image also keeps RETAIN across a power cycle (CONFIG_ZPLC_RETAIN_PERSIST, RT-025), which the RETAIN
+            step of the record needs, and it fits the Pico's storage partition; the shipped profile keeps it off
 
 It needs a west workspace whose `zplc` is this checkout, named by ZPLC_FW_WS (tools/firmware-test/setup.sh); without
 one it is skipped and says so, as in the CI job of the Python tests, which has no Zephyr workspace.
@@ -53,6 +55,11 @@ class HilImageRule(unittest.TestCase):
         self.assertIn("keeps the hardware watchdog of", text)
         self.assertIn("-DCONFIG_ZPLC_HIL_IMAGE=y", text, "and the refusal says to build the HIL image for the record run")
 
+        code, text = west(work / "plain", cmake_only=True)
+        self.assertEqual(code, 0, f"the shipped profile configures: {text[-2000:]}")
+        self.assertIn("# CONFIG_ZPLC_RETAIN_PERSIST is not set", (work / "plain" / "zephyr" / ".config").read_text(),
+                      "the shipped profile keeps RETAIN persistence off until the board has its record")
+
         code, text = west(work / "hil-image", "-DCONFIG_ZPLC_HIL_IMAGE=y")
         self.assertEqual(code, 0, f"the HIL image builds: {text[-3000:]}")
         config = (work / "hil-image" / "zephyr" / ".config").read_text()
@@ -60,6 +67,8 @@ class HilImageRule(unittest.TestCase):
         self.assertIn("CONFIG_ZPLC_HARDWARE_WATCHDOG=y", config, "with the hardware watchdog on")
         headers = [h for h in (work / "hil-image").rglob("*.h") if "ZPLC_FW_OPTIONS" in h.read_text(errors="ignore")]
         self.assertTrue(any("HIL_IMAGE=y" in h.read_text() for h in headers), "its build options say HIL_IMAGE=y")
+        self.assertIn("CONFIG_ZPLC_RETAIN_PERSIST=y", config, "with RETAIN persistence on, for the RETAIN step")
+        self.assertTrue(any("RETAIN_PERSIST=y" in h.read_text() for h in headers), "which its build options say too")
         self.assertIn(VERSION_LINE, (work / "hil-image" / "zephyr" / "zephyr.elf").read_bytes(),
                       "and the image carries the line `zplc version` prints for it")
 

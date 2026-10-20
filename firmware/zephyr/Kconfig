@@ -287,11 +287,15 @@ config ZPLC_HIL_IMAGE
     default n
     select WATCHDOG
     select ZPLC_HARDWARE_WATCHDOG
+    select ZPLC_RETAIN_PERSIST if ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       The image a hardware record of HIL-010 is made on (RT-020). It turns the
       hardware watchdog on in a profile whose entry in boards.json keeps it
       off until that record exists, with the timeouts and the STOP, pause and
       fault policies of that entry (firmware/app/CMakeLists.txt checks them).
+      It also turns RETAIN persistence on (ZPLC_RETAIN_PERSIST), which the
+      power cycle step of the record measures (RT-025) and which the shipped
+      profiles keep off until that record exists.
       It says what it is: `zplc version` prints a line for it and its build
       options list HIL_IMAGE=y (`zplc sys build`). It is for the record run
       only and is never a release image. Build it with
@@ -429,7 +433,8 @@ config ZPLC_RETAIN_PERSIST
       (zplc_nvs_partition, or storage_partition where no file system is built;
       tools/hil/check_storage_partitions.py checks every build), but no board
       has been measured. Turn it on for a board once that board has passed its
-      hardware record (HIL-010).
+      hardware record (HIL-010). The HIL image (ZPLC_HIL_IMAGE), which that
+      record is made on, turns it on.
 
       Restores the RETAIN region when a program is loaded or restored at boot,
       before the first scan, and stores it on STOP and periodically while the
@@ -476,8 +481,10 @@ config ZPLC_RETAIN_FLASH_WEAR_BYTES
     range 1024 1000000000
     help
       (sectors - 1) * sector size, minus the live data that garbage collection
-      copies at every rotation (the two program slots, about 8300 bytes). One
-      sector is always kept free for garbage collection.
+      copies at every rotation: the two program slots at the largest program
+      (2 * CONFIG_ZPLC_CODE_SIZE_MAX in chunks, with their entry overhead) and
+      the RETAIN record that is not being written. One sector is always kept
+      free for garbage collection.
 
 config ZPLC_RETAIN_ENTRY_OVERHEAD
     int "Backend bytes per stored chunk beyond the data"

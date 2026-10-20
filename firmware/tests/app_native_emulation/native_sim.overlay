@@ -62,7 +62,8 @@
     ngpios = <32>;
 };
 
-/* The Pico keeps 64 KB of storage at 0x1f0000 (rpi_pico_rp2040.overlay); native_sim's 16 KB is too small. */
+/* native_sim's 16 KB of storage is too small for the program store of the Pico's channel map: 64 KB here (the Pico
+ * itself keeps 128 KB at 0x1e0000, rpi_pico_rp2040.overlay). */
 &storage_partition {
     reg = <0x001f0000 0x00010000>;
 };
