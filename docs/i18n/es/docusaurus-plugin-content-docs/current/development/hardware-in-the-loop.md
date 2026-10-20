@@ -91,7 +91,7 @@ falla:
    enlace con el dispositivo solo después de este paso: una placa en blanco no
    tiene puerto serie, y una placa grabada reaparece con otro nombre, así que la
    herramienta vuelve a buscar el puerto durante hasta 30 segundos después de que
-   usted presiona Enter.
+   usted pulse Enter.
 3. **Intercambio de identidad.** La herramienta pregunta al dispositivo quién es
    (`zplc sys info --json`) y qué imagen es (`zplc sys build --json`: versión,
    commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de

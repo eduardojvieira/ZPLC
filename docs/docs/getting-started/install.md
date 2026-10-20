@@ -234,8 +234,9 @@ access to those serial devices while the session lasts, with no group and no
 reboot. The rule is generated from the project's list of board USB identifiers
 (`tools/hil/usb-ids.json`), so it covers exactly the boards that list names. Today
 that is the two RP2040 boards, Raspberry Pi Pico and Waveshare RP2040-Zero
-(`2e8a:000a`); the file lists the boards that have no recorded identifier, such as
-the ESP32-S3-DevKitC-1, and they need the group below.
+(`2e8a:000a`), and the ESP32-S3-DevKitC-1 on its native port marked USB
+(`303a:1001`). The other boards have no recorded identifier yet, and they need the
+group below; so does the ESP32-S3's UART bridge port.
 
 To apply the rule to a board that is already plugged in, without rebooting,
 reload the rules and replay the device events, or unplug the board and plug it in

@@ -239,8 +239,9 @@ máquina acceso a esos dispositivos serie mientras dure la sesión, sin grupo y 
 reiniciar. La regla se genera desde la lista de identificadores USB de placas del
 proyecto (`tools/hil/usb-ids.json`), así que cubre exactamente las placas que esa
 lista nombra. Hoy son las dos placas RP2040, Raspberry Pi Pico y Waveshare
-RP2040-Zero (`2e8a:000a`); el archivo enumera las placas sin identificador
-registrado, como la ESP32-S3-DevKitC-1, y ellas necesitan el grupo de abajo.
+RP2040-Zero (`2e8a:000a`), y la ESP32-S3-DevKitC-1 por su puerto nativo marcado
+USB (`303a:1001`). Las demás placas todavía no tienen un identificador registrado y
+necesitan el grupo de abajo; también lo necesita el puerto del puente UART de la ESP32-S3.
 
 Para aplicar la regla a una placa que ya está conectada, sin reiniciar, recargue
 las reglas y repita los eventos del dispositivo, o desconecte la placa y vuelva a
