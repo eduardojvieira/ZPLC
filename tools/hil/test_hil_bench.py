@@ -385,6 +385,22 @@ class StepTests(Quiet):
         good, bad = self.passes_and_fails("analog-read", "analog-off")
         self.assertEqual([p["raw"] for p in good["measurements"]["points"]], [0, 2048, 4095])
 
+    def test_the_analog_expectation_follows_the_3v3_divider_and_saturates_where_the_converter_does(self):
+        """The potentiometer is wired 3V3 to GND, so its top is 3.3 V. The ESP32-S3 converter stops at about 3.1 V
+        (raw_max 2885): the 100 % point must read full scale or the 'some chips stop near 2.9 V' margin, never 3.3/3.1."""
+        pico = {"range": {"raw_max": 4095, "eng_max": 3.3}}
+        esp = {"range": {"raw_max": 2885, "eng_max": 3.1}}
+        self.assertEqual(hil_steps.analog_expectation(pico, 0.5, 0.10), (0.5, 0.10))
+        self.assertEqual(hil_steps.analog_expectation(pico, 1.0, 0.05), (1.0, 0.05))
+        half, half_tolerance = hil_steps.analog_expectation(esp, 0.5, 0.10)
+        self.assertAlmostEqual(half, 3.3 * 0.5 / 3.1)  # 1.65 V is 53 % of the 3.1 V that the converter spans
+        self.assertEqual(half_tolerance, 0.10)
+        full, full_tolerance = hil_steps.analog_expectation(esp, 1.0, 0.05)
+        self.assertEqual(full, 1.0, "3.3 V saturates the converter")
+        self.assertGreaterEqual(full_tolerance, 0.07, "and a chip that stops near 2.9 V (2.9/3.1 of full scale) still passes")
+        self.assertLessEqual(abs(2700 / 2885 - full), full_tolerance)
+        self.assertGreater(abs(2000 / 2885 - full), full_tolerance, "while a reading far below is still a failure")
+
     def test_timer_accuracy_against_the_bench_clock(self):
         good, bad = self.passes_and_fails("timer-accuracy", "timer-slow")
         self.assertLessEqual(abs(good["measurements"]["error_ms"]), 20)

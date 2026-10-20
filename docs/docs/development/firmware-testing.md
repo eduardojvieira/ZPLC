@@ -19,8 +19,9 @@ on real silicon. Those claims need the hardware-in-the-loop procedures in
 
 ## What you need
 
-- Linux on x86-64 with about 15 GB free: the pinned Zephyr tree is about 6 GB
-  and the build outputs add a few more.
+- Linux on x86-64 with about 15 GB free: the pinned Zephyr workspace is about 6.6 GB
+  (measured with `du`, without its build outputs), the Zephyr SDK about 7 GB when installed whole, and the build
+  outputs add a few more.
 - `git`, `cmake` 3.20 or newer, `ninja`, `dtc`, `gperf`, `python3` 3.10 or
   newer, and a C compiler. The 32-bit modes also need the 32-bit C runtime
   (`lib32-glibc` and `lib32-gcc-libs` on Arch, `gcc-multilib` on Debian and

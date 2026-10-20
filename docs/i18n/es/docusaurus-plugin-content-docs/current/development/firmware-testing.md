@@ -21,8 +21,9 @@ descritos en [Compatibilidad de hardware](../reference/capabilities-evidence.md)
 
 ## Qué necesita
 
-- Linux sobre x86-64 con unos 15 GB libres: el árbol de Zephyr fijado ocupa
-  unos 6 GB y las salidas de compilación suman algunos más.
+- Linux sobre x86-64 con unos 15 GB libres: el espacio de trabajo de Zephyr fijado ocupa
+  unos 6,6 GB (medido con `du`, sin sus salidas de compilación), el SDK de Zephyr unos 7 GB instalado completo, y las
+  salidas de compilación suman algunos más.
 - `git`, `cmake` 3.20 o superior, `ninja`, `dtc`, `gperf`, `python3` 3.10 o
   superior y un compilador de C. Los modos de 32 bits requieren además el
   runtime C de 32 bits (`lib32-glibc` y `lib32-gcc-libs` en Arch,

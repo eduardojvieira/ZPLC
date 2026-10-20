@@ -3,7 +3,7 @@ slug: /guides/build-firmware
 id: build-firmware
 title: Compilar el firmware desde el código fuente
 sidebar_label: Compilar el firmware
-description: "Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script que usa la integración continua, y qué demuestra una compilación terminada."
+description: "Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script del repositorio, y qué demuestra una compilación terminada."
 tags: [how-to, hardware, firmware]
 ---
 
@@ -16,12 +16,13 @@ ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, inician ni detienen un
 :::caution Redactado, ejecutado en un anfitrión solo donde se indica
 Los comandos son los de los scripts del repositorio. Las compilaciones de Zephyr no se ejecutaron
 al escribir esta página (el espacio de trabajo de Zephyr no está instalado en la máquina que la escribió);
-la integración continua compila cada placa del manifiesto y comprueba su presupuesto de flash y RAM.
+la integración continua compila cada placa del manifiesto con `west build -p always` y comprueba su presupuesto de flash y RAM
+con `fwtest.py size`, el mismo verificador que llama `run.sh size`.
 :::
 
 ## 1. Prepare el espacio de trabajo una vez
 
-Unos 15 GB libres y acceso a la red la primera vez. El script crea o verifica el espacio de
+Unos 15 GB libres y acceso a la red la primera vez (el espacio de trabajo ocupa unos 6,6 GB; el SDK de Zephyr, unos 7 GB instalado completo, y las salidas de compilación suman el resto). El script crea o verifica el espacio de
 trabajo de Zephyr fuera del repositorio, en `~/zplc-zephyr-ws` (cámbielo con `ZPLC_FW_WS`):
 
 ```bash
@@ -43,7 +44,7 @@ contra el presupuesto registrado. Las imágenes están en `$ZPLC_FW_WS/out/size/
 `zephyr.elf` y, para la Pico, `zephyr.uf2`. El ESP32-S3 necesita una vez sus blobs de HAL:
 `west blobs fetch hal_espressif`.
 
-El canal de versiones compila con el mismo comando, limpio y sin superposiciones:
+Los trabajos de integración continua y el canal de versiones no llaman al script: ejecutan `west build` directamente, limpio y sin superposiciones:
 
 ```bash
 west build -p always -b rpi_pico/rp2040 firmware/app
