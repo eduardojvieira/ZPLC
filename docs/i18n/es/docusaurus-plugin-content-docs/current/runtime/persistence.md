@@ -271,13 +271,18 @@ credenciales de Wi-Fi pasan por la configuración, esas credenciales). Dos almac
 sobrescriben entre sí, de modo que cada uno tiene la suya (IO-008). La HAL ocupa `zplc_nvs_partition` cuando el
 devicetree de la placa la define, y `storage_partition` en otro caso; el sistema de archivos de configuración monta
 `storage_partition`. La compilación se detiene cuando una placa que incluye el sistema de archivos no tiene
-`zplc_nvs_partition`, o cuando las dos particiones se superponen.
+`zplc_nvs_partition`, o cuando las dos particiones se superponen. Una configuración de certificado o de clave
+(`mqtt_ca_cert_path`, `mqtt_client_cert_path`, `mqtt_client_key_path`, `aws_claim_cert_path`, `aws_claim_key_path`)
+nombra un archivo del sistema de archivos o uno de los dos registros de credenciales, `persist://aws_cert_pem` y
+`persist://aws_key_pem`. Cualquier otro nombre `persist://` lo rechaza `zplc config set`, no se aplica cuando un valor
+guardado lo contiene y nunca se lee: ninguna configuración puede entregar el programa ni una clave del enlace del
+dispositivo a la pila TLS.
 
 | Placa | Registros de la HAL | Sistema de archivos de configuración | Slot de la imagen |
 |---|---|---|---|
-| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | de 0x100 al final de la flash de 2 MB |
-| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | de 0x100 al final de la flash de 2 MB |
-| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB en 0x400000 de la NOR SPI del módulo | `storage_partition`, 192 KB en 0x3b0000 | de 0 al final de la flash de 8 MB |
+| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1f0000 |
+| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1f0000 |
+| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB en 0x400000 de la NOR SPI del módulo | `storage_partition`, 192 KB en 0x3b0000 | de 0 a 0x101c00, el presupuesto de flash de la placa |
 | Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
 | Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
 | STM32F746G Discovery | NVS, `zplc_nvs_partition`, 15 MB en 0xa0000 de la NOR QSPI externa | `storage_partition`, 640 KB en 0 de la NOR QSPI | de 0 a 1 MB, la flash interna |
@@ -287,9 +292,12 @@ Las direcciones son las del devicetree de cada compilación. `tools/hil/check_st
 `zephyr.dts` y del `.config` que `run.sh size` conserva para cada placa, y falla cuando dos almacenes comparten o
 superponen una partición, cuando un almacén tiene menos de dos bloques de borrado o bloques que su backend no puede
 montar (NVS rechaza un sector de más de 64 KB), o cuando un almacén queda dentro del slot de la imagen, el rango de
-flash que el enlazador puede llenar con la imagen. El slot de la imagen de las dos placas RP2040 y de la ESP32-S3
-todavía llega al final de la flash que contiene los registros, de modo que el enlazador no detendría una imagen que
-creciera lo suficiente; esas placas figuran con ese motivo en `tools/hil/storage-partitions-open.json`. Para las placas
+flash que el enlazador puede llenar con la imagen. Las dos placas RP2040 terminan su `code_partition` antes de los
+registros, de modo que el enlazador rechaza una imagen que crecería sobre ellos. El enlazador de la ESP32-S3 no acota
+la imagen (ignora el tamaño de carga de Zephyr y llega al final de la flash), así que su slot es el presupuesto de flash
+de la placa, que la verificación de tamaño de la misma ejecución hace cumplir. Las siete placas pasan, y
+`tools/hil/storage-partitions-open.json`, la lista de placas con una falla conocida, está vacía. CI ejecuta la misma
+verificación en cada compilación cruzada; ese paso está escrito y no se ejecutó aquí. Para las placas
 del curso, una prueba de la descripción de la placa también falla cuando dos almacenes comparten una partición (lee
 los archivos Kconfig y overlay de la placa). Todo esto es evidencia a nivel de compilación: cómo se comporta la flash
 de cada placa corresponde al banco de HIL-010, y no se midió ninguna placa.
