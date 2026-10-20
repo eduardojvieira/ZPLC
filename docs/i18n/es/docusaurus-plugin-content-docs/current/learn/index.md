@@ -92,6 +92,6 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía falta
 
-Cada lección enumera las rutas que admite y, para una ruta que no admite, dice por qué y qué hacer en su lugar. La [ruta de hardware](hardware-track.md) explica cómo elegir su placa y cómo se comprueba una ejecución en ella, y cada lección de hardware tiene una página de cableado por placa; la comprobación de una ejecución desde el panel de la lección es trabajo futuro. El [esquema del curso](course-outline.md) indica las rutas de cada lección. Las
+Cada lección enumera las rutas que admite y, para una ruta que no admite, dice por qué y qué hacer en su lugar. La [ruta de hardware](hardware-track.md) explica cómo elegir su placa y cómo se comprueba una ejecución en ella, y cada lección de hardware tiene una página de cableado por placa. En Studio, una lección de hardware muestra el cableado para su placa y una comprobación en la placa que usted inicia; todavía no se registró ninguna ejecución en una placa física. El [esquema del curso](course-outline.md) indica las rutas de cada lección. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.
