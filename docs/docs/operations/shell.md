@@ -63,7 +63,7 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 - `zplc dbg mpeek addr:len[,addr:len...]` - Reads one or more blocks of memory at the given hexadecimal addresses.
 - `zplc dbg poke <addr> <value>` - Writes a value to a memory address.
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Dumps one memory region to the console, starting at the optional offset.
-- `zplc dbg watch <addr> [type]` - Reads one value from a PLC memory region and prints it in the type you name: `bool`, `i8`, `i16`, `i32`, `u8` (the default), `u16`, `u32` or `f32`. It is a snapshot, not a stream: Studio's Watch tab polls the same memory.
+- `zplc dbg watch <addr> [type]` - Reads one value from a PLC memory region and prints it in the type you name: `bool`, `i8`, `i16`, `i32`, `u8` (the default), `u16`, `u32` or `f32`. It is a snapshot, not a stream: the Watch tab of the ZPLC application polls the same memory.
 
 Every command of the `zplc` set that takes an address works inside the four PLC regions (input image, output image, work and retain) and refuses an address outside them. Reading or writing any other address of the device is the `devmem` command of the Zephyr shell, which release firmware does not have: see [Raw memory](#raw-memory-diagnostic-firmware-only).
 
@@ -86,7 +86,7 @@ The scheduler decides when each task runs. These commands are available when the
 - `zplc sched status` - Shows the scheduler state, such as `RUNNING` or `HALTED`.
 - `zplc sched tasks` - Lists the configured tasks with their priority and cycle-time measurements.
 - `zplc sched load <size>` - Prepares the runtime to receive a `.zplc` program of the given size in bytes.
-- `zplc sched data <hex>` - Sends the next chunk of the program, in hexadecimal, without going through Studio.
+- `zplc sched data <hex>` - Sends the next chunk of the program, in hexadecimal, without going through the ZPLC application.
 
 ---
 
@@ -175,6 +175,6 @@ ZPLC can synchronize the clock over SNTP.
 These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
 
 - `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image and, under `memory`, `code_size` and `max_artifact_size`, the largest program the board accepts (`CONFIG_ZPLC_CODE_SIZE_MAX`); a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
-- `zplc sys build` - Shows the identity of the firmware image, as `zplc version` does. `--json` prints it as one object with `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` and `options`. `commit` is `unknown` when the image was built from a source archive with no git history. It is a command of its own because Studio's handshake accepts exactly the keys of `zplc sys info --json`.
-- `zplc sys io` - Shows the identity of the board I/O description the image was built from. `--json` prints it as one object with `schema`, `board_id`, `hash`, `channels`, `input_bytes` and `output_bytes`. Studio compares the hash with the description it holds for the board and refuses a program that uses I/O on firmware that reports another one or none, or that touches an address the board has no channel for (see [Supported Boards](../reference/boards.md)). It is a command of its own for the same reason as `zplc sys build`: the keys of `zplc sys info --json` do not change.
+- `zplc sys build` - Shows the identity of the firmware image, as `zplc version` does. `--json` prints it as one object with `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` and `options`. `commit` is `unknown` when the image was built from a source archive with no git history. It is a command of its own because the handshake of the ZPLC application accepts exactly the keys of `zplc sys info --json`.
+- `zplc sys io` - Shows the identity of the board I/O description the image was built from. `--json` prints it as one object with `schema`, `board_id`, `hash`, `channels`, `input_bytes` and `output_bytes`. The ZPLC application compares the hash with the description it holds for the board and refuses a program that uses I/O on firmware that reports another one or none, or that touches an address the board has no channel for (see [Supported Boards](../reference/boards.md)). It is a command of its own for the same reason as `zplc sys build`: the keys of `zplc sys info --json` do not change.
 - `zplc sys reboot` - Reboots the board with a software reset.

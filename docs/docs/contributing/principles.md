@@ -73,13 +73,13 @@ See [Hardware support](../reference/capabilities-evidence.md).
 
 Public documentation exists in both languages and changes in both at once. A new
 dependency needs a concrete need and a recorded architectural justification.
-So far only the Spanish pages of Learn and of the Studio workbench have been reviewed; no fluent reviewer has read the other Spanish pages yet.
+So far only the Spanish pages of Learn and of the ZPLC workbench have been reviewed; no fluent reviewer has read the other Spanish pages yet.
 
 ### 9. AI and MCP help inside the workspace and never act on hardware
 
 An AI assistant or an MCP client may inspect, plan, compile, test and simulate
 within the approved workspace. It must not flash, deploy to hardware, force I/O,
-change RUN or STOP, open a raw serial port or run a shell. Studio works fully
+change RUN or STOP, open a raw serial port or run a shell. ZPLC works fully
 without AI.
 
 ## Using the rules

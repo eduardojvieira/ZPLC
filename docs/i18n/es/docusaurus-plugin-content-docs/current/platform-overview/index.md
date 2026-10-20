@@ -15,7 +15,7 @@ ZPLC (Zephyr PLC) combina un núcleo de ejecución portable en ANSI C99 con herr
 
 ```mermaid
 flowchart TB
-  IDE[IDE ZPLC]
+  IDE[Aplicación ZPLC]
   Compiler[Compilador]
   Runtime[Núcleo del runtime]
   Boards[Perfiles de placa]

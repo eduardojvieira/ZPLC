@@ -32,7 +32,7 @@ on real silicon, or that a watchdog resets in time. Those need the board level.
 |------|-----|
 | `python3 tools/hil/run_chain.py <board> [--bench human\|emulated]` | One command per board. Prompts for each physical step, measures the HIL-010 steps and writes a run record. |
 | `python3 tools/hil/compare_sim.py <board> [--bench human\|emulated]` | Runs the reference projects in native simulation and on the bench and records every difference (HIL-015). |
-| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <file>` | Runs a scenario file of a project on a board. The scenario is the file Studio runs on the host. |
+| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <file>` | Runs a scenario file of a project on a board. The scenario is the file the ZPLC application runs on the host. |
 | `python3 tools/hil/run_all_languages.py` | The IL, LD, FBD, SFC and ST fixtures and the reference projects, on the device. |
 | `python3 tools/hil/run_all_hil_tests.py` | The opcode-level scripts. They need a firmware image that prints the HIL trace. |
 | `python3 tools/hil/verify_compilation.py` | Compiles every fixture and reference project. No device. |
@@ -238,7 +238,7 @@ potentiometer, a 100 nF capacitor and jumper wires), and for the bench:
 
 Each output is wired to the input of the same number through a 1 kΩ resistor.
 Nothing else is connected to those pins during the run. The pin map of the
-board in Studio (from `firmware/app/boards/boards.json`) is the reference when
+board in the ZPLC application (from `firmware/app/boards/boards.json`) is the reference when
 it differs from this table.
 
 | Wire | Raspberry Pi Pico | ESP32-S3-DevKitC-1 |
@@ -329,7 +329,7 @@ emulated bench cuts at scripted points.
 ## Simulation and hardware (HIL-015)
 
 `python3 tools/hil/compare_sim.py <board>` compiles each reference project of
-Studio (the LD, FBD and SFC blinkies and the LD motor control) for the board,
+the ZPLC application (the LD, FBD and SFC blinkies and the LD motor control) for the board,
 runs it on the native runtime and on the bench with the same inputs at the
 same times, and compares the output traces. Every difference, another sequence
 of output values or a change more than `--tolerance-ms` (100 ms) away from its

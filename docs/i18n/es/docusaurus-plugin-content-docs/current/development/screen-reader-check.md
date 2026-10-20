@@ -2,18 +2,18 @@
 slug: /development/screen-reader-check
 title: Verificación con lector de pantalla
 sidebar_label: Verificación con lector de pantalla
-description: El guion manual para comprobar el camino principal de ZPLC Studio con NVDA, Narrator y VoiceOver antes de una versión, con lo que hay que escuchar y una tabla para registrar el resultado. Ningún agente lo ha ejecutado.
+description: El guion manual para comprobar el camino principal de ZPLC con NVDA, Narrator y VoiceOver antes de una versión, con lo que hay que escuchar y una tabla para registrar el resultado. Ningún agente lo ha ejecutado.
 ---
 
 # Verificación con lector de pantalla
 
 Este es el guion del requisito UX-028: antes de la disponibilidad general, una
-persona comprueba el camino principal de Studio con un lector de pantalla en
+persona comprueba el camino principal de ZPLC con un lector de pantalla en
 Windows y en macOS, y registra el resultado.
 
 :::warning Una verificación manual que ningún agente ha ejecutado
 Esta página es un guion para una persona con un lector de pantalla. Se escribió a
-partir del código fuente de Studio y **nadie la ha ejecutado todavía**: no se inició
+partir del código fuente de ZPLC y **nadie la ha ejecutado todavía**: no se inició
 ningún lector de pantalla para escribirla, de modo que las frases de «Qué escuchar»
 son lo que el código está hecho para decir, no algo que alguien haya oído. Mientras
 una persona no complete la tabla de resultados y la conserve con la lista de control
@@ -27,7 +27,7 @@ declare verificado.
 | --- | --- | --- |
 | Lector de pantalla | NVDA (versión actual) y Narrator | VoiceOver |
 | Iniciar y detener | NVDA: Ctrl+Alt+N. Narrator: Win+Ctrl+Intro | Cmd+F5 |
-| Studio | La compilación del instalador que se evalúa, no el servidor de desarrollo | La compilación del instalador que se evalúa |
+| ZPLC | La compilación del instalador que se evalúa, no el servidor de desarrollo | La compilación del instalador que se evalúa |
 | Proyecto | El ejemplo **Blinky** copiado a una carpeta vacía | El mismo |
 | Dispositivo | Ninguno: use **Simular**. Esta verificación no necesita una placa | Ninguno |
 
@@ -35,9 +35,9 @@ Use el mismo ejemplo y los mismos pasos en ambos sistemas. Hágalo una vez por c
 lector de pantalla: NVDA y Narrator en Windows, VoiceOver en macOS. Cierre las demás
 aplicaciones que hablen o reproduzcan sonido.
 
-## Cómo habla Studio
+## Cómo habla ZPLC
 
-Studio tiene dos regiones dinámicas, montadas una sola vez para la ventana y
+ZPLC tiene dos regiones dinámicas, montadas una sola vez para la ventana y
 presentes antes del primer mensaje (`packages/zplc-ide/src/ui/LiveRegions.tsx`):
 
 - una región de estado **cortés** (polite), para resultados: una compilación
@@ -64,7 +64,7 @@ hacerlo y conocer su resultado.
 
 ### 1. Abrir
 
-1. Inicie Studio. Escuche el título de la ventana y dónde cae el foco.
+1. Inicie ZPLC. Escuche el título de la ventana y dónde cae el foco.
 2. Recorra la pantalla de bienvenida con Tab. Cada botón (**Abrir proyecto**,
    **Nuevo proyecto**, **Aprender**, un ejemplo) debe anunciarse con su nombre y su rol.
 3. Active **Ejemplos**, **Blinky** y elija una carpeta vacía.
@@ -79,7 +79,7 @@ etiqueta». Cuando el proyecto se abre, el foco queda dentro del entorno de trab
 2. Cambie un número en el código y guarde con Ctrl+S (Cmd+S en macOS).
 
 Qué escuchar: el editor anunciado como un área de texto donde se puede escribir, y la
-pestaña como seleccionada. Studio no anuncia un guardado simple; anote cómo pudo
+pestaña como seleccionada. ZPLC no anuncia un guardado simple; anote cómo pudo
 saber que el archivo se guardó, o que no pudo.
 
 ### 3. Compilar
@@ -158,7 +158,7 @@ Copie esta tabla en la lista de control de la versión, una fila por lector de
 pantalla y por paso. Escriba con sus propias palabras lo que oyó. Marque un paso como
 **Aprobado**, **Fallido** o **No ejecutado**, y explique por qué en los dos últimos.
 
-| Fecha | Persona | Lector de pantalla y versión | Sistema | Versión de Studio | Paso | Lo que oyó | Foco correcto | Resultado | Notas |
+| Fecha | Persona | Lector de pantalla y versión | Sistema | Versión de ZPLC | Paso | Lo que oyó | Foco correcto | Resultado | Notas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | 1 Abrir | | | | |
 | | | | | | 2 Editar | | | | |
@@ -177,5 +177,5 @@ explique en las notas de la versión.
 ## Vea también
 
 - [Referencia del teclado para los editores visuales](../reference/visual-editor-keyboard.md)
-- [Banco de trabajo de Studio](../ide/features.md)
+- [Banco de trabajo de ZPLC](../ide/features.md)
 - [Hardware en el lazo](./hardware-in-the-loop.md)

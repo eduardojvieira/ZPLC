@@ -84,7 +84,7 @@ Use the Python of the firmware workspace (it has `pyserial`). The emulated bench
 needs no terminal and asks nobody: the steps that ask a person to confirm the
 board are recorded as skipped. Records go to `build/hil-records/`.
 
-To boot one board and use its ports by hand, for example from Studio:
+To boot one board and use its ports by hand, for example from the ZPLC application:
 
 ```bash
 python3 tools/hil/emulator/bench_emulated.py rpi_pico

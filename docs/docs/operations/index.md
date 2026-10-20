@@ -19,7 +19,7 @@ state from a host result or turn a deploy into a firmware recovery procedure.
 3. Keep physical actions under explicit human authority and the site procedure.
 4. Use [Recovery Boundaries](./recovery.md) when a connection, program, or firmware path fails.
 
-## What Studio can show
+## What ZPLC can show
 
 - Compiler diagnostics, test results, host simulation trace, and a connected runtime’s reported status.
 - The selected board profile and its evidence tier.

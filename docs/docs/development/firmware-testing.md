@@ -137,7 +137,7 @@ of the network stack: success, no `CONNACK`, a refused connection, a lost sessio
 and `comm_modbus_fb` run the handlers with a stand-in service, `modbus_client_tcp` the Modbus TCP client against a server
 written for the test. The provisioning blocks `AZURE_DPS_PROV` and `AWS_FLEET_PROV` are verified at the handler only. A
 double proves protocol behaviour, not acceptance by a real service. On the host, `test_host_loopback` shows the endpoints
-that a Studio session starts inside its runtime (COM-009), and `test_io_unsupported` shows that a channel the board cannot
+that a session of the ZPLC application starts inside its runtime (COM-009), and `test_io_unsupported` shows that a channel the board cannot
 serve is counted and reported (IO-007).
 
 The runtime hardening of the firmware (RT-010 to RT-034) has its own suites:

@@ -35,7 +35,7 @@ requiere el nivel de placa.
 |-------------|-----|
 | `python3 tools/hil/run_chain.py <placa> [--bench human\|emulated]` | Un comando por placa. Pide cada paso físico, mide los pasos de HIL-010 y escribe un registro de ejecución. |
 | `python3 tools/hil/compare_sim.py <placa> [--bench human\|emulated]` | Ejecuta los proyectos de referencia en simulación nativa y en el banco y registra cada diferencia (HIL-015). |
-| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <archivo>` | Ejecuta en una placa un archivo de escenario de un proyecto. El escenario es el archivo que Studio ejecuta en el host. |
+| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <archivo>` | Ejecuta en una placa un archivo de escenario de un proyecto. El escenario es el archivo que la aplicación ZPLC ejecuta en el host. |
 | `python3 tools/hil/run_all_languages.py` | Los fixtures IL, LD, FBD, SFC y ST y los proyectos de referencia, en el dispositivo. |
 | `python3 tools/hil/run_all_hil_tests.py` | Los scripts de nivel de opcode. Requieren una imagen de firmware que imprima la traza HIL. |
 | `python3 tools/hil/verify_compilation.py` | Compila cada fixture y proyecto de referencia. Sin dispositivo. |
@@ -266,7 +266,7 @@ para el banco:
 
 Cada salida se cablea a la entrada del mismo número a través de una
 resistencia de 1 kΩ. Durante la ejecución no se conecta nada más a esos pines.
-El mapa de pines de la placa en Studio (de `firmware/app/boards/boards.json`)
+El mapa de pines de la placa en la aplicación ZPLC (de `firmware/app/boards/boards.json`)
 es la referencia cuando difiere de esta tabla.
 
 | Cable | Raspberry Pi Pico | ESP32-S3-DevKitC-1 |
@@ -360,7 +360,7 @@ programados.
 ## Simulación y hardware (HIL-015)
 
 `python3 tools/hil/compare_sim.py <placa>` compila cada proyecto de referencia
-de Studio (los parpadeos LD, FBD y SFC y el control de motor LD) para la
+de la aplicación ZPLC (los parpadeos LD, FBD y SFC y el control de motor LD) para la
 placa, lo ejecuta en el runtime nativo y en el banco con las mismas entradas en
 los mismos instantes, y compara las trazas de salida. Cada diferencia, otra
 secuencia de valores de salida o un cambio a más de `--tolerance-ms` (100 ms)

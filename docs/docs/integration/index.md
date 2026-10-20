@@ -20,7 +20,7 @@ flowchart LR
   A[Compile project to .zplc] --> B{Execution Target}
   B --> D[Native PC SoftPLC Simulation]
   B --> E[Zephyr Hardware Runtime]
-  E --> F[Online Debugging via IDE]
+  E --> F[Online Debugging via the ZPLC application]
 ```
 
 ## Integrating ZPLC into Custom Firmwares
@@ -45,7 +45,7 @@ Because ZPLC handles the protocol logic abstractly inside the VM engine, configu
 
 ## Flashing the Hardware
 
-To bootstrap a new microcontroller, you must flash the core ZPLC Zephyr firmware before the IDE can safely transmit `.zplc` bytecode over serial. 
+To bootstrap a new microcontroller, you must flash the core ZPLC Zephyr firmware before the ZPLC application can safely transmit `.zplc` bytecode over serial. 
 
 Generally speaking, ZPLC leans on standardized Zephyr flash processes:
 - Many ARM-based boards accept direct ST-Link or J-Link flashing via `west flash`.

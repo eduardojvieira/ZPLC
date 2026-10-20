@@ -23,7 +23,7 @@ command runs.
   be listed with the requirement that will fix it, and the list can only shrink.
 - **A conformance suite.** Structured Text programs are compiled, loaded into the
   real VM and their memory is asserted.
-- **Studio stopgaps.** Closing a file or the window with unsaved work asks first,
+- **Application stopgaps.** Closing a file or the window with unsaved work asks first,
   each text file keeps its own undo history, and a failed build shows the
   compiler's own message with its line and column.
 - **A release pipeline.** One workflow builds the Linux, macOS and Windows
@@ -34,7 +34,7 @@ command runs.
   64 and 32 bits and on QEMU Cortex-M3 and M0, with a flash and RAM budget per
   board. See [Firmware testing](../development/firmware-testing.md).
 - **One generated source for the binary contract**, and a draft counter that the
-  compiler, the loader, the runtime and Studio compare.
+  compiler, the loader, the runtime and the ZPLC application compare.
 - **Numeric and visual-language corrections** in the compiler: signed `INT`
   widths, signed comparisons, `REAL` arithmetic, `TIME` literals, and the
   Instruction List, Ladder and SFC defects that conformance cases exposed.
@@ -44,7 +44,7 @@ command runs.
 - **Close the rest of the verification foundation.** Sandbox closure for programs
   that read or write outside their regions, a fuzzer that runs the programs the
   loader accepts, opcode coverage for the VM, a render-test environment for
-  Studio, and the cost of 64-bit arithmetic measured on the Raspberry Pi Pico.
+  the ZPLC application, and the cost of 64-bit arithmetic measured on the Raspberry Pi Pico.
 - **Correct Structured Text across a whole project.** Types, structures,
   enumerations, several files, errors with their position, and an open, edit,
   build and simulate path with no hidden step.
@@ -53,7 +53,7 @@ command runs.
 
 | Phase | What it delivers |
 |---|---|
-| New shell and five languages | A rebuilt Studio view layer, and Instruction List, Ladder, FBD and SFC that compile correctly, debug and monitor. |
+| New shell and five languages | A rebuilt view layer of the application, and Instruction List, Ladder, FBD and SFC that compile correctly, debug and monitor. |
 | Learn in simulation | A course that opens from the Welcome screen and grades honestly, in English and Spanish, with no hardware. |
 | Runtime trust and the first board | The same scheduler semantics on the simulator and the target, safe outputs on a fault, retentive memory that survives a power cycle, and the first bench record on the Raspberry Pi Pico. |
 | Communications and the second board | Modbus, MQTT, Sparkplug B and the cloud blocks repaired, and bench evidence on the ESP32-S3. |
