@@ -12,6 +12,7 @@
     { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/contract/test_protocol.py", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/hil/test_hil_*.py", "job": "typescript", "command": "python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'" },
+    { "pattern": "tools/hil/emulator/test_*.py", "job": "typescript", "command": "bun test ./tools/ci" },
     { "pattern": "tools/test_crc32_cross.py", "job": "typescript", "command": "python3 -B tools/test_crc32_cross.py" },
     { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "job": "typescript", "command": "bun test packages/zplc-hil" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },

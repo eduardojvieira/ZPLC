@@ -107,7 +107,7 @@ wire(config.wiring);
 };
 mcu.uart[0].onByte = (byte: number) => log.write(String.fromCharCode(byte));
 mcu.uart[1].onByte = (byte: number) => ptyWrite(config.rtuFd, Uint8Array.of(byte));
-ptyReader(config.rtuFd).on('data', (data: Buffer) => { for (const byte of data) mcu.uart[1].feedByte(byte); });
+ptyReader(config.rtuFd).on('data', (data: string | Buffer) => { for (const byte of Buffer.from(data)) mcu.uart[1].feedByte(byte); });
 
 // ---------------------------------------------------------------- USB CDC bridge (the shell)
 const cdc = new USBCDC(mcu.usbCtrl);
@@ -148,8 +148,8 @@ mcu.usbCtrl.onEndpointRead = (endpoint: number, size: number) => {
   pendingRead = size;
   completeRead();
 };
-ptyReader(config.cdcFd).on('data', (data: Buffer) => {
-  for (const byte of data) cdc.sendSerialByte(byte);
+ptyReader(config.cdcFd).on('data', (data: string | Buffer) => {
+  for (const byte of Buffer.from(data)) cdc.sendSerialByte(byte);
   completeRead();
 });
 
