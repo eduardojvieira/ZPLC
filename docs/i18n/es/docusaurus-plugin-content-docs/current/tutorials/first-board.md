@@ -30,21 +30,24 @@ lo cual está verificado.
 
 ## Qué necesita
 
-| | Raspberry Pi Pico | ESP32-S3 DevKitC-1 |
+| | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
 | --- | --- | --- |
 | Destino de compilación | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
 | Placa en Studio | `rpi_pico` | `esp32s3_devkitc` |
 | Proyecto de ejemplo | `pico_blinky` | `esp32s3_blinky` |
-| Primera salida digital | `DO0`, `%QX0.0`, pin GP0 (pin 1 del conector) | `DO0`, `%QX0.0`, pin GPIO38 (conector J3) |
-| Qué cablear | Un LED y una resistencia del pin a tierra | Un LED y una resistencia del pin a tierra |
-| Interfaz con Studio | El cable USB de la placa | El cable USB de la placa |
+| Primera salida digital | `DO0`, `%QX0.0`, pin GP0 (pin 1 del conector) | `DO0`, `%QX0.0`, pin GPIO15 (pin 8 del conector J1) |
+| Qué cablear | Un LED y una resistencia de 330 Ω del pin a GND (pin 3 del conector) | Un LED y una resistencia de 330 Ω del pin a GND (pin 22 del conector J1) |
+| Interfaz con Studio | El cable USB de la placa | El cable USB, en el puerto marcado USB (no UART) |
 
 Los canales y el valor seguro de cada salida, las notas eléctricas y qué pines
 demuestra el devicetree de la placa están en [Placas soportadas](../reference/boards.md).
 Lea las notas de su placa antes de cablear nada: los pines son de lógica de 3,3 V y
-no toleran 5 V. El ejemplo `esp32s3_blinky` dice que el mapeo del pin de la
-DevKitC-1 está pendiente; compruebe el pin del ejemplo contra la descripción de la
-placa.
+no toleran 5 V. Allí están también las entradas y la entrada analógica: en la Pico,
+`DI0` a `DI3` son GP15 a GP12 y `AI0` es GP26; en la DevKitC-1, `DI0` a `DI3` son
+GPIO5 a GPIO8 (pines 5 a 7 y 12 del conector J1) y `AI0` es GPIO4 (pin 4 del
+conector J1). El botón BOOT de la DevKitC-1 es la entrada adicional `DI4`: no lo
+mantenga pulsado mientras la placa se reinicia, o la placa arranca en modo de
+descarga.
 
 ## 1. Obtenga el firmware
 
@@ -70,7 +73,7 @@ tools/firmware-test/run.sh size rpi-pico-rp2040
 El script ejecuta `west build` para la placa del manifiesto y comprueba su flash y
 su RAM contra el presupuesto registrado. La imagen está en
 `$ZPLC_FW_WS/out/size/rpi-pico-rp2040/zephyr/` (`zephyr.elf` y, para la Pico,
-`zephyr.uf2`). Para el ESP32-S3 el identificador de placa es `esp32-s3-devkitc`.
+`zephyr.uf2`; para el ESP32-S3, `zephyr.bin`). Para el ESP32-S3 el identificador de placa es `esp32-s3-devkitc`.
 Para compilar una placa sin el script, ejecute el comando de su perfil desde la raíz
 del espacio de trabajo de Zephyr:
 
@@ -90,8 +93,9 @@ la placa:
 - **Raspberry Pi Pico:** el cargador de arranque del RP2040 acepta un archivo UF2.
   Mantenga pulsado el botón BOOTSEL mientras conecta el cable USB, y copie
   `zephyr.uf2` en la unidad que aparece.
-- **ESP32-S3:** ejecute `west flash` desde el directorio de compilación con el
-  ejecutor de Zephyr de la placa.
+- **ESP32-S3:** mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT para entrar
+  en modo de descarga; luego ejecute `west flash` desde el directorio de compilación,
+  o escriba `zephyr.bin` en `0x0` con `esptool`, y pulse RST.
 
 Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 [Límites de la recuperación](../operations/recovery.md).
