@@ -130,7 +130,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
             }}
           >
             <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-              <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0 outline-none">
+              <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
                 <ErrorBoundary region="Editor">
                   <EditorArea />
                 </ErrorBoundary>

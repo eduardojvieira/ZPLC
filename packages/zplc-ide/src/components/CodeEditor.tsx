@@ -19,6 +19,7 @@ import { useEditorView } from '../store/editorViewSettings';
 import { useAppSettings } from '../store/useAppSettings';
 import { useFileBreakpoints, useCurrentExecution, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
+import { useT } from '../i18n';
 import { ilInlineTargets, inlineValues, stInlineTargets } from '../monitoring/inlineValues';
 import { useMonitoredVariables } from '../monitoring/useMonitor';
 import type { PLCLanguage } from '../types';
@@ -103,6 +104,7 @@ export function CodeEditor({
   readOnly = false,
 }: CodeEditorProps): React.ReactElement {
   const { effectiveTheme } = useTheme();
+  const { t } = useT();
   const editorRef = useRef<MonacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   // Decorations belong to a model, and each open file keeps its own model.
@@ -548,6 +550,8 @@ export function CodeEditor({
         onMount={handleEditorDidMount}
         theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID}
         options={{
+          // The editor takes Tab as a character; a person who cannot see the screen learns the way out from its name (UX-025, UX-028).
+          ariaLabel: t('editors.code.label', { name: fileName }),
           fontFamily: 'var(--font-mono)',
           fontSize: editorFontSize,
           lineNumbers: 'on',

@@ -3867,6 +3867,8 @@ export const JOURNEYS: Journey[] = [
       // (typing the text would let the editor indent and close brackets as it does for a person; the solution is pasted)
       await app.eval(`(() => { const area = document.createElement('textarea'); area.value = ${JSON.stringify(solution)}; document.body.append(area); area.select(); document.execCommand('copy'); area.remove(); })()`);
       await reach('the code editor', `el.closest('.monaco-editor') !== null`, 'Tab', 80);
+      // the editor takes Tab as a character, so its name tells a person who cannot see it the way out (UX-028)
+      assert(await app.eval<boolean>(`(document.activeElement?.getAttribute('aria-label') ?? '').includes('Ctrl+M')`), `The code editor does not name the way out of it: ${await app.eval<string>(`document.activeElement?.getAttribute('aria-label') ?? ''`)}`);
       await app.press('Ctrl+A');
       await app.press('Ctrl+V');
       await app.until('the solution in the editor', async () => (await editorText(app)).includes('Forward') || undefined);
@@ -3921,6 +3923,9 @@ export const JOURNEYS: Journey[] = [
       await reach('the variable field of Watch', `el.matches('input[placeholder^="Variable path"]')`, 'Tab', 5);
       await app.type('Forward'); await app.press('Enter');
       await app.until('Forward to read TRUE in the Watch table', async () => await watchValue(app, 'Forward') === 'TRUE' || undefined);
+      // the field leaves the page with the form: the focus goes back to the button that opened it, and the row is announced (UX-028)
+      await app.until('the focus to return to Add variable', async () => (await focused()).startsWith('Add variable') || undefined, 3_000).catch(async () => { throw new Error(`Adding a variable must return the focus to Add variable, it is on ${await focused()}`); });
+      assert(/Forward added to the watch table/.test(await live('polite')), `Adding a variable is not announced: ${JSON.stringify(await live('polite'))}`);
 
       // 7. The deploy dialog: asked as the toolbar asks it; focus starts on Cancel, Tab stays inside, Escape closes it and gives the focus back
       const trigger = await focused();
@@ -3966,7 +3971,11 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Safe motor start-stop lesson to be chosen', async () => await app.eval<boolean>(`document.getElementById('learn-title')?.textContent?.trim() === 'Safe motor start-stop'`) || undefined);
       await app.until('the Check button to be enabled', async () => await isEnabled('[data-learn-check]') || undefined);
       await reach('the Check button', `el.matches('[data-learn-check]')`, 'Tab', 60);
+      // each stage's checkpoint disclosure has its own name, and the Check button keeps the focus while it works (UX-028)
+      const checkpointNames = await app.eval<string[]>(`[...document.querySelectorAll('[aria-label="Primary sidebar"] ol summary')].map((el) => el.getAttribute('aria-label') ?? el.textContent)`);
+      assert(checkpointNames.length > 1 && new Set(checkpointNames).size === checkpointNames.length, `The checkpoint disclosures share a name: ${JSON.stringify(checkpointNames)}`);
       await app.press('Enter');
+      assert(await app.eval<boolean>(`document.activeElement?.matches('[data-learn-check]') === true`), `The Check button must keep the focus while it checks, it is on ${await focused()}`);
       await app.until('Learn to grade the program as passed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`) || undefined, 60_000)
         .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}; ${await app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`)}`); });
     },

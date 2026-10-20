@@ -18,6 +18,7 @@ import { completeWatchSymbols, formatWatchValue, parseWatchDraft, sortWatchRows,
 import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 import { Button, Checkbox, IconButton, Select, TextField, Tooltip } from '../ui';
 import { useT } from '../i18n';
+import { announce } from '../utils/announce';
 import { PanelEmptyState } from './panelStates';
 
 /** What the force checkbox of a row says when the pointer or the focus is on it. */
@@ -101,6 +102,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
   // values typed ahead and not written yet (IDE-019): the user writes them all with one explicit action
   const [prepared, setPrepared] = useState<Map<string, EditingCell & { value: number | boolean | string }>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   // Get debug state from store
   const debugMode = useIDEStore((state) => state.debug.mode);
@@ -128,8 +130,15 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
     if (!varPath) return;
 
     addWatch(varPath);
+    announce(t('workbench.watch.added', { path: varPath }));
+    closeAddForm();
+  };
+
+  /** The field leaves the page with the form, so the focus goes back to the control that opened it (UX-025, UX-028). */
+  const closeAddForm = () => {
     setNewVarInput('');
     setShowAddForm(false);
+    requestAnimationFrame(() => addButtonRef.current?.focus());
   };
 
   // Handle key press in "add variable" input
@@ -139,8 +148,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       handleAddVariable();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      setShowAddForm(false);
-      setNewVarInput('');
+      closeAddForm();
     }
   };
 
@@ -289,7 +297,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
           <Select aria-label={t('panel.watch.format')} value={format} onChange={(e) => setFormat(e.target.value as WatchFormat)} className="w-24 text-[11px]">
             {WATCH_FORMATS.map((entry) => <option key={entry} value={entry}>{t(`panel.watch.format.${entry}`)}</option>)}
           </Select>
-          <IconButton label={t('workbench.watch.addVariable')} variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
+          <IconButton ref={addButtonRef} label={t('workbench.watch.addVariable')} variant="ghost" size="sm" icon={<Plus size={14} />} onClick={() => setShowAddForm(!showAddForm)} />
           {variables.length > 0 && (
             <IconButton label={t('workbench.watch.clearAll')} variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={clearAll} />
           )}
