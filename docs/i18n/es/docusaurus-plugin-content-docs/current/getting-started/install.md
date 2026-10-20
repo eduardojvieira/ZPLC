@@ -44,6 +44,10 @@ archivo contra `SHA256SUMS` ([Verificar la descarga](#verificar-la-descarga)) y
 
 Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
 
+## Sin instalar
+
+[ZPLC en el navegador](https://eduardojvieira.github.io/ZPLC/app/) ejecuta la aplicación en Chrome o Edge sin instalar nada. No tiene conexión con dispositivos, ni compilación de firmware, ni simulación nativa: [qué le falta](../ide/browser.md#qué-no-está-disponible).
+
 ## Canales
 
 | Canal | Estado | Qué es |

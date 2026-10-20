@@ -152,6 +152,7 @@ const sidebars = {
             'ide/features',
             'ide/editors',
             'ide/compiler',
+            'ide/browser',
           ],
         },
         'languages/index',
