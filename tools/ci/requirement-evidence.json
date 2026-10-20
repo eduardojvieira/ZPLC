@@ -2608,9 +2608,23 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnHomeView.test.tsx","test":"LRN-006 tells the learner why the course is in this order, and why each module sits where it does"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"LRN-006 refuses a course with no rationale and a module that does not say why it sits where it does"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 begins with the tour of module 0, then the scan cycle, then the first blink in Ladder and in Structured Text"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 has the modules of the table in order, each with its title intent, level, required module and tracks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 places in each module only lessons whose edited program is in a language the table gives it (module 0 is a tour and teaches none)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 states why the course is in this order, and why each module sits where it does, in both languages"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-006 the course follows the curriculum table of the spec, in its order"},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-006 lists the lessons of a module in course order, the order Learn shows, and says why the module sits where it does"}
+  ],
   "LRN-007": [
     {"kind":"unit","ref":"tools/ci/course-outline.test.ts","test":"course outline pages (LRN-007)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)"}
+  ],
+  "LRN-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grades an edit in it, and offers the first blink in LD and in ST"}
   ],
   "LRN-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
@@ -2630,6 +2644,13 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 lets a hardware-only lesson say why it has no simulation grade, and what to do instead"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+  ],
+  "LRN-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"LRN-012 refuses a Foundation or Intermediate lesson that cannot be done in simulation, except the board check of module 0"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"}
   ],
   "LRN-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
@@ -2725,6 +2746,13 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
+  "LRN-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the main process reaches the network only in the update check, off until the user turns it on, and the opt-in assistant"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the policy of the installed window lets it load nothing from another host"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the production renderer loads no remote font, stylesheet or script, and names no host it could load from"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"LRN-030 the simulation track needs no network: the installed application fetches nothing from another host"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"58 The simulation track works offline: a lesson and a Communications lesson run and pass with every remote request refused"}
+  ],
   "LRN-031": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
@@ -2761,6 +2789,8 @@
   ],
   "LRN-035": [
     {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 stopgap, the faceplate leg: the faceplate page, in both languages, linked from Learn (the board kit pages are still to come)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 stopgap: says what the faceplate lists, how each input is operated and when a change reaches the program, in the words Studio shows","partial":true},
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-035 the kit page of each learner board, generated from boards.json and kit.json"}
   ],
   "LRN-036": [
