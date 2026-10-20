@@ -1,5 +1,5 @@
 ---
-name: "ZPLC Studio 2.0"
+name: "ZPLC"
 description: "A dense, verifiable desktop workbench for PLC programming."
 colors:
   drawing-sheet-canvas: "#e7ece8"
@@ -41,9 +41,9 @@ components:
     rounded: "2px"
 ---
 
-# Design System: ZPLC Studio 2.0
+# Design System: ZPLC
 
-This document describes the interface Studio ships. The colour, type, shape and density values are printed from the token
+This document describes the interface ZPLC ships. The colour, type, shape and density values are printed from the token
 source (`src/theme/tokens.ts`) by `bun tools/ci/ux-tokens.ts --write`, and CI fails when the tables below differ from it, so
 a value written here is a value the application uses.
 
@@ -160,7 +160,7 @@ Every form control has a programmatically associated label (a `Field`, a wrappin
 
 ### Component gallery
 
-A development build serves every component in every theme and density, six panels on one page, at the `#ui-gallery` address: `http://localhost:3000/#ui-gallery` while `bun run dev` serves Studio (in the Electron development window, set `location.hash = '#ui-gallery'` and reload). The page, its scoped theme stylesheet and its text are not in a production build (`scripts/galleryBundle.test.ts`), and journey 40 drives it with real key events.
+A development build serves every component in every theme and density, six panels on one page, at the `#ui-gallery` address: `http://localhost:3000/#ui-gallery` while `bun run dev` serves ZPLC (in the Electron development window, set `location.hash = '#ui-gallery'` and reload). The page, its scoped theme stylesheet and its text are not in a production build (`scripts/galleryBundle.test.ts`), and journey 40 drives it with real key events.
 
 ### Lower tool ledger
 

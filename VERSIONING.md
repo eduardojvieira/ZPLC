@@ -38,7 +38,7 @@ Electron reports its packaged manifest version through `app.getVersion()`;
 - `CHANGELOG.md` holds only tagged versions: entries wait under `## Unreleased` and take a dated version heading
   when the release is cut. `scripts/release/changelog.ts` checks it.
 - The product name and the application identifier are recorded in `scripts/release/identity.json` and checked
-  against `electron-builder.yml` and the Studio `package.json`. They are permanent after the first Store or signed
+  against `electron-builder.yml` and the ZPLC application `package.json`. They are permanent after the first Store or signed
   release, so they change only by decision D-03 of the owner.
 - Each firmware image embeds its version, the commit it was built from, whether tracked files differed from it, its
   board, the bytecode ABI and draft counter, and the `CONFIG_ZPLC_*` options with their hash. `zplc version` and

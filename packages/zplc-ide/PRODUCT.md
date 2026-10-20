@@ -16,15 +16,15 @@ workflow explicitly supports them.
 
 ## Product Purpose
 
-ZPLC Studio 2.0 is a desktop environment for programming, testing,
+ZPLC is a desktop environment for programming, testing,
 simulating, learning, building, deploying, and debugging PLC projects against
 the same runtime semantics and evidence model. Success is a user completing a
-verified PLC task without needing a terminal for the main Studio path.
+verified PLC task without needing a terminal for the main path of the ZPLC application.
 
 ## Positioning
 
 ZPLC shares one project model, PLC semantics, Tool API, and evidence spine
-across Studio, CLI, AI, MCP, Lab, Learn, and supported hardware workflows.
+across the ZPLC application, CLI, AI, MCP, Lab, Learn, and supported hardware workflows.
 AI can explain and prepare locally verifiable changes, but it is structurally
 prevented from initiating physical operations.
 
@@ -38,7 +38,7 @@ human-controlled.
 
 ## Capabilities and Constraints
 
-- Studio supports project work, compilation, temporal tests, simulation,
+- The ZPLC application supports project work, compilation, temporal tests, simulation,
   evidence, and staged hardware workflows through shared contracts.
 - Build runtime firmware, flash runtime firmware, deploy a `.zplc` program,
   and run/debug are separate operations.
@@ -53,7 +53,7 @@ human-controlled.
 
 ## Brand Commitments
 
-The product is named ZPLC Studio 2.0. Its voice is direct, calm, and aware of
+The product is named ZPLC; its version is shown apart from the name. Its voice is direct, calm, and aware of
 industrial evidence. The user requires a “calma industrial” character; the
 visual language is the Wiring Ledger direction, described as shipped in
 `DESIGN.md`: its tokens, signal vocabulary and component kit are the single
@@ -80,7 +80,7 @@ as proof.
 
 ## Accessibility & Inclusion
 
-The Studio golden path must be operable by keyboard and meet WCAG AA. Status
+The golden path of the ZPLC application must be operable by keyboard and meet WCAG AA. Status
 cannot rely on color alone. Light, dark, high-contrast, and reduced-motion
 experiences are required for published workflows.
 
