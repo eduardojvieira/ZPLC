@@ -6,6 +6,9 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { readBoardIo } from '../boards/boardIo';
+import { normalizeAddress } from '../boards/boardIoMapping';
+import { WIRING_FILE, programWiringProblems, validateWiring, wiringBoardProblems, type WiringBoard, type WiringFile } from '../boards/wiring/wiring';
 import { validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
@@ -27,6 +30,8 @@ import {
 
 export const LESSONS_DIRECTORY = join(import.meta.dir, '..', '..', 'lessons');
 export const PROJECTS_DIRECTORY = join(import.meta.dir, '..', '..', 'projects');
+/** The board I/O manifest of the firmware: the one source of the pins of the learner boards (IO-001). */
+export const BOARDS_FILE = join(import.meta.dir, '..', '..', '..', '..', 'firmware', 'app', 'boards', 'boards.json');
 const LOCALES: readonly LessonLocale[] = ['en', 'es'];
 
 export const sha256Hex = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
@@ -43,6 +48,46 @@ export interface LessonPackage {
   checks: LessonChecks | undefined;
   /** The plant's mapping to the starter's I/O (LRN-021); null for a lesson without a plant. */
   plantMap: PlantMap | null;
+  /** The parts of a lesson on the hardware track (LRN-014); null for any other lesson. */
+  wiring: WiringFile | null;
+}
+
+/**
+ * The learner boards of the course: the boards `kit.json` beside the lessons names, with the pins of their supply and
+ * ground, and their I/O description from boards.json. A broken kit or board entry is reported and leaves no board.
+ */
+export function loadLearnerBoards(lessonsDirectory = LESSONS_DIRECTORY, boardsFile = BOARDS_FILE): { boards: WiringBoard[]; problems: string[] } {
+  const problems: string[] = [];
+  const kit = readJson(join(lessonsDirectory, 'kit.json'), problems) as { boards?: Array<{ boardId: string; supply: string; ground: string; analogGround: string }> } | undefined;
+  const manifest = readJson(boardsFile, problems) as Array<{ board_id: string; display_name: string; io: unknown }> | undefined;
+  if (!kit || !manifest) return { boards: [], problems };
+  const boards: WiringBoard[] = [];
+  for (const entry of kit.boards ?? []) {
+    const board = manifest.find((candidate) => candidate.board_id === entry.boardId);
+    const io = board ? readBoardIo(board.io) : undefined;
+    if (!board || !io) { problems.push(`kit.json: board "${entry.boardId}" has no valid I/O description in boards.json`); continue; }
+    boards.push({ boardId: entry.boardId, displayName: board.display_name, io, supply: entry.supply, ground: entry.ground, analogGround: entry.analogGround });
+  }
+  if (boards.length === 0 && problems.length === 0) problems.push('kit.json: names no learner board');
+  return { boards, problems };
+}
+
+/** `AT %QX0.0` of Structured Text and Instruction List, `"address": "%I0.0"` of the Ladder, FBD and SFC documents. */
+const LOCATED = /\bAT\s+(%[IQ][XWB]?\d+(?:\.\d)?)|"address"\s*:\s*"(%[IQ][XWB]?\d+(?:\.\d)?)"/gi;
+
+/** The process-image addresses the sources of a project locate, normalized and sorted, and the ones its io.virtual declares. */
+export function programAddresses(projectDirectory: string): { addresses: string[]; virtual: string[] } {
+  const sources = join(projectDirectory, 'src');
+  const found = new Set<string>();
+  for (const file of readdirSync(sources).sort()) {
+    for (const match of readFileSync(join(sources, file), 'utf8').matchAll(LOCATED)) {
+      const address = normalizeAddress(match[1] ?? match[2]!);
+      if (address) found.add(address);
+    }
+  }
+  const config = JSON.parse(readFileSync(join(projectDirectory, 'zplc.json'), 'utf8')) as { io?: { virtual?: Array<{ address: string }> } };
+  const virtual = (config.io?.virtual ?? []).map((row) => normalizeAddress(row.address)).filter((address): address is string => address !== undefined);
+  return { addresses: [...found].sort(), virtual: virtual.sort() };
 }
 
 /** Reads and validates `course.json` beside the lesson packages. A missing or broken file is reported and leaves no course. */
@@ -66,6 +111,7 @@ function readJson(path: string, problems: string[]): unknown {
 export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, projectsDirectory = PROJECTS_DIRECTORY): LoadedPackages {
   const problems: string[] = [];
   const packages: LessonPackage[] = [];
+  let learnerBoards: ReturnType<typeof loadLearnerBoards> | undefined;
   const directories = readdirSync(lessonsDirectory).filter((name) => statSync(join(lessonsDirectory, name)).isDirectory()).sort();
   for (const id of directories) {
     const directory = join(lessonsDirectory, id);
@@ -107,6 +153,26 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
         if (plantMap.plant !== typed.plant) here.push(`${id}/plant-map.json: plant "${plantMap.plant}" differs from the manifest plant "${typed.plant}"`);
       }
     }
+    // LRN-013, LRN-014: a lesson on the hardware track ships its wiring, which fits both learner boards and its program.
+    let wiring: WiringFile | null = null;
+    const hasWiring = existsSync(join(directory, WIRING_FILE));
+    if (typed.hardware && !hasWiring) here.push(`${id}: the lesson is on the hardware track but has no ${WIRING_FILE}`);
+    if (!typed.hardware && hasWiring) here.push(`${id}: ${WIRING_FILE} belongs to a lesson on the hardware track`);
+    if (typed.hardware && hasWiring) {
+      const raw = readJson(join(directory, WIRING_FILE), here);
+      const shape = validateWiring(raw);
+      here.push(...shape.map((problem) => `${id}/${WIRING_FILE}: ${problem}`));
+      learnerBoards ??= loadLearnerBoards(lessonsDirectory);
+      here.push(...learnerBoards.problems);
+      if (shape.length === 0 && learnerBoards.problems.length === 0) {
+        wiring = raw as WiringFile;
+        const solution = join(projectsDirectory, typed.solution.project);
+        const fits = wiringBoardProblems(wiring, learnerBoards.boards);
+        const program = existsSync(join(solution, 'zplc.json')) ? programAddresses(solution) : undefined;
+        const used = fits.length === 0 && program ? programWiringProblems(wiring, learnerBoards.boards, program.addresses, program.virtual) : [];
+        here.push(...[...fits, ...used].map((problem) => `${id}/${WIRING_FILE}: ${problem}`));
+      }
+    }
     const scenario = scenarioParsed.scenario;
     if (scenario) {
       if (scenario.id !== typed.scenario.id) here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
@@ -121,7 +187,7 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
     }
     problems.push(...here);
     if (here.length === 0 && scenario && texts.en && texts.es) {
-      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks, plantMap });
+      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks, plantMap, wiring });
     }
   }
   return { packages, problems };
@@ -158,7 +224,7 @@ export function validateCourse(packages: readonly LessonPackage[], course?: Cour
 /** The generated index of the packages, in course order, with the text expanded. Problems of expansion are returned. */
 export function buildIndex(packages: readonly LessonPackage[], course: CourseDefinition): { index: LessonIndex; problems: string[] } {
   const problems: string[] = [];
-  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts, plantMap }) => {
+  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring }) => {
     const expanded = Object.fromEntries(LOCALES.map((locale) => {
       const result = expandText(texts[locale], scenario);
       problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
@@ -181,6 +247,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
       solution: manifest.solution,
       scenario: { id: manifest.scenario.id, path: manifest.scenario.path, sha256: manifest.scenario.sha256, tickMs: scenario.tickMs, durationMs: scenario.durationMs, assertions: scenario.expectations.length, canonical: scenarioBytes },
       regressionScenarios: manifest.regressionScenarios,
+      hardware: manifest.hardware && wiring ? { wiring, tolerances: manifest.hardware.tolerances } : null,
       text: expanded,
     };
   });

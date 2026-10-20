@@ -129,6 +129,7 @@ const sidebars = {
           items: [
             'reference/boards',
             'reference/zephyr-workspace-setup',
+            'reference/learner-kits/index',
           ],
         },
       ],
