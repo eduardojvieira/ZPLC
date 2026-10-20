@@ -62,6 +62,12 @@ describe('the hardware recorder (LRN-024)', () => {
     const recording = await recordHardwareTrace(session, VARIABLES, { durationMs: 10_000, intervalMs: 50, now: time.now, wait: async (ms) => { await time.wait(ms); if (time.now() >= 1100) done.abort(); }, signal: done.signal });
     // Done is pressed during the wait after the second read: no further read is made.
     expect(recording.ok && recording.trace.map((sample) => sample.atMs)).toEqual([0, 50]);
+    // A caller that follows the samples can end the run itself.
+    const enough = new AbortController();
+    const seen: number[] = [];
+    const followed = await recordHardwareTrace(session, VARIABLES, { durationMs: 10_000, intervalMs: 50, ...clock(), signal: enough.signal, onSample: (trace) => { seen.push(trace.length); if (trace.length === 3) enough.abort(); } });
+    expect(seen).toEqual([1, 2, 3]);
+    expect(followed.ok && followed.trace).toHaveLength(3);
   });
 });
 

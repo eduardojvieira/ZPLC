@@ -14,6 +14,7 @@ import { validateCourseDefinition, validateCoursePlacement, type CourseDefinitio
 import {
   canonicalJson,
   expandText,
+  hardwareToleranceProblems,
   parseScenarioFile,
   textShape,
   validateChecks,
@@ -166,6 +167,11 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
         const used = fits.length === 0 && program ? programWiringProblems(wiring, learnerBoards.boards, program.addresses, program.virtual) : [];
         here.push(...[...fits, ...used].map((problem) => `${id}/${WIRING_FILE}: ${problem}`));
       }
+      // LRN-024: the time tolerance covers a sampling period of the check and a scan of the starter's slowest task.
+      const starterConfig = join(projectsDirectory, typed.starter.project, 'zplc.json');
+      const tasks = existsSync(starterConfig) ? (JSON.parse(readFileSync(starterConfig, 'utf8')) as { tasks?: Array<{ interval_ms?: unknown }> }).tasks ?? [] : [];
+      const scans = tasks.map((task) => task.interval_ms).filter((interval): interval is number => typeof interval === 'number' && interval > 0);
+      if (scans.length > 0) here.push(...hardwareToleranceProblems(typed.hardware.tolerances.timeMs, Math.max(...scans)).map((problem) => `${id}: ${problem}`));
     }
     const scenario = scenarioParsed.scenario;
     if (scenario) {

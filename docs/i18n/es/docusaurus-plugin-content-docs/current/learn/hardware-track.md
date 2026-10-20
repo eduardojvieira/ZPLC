@@ -1,43 +1,85 @@
 ---
 slug: /learn/hardware-track
 id: hardware-track
-title: Vía de hardware
-sidebar_label: Vía de hardware
-description: "La vía de hardware de Aprender, para una Raspberry Pi Pico o una ESP32-S3-DevKitC-1 propia: cómo elegir la placa, quién inicia cada operación física y cómo se hace y se identifica una comprobación en la placa. Ninguna placa tiene todavía un registro de hardware."
+title: Ruta de hardware
+sidebar_label: Ruta de hardware
+description: "La ruta de hardware de Aprender, para una Raspberry Pi Pico o una ESP32-S3-DevKitC-1 propia: cómo elegir la placa, qué muestra una lección para ella, quién inicia cada operación física y cómo se hace y se identifica una comprobación en la placa. Ninguna placa tiene todavía un registro de hardware."
 tags: [learn, lessons, hardware]
-unlisted: true
 ---
 
-# Vía de hardware
+# Ruta de hardware
 
-Todas las lecciones se pueden aprobar en simulación, sin hardware. La vía de hardware lleva
+Todas las lecciones se pueden aprobar en simulación, sin hardware. La ruta de hardware lleva
 las mismas lecciones a una placa sobre su mesa, una de las dos placas de aprendizaje:
 una Raspberry Pi Pico (RP2040) o una ESP32-S3-DevKitC-1.
 Todavía no se registró ninguna comprobación en ninguna de las dos placas: vea el final de esta página.
 
 ## Elija su placa
 
-Al pie del inicio de Aprender, la franja **Pista de hardware** tiene un grupo **Su placa** con
-las dos placas. Elija la que tiene. Con el teclado, llegue al grupo con Tab, pase de una placa
-a otra con las flechas y pulse Intro o Espacio. Studio dice qué placa eligió y la guarda en esta
+Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con
+las dos placas, y cada lección de hardware repite ese grupo al principio de su sección **En su
+placa**. Elija la que tiene. Con el teclado, llegue al grupo con Tab, pase de una placa a otra
+con las flechas y pulse Intro o Espacio. Studio dice qué placa eligió y la guarda en esta
 computadora.
+
+## Qué muestra una lección para su placa
+
+En el panel de la lección, **En su placa** muestra, para la placa que eligió:
+
+- el cableado de la lección como diagrama, y el mismo cableado como lista numerada;
+- el mapa de pines de la lección: cada pieza, su canal, el pin y dónde está el pin;
+- el límite de tensión, al que lleva un botón encima del diagrama;
+- la lista de materiales de todo el curso;
+- la imagen de firmware de la placa con su SHA-256, y los pasos de grabación que usted sigue:
+  Studio no graba una placa;
+- **Comprobar en la placa**.
 
 ## Usted inicia cada operación física
 
 Aprender nunca se conecta a una placa, carga un programa, ejecuta, detiene, fuerza un valor ni
 graba firmware por sí mismo. Usted hace cada una de estas cosas con los controles habituales de
-Studio. La comprobación en hardware solo lee una placa que usted conectó, en la que cargó el
-programa y que puso en marcha; rechaza una placa que no está conectada o que no está en
-ejecución, y se detiene cuando la placa se detiene.
+Studio. **Comprobar en la placa** permanece desactivado, y dice qué falta, hasta que:
 
-## Cómo se comprueba una ejecución en la placa
+1. usted eligió una placa;
+2. Studio está conectado a ella;
+3. el programa de la lección está compilado, cargado en la placa y en marcha;
+4. la placa indica qué placa es, y es la placa que usted eligió. Una placa que indica otra placa,
+   o ninguna, se nombra como el problema.
 
-La comprobación en hardware usa el escenario de referencia de la lección, el mismo archivo y el
-mismo hash de contenido que la comprobación en simulación. Studio lee las entradas y salidas de
-la lección en la placa a intervalos fijos, con la misma lectura que llena la tabla Watch, y las
-registra como una traza. La lección declara dos tolerancias: `timeMs`, cuánto puede alejarse
-una muestra, hacia uno u otro lado, del tiempo que nombra una aserción, y `analogPercent`, para
-los valores analógicos.
+La comprobación solo lee la placa: se detiene cuando la placa se detiene y nunca la vuelve a
+poner en marcha.
+
+## Comprobar una ejecución en su placa
+
+Pulse **Comprobar en la placa**. El panel enumera los pasos: cada cambio de entrada del escenario
+de referencia de la lección, en la pieza y el canal que nombra el cableado, por ejemplo "mantenga
+pulsado Pulsador de prueba (DI0) ahora". Muestra el paso en el que está, pasa al siguiente cuando
+la placa muestra que usted lo hizo, sigue leyendo durante el resto del escenario y luego califica
+la ejecución. **Cancelar la comprobación** la detiene, y no se registra nada.
+
+La comprobación usa el escenario de referencia de la lección, el mismo archivo y el mismo hash de
+contenido que la comprobación en simulación. Una comprobación fallida dice qué aserción falló, en
+qué tiempo de la traza registrada, los valores esperados y observados, y qué muestra de la traza
+leyó.
+
+### Cómo se lee la placa, y la tolerancia de tiempo
+
+Studio lee las entradas y salidas de la lección con la misma lectura que llena la tabla Watch, y
+espera 100 ms entre dos lecturas, el intervalo de sondeo de la tabla Watch. Una lectura son a lo
+sumo dos comandos `zplc dbg peek`, la imagen de entradas y la imagen de salidas, de unos 96
+caracteres cada uno. A 115200 baudios eso es 2 × 96 × 10 bits / 115200 bit/s, unos 17 ms, y la
+comprobación reserva 20 ms. Así, una muestra sigue a la anterior en a lo sumo 120 ms.
+
+Una lección declara `timeMs`, cuánto puede alejarse una muestra, hacia uno u otro lado, del tiempo
+que nombra una aserción. Debe ser al menos 120 ms más un escaneo de la tarea más lenta del
+proyecto inicial de la lección, o la comprobación podría reprobar un programa correcto: una
+salida cambia hasta un escaneo después de su entrada, y se lee hasta 120 ms más tarde. Todas las
+lecciones de hardware ejecutan una tarea de 10 ms, así que cada una declara 130 ms, y Studio
+rechaza una lección que declare menos. Estos números se derivan de la configuración serie; no se
+tomaron en una placa. `analogPercent` es para los valores analógicos; hoy los escenarios solo
+tienen condiciones de encendido y apagado, así que todavía no tiene nada que comparar.
+
+### Cómo se alinea el escenario con lo que usted hizo
 
 En simulación, el escenario cambia las entradas en tiempos exactos. En una placa, usted las
 cambia al pulsar botones, así que sus tiempos son humanos. Por eso la comprobación alinea el
@@ -56,20 +98,32 @@ escenario con lo que usted hizo:
 4. Una aserción que depende de un cambio de entrada que usted nunca hizo falla, sin nada
    observado.
 
-Hoy los escenarios solo tienen condiciones de encendido y apagado, así que `analogPercent` todavía
-no tiene nada que comparar.
+### Lo que una comprobación en la placa no puede distinguir
 
-Una comprobación fallida dice qué aserción falló, en qué tiempo de la traza registrada, los
-valores esperados y observados, y qué muestra de la traza leyó.
+- Todas las lecciones de hardware comprueban sus salidas en tiempos separados por uno o dos
+  escaneos, 10 o 20 ms. Con 130 ms de margen hacia cada lado, la comprobación no puede distinguir
+  esas aserciones, así que en una placa es una comprobación más débil que en simulación. Las
+  aserciones no se aflojan para ella, y la comprobación en simulación sigue siendo la aprobación
+  del curso. Esto vale para todas las lecciones de la ruta de hardware de hoy: analog-scaling-integer,
+  blink-structured-text, blinky-ladder-timer-feedback, boolean-logic-two-hand-guard,
+  counter-batch-fbd, edge-counter-pulses, function-block-pump-pair, instruction-list-door-alarm,
+  motor-start-stop-safe, one-logic-five-languages, scan-cycle-one-scan-memory, seal-in-ladder,
+  set-reset-alarm-latch, sfc-fill-mix-sequence, structures-arrays-call-panel,
+  timers-on-delay-off-delay, types-arithmetic-comparison y verify-my-board.
+- Una aserción sobre un temporizador antes del primer cambio de entrada depende de cuándo arrancó
+  el programa, algo que una comprobación de un programa que ya está en marcha no puede saber.
+  blinky-ladder-timer-feedback y verify-my-board tienen aserciones así.
 
 ## Una ejecución en la placa se identifica aparte
 
-Una aprobación en la placa se muestra como **Aprobada en hardware**: en la franja Pista de
-hardware, que enumera esas lecciones, y en la línea de progreso de la lección. No aprueba la
-lección en el curso, que se califica en simulación, y una aprobación en simulación no es una
-aprobación en hardware. Su progreso guarda la aprobación en hardware más reciente de cada lección
-aparte de su calificación en simulación, y un archivo de progreso de una versión anterior se lee
-y se convierte.
+Una aprobación en la placa se muestra como **Aprobada en hardware**: en la franja Ruta de
+hardware, que enumera esas lecciones, y en la línea de progreso de la lección. No aprueba una
+lección que se puede calificar en simulación, y una aprobación en simulación no es una aprobación
+en hardware. La única excepción es verify-my-board, que solo tiene la ruta de hardware: su
+comprobación en la placa es su aprobación. Su progreso guarda la aprobación en hardware más
+reciente de cada lección aparte de su calificación en simulación, con el hash de la compilación
+(el SHA-256 de su mapa de depuración) y la versión de ZPLC que informó la placa. Un archivo de
+progreso de una versión anterior se lee y se convierte.
 
 ## Antes de cablear
 
@@ -84,11 +138,10 @@ y se convierte.
 ## Lo que está probado y lo que todavía no está
 
 - La comprobación está probada en el equipo de desarrollo con trazas sintéticas: trazas que las
-  pruebas construyen para que se parezcan a lo que informa una placa. El registrador está probado
-  con una sesión simulada. La elección de placa y las etiquetas están probadas en Studio en
-  Linux.
+  pruebas construyen para que se parezcan a lo que informa una placa. El registrador y los pasos
+  de la comprobación están probados con sesiones simuladas. La elección de placa, el cableado de
+  cada placa, las etiquetas y la comprobación desactivada con su motivo están probados en Studio
+  en Linux.
 - Esta evidencia no incluye ninguna traza de una placa real ni ninguna ejecución en una placa
   física. Las ejecuciones en las dos placas son evidencia de hardware en el lazo que todavía falta
   registrar.
-- La tarjeta de cableado de cada lección y el botón que registra y comprueba una ejecución desde
-  el panel de la lección todavía no están en Studio.

@@ -18,7 +18,7 @@ function lessonsWithHardware(parts: unknown[] | null): string {
   cpSync(LESSONS_DIRECTORY, root, { recursive: true });
   const file = join(root, 'blink-structured-text', 'lesson.json');
   const manifest = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
-  writeFileSync(file, JSON.stringify({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {}, hardware: { wiring: 'wiring.json', tolerances: { timeMs: 50, analogPercent: 5 } } }));
+  writeFileSync(file, JSON.stringify({ ...manifest, tracks: ['simulation', 'hardware'], unsupported: {}, hardware: { wiring: 'wiring.json', tolerances: { timeMs: 130, analogPercent: 5 } } }));
   if (parts) writeFileSync(join(root, 'blink-structured-text', 'wiring.json'), JSON.stringify({ schemaVersion: 1, parts }));
   else rmSync(join(root, 'blink-structured-text', 'wiring.json'), { force: true });
   return root;
@@ -40,7 +40,7 @@ describe('the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)', (
     expect(problemsOf(root)).toEqual([]);
     const loaded = loadLessonPackages(root);
     const entry = buildIndex(loaded.packages, loadCourse(root).course!).index.lessons.find((lesson) => lesson.id === 'blink-structured-text')!;
-    expect(entry.hardware).toEqual({ wiring: { schemaVersion: 1, parts: [lamp, enable] }, tolerances: { timeMs: 50, analogPercent: 5 } });
+    expect(entry.hardware).toEqual({ wiring: { schemaVersion: 1, parts: [lamp, enable] }, tolerances: { timeMs: 130, analogPercent: 5 } });
     expect(buildIndex(loaded.packages, loadCourse(root).course!).index.lessons.find((lesson) => lesson.id === 'first-blink-simulation')!.hardware).toBeNull();
   });
 

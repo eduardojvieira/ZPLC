@@ -10,12 +10,13 @@ import { useAppSettings } from '../store/useAppSettings';
 import { useT, type MessageKey } from '../i18n';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { describeFailure } from '../learn/gradeRecord';
-import { passedLessonIds, type GradeRecord, type LessonNote } from '../../electron/learnProgressModel';
+import type { GradeRecord, LessonNote } from '../../electron/learnProgressModel';
 import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
 import { announce } from '../utils/announce';
 import { AlertDialog, Button, ToggleGroup } from '../ui';
+import { LearnBoardLesson } from './LearnBoardLesson';
 
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const { t, tn } = useT();
@@ -38,7 +39,8 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const ordered = view.modules.flatMap((module) => module.lessons);
   const selected = useLearnUi((state) => state.selected);
   const select = useLearnUi((state) => state.select);
-  const mastered = new Set(progress ? passedLessonIds(progress) : []);
+  // The passes of the course, as the course counts them: a hardware-only lesson is passed by its hardware check (LRN-024).
+  const mastered = new Set(ordered.filter((candidate) => candidate.state === 'passed').map((candidate) => candidate.id));
   // The lesson shown: the one chosen here or in the home, else the last one worked on, else the first of the course.
   const last = progress?.last?.lessonId;
   const lessonId = (ordered.find((candidate) => candidate.id === selected) ?? ordered.find((candidate) => candidate.id === last) ?? ordered[0])?.id as LearnLessonId;
@@ -200,6 +202,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             : <Button variant="secondary" size="sm" className="mt-2" data-learn-show-solution onClick={() => setConfirm('solution')}>{t('learn.showTheReferenceSolution')}</Button>}
         </section>
 
+        <LearnBoardLesson lessonId={lesson.id} />
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
             {workspaceOpen
