@@ -1,4 +1,5 @@
 #include "zplc_tls_credentials.h"
+#include "zplc_config.h"
 
 #include <zplc_hal.h>
 
@@ -39,6 +40,11 @@ int zplc_tls_credential_read_pem(const char *path, uint8_t *buf, size_t buf_len)
     }
     memset(buf, 0, buf_len);
     if (strncmp(path, persist_prefix, sizeof(persist_prefix) - 1U) == 0) {
+        /* IO-008: only a credential record of the HAL is read as a PEM, never the program, a settings key or a
+         * key of the device link, whatever path a setting holds. */
+        if (path[sizeof(persist_prefix) - 1U] != '\0' && !zplc_config_credential_path_valid(path)) {
+            return -EACCES;
+        }
         rc = read_persisted_pem(path + sizeof(persist_prefix) - 1U, buf, buf_len);
         if (rc < 0) {
             memset(buf, 0, buf_len);

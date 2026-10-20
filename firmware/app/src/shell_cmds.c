@@ -3176,6 +3176,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
  * the others also for "on", and any other text is false without an error. */
 typedef enum {
   CONFIG_KEY_TEXT,
+  CONFIG_KEY_CREDENTIAL_PATH,
   CONFIG_KEY_FLAG,
   CONFIG_KEY_FLAG_ON,
   CONFIG_KEY_U8,
@@ -3191,6 +3192,7 @@ typedef enum {
 
 union config_setter {
   void (*text)(const char *);
+  int (*credential)(const char *);
   void (*flag)(bool);
   void (*u8)(uint8_t);
   void (*u16)(uint16_t);
@@ -3255,9 +3257,9 @@ union config_setter {
   X("mqtt_lwt_payload", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_payload) \
   X("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos) \
   X("mqtt_lwt_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_retain) \
-  X("mqtt_ca_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_ca_cert_path) \
-  X("mqtt_client_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_cert_path) \
-  X("mqtt_client_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_key_path) \
+  X("mqtt_ca_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_ca_cert_path) \
+  X("mqtt_client_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_client_cert_path) \
+  X("mqtt_client_key_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_client_key_path) \
   X("azure_sas_key", CONFIG_KEY_TEXT, text, zplc_config_set_azure_sas_key) \
   X("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s) \
   X("azure_twin_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_twin_enabled) \
@@ -3274,8 +3276,8 @@ union config_setter {
   X("aws_jobs_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_jobs_enabled) \
   X("aws_fleet_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_fleet_enabled) \
   X("aws_fleet_template_name", CONFIG_KEY_TEXT, text, zplc_config_set_aws_fleet_template_name) \
-  X("aws_claim_cert_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_cert_path) \
-  X("aws_claim_key_path", CONFIG_KEY_TEXT, text, zplc_config_set_aws_claim_key_path)
+  X("aws_claim_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_aws_claim_cert_path) \
+  X("aws_claim_key_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_aws_claim_key_path)
 
 #define CONFIG_KEY_NAME(name, kind, member, setter) name,
 #define CONFIG_KEY_KIND(name, kind, member, setter) (uint8_t)kind,
@@ -3324,6 +3326,14 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   switch (config_key_kinds[entry]) {
   case CONFIG_KEY_TEXT:
     set->text(val);
+    break;
+  case CONFIG_KEY_CREDENTIAL_PATH:
+    /* IO-008: a certificate or key path is a file, or a credential record of the store; no other record. */
+    if (set->credential(val) != 0) {
+      shell_error(sh, "ERROR: %s must be a file path, persist://aws_cert_pem or persist://aws_key_pem, got '%s'",
+                  key, val);
+      return -EINVAL;
+    }
     break;
   case CONFIG_KEY_FLAG_ON:
     set->flag(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);

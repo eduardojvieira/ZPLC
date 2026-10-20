@@ -1539,9 +1539,12 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"IO-007: a channel the board cannot serve reaches the user as a warning on the log events"}
   ],
   "IO-008": [
+    {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"IO-008: a certificate path names a file or a credential record of the store, never another record"},
+    {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"IO-008: a stored certificate path that names another record is not applied at the next start"},
     {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"IO-008: every program chunk of both slots and every device setting has an identifier of its own"},
     {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"IO-008: the settings file system mounts on its own partition and the NVS records stay intact beside it"},
-    {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"}
+    {"kind":"c-test","ref":"firmware/tests/hal_persist_keys/src/main.c","test":"Non-volatile storage works for every key the runtime uses (IO-008).","partial":true,"note":"native_sim level: the NVS of the flash simulator; the flash of each shipped board needs the bench of HIL-010"},
+    {"kind":"c-test","ref":"firmware/tests/tls_credentials/src/main.c","test":"IO-008: a persist:// name that is not a credential record is refused, never read as PEM"}
   ],
   "IO-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"tells an on-board channel from a header pin, so the Pico LED needs no wiring while every input is on the header (IO-009)"},
