@@ -7,20 +7,48 @@
  *   - led1 = yellow_led (PE1)
  *   - sw0 = user_button (PC13)
  *
- * This overlay adds:
- *   - Storage partition for NVS (program persistence)
- *
- * Flash Layout (2MB total):
- *   The H743ZI has 2MB flash with 128KB sectors.
- *   We reserve the last 128KB for NVS storage.
+ * Flash layout (IO-008). The STM32H743ZI has 2 MB of internal flash in two banks of 1 MB, erased in sectors of
+ * 128 KB, and no external flash on this board. The upstream board DTS lays out MCUboot partitions and a one-sector
+ * storage_partition at 0x20000, inside the image this firmware links at 0 (no MCUboot is built). It is replaced by:
+ *   - slot0_partition, 512 KB at 0 (sectors 0-3 of bank 1): the image (CONFIG_USE_DT_CODE_PARTITION), which is
+ *     about 354 KB against the 371 KB of its size budget (tools/firmware-test/size-budget.json). The linker stops an
+ *     image that would grow into the stores.
+ *   - storage_partition, 1152 KB at 0x80000 (9 sectors, bank 1 and bank 2): LittleFS, the settings file and the
+ *     certificate files. A LittleFS block is a 128 KB sector: two for the root directory, two for the certificates
+ *     directory, one per certificate file (three), one for the settings file and one free to rewrite a file.
+ *   - zplc_nvs_partition, 384 KB at 0x1a0000 (the last 3 sectors of bank 2): the records of the HAL (the two program
+ *     slots, the RETAIN records, the settings keys and the credentials), in ZMS: NVS refuses a sector above 64 KB.
+ *     ZMS keeps one sector empty for garbage collection, which leaves 256 KB for records of about 130 KB at the
+ *     largest. In bank 2, an erase of the records does not stall code fetch from bank 1.
+ * tools/hil/check_storage_partitions.py checks this layout on every build (run.sh size); the flash of a board is
+ * HIL-010.
  */
 
 / {
     /* Board has sufficient default aliases for ZPLC GPIO HAL */
 };
 
-/*
- * The upstream Nucleo H743ZI board DTS already defines `storage_partition`
- * on internal flash. Do not redefine it here or devicetree label collisions
- * will break the build.
- */
+/delete-node/ &boot_partition;
+/delete-node/ &storage_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &scratch_partition;
+
+&flash0 {
+	partitions {
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x00080000 DT_SIZE_K(1152)>;
+		};
+
+		zplc_nvs_partition: partition@1a0000 {
+			label = "zplc-nvs";
+			reg = <0x001a0000 DT_SIZE_K(384)>;
+		};
+	};
+};
