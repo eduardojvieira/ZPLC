@@ -13,12 +13,13 @@ export const isWebBuild = (): boolean => typeof __ZPLC_WEB_BUILD__ !== 'undefine
 export const WEB_MISSING_FEATURES = ['nativeSimulation', 'deviceLink', 'firmwareBuilds', 'hostTests', 'mcpCli', 'updateCheck', 'profileStore', 'aiAssistant'] as const;
 export type WebMissingFeature = (typeof WEB_MISSING_FEATURES)[number];
 
-const SITE = 'https://eduardojvieira.github.io/ZPLC';
-export const WEB_INSTALL_URL = `${SITE}/docs/getting-started/install/`;
-export const WEB_PAGE_URL = `${SITE}/docs/ide/browser/`;
+// The docs are the parent folder of the app on the site (/ZPLC/docs next to /ZPLC/app), so the links are relative: the bundle
+// names no host, and a copy of the site on another address still links to its own docs.
+export const WEB_INSTALL_PATH = 'docs/getting-started/install/';
+export const WEB_PAGE_PATH = 'docs/ide/browser/';
 
-/** The docs address in the language of the interface: the Spanish site is under /es/. */
-export const webDocsUrl = (url: string, locale: string): string => (locale === 'es' ? url.replace(SITE, `${SITE}/es`) : url);
+/** The link to a docs page, in the language of the interface: the Spanish site is under /es/. */
+export const webDocsLink = (path: string, locale: string): string => (locale === 'es' ? `../es/${path}` : `../${path}`);
 
 export function webMissingFeatures(translator: Pick<Translator, 't'>): Array<{ id: WebMissingFeature; title: string; reason: string }> {
   return WEB_MISSING_FEATURES.map((id) => ({ id, title: translator.t(`web.feature.${id}.title`), reason: translator.t(`web.feature.${id}.reason`) }));

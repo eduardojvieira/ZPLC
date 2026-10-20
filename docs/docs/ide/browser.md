@@ -48,6 +48,10 @@ These features need the desktop app. In the browser they are absent or disabled,
 - The page is served with a content security policy that allows only its own scripts, styles and workers, WebAssembly compiled from its own bundle, and no network request to another origin.
 - A simulation in a browser is not a controller. Its timing is the browser clock, which a background tab throttles. Do not use it to decide anything about a real machine: [Safety and limitations](../safety-and-limitations.md).
 
+## What has been tried
+
+The web build and its browser smoke test (load, an example, an edit, a save, a build, a simulation with a value that changes, and the refused device actions) have been run on Linux with Chromium. The workflow that publishes the build with this documentation is written, and has not run on GitHub yet. The build has not been tried on Windows or macOS, or in Firefox or Safari.
+
 {/* <<< END GENERATED: ide/browser <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

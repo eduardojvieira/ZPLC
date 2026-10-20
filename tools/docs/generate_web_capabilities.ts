@@ -102,12 +102,25 @@ const SAFETY: L10n = {
   ].join('\n'),
 };
 
+const STATUS: L10n = {
+  en: [
+    '## What has been tried',
+    '',
+    'The web build and its browser smoke test (load, an example, an edit, a save, a build, a simulation with a value that changes, and the refused device actions) have been run on Linux with Chromium. The workflow that publishes the build with this documentation is written, and has not run on GitHub yet. The build has not been tried on Windows or macOS, or in Firefox or Safari.',
+  ].join('\n'),
+  es: [
+    '## Qué se ha probado',
+    '',
+    'La versión web y su prueba de humo en el navegador (cargar, un ejemplo, una edición, guardar, compilar, una simulación con un valor que cambia y las acciones de dispositivo rechazadas) se ejecutaron en Linux con Chromium. El flujo de trabajo que publica la versión junto con esta documentación está escrito y todavía no se ejecutó en GitHub. La versión no se probó en Windows ni en macOS, ni en Firefox ni en Safari.',
+  ].join('\n'),
+};
+
 export function featureRows(lang: Lang): string[][] {
   return WEB_MISSING_FEATURES.map((id) => [`**${prose(CATALOG[lang][`web.feature.${id}.title`]!)}**`, prose(CATALOG[lang][`web.feature.${id}.reason`]!)]);
 }
 
 export function browserBody(lang: Lang): string {
-  return [INTRO[lang], WORKS[lang], PROJECTS[lang], [LACKS[lang], '', LACKS_INTRO[lang], '', table([...COLUMNS[lang]], featureRows(lang))].join('\n'), SAFETY[lang]].join('\n\n');
+  return [INTRO[lang], WORKS[lang], PROJECTS[lang], [LACKS[lang], '', LACKS_INTRO[lang], '', table([...COLUMNS[lang]], featureRows(lang))].join('\n'), SAFETY[lang], STATUS[lang]].join('\n\n');
 }
 
 export const PAGES: ReferencePage[] = [

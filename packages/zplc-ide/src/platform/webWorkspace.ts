@@ -10,6 +10,7 @@ import { buildOptionsOf } from '../project/buildOptions';
 import { parseAndMigrateProject } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { getLanguageFromFilename, type PLCLanguage } from '../types';
+import { t } from '../i18n';
 import { isWebBuild } from './webCapabilities';
 
 const MANIFEST_MAX_BYTES = 128 * 1024;
@@ -29,7 +30,7 @@ const hex = (bytes: ArrayBuffer): string => [...new Uint8Array(bytes)].map((byte
 function compilerDiagnostic(error: CompilerError): Diagnostic {
   return {
     code: error.code,
-    message: error.detail.slice(0, 512) || 'Compilation failed',
+    message: error.detail.slice(0, 512) || t('web.build.failed'),
     phase: error.phase,
     line: error.line,
     column: error.column,
@@ -40,7 +41,7 @@ function compilerDiagnostic(error: CompilerError): Diagnostic {
 }
 
 const compilerDiagnostics = (error: unknown): Diagnostic[] =>
-  error instanceof CompilerError ? error.errors.slice(0, 128).map(compilerDiagnostic) : [{ code: 'INTERNAL_COMPILER_ERROR', message: 'Compilation failed' }];
+  error instanceof CompilerError ? error.errors.slice(0, 128).map(compilerDiagnostic) : [{ code: 'INTERNAL_COMPILER_ERROR', message: t('web.build.failed') }];
 
 async function fileBytes(directory: FileSystemDirectoryHandle, name: string, limit: number): Promise<Uint8Array | null> {
   try {
@@ -63,20 +64,20 @@ async function readSources(root: FileSystemDirectoryHandle, folders: Array<{ log
   const decoder = new TextDecoder();
   for (const { logical, library } of folders) {
     const directory = await folder(root, logical);
-    if (!directory) return { diagnostic: { code: 'WORKSPACE_MISSING', message: `${library === undefined ? 'Source' : 'Library'} directory is unavailable`, path: logical } };
+    if (!directory) return { diagnostic: { code: 'WORKSPACE_MISSING', message: t(library === undefined ? 'web.build.noSource' : 'web.build.noLibrary'), path: logical } };
     const names = new Set<string>();
     const entries: string[] = [];
     for await (const entry of directory.values()) if (entry.kind === 'file' && SUPPORTED_SOURCE.test(entry.name)) entries.push(entry.name);
     for (const name of entries.sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))) {
       const path = `${logical}/${name}`;
-      if (sources.length >= SOURCES_MAX_COUNT) return { diagnostic: { code: 'WORKSPACE_LIMIT', message: 'Workspace has too many source files', path: logical } };
+      if (sources.length >= SOURCES_MAX_COUNT) return { diagnostic: { code: 'WORKSPACE_LIMIT', message: t('web.build.tooMany'), path: logical } };
       const key = name.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
-      if (names.has(key)) return { diagnostic: { code: 'WORKSPACE_DUPLICATE_SOURCE', message: 'Source filenames must be unique regardless of case, and main.ld and main.ld.json are the same name', path } };
+      if (names.has(key)) return { diagnostic: { code: 'WORKSPACE_DUPLICATE_SOURCE', message: t('web.build.duplicate'), path } };
       names.add(key);
       const bytes = await fileBytes(directory, name, SOURCE_MAX_BYTES);
-      if (!bytes) return { diagnostic: { code: 'WORKSPACE_READ_FAILED', message: 'Unable to read source file', path } };
+      if (!bytes) return { diagnostic: { code: 'WORKSPACE_READ_FAILED', message: t('web.build.unreadable'), path } };
       total += bytes.byteLength;
-      if (total > SOURCES_MAX_BYTES) return { diagnostic: { code: 'WORKSPACE_LIMIT', message: 'Workspace source files exceed the size limit', path: logical } };
+      if (total > SOURCES_MAX_BYTES) return { diagnostic: { code: 'WORKSPACE_LIMIT', message: t('web.build.tooLarge'), path: logical } };
       sources.push({ name, path, content: decoder.decode(bytes), language: getLanguageFromFilename(name), bytes, ...(library === undefined ? {} : { library }) });
     }
   }
@@ -86,9 +87,9 @@ async function readSources(root: FileSystemDirectoryHandle, folders: Array<{ log
 /** Builds the folder and answers as the main process does: the artifacts of a good build, or the diagnostics of a failed one. */
 export async function compileWebWorkspace(root: FileSystemDirectoryHandle): Promise<unknown> {
   const manifest = await fileBytes(root, 'zplc.json', MANIFEST_MAX_BYTES);
-  if (!manifest) return failure({ code: 'WORKSPACE_MISSING', message: 'The folder has no readable zplc.json', path: 'zplc.json' });
+  if (!manifest) return failure({ code: 'WORKSPACE_MISSING', message: t('web.build.noManifest'), path: 'zplc.json' });
   let raw: unknown;
-  try { raw = JSON.parse(new TextDecoder().decode(manifest)); } catch { return failure({ code: 'PROJECT_INVALID', message: 'Manifest is not valid JSON', path: 'zplc.json' }); }
+  try { raw = JSON.parse(new TextDecoder().decode(manifest)); } catch { return failure({ code: 'PROJECT_INVALID', message: t('web.build.notJson'), path: 'zplc.json' }); }
   const parsed = parseAndMigrateProject(raw);
   if (!parsed.ok) return failure(...parsed.diagnostics.map((diagnostic) => ({ code: 'PROJECT_INVALID', message: diagnostic.message, path: diagnostic.path })));
   const project = parsed.project;
@@ -104,7 +105,7 @@ export async function compileWebWorkspace(root: FileSystemDirectoryHandle): Prom
   project.tasks.forEach((task, taskIndex) => task.programs.forEach((program, programIndex) => {
     const source = resolveProgramSource(program, programSources);
     if (source) byProgram.set(program, source);
-    else unresolved.push({ code: 'PROGRAM_NOT_FOUND', message: 'Task program could not be resolved from src', path: `tasks[${taskIndex}].programs[${programIndex}]` });
+    else unresolved.push({ code: 'PROGRAM_NOT_FOUND', message: t('web.build.noProgram'), path: `tasks[${taskIndex}].programs[${programIndex}]` });
   }));
   if (unresolved.length > 0) return failure(...unresolved);
   const bytesByPath = new Map(read.sources.map((source) => [source.path, source.bytes]));
@@ -143,7 +144,7 @@ export async function compileWebWorkspace(root: FileSystemDirectoryHandle): Prom
 export function webBuildBridge(directory: () => FileSystemDirectoryHandle | null): { compile(request: { workspaceId: string }): Promise<unknown>; cancel(): Promise<{ requested: boolean }> } | undefined {
   if (!isWebBuild()) return undefined;
   return {
-    compile: async () => { const root = directory(); return root ? compileWebWorkspace(root) : failure({ code: 'WORKSPACE_MISSING', message: 'No project folder is open' }); },
+    compile: async () => { const root = directory(); return root ? compileWebWorkspace(root) : failure({ code: 'WORKSPACE_MISSING', message: t('web.build.noFolder') }); },
     // a build in the page cannot be interrupted once started; it takes well under a second
     cancel: async () => ({ requested: false }),
   };

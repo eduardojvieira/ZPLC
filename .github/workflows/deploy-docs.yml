@@ -90,13 +90,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends clang lld
 
+      - name: Build the compiler for the web build
+        run: bun run build:compiler
+
       - name: Build the web build
+        working-directory: packages/zplc-ide
         env:
           CI: 'true'
         run: |
-          bun run build:compiler
-          bun run --cwd packages/zplc-ide build:assets
-          bun run --cwd packages/zplc-ide build:web
+          bun run build:assets
+          bun run build:web
 
       # The pages come first and the app after: docusaurus empties docs/build, and the app is served from /ZPLC/app/.
       - name: Add the web build to the site
@@ -107,9 +110,10 @@ jobs:
       # The smoke serves docs/build the way Pages does (under /ZPLC/) and drives headless Chrome through it: load, an example,
       # an edit, a build, a WASM simulation with a value that changes, the notice, and the device actions refused.
       - name: Smoke test the web build
+        working-directory: packages/zplc-ide
         env:
           ZPLC_WEB_SITE_ROOT: ${{ github.workspace }}/docs/build
-        run: bun run --cwd packages/zplc-ide smoke:web
+        run: bun run smoke:web
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

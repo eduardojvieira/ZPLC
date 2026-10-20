@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { requestPort } from '../uploader/webserial';
 import { translatorFor } from '../i18n';
 import { webContentSecurityPolicy } from './webCsp';
-import { WEB_INSTALL_URL, WEB_MISSING_FEATURES, deviceLinkRefusal, isWebBuild, webMissingFeatures } from './webCapabilities';
+import { WEB_INSTALL_PATH, WEB_MISSING_FEATURES, deviceLinkRefusal, isWebBuild, webDocsLink, webMissingFeatures } from './webCapabilities';
 
 describe('the web build states what it lacks (REL-037)', () => {
   test('REL-037: every missing feature has a title and a reason in English and in Spanish, from the one table', () => {
@@ -32,7 +32,8 @@ describe('the web build states what it lacks (REL-037)', () => {
   });
 
   test('REL-037: the install page is the docs page, and the policy keeps a static site closed', () => {
-    expect(WEB_INSTALL_URL).toBe('https://eduardojvieira.github.io/ZPLC/docs/getting-started/install/');
+    expect(webDocsLink(WEB_INSTALL_PATH, 'en')).toBe('../docs/getting-started/install/');
+    expect(webDocsLink(WEB_INSTALL_PATH, 'es')).toBe('../es/docs/getting-started/install/');
     const policy = webContentSecurityPolicy();
     expect(policy).toContain("default-src 'self'");
     expect(policy).toContain("object-src 'none'");

@@ -9,7 +9,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { WEB_INSTALL_URL, WEB_MISSING_FEATURES } from '../src/platform/webCapabilities';
+import { WEB_MISSING_FEATURES } from '../src/platform/webCapabilities';
 import { APP_PREFIX, secretsIn, serveWebSite } from './webSite';
 import { assert, freePort, openPage, stop, waitFor, type Cdp, type OwnedProcess } from './cdpHarness';
 
@@ -52,7 +52,8 @@ async function main(): Promise<void> {
 
     // 2. The notice lists what is missing, from the one table, and links to the install page.
     for (const id of WEB_MISSING_FEATURES) assert(await page.evaluate(`document.querySelector('[data-web-build-notice] [data-web-feature="${id}"]') !== null`) === true, `The notice does not list ${id}`);
-    assert(await page.evaluate("document.querySelector('[data-web-install]')?.href") === WEB_INSTALL_URL, 'The notice must link to the install page');
+    // the docs are next to the app on the site: /ZPLC/docs/ beside /ZPLC/app/
+    assert(await page.evaluate("document.querySelector('[data-web-install]')?.href") === `http://127.0.0.1:${port}/ZPLC/docs/getting-started/install/`, 'The notice must link to the install page');
     assert((await text(page)).includes('You are using ZPLC in the browser.'), 'The notice must say that this is the browser');
 
     // 3. An example opens as a copy kept in this browser (no dialog), in an editor.

@@ -48,6 +48,10 @@ Estas funciones necesitan la aplicación de escritorio. En el navegador están a
 - La página se sirve con una política de seguridad de contenido que solo permite sus propios scripts, estilos y workers, WebAssembly compilado desde su propio paquete, y ninguna solicitud de red a otro origen.
 - Una simulación en un navegador no es un controlador. Sus tiempos son los del reloj del navegador, que una pestaña en segundo plano ralentiza. No la use para decidir nada sobre una máquina real: [Seguridad y límites](../safety-and-limitations.md).
 
+## Qué se ha probado
+
+La versión web y su prueba de humo en el navegador (cargar, un ejemplo, una edición, guardar, compilar, una simulación con un valor que cambia y las acciones de dispositivo rechazadas) se ejecutaron en Linux con Chromium. El flujo de trabajo que publica la versión junto con esta documentación está escrito y todavía no se ejecutó en GitHub. La versión no se probó en Windows ni en macOS, ni en Firefox ni en Safari.
+
 {/* <<< END GENERATED: ide/browser <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

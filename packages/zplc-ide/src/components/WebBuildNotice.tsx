@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { Button } from '../ui';
 import { useT } from '../i18n';
-import { WEB_INSTALL_URL, WEB_PAGE_URL, isWebBuild, webDocsUrl, webMissingFeatures } from '../platform/webCapabilities';
+import { WEB_INSTALL_PATH, WEB_PAGE_PATH, isWebBuild, webDocsLink, webMissingFeatures } from '../platform/webCapabilities';
 
 const useWebNotice = create<{ dismissed: boolean; dismiss: () => void }>((set) => ({ dismissed: false, dismiss: () => set({ dismissed: true }) }));
 
@@ -22,8 +22,8 @@ export function WebBuildNoticeView({ onDismiss }: { onDismiss: () => void }) {
       <div className="flex items-start justify-between gap-4">
         <p>
           <strong className="text-[var(--text-primary)]">{t('web.notice.title')}</strong> {t('web.notice.body')}{' '}
-          <a className="underline" href={webDocsUrl(WEB_INSTALL_URL, locale)} target="_blank" rel="noopener noreferrer" data-web-install="">{t('web.notice.install')}</a>{' · '}
-          <a className="underline" href={webDocsUrl(WEB_PAGE_URL, locale)} target="_blank" rel="noopener noreferrer">{t('web.notice.page')}</a>
+          <a className="underline" href={webDocsLink(WEB_INSTALL_PATH, locale)} target="_blank" rel="noopener noreferrer" data-web-install="">{t('web.notice.install')}</a>{' · '}
+          <a className="underline" href={webDocsLink(WEB_PAGE_PATH, locale)} target="_blank" rel="noopener noreferrer">{t('web.notice.page')}</a>
         </p>
         <Button size="sm" onClick={onDismiss} aria-label={t('web.notice.dismissLabel')} className="shrink-0">{t('web.notice.dismiss')}</Button>
       </div>

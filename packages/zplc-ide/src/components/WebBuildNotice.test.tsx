@@ -11,7 +11,8 @@ describe('the notice of the web build (REL-037)', () => {
     const html = renderToStaticMarkup(<WebBuildNoticeView onDismiss={() => undefined} />);
     for (const id of WEB_MISSING_FEATURES) expect(html).toContain(`data-web-feature="${id}"`);
     expect(html).toContain('You are using ZPLC in the browser.');
-    expect(html).toContain('href="https://eduardojvieira.github.io/ZPLC/docs/getting-started/install/"');
+    expect(html).toContain('href="../docs/getting-started/install/"');
+    expect(html).not.toContain('https://');
     expect(html).toContain('Device connection and deploy');
   });
 
