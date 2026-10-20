@@ -87,7 +87,11 @@ falla:
 
 1. **Verificación previa.** La placa está en el manifiesto y los fixtures de la
    ejecución compilan con el compilador del repositorio, para la placa.
-2. **Grabación.** Usted graba la imagen. La herramienta no lo hace.
+2. **Grabación.** Usted graba la imagen. La herramienta no lo hace. Abre el
+   enlace con el dispositivo solo después de este paso: una placa en blanco no
+   tiene puerto serie, y una placa grabada reaparece con otro nombre, así que la
+   herramienta vuelve a buscar el puerto durante hasta 30 segundos después de que
+   usted presiona Enter.
 3. **Protocolo de identidad.** La herramienta pregunta al dispositivo quién es
    (`zplc sys info --json`) y qué imagen es (`zplc sys build --json`: versión,
    commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de
@@ -278,7 +282,7 @@ es la referencia cuando difiere de esta tabla.
 | Extremos del potenciómetro | 3V3(OUT) (pin 36) y AGND (pin 33) | 3V3 (J1-1) y GND (J1-22) |
 | Cursor del potenciómetro → AI0 | GP26/ADC0 (pin 31) | GPIO4/ADC1_CH3 (J1-4) |
 | Modbus RTU | GP4 (pin 6, TX) → RX del adaptador, GP5 (pin 7, RX) ← TX del adaptador, GND (pin 8) → GND del adaptador | (ninguno) |
-| Red | (ninguna) | Wi-Fi, credenciales guardadas con `wifi connect` |
+| Red | (ninguna) | Wi-Fi: las credenciales se guardan con `zplc config set wifi_ssid` y `wifi_pass` (y luego `zplc config save`); `wifi connect` solo las usa |
 
 Las entradas usan su pull-up interno y son activas en bajo en el firmware, de
 modo que a través del lazo una entrada lee el inverso de su salida. La cadena
@@ -350,7 +354,7 @@ puerto marcado USB, y presione RST si la placa queda en modo de descarga.
 | 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |
 | 21 | 20 cortes de energía durante el despliegue | Carga el programa A, envía una parte del programa B (desde una vigésima parte hasta todo) y le pide desconectar de inmediato | Tras cada corte la placa está en STOP y ejecuta A o B completo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 22 | Escritura atómica | Escribe 100 veces un valor de cuatro bytes por el enlace del dispositivo mientras el programa cuenta valores partidos | Ningún scan vio un valor escrito a medias | Todavía no se ejecutó | Se completa con los registros emulados |
-| 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en esta computadora, en una línea abierta a 19200 baudios. ESP32-S3: escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
+| 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en esta computadora, en una línea abierta a 19200 baudios. ESP32-S3: espera a que la placa informe una dirección IP (`zplc net status`; el firmware se une por sí solo a la red guardada al arrancar y de nuevo después de una caída), y luego escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora. Los resultados se leen como una sola instantánea: primero `done`, luego los valores, y solo cuando una segunda lectura coincide | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
 
 Una persona no puede cortar la energía en el instante exacto en que el
 programa se escribe en la flash, de modo que en una placa el paso 21 prueba los
