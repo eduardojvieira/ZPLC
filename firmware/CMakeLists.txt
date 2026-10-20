@@ -74,7 +74,8 @@ if(CONFIG_ZPLC)
   # firmware/app/boards/boards.json, or from the default alias profile for a target that has none. Adding a channel
   # to a board edits the JSON and the devicetree overlay, not C. ZPLC_IO_DESCRIPTION names one board entry to use
   # instead (a test, a board that is not in the manifest yet). The build fails when the description and the
-  # devicetree disagree.
+  # devicetree disagree. The board target is "${BOARD}/${BOARD_QUALIFIERS}": Zephyr 4.4 sets BOARD_QUALIFIERS without
+  # the leading slash ("rp2040" for rpi_pico/rp2040).
   if(NOT DEFINED ZPLC_IO_MANIFEST)
     set(ZPLC_IO_MANIFEST ${CMAKE_CURRENT_LIST_DIR}/app/boards/boards.json)
   endif()
@@ -91,7 +92,7 @@ if(CONFIG_ZPLC)
   else()
     set(ZPLC_IO_GENERATOR_ARGS
       --manifest ${ZPLC_IO_MANIFEST}
-      --zephyr-board "${BOARD}${BOARD_QUALIFIERS}"
+      --zephyr-board "${BOARD}/${BOARD_QUALIFIERS}"
       --default-profile ${ZPLC_IO_DEFAULT_PROFILE})
     set(ZPLC_IO_INPUTS ${ZPLC_IO_MANIFEST} ${ZPLC_IO_DEFAULT_PROFILE})
   endif()
@@ -99,7 +100,7 @@ if(CONFIG_ZPLC)
     OUTPUT ${ZPLC_IO_TABLE_C}
     COMMAND ${PYTHON_EXECUTABLE} -B ${ZPLC_IO_GENERATOR} ${ZPLC_IO_GENERATOR_ARGS} --output ${ZPLC_IO_TABLE_C}
     DEPENDS ${ZPLC_IO_GENERATOR} ${ZPLC_IO_LIBRARY} ${ZPLC_IO_INPUTS}
-    COMMENT "ZPLC: I/O table of ${BOARD}${BOARD_QUALIFIERS}"
+    COMMENT "ZPLC: I/O table of ${BOARD}/${BOARD_QUALIFIERS}"
     VERBATIM
   )
   zephyr_library_sources(${ZPLC_IO_TABLE_C})
