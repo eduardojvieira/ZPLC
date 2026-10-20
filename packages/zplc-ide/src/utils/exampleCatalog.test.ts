@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
-import { EXAMPLE_CATALOG, EXAMPLE_GROUPS, boardName, buildExampleSections, groupByLevel, languageName, levelName, type ExampleListing } from './exampleCatalog';
+import { EXAMPLE_CATALOG, EXAMPLE_GROUPS, boardName, buildExampleSections, groupByLevel, languageName, lessonProjectIds, levelName, type ExampleListing } from './exampleCatalog';
+import { LESSON_INDEX } from '../generated/lessonIndex';
 import { en, type MessageKey } from '../i18n/en';
 import { es } from '../i18n/es';
 import { useAppSettings } from '../store/useAppSettings';
@@ -19,6 +20,9 @@ const listedFolders = readdirSync(projectsDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
+/** The starter and solution folders of the lesson packages (LRN-027): Learn opens them, so they need no entry. */
+const LESSON_PROJECTS = lessonProjectIds();
+
 /** A folder is named here only when it is deliberately left to the "More examples" fallback instead of getting an entry. */
 const DELIBERATELY_UNCATALOGUED: string[] = [];
 
@@ -32,8 +36,8 @@ const everyListing = (sections: ReturnType<typeof buildExampleSections>) => sect
 const LANGUAGE_TOUR = ['blinky_st', 'blinky_il', 'blinky_fbd', 'blinky_sfc'];
 
 describe('example catalogue', () => {
-  it('has an entry for every project folder, or names the folder as deliberately left to the fallback', () => {
-    const missing = listedFolders.filter((id) => !(id in EXAMPLE_CATALOG) && !DELIBERATELY_UNCATALOGUED.includes(id));
+  it('has an entry for every project folder that is not a lesson project, or names the folder as deliberately left to the fallback', () => {
+    const missing = listedFolders.filter((id) => !(id in EXAMPLE_CATALOG) && !LESSON_PROJECTS.has(id) && !DELIBERATELY_UNCATALOGUED.includes(id));
     expect(missing).toEqual([]);
   });
 
@@ -142,7 +146,9 @@ describe('Welcome example sections', () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).not.toContain('kitchen_sink');
     expect(ids).not.toContain('pico_persist_test');
-    expect([...ids].sort()).toEqual(listedFolders.filter((id) => EXAMPLE_CATALOG[id]?.showOnWelcome !== false).sort());
+    // a catalogued folder follows its entry; a folder with no entry is listed under "More examples" unless a lesson uses it
+    const visible = (id: string) => (id in EXAMPLE_CATALOG ? EXAMPLE_CATALOG[id]!.showOnWelcome : !LESSON_PROJECTS.has(id));
+    expect([...ids].sort()).toEqual(listedFolders.filter(visible).sort());
   });
 
   it('gives every listing a title and a summary to choose with', () => {
@@ -191,6 +197,36 @@ describe('Welcome example sections', () => {
     expect(boards.examples.find((example) => example.id === 'pico_blinky')?.board).toBe('rpi_pico');
     expect(boards.examples.find((example) => example.id === 'esp32s3_blinky')?.board).toBe('esp32s3_devkitc');
     expect(sections.find((section) => section.id === 'motors')!.examples.every((example) => example.board === undefined)).toBe(true);
+  });
+});
+
+describe('LRN-027 a lesson needs no entry in the example catalogue', () => {
+  const lessonLike = (project: string) => ({ starter: { project: `${project}_starter` }, solution: { project } });
+  const extra = { id: 'synthetic_lesson', name: 'Synthetic lesson', description: 'The solution of a lesson package added without a catalogue entry.', version: '1.0.0', path: '/projects/synthetic_lesson' };
+
+  it('LRN-027 reads the lesson projects, starters and solutions alike, from the generated lesson index', () => {
+    for (const lesson of LESSON_INDEX.lessons) {
+      expect(LESSON_PROJECTS.has(lesson.starter.project), lesson.id).toBe(true);
+      expect(LESSON_PROJECTS.has(lesson.solution.project), lesson.id).toBe(true);
+    }
+    expect([...lessonProjectIds([lessonLike('synthetic_lesson')])].sort()).toEqual(['synthetic_lesson', 'synthetic_lesson_starter']);
+  });
+
+  it('LRN-027 leaves the solution of a new lesson package out of the Welcome screen, with no "More examples" section', () => {
+    const lessons = lessonProjectIds([...LESSON_INDEX.lessons, lessonLike('synthetic_lesson')]);
+    const withLesson = buildExampleSections([...listedFolders.map(projectInfo), extra], lessons);
+    expect(everyListing(withLesson).some((example) => example.id === 'synthetic_lesson')).toBe(false);
+    expect(withLesson.some((section) => section.id === 'more')).toBe(false);
+    // the same folder, used by no lesson, is an example without an entry and is still listed
+    const asProject = buildExampleSections([...listedFolders.map(projectInfo), extra], LESSON_PROJECTS);
+    expect(asProject.at(-1)!.examples.map((example) => example.id)).toEqual(['synthetic_lesson']);
+  });
+
+  it('LRN-027 keeps a lesson project that has an entry on the Welcome screen, as LRN-036 counts it', () => {
+    const lessonExamples = Object.keys(EXAMPLE_CATALOG).filter((id) => LESSON_PROJECTS.has(id));
+    expect(lessonExamples).toContain('batch_count_fbd');
+    const listed = everyListing(buildExampleSections(listedFolders.map(projectInfo))).map((example) => example.id);
+    for (const id of lessonExamples.filter((folder) => listedFolders.includes(folder) && EXAMPLE_CATALOG[folder]!.showOnWelcome)) expect(listed, id).toContain(id);
   });
 });
 

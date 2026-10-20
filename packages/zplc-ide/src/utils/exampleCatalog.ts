@@ -4,7 +4,9 @@
  *
  * Rules:
  * - The key is the folder name under projects/. An entry whose folder does not exist (yet) is ignored; a folder with no
- *   entry is listed under "More examples" with its manifest name, so adding a project never makes it vanish.
+ *   entry is listed under "More examples" with its manifest name, so adding a project never makes it vanish. A folder that
+ *   a lesson package uses as its starter or solution needs no entry (LRN-027): Learn opens it. Given an entry, it is a
+ *   Welcome example as well.
  * - `languages` are the languages of the programs the manifest's tasks build, and `board` is the manifest's target board
  *   (left out for the host simulator, `posix`). exampleCatalog.test.ts compares both with every manifest on disk.
  * - `showOnWelcome: false` is for test fixtures. The `_starter` folders are not listed here: they belong to the Learn tab.
@@ -15,6 +17,7 @@
 import { t } from '../i18n';
 import type { MessageKey } from '../i18n/en';
 import type { ProjectInfo } from './projectLoader';
+import { LESSON_INDEX } from '../generated/lessonIndex';
 
 export type ExampleLanguage = 'ST' | 'LD' | 'IL' | 'FBD' | 'SFC';
 export type ExampleLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -122,6 +125,14 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   pico_persist_test: example('pico_persist_test', { group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', noScenario: true, showOnWelcome: false }),
 };
 
+/**
+ * The folders that the lesson packages use as their starter or their reference solution, read from the generated lesson
+ * index (LRN-027): adding a lesson adds its projects here with no change to this file.
+ */
+export function lessonProjectIds(lessons: ReadonlyArray<{ starter: { project: string }; solution: { project: string } }> = LESSON_INDEX.lessons): ReadonlySet<string> {
+  return new Set(lessons.flatMap((lesson) => [lesson.starter.project, lesson.solution.project]));
+}
+
 /** What the Welcome screen shows for one example. `level` is missing for a project that has no entry. */
 export interface ExampleListing {
   id: string;
@@ -138,9 +149,9 @@ export interface ExampleSection { id: ExampleGroupId; title: string; blurb: stri
 
 /**
  * Turns the projects the app bundles into the sections of the Welcome screen: the groups of the catalogue in order, then
- * "More examples" for every project the catalogue does not know. Sections without an example are left out.
+ * "More examples" for every project the catalogue does not know and no lesson uses. Sections without an example are left out.
  */
-export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, 'id' | 'name' | 'description'>>): ExampleSection[] {
+export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, 'id' | 'name' | 'description'>>, lessonProjects = lessonProjectIds()): ExampleSection[] {
   const present = new Map(projects.map((project) => [project.id, project]));
   const sections: ExampleSection[] = EXAMPLE_GROUPS.map((group) => ({ id: group.id, title: t(group.titleKey), blurb: group.blurbKey ? t(group.blurbKey) : '', examples: [] }));
   const section = (id: ExampleGroupId) => sections.find((candidate) => candidate.id === id)!;
@@ -149,7 +160,7 @@ export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, '
     if (!present.has(id) || !entry.showOnWelcome) continue;
     section(entry.group).examples.push({ id, title: entry.title, summary: entry.summary, level: entry.level, languages: entry.languages, board: entry.board, ...(entry.noScenario ? { noScenario: t(`examples.${id}.noScenario` as MessageKey) } : {}) });
   }
-  const uncatalogued = projects.filter((project) => !(project.id in EXAMPLE_CATALOG)).sort((a, b) => a.name.localeCompare(b.name));
+  const uncatalogued = projects.filter((project) => !(project.id in EXAMPLE_CATALOG) && !lessonProjects.has(project.id)).sort((a, b) => a.name.localeCompare(b.name));
   for (const project of uncatalogued) section('more').examples.push({ id: project.id, title: project.name, summary: project.description ?? '', languages: [] });
 
   return sections.filter((candidate) => candidate.examples.length > 0);
