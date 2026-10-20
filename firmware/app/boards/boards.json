@@ -546,13 +546,29 @@
           "direction": "input",
           "kind": "digital",
           "address": "%IX0.3",
-          "pin": "GPIO0 (BOOT button)",
+          "pin": "GPIO8",
           "dt": {
             "alias": "sw3",
             "controller": "gpio0",
+            "pin": 8
+          },
+          "electrical": "3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant.",
+          "pin_status": "profile",
+          "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
+          "location": "header J1 pin 12"
+        },
+        {
+          "id": "DI4",
+          "direction": "input",
+          "kind": "digital",
+          "address": "%IX0.4",
+          "pin": "GPIO0 (BOOT button)",
+          "dt": {
+            "alias": "sw4",
+            "controller": "gpio0",
             "pin": 0
           },
-          "electrical": "On-board BOOT button, active low with the internal pull-up; it needs no wiring. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode.",
+          "electrical": "On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
           "location": "on-board BOOT button"

@@ -147,7 +147,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 - **Build command:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
 - **Reference anchor:** `docs/docs/reference/capabilities-evidence.md`
 - **Process image used (input, output):** 10 B, 1 B
-- **I/O description hash:** `2e9abb09`
+- **I/O description hash:** `93e038ba`
 - **Support assets:**
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf`
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay`
@@ -163,7 +163,8 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 | DI0 | input | digital | `%IX0.0` | GPIO5 | header J1 pin 5 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
 | DI1 | input | digital | `%IX0.1` | GPIO6 | header J1 pin 6 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
 | DI2 | input | digital | `%IX0.2` | GPIO7 | header J1 pin 7 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
-| DI3 | input | digital | `%IX0.3` | GPIO0 (BOOT button) | on-board BOOT button | devicetree |  | On-board BOOT button, active low with the internal pull-up; it needs no wiring. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
+| DI3 | input | digital | `%IX0.3` | GPIO8 | header J1 pin 12 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI4 | input | digital | `%IX0.4` | GPIO0 (BOOT button) | on-board BOOT button | devicetree |  | On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
 | AI0 | input | analog | `%IW4` | GPIO4 (ADC1_CH3) | header J1 pin 4 | profile |  | 0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin. 0..2885 -> 0.0 to 3.1 V. The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends.. |
 
 #### Not mapped

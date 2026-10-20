@@ -288,9 +288,10 @@ class ManifestTests(unittest.TestCase):
             {entry["board_id"] for entry in self.boards},
         )
 
-    def test_the_learner_boards_expose_four_outputs_four_inputs_and_one_analog_input(self) -> None:
+    def test_io_009_the_learner_boards_expose_four_outputs_four_inputs_and_one_analog_input_on_header_pins(self) -> None:
+        # An on-board LED or button (the Pico's GP25, the ESP32-S3's BOOT) is an extra, not one of the four.
         for board_id in ("rpi-pico-rp2040", "esp32-s3-devkitc"):
-            channels = self.by_id(board_id)["io"]["channels"]
+            channels = [c for c in self.by_id(board_id)["io"]["channels"] if c.get("location", "").startswith("header")]
             digital_out = [c for c in channels if c["kind"] == "digital" and c["direction"] == "output"]
             digital_in = [c for c in channels if c["kind"] == "digital" and c["direction"] == "input"]
             analog_in = [c for c in channels if c["kind"] == "analog" and c["direction"] == "input"]
@@ -298,9 +299,9 @@ class ManifestTests(unittest.TestCase):
             self.assertGreaterEqual(len(digital_in), 4, board_id)
             self.assertGreaterEqual(len(analog_in), 1, board_id)
 
-    def test_the_pico_maps_its_on_board_led(self) -> None:
-        pins = {c["pin"] for c in self.by_id("rpi-pico-rp2040")["io"]["channels"]}
-        self.assertIn("GP25", pins)
+    def test_io_009_the_pico_maps_its_on_board_led_as_an_output(self) -> None:
+        led = next(c for c in self.by_id("rpi-pico-rp2040")["io"]["channels"] if c["pin"] == "GP25")
+        self.assertEqual(("output", "on-board LED"), (led["direction"], led["location"]))
 
     def test_the_opta_maps_its_relays(self) -> None:
         aliases = {c["dt"].get("alias") for c in self.by_id("arduino-opta-wifi-m7")["io"]["channels"]}
@@ -312,7 +313,7 @@ class ManifestTests(unittest.TestCase):
             outputs = [a for a in channels if a.startswith("%QX0.")]
             self.assertIn("%QX0.0", outputs, entry["board_id"])
 
-    def test_the_esp32_profile_names_the_devkitc_1_variant(self) -> None:
+    def test_io_009_the_esp32_profile_has_the_flash_and_psram_of_the_n8r8_devkitc_1(self) -> None:
         entry = self.by_id("esp32-s3-devkitc")
         self.assertIn("DevKitC-1", entry["display_name"])
         self.assertEqual("N8R8", entry["hardware"]["variant"])
@@ -322,15 +323,15 @@ class ManifestTests(unittest.TestCase):
     LEARNER_PINS = {
         "rpi-pico-rp2040": {
             "DO0": "GP0", "DO1": "GP1", "DO2": "GP2", "DO3": "GP3", "DO4": "GP25",
-            "DI0": "GP15", "DI1": "GP14", "DI2": "GP13", "AI0": "GP26",
+            "DI0": "GP15", "DI1": "GP14", "DI2": "GP13", "DI3": "GP12", "AI0": "GP26",
         },
         "esp32-s3-devkitc": {
             "DO0": "GPIO15", "DO1": "GPIO16", "DO2": "GPIO17", "DO3": "GPIO18",
-            "DI0": "GPIO5", "DI1": "GPIO6", "DI2": "GPIO7", "DI3": "GPIO0", "AI0": "GPIO4",
+            "DI0": "GPIO5", "DI1": "GPIO6", "DI2": "GPIO7", "DI3": "GPIO8", "DI4": "GPIO0", "AI0": "GPIO4",
         },
     }
 
-    def test_the_learner_channels_sit_on_the_pins_of_the_course(self) -> None:
+    def test_io_009_the_learner_channels_sit_on_the_pins_of_the_course(self) -> None:
         for board_id, pins in self.LEARNER_PINS.items():
             channels = {c["id"]: c for c in self.by_id(board_id)["io"]["channels"]}
             printed = {key: re.match(r"GP(?:IO)?\d+", channels[key]["pin"]).group() for key in pins if key in channels}

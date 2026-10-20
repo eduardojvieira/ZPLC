@@ -13,9 +13,10 @@
  *
  *   DO0 to DO3   GPIO15, GPIO16, GPIO17, GPIO18   J1-8 to J1-11
  *                -> 330 ohm -> LED -> GND
- *   DI0 to DI2   GPIO5, GPIO6, GPIO7              J1-5 to J1-7
+ *   DI0 to DI3   GPIO5, GPIO6, GPIO7, GPIO8       J1-5 to J1-7, J1-12
  *                -> button -> GND, internal pull-up, active low
- *   DI3          GPIO0, the BOOT button (a strapping pin: never hold it
+ *   DI4          GPIO0, the BOOT button: an extra input that needs no wiring,
+ *                not one of the four (a strapping pin: never hold it
  *                pressed while the board resets)
  *   AI0          GPIO4, ADC1 channel 3            J1-4
  *                -> wiper of a 10 kohm potentiometer between 3V3 (J1-1) and
@@ -92,11 +93,17 @@
             zephyr,code = <2>;
         };
 
-        /* The same pin as button0 of the base DTS, named here so that this file binds every channel */
         input3: input_3 {
-            gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            label = "ZPLC Input 3 (GPIO0, BOOT button)";
+            gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 3 (GPIO8, J1-12)";
             zephyr,code = <3>;
+        };
+
+        /* The same pin as button0 of the base DTS, named here so that this file binds every channel */
+        input4: input_4 {
+            gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 4 (GPIO0, BOOT button)";
+            zephyr,code = <4>;
         };
     };
 
@@ -110,6 +117,7 @@
         sw1 = &input1;
         sw2 = &input2;
         sw3 = &input3;
+        sw4 = &input4;
     };
 };
 
