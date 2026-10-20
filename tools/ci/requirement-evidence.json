@@ -758,6 +758,8 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"drives and observes a global that another file declares, by program or by name alone (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"lists a global of a library file once, under a POU name the MCP symbol schema accepts (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/projects/bundledProjects.test.ts","test":"CMP-042 counts a Structured Text file that only declares a function block or a function as built, and still finds a PROGRAM that no task runs"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/projects/bundledProjects.test.ts","test":"the orphan check used by this file (CMP-042)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/globals.test.ts","test":"scenario signals that name a global (CMP-042)"}
   ],
   "CMP-043": [
@@ -1030,13 +1032,17 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54b Instruction List values are watched and a variable is forced and released","partial":true}
   ],
   "LNG-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-007 gives a Modbus, an MQTT or a library block an instance name as it gives a timer one, so a placed block builds"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every element of the SFC palette is run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every function block of the Ladder palette is placed, built and run"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the Ladder palette does not hide what the transpiler translates and offers nothing it refuses"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the branch of the Ladder palette is run"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the branch of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdCommBlocks.test.ts","test":"LNG-007 declares an instance once, when the diagram already declares it as a local variable"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdCommBlocks.test.ts","test":"LNG-007 declares the instance of a Modbus block and of an MQTT block, and the program builds"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/fbdCommBlocks.test.ts","test":"communication blocks in a function block diagram (LNG-007)"}
   ],
   "LNG-008": [
     {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
@@ -2797,6 +2803,10 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-027 a lesson needs no entry in the example catalogue"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-027 keeps a lesson project that has an entry on the Welcome screen, as LRN-036 counts it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-027 leaves the solution of a new lesson package out of the Welcome screen, with no \"More examples\" section"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-027 reads the lesson projects, starters and solutions alike, from the generated lesson index"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
   "LRN-028": [
@@ -2877,6 +2887,7 @@
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-035 the kit page of each learner board, generated from boards.json and kit.json"}
   ],
   "LRN-036": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-027 keeps a lesson project that has an entry on the Welcome screen, as LRN-036 counts it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 carries the reason to the listing of the example that has none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"LRN-036 gives each hardware example a scenario, or states in both languages why it has none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"the scenario of a hardware example (LRN-036)"},
