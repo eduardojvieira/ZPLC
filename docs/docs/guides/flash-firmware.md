@@ -52,31 +52,44 @@ sha256sum --check --ignore-missing SHA256SUMS
 ## 2. Raspberry Pi Pico and Waveshare RP2040-Zero: download and boot mode
 
 The RP2040 boot ROM shows the board as a USB drive when it starts in boot mode, and
-takes a UF2 file copied to it.
+takes a UF2 file copied to it. You do every step: Studio never writes a board.
 
 1. Unplug the board. Hold its BOOT button (BOOTSEL on the Pico) and, with the button
    held, plug in the USB cable. Release the button.
 2. A drive named `RPI-RP2` appears. If it does not, unplug the board and start again;
-   a board that was not started in boot mode shows no drive.
-3. Copy the `.uf2` file of your board to the drive. The board writes it and restarts by
-   itself, and the drive disappears.
+   a board that was not started in boot mode shows no drive, and neither does a cable
+   that only charges.
+3. Copy the `.uf2` file of your board to the drive: the release image
+   (`zplc-runtime-<version>-rpi-pico-rp2040.uf2` for the Pico), or `build/zephyr/zephyr.uf2`
+   when you built the image yourself. The board writes it and restarts by itself, and the
+   drive disappears.
 
-## 3. ESP32-S3-DevKitC-1: boot mode and the command line
+The Pico image is for the Raspberry Pi Pico (RP2040). On a Pico W the on-board LED is not
+on GP25, and a Pico 2 (RP2350) does not run this image.
 
-The ROM boot loader of the ESP32-S3 takes an image over the serial port when the board
-starts in download mode.
+## 3. ESP32-S3-DevKitC-1: download mode and esptool
 
-1. Plug the board in with a USB cable to the port that gives you a serial port.
-2. Hold the BOOT button, press and release RESET, and release BOOT. The board is in
-   download mode.
-3. Write the image to the address that the manifest names for it
-   (`images[].flash.address` of `zplc-runtime-<version>.manifest.json`):
+The ROM boot loader of the ESP32-S3 takes an image over USB when the board starts in
+download mode. The image is for the N8R8 board (8 MB flash, 8 MB octal PSRAM): it does
+not start on the N8 or the N8R2 ([Board reference](../reference/boards.md)).
+
+1. Plug the cable into the port marked **USB**, the ESP32-S3's own USB port, not the one
+   marked UART: the ZPLC console and the connection of Studio use the **USB** port. On
+   Linux it is `/dev/ttyACM<n>`, on macOS `/dev/cu.usbmodem<n>`, on Windows a `COM<n>`
+   port.
+2. Hold BOOT, press and release RST, and release BOOT. The board is in download mode.
+3. Write the image at address `0x0`, the address that the manifest names for it
+   (`images[].flash.address` of `zplc-runtime-<version>.manifest.json`). With esptool v5:
 
 ```bash
-esptool.py --chip esp32s3 --port <serial port> write_flash <address> zplc-runtime-<version>-esp32-s3-devkitc.bin
+esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<version>-esp32-s3-devkitc.bin
 ```
 
-4. Press RESET to start the program that you wrote.
+   For an image you built yourself the file is `build/zephyr/zephyr.bin`. Version 4 of
+   esptool spells the same command `esptool.py ... write_flash`.
+
+4. Press RST to leave download mode and start the program that you wrote. If the console
+   stays silent, the board is still in download mode: press RST again.
 
 ### The browser flasher
 

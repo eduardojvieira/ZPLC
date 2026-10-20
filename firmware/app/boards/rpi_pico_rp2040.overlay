@@ -19,6 +19,11 @@
  * Hardware connection:
  *   GP0..GP3   -> LED -> resistor -> GND   (outputs, header pins 1, 2, 4, 5)
  *   GP15..GP12 -> switch -> GND            (inputs, internal pull-up)
+ *   GP4, GP5   -> Modbus RTU on UART1 (TX, RX; header pins 6, 7), 3.3 V logic:
+ *                 an RS-485 transceiver or a 3.3 V USB-serial adapter
+ *
+ * UART0 of the board DTS (GP0, GP1) and I2C0 (GP4, GP5) are disabled: their pins
+ * are DO0 and DO1, and the Modbus RTU port. The console stays on USB CDC ACM.
  *
  * Flash Layout (2MB total):
  *   0x000000 - 0x1EFFFF: Application code (1984 KB)
@@ -99,6 +104,42 @@
         led1 = &led1;
         led2 = &led2;
         led3 = &led3;
+    };
+};
+
+/* UART0 sits on GP0 and GP1, which are DO0 and DO1 of this profile */
+&uart0 {
+    status = "disabled";
+};
+
+/* I2C0 sits on GP4 and GP5, which carry the Modbus RTU port */
+&i2c0 {
+    status = "disabled";
+};
+
+&pinctrl {
+    uart1_default: uart1_default {
+        group1 {
+            pinmux = <UART1_TX_P4>;
+        };
+
+        group2 {
+            pinmux = <UART1_RX_P5>;
+            input-enable;
+        };
+    };
+};
+
+/* Modbus RTU (COM-012, HIL-010): UART1 on GP4 (TX, header pin 6) and GP5 (RX, header pin 7) */
+&uart1 {
+    status = "okay";
+    current-speed = <19200>;
+    pinctrl-0 = <&uart1_default>;
+    pinctrl-names = "default";
+
+    modbus0: modbus0 {
+        compatible = "zephyr,modbus-serial";
+        status = "okay";
     };
 };
 

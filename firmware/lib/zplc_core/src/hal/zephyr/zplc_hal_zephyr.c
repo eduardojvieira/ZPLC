@@ -420,7 +420,10 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *   IDs 512..611: device settings, keys "cfg_00".."cfg_99" (COM-027)
  *   IDs 640, 641: the AWS fleet certificate and private key PEM
  *
- * The storage_partition must be defined in the board's DeviceTree overlay.
+ * The records live in zplc_nvs_partition when the board's devicetree defines
+ * one, and in storage_partition otherwise. A board whose settings file system
+ * (LittleFS, zplc_config.c) mounts storage_partition gives the records their
+ * own partition, so that the two stores never share flash (IO-008).
  */
 
 #if defined(CONFIG_NVS) || defined(CONFIG_ZMS)
@@ -457,14 +460,20 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 #endif
 #include <zephyr/storage/flash_map.h>
 
-#ifdef PARTITION_DEVICE
-#define ZPLC_STORAGE_DEVICE() PARTITION_DEVICE(storage_partition)
-#define ZPLC_STORAGE_OFFSET() PARTITION_OFFSET(storage_partition)
-#define ZPLC_STORAGE_SIZE() PARTITION_SIZE(storage_partition)
+#if DT_NODE_EXISTS(DT_NODELABEL(zplc_nvs_partition))
+#define ZPLC_NVS_PARTITION zplc_nvs_partition
 #else
-#define ZPLC_STORAGE_DEVICE() FIXED_PARTITION_DEVICE(storage_partition)
-#define ZPLC_STORAGE_OFFSET() FIXED_PARTITION_OFFSET(storage_partition)
-#define ZPLC_STORAGE_SIZE() FIXED_PARTITION_SIZE(storage_partition)
+#define ZPLC_NVS_PARTITION storage_partition
+#endif
+
+#ifdef PARTITION_DEVICE
+#define ZPLC_STORAGE_DEVICE() PARTITION_DEVICE(ZPLC_NVS_PARTITION)
+#define ZPLC_STORAGE_OFFSET() PARTITION_OFFSET(ZPLC_NVS_PARTITION)
+#define ZPLC_STORAGE_SIZE() PARTITION_SIZE(ZPLC_NVS_PARTITION)
+#else
+#define ZPLC_STORAGE_DEVICE() FIXED_PARTITION_DEVICE(ZPLC_NVS_PARTITION)
+#define ZPLC_STORAGE_OFFSET() FIXED_PARTITION_OFFSET(ZPLC_NVS_PARTITION)
+#define ZPLC_STORAGE_SIZE() FIXED_PARTITION_SIZE(ZPLC_NVS_PARTITION)
 #endif
 
 /** @brief NVS ID for program length */
@@ -511,7 +520,7 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES,
              "the storage partition cannot hold two program slots of "
              "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
-             "of the board profile or enlarge storage_partition");
+             "of the board profile or enlarge its NVS partition");
 
 /** @brief NVS IDs 512..611: one device setting per entry, "cfg_NN" (COM-027). Above the program chunk range
  *         (NVS_ID_PROGRAM_CHUNKS + 2 * ZPLC_PROGRAM_STORE_MAX_CHUNKS, at most 418 with the smallest chunk and the

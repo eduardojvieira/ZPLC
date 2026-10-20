@@ -54,31 +54,46 @@ sha256sum --check --ignore-missing SHA256SUMS
 ## 2. Raspberry Pi Pico y Waveshare RP2040-Zero: descarga y modo de arranque
 
 La ROM de arranque del RP2040 muestra la placa como una unidad USB cuando arranca en
-modo de arranque, y acepta un archivo UF2 copiado en ella.
+modo de arranque, y acepta un archivo UF2 copiado en ella. Usted realiza cada paso:
+Studio nunca escribe en una placa.
 
 1. Desconecte la placa. Mantenga pulsado su botón BOOT (BOOTSEL en la Pico) y, con el
    botón pulsado, conecte el cable USB. Suelte el botón.
 2. Aparece una unidad llamada `RPI-RP2`. Si no aparece, desconecte la placa y empiece
-   de nuevo; una placa que no arrancó en modo de arranque no muestra ninguna unidad.
-3. Copie a la unidad el archivo `.uf2` de su placa. La placa lo escribe y se reinicia
-   sola, y la unidad desaparece.
+   de nuevo; una placa que no arrancó en modo de arranque no muestra ninguna unidad, y
+   tampoco la muestra un cable que solo carga.
+3. Copie a la unidad el archivo `.uf2` de su placa: la imagen de la versión
+   (`zplc-runtime-<versión>-rpi-pico-rp2040.uf2` para la Pico), o `build/zephyr/zephyr.uf2`
+   cuando compiló la imagen usted mismo. La placa lo escribe y se reinicia sola, y la
+   unidad desaparece.
 
-## 3. ESP32-S3-DevKitC-1: modo de arranque y línea de comandos
+La imagen de la Pico es para la Raspberry Pi Pico (RP2040). En una Pico W el LED de la
+placa no está en GP25, y una Pico 2 (RP2350) no ejecuta esta imagen.
 
-El cargador de arranque en ROM del ESP32-S3 acepta una imagen por el puerto serie
-cuando la placa arranca en modo de descarga.
+## 3. ESP32-S3-DevKitC-1: modo de descarga y esptool
 
-1. Conecte la placa con un cable USB al puerto que le da un puerto serie.
-2. Mantenga pulsado el botón BOOT, pulse y suelte RESET, y suelte BOOT. La placa está
-   en modo de descarga.
-3. Escriba la imagen en la dirección que el manifiesto nombra para ella
-   (`images[].flash.address` de `zplc-runtime-<versión>.manifest.json`):
+El cargador de arranque en ROM del ESP32-S3 acepta una imagen por USB cuando la placa
+arranca en modo de descarga. La imagen es para la placa N8R8 (8 MB de flash, 8 MB de PSRAM
+octal): no arranca en la N8 ni en la N8R2 ([Referencia de placas](../reference/boards.md)).
+
+1. Conecte el cable al puerto marcado **USB**, el puerto USB propio del ESP32-S3, no al
+   marcado UART: la consola de ZPLC y la conexión de Studio usan el puerto **USB**. En
+   Linux es `/dev/ttyACM<n>`, en macOS `/dev/cu.usbmodem<n>` y en Windows un puerto
+   `COM<n>`.
+2. Mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT. La placa está en modo de
+   descarga.
+3. Escriba la imagen en la dirección `0x0`, la que el manifiesto nombra para ella
+   (`images[].flash.address` de `zplc-runtime-<versión>.manifest.json`). Con esptool v5:
 
 ```bash
-esptool.py --chip esp32s3 --port <puerto serie> write_flash <dirección> zplc-runtime-<versión>-esp32-s3-devkitc.bin
+esptool --chip esp32s3 --port <puerto serie> write-flash 0x0 zplc-runtime-<versión>-esp32-s3-devkitc.bin
 ```
 
-4. Pulse RESET para arrancar el programa que escribió.
+   Para una imagen que compiló usted mismo, el archivo es `build/zephyr/zephyr.bin`. La
+   versión 4 de esptool escribe el mismo comando como `esptool.py ... write_flash`.
+
+4. Pulse RST para salir del modo de descarga y arrancar el programa que escribió. Si la
+   consola sigue en silencio, la placa sigue en modo de descarga: pulse RST otra vez.
 
 ### El grabador en el navegador
 

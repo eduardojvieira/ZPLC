@@ -19,12 +19,12 @@
         ]
       },
       "measured": {
-        "flash": 166408,
-        "ram": 170136
+        "flash": 177848,
+        "ram": 173424
       },
       "budget": {
-        "flash": 174336,
-        "ram": 178688
+        "flash": 186880,
+        "ram": 182272
       }
     },
     "arduino-giga-r1-m7": {
