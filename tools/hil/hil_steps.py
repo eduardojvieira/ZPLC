@@ -41,7 +41,11 @@ ANALOG_POINTS = ((0.0, 0.05), (0.5, 0.10), (1.0, 0.05))  # (fraction of travel, 
 DEPLOY_CUTS = 20
 ATOMIC_WRITES = 100
 RTU_VALUE = 0x5A17
+RTU_BAUD = 19200  # the line speed the step sets on the device's RTU client and on the host side of the line
 FIELDBUS_WAIT_S = 20
+VM_BUDGET_DEFAULT = 100_000  # CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET when the image does not report it
+OVERRUN_ITERATION_COST = 13  # VM instructions of one turn of the overrun program's FOR loop (its assembly listing)
+FAULT_WAIT_S = 10.0  # how long a fault step waits for the latch: a board latches in 0.2 s, an emulator can be 6x slower
 
 # What each step costs on a person's bench, in seconds: the chain adds them up to say how long it takes (HIL-012).
 STEP_SECONDS = {
@@ -70,11 +74,13 @@ t(IN := TRUE, PT := T#{TIMER_PT_MS}ms);
 q := t.Q;
 END_PROGRAM
 """),
+    # A scan that runs past the VM's instruction budget is a VM watchdog fault (ZPLC_VM_WATCHDOG), not an overrun:
+    # the step sizes the loop to half the budget the image reports, which is still many milliseconds on a board.
     "overrun": (1, """
 PROGRAM Main
 VAR i : DINT; acc : DINT; q AT %QX0.0 : BOOL; END_VAR
 q := TRUE;
-FOR i := 1 TO 8000 DO acc := acc + i; END_FOR;
+FOR i := 1 TO {iterations} DO acc := acc + i; END_FOR;
 END_PROGRAM
 """),
     "fault": (10, """
@@ -415,29 +421,46 @@ class BenchSteps:
             raise AssertionError("; ".join(problems))
         return f"{self.jitter_seconds} s: no overrun, no deadline miss, every {JITTER_SAMPLE_S} s window within {worst:.3%} of {interval} ms"
 
-    def _fault_leaves_outputs_off(self, program: str, reason: str, wait_s: float):
-        self.deploy_program(program)
+    def _fault_leaves_outputs_off(self, program: str, reason: str, **values):
+        """Run a program that faults and wait, up to FAULT_WAIT_S on the bench clock, for the runtime to latch a fault.
+
+        The wait is for the latch, not a fixed time: on Espressif QEMU the board's clock ran at about a sixth of the
+        host's, so 1 s of the bench was 160 ms of the board, fewer scans than the fault program needs."""
+        self.deploy_program(program, **values)
+        started = self.now()
         self.tester.send("zplc start")
         try:
             self.wait(0.05)
             driven = self.outputs()
-            self.wait(wait_s)
-            status, after = self.status(), self.outputs()
+            status = self.status()
+            # an overrunning scan can starve the shell, whose answer is then missing: only a latched fault ends the wait
+            while status.get("fault", {}).get("reason") in (None, "none") and self.now() - started < FAULT_WAIT_S * 1000:
+                self.wait(0.1)
+                status = self.status()
+            latched_after = self.now() - started
+            after = self.outputs()
         finally:
             self.stop_and_clear()
         fault = status.get("fault", {}).get("reason")
-        self.measure(outputs_before=driven, outputs_after=after, state=status.get("state"), fault=fault, vm_error=status.get("vm", {}).get("error"))
+        self.measure(
+            outputs_before=driven, outputs_after=after, state=status.get("state"), fault=fault, vm_error=status.get("vm", {}).get("error"),
+            latched_after_ms=round(latched_after), scans=status.get("stats", {}).get("cycles"),
+        )
         if fault != reason:
-            raise AssertionError(f"the fault latched is {fault!r}, not {reason!r} (state {status.get('state')!r})")
+            raise AssertionError(f"the fault latched is {fault!r}, not {reason!r} (state {status.get('state')!r} after {latched_after:.0f} ms)")
         if after:
             raise AssertionError(f"the outputs are 0x{after:02x} after the {reason} fault, not off")
-        return f"{reason} latched, outputs off (0x{after:02x})"
+        return f"{reason} latched after {latched_after:.0f} ms, outputs off (0x{after:02x})"
 
     def overrun_fault(self):
-        return self._fault_leaves_outputs_off("overrun", "deadline_miss", 1.0)
+        options = self.record["firmware"].get("build_options") or {}
+        budget = int(options.get("VM_CYCLE_INSTRUCTION_BUDGET") or VM_BUDGET_DEFAULT)
+        iterations = budget // (2 * OVERRUN_ITERATION_COST)
+        self.measure(instruction_budget=budget, iterations=iterations)
+        return self._fault_leaves_outputs_off("overrun", "deadline_miss", iterations=iterations)
 
     def fatal_fault(self):
-        return self._fault_leaves_outputs_off("fault", "vm_fault", 1.0)
+        return self._fault_leaves_outputs_off("fault", "vm_fault")
 
     def stop_and_link_loss(self):
         """Outputs safe after a commanded STOP with forces active, and after the link goes silent with forces active."""
@@ -505,6 +528,12 @@ class BenchSteps:
 
     def power_cycle_retain(self):
         """After a power cycle the program is there, in STOP, and a RETAIN variable keeps its value (RT-022, RT-025)."""
+        options = self.record["firmware"].get("build_options") or {}
+        if options.get("RETAIN_PERSIST") != "y":
+            raise AssertionError(
+                "the image under test was built with RETAIN persistence off, so no RETAIN value can survive a power cycle: "
+                "the step needs the HIL build (CONFIG_ZPLC_RETAIN_PERSIST=y)"
+            )
         symbols = self.deploy_program("retain")
         address = symbols.get("scans")
         if address is None:
@@ -618,6 +647,15 @@ class BenchSteps:
         port = getattr(self.args, "rtu_port", None) or getattr(self.bench, "rtu_port", None)
         if not port:
             raise AssertionError("the Modbus RTU exchange needs the host side of the line: --rtu-port names the USB-serial adapter")
+        # The device's RTU client is off by default and starts at boot only (zplc_modbus_client_init): without it the
+        # block fails at once with UNAVAILABLE (10) and no byte reaches the line. Turn it on at the line's speed,
+        # store the setting and restart the board.
+        for line in ("zplc config set modbus_rtu_client_enabled 1", f"zplc config set modbus_rtu_baud {RTU_BAUD}"):
+            if "OK:" not in self.tester.send(line, wait_for="OK:"):
+                raise AssertionError(f"the device refused `{line}`")
+        self.tester.send("zplc config save", wait_for="OK:")
+        self.bench.power_cycle()
+        self.reconnect()
         descriptor = _open_line(port)
         try:
             with hil_endpoints.RtuServer(descriptor, registers={100: RTU_VALUE}) as server:
@@ -680,6 +718,6 @@ def _open_line(port: str) -> int:
     attributes = termios.tcgetattr(descriptor)
     attributes[0] = attributes[1] = attributes[3] = 0  # raw: no input, output or local processing
     attributes[2] = termios.CS8 | termios.CREAD | termios.CLOCAL
-    attributes[4] = attributes[5] = termios.B115200
+    attributes[4] = attributes[5] = getattr(termios, f"B{RTU_BAUD}")
     termios.tcsetattr(descriptor, termios.TCSANOW, attributes)
     return descriptor

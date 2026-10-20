@@ -14,6 +14,7 @@ import select
 import socket
 import struct
 import tempfile
+import termios
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -56,9 +57,12 @@ class FakeBoard(hil_devices.ShellDevice):
     kind = "fake"
     PT = hil_steps.TIMER_PT_MS
 
-    def __init__(self, clock, defects=(), rtu=None):
+    def __init__(self, clock, defects=(), rtu=None, line=None):
         super().__init__()
-        self.clock, self.defects, self.rtu = clock, set(defects), rtu
+        self.clock, self.defects, self.rtu, self.line = clock, set(defects), rtu, line
+        # the stored settings, those the shell set since, and the RTU client, which starts at boot when it is on
+        self.config, self.saved_config, self.rtu_client = {}, {}, False
+        self.budget = 100_000  # VM instructions in one scan (CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET)
         self.memory = bytearray(0x5000)
         self.forces: dict[int, bytes] = {}
         self.session_forces: set[int] = set()
@@ -70,7 +74,8 @@ class FakeBoard(hil_devices.ShellDevice):
 
     # physics ---------------------------------------------------------------------------------------
     def now(self):
-        return self.clock.ms
+        """The board's own clock. On a slow emulator it runs behind the bench's (Espressif QEMU ran at about 0.16)."""
+        return self.clock.ms * (0.15 if "slow-clock" in self.defects else 1.0)
 
     def power_cycle(self, cause="power_on"):
         if self.staging is not None and "partial-deploy" in self.defects:
@@ -78,6 +83,8 @@ class FakeBoard(hil_devices.ShellDevice):
         self.staging, self.state, self.fault, self.cause, self.boot = None, "idle", "none", cause, self.now()
         self.forces.clear()
         self.session = False
+        self.config = dict(self.saved_config)
+        self.rtu_client = self.config.get("modbus_rtu_client_enabled") == "1"  # zplc_modbus_client_init, at boot only
         self.memory[0x4004:0x4008] = (0 if "retain-lost" in self.defects else self.saved_retain).to_bytes(4, "little", signed=True)
 
     def tick(self):
@@ -90,8 +97,10 @@ class FakeBoard(hil_devices.ShellDevice):
         if self.state != "running":
             return
         running = now - self.started
-        if self.program == "overrun" and running > 5:
-            self.state, self.fault = "error", "deadline_miss"
+        if self.program == "overrun" and running > (300 if "starved-shell" in self.defects else 5):
+            # one scan of more than the VM's instruction budget is a VM watchdog fault (ZPLC_VM_WATCHDOG), not an overrun
+            tripped = int(self.values.get("iterations", 8000)) * hil_steps.OVERRUN_ITERATION_COST > self.budget
+            self.state, self.fault = "error", "vm_fault" if tripped else "deadline_miss"
         if self.program == "fault" and running > 200:
             self.state, self.fault = "error", "vm_fault"
         if self.program == "hang" and running >= 1000 + (900 if "watchdog-late" in self.defects else 0):
@@ -102,6 +111,14 @@ class FakeBoard(hil_devices.ShellDevice):
             self.memory[0x4004:0x4008] = value.to_bytes(4, "little", signed=True)
         if self.program == "modbus-rtu" and self.rtu is not None and not self.values.get("asked"):
             self.values["asked"] = True
+            if not self.rtu_client:  # the client is off by default: the block fails at once, no byte reaches the line
+                self.memory[0x2788:0x278C] = struct.pack("<i", 10)  # ZPLC_COMM_UNAVAILABLE
+                return
+            speeds = {9600: termios.B9600, 19200: termios.B19200, 115200: termios.B115200}
+            baud = int(self.config.get("modbus_rtu_baud", 19200))
+            if self.line is not None and termios.tcgetattr(self.line)[4] != speeds.get(baud):
+                self.memory[0x2788:0x278C] = struct.pack("<i", 2)  # at another speed the host hears noise: a timeout
+                return
             unit = 2 if "fieldbus-fails" in self.defects else 1  # nobody answers unit 2
             os.write(self.rtu, hil_endpoints.rtu_frame(bytes([unit, 3, 0, 100, 0, 1])))
             reply = b""
@@ -175,6 +192,8 @@ class FakeBoard(hil_devices.ShellDevice):
             _, name, values = text.split(":", 2) if text.startswith("PROG:") else ("", "fixture", "{}")
             self.program, self.values, self.staging, self.state = name, json.loads(values), None, "idle"
             return f"OK: Program loaded ({self.expected} bytes)\r\n"
+        if words[:3] == ["zplc", "status", "--json"] and "starved-shell" in self.defects and self.state == "running":
+            return ""  # an overrunning scan at a higher priority than the shell (RT-013) leaves the shell no time to answer
         if words[:3] == ["zplc", "status", "--json"]:
             cycles = int((self.now() - self.started) // 10) if self.state == "running" else 0
             misses = cycles // 1000 if "jitter-misses" in self.defects else 0
@@ -194,6 +213,12 @@ class FakeBoard(hil_devices.ShellDevice):
                 self.forces.clear()
                 return "OK: Cleared all force entries\r\n"
             return json.dumps({"count": len(self.forces), "items": []}) + "\r\n"
+        if words[:3] == ["zplc", "config", "set"]:
+            self.config[words[3]] = words[4]
+            return "OK: Config updated\r\n"
+        if words[:3] == ["zplc", "config", "save"]:
+            self.saved_config = dict(self.config)
+            return "OK: Config saved\r\n"
         if words[:3] == ["zplc", "sys", "info"]:
             return json.dumps({"board": "rpi_pico", "board_profile": "rpi_pico"}) + "\r\n"
         return "OK: done\r\n"
@@ -312,14 +337,15 @@ class StepTests(Quiet):
     def tearDown(self):
         hil_steps.compile_program = self.compile
 
-    def step(self, step_id, defects=(), board="rpi_pico", extra=(), options=None, rtu=None):
+    def step(self, step_id, defects=(), board="rpi_pico", extra=(), options=None, rtu=None, line=None):
         clock = Clock()
-        device = FakeBoard(clock, defects, rtu)
+        device = FakeBoard(clock, defects, rtu, line)
+        device.budget = int((options or {}).get("VM_CYCLE_INSTRUCTION_BUDGET", 100_000))
         bench = FakeBench(clock, device)
         args = run_chain.parse([board, "--dry-run", "--operator", "CI", *extra])
         chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS[board], lambda name: device, bench)
         chain.tester = LanguageTester(transport=device, board=board)
-        chain.record["firmware"]["build_options"] = options or {"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000"}
+        chain.record["firmware"]["build_options"] = options or {"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000", "RETAIN_PERSIST": "y"}
         _, title, method, requirement = next(s for s in chain.STEPS if s[0] == step_id)
         chain.step(step_id, title, "automatic", getattr(chain, method), requirement)
         entry = chain.record["steps"][-1]
@@ -363,6 +389,31 @@ class StepTests(Quiet):
         good, _ = self.passes_and_fails("fatal-fault-outputs-off", "fault-keeps-outputs")
         self.assertEqual((good["measurements"]["fault"], good["measurements"]["outputs_before"]), ("vm_fault", 1))
 
+    def test_the_overrun_program_stays_inside_the_boards_instruction_budget(self):
+        """A scan longer than the budget is a VM watchdog fault by design (CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET):
+        the overrun program is sized from the budget the image reports, so what latches is the deadline miss."""
+        for budget in ("100000", "40000"):
+            entry, _ = self.step("overrun-fault-outputs-off", options={"VM_CYCLE_INSTRUCTION_BUDGET": budget})
+            self.assertEqual(entry["result"], "pass", entry.get("detail"))
+            self.assertEqual(entry["measurements"]["fault"], "deadline_miss")
+            self.assertEqual(entry["measurements"]["instruction_budget"], int(budget))
+            self.assertLessEqual(entry["measurements"]["iterations"] * hil_steps.OVERRUN_ITERATION_COST, int(budget) // 2)
+
+    def test_a_board_whose_clock_runs_behind_the_bench_still_latches_its_fault(self):
+        """On Espressif QEMU the board's clock ran at about a sixth of the host's: the step waits for the latch."""
+        for step_id, fault in (("fatal-fault-outputs-off", "vm_fault"), ("overrun-fault-outputs-off", "deadline_miss")):
+            entry, _ = self.step(step_id, ("slow-clock",))
+            self.assertEqual(entry["result"], "pass", entry.get("detail"))
+            self.assertEqual(entry["measurements"]["fault"], fault)
+        self.assertGreater(self.step("fatal-fault-outputs-off", ("slow-clock",))[0]["measurements"]["latched_after_ms"], 1000,
+                           "the fatal fault took longer than the old fixed wait of one second")
+
+    def test_a_shell_starved_by_the_overrun_does_not_end_the_wait(self):
+        """Seen on the emulated Pico: while the 1 ms task overran, `zplc status` had no answer until the fault latched."""
+        entry, _ = self.step("overrun-fault-outputs-off", ("starved-shell",))
+        self.assertEqual(entry["result"], "pass", entry.get("detail"))
+        self.assertEqual(entry["measurements"]["state"], "error")
+
     def test_outputs_safe_after_stop_and_after_link_loss_with_forces_active(self):
         good, bad = self.passes_and_fails("stop-and-link-loss-safe", "link-loss-keeps-forces")
         self.assertEqual(good["measurements"]["session_idle_s"], 30)
@@ -382,6 +433,13 @@ class StepTests(Quiet):
         good, _ = self.passes_and_fails("power-cycle-retain", "retain-lost")
         self.assertEqual(good["measurements"]["retain_after"], good["measurements"]["retain_before"])
 
+    def test_power_cycle_retain_needs_an_image_built_with_retain_persistence(self):
+        """RETAIN persistence is off in every shipped profile until a board has a hardware record (RT-025): an image
+        without it cannot keep RETAIN, and the step says that instead of reporting a lost value."""
+        plain, _ = self.step("power-cycle-retain", options={"SCHEDULER": "y", "HARDWARE_WATCHDOG": "y"})
+        self.assertEqual(plain["result"], "fail")
+        self.assertIn("CONFIG_ZPLC_RETAIN_PERSIST=y", plain["detail"])
+
     def test_a_power_step_whose_board_did_not_restart_fails(self):
         class NoPower(FakeBench):
             def power_cycle(self):
@@ -392,6 +450,7 @@ class StepTests(Quiet):
         args = run_chain.parse(["rpi_pico", "--dry-run", "--operator", "CI"])
         chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS["rpi_pico"], lambda name: device, NoPower(clock, device))
         chain.tester = LanguageTester(transport=device, board="rpi_pico")
+        chain.record["firmware"]["build_options"] = {"RETAIN_PERSIST": "y"}
         chain.step("power-cycle-retain", "Power cycle", "automatic", chain.power_cycle_retain)
         self.assertEqual(chain.record["steps"][-1]["result"], "fail")
         self.assertIn("did not restart", chain.record["steps"][-1]["detail"])
@@ -410,7 +469,7 @@ class StepTests(Quiet):
         for defects in ((), ("fieldbus-fails",)):
             master, slave = os.openpty()
             try:
-                entry, bench = self.step("fieldbus-exchange", defects, extra=("--rtu-port", os.ttyname(slave)), rtu=master)
+                entry, bench = self.step("fieldbus-exchange", defects, extra=("--rtu-port", os.ttyname(slave)), rtu=master, line=slave)
             finally:
                 os.close(master)
                 os.close(slave)
@@ -438,6 +497,7 @@ class StepTests(Quiet):
         args = run_chain.parse(["rpi_pico", "--dry-run", "--operator", "CI"])
         chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS["rpi_pico"], lambda name: device, benches.StandInBench("a fake"))
         chain.tester = LanguageTester(transport=device, board="rpi_pico")
+        chain.record["firmware"]["build_options"] = {"RETAIN_PERSIST": "y"}
         chain.step("analog-read", "Analog read", "automatic", chain.analog_read)
         self.assertEqual(chain.record["steps"][-1]["result"], "skipped")
         chain.record["evidence_level"] = "emulated"
@@ -515,11 +575,11 @@ class BenchTests(Quiet):
 
 class CompilePerBoardTests(Quiet):
     def test_every_step_program_compiles_for_both_learner_boards_with_the_boards_memory(self):
-        values = {"host": "192.168.1.2", "modbus_port": 5020}
+        values = {"host": "192.168.1.2", "modbus_port": 5020, "iterations": 3846}
         for board in ("rpi_pico", "esp32s3_devkitc"):
             for name in hil_steps.PROGRAMS:
                 with self.subTest(board=board, program=name):
-                    code, symbols = hil_steps.compile_program(name, board, values if "{host}" in hil_steps.PROGRAMS[name][1] else None)
+                    code, symbols = hil_steps.compile_program(name, board, values if "{" in hil_steps.PROGRAMS[name][1] else None)
                     self.assertTrue(code)
                     if name == "atomic":
                         self.assertEqual((symbols["x"], symbols["torn"]), (0x2780, 0x2784))
@@ -548,6 +608,18 @@ class NativeRuntimeStepTests(Quiet):
         self.assertEqual(steps["analog-read"]["result"], "skipped", "the host runtime has no potentiometer")
         self.assertEqual((record["evidence"], record["evidence_level"]), ("host-runtime", None))
         self.assertEqual(code, 0)
+
+    def test_the_overrun_program_does_not_trip_the_instruction_budget_of_the_runtime(self):
+        """The real compiler and VM: the overrun step's scan ends inside the budget, so it never latches the VM
+        watchdog fault (vm error 8). Whether a host this fast misses a 1 ms deadline is not asserted."""
+        os.environ["ZPLC_NATIVE_SIM_BIN"] = RUNTIME
+        with tempfile.TemporaryDirectory() as out:
+            run_chain.main(["rpi_pico", "--dry-run", "--device", "host", "--out", out, "--operator", "CI", "--only", "il.minimal",
+                            "--steps", "overrun-fault-outputs-off"], stdout=io.StringIO())
+            record = json.loads(next(Path(out).glob("*.json")).read_text())
+        entry = next(s for s in record["steps"] if s["id"] == "overrun-fault-outputs-off")
+        self.assertNotEqual(entry["measurements"]["vm_error"], 8, entry.get("detail"))
+        self.assertNotEqual(entry["measurements"]["fault"], "vm_fault", entry.get("detail"))
 
 
 if __name__ == "__main__":
