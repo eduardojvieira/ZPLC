@@ -32,6 +32,52 @@ ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "packages/zplc-ide/src/cli/index.ts"
 EXIT_SKIPPED = 77
 PROMPT = "zplc:~$"
+ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+# what the firmware prints on its own, whatever command runs: a Zephyr log line and the count of dropped ones. The
+# shell prints its prompt (and the line being run) again after each, so neither is part of an answer.
+LOG_LINE = re.compile(r"^\s*(?:\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\]\s*<(?:err|wrn|inf|dbg)>|-{3}\s*\d+\s+messages? dropped\s*-{3})")
+
+
+def shell_answer(text: str, command: str, wait_for: str = PROMPT) -> str | None:
+    """The answer to `command` in what the shell printed, or None while it is not complete.
+
+    The answer starts after the echo of the command (what came before it belongs to an earlier command or to the log)
+    and ends at a prompt that the command's own output ends with. Log lines go, and so does the prompt the shell prints
+    again after one; with `wait_for` other than the prompt, the answer is complete when it holds that text.
+    """
+    lines = ANSI.sub("", text).replace("\r", "").split("\n")
+    start = 0
+    if command:
+        echoes = [i for i, line in enumerate(lines) if line.rstrip().endswith(command) and not LOG_LINE.match(line)]
+        if not echoes:
+            return None
+        start = echoes[0] + 1
+    kept: list[str] = []
+    after_log = False
+    ended = False
+    for index, line in enumerate(lines[start:], start):
+        if LOG_LINE.match(line):
+            after_log = True
+            continue
+        stripped = line.strip()
+        if stripped.startswith(PROMPT):
+            rest = stripped[len(PROMPT):].strip()
+            if after_log or (command and rest == command):
+                after_log = False  # the prompt printed again after a log line, with the line being run
+                if rest and rest != command:
+                    kept.append(rest)
+                continue
+            if index == len(lines) - 1 and not rest:
+                ended = True
+                break
+            kept.append(rest)
+            continue
+        after_log = False
+        kept.append(line)
+    answer = "\n".join(kept)
+    if wait_for != PROMPT:
+        return answer if wait_for in answer else None
+    return answer + "\n" + PROMPT if ended else None
 
 
 class CompileError(Exception):
@@ -127,30 +173,34 @@ class ZPLCTester:
 
     # shell -------------------------------------------------------------------------------------------
     def send(self, cmd, wait_for=PROMPT, timeout=5.0):
-        """Send a command and wait for the prompt or a given answer."""
+        """Send a command and wait for its answer: up to its prompt, or up to `wait_for`. Log lines and the prompts the
+        shell prints again after them are left out (shell_answer); at the timeout, what came is returned as it came."""
         while self.ser.in_waiting:
             self.ser.read(self.ser.in_waiting)
         self.ser.write(f"{cmd}\r\n".encode())
         self.log.append(("tx", cmd))
         deadline = time.time() + timeout
-        response = ""
+        raw = ""
+        answer = None
         while time.time() < deadline:
             if self.ser.in_waiting > 0:
-                response += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
-                if wait_for in response:
+                raw += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
+                answer = shell_answer(raw, cmd.strip(), wait_for)
+                if answer is not None:
                     break
             else:
                 time.sleep(0.01)
-        if wait_for != PROMPT and wait_for in response and PROMPT not in response:
+        if answer is not None and wait_for != PROMPT:
             # the answer came before its prompt: take the prompt too, or it would be taken for the end of the next command's answer
             quiet = time.time() + 0.3
-            while time.time() < quiet and PROMPT not in response:
+            while time.time() < quiet and shell_answer(raw, cmd.strip()) is None:
                 if self.ser.in_waiting > 0:
-                    response += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
+                    raw += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
                 else:
                     time.sleep(0.005)
-        self.log.append(("rx", response))
-        return response
+            answer = shell_answer(raw, cmd.strip()) or answer
+        self.log.append(("rx", raw))
+        return answer if answer is not None else raw
 
     def identity(self) -> dict:
         """What the device says it is: the JSON of `zplc sys info --json` ({} when it answers nothing parseable)."""
