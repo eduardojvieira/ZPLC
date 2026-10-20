@@ -33,6 +33,14 @@ Una lección de la ruta de hardware la incluye en `lesson.json` y agrega un bloq
   incluye `tracks: ["hardware"]` e indica en `unsupported.simulation` por qué no tiene calificación en
   simulación.
 
+## Un solo kit para todo el curso
+
+El curso tiene una sola lista de materiales, la misma para cualquiera de las dos placas: una placa, un
+cable USB de datos, una protoboard, seis LED con seis resistencias de 330 Ω, tres pulsadores, dos
+resistencias de 10 kΩ, un potenciómetro de 10 kΩ, un capacitor de 100 nF y veinte cables puente. Las
+piezas se reutilizan de una lección a otra: la CI de lecciones verifica que el kit contiene lo que cada
+lección de hardware necesita a la vez, en cada placa.
+
 ## Solo piezas seguras
 
 Todas las lecciones de hardware usan entradas y salidas de nivel lógico y piezas de baja tensión, y el

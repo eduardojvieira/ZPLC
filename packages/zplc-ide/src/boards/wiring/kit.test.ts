@@ -2,7 +2,8 @@ import { describe, expect, it } from 'bun:test';
 
 import boardManifest from '../../../../../firmware/app/boards/boards.json';
 import kitFile from '../../../lessons/kit.json';
-import { joinLearnerBoards, validateKit } from './kit';
+import { bomProblems, joinLearnerBoards, validateKit, type BomItem } from './kit';
+import { BOARDS, WIRING } from './wiring.fixtures';
 
 describe('the learner kit of the course (LRN-014, LRN-016)', () => {
   it('is valid and names the two learner boards of boards.json', () => {
@@ -28,5 +29,34 @@ describe('the learner kit of the course (LRN-014, LRN-016)', () => {
     expect(validateKit({ ...kitFile, boards: [] })).toContain('kit.boards: must list the learner boards');
     expect(validateKit({ ...kitFile, voltageLimit: { en: ['x'] } })).toContain('kit.voltageLimit: must list the same number of non-empty sentences in en and es');
     expect(joinLearnerBoards({ ...(kitFile as never), boards: [{ boardId: 'uno', supply: 'a', ground: 'b', analogGround: 'c' }] }, boardManifest).problems).toEqual(['kit.json: board "uno" has no valid I/O description in boards.json']);
+  });
+});
+
+describe('the one bill of materials of the course (LRN-014)', () => {
+  const bom = (kitFile as unknown as { bom: BomItem[] }).bom;
+  const lessons = [{ id: 'fixture', wiring: WIRING }];
+
+  it('lists the kit of lrn-shared section D, the same for either board', () => {
+    expect(bom.map((item) => [item.id, item.quantity])).toEqual([
+      ['board', 1], ['usb-cable', 1], ['breadboard', 1], ['led', 6], ['resistor-330', 6], ['button', 3], ['resistor-10k', 2], ['potentiometer', 1], ['capacitor', 1], ['jumper-wires', 20],
+    ]);
+  });
+
+  it('covers the parts every lesson needs on each board, counting what one lesson needs at once', () => {
+    expect(bomProblems(bom, lessons, BOARDS)).toEqual([]);
+    const fewer = bom.map((item) => (item.id === 'button' ? { ...item, quantity: 1 } : item));
+    // The Pico wires Start and Stop as buttons; the ESP32-S3 uses its BOOT button for Stop.
+    expect(bomProblems(fewer, lessons, BOARDS)).toEqual(['fixture on Raspberry Pi Pico (RP2040) needs 2 of button, the bill of materials has 1']);
+    const noResistor = bom.filter((item) => item.id !== 'resistor-330');
+    expect(bomProblems(noResistor, lessons, BOARDS)).toEqual([
+      'fixture on Raspberry Pi Pico (RP2040) needs 2 of resistor 330 Ω, the bill of materials has 0',
+      'fixture on ESP32-S3-DevKitC-1 (N8R8) needs 2 of resistor 330 Ω, the bill of materials has 0',
+    ]);
+  });
+
+  it('counts the jumper wires: one for a jumper used as a switch, two for every other part on the breadboard, two for the rails', () => {
+    // Pico: 1 jumper switch + 2 x 5 other parts + 2 rails = 13.
+    const tight = bom.map((item) => (item.id === 'jumper-wires' ? { ...item, quantity: 12 } : item));
+    expect(bomProblems(tight, lessons, BOARDS)).toEqual(['fixture on Raspberry Pi Pico (RP2040) needs 13 of jumper wire, the bill of materials has 12']);
   });
 });

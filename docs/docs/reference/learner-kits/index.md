@@ -30,6 +30,13 @@ A lesson on the hardware track lists it in `lesson.json` and adds a `hardware` b
   English and Spanish. A lesson that only runs on a board, such as "verify my board", lists
   `tracks: ["hardware"]` and says in `unsupported.simulation` why it has no simulation grade.
 
+## One kit for the whole course
+
+The course has one bill of materials, the same for either board: one board, a USB data cable, a
+breadboard, six LEDs with six 330 Ω resistors, three push buttons, two 10 kΩ resistors, a 10 kΩ
+potentiometer, a 100 nF capacitor and twenty jumper wires. The parts are reused from lesson to lesson:
+the lesson CI checks that the kit holds what each hardware lesson needs at once, on each board.
+
 ## Safe parts only
 
 Every hardware lesson uses logic-level inputs and outputs and low-voltage parts, and the course contains

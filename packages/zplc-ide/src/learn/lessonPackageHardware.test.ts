@@ -3,6 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { bomProblems } from '../boards/wiring/kit';
 import { programWiringProblems, wiringSafetyProblems } from '../boards/wiring/wiring';
 import { BOARDS, WIRING } from '../boards/wiring/wiring.fixtures';
 import { LESSONS_DIRECTORY, buildIndex, loadCourse, loadLearnerBoards, loadLessonPackages, programAddresses, PROJECTS_DIRECTORY } from './lessonPackageFiles';
@@ -94,5 +95,13 @@ describe('LRN-016 the course wires only logic-level I/O and low-voltage parts, a
     for (const lesson of loadLessonPackages().packages.filter((item) => item.manifest.tracks.includes('hardware'))) {
       expect({ lesson: lesson.id, problems: wiringSafetyProblems(lesson.wiring!, boards) }).toEqual({ lesson: lesson.id, problems: [] });
     }
+  });
+});
+
+describe('the bill of materials covers every hardware lesson (LRN-014)', () => {
+  it('has enough of every part for the union of the wiring of all hardware lessons, on both learner boards', () => {
+    const { kit, boards } = loadLearnerBoards();
+    const lessons = loadLessonPackages().packages.flatMap((lesson) => (lesson.wiring ? [{ id: lesson.id, wiring: lesson.wiring }] : []));
+    expect(bomProblems(kit!.bom, lessons, boards)).toEqual([]);
   });
 });
