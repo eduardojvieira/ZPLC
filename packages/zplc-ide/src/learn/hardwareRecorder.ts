@@ -21,6 +21,8 @@ export interface RecordOptions {
   wait(ms: number): Promise<void>;
   /** Aborted when the learner says the run is done. */
   signal?: AbortSignal;
+  /** Called with the trace so far after every sample, so that a caller can follow the run and end it through `signal`. */
+  onSample?(trace: readonly HardwareSample[]): void;
 }
 
 export type Recording =
@@ -51,6 +53,7 @@ export async function recordHardwareTrace(session: RecorderSession, variables: r
     try { read = await session.readWatchVariables(variables.map((variable) => ({ ...variable }))); } catch { return { ok: false, reason: 'read-failed', trace }; }
     const elapsed = options.now() - start;
     trace.push({ atMs: Math.round(elapsed), values: valuesOf(read) });
+    options.onSample?.(trace);
     if (options.signal?.aborted || trace.length >= MAX_SAMPLES || elapsed + options.intervalMs > options.durationMs) return { ok: true, trace };
     await options.wait(options.intervalMs);
     if (options.signal?.aborted) return { ok: true, trace };
