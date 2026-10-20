@@ -312,15 +312,13 @@ de la versión (`scripts/release/firmware-images.ts`) rechaza una compilación c
 configuración u opciones la nombran. `--no-watchdog-build` imprime el comando
 sin la opción, y el paso del watchdog falla y dice por qué.
 
-El paso de RETAIN necesita una imagen compilada con
-`-DCONFIG_ZPLC_RETAIN_PERSIST=y`. La persistencia de RETAIN está desactivada en
-cada perfil que se distribuye hasta que una placa tenga un registro de hardware,
-y el comando que se imprime todavía no agrega la opción, así que con esa imagen
-el paso falla y dice que la imagen no puede conservar RETAIN. En la Pico la
-opción ni siquiera compila con la partición de almacenamiento de 64 KB y el
-tamaño de código de 24 KB del perfil: la comprobación de almacenamiento de la
-compilación (RT-029) la detiene, porque no caben dos ranuras de programa, los
-dos registros de RETAIN y un sector de reserva.
+La imagen HIL también activa la persistencia de RETAIN
+(`CONFIG_ZPLC_RETAIN_PERSIST`), que los perfiles que se distribuyen mantienen
+desactivada hasta que una placa tenga su registro de hardware, para que el paso
+de RETAIN pueda medirla. Con una imagen sin ella el paso falla y dice que la
+imagen no puede conservar RETAIN. La Pico y la RP2040-Zero tienen una partición
+de almacenamiento de 128 KB, que guarda las dos ranuras de programa, los dos
+registros de RETAIN y un sector de reserva (RT-029).
 
 La grabación la hace usted. La Pico: mantenga presionado BOOTSEL mientras
 conecta el cable USB y copie `zephyr.uf2` a la unidad RPI-RP2. La ESP32-S3:

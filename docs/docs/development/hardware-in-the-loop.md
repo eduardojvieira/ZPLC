@@ -283,13 +283,12 @@ release image: the release collection (`scripts/release/firmware-images.ts`) ref
 a build whose configuration or options name it. `--no-watchdog-build` prints
 the plain command, and the watchdog step then fails and says why.
 
-The RETAIN step needs an image built with `-DCONFIG_ZPLC_RETAIN_PERSIST=y`.
-RETAIN persistence is off in every shipped profile until a board has a hardware
-record, and the printed command does not add the option yet, so on such an
-image the step fails and says that the image cannot keep RETAIN. On the Pico
-the option does not build at all with the profile's 64 KB storage partition and
-24 KB code size: the storage check of the build (RT-029) stops it, because two
-program slots, the two RETAIN records and a spare sector do not fit.
+The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`),
+which the shipped profiles keep off until a board has its hardware record, so
+that the RETAIN step can measure it. On an image without it the step fails and
+says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
+128 KB storage partition, which holds the two program slots, the two RETAIN
+records and a spare sector (RT-029).
 
 Flashing is yours. The Pico: hold BOOTSEL while you plug in the USB cable and
 copy `zephyr.uf2` to the RPI-RP2 drive. The ESP32-S3: `esptool --chip esp32s3

@@ -148,11 +148,19 @@ was traced to its cause, and the step was run again on the emulator after the fi
 
 | Step | What the record said | Cause | Fix |
 |---|---|---|---|
-| Power cycle and RETAIN (both boards) | RETAIN 102 before the power cycle, 0 after | The images had no RETAIN persistence: `CONFIG_ZPLC_RETAIN_PERSIST` is off in every shipped profile until a board has a hardware record, and on the Pico it does not fit the 64 KB storage partition (the build stops). With the option on, the ESP32-S3 image kept the value (16 before and after), and so did a Pico image built for the test with a 128 KB storage partition (101 before and after) | The step checks the image's option and says why it cannot pass. Open: the HIL build must turn the option on, and the Pico needs a larger storage partition |
+| Power cycle and RETAIN (both boards) | RETAIN 102 before the power cycle, 0 after | The images had no RETAIN persistence: `CONFIG_ZPLC_RETAIN_PERSIST` is off in every shipped profile until a board has a hardware record, and on the Pico it does not fit the 64 KB storage partition (the build stops). With the option on, the ESP32-S3 image kept the value (16 before and after), and so did a Pico image built for the test with a 128 KB storage partition (101 before and after) | The step checks the image's option and says why it cannot pass. The HIL image turns the option on, and the Pico and the RP2040-Zero keep a 128 KB storage partition: the Pico's HIL image kept the value (102 before and after) |
 | Overrun (both boards) | `vm_fault` with VM error 8, not `deadline_miss`; outputs off | The step's loop ran 104,000 VM instructions in one scan, past the budget of 100,000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), so the runtime latched its VM watchdog fault, as designed | The step sizes the loop to half the budget the image reports; both boards then latch `deadline_miss` after three late scans, outputs off |
 | Fieldbus exchange (Pico) | No request reached the host, error 10 | The device's Modbus RTU client is off by default and starts at boot only, so the block failed at once with `UNAVAILABLE`. The host side of the line was also opened at 115200 baud, while the device runs 19200 | The step turns the client on at 19200 baud, stores it and restarts the board; the emulated exchange read 0x5A17 |
-| Deploy (ESP32-S3) | "Not in loading state" after a chunk was sent again | The loader refused the fixture with `ZPLC_LOADER_ERR_MEMORY` (-13): the chain compiles the fixtures for 8 KB of work memory, and the ESP32-S3 has 2 KB. The tester then sent the last chunk again, to a load that had ended. A board does the same | Open: the chain must compile the fixtures for the board, and the tester must not resend a refused chunk |
+| Deploy (ESP32-S3) | "Not in loading state" after a chunk was sent again | The loader refused the fixture with `ZPLC_LOADER_ERR_MEMORY` (-13): the chain compiles the fixtures for 8 KB of work memory, and the ESP32-S3 has 2 KB. The tester then sent the last chunk again, to a load that had ended. A board does the same | The chain compiles the fixtures for the board, and the tester raises the device's refusal instead of sending the chunk again. The ESP32-S3 bench also gives programs ten times the host time, for QEMU's slow clock: the deploy and the six blink fixtures then pass |
 | Fatal fault (ESP32-S3) | Still running, no fault, after 1 s | The fault path works on Xtensa (division by zero, VM error 3, outputs off), but on QEMU's slow clock one second of the host was not enough for the 21 scans the program needs | The fault steps wait for the fault, up to 10 s; QEMU latched it after 1.4 s of host time and 21 scans |
+
+Running the RETAIN step on the Pico's HIL image found one more defect: the image refused every START ("Scheduler
+start failed (-3)"), because the scheduler armed only the devicetree's chosen `zephyr,watchdog`, which no board of
+this repository sets. It now arms the board's `watchdog0` alias when nothing is chosen, and an image with the
+hardware watchdog and neither node does not build.
+
+On rp2040js the blink fixtures count output changes by reading the outputs over the shell, and from one run to the
+next a different one sees too few changes: they are not evidence on this emulator either way.
 
 ## Licenses
 
