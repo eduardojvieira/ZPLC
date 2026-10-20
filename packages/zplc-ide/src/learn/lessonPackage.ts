@@ -70,14 +70,30 @@ export const HARDWARE_READ_BUDGET_MS = 20;
 export const HARDWARE_SAMPLE_PERIOD_MS = HARDWARE_SAMPLE_INTERVAL_MS + HARDWARE_READ_BUDGET_MS;
 
 /**
- * LRN-024: the time tolerance of a hardware lesson covers one sampling period of the check and one scan of the lesson's
- * program (the interval of its slowest task), or the check can fail a correct program: an output can change up to a scan
- * after its input, and be read up to a period later still.
+ * The jitter margin of a device trace (LRN-024): what separates a board's scan grid from the simulation's, besides the scan
+ * itself. The trace stamps a scan with the HAL tick at its input latch, in whole milliseconds (up to 1 ms); a release of the
+ * Zephyr scheduler is late by its kernel tick and the work queue's wake-up (about 1 ms on both learner boards); and the
+ * output of a scan is committed, and stamped as seen, after the scan has run (well under a millisecond for a lesson program,
+ * and never more than the deadline, which the scheduler latches as a fault). 10 ms covers these several times over and is a
+ * whole number of scans of the lessons' 10 ms task. It is derived, not measured: no board was attached where it was written,
+ * and the scan-jitter record of HIL-010 is what will confirm or replace it.
+ */
+export const DEVICE_TRACE_JITTER_MS = 10;
+
+/**
+ * LRN-024: the time tolerance a hardware lesson declares is the one of a board that keeps a device trace: one scan of the
+ * lesson's program (the interval of its slowest task), since an output can change up to a scan after its input, plus the
+ * jitter margin. A board without the device trace is read by polling, and its check widens the declared tolerance by the
+ * difference between a polling period and that margin (`pollingTimeToleranceMs`): one sampling period plus one scan for a
+ * lesson that declares the least it may.
  */
 export function hardwareToleranceProblems(timeMs: number, scanMs: number): string[] {
-  const least = HARDWARE_SAMPLE_PERIOD_MS + scanMs;
-  return timeMs >= least ? [] : [`manifest.hardware.tolerances.timeMs: ${timeMs} ms is less than one sampling period of the hardware check (${HARDWARE_SAMPLE_PERIOD_MS} ms) plus one scan of the program (${scanMs} ms); it must be at least ${least} ms`];
+  const least = scanMs + DEVICE_TRACE_JITTER_MS;
+  return timeMs >= least ? [] : [`manifest.hardware.tolerances.timeMs: ${timeMs} ms is less than one scan of the program (${scanMs} ms) plus the jitter margin of a device trace (${DEVICE_TRACE_JITTER_MS} ms); it must be at least ${least} ms`];
 }
+
+/** The time tolerance of a check recorded by polling, for a lesson that declares `timeMs` (see hardwareToleranceProblems). */
+export const pollingTimeToleranceMs = (timeMs: number): number => timeMs + HARDWARE_SAMPLE_PERIOD_MS - DEVICE_TRACE_JITTER_MS;
 
 export interface LessonManifest {
   schemaVersion: typeof LESSON_SCHEMA_VERSION;

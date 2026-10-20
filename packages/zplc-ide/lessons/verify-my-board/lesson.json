@@ -46,7 +46,7 @@
   "hardware": {
     "wiring": "wiring.json",
     "tolerances": {
-      "timeMs": 130,
+      "timeMs": 20,
       "analogPercent": 5
     }
   }

@@ -101,3 +101,19 @@ describe('the hardware recorder starts no physical operation (LRN-015)', () => {
     expect(new Set(failing.calls)).toEqual(new Set(['readWatchVariables']));
   });
 });
+
+describe('the polling recorder with "arm, then the learner presses Run" (LRN-024)', () => {
+  it('LRN-024 waits while the program is stopped and makes the first sample of the run time 0', async () => {
+    const waiting = fakeSession(true, 'idle', (read) => ({ Start: false, Motor: read >= 1, Level: read }));
+    const time = clock();
+    const recording = await recordHardwareTrace(waiting.session, VARIABLES, {
+      durationMs: 1000, intervalMs: 100, awaitRun: true, now: time.now,
+      wait: async (ms) => { await time.wait(ms); if (time.now() >= 1300) (waiting.session as { state: VMState }).state = 'running'; },
+      signal: AbortSignal.timeout(60_000),
+    });
+    expect(recording.ok).toBe(true);
+    expect(recording.trace[0]).toEqual({ atMs: 0, values: { Start: false, Motor: false, Level: 0 } });
+    expect(recording.trace[1]!.atMs).toBe(100);
+    expect(waiting.calls[0]).toBe('readWatchVariables'); // nothing was read, or driven, while the program was stopped
+  });
+});

@@ -23,6 +23,11 @@ export interface RecordOptions {
   signal?: AbortSignal;
   /** Called with the trace so far after every sample, so that a caller can follow the run and end it through `signal`. */
   onSample?(trace: readonly HardwareSample[]): void;
+  /**
+   * "Arm, then the learner presses Run": wait while the program is stopped, and make time 0 the first sample read once it
+   * runs. That sample follows the start by at most one sampling period, which the polling tolerance covers.
+   */
+  awaitRun?: boolean;
 }
 
 export type Recording =
@@ -43,8 +48,15 @@ function valuesOf(read: readonly WatchVariable[]): HardwareSample['values'] {
 
 export async function recordHardwareTrace(session: RecorderSession, variables: readonly WatchVariable[], options: RecordOptions): Promise<Recording> {
   const trace: HardwareSample[] = [];
-  const start = options.now();
+  const begun = options.now();
+  let start = begun;
   for (;;) {
+    if (options.awaitRun && trace.length === 0 && session.connected && session.state !== 'running') {
+      if (options.signal?.aborted || options.now() - begun > options.durationMs) return { ok: true, trace };
+      await options.wait(options.intervalMs);
+      start = options.now();
+      continue;
+    }
     if (!session.connected || session.state !== 'running') {
       if (trace.length > 0) return { ok: false, reason: 'session-ended', trace };
       return { ok: false, reason: session.connected ? 'not-running' : 'not-connected', trace };

@@ -16,6 +16,11 @@
  *     must hold throughout (FOR, the body of UNTIL) shrinks by `timeMs` at both ends. ALWAYS and NEVER cover the trace up
  *     to the moved end of the scenario.
  *  4. An assertion whose time depends on an event that was never observed fails with nothing observed.
+ *  5. Start anchor ("arm, then the learner presses Run"). When the trace begins at the first scan of a run, its time 0 is
+ *     the program's start, as in simulation, so the times before the first input event the learner makes are read where the
+ *     scenario puts them: the blink of a program is aligned with its start. The input events at scenario time 0 are the
+ *     state of the inputs at the start; they are taken at trace time 0 and not searched for, so a button held at the start
+ *     does not shift the rest of the scenario: the assertions see the input the program saw.
  *
  * The scenario format holds boolean conditions only, so `analogPercent` has nothing to compare yet; it is carried so that
  * the tolerances the lesson declares reach the check unchanged.
@@ -37,11 +42,15 @@ const matches = (condition: Record<string, boolean>, values: HardwareSample['val
 
 const eventsOf = (scenario: ScenarioFile) => [...scenario.events].sort((left, right) => left.atMs - right.atMs);
 
-/** Where each input event of the scenario, in time order, was observed in the trace (its sample's `atMs`); null when it was not. */
-export function alignEvents(scenario: ScenarioFile, trace: Trace): Array<number | null> {
+/**
+ * Where each input event of the scenario, in time order, was observed in the trace (its sample's `atMs`); null when it was
+ * not. In an anchored trace (time 0 is the start of the run) the events at scenario time 0 are taken at its first sample.
+ */
+export function alignEvents(scenario: ScenarioFile, trace: Trace, anchored = false): Array<number | null> {
   const observed: Array<number | null> = [];
   let from = 0;
   for (const event of eventsOf(scenario)) {
+    if (anchored && event.atMs === 0) { observed.push(trace.length > 0 ? trace[0]!.atMs : null); continue; }
     const index = from < 0 ? -1 : trace.findIndex((sample, position) => position >= from && matches(event.set, sample.values));
     observed.push(index < 0 ? null : trace[index]!.atMs);
     from = index;
@@ -49,9 +58,9 @@ export function alignEvents(scenario: ScenarioFile, trace: Trace): Array<number 
   return observed;
 }
 
-export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tolerances: HardwareTolerances, traceSha256: string): HardwareResult {
+export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tolerances: HardwareTolerances, traceSha256: string, anchored = false): HardwareResult {
   const events = eventsOf(scenario);
-  const observed = alignEvents(scenario, trace);
+  const observed = alignEvents(scenario, trace, anchored);
   const slack = tolerances.timeMs;
   /** A scenario time moved onto the trace through the input event it depends on; null when that event was not observed. */
   const moved = (atMs: number): number | null => {
@@ -142,11 +151,13 @@ export interface HardwareGradeInput {
   trace: Trace;
   traceSha256: string;
   tolerances: HardwareTolerances;
+  /** Time 0 of the trace is the first scan of the run (rule 5). */
+  anchored?: boolean;
 }
 
 /** The grade of a hardware run: track `hardware`, so the progress store keeps it apart from a simulation pass (LRN-024). */
 export function hardwareGradeRecordOf(input: HardwareGradeInput): GradeRecord {
-  const result = evaluateHardwareTrace(input.scenario, input.trace, input.tolerances, input.traceSha256);
+  const result = evaluateHardwareTrace(input.scenario, input.trace, input.tolerances, input.traceSha256, input.anchored);
   return {
     schemaVersion: 1,
     lessonId: input.lessonId,

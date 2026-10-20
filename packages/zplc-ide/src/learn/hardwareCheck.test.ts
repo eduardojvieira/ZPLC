@@ -1,6 +1,7 @@
 // The hardware check of a lesson (LRN-024, LRN-026): the reference scenario evaluated on a trace recorded from a board, with the
 // lesson's tolerances, aligned on the input events the learner produced by hand. Every trace here is SYNTHETIC: it is built by
 // the helper below to look like what a board would report, and no board was involved in these tests.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'bun:test';
 
 import { parseGradeRecord } from '../../electron/learnProgressModel';
@@ -118,5 +119,57 @@ describe('the grade of a hardware check is labelled a hardware run (LRN-024)', (
     });
     expect(failed).toMatchObject({ track: 'hardware', result: 'failed', assertions: { total: 5, passed: 4 } });
     expect(parseGradeRecord(failed)).toEqual(failed);
+  });
+});
+
+// Start alignment (rule 5): the two lessons whose assertions depend on when the program started. Each trace is a SYNTHETIC
+// device trace, one sample per 10 ms scan with a few ms of jitter, of the lesson's reference program: Blink changes state
+// when a 500 ms TON elapses and the timer restarts on the next scan (so at 500, 1010, 1520 ms), and verify-my-board also
+// lights its LEDs while the button is held. No board was involved.
+const lessonScenario = (id: string): ScenarioFile =>
+  JSON.parse(readFileSync(new URL(`../../lessons/${id}/scenario.json`, import.meta.url), 'utf8')) as ScenarioFile;
+const blinkAt = (programMs: number): boolean => {
+  let toggles = 0;
+  for (let at = 500; at <= programMs; at += 510) toggles += 1;
+  return toggles % 2 === 1;
+};
+const DEVICE_TRACE = { timeMs: 20, analogPercent: 5 };
+
+/** Scans from `startMs` of program time on, re-zeroed at the first one: what a device trace armed then gives. */
+function deviceTrace(startMs: number, endMs: number, values: (programMs: number) => HardwareSample['values']): HardwareSample[] {
+  const samples: HardwareSample[] = [];
+  for (let programMs = startMs; programMs <= endMs; programMs += 10) samples.push({ atMs: programMs - startMs + ((programMs / 10) % 3), values: values(programMs) });
+  return samples;
+}
+
+describe('the hardware check aligns a trace that starts with the run (LRN-024)', () => {
+  const button = (programMs: number) => programMs >= 1170 && programMs < 1370;
+  const verifyBoard = (programMs: number) => {
+    const led = blinkAt(programMs) || button(programMs);
+    return { 'VerifyBoard.Button': button(programMs), 'VerifyBoard.Led': led, 'VerifyBoard.OnBoardLed': led };
+  };
+  const blinky = (programMs: number) => ({ 'Blinky.LED_Output': blinkAt(programMs) });
+
+  it('LRN-024 passes verify-my-board on a trace whose time 0 is the first scan after Run, at the device-trace tolerance', () => {
+    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(0, 1700, verifyBoard), DEVICE_TRACE, HASH, true);
+    expect(result.failures).toEqual([]);
+    expect(result.passed).toBe(true);
+  });
+
+  it('LRN-024 cannot align verify-my-board on a trace of a program that was already running', () => {
+    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(330, 2030, verifyBoard), DEVICE_TRACE, HASH);
+    expect(result.passed).toBe(false);
+    expect(result.failures.map((failure) => failure.index)).toContain(1); // AT 750: the blink is out of phase
+  });
+
+  it('LRN-024 passes blinky-ladder-timer-feedback from the start of the run, and not from the middle of it', () => {
+    expect(evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(0, 1900, blinky), DEVICE_TRACE, HASH, true).passed).toBe(true);
+    expect(evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(240, 2140, blinky), DEVICE_TRACE, HASH).passed).toBe(false);
+  });
+
+  it('LRN-024 takes the inputs at scenario time 0 from the start of an anchored run: a button held at Run does not shift the scenario', () => {
+    const held = (programMs: number) => ({ ...verifyBoard(programMs), 'VerifyBoard.Button': programMs < 60 || button(programMs), 'VerifyBoard.Led': blinkAt(programMs) || programMs < 60 || button(programMs) });
+    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 1700, held), true)[0]).toBe(0);
+    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 1700, held))[0]).toBeGreaterThanOrEqual(60);
   });
 });
