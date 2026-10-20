@@ -1461,6 +1461,13 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* COM-020: a force from the console belongs to a session, like one from a frame. `begin` takes the device link's
+ * lock (and, to set a force, opens or joins the session of the shell's link); `end` tells the engine what changed and
+ * gives the lock back. Defined with the device link below. */
+#include <zplc_proto.h>
+static int console_force_begin(const struct shell *sh, bool lease);
+static void console_force_end(uint8_t change, uint16_t address, bool changed);
+
 static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
   char *endptr;
   unsigned long addr;
@@ -1485,8 +1492,13 @@ static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
+  rc = console_force_begin(sh, true);
+  if (rc != 0) {
+    return rc;
+  }
 #ifdef CONFIG_ZPLC_SCHEDULER
   if (zplc_sched_lock(5) != 0) {
+    console_force_end(0U, 0U, false);
     shell_error(sh, "ERROR: Could not acquire scheduler lock");
     return -EBUSY;
   }
@@ -1500,6 +1512,7 @@ static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
 #endif
+  console_force_end((uint8_t)ZPLC_PROTO_FORCE_CHANGE_SET, (uint16_t)addr, rc == 0);
 
   if (rc == -2) {
     shell_error(sh, "ERROR: Address range out of bounds");
@@ -1538,8 +1551,10 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
     return -EINVAL;
   }
 
+  (void)console_force_begin(sh, false); /* a release needs no session: it only gives the outputs back to the program */
 #ifdef CONFIG_ZPLC_SCHEDULER
   if (zplc_sched_lock(5) != 0) {
+    console_force_end(0U, 0U, false);
     shell_error(sh, "ERROR: Could not acquire scheduler lock");
     return -EBUSY;
   }
@@ -1553,6 +1568,7 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
 #endif
+  console_force_end((uint8_t)ZPLC_PROTO_FORCE_CHANGE_CLEARED, (uint16_t)addr, rc == 0);
 
   if (rc != 0) {
     shell_error(sh, "ERROR: Force entry not found at 0x%04lX", addr);
@@ -1568,8 +1584,10 @@ static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
+  (void)console_force_begin(sh, false);
 #ifdef CONFIG_ZPLC_SCHEDULER
   if (zplc_sched_lock(5) != 0) {
+    console_force_end(0U, 0U, false);
     shell_error(sh, "ERROR: Could not acquire scheduler lock");
     return -EBUSY;
   }
@@ -1583,6 +1601,7 @@ static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
 #endif
+  console_force_end((uint8_t)ZPLC_PROTO_FORCE_CHANGE_CLEARED_ALL, 0U, true);
 
   shell_print(sh, "OK: Cleared all force entries");
   return 0;
@@ -4012,6 +4031,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
 #include <zplc_crc32.h>
 #include <zplc_proto_dev.h>
 #include <zplc_sha256.h>
+#include <zephyr/drivers/uart.h>
 #if defined(CONFIG_CSPRNG_ENABLED)
 #include <zephyr/random/random.h>
 #endif
@@ -4499,11 +4519,26 @@ static int link_write(void *context, const uint8_t *frame, size_t length) {
   return 0;
 }
 
+/* COM-020: the line under the shell's link, where its driver reports one. On a USB CDC ACM console (the Raspberry Pi
+ * Pico) DTR falls when the host closes the port and when the cable goes (the driver clears the line state on a USB
+ * reset or disconnect): the session ends at once and its forces are released. A console that reports no line (a
+ * plain UART, the ESP32-S3 USB-Serial/JTAG controller, native_sim) keeps the idle time as its one end. */
+static void link_watch_line(void) {
+#if defined(CONFIG_UART_LINE_CTRL) && DT_HAS_CHOSEN(zephyr_shell_uart)
+  uint32_t dtr = 0U;
+
+  if (uart_line_ctrl_get(DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart)), UART_LINE_CTRL_DTR, &dtr) == 0) {
+    zplc_proto_link_line(&link_shell_link, dtr != 0U ? 1 : 0);
+  }
+#endif
+}
+
 static void link_service(struct k_work *work) {
   zplc_proto_link_t *links[1] = {&link_shell_link};
 
   ARG_UNUSED(work);
   if (k_mutex_lock(&link_mutex, K_MSEC(5)) == 0) {
+    link_watch_line();
     zplc_proto_dev_service(&link_dev, links, 1U);
     k_mutex_unlock(&link_mutex);
   }
@@ -4590,6 +4625,49 @@ static int cmd_link(const struct shell *sh, size_t argc, char **argv) {
   }
   zplc_secure_zero(frame, sizeof(frame));
   return rc == 0 ? 0 : -EINVAL;
+}
+
+/* The console is the person at the shell's link: a force it sets opens or joins that link's session (a lease with the
+ * idle, close, takeover and line-loss rules of every session), and ends with it. A release needs no session. */
+static int console_force_begin(const struct shell *sh, bool lease) {
+  int rc;
+
+  k_mutex_lock(&link_mutex, K_FOREVER);
+  if (!lease) {
+    return 0;
+  }
+  link_start();
+  rc = zplc_proto_session_lease(&link_shell_link);
+  if (rc != 0) {
+    k_mutex_unlock(&link_mutex);
+    shell_error(sh, "ERROR: A force needs the session of this link, and another link holds it (COM-020)");
+    return -EBUSY;
+  }
+  return 0;
+}
+
+static void console_force_end(uint8_t change, uint16_t address, bool changed) {
+  if (changed && link_started) {
+    zplc_proto_session_force_changed(&link_shell_link, change, address);
+  }
+  k_mutex_unlock(&link_mutex);
+}
+
+#elif defined(CONFIG_ZPLC_SCHEDULER) /* the force commands without the device link */
+
+/* No device link, no session: a force is refused (COM-020); a release is always allowed. */
+static int console_force_begin(const struct shell *sh, bool lease) {
+  if (lease) {
+    shell_error(sh, "ERROR: A force needs a session, and this image has no device link (CONFIG_ZPLC_DEVICE_LINK)");
+    return -ENOTSUP;
+  }
+  return 0;
+}
+
+static void console_force_end(uint8_t change, uint16_t address, bool changed) {
+  ARG_UNUSED(change);
+  ARG_UNUSED(address);
+  ARG_UNUSED(changed);
 }
 
 #endif /* CONFIG_ZPLC_DEVICE_LINK */
