@@ -4963,6 +4963,86 @@ static void test_posix_hal_lifecycle_clears_tick_override(void)
     (void)zplc_hal_shutdown();
 }
 
+/* LRN-024: the session keeps the per-scan I/O trace a board keeps, behind trace.arm, trace.status, trace.read and
+ * trace.clear, so that Studio's device-trace recorder can be tested end to end against this runtime. */
+static uint32_t trace_clock_now_ms;
+
+static uint32_t trace_clock(void)
+{
+    return trace_clock_now_ms;
+}
+
+static void test_io_trace_requests(void)
+{
+    zplc_native_runtime_session_t session;
+    char request[4096];
+    char response[8192];
+    char event[8192];
+    uint8_t program[16];
+    char program_hex[512];
+    size_t length = 0U;
+
+    printf("\n=== Test: the session keeps the per-scan I/O trace (LRN-024) ===\n");
+    length = emit_mem8(program, length, OP_LOAD8, ZPLC_MEM_IPI_BASE);
+    length = emit_mem8(program, length, OP_STORE8, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    bytecode_to_task_hex(program, length, program_hex, sizeof(program_hex));
+
+    zplc_native_runtime_session_init(&session);
+    session.clock_ms = trace_clock;
+    trace_clock_now_ms = 0U;
+    snprintf(request, sizeof(request),
+             "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             program_hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"ts\",\"type\":\"request\",\"method\":\"trace.status\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"available\":true,\"armed\":false", "trace.status: available, not armed");
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"bad\",\"type\":\"request\",\"method\":\"trace.arm\",\"params\":{\"capacity\":0,\"in_bytes\":33,\"out_bytes\":1}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"code\":\"INVALID_REQUEST\"", "trace.arm refuses more bytes than a sample holds");
+
+    trace_clock_now_ms = 50U;
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"arm\",\"type\":\"request\",\"method\":\"trace.arm\",\"params\":{\"capacity\":0,\"in_bytes\":1,\"out_bytes\":1}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"armed\":true", "trace.arm arms the trace in STOP");
+    TEST_ASSERT_CONTAINS(response, "\"in_bytes\":1,\"out_bytes\":1,\"written\":0", "trace.arm reports its shape");
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    trace_clock_now_ms = 100U;
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"w\",\"type\":\"request\",\"method\":\"memory.write\",\"params\":{\"address\":0,\"bytes_hex\":\"05\"}}",
+        response, sizeof(response), event, sizeof(event));
+    trace_clock_now_ms = 200U;
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"r\",\"type\":\"request\",\"method\":\"trace.read\",\"params\":{\"from\":0,\"count\":8}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"from\":0,\"next\":2,\"samples\":[[50000,1,\"00\",\"00\"],[150000,2,\"05\",\"05\"]]",
+                         "trace.read gives each scan: time from the arm, its number in the run, inputs, outputs");
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"r2\",\"type\":\"request\",\"method\":\"trace.read\",\"params\":{\"from\":1,\"count\":0}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"code\":\"INVALID_REQUEST\"", "trace.read refuses a count of 0");
+
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"c\",\"type\":\"request\",\"method\":\"trace.clear\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"armed\":false,\"capacity\":0", "trace.clear disarms the trace");
+    TEST_ASSERT(zplc_opi_read8(0U) == 5U, "the trace changed nothing the program does");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 int main(void)
 {
     TEST_ASSERT(mkdtemp(test_persist_root) != NULL,
@@ -4973,6 +5053,7 @@ int main(void)
     if (fail_count != 0) { remove_test_persist_root(); return 1; }
 
     test_handshake();
+    test_io_trace_requests();
     test_load_start_tick_status_reset_shutdown();
     test_maximum_force_table_serialization();
     test_execution_step();

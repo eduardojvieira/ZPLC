@@ -13,6 +13,7 @@
 #include <zplc_core.h>
 #include <zplc_loader.h>
 #include <zplc_sched_core.h>
+#include <zplc_io_trace.h>
 
 /*
  * Sizes of the lines the POSIX host reads and writes on stdio (see main.c).
@@ -33,6 +34,11 @@
 #define ZPLC_NATIVE_REQUEST_MAX ((ZPLC_MEM_CODE_SIZE * 2U) + ZPLC_NATIVE_REQUEST_ENVELOPE_MAX)
 #define ZPLC_NATIVE_RESPONSE_MAX 8192U
 #define ZPLC_NATIVE_EVENT_MAX 8192U
+
+/* LRN-024: bytes of the session's I/O trace ring (see zplc_io_trace.h); a board's ring is CONFIG_ZPLC_IO_TRACE_BUFFER_SIZE. */
+#define ZPLC_NATIVE_IO_TRACE_BYTES 16384U
+/* The most samples one trace.read returns, so that a response stays one line under ZPLC_NATIVE_RESPONSE_MAX. */
+#define ZPLC_NATIVE_IO_TRACE_READ_MAX 32U
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,6 +137,13 @@ typedef struct {
     zplc_sched_core_t core;
     /* Milliseconds clock that times a scan; NULL means zplc_hal_tick(). A test sets it to let time pass inside a scan. */
     uint32_t (*clock_ms)(void);
+    /*
+     * LRN-024: the per-scan trace of the I/O images a board keeps, fed by the core at the end of each scan and read
+     * with trace.read, so that Studio's device-trace recorder can be tested against this runtime. Timestamps come
+     * from the clock above.
+     */
+    zplc_io_trace_t io_trace;
+    uint8_t io_trace_storage[ZPLC_NATIVE_IO_TRACE_BYTES];
     uint8_t program[ZPLC_MEM_CODE_SIZE];
 } zplc_native_runtime_session_t;
 
