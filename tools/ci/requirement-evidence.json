@@ -2963,7 +2963,8 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/memory.test.ts","test":"HIL cases: memory opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
-    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"}
+    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"}
   ],
   "HIL-002": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
@@ -3027,6 +3028,7 @@
   ],
   "HIL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal"},
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-012: the chain says how long it takes, about 30 minutes on a person's bench"},
     {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record"}
@@ -3038,6 +3040,7 @@
     {"kind":"py-test","ref":"tools/hil/test_hil_trace_profile.py","test":"HIL-013: no shipped board profile turns the HIL trace on; it comes from the HIL overlay"}
   ],
   "HIL-015": [
+    {"kind":"c-test","ref":"firmware/tests/app_native_emulation/module/emu_shell.c","test":"same program can be compared with the emulated Pico (HIL-015). It is never compiled"},
     {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true}
   ],
   "HIL-016": [
