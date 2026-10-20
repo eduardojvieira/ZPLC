@@ -37,6 +37,7 @@ export const LESSON_IDS = [
   "analog-scaling-fbd",
   "interlock-reversing-ladder",
   "function-block-valves-fbd",
+  "modbus-coil-fbd",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

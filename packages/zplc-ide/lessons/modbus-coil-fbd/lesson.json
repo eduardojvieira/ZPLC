@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "modbus-coil-fbd",
+  "version": 1,
+  "order": 33,
+  "module": 10,
+  "level": "advanced",
+  "prerequisites": [
+    "modbus-register-round-trip",
+    "counter-batch-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
+        "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "coil_echo_fbd_starter",
+    "program": "src/CoilEcho.fbd.json"
+  },
+  "solution": {
+    "project": "coil_echo_fbd",
+    "program": "src/CoilEcho.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "CoilEcho",
+    "path": "tests/coil-echo.scenario.json",
+    "sha256": "58bf66c6e6f3a65f8405e91c8224be4c43d8a1c5f10ab1f5fd37324768fa44cb"
+  },
+  "regressionScenarios": []
+}

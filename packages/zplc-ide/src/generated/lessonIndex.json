@@ -5394,6 +5394,178 @@
           ]
         }
       }
+    },
+    {
+      "id": "modbus-coil-fbd",
+      "version": 1,
+      "order": 33,
+      "module": 10,
+      "level": "advanced",
+      "prerequisites": [
+        "modbus-register-round-trip",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded against a Modbus server that Studio starts inside the simulation session, and no trace of a real device or gateway has been recorded for it.",
+            "es": "La lección se califica contra un servidor Modbus que Studio inicia dentro de la sesión de simulación, y no se ha registrado una traza de un dispositivo o una pasarela reales para ella."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "coil_echo_fbd_starter",
+        "program": "src/CoilEcho.fbd.json"
+      },
+      "solution": {
+        "project": "coil_echo_fbd",
+        "program": "src/CoilEcho.fbd.json"
+      },
+      "scenario": {
+        "id": "CoilEcho",
+        "path": "tests/coil-echo.scenario.json",
+        "sha256": "58bf66c6e6f3a65f8405e91c8224be4c43d8a1c5f10ab1f5fd37324768fa44cb",
+        "tickMs": 10,
+        "durationMs": 20000,
+        "assertions": 6,
+        "canonical": "{\"durationMs\":20000,\"events\":[{\"atMs\":0,\"set\":{\"CoilEcho.Send\":false}},{\"atMs\":10,\"set\":{\"CoilEcho.Send\":true}},{\"atMs\":10000,\"set\":{\"CoilEcho.Send\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"CoilEcho.Echo\":false,\"CoilEcho.Failed\":false,\"CoilEcho.Written\":false},\"kind\":\"AT\"},{\"condition\":{\"CoilEcho.Written\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"CoilEcho.Echo\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"CoilEcho.Failed\":false},\"kind\":\"ALWAYS\"},{\"atMs\":9990,\"condition\":{\"CoilEcho.Echo\":true,\"CoilEcho.Written\":true},\"kind\":\"AT\"},{\"atMs\":10100,\"condition\":{\"CoilEcho.Echo\":false,\"CoilEcho.Written\":false},\"kind\":\"AT\"}],\"id\":\"CoilEcho\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Modbus in Function Block Diagram: write a coil and read it back",
+          "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
+          "scope": "The Modbus server of this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+          "objectives": [
+            "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
+            "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
+              "checkpoint": "Written, Echo and Failed describe the exchange: the coil was written, the coil read back is ON, and nothing failed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Send turns ON at 10 ms and OFF at 10000 ms. Predict Written, Echo and Failed at 0 ms, while Send is ON, and after Send turns OFF. A block clears DONE when its EN falls.",
+              "checkpoint": "All three OFF at 0 ms; Written and Echo turn ON a few scans after Send and Failed stays OFF; Written and Echo are OFF again at 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done. Draw one wire, from the DONE output of Wr to the EN input of Rd, and leave the shared constants as they are.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+              "checkpoint": "The scenario is named CoilEcho and contains 6 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "The scenario does not ask for Written and Echo at one exact scan. The server answers in real time while the runtime plays simulated time faster, so it asks for each to turn ON at some moment from 10 to 9010 ms, and it holds them to the same answer at 9990 ms.",
+              "checkpoint": "Written and Echo are both ON at 9990 ms, and both are OFF again at 10100 ms because Send fell at 10000 ms, Wr cleared DONE, and so Rd lost its EN as well."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would the scenario show if Rd read coil 5 instead of coil 4, or if Wr wrote FALSE? Wire a new constant 5 to Rd.ADDR and see which assertion fails.",
+              "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Rd reads only while its EN is TRUE. Which output of Wr is TRUE once the coil has been written?"
+            },
+            {
+              "level": 2,
+              "text": "Draw a wire from Wr.DONE to Rd.EN. Do not wire Send to Rd.EN: the read could then run before the write is done."
+            }
+          ],
+          "faultCases": [
+            "The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done."
+          ]
+        },
+        "es": {
+          "title": "Modbus en diagrama de bloques de función: escribir una bobina y leerla de vuelta",
+          "summary": "Edite un diagrama de bloques de función para que MB_READ_COIL lea de vuelta la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.",
+          "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+          "objectives": [
+            "Llame a un bloque cliente Modbus en un diagrama de bloques de función, con sus entradas alimentadas desde constantes que comparten los dos bloques, para que la escritura y la lectura nombren el mismo servidor y la misma bobina.",
+            "Encadene dos solicitudes con un cable desde la salida DONE del primer bloque hasta la entrada EN del segundo."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de vuelta: Rd debe ejecutarse cuando la escritura termine.",
+              "checkpoint": "Written, Echo y Failed describen el intercambio: la bobina se escribió, la bobina leída de vuelta está en ON y nada falló."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Send pasa a ON a los 10 ms y a OFF a los 10000 ms. Prediga Written, Echo y Failed a los 0 ms, mientras Send está en ON y después de que Send pasa a OFF. Un bloque borra DONE cuando su EN cae.",
+              "checkpoint": "Las tres en OFF a los 0 ms; Written y Echo pasan a ON unos ciclos después de Send y Failed sigue en OFF; Written y Echo vuelven a OFF a los 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe la bobina 4 pero la entrada EN de Rd no está conectada, así que Rd nunca lee la bobina y Echo sigue en OFF; conecte Wr.DONE a Rd.EN para que la lectura se ejecute cuando la escritura termine. Trace un solo cable, desde la salida DONE de Wr hasta la entrada EN de Rd, y deje las constantes compartidas como están.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "checkpoint": "El escenario se llama CoilEcho y contiene 6 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "El escenario no pide Written y Echo en un ciclo exacto. El servidor responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que pide que cada una pase a ON en algún momento entre los 10 y los 9010 ms, y exige la misma respuesta a los 9990 ms.",
+              "checkpoint": "Written y Echo están en ON a los 9990 ms, y las dos vuelven a OFF a los 10100 ms porque Send cayó a los 10000 ms, Wr borró DONE y así Rd también perdió su EN."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué mostraría el escenario si Rd leyera la bobina 5 en lugar de la 4, o si Wr escribiera FALSE? Conecte una constante nueva 5 a Rd.ADDR y vea qué assertion falla.",
+              "checkpoint": "La bobina 5 nunca se escribió y se lee en OFF, así que Echo nunca pasa a ON; escribir FALSE produce lo mismo. Compartir una constante entre los dos bloques es lo que los mantiene en la misma bobina. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso debe comprobarse contra ese dispositivo."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Rd lee solo mientras su EN es TRUE. ¿Qué salida de Wr es TRUE cuando la bobina ya se escribió?"
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de Wr.DONE a Rd.EN. No conecte Send a Rd.EN: la lectura podría ejecutarse antes de que termine la escritura."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial escribe la bobina 4 pero la entrada EN de Rd no está conectada, así que Rd nunca lee la bobina y Echo sigue en OFF; conecte Wr.DONE a Rd.EN para que la lectura se ejecute cuando la escritura termine."
+          ]
+        }
+      }
     }
   ],
   "course": {

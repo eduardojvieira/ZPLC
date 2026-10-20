@@ -20,6 +20,7 @@ unlisted: true
 | --- | --- | --- | --- |
 | [Modbus TCP: escribir un registro y leerlo de vuelta](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
 | [MQTT: publicar un mensaje y recibirlo](../lessons/mqtt-publish-subscribe.md) | `mqtt-publish-subscribe` | ST | 25 |
+| [Modbus en diagrama de bloques de función: escribir una bobina y leerla de vuelta](../lessons/modbus-coil-fbd.md) | `modbus-coil-fbd` | FBD | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-10 <<< */}
 

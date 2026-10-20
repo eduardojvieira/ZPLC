@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Modbus in Function Block Diagram: write a coil and read it back",
+  "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
+  "scope": "The Modbus server of this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+  "objectives": [
+    "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
+    "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
+      "checkpoint": "Written, Echo and Failed describe the exchange: the coil was written, the coil read back is ON, and nothing failed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Send turns ON at {{t:10}} ms and OFF at {{t:10000}} ms. Predict Written, Echo and Failed at {{t:0}} ms, while Send is ON, and after Send turns OFF. A block clears DONE when its EN falls.",
+      "checkpoint": "{{v:CoilEcho.Written=false,CoilEcho.Echo=false,CoilEcho.Failed=false@0|All three OFF}} at {{t:0}} ms; Written and Echo turn ON a few scans after Send and Failed stays OFF; {{v:CoilEcho.Written=false,CoilEcho.Echo=false@10100|Written and Echo are OFF again}} at {{t:10100}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done. Draw one wire, from the DONE output of Wr to the EN input of Rd, and leave the shared constants as they are.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+      "checkpoint": "The scenario is named CoilEcho and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "The scenario does not ask for Written and Echo at one exact scan. The server answers in real time while the runtime plays simulated time faster, so it asks for each to turn ON at some moment from {{t:10}} to {{t:9010}} ms, and it holds them to the same answer at {{t:9990}} ms.",
+      "checkpoint": "Written and Echo are both ON at {{t:9990}} ms, and both are OFF again at {{t:10100}} ms because Send fell at {{t:10000}} ms, Wr cleared DONE, and so Rd lost its EN as well."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would the scenario show if Rd read coil 5 instead of coil 4, or if Wr wrote FALSE? Wire a new constant 5 to Rd.ADDR and see which assertion fails.",
+      "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Rd reads only while its EN is TRUE. Which output of Wr is TRUE once the coil has been written?"
+    },
+    {
+      "level": 2,
+      "text": "Draw a wire from Wr.DONE to Rd.EN. Do not wire Send to Rd.EN: the read could then run before the write is done."
+    }
+  ],
+  "faultCases": [
+    "The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done."
+  ]
+}
