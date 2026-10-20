@@ -2702,7 +2702,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true},
+    {"kind":"gate","ref":"docs/docs/learn/hardware-track.md","test":"No trace from a real board and no run on a physical board are part of this evidence","note":"Needs a person to run and check a hardware-track lesson's program on a physical Raspberry Pi Pico and ESP32-S3-DevKitC-1, kept as a hardware record (HIL-009). The tests and journeys prove the board choice, the wiring and the check in Studio, never a run on a board."}
   ],
   "LRN-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"LRN-014 flashes the ESP32-S3 over the port marked USB in download mode with esptool v5, then presses RST"},
@@ -2830,7 +2831,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"LRN-024 names the board and the ZPLC version the firmware reported, or null when it reported none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"the read-only board session (LRN-015, LRN-024)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true},
+    {"kind":"gate","ref":"docs/docs/learn/hardware-track.md","test":"No trace from a real board and no run on a physical board are part of this evidence","note":"Needs a hardware check evaluated on a trace recorded from a physical Raspberry Pi Pico and ESP32-S3-DevKitC-1, kept as a hardware record (HIL-009). The tests prove the check on synthetic traces and the recorder on simulated sessions only."}
   ],
   "LRN-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
@@ -2968,7 +2970,8 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
-    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"}
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a run of packages/zplc-hil on a flashed Raspberry Pi Pico or ESP32-S3 that compiles, deploys through the control protocol and observes the device with no mocked step, kept as a hardware run record (HIL-009). The describeCases tables only compile their cases, and the runner and shell-link tests and the emulated bench reach no physical device."}
   ],
   "HIL-002": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
@@ -3024,7 +3027,8 @@
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true}
+    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs hardware run records (HIL-009) of the Raspberry Pi Pico and the ESP32-S3, written by a person at the bench with run_chain.py, covering every step HIL-010 lists, from the flash by a person to the fieldbus exchange of each board. The scheduler C test, the Zephyr suites and the emulated bench prove the software legs only."}
   ],
   "HIL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/supportLevel.test.ts","test":"a report from a user is a lead and never raises the level, whatever its result (HIL-011)"},
@@ -3048,7 +3052,8 @@
   ],
   "HIL-015": [
     {"kind":"c-test","ref":"firmware/tests/app_native_emulation/module/emu_shell.c","test":"same program can be compared with the emulated Pico (HIL-015). It is never compiled"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true}
+    {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs compare_sim.py run against a physical Raspberry Pi Pico and ESP32-S3 (the comparison table of the page says 'Not run yet' for both), with every difference recorded and reflected in the simulator's capability profile. The emulation shell and the emulated bench compare against an emulated Pico, not a board."}
   ],
   "HIL-016": [
     {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)"}

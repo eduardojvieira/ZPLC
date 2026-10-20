@@ -303,6 +303,28 @@ describe('the committed evidence (VF-027)', () => {
     expect(manual.filter(({ check }) => !check.note).map(({ id }) => id)).toEqual([]);
   });
 
+  it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
+    const board = ['HIL-001', 'HIL-010', 'HIL-015', 'LRN-013', 'LRN-024'];
+    const gated = Object.entries(evidence).filter(([, checks]) => checks.some((check) => check.kind === 'gate' && check.note)).map(([id]) => id);
+    expect(gated).toEqual(expect.arrayContaining(board));
+    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
+    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
+    const { states } = coverage(full, evidence, listed);
+    expect(board.filter((id) => states.get(id) === 'covered')).toEqual([]);
+  });
+
+  it('lists every gated requirement with the evidence its gate still asks for', () => {
+    const run = Bun.spawnSync(['bun', 'tools/ci/requirement-coverage.ts', '--list'], { cwd: root.pathname });
+    expect(run.exitCode).toBe(0);
+    const out = run.stdout.toString();
+    const gates = records.filter(({ check }) => check.kind === 'gate');
+    expect(gates.length).toBeGreaterThan(0);
+    for (const { id, check } of gates) {
+      expect(out).toContain(`  ${id}! `);
+      expect(out).toContain(check.note!);
+    }
+  });
+
   it('adds up: every requirement of the index is covered, partial or uncovered', () => {
     const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
     const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
