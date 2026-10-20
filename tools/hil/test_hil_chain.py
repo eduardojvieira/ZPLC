@@ -119,6 +119,78 @@ class StartTests(QuietCase):
         self.assertIn("no_such_board", done.stderr)
 
 
+class EmulatedRehearsalTests(QuietCase):
+    """HIL-012.06: on an emulator that cannot sample the shell fast enough the blink-count fixtures are not emulable, and
+    --keep-going lets an emulated rehearsal report every step; a hardware run keeps stop-on-failure."""
+
+    class Bench:
+        level = "emulated"
+        emulator = {"name": "stub", "version": "0", "patch_sha256": None}
+
+        def __init__(self, blink_sampling):
+            self.blink_sampling = blink_sampling
+
+    class Tester:
+        def __init__(self):
+            self.ran = []
+
+        def run_fixture(self, fixture, bytecode=None):
+            self.ran.append(fixture["id"])
+            return []
+
+    def chain(self, blink_sampling=False, *extra, bench=None):
+        args = run_chain.parse(["rpi_pico", "--dry-run", "--operator", "CI", *extra])
+        chain = run_chain.Chain(args, hil_guard.PipedIo(), run_chain.find_board("rpi_pico"), bench=bench or self.Bench(blink_sampling))
+        chain.tester = self.Tester()
+        return chain
+
+    def test_blink_count_fixtures_are_not_emulable_when_the_emulator_cannot_sample_them(self):
+        chain = self.chain(False, "--only", "st.master_blinky,il.minimal")
+        chain.compiled = {"st.master_blinky": [1], "il.minimal": [1]}
+        chain.fixture_step()
+        by_id = {t["id"]: t for t in chain.record["tests"]}
+        self.assertEqual(chain.tester.ran, ["il.minimal"], "only the fixture that does not count changes runs")
+        self.assertEqual(by_id["st.master_blinky"]["result"], "skipped")
+        self.assertIn("not-emulable", by_id["st.master_blinky"]["detail"])
+
+    def test_when_every_fixture_is_a_blink_count_the_step_is_not_emulable_and_the_chain_goes_on(self):
+        chain = self.chain(False, "--only", "st.master_blinky")
+        chain.compiled = {"st.master_blinky": [1]}
+        chain.step("fixtures", "fixtures", "automatic", chain.fixture_step)
+        chain.step("after", "after", "automatic", lambda: None)
+        self.assertEqual([s["result"] for s in chain.record["steps"]], ["not-emulable", "pass"])
+        self.assertEqual(chain.tester.ran, [])
+
+    def test_an_emulator_that_samples_fast_enough_runs_the_blink_fixtures(self):
+        chain = self.chain(True, "--only", "st.master_blinky")
+        chain.compiled = {"st.master_blinky": [1]}
+        chain.fixture_step()
+        self.assertEqual(chain.tester.ran, ["st.master_blinky"])
+
+    def failing(self):
+        raise AssertionError("boom")
+
+    def test_keep_going_reports_every_step_of_an_emulated_run_and_stops_without_it(self):
+        for keep, expected in ((True, ["fail", "pass"]), (False, ["fail", "skipped"])):
+            chain = self.chain(True, *(["--keep-going"] if keep else []))
+            chain.step("one", "one", "automatic", self.failing)
+            chain.step("two", "two", "automatic", lambda: None)
+            self.assertEqual([s["result"] for s in chain.record["steps"]], expected, keep)
+
+    def test_keep_going_never_skips_past_a_failed_setup_step(self):
+        chain = self.chain(True, "--keep-going")
+        chain.step("open", "open", "automatic", self.failing)
+        chain.step("deploy", "deploy", "automatic", lambda: None)
+        self.assertEqual([s["result"] for s in chain.record["steps"]], ["fail", "skipped"])
+
+    def test_keep_going_is_refused_on_a_hardware_bench(self):
+        hardware = type("Hardware", (), {"level": "hardware"})()
+        with tempfile.TemporaryDirectory() as directory:
+            code = run_chain.main(["rpi_pico", "--keep-going", "--out", directory, "--operator", "CI"], io=ScriptedPerson(), bench=hardware, stdout=io.StringIO())
+        self.assertEqual(code, 2)
+        self.assertEqual(list(Path(directory).glob("*.json")), [])
+
+
 class DryRunTests(QuietCase):
     def chain(self, *extra):
         with tempfile.TemporaryDirectory() as directory:
