@@ -87,6 +87,25 @@ def _source_exists(source: str, root: Path | None) -> bool:
     return root is None or (root / source).is_file()
 
 
+_PIN_NAMES = (
+    # RP2040: GPn is pin n of gpio0.
+    (re.compile(r"^GP(\d+)\b"), lambda n: ("gpio0", int(n))),
+    # ESP32: GPIOn is pin n of gpio0 up to 31 and pin n - 32 of gpio1 from 32.
+    (re.compile(r"^GPIO(\d+)\b"), lambda n: ("gpio0", int(n)) if int(n) < 32 else ("gpio1", int(n) - 32)),
+    # STM32: Pxn is pin n of port x.
+    (re.compile(r"^P([A-K])(\d{1,2})\b"), lambda port, n: (f"gpio{port.lower()}", int(n))),
+)
+
+
+def gpio_of_pin_name(pin: str) -> tuple[str, int] | None:
+    """The GPIO controller label and pin that a printed pin name stands for, or None for a name of another form."""
+    for pattern, gpio in _PIN_NAMES:
+        match = pattern.match(pin)
+        if match:
+            return gpio(*match.groups())
+    return None
+
+
 def _validate_channel(channel: Any, label: str, root: Path | None) -> list[str]:
     errors: list[str] = []
     if not isinstance(channel, dict):
@@ -143,6 +162,12 @@ def _validate_channel(channel: Any, label: str, root: Path | None) -> list[str]:
                 errors.append(f"{prefix}: dt must name the GPIO controller label (dt.controller)")
             if not (_is_int(dt.get("pin")) and 0 <= dt["pin"] < 256):
                 errors.append(f"{prefix}: dt must carry the pin number on its controller (dt.pin)")
+            named = gpio_of_pin_name(channel["pin"]) if isinstance(channel["pin"], str) else None
+            if named is not None and named != (dt.get("controller"), dt.get("pin")):
+                errors.append(
+                    f"{prefix}: the pin name {channel['pin']} is {named[0]} {named[1]}, "
+                    f"not the described {dt.get('controller')} {dt.get('pin')}"
+                )
         if channel["direction"] == "output" and not (_is_int(channel.get("safe")) and channel["safe"] in (0, 1)):
             errors.append(f"{prefix}: an output needs its safe value, 0 or 1 (safe)")
     elif channel["kind"] == "analog":
@@ -291,7 +316,81 @@ def validate_manifest(boards: Any, root: Path | None = None) -> list[str]:
                 f"{label}: evidence record {ref} does not exist" for ref in entry["evidence_refs"] if not (root / ref).is_file()
             )
         errors.extend(validate_io_description(entry, root))
+        if root is not None:
+            errors.extend(devicetree_mismatches(entry, root))
         errors.extend(validate_watchdog(entry, root))
+    return errors
+
+
+_COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
+_LABELED_NODE = re.compile(r"\b([A-Za-z_]\w*)\s*:\s*[\w,.@-]+\s*\{([^{}]*)\}")
+_GPIOS = re.compile(r"\bgpios\s*=\s*<\s*&(\w+)\s+(\d+)\s*([^>]*)>")
+_ALIASES = re.compile(r"\baliases\s*\{([^{}]*)\}")
+_ALIAS = re.compile(r"([\w-]+)\s*=\s*&(\w+)\s*;")
+_OKAY_REFERENCE = re.compile(r"&(\w+)\s*\{[^{}]*\bstatus\s*=\s*\"okay\"")
+
+
+def parse_overlay(text: str) -> dict[str, Any]:
+    """The aliases, the GPIO of each labelled node and the nodes set to okay of a devicetree overlay.
+
+    ponytail: a regular-expression reading of the plain overlays of this repository (leaf nodes, no #include or
+    macros in a gpios cell); the Zephyr build stays the full check (the BUILD_ASSERTs of gen_io_table.py).
+    """
+    text = _COMMENT.sub("", text)
+    gpios = {}
+    for label, body in _LABELED_NODE.findall(text):
+        match = _GPIOS.search(body)
+        if match:
+            gpios[label] = {"controller": match.group(1), "pin": int(match.group(2)), "flags": match.group(3).strip()}
+    aliases = {name: target for block in _ALIASES.findall(text) for name, target in _ALIAS.findall(block)}
+    return {"aliases": aliases, "gpios": gpios, "okay": set(_OKAY_REFERENCE.findall(text))}
+
+
+def _overlay_of(channel: dict[str, Any], root: Path) -> dict[str, Any] | None:
+    source = channel.get("source")
+    if not isinstance(source, str) or not source.endswith(".overlay") or not (root / source).is_file():
+        return None
+    return parse_overlay((root / source).read_text())
+
+
+def overlay_binding(channel: dict[str, Any], root: Path) -> dict[str, Any] | None:
+    """The GPIO (controller, pin, flags) that the overlay a digital channel cites binds to its alias, or None."""
+    overlay = _overlay_of(channel, root)
+    alias = channel.get("dt", {}).get("alias")
+    if overlay is None or alias not in overlay["aliases"]:
+        return None
+    return overlay["gpios"].get(overlay["aliases"][alias])
+
+
+def devicetree_mismatches(board: dict[str, Any], root: Path) -> list[str]:
+    """IO-001 without a Zephyr build: each channel whose source is an overlay of the repository is defined there.
+
+    A digital channel's alias must be bound in that overlay to the described controller and pin; an analog channel's
+    converter must be set to okay there. A `zephyr:` source is left to the build.
+    """
+    name = board.get("board_id", "?")
+    errors: list[str] = []
+    for channel in board.get("io", {}).get("channels", []):
+        overlay = _overlay_of(channel, root)
+        if overlay is None or not isinstance(channel.get("dt"), dict):
+            continue
+        dt, where = channel["dt"], f"{name}: channel {channel.get('id')} ({channel.get('pin')})"
+        if channel.get("kind") == "analog":
+            if dt.get("controller") not in overlay["okay"]:
+                errors.append(f"{where}: {channel['source']} does not set the converter {dt.get('controller')} to okay")
+            continue
+        alias = dt.get("alias")
+        if alias not in overlay["aliases"]:
+            errors.append(f"{where}: {channel['source']} does not define the alias {alias}")
+            continue
+        bound = overlay["gpios"].get(overlay["aliases"][alias])
+        if bound is None:
+            errors.append(f"{where}: alias {alias} in {channel['source']} names a node without gpios")
+        elif (bound["controller"], bound["pin"]) != (dt.get("controller"), dt.get("pin")):
+            errors.append(
+                f"{where}: {channel['source']} binds {alias} to {bound['controller']} {bound['pin']}, "
+                f"the description says {dt.get('controller')} {dt.get('pin')}"
+            )
     return errors
 
 

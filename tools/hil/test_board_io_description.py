@@ -149,6 +149,79 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(any("at most 64 channels" in text for text in errors), errors)
 
 
+OVERLAY = """
+/ {
+    leds {
+        compatible = "gpio-leds";
+        led0: led_0 { gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>; };  /* GP0 */
+        led1: led_1 { gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>; };
+    };
+    keys {
+        compatible = "gpio-keys";
+        button0: button_0 { gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+    aliases {
+        led0 = &led0;
+        // led9 = &led1;
+        sw0 = &button0;
+    };
+};
+&adc { status = "okay"; };
+"""
+
+
+class DevicetreeCrossCheckTests(unittest.TestCase):
+    """IO-001: a channel names the GPIO its pin name says, and the overlay it cites binds that alias to that GPIO."""
+
+    def mismatches(self, channels: list[dict[str, object]], text: str = OVERLAY) -> list[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(text)
+            for item in channels:
+                item["source"] = "board.overlay"
+            return boards_lib.devicetree_mismatches(board(channels), Path(directory))
+
+    def test_a_pin_name_that_is_not_the_described_gpio_is_reported(self) -> None:
+        errors = errors_of([channel(pin="GP1")])
+        self.assertTrue(any("DO0" in text and "GP1" in text for text in errors), errors)
+
+    def test_an_esp32_gpio_from_32_up_is_on_the_second_controller(self) -> None:
+        errors = errors_of([channel(pin="GPIO38", dt={"alias": "led0", "controller": "gpio0", "pin": 38})])
+        self.assertTrue(any("DO0" in text and "GPIO38" in text for text in errors), errors)
+        self.assertEqual([], errors_of([channel(pin="GPIO38", dt={"alias": "led0", "controller": "gpio1", "pin": 6})]))
+
+    def test_an_stm32_port_pin_is_on_its_port_controller(self) -> None:
+        self.assertEqual([], errors_of([channel(pin="PI12 (red LED)", dt={"alias": "led0", "controller": "gpioi", "pin": 12})]))
+        errors = errors_of([channel(pin="PJ12", dt={"alias": "led0", "controller": "gpioi", "pin": 12})])
+        self.assertTrue(any("PJ12" in text for text in errors), errors)
+
+    def test_channels_that_match_their_overlay_have_no_mismatch(self) -> None:
+        self.assertEqual([], self.mismatches([channel(), channel(id="DI0", direction="input", address="%IX0.0", pin="GP15",
+                                                                    dt={"alias": "sw0", "controller": "gpio0", "pin": 15}),
+                                              analog_input()]))
+
+    def test_an_alias_the_overlay_does_not_define_is_reported(self) -> None:
+        errors = self.mismatches([channel(dt={"alias": "led9", "controller": "gpio0", "pin": 0})])
+        self.assertTrue(any("DO0" in text and "led9" in text and "board.overlay" in text for text in errors), errors)
+
+    def test_an_alias_on_another_gpio_is_reported(self) -> None:
+        errors = self.mismatches([channel(id="DO1", address="%QX0.1", pin="GP1", dt={"alias": "led0", "controller": "gpio0", "pin": 1})])
+        self.assertTrue(any("DO1" in text and "gpio0 0" in text for text in errors), errors)
+
+    def test_an_analog_input_on_a_converter_the_overlay_does_not_enable_is_reported(self) -> None:
+        errors = self.mismatches([analog_input(dt={"controller": "adc0", "channel": 3})])
+        self.assertTrue(any("AI0" in text and "adc0" in text for text in errors), errors)
+
+    def test_the_binding_carries_the_flags_of_the_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(OVERLAY)
+            button = channel(id="DI0", direction="input", address="%IX0.0", pin="GP15",
+                             dt={"alias": "sw0", "controller": "gpio0", "pin": 15}, source="board.overlay")
+            binding = boards_lib.overlay_binding(button, Path(directory))
+        self.assertEqual(("gpio0", 15), (binding["controller"], binding["pin"]))
+        self.assertIn("GPIO_PULL_UP", binding["flags"])
+        self.assertIn("GPIO_ACTIVE_LOW", binding["flags"])
+
+
 class DerivedValuesTests(unittest.TestCase):
     def test_image_extent_is_what_the_channels_need(self) -> None:
         description = board([
