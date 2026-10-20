@@ -1,7 +1,7 @@
 import { BookOpen, Copy, FlaskConical, Info, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { buildCourseView } from '../learn/course';
+import { buildCourseView, trackSupport } from '../learn/course';
 import { useLearnUi } from '../learn/learnUi';
 import { useLearnProgress } from '../learn/progressState';
 import { isFileSystemAccessSupported } from '../types';
@@ -106,6 +106,9 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const masteryCopy = mastered.has(lesson.id)
     ? t('learn.previouslyCompleted')
     : t('learn.notCompleted');
+  // A run on a board is labelled apart from the course pass, which is graded in simulation (LRN-024).
+  const passedOnHardware = progress?.lessons[lesson.id]?.hardware != null;
+  const hardwareCopy = passedOnHardware ? t('learn.hardware.lesson.passed') : trackSupport(LESSON_INDEX, lesson.id, 'hardware', locale).supported ? t('learn.hardware.lesson.notPassed') : '';
 
   return (
     <section aria-labelledby="learn-title" className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
@@ -135,7 +138,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
           />
           <p className="mt-3 break-words font-mono text-xs text-[var(--color-surface-400)]">{lesson.sourcePath} · {lesson.scenarioPath}</p>
           <p className="mt-1 text-xs leading-5 text-[var(--color-surface-400)]">{t('learn.theStarterFailsThis')}</p>
-          <p aria-label={t('learn.lessonProgress')} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}</p>
+          <p aria-label={t('learn.lessonProgress')} className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryCopy} · {mastered.size}/{lessons.length}{hardwareCopy && <> · <span data-learn-hardware-state={passedOnHardware ? 'passed' : 'not-passed'}>{hardwareCopy}</span></>}</p>
           {locked && <p role="status" data-learn-locked className="mt-1 text-xs text-[var(--color-surface-300)]">{t('learn.lockedLesson', { lessons: (lessonView?.missing ?? []).map((id) => view.titles[id] ?? id).join(', ') })}</p>}
           {progressFailed && <p role="alert" className="mt-1 text-xs text-[var(--color-accent-red)]">{t('learn.home.progressFailed')}</p>}
         </header>

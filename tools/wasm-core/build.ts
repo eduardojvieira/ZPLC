@@ -78,7 +78,7 @@ function git(...args: string[]): string | null {
 }
 
 /** The commit and the dirty flag of the tree, as the firmware identity of a CMake build reads them (REL-023). */
-function treeIdentity(): { commit: string; dirty: boolean } {
+export function treeIdentity(): { commit: string; dirty: boolean } {
   const forced = process.env.ZPLC_BUILD_COMMIT;
   const head = forced !== undefined && forced !== '' ? forced : git('rev-parse', 'HEAD');
   const commit = head !== null && /^[0-9a-f]{40}$/.test(head) ? head : 'unknown';
@@ -88,12 +88,12 @@ function treeIdentity(): { commit: string; dirty: boolean } {
   return { commit, dirty };
 }
 
-function productVersion(): string {
+export function productVersion(): string {
   return (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string }).version;
 }
 
 /** The generated header of the firmware identity, from the same template that the CMake build fills (REL-023). */
-function identityHeader(commit: string, dirty: boolean, version: string): string {
+export function identityHeader(commit: string, dirty: boolean, version: string): string {
   const options = 'build_type=wasm-freestanding';
   const optionsHash = createHash('sha256').update(options).digest('hex').slice(0, 8);
   const values: Record<string, string> = {

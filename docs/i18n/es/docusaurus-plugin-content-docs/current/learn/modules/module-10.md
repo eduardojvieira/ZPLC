@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-10. Do not edit. >>> */}
 
+Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa.
+
 - Nivel: Avanzado
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [7](./module-7.md)
@@ -18,7 +20,7 @@ unlisted: true
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Modbus TCP: escribir un registro y leerlo de vuelta](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
+| [Modbus TCP: escribir un registro y volver a leerlo](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
 | [MQTT: publicar un mensaje y recibirlo](../lessons/mqtt-publish-subscribe.md) | `mqtt-publish-subscribe` | ST | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-10 <<< */}

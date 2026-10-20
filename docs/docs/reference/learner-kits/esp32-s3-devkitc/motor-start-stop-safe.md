@@ -26,12 +26,12 @@ The wiring of the lesson [Safe motor start-stop](../../../learn/lessons/motor-st
 
 ## Wiring card
 
-1. Start: push button between GPIO0 (BOOT) (header J3 and BOOT button, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
-2. Stop: push button between GPIO18 (header J1, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
-3. Emergency stop (a practice button, not a safety device): push button between GPIO8 (header J1, DI2) and GND (GND · J1-22); the internal pull-up of the board reads it.
-4. Overload: jumper wire from GPIO9 (header J1, DI3) to GND (GND · J1-22); plugged in means on.
-5. Forward: green LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
-6. Reverse: yellow LED with a 330 Ω resistor in series, from GPIO15 (header J1, DO1) to GND (GND · J1-22).
+1. Start: push button between GPIO5 (header J1 pin 5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
+2. Stop: push button between GPIO6 (header J1 pin 6, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
+3. Emergency stop (a practice button, not a safety device): push button between GPIO7 (header J1 pin 7, DI2) and GND (GND · J1-22); the internal pull-up of the board reads it.
+4. Overload: jumper wire from GPIO8 (header J1 pin 12, DI3) to GND (GND · J1-22); plugged in means on.
+5. Forward: green LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
+6. Reverse: yellow LED with a 330 Ω resistor in series, from GPIO16 (header J1 pin 9, DO1) to GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe <<< */}
 

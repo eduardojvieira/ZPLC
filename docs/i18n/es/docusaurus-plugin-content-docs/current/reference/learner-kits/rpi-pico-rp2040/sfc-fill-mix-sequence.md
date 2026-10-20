@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en Raspberry Pi Pico (RP2040)"
+title: "Cableado: Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en Raspberry Pi Pico (RP2040)"
 sidebar_label: "sfc-fill-mix-sequence"
-description: "Cómo cablear la lección sfc-fill-mix-sequence en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección sfc-fill-mix-sequence en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en Raspberry Pi Pico (RP2040)
+# Cableado: Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en Raspberry Pi Pico (RP2040)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence. Do not edit. >>> */}
 
-El cableado de la lección [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](../../../learn/lessons/sfc-fill-mix-sequence.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../../../learn/lessons/sfc-fill-mix-sequence.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,11 +22,11 @@ El cableado de la lección [Una secuencia en diagrama funcional de secuencias: l
 
 ## Diagrama
 
-![Cableado de Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/sfc-fill-mix-sequence.es.svg)
+![Cableado de Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/sfc-fill-mix-sequence.es.svg)
 
 ## Tarjeta de cableado
 
-1. Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
+1. Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 2. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
 3. Mezclador: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).
 

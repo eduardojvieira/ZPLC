@@ -60,9 +60,9 @@ describe('the wiring card: the same wiring as a text list, part by part (LRN-014
     expect(wiringCard(PICO, WIRING, 'es')).toEqual([
       'Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).',
       'Advertencia: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).',
-      'Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.',
+      'Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.',
       'Armado: cable puente desde GP14 (header pin 19, DI1) hasta GND (GND · pin 38); conectado significa activado.',
-      'Parada: pulsador entre GP12 (header pin 16, DI3) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.',
+      'Parada: pulsador entre GP12 (header pin 16, DI3) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.',
       'Nivel: potenciómetro de 10 kΩ, extremos a 3V3 (3V3(OUT) · pin 36) y GND (AGND · pin 33), cursor a GP26 (ADC0) (header pin 31, AI0).',
       'LED de la placa: GP25 (on-board LED, DO4) está en la placa; no necesita cableado.',
     ]);

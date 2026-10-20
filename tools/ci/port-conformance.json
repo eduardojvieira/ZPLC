@@ -1,5 +1,5 @@
 {
-  "description": "The port conformance suite (IO-013): what a port of the runtime has to pass, and the check that runs it on each port. Every leg names real suites, or says why it is open and who owns it. tools/ci/port-conformance.test.ts checks the names against the tree; tools/docs/generate_port_interface.ts prints this file in the port interface page.",
+  "description": "The port conformance suite (IO-013): what a port of the runtime has to pass, and the check that runs it on each port. Every leg names real suites, or says why it is open and who owns it. The WebAssembly legs name the C suites that tools/wasm-core/suites.ts builds with the HAL port of that runtime (key \"wasm\"). tools/ci/port-conformance.test.ts checks the names against the tree; tools/docs/generate_port_interface.ts prints this file in the port interface page.",
   "ports": [
     {
       "id": "posix",
@@ -30,8 +30,8 @@
         "es": "WebAssembly"
       },
       "how": {
-        "en": "`bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (the core built by `tools/wasm-core`)",
-        "es": "`bun test packages/zplc-ide/src/runtime/wasmParity.test.ts` (el núcleo que construye `tools/wasm-core`)"
+        "en": "`bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them)",
+        "es": "`bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala)"
       }
     }
   ],
@@ -63,6 +63,12 @@
           ]
         },
         "wasm": {
+          "wasm": [
+            "test_isa",
+            "test_vm_core",
+            "test_vm_arith_edges",
+            "test_opcode_coverage"
+          ],
           "bun": [
             {
               "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
@@ -97,6 +103,11 @@
           ]
         },
         "wasm": {
+          "wasm": [
+            "test_loader_verify",
+            "test_sandbox",
+            "test_sandbox_regions"
+          ],
           "bun": [
             {
               "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
@@ -137,11 +148,18 @@
           ]
         },
         "wasm": {
-          "open": {
-            "en": "The WebAssembly runtime does not use the scheduler core yet: its adapter drives the VM directly, so no scheduler suite can run on it.",
-            "es": "El runtime WebAssembly todavía no usa el núcleo del planificador: su adaptador maneja la VM directamente, de modo que ninguna suite del planificador puede correr en él.",
-            "owner": "WP-92 (RT-008, RT-027, IDE-025)"
-          }
+          "wasm": [
+            "test_sched_core",
+            "test_sched_equivalence",
+            "test_single_task",
+            "test_failsafe"
+          ],
+          "bun": [
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmRuntime.test.ts",
+              "test": "the scheduler of the WebAssembly runtime decides what the native runtime decides (RT-008)"
+            }
+          ]
         }
       }
     },
@@ -167,11 +185,9 @@
           ]
         },
         "wasm": {
-          "open": {
-            "en": "The module that CI builds links the core with a shim whose clock the embedder sets (tools/wasm-core), not with the WebAssembly HAL, and no test of the repository calls that HAL without a browser engine.",
-            "es": "El módulo que construye CI enlaza el núcleo con un shim cuyo reloj fija el anfitrión (tools/wasm-core), no con la HAL de WebAssembly, y ninguna prueba del repositorio llama a esa HAL sin un motor de navegador.",
-            "owner": "WP-92 (IDE-025: the browser-engine test of the adapter)"
-          }
+          "wasm": [
+            "test_port_timing"
+          ]
         }
       }
     },
@@ -201,11 +217,10 @@
           ]
         },
         "wasm": {
-          "open": {
-            "en": "The WebAssembly HAL lists no channel, so its table is empty by design (the page of the HAL contract), and no suite calls its table functions: the module that CI builds links the core with a shim, not with that HAL.",
-            "es": "La HAL de WebAssembly no lista ningún canal, de modo que su tabla está vacía por diseño (la página del contrato de la HAL), y ninguna suite llama a sus funciones de tabla: el módulo que construye CI enlaza el núcleo con un shim, no con esa HAL.",
-            "owner": "WP-92 (IDE-025, with the HAL of the module that is shipped)"
-          }
+          "wasm": [
+            "test_io_table",
+            "test_hal_posix_io_table"
+          ]
         }
       }
     },
@@ -236,11 +251,20 @@
           ]
         },
         "wasm": {
-          "open": {
-            "en": "The retain rules are not linked into the WebAssembly build and its storage is the page's local storage, which no repository test reaches.",
-            "es": "Las reglas de retención no están enlazadas en la compilación WebAssembly y su almacenamiento es el almacenamiento local de la página, al que ninguna prueba del repositorio llega.",
-            "owner": "WP-92 (RT-027)"
-          }
+          "bun": [
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmPortSuites.test.ts",
+              "test": "the storage of the WebAssembly port: the program store over the records of the host (IO-013)"
+            },
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmRetain.test.ts",
+              "test": "RETAIN on the WebAssembly runtime follows the rules of the firmware (RT-025, RT-027)"
+            },
+            {
+              "file": "packages/zplc-ide/src/runtime/wasmRetain.test.ts",
+              "test": "RETAIN records kept with the project (RT-027)"
+            }
+          ]
         }
       }
     }

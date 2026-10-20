@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-11. Do not edit. >>> */}
 
+El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior.
+
 - Nivel: Avanzado
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [8](./module-8.md)

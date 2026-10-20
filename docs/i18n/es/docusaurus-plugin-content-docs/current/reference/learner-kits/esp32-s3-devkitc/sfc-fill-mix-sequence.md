@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "sfc-fill-mix-sequence"
-description: "Cómo cablear la lección sfc-fill-mix-sequence en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección sfc-fill-mix-sequence en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence. Do not edit. >>> */}
 
-El cableado de la lección [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](../../../learn/lessons/sfc-fill-mix-sequence.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../../../learn/lessons/sfc-fill-mix-sequence.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,13 +22,13 @@ El cableado de la lección [Una secuencia en diagrama funcional de secuencias: l
 
 ## Diagrama
 
-![Cableado de Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/sfc-fill-mix-sequence.es.svg)
+![Cableado de Una secuencia en diagrama funcional secuencial: llenar y luego mezclar en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/sfc-fill-mix-sequence.es.svg)
 
 ## Tarjeta de cableado
 
-1. Arranque: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-2. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-3. Mezclador: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
+1. Arranque: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+3. Mezclador: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence <<< */}
 

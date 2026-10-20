@@ -26,8 +26,8 @@ The wiring of the lesson [Write a blinker in Structured Text](../../../learn/les
 
 ## Wiring card
 
-1. Enable: jumper wire from GPIO0 (BOOT) (header J3 and BOOT button, DI0) to GND (GND · J1-22); plugged in means on.
-2. Lamp: red LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
+1. Enable: jumper wire from GPIO5 (header J1 pin 5, DI0) to GND (GND · J1-22); plugged in means on.
+2. Lamp: red LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/blink-structured-text <<< */}
 

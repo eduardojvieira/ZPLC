@@ -38,7 +38,7 @@ Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo C
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de una cinta física, del despeje de un atasco, hardware, HIL ni certificación.
 
 ## En una placa
 

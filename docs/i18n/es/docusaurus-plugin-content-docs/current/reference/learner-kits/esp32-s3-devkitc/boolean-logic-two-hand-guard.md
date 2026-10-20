@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Lógica booleana: un mando a dos manos con protección en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "boolean-logic-two-hand-guard"
-description: "Cómo cablear la lección boolean-logic-two-hand-guard en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección boolean-logic-two-hand-guard en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/boolean-logic-two-hand-guard. Do not edit. >>> */}
 
-El cableado de la lección [Lógica booleana: un mando a dos manos con protección](../../../learn/lessons/boolean-logic-two-hand-guard.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Lógica booleana: un mando a dos manos con protección](../../../learn/lessons/boolean-logic-two-hand-guard.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,12 +26,12 @@ El cableado de la lección [Lógica booleana: un mando a dos manos con protecci�
 
 ## Tarjeta de cableado
 
-1. Mano izquierda: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-2. Mano derecha: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-3. Protección cerrada: cable puente desde GPIO8 (header J1, DI2) hasta GND (GND · J1-22); conectado significa activado.
-4. Habilitación de la prensa: LED verde con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-5. Lámpara de la protección: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
-6. Advertencia de una sola mano: LED rojo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1, DO2) hasta GND (GND · J1-22).
+1. Mano izquierda: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Mano derecha: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Protección cerrada: cable puente desde GPIO7 (header J1 pin 7, DI2) hasta GND (GND · J1-22); conectado significa activado.
+4. Habilitación de la prensa: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+5. Lámpara de la protección: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
+6. Advertencia de una sola mano: LED rojo con una resistencia de 330 Ω en serie, desde GPIO17 (header J1 pin 10, DO2) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/boolean-logic-two-hand-guard <<< */}
 

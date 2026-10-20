@@ -1,54 +1,54 @@
 {
   "schemaVersion": 1,
-  "title": "Escriba un parpadeador en Structured Text",
+  "title": "Escriba un parpadeador en texto estructurado",
   "summary": "Construya un parpadeador con un temporizador TON y una variable de memoria, y haga que funcione solo mientras una entrada de habilitación está en ON.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.",
   "objectives": [
     "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
-    "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada baja."
+    "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar Lamp cada {{t:300}} ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
-      "checkpoint": "Usted puede describir el patrón: correr un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
+      "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar de estado a Lamp cada {{t:300}} ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
+      "checkpoint": "Usted puede describir el patrón: poner en marcha un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
     },
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Enable pasa a ON a los {{t:100}} ms y a OFF a los {{t:1150}} ms. Prediga Lamp en {{t:350}}, {{t:550}}, {{t:850}} y {{t:1250}} ms.",
-      "checkpoint": "{{v:EnabledBlink.Lamp=false@350|OFF}} en {{t:350}} ms, {{v:EnabledBlink.Lamp=true@550|ON}} en {{t:550}} ms, {{v:EnabledBlink.Lamp=false@850|OFF}} en {{t:850}} ms, {{v:EnabledBlink.Lamp=false@1250|OFF}} en {{t:1250}} ms."
+      "body": "Enable pasa a ON a los {{t:100}} ms y a OFF a los {{t:1150}} ms. Prediga Lamp a los {{t:350}}, {{t:550}}, {{t:850}} y {{t:1250}} ms.",
+      "checkpoint": "{{v:EnabledBlink.Lamp=false@350|OFF}} a los {{t:350}} ms, {{v:EnabledBlink.Lamp=true@550|ON}} a los {{t:550}} ms, {{v:EnabledBlink.Lamp=false@850|OFF}} a los {{t:850}} ms, {{v:EnabledBlink.Lamp=false@1250|OFF}} a los {{t:1250}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms. Ejecute Clock con Enable y un preajuste de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Tome Lamp de LampOn y Enable, y guarde el archivo.",
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms. Llame a Clock con Enable como entrada y un valor preestablecido de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Calcule Lamp a partir de LampOn y Enable, y guarde el archivo.",
       "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama EnabledBlink y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama EnabledBlink y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los {{t:400}} ms, es decir {{t:300}} ms después de que Enable pasó a ON, está en ON hasta cerca de los {{t:700}} ms, otra vez en ON desde cerca de los {{t:1000}} ms y baja a OFF de inmediato a los {{t:1150}} ms cuando Enable baja.",
+      "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los {{t:400}} ms, es decir, {{t:300}} ms después de que Enable pasó a ON; está en ON hasta cerca de los {{t:700}} ms, otra vez en ON desde cerca de los {{t:1000}} ms y pasa a OFF de inmediato a los {{t:1150}} ms, cuando Enable cae.",
       "checkpoint": "El primer ON empieza unos {{t:300}} ms después de que Enable pasó a ON, no {{t:300}} ms después de arrancar el programa."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "Un parpadeador que ignora Enable ya estaría en ON a los {{t:350}} ms. ¿Qué línea suya marca la diferencia?",
-      "checkpoint": "Arrancar el temporizador desde Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+      "body": "Un parpadeador que ignora Enable ya estaría en ON a los {{t:350}} ms. ¿Cuál de sus líneas marca la diferencia?",
+      "checkpoint": "Poner en marcha el temporizador con Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "El temporizador solo debe correr mientras Enable está en ON, así que Enable es el IN de Clock."
+      "text": "El temporizador solo debe contar mientras Enable está en ON, así que Enable es la entrada IN de Clock."
     },
     {
       "level": 2,

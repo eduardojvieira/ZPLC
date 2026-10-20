@@ -17,6 +17,7 @@ import { faceplateEs } from './catalog/faceplate';
 import { interlockEs } from './catalog/interlock';
 import { learnEs } from './catalog/learn';
 import { learnHomeEs } from './catalog/learnHome';
+import { learnHardwareEs } from './catalog/learnHardware';
 import { toolbarMsgEs } from './catalog/toolbarMsg';
 import { examplesEs } from './catalog/examples';
 import { noticesEs } from './catalog/notices';
@@ -273,7 +274,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'connection.simulation.wasm': 'Simulación · runtime del navegador',
   'connection.hardware.connecting': 'Conectando con el hardware',
   'connection.hardware.connected': 'Hardware real',
-  'connection.hardware.faulted': 'Fallo del hardware',
+  'connection.hardware.faulted': 'Falla del hardware',
   'connection.link.framed': 'enlace con tramas',
   'connection.link.shell': 'enlace de shell de texto',
   'deploy.title': '¿Cargar en el dispositivo?',
@@ -423,7 +424,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'command.view.output': 'Mostrar la salida',
   'command.view.problems': 'Mostrar los problemas',
   'command.view.tests': 'Mostrar las pruebas',
-  'command.view.trace': 'Mostrar el trazado',
+  'command.view.trace': 'Mostrar la traza',
   'command.view.watch': 'Mostrar las variables vigiladas',
   'command.view.themeLight': 'Usar el tema claro',
   'command.view.themeDark': 'Usar el tema oscuro',
@@ -467,8 +468,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'panel.problems.empty.title': 'No se encontraron problemas',
   'panel.problems.empty.checked': 'La última compilación no informó diagnósticos.',
   'panel.problems.empty.unchecked': 'Compile el proyecto para comprobar si tiene problemas.',
-  'panel.trace.empty.title': 'Aún no hay muestras de trazado',
-  'panel.trace.empty.description': 'Avance un ciclo de la simulación nativa POSIX para recoger muestras de trazado.',
+  'panel.trace.empty.title': 'Aún no hay muestras de traza',
+  'panel.trace.empty.description': 'Avance un ciclo de la simulación nativa POSIX para recoger muestras de traza.',
   'panel.watch.empty.title': 'No hay variables vigiladas',
   'panel.watch.empty.description': 'Agregue una variable para seguir su valor mientras el programa se ejecuta.',
   'panel.watch.empty.action': 'Agregar una variable',
@@ -514,8 +515,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'welcome.language.ST': 'Texto estructurado',
   'welcome.language.LD': 'Diagrama de escalera',
   'welcome.language.IL': 'Lista de instrucciones',
-  'welcome.language.FBD': 'Diagrama de bloques de funciones',
-  'welcome.language.SFC': 'Diagrama funcional de secuencias',
+  'welcome.language.FBD': 'Diagrama de bloques de función',
+  'welcome.language.SFC': 'Diagrama funcional secuencial',
   'welcome.board.rpi_pico': 'Raspberry Pi Pico',
   'welcome.board.esp32s3_devkitc': 'ESP32-S3 DevKitC',
   'welcome.board.arduino_opta_wifi': 'Arduino Opta WiFi',
@@ -618,6 +619,7 @@ export const es: Record<MessageKey, string> = {
   ...interlockEs,
   ...learnEs,
   ...learnHomeEs,
+  ...learnHardwareEs,
   ...toolbarMsgEs,
   ...examplesEs,
   ...noticesEs,

@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Ciclo de scan y memoria de un ciclo en Raspberry Pi Pico (RP2040)"
+title: "Cableado: Ciclo de escaneo y memoria de un ciclo en Raspberry Pi Pico (RP2040)"
 sidebar_label: "scan-cycle-one-scan-memory"
-description: "Cómo cablear la lección scan-cycle-one-scan-memory en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección scan-cycle-one-scan-memory en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Ciclo de scan y memoria de un ciclo en Raspberry Pi Pico (RP2040)
+# Cableado: Ciclo de escaneo y memoria de un ciclo en Raspberry Pi Pico (RP2040)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory. Do not edit. >>> */}
 
-El cableado de la lección [Ciclo de scan y memoria de un ciclo](../../../learn/lessons/scan-cycle-one-scan-memory.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Ciclo de escaneo y memoria de un ciclo](../../../learn/lessons/scan-cycle-one-scan-memory.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,11 +22,11 @@ El cableado de la lección [Ciclo de scan y memoria de un ciclo](../../../learn/
 
 ## Diagrama
 
-![Cableado de Ciclo de scan y memoria de un ciclo en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/scan-cycle-one-scan-memory.es.svg)
+![Cableado de Ciclo de escaneo y memoria de un ciclo en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/scan-cycle-one-scan-memory.es.svg)
 
 ## Tarjeta de cableado
 
-1. Pulsador: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
+1. Pulsador: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 2. Actual: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
 3. Retardado: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).
 4. Pulso de flanco ascendente: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (header pin 4, DO2) hasta GND (GND · pin 38).

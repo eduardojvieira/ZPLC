@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-9. Do not edit. >>> */}
 
+Instruction List comes late, as a way to read low-level and legacy code. It closes the set of languages, and the same logic is then written in all five.
+
 - Level: Advanced
 - Tracks: Simulation, Hardware
 - Requires module: [7](./module-7.md)

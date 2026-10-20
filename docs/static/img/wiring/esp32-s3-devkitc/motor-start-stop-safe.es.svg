@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-esp32-s3-devkitc-title wiring-esp32-s3-devkitc-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-esp32-s3-devkitc-title">Cableado en ESP32-S3-DevKitC-1 (N8R8)</title>
-<desc id="wiring-esp32-s3-devkitc-desc">Arranque: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa. Parada: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GPIO8 (header J1, DI2) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa. Sobrecarga: cable puente desde GPIO9 (header J1, DI3) hasta GND (GND · J1-22); conectado significa activado. Avance: LED verde con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22). Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).</desc>
+<desc id="wiring-esp32-s3-devkitc-desc">Arranque: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GPIO7 (header J1 pin 7, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna. Sobrecarga: cable puente desde GPIO8 (header J1 pin 12, DI3) hasta GND (GND · J1-22); conectado significa activado. Avance: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22). Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).</desc>
 <rect width="760" height="496" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en ESP32-S3-DevKitC-1 (N8R8)</text>
 <rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
 <rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GPIO0 (BOOT)</text>
-<text stroke="none" x="30" y="102" font-size="11">header J3 and BOOT button · DI0</text>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GPIO5</text>
+<text stroke="none" x="30" y="102" font-size="11">header J1 pin 5 · DI0</text>
 <text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Arranque</text>
 <polyline points="264,88 334,88" fill="none"/>
 <circle cx="337" cy="88" r="3" fill="#ffffff"/>
@@ -17,8 +17,8 @@
 <text stroke="none" x="357" y="110" text-anchor="middle" font-size="11">pulsador</text>
 <polyline points="380,88 712,88" fill="none"/>
 <rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GPIO18</text>
-<text stroke="none" x="30" y="166" font-size="11">header J1 · DI1</text>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GPIO6</text>
+<text stroke="none" x="30" y="166" font-size="11">header J1 pin 6 · DI1</text>
 <text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Parada</text>
 <polyline points="264,152 334,152" fill="none"/>
 <circle cx="337" cy="152" r="3" fill="#ffffff"/>
@@ -29,8 +29,8 @@
 <text stroke="none" x="357" y="174" text-anchor="middle" font-size="11">pulsador</text>
 <polyline points="380,152 712,152" fill="none"/>
 <rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GPIO8</text>
-<text stroke="none" x="30" y="230" font-size="11">header J1 · DI2</text>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GPIO7</text>
+<text stroke="none" x="30" y="230" font-size="11">header J1 pin 7 · DI2</text>
 <text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad)</text>
 <polyline points="264,216 334,216" fill="none"/>
 <circle cx="337" cy="216" r="3" fill="#ffffff"/>
@@ -41,14 +41,14 @@
 <text stroke="none" x="357" y="238" text-anchor="middle" font-size="11">pulsador</text>
 <polyline points="380,216 712,216" fill="none"/>
 <rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GPIO9</text>
-<text stroke="none" x="30" y="294" font-size="11">header J1 · DI3</text>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GPIO8</text>
+<text stroke="none" x="30" y="294" font-size="11">header J1 pin 12 · DI3</text>
 <text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Sobrecarga</text>
 <polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
 <text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">cable puente a GND</text>
 <rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO38</text>
-<text stroke="none" x="30" y="358" font-size="11">header J3 · DO0</text>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO15</text>
+<text stroke="none" x="30" y="358" font-size="11">header J1 pin 8 · DO0</text>
 <text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Avance</text>
 <polyline points="264,344 300,344" fill="none"/>
 <polyline points="300,344 306,336 318,352 330,336 342,352 354,336 360,344" fill="none"/>
@@ -61,8 +61,8 @@
 <text stroke="none" x="402" y="370" text-anchor="middle" font-size="11">LED verde</text>
 <polyline points="412,344 712,344" fill="none"/>
 <rect x="20" y="386" width="232" height="44" rx="4" fill="#ffffff"/>
-<text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GPIO15</text>
-<text stroke="none" x="30" y="422" font-size="11">header J1 · DO1</text>
+<text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GPIO16</text>
+<text stroke="none" x="30" y="422" font-size="11">header J1 pin 9 · DO1</text>
 <text stroke="none" x="440" y="400" font-size="13" font-weight="bold">Retroceso</text>
 <polyline points="264,408 300,408" fill="none"/>
 <polyline points="300,408 306,400 318,416 330,400 342,416 354,400 360,408" fill="none"/>

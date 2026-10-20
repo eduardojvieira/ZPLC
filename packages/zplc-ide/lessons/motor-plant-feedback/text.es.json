@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "title": "Comando, realimentación y velocidad",
+  "title": "Orden, realimentación y velocidad",
   "summary": "Separe la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
-  "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
+  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.",
   "objectives": [
     "Separe la orden al motor de la confirmación de que está en marcha.",
-    "Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed."
+    "Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/MotorPlant.st, mantenga una memoria Requested que Start activa y Stop borra, y cablee Requested, Command y Running.",
-      "checkpoint": "Command expresa la orden; Running depende además de AtSpeed."
+      "body": "En src/MotorPlant.st, mantenga una memoria Requested que Start activa y Stop borra, y conecte Requested, Command y Running.",
+      "checkpoint": "Command refleja la solicitud; Running depende además de AtSpeed."
     },
     {
       "key": "predict",
@@ -23,39 +23,39 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorPlant.",
-      "checkpoint": "El escenario requerido se llama MotorPlant y contiene {{assertions}} assertions."
+      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorPlant.",
+      "checkpoint": "El escenario requerido se llama MotorPlant y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:10}} con {{t:30}} ms: la planta registra orden antes de AtSpeed; Stop a {{t:40}} apaga ambos.",
+      "body": "Compare {{t:10}} con {{t:30}} ms: la planta registra la orden antes de AtSpeed; Stop a los {{t:40}} ms apaga ambos.",
       "checkpoint": "La matriz y la traza registradas muestran el avance discreto de speed/AtSpeed."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
       "body": "RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.",
-      "checkpoint": "No demuestra inercia, motor físico, timing de hardware, HIL ni certificación."
+      "checkpoint": "No demuestra inercia, un motor físico, los tiempos del hardware, HIL ni certificación."
     }
   ],
   "hints": [
     {
       "level": 1,
-      "text": "Start solo necesita un pulso, así que el pedido tiene que recordarse: active Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
+      "text": "Start solo necesita un pulso, así que la solicitud tiene que recordarse: active Requested con Start y bórrela con Stop (Stop tiene prioridad si ambos están en TRUE)."
     },
     {
       "level": 2,
-      "text": "Maneje Command desde Requested y Running desde Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa velocidad, y ambos caen juntos con Stop."
+      "text": "Calcule Command a partir de Requested, y Running a partir de Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa la velocidad, y ambos caen juntos con Stop."
     }
   ],
   "faultCases": [
-    "El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed."
+    "El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed."
   ]
 }

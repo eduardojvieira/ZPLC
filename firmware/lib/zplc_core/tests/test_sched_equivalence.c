@@ -111,6 +111,23 @@ static int load_artifact(zplc_native_runtime_session_t *session, const uint8_t *
   return session->program_loaded != 0U && strstr(response, "\"error\":{") == NULL;
 }
 
+/* A program store of its own for each test: a new directory on the POSIX host. A port without a file system
+ * (ZPLC_TEST_NO_FILE_IO: the WebAssembly suites of tools/wasm-core/suites.ts) keeps the records with its host, and the
+ * load of each test replaces the program that an earlier one stored. */
+static int fresh_program_store(char *template) {
+#if defined(ZPLC_TEST_NO_FILE_IO)
+  (void)template;
+  return 1;
+#else
+  if (mkdtemp(template) == NULL) {
+    return 0;
+  }
+  setenv("ZPLC_PERSIST_ROOT", template, 1);
+  unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
+  return 1;
+#endif
+}
+
 /* The clock of the scenario: the reads of the batch that is running, in order. */
 static const zplc_trace_batch_t *current_batch;
 static unsigned current_read;
@@ -137,12 +154,10 @@ static void test_the_session_decides_the_golden_trace(void) {
   int all_lines_equal = 1;
 
   printf("\n=== Test: the host session decides the golden trace (RT-008) ===\n");
-  if (mkdtemp(template) == NULL) {
+  if (!fresh_program_store(template)) {
     CHECK(0, "a directory for the program store");
     return;
   }
-  setenv("ZPLC_PERSIST_ROOT", template, 1);
-  unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
   memset(&log, 0, sizeof(log));
 
   zplc_native_runtime_session_init(&session);
@@ -205,12 +220,10 @@ static void test_the_session_with_one_task_decides_the_one_task_trace(void) {
   int all_lines_equal = 1;
 
   printf("\n=== Test: a session with one task decides the one-task trace (RT-018) ===\n");
-  if (mkdtemp(template) == NULL) {
+  if (!fresh_program_store(template)) {
     CHECK(0, "a directory for the program store");
     return;
   }
-  setenv("ZPLC_PERSIST_ROOT", template, 1);
-  unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
   memset(&log, 0, sizeof(log));
 
   zplc_native_runtime_session_init(&session);

@@ -1,7 +1,7 @@
 ---
 title: "Kit del estudiante: Raspberry Pi Pico (RP2040)"
 sidebar_label: "Raspberry Pi Pico (RP2040)"
-description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la Raspberry Pi Pico (RP2040) para el curso, generados del manifiesto de E/S de la placa y del kit."
+description: "El mapa de pines, las piezas, el firmware y el límite de tensión de la Raspberry Pi Pico (RP2040) para el curso, generados a partir del manifiesto de E/S de la placa y del kit."
 tags: [learn, hardware, generated]
 ---
 
@@ -23,16 +23,16 @@ El kit del curso para la Raspberry Pi Pico (RP2040): su mapa de pines, las pieza
 
 | Canal | Dirección | Dirección IEC | Pin | Ubicación | Notas |
 | --- | --- | --- | --- | --- | --- |
-| `DO0` | salida, digital | `%QX0.0` | GP0 | header pin 1 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO1` | salida, digital | `%QX0.1` | GP1 | header pin 2 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO2` | salida, digital | `%QX0.2` | GP2 | header pin 4 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO3` | salida, digital | `%QX0.3` | GP3 | header pin 5 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| `DO4` | salida, digital | `%QX0.4` | GP25 | on-board LED | On-board green LED through its series resistor; not a field output. |
+| `DO0` | salida, digital | `%QX0.0` | GP0 | header pin 1 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO1` | salida, digital | `%QX0.1` | GP1 | header pin 2 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO2` | salida, digital | `%QX0.2` | GP2 | header pin 4 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO3` | salida, digital | `%QX0.3` | GP3 | header pin 5 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| `DO4` | salida, digital | `%QX0.4` | GP25 | on-board LED | On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image. |
 | `DI0` | entrada, digital | `%IX0.0` | GP15 | header pin 20 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI1` | entrada, digital | `%IX0.1` | GP14 | header pin 19 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI2` | entrada, digital | `%IX0.2` | GP13 | header pin 17 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | `DI3` | entrada, digital | `%IX0.3` | GP12 | header pin 16 | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | header pin 31 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
+| `AI0` | entrada, analógica | `%IW4` | GP26 (ADC0) | header pin 31 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin. |
 | `AI1` | entrada, analógica | `%IW5` | GP27 (ADC1) | header pin 32 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
 | `AI2` | entrada, analógica | `%IW6` | GP28 (ADC2) | header pin 34 | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. |
 | `AI3` | entrada, analógica | `%IW7` | VSYS/3 (ADC3) | internal | Internal: the supply voltage divided by 3, no external connection. |
@@ -66,18 +66,18 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Arranque y parada seguros](./rpi-pico-rp2040/motor-start-stop-safe.md) | `motor-start-stop-safe` |
 | [Oscilador TON y realimentación de salida](./rpi-pico-rp2040/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
 | [Flancos y contador de pulsos](./rpi-pico-rp2040/edge-counter-pulses.md) | `edge-counter-pulses` |
-| [Ciclo de scan y memoria de un ciclo](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
+| [Ciclo de escaneo y memoria de un ciclo](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./rpi-pico-rp2040/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./rpi-pico-rp2040/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Escriba un parpadeador en Structured Text](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
-| [Enclavar una alarma: set y reset, y cuál gana](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
-| [Autorretención en Ladder: un motor que se mantiene encendido](./rpi-pico-rp2040/seal-in-ladder.md) | `seal-in-ladder` |
-| [Contadores en diagrama de bloques de función: contar piezas hasta un lote](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
+| [Escriba un parpadeador en texto estructurado](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
+| [Retener una alarma: set y reset, y cuál tiene prioridad](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Autorretención en diagrama de escalera: un motor que se mantiene encendido](./rpi-pico-rp2040/seal-in-ladder.md) | `seal-in-ladder` |
+| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [Tipos, aritmética y comparación: un total y tres bandas](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Escalado analógico: de cuentas crudas a un porcentaje](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
-| [Bloques de función: un enclavamiento, dos bombas](./rpi-pico-rp2040/function-block-pump-pair.md) | `function-block-pump-pair` |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Bloques de función: un biestable, dos bombas](./rpi-pico-rp2040/function-block-pump-pair.md) | `function-block-pump-pair` |
 | [Estructuras y arreglos: un panel de tres llamadas](./rpi-pico-rp2040/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Verificar mi placa](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |

@@ -24,7 +24,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 
 ## Objetivos
 
-- Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez.
+- Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.
 - Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas.
 
 ## Etapas
@@ -38,7 +38,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que exige un dispositivo real de mando a dos manos, y no son evidencia de seguridad, de HIL ni de certificación.
 
 ## Cableado
 

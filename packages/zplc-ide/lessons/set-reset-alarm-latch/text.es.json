@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "title": "Enclavar una alarma: set y reset, y cuál gana",
+  "title": "Retener una alarma: set y reset, y cuál tiene prioridad",
   "summary": "Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno cuando la falla y el reconocimiento llegan juntos.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de gestión de alarmas de una máquina real, HIL ni certificación.",
   "objectives": [
-    "Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.",
+    "Mantenga una alarma después de que la falla haya desaparecido, hasta que se reconozca.",
     "Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset."
   ],
   "stages": [
@@ -17,32 +17,32 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Fault da un pulso en ON a los {{t:10}} ms. Ack se pulsa a los {{t:30}} ms. A los {{t:50}} ms llegan juntos, y Ack sigue pulsado a los {{t:60}} ms. Prediga las dos salidas en {{t:20}}, {{t:30}} y {{t:50}} ms.",
-      "checkpoint": "{{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=true@20|ambas en ON}} en {{t:20}} ms; {{v:AlarmLatch.SetFirst=false,AlarmLatch.ResetFirst=false@30|ambas en OFF}} en {{t:30}} ms; {{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=false@50|solo SetFirst en ON}} en {{t:50}} ms."
+      "body": "Fault da un pulso en ON a los {{t:10}} ms. Ack se pulsa a los {{t:30}} ms. A los {{t:50}} ms llegan juntos, y Ack sigue pulsado a los {{t:60}} ms. Prediga las dos salidas a los {{t:20}}, {{t:30}} y {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=true@20|ambas en ON}} a los {{t:20}} ms; {{v:AlarmLatch.SetFirst=false,AlarmLatch.ResetFirst=false@30|ambas en OFF}} a los {{t:30}} ms; {{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=false@50|solo SetFirst en ON}} a los {{t:50}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya pasó. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
-      "checkpoint": "Cada salida es la Q1 de su propio enclavamiento."
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
+      "checkpoint": "Cada salida es la Q1 de su propio biestable."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-      "checkpoint": "El escenario se llama AlarmLatch y contiene {{assertions}} assertions."
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama AlarmLatch y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:20}}, {{t:30}} y {{t:50}} ms: la alarma sigue en ON a los {{t:20}} ms aunque Fault ya pasó, Ack la borra a los {{t:30}} ms, y solo los dos bloques difieren a los {{t:50}} ms.",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:50}} ms: la alarma sigue en ON a los {{t:20}} ms aunque Fault ya desapareció, Ack la borra a los {{t:30}} ms, y los dos bloques solo difieren a los {{t:50}} ms.",
       "checkpoint": "Las salidas difieren solo cuando Fault y Ack llegan juntos."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe ganar cuando ambas se pulsan.",
-      "checkpoint": "Una parada o un reset normalmente debe ganar, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
+      "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe tener prioridad cuando se pulsan ambos.",
+      "checkpoint": "Una parada o un reset normalmente debe tener prioridad, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya pasó."
+    "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los {{t:20}} ms cuando la falla ya desapareció."
   ]
 }

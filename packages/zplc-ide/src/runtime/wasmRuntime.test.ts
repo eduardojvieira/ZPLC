@@ -382,5 +382,7 @@ describe('the communication blocks of the WebAssembly runtime (IDE-025)', () => 
     } finally {
       await rm(root, { recursive: true, force: true });
     }
-  });
+    // the test compiles a project and starts a module; under the load of a full run that alone can pass five seconds,
+    // and the time is not what it measures
+  }, 60_000);
 });

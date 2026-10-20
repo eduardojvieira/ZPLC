@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "body": "Build the program: on the toolbar, open Build and choose Compile. Press Connect to start the simulation, then Run (F5); Run stays disabled until a build exists. Open the Watch tab and see Lamp turn on and off. Then press Check: Studio runs your saved program against the scenario of this lesson.",
       "checkpoint": "The scenario is named FirstBlink and contains {{assertions}} assertions; Studio lists every one that failed."
     },
     {

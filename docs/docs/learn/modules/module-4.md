@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-4. Do not edit. >>> */}
 
+Real signals are numbers, not only on and off. Types, arithmetic, comparison and analog scaling prepare for the processes that follow.
+
 - Level: Intermediate
 - Tracks: Simulation, Hardware
 - Requires module: [3](./module-3.md)

@@ -10,6 +10,8 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-4. Do not edit. >>> */}
 
+Las señales reales son números, no solo encendido y apagado. Los tipos, la aritmética, la comparación y el escalado analógico preparan para los procesos que siguen.
+
 - Nivel: Intermedio
 - Rutas: Simulación, Hardware
 - Requiere el módulo: [3](./module-3.md)
@@ -19,7 +21,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Tipos, aritmética y comparación: un total y tres bandas](../lessons/types-arithmetic-comparison.md) | `types-arithmetic-comparison` | ST | 20 |
-| [Escalado analógico: de cuentas crudas a un porcentaje](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

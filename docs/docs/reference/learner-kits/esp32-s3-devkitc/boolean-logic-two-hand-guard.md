@@ -26,12 +26,12 @@ The wiring of the lesson [Boolean logic: a two-hand control with a guard](../../
 
 ## Wiring card
 
-1. Left hand: push button between GPIO0 (BOOT) (header J3 and BOOT button, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
-2. Right hand: push button between GPIO18 (header J1, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
-3. Guard closed: jumper wire from GPIO8 (header J1, DI2) to GND (GND · J1-22); plugged in means on.
-4. Press enable: green LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
-5. Guard lamp: yellow LED with a 330 Ω resistor in series, from GPIO15 (header J1, DO1) to GND (GND · J1-22).
-6. One-hand warning: red LED with a 330 Ω resistor in series, from GPIO16 (header J1, DO2) to GND (GND · J1-22).
+1. Left hand: push button between GPIO5 (header J1 pin 5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
+2. Right hand: push button between GPIO6 (header J1 pin 6, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
+3. Guard closed: jumper wire from GPIO7 (header J1 pin 7, DI2) to GND (GND · J1-22); plugged in means on.
+4. Press enable: green LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
+5. Guard lamp: yellow LED with a 330 Ω resistor in series, from GPIO16 (header J1 pin 9, DO1) to GND (GND · J1-22).
+6. One-hand warning: red LED with a 330 Ω resistor in series, from GPIO17 (header J1 pin 10, DO2) to GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/boolean-logic-two-hand-guard <<< */}
 

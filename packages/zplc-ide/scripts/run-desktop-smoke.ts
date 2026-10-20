@@ -39,11 +39,13 @@ class Cdp {
   readonly errors: string[] = [];
   readonly errorDetails: string[] = [];
   #contexts = new Map<number, string>();
+  #listeners = new Map<string, Set<(params: unknown) => void>>();
   private constructor(socket: WebSocket) {
     this.#socket = socket;
     socket.addEventListener('message', (event) => {
       const message = JSON.parse(String(event.data)) as { id?: number; result?: unknown; error?: { message?: string }; method?: string; params?: { executionContextId?: number; exceptionDetails?: { text?: string; exception?: { description?: string }; executionContextId?: number; stackTrace?: { callFrames?: Array<{ url?: string; functionName?: string; lineNumber?: number; columnNumber?: number }> } }; entry?: { level?: string; text?: string; url?: string; lineNumber?: number }; type?: string; args?: Array<{ value?: unknown; description?: string }>; stackTrace?: { callFrames?: Array<{ url?: string; functionName?: string; lineNumber?: number; columnNumber?: number }> }; context?: { id?: number; origin?: string; name?: string; auxData?: { type?: string; frameId?: string; isDefault?: boolean } } } };
       if (message.id) { const pending = this.#pending.get(message.id); if (!pending) return; this.#pending.delete(message.id); if (message.error) pending.reject(new Error(message.error.message ?? 'CDP command failed')); else pending.resolve(message.result); return; }
+      if (message.method) for (const listener of this.#listeners.get(message.method) ?? []) listener(message.params);
       if (message.method === 'Runtime.executionContextCreated') { const context = message.params?.context; if (context?.id !== undefined) this.#contexts.set(context.id, JSON.stringify({ id: context.id, origin: context.origin, name: context.name, ...context.auxData })); return; }
       const human = message.method === 'Runtime.exceptionThrown' ? message.params?.exceptionDetails?.exception?.description ?? message.params?.exceptionDetails?.text ?? 'Runtime exception' : message.method === 'Log.entryAdded' ? message.params?.entry?.text ?? 'Browser log error' : message.params?.args?.map((arg) => String(arg.value ?? arg.description ?? '')).join(' ') || 'console.error';
       const isError = message.method === 'Runtime.exceptionThrown' || (message.method === 'Log.entryAdded' && message.params?.entry?.level === 'error') || (message.method === 'Runtime.consoleAPICalled' && message.params?.type === 'error');
@@ -58,6 +60,8 @@ class Cdp {
   }
   static async connect(url: string): Promise<Cdp> { const socket = new WebSocket(url); await new Promise<void>((resolve, reject) => { socket.addEventListener('open', () => resolve(), { once: true }); socket.addEventListener('error', () => reject(new Error('CDP WebSocket connection failed')), { once: true }); }); return new Cdp(socket); }
   async command(method: string, params: Record<string, unknown> = {}): Promise<unknown> { const id = this.#id++; const response = new Promise<unknown>((resolve, reject) => { const timeout = setTimeout(() => { this.#pending.delete(id); reject(new Error(`CDP ${method} timed out`)); }, TIMEOUT_MS); this.#pending.set(id, { resolve: (value) => { clearTimeout(timeout); resolve(value); }, reject: (error) => { clearTimeout(timeout); reject(error); } }); }); this.#socket.send(JSON.stringify({ id, method, params })); return await response; }
+  /** Calls `listener` with the params of every event `method` the target sends, until the returned function is called. */
+  on(method: string, listener: (params: unknown) => void): () => void { const listeners = this.#listeners.get(method) ?? new Set(); listeners.add(listener); this.#listeners.set(method, listeners); return () => { listeners.delete(listener); }; }
   async evaluate(expression: string): Promise<unknown> { const response = await this.command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }) as { result?: { value?: unknown }; exceptionDetails?: { text?: string; exception?: { description?: string } } }; if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text ?? 'Page evaluation failed'); return response.result?.value; }
   close(): void { this.#socket.close(); }
 }
