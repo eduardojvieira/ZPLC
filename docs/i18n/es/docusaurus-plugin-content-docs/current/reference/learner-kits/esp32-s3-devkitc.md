@@ -76,6 +76,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
+| [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Verificar mi placa](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}

@@ -80,6 +80,7 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-rpi-pi
 | [A sequence in Sequential Function Chart: fill, then mix](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Instruction List: the current result and the order of instructions](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
+| [Analog scaling in Function Block Diagram: a high level alarm](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Verify my board](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}

@@ -1,0 +1,312 @@
+{
+  "name": "Reversing",
+  "description": "A reversing motor: each direction holds itself on, LubeOk permits both, and each contactor locks the other out.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "FwdPB",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Forward pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "RevPB",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Reverse pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "StopPB",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Stop pushbutton, normally open: TRUE while pressed. The rung breaks on a press."
+      },
+      {
+        "name": "LubeOk",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Lubrication pressure switch: TRUE while the pressure is good. The permissive of both directions."
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Forward",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Forward contactor"
+      },
+      {
+        "name": "Reverse",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Reverse contactor"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Forward: StopPB and the permissive LubeOk in series; FwdPB starts the coil, which holds itself on through the contact under FwdPB; the normally closed contact on Reverse is the interlock.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 1,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "fwd_stoppb_0",
+              "type": "contact_nc",
+              "variable": "StopPB",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fwd_fwdpb_1",
+              "type": "contact_no",
+              "variable": "FwdPB",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fwd_lubeok_2",
+              "type": "contact_no",
+              "variable": "LubeOk",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fwd_reverse_3",
+              "type": "contact_nc",
+              "variable": "Reverse",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fwd_coil",
+              "type": "coil",
+              "variable": "Forward",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "fwd_seal",
+              "type": "contact_no",
+              "variable": "Forward",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Reverse: StopPB and the permissive LubeOk in series; RevPB starts the coil, which holds itself on through the contact under RevPB; the normally closed contact on Forward is the interlock.",
+      "branches": [
+        {
+          "id": "branch_2",
+          "startCol": 1,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "rev_stoppb_0",
+              "type": "contact_nc",
+              "variable": "StopPB",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "rev_revpb_1",
+              "type": "contact_no",
+              "variable": "RevPB",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "rev_lubeok_2",
+              "type": "contact_no",
+              "variable": "LubeOk",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "rev_forward_3",
+              "type": "contact_nc",
+              "variable": "Forward",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "rev_coil",
+              "type": "coil",
+              "variable": "Reverse",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "rev_seal",
+              "type": "contact_no",
+              "variable": "Reverse",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-20",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

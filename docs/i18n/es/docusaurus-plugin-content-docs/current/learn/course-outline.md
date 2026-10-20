@@ -34,7 +34,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en Studio muestra las mismas palabras, tomadas del mismo archivo del curso.
 
 
-Disponibles hoy: **28**. Planeadas: **1**. En total: **29**.
+Disponibles hoy: **33**. Planeadas: **0**. En total: **33**.
 
 
 ## Lenguajes
@@ -134,11 +134,13 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 |---|---|---|---|---|---|---|
 | `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas | Disponible | ST | Simulación, Hardware | - | 20 | `edge-counter-pulses` |
 | `analog-scaling-integer` Escalado analógico: de cuentas en bruto a un porcentaje | Disponible | ST | Simulación, Hardware | - | 20 | `types-arithmetic-comparison` |
+| `analog-scaling-fbd` Escalado analógico en diagrama de bloques de función: una alarma de nivel alto | Disponible | FBD | Simulación, Hardware | - | 20 | `analog-scaling-integer`, `counter-batch-fbd` |
 
 Objetivos de las lecciones disponibles:
 
 - **Tipos, aritmética y comparación: un total y tres bandas**: Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL. Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
 - **Escalado analógico: de cuentas en bruto a un porcentaje**: Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden. Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio.
+- **Escalado analógico en diagrama de bloques de función: una alarma de nivel alto**: Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas. Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto.
 
 
 ## Módulo 5: Máquinas de estado y secuencias
@@ -169,12 +171,14 @@ Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya pued
 | `motor-plant-feedback` Orden, realimentación y velocidad | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
 | `tank-level-fault-reset` Nivel de tanque, fallas y reset | Disponible | ST | Simulación | tank-v1 | 25 | `motor-plant-feedback` |
 | `interlock-guard-permissive` Enclavamientos y permisivos: una protección que detiene el motor | Disponible | ST | Simulación | motor-v1 | 20 | `pedestrian-crossing-states` |
+| `interlock-reversing-ladder` Enclavamientos en diagrama de escalera: un motor con inversión de giro | Disponible | LD | Simulación | - | 20 | `interlock-guard-permissive`, `seal-in-ladder` |
 
 Objetivos de las lecciones disponibles:
 
 - **Orden, realimentación y velocidad**: Separe la orden al motor de la confirmación de que está en marcha. Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed.
 - **Nivel de tanque, fallas y reset**: Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una retención. Retenga la alarma con PumpFault o EStop y libérela solo con un nuevo Reset, después de que la falla haya desaparecido.
 - **Enclavamientos y permisivos: una protección que detiene el motor**: Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden. Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar.
+- **Enclavamientos en diagrama de escalera: un motor con inversión de giro**: Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione. Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo.
 
 
 ## Módulo 7: Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas
@@ -183,17 +187,19 @@ Intermedio. Requiere el módulo: 4. Rutas: Simulación, Hardware.
 
 Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques de función, las estructuras, los arreglos y las tareas mantienen un programa legible y reutilizable.
 
-Las dos lecciones siguientes cubren bloques de función, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
+Las lecciones siguientes cubren bloques de función, también llamados desde un diagrama de bloques de función, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
 
 | Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `function-block-pump-pair` Bloques de función: un biestable, dos bombas | Disponible | ST | Simulación, Hardware | - | 25 | `types-arithmetic-comparison` |
 | `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas | Disponible | ST | Simulación, Hardware | - | 25 | `function-block-pump-pair` |
+| `function-block-valves-fbd` Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque | Disponible | FBD | Simulación | - | 20 | `function-block-pump-pair`, `counter-batch-fbd` |
 
 Objetivos de las lecciones disponibles:
 
 - **Bloques de función: un biestable, dos bombas**: Escriba un bloque de función con entradas, una salida y una memoria que se conserva entre llamadas. Vea que dos instancias del mismo bloque de función guardan memorias separadas.
 - **Estructuras y arreglos: un panel de tres llamadas**: Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro. Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo.
+- **Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque**: Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración. Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia.
 
 
 ## Módulo 8: Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción
@@ -242,13 +248,15 @@ Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulac
 |---|---|---|---|---|---|---|
 | `modbus-register-round-trip` Modbus TCP: escribir un registro y volver a leerlo | Disponible | ST | Simulación | - | 25 | `structures-arrays-call-panel` |
 | `mqtt-publish-subscribe` MQTT: publicar un mensaje y recibirlo | Disponible | ST | Simulación | - | 25 | `modbus-register-round-trip` |
+| `modbus-coil-fbd` Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla | Disponible | FBD | Simulación | - | 25 | `modbus-register-round-trip`, `counter-batch-fbd` |
 
-Las dos lecciones se califican con un servidor Modbus TCP y un broker MQTT que Studio inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
+Las lecciones de este módulo se califican con un servidor Modbus TCP y un broker MQTT que Studio inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
 
 Objetivos de las lecciones disponibles:
 
 - **Modbus TCP: escribir un registro y volver a leerlo**: Escriba un registro de retención con MB_WRITE_HREG y vuelva a leerlo con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo. Compare el valor leído con el valor escrito, e informe un ERROR de cualquiera de los dos bloques. Indique qué muestra un doble de loopback y qué no muestra.
 - **MQTT: publicar un mensaje y recibirlo**: Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN. Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega. Conserve un mensaje que VALID indica durante un solo ciclo, y compare su PAYLOAD. Indique qué muestra un broker de loopback y qué no muestra.
+- **Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla**: Llame a un bloque cliente Modbus en un diagrama de bloques de función, con sus entradas alimentadas desde constantes que comparten los dos bloques, para que la escritura y la lectura nombren el mismo servidor y la misma bobina. Encadene dos solicitudes con un cable desde la salida DONE del primer bloque hasta la entrada EN del segundo.
 
 
 ## Módulo 11: Proyecto final: una máquina pequeña, de la descripción al programa probado

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Enclavamientos en diagrama de escalera: un motor con inversión de giro",
+  "summary": "Edite dos peldaños en diagrama de escalera para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.",
+  "objectives": [
+    "Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione.",
+    "Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Reversing.ld.json hay dos peldaños dibujados, uno por sentido de giro. Cada uno mantiene su bobina con una autorretención bajo su pulsador, y tiene StopPB y el permisivo LubeOk en serie. Agregue el enclavamiento: un contacto normalmente cerrado de Reverse en el peldaño de Forward, y un contacto normalmente cerrado de Forward en el peldaño de Reverse.",
+      "checkpoint": "Forward y Reverse nunca están en ON a la vez, un sentido en marcha ignora el otro pulsador, y la pérdida de LubeOk apaga cualquiera de los dos."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Forward arranca a los {{t:10}} ms. Prediga Forward y Reverse a los {{t:30}} ms, cuando se pulsa RevPB con Forward en marcha, a los {{t:90}} ms, cuando se pulsa FwdPB con Reverse en marcha, y a los {{t:110}} ms, cuando cae LubeOk.",
+      "checkpoint": "{{v:Reversing.Forward=true,Reversing.Reverse=false@30|Forward en ON y Reverse en OFF}} a los {{t:30}} ms; {{v:Reversing.Forward=false,Reversing.Reverse=true@90|Forward en OFF y Reverse en ON}} a los {{t:90}} ms; {{v:Reversing.Forward=false,Reversing.Reverse=false@110|ambos en OFF}} a los {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los {{t:30}} ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse. En el editor de diagrama de escalera agregue en cada peldaño un contacto normalmente cerrado entre el contacto LubeOk y la bobina, y asígnele la bobina del otro peldaño.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Reversing y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:70}} ms: RevPB se ignora a los {{t:30}} ms mientras Forward está en marcha, Stop apaga Forward a los {{t:50}} ms, y solo entonces RevPB arranca Reverse a los {{t:70}} ms.",
+      "checkpoint": "Reverse cae una vez a los {{t:110}} ms cuando cae LubeOk, y no vuelve a arrancar a los {{t:120}} ms cuando LubeOk regresa; una nueva pulsación de FwdPB arranca Forward a los {{t:130}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué el enclavamiento usa la otra bobina y no el otro pulsador? ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué aserción falla.",
+      "checkpoint": "La bobina dice lo que hace el motor, un pulsador solo lo que alguien pide: un enclavamiento con RevPB dejaría cerrar Forward con Reverse retenido. Un permisivo solo en el camino de arranque deja que un motor en marcha lo ignore. El escenario muestra solo la lógica; los arrancadores reales con inversión de giro usan además contactores con enclavamiento mecánico, y esto no es una función de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un enclavamiento mantiene una bobina en OFF mientras la otra está en ON. ¿Qué tipo de contacto deja pasar la energía solo cuando su variable es FALSE?"
+    },
+    {
+      "level": 2,
+      "text": "En el peldaño de Forward agregue un contacto normalmente cerrado de Reverse entre LubeOk y la bobina; en el peldaño de Reverse agregue un contacto normalmente cerrado de Forward en el mismo lugar. Deje StopPB, LubeOk y los contactos de autorretención donde están."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los {{t:30}} ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Analog scaling in Function Block Diagram: a high level alarm",
+  "summary": "Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into a level in percent with MUL, DIV and LIMIT blocks, and lights HighLevel at 75 percent.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task and a stand-in for the potentiometer; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+  "objectives": [
+    "Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.",
+    "Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Add the division by 4095, so that Level is the level in percent.",
+      "checkpoint": "Level follows Raw in percent, and HighLevel turns ON once Level reaches 75 percent."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Enable rises at {{t:10}} ms, so Raw is 410 after that scan, 2870 at {{t:70}} ms and 3280 at {{t:80}} ms. Work out Level at those times and predict HighLevel at {{t:10}}, {{t:70}} and {{t:80}} ms.",
+      "checkpoint": "{{v:LevelScale.HighLevel=false@10|OFF}} at {{t:10}} ms, with Level at 10; {{v:LevelScale.HighLevel=false@70|OFF}} at {{t:70}} ms, with Level at 70; {{v:LevelScale.HighLevel=true@80|ON}} at {{t:80}} ms, with Level at 80."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT. Place a DIV block and a constant 4095 of type DINT, wire MUL.OUT to DIV.IN1 and the constant to DIV.IN2, then wire DIV.OUT to LIMIT.IN in place of the wire from MUL.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named LevelScale and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch Level and compare {{t:70}}, {{t:80}} and {{t:100}} ms: Level climbs by 10 percent per scan, HighLevel rises at {{t:80}} ms, and at {{t:100}} ms Raw has reached 4095 and Level stays at 100.",
+      "checkpoint": "HighLevel rises once at {{t:80}} ms and falls once at {{t:110}} ms, when Enable drops and the stand-in turns Raw back to 0."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why multiply before dividing, and why does this diagram use DINT? Raw times 100 reaches 409500, more than a 16-bit INT holds. What would LIMIT protect against if the sensor reported a value outside 0..4095?",
+      "checkpoint": "Dividing first loses the remainder, so Level would stay 0 until full scale. LIMIT keeps the value inside 0..100 whatever the input does; the scenario checks the threshold only, not the clamp, the rounding or a real potentiometer."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The level in percent is Raw times 100 divided by 4095. Which block is missing from the starter, and between which two blocks does it go?"
+    },
+    {
+      "level": 2,
+      "text": "Place a DIV block, wire MUL.OUT to its IN1 and a DINT constant 4095 to its IN2, then wire DIV.OUT to LIMIT.IN. Leave the constant 75 and the wire to HighLevel as they are."
+    }
+  ],
+  "faultCases": [
+    "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at {{t:10}} ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT."
+  ]
+}

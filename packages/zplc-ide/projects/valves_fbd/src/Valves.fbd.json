@@ -1,0 +1,306 @@
+{
+  "name": "Valves",
+  "description": "Two valves commanded by two instances of the project's function block ValveCtl.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "FillPB",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Fill pushbutton"
+      },
+      {
+        "name": "DrainPB",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Drain pushbutton"
+      },
+      {
+        "name": "StopPB",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Stop pushbutton: closes both valves"
+      },
+      {
+        "name": "AirOk",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Instrument air pressure is good: the permissive of both valves"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillValve",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Fill valve solenoid"
+      },
+      {
+        "name": "DrainValve",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Drain valve solenoid"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_fill",
+      "type": "variable",
+      "variableName": "FillPB",
+      "direction": "read",
+      "comment": "Fill pushbutton",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "var_drain",
+      "type": "variable",
+      "variableName": "DrainPB",
+      "direction": "read",
+      "comment": "Drain pushbutton",
+      "position": {
+        "x": 40,
+        "y": 140
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "var_stop",
+      "type": "variable",
+      "variableName": "StopPB",
+      "direction": "read",
+      "comment": "Stop pushbutton",
+      "position": {
+        "x": 40,
+        "y": 240
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "var_air",
+      "type": "variable",
+      "variableName": "AirOk",
+      "direction": "read",
+      "comment": "Instrument air pressure is good",
+      "position": {
+        "x": 40,
+        "y": 340
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "fill",
+      "type": "ValveCtl",
+      "instanceName": "Fill",
+      "comment": "Fill valve: an instance of ValveCtl, declared in src/ValveCtl.st",
+      "position": {
+        "x": 320,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "Open",
+          "type": "BOOL"
+        },
+        {
+          "name": "Close",
+          "type": "BOOL"
+        },
+        {
+          "name": "Permit",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Cmd",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "drain",
+      "type": "ValveCtl",
+      "instanceName": "Drain",
+      "comment": "Drain valve: a second instance of ValveCtl, with a memory of its own",
+      "position": {
+        "x": 320,
+        "y": 260
+      },
+      "inputs": [
+        {
+          "name": "Open",
+          "type": "BOOL"
+        },
+        {
+          "name": "Close",
+          "type": "BOOL"
+        },
+        {
+          "name": "Permit",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Cmd",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_fill",
+      "type": "output",
+      "variableName": "FillValve",
+      "comment": "Fill valve solenoid",
+      "position": {
+        "x": 600,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_drain",
+      "type": "output",
+      "variableName": "DrainValve",
+      "comment": "Drain valve solenoid",
+      "position": {
+        "x": 600,
+        "y": 260
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_fill_out_fill_open",
+      "from": {
+        "block": "var_fill",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "fill",
+        "port": "Open"
+      }
+    },
+    {
+      "id": "conn_var_stop_out_fill_close",
+      "from": {
+        "block": "var_stop",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "fill",
+        "port": "Close"
+      }
+    },
+    {
+      "id": "conn_var_air_out_fill_permit",
+      "from": {
+        "block": "var_air",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "fill",
+        "port": "Permit"
+      }
+    },
+    {
+      "id": "conn_fill_cmd_out_fill_in",
+      "from": {
+        "block": "fill",
+        "port": "Cmd"
+      },
+      "to": {
+        "block": "out_fill",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_drain_out_drain_open",
+      "from": {
+        "block": "var_drain",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "drain",
+        "port": "Open"
+      }
+    },
+    {
+      "id": "conn_var_stop_out_drain_close",
+      "from": {
+        "block": "var_stop",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "drain",
+        "port": "Close"
+      }
+    },
+    {
+      "id": "conn_drain_cmd_out_drain_in",
+      "from": {
+        "block": "drain",
+        "port": "Cmd"
+      },
+      "to": {
+        "block": "out_drain",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_air_out_drain_permit",
+      "from": {
+        "block": "var_air",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "drain",
+        "port": "Permit"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-20",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

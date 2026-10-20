@@ -76,6 +76,7 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-
 | [A sequence in Sequential Function Chart: fill, then mix](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Instruction List: the current result and the order of instructions](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [One logic in five languages: a gate that holds itself open](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
+| [Analog scaling in Function Block Diagram: a high level alarm](./esp32-s3-devkitc/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Verify my board](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}

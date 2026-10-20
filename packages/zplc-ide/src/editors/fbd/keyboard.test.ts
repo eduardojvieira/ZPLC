@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import type { Edge, Node } from '@xyflow/react';
 
 import type { FBDModel } from '../../models/fbd';
+import { compileSingleFileWithTask } from '../../compiler';
 import { transpileFBDToST } from '../../transpiler/fbdToST';
 import { actionFor, actionsOf, parseChord } from '../keymap';
 import { edgesToConnections, nodesToBlocks } from './graphModel';
@@ -123,6 +124,17 @@ describe('LNG-012 function block diagram keyboard authoring', () => {
     expect(data(selected(session)).instanceName).toBe('TON_1');
     run(session, 'insertElement', { blockType: 'TON' });
     expect(session.state.nodes.map((node) => data(node).instanceName)).toEqual(['TON_1', 'TON_2']);
+  });
+
+  it('LNG-007 gives a Modbus, an MQTT or a library block an instance name as it gives a timer one, so a placed block builds', () => {
+    const session = start();
+    for (const blockType of ['MB_WRITE_COIL', 'MQTT_PUBLISH', 'BLINK']) {
+      run(session, 'insertElement', { blockType });
+      expect(data(selected(session)).instanceName, blockType).toBe(`${blockType}_1`);
+    }
+    const translated = transpileFBDToST(documentOf(session));
+    expect(translated.errors).toEqual([]);
+    expect(() => compileSingleFileWithTask(translated.source, 'ST')).not.toThrow();
   });
 
   it('is one change of the document for each command that changes it, and none for moving', () => {

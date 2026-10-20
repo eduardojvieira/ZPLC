@@ -5562,6 +5562,545 @@
       }
     },
     {
+      "id": "analog-scaling-fbd",
+      "version": 1,
+      "order": 30,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "analog-scaling-integer",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation",
+        "hardware"
+      ],
+      "unsupported": {},
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "level_scale_fbd_starter",
+        "program": "src/LevelScale.fbd.json"
+      },
+      "solution": {
+        "project": "level_scale_fbd",
+        "program": "src/LevelScale.fbd.json"
+      },
+      "scenario": {
+        "id": "LevelScale",
+        "path": "tests/level-scale.scenario.json",
+        "sha256": "f825ce4b24aebf0db3fbe05bf9eef58b9a2ccfb8fba2c09849a8992e2c94b713",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"LevelScale.Enable\":false}},{\"atMs\":10,\"set\":{\"LevelScale.Enable\":true}},{\"atMs\":110,\"set\":{\"LevelScale.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"LevelScale.HighLevel\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"LevelScale.HighLevel\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"condition\":{\"LevelScale.HighLevel\":true},\"forMs\":20,\"fromMs\":80,\"kind\":\"FOR\"},{\"condition\":{\"LevelScale.HighLevel\":true},\"fromMs\":80,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"LevelScale.HighLevel\":false},\"fromMs\":110,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"LevelScale\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": {
+        "wiring": {
+          "schemaVersion": 1,
+          "parts": [
+            {
+              "id": "enable",
+              "kind": "button",
+              "channel": "DI0",
+              "label": {
+                "en": "Enable",
+                "es": "Habilitación"
+              }
+            },
+            {
+              "id": "high",
+              "kind": "led",
+              "channel": "DO0",
+              "color": "red",
+              "resistorOhms": 330,
+              "label": {
+                "en": "High level",
+                "es": "Nivel alto"
+              }
+            }
+          ]
+        },
+        "tolerances": {
+          "timeMs": 10,
+          "analogPercent": 5
+        }
+      },
+      "text": {
+        "en": {
+          "title": "Analog scaling in Function Block Diagram: a high level alarm",
+          "summary": "Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into a level in percent with MUL, DIV and LIMIT blocks, and lights HighLevel at 75 percent.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task and a stand-in for the potentiometer; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+          "objectives": [
+            "Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.",
+            "Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Add the division by 4095, so that Level is the level in percent.",
+              "checkpoint": "Level follows Raw in percent, and HighLevel turns ON once Level reaches 75 percent."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable rises at 10 ms, so Raw is 410 after that scan, 2870 at 70 ms and 3280 at 80 ms. Work out Level at those times and predict HighLevel at 10, 70 and 80 ms.",
+              "checkpoint": "OFF at 10 ms, with Level at 10; OFF at 70 ms, with Level at 70; ON at 80 ms, with Level at 80."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT. Place a DIV block and a constant 4095 of type DINT, wire MUL.OUT to DIV.IN1 and the constant to DIV.IN2, then wire DIV.OUT to LIMIT.IN in place of the wire from MUL.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named LevelScale and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch Level and compare 70, 80 and 100 ms: Level climbs by 10 percent per scan, HighLevel rises at 80 ms, and at 100 ms Raw has reached 4095 and Level stays at 100.",
+              "checkpoint": "HighLevel rises once at 80 ms and falls once at 110 ms, when Enable drops and the stand-in turns Raw back to 0."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why multiply before dividing, and why does this diagram use DINT? Raw times 100 reaches 409500, more than a 16-bit INT holds. What would LIMIT protect against if the sensor reported a value outside 0..4095?",
+              "checkpoint": "Dividing first loses the remainder, so Level would stay 0 until full scale. LIMIT keeps the value inside 0..100 whatever the input does; the scenario checks the threshold only, not the clamp, the rounding or a real potentiometer."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The level in percent is Raw times 100 divided by 4095. Which block is missing from the starter, and between which two blocks does it go?"
+            },
+            {
+              "level": 2,
+              "text": "Place a DIV block, wire MUL.OUT to its IN1 and a DINT constant 4095 to its IN2, then wire DIV.OUT to LIMIT.IN. Leave the constant 75 and the wire to HighLevel as they are."
+            }
+          ],
+          "faultCases": [
+            "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT."
+          ]
+        },
+        "es": {
+          "title": "Escalado analógico en diagrama de bloques de función: una alarma de nivel alto",
+          "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas en bruto de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX, una tarea de 10 ms y un sustituto del potenciómetro; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
+          "objectives": [
+            "Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
+            "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Agregue la división por 4095 para que Level sea el nivel en porcentaje.",
+              "checkpoint": "Level sigue a Raw en porcentaje, y HighLevel pasa a ON cuando Level llega al 75 por ciento."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable sube a los 10 ms, así que Raw vale 410 después de ese ciclo, 2870 a los 70 ms y 3280 a los 80 ms. Calcule Level en esos momentos y prediga HighLevel a los 10, 70 y 80 ms.",
+              "checkpoint": "En OFF a los 10 ms, con Level en 10; en OFF a los 70 ms, con Level en 70; en ON a los 80 ms, con Level en 80."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095. Coloque un bloque DIV y una constante 4095 de tipo DINT, conecte MUL.OUT a DIV.IN1 y la constante a DIV.IN2, y luego conecte DIV.OUT a LIMIT.IN en lugar del cable que viene de MUL.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama LevelScale y contiene 9 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Observe Level y compare 70, 80 y 100 ms: Level sube 10 por ciento por ciclo, HighLevel sube a los 80 ms, y a los 100 ms Raw ya llegó a 4095 y Level se queda en 100.",
+              "checkpoint": "HighLevel sube una vez a los 80 ms y cae una vez a los 110 ms, cuando Enable cae y el sustituto devuelve Raw a 0."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué se multiplica antes de dividir, y por qué este diagrama usa DINT? Raw por 100 llega a 409500, más de lo que cabe en un INT de 16 bits. ¿De qué protegería LIMIT si el sensor entregara un valor fuera de 0..4095?",
+              "checkpoint": "Si se divide primero se pierde el resto, y Level quedaría en 0 hasta el fondo de escala. LIMIT mantiene el valor dentro de 0..100 haga lo que haga la entrada; el escenario comprueba solo el umbral, no el recorte, el redondeo ni un potenciómetro real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "El nivel en porcentaje es Raw por 100 dividido por 4095. ¿Qué bloque falta en el programa inicial, y entre qué dos bloques va?"
+            },
+            {
+              "level": 2,
+              "text": "Coloque un bloque DIV, conecte MUL.OUT a su IN1 y una constante DINT 4095 a su IN2, y luego conecte DIV.OUT a LIMIT.IN. Deje como están la constante 75 y el cable hacia HighLevel."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095."
+          ]
+        }
+      }
+    },
+    {
+      "id": "interlock-reversing-ladder",
+      "version": 1,
+      "order": 31,
+      "module": 6,
+      "level": "intermediate",
+      "prerequisites": [
+        "interlock-guard-permissive",
+        "seal-in-ladder"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson needs four pushbuttons at the same time (FwdPB, RevPB, StopPB and LubeOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
+            "es": "La lección necesita cuatro pulsadores a la vez (FwdPB, RevPB, StopPB y LubeOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "reversing_ladder_starter",
+        "program": "src/Reversing.ld.json"
+      },
+      "solution": {
+        "project": "reversing_ladder",
+        "program": "src/Reversing.ld.json"
+      },
+      "scenario": {
+        "id": "Reversing",
+        "path": "tests/reversing.scenario.json",
+        "sha256": "5b348e6316fdceca450886dada64c3e1d8cc40d12995bafc0b3999346a500c58",
+        "tickMs": 10,
+        "durationMs": 150,
+        "assertions": 11,
+        "canonical": "{\"durationMs\":150,\"events\":[{\"atMs\":0,\"set\":{\"Reversing.FwdPB\":false,\"Reversing.LubeOk\":true,\"Reversing.RevPB\":false,\"Reversing.StopPB\":false}},{\"atMs\":10,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":20,\"set\":{\"Reversing.FwdPB\":false}},{\"atMs\":30,\"set\":{\"Reversing.RevPB\":true}},{\"atMs\":40,\"set\":{\"Reversing.RevPB\":false}},{\"atMs\":50,\"set\":{\"Reversing.StopPB\":true}},{\"atMs\":60,\"set\":{\"Reversing.StopPB\":false}},{\"atMs\":70,\"set\":{\"Reversing.RevPB\":true}},{\"atMs\":80,\"set\":{\"Reversing.RevPB\":false}},{\"atMs\":90,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":100,\"set\":{\"Reversing.FwdPB\":false}},{\"atMs\":110,\"set\":{\"Reversing.LubeOk\":false}},{\"atMs\":120,\"set\":{\"Reversing.LubeOk\":true}},{\"atMs\":130,\"set\":{\"Reversing.FwdPB\":true}},{\"atMs\":140,\"set\":{\"Reversing.FwdPB\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":true},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":120,\"condition\":{\"Reversing.Forward\":false,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"atMs\":130,\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":false},\"kind\":\"AT\"},{\"condition\":{\"Reversing.Reverse\":false},\"fromMs\":110,\"kind\":\"FALLING\",\"withinMs\":0},{\"condition\":{\"Reversing.Forward\":true,\"Reversing.Reverse\":true},\"kind\":\"NEVER\"}],\"id\":\"Reversing\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Interlocks in Ladder: a reversing motor",
+          "summary": "Edit two Ladder rungs so that a reversing motor never closes its Forward and Reverse contactors together, and a lost lubrication permissive drops either direction.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, mechanically interlocked contactors, wiring, hardware timing, HIL, or certification.",
+          "objectives": [
+            "Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all.",
+            "Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/Reversing.ld.json two rungs are drawn, one per direction. Each holds its coil on with a seal-in under its pushbutton, and has StopPB and the permissive LubeOk in series. Add the interlock: a normally closed contact on Reverse in the Forward rung, and a normally closed contact on Forward in the Reverse rung.",
+              "checkpoint": "Forward and Reverse are never ON together, a running direction ignores the other pushbutton, and losing LubeOk drops either one."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Forward starts at 10 ms. Predict Forward and Reverse at 30 ms, when RevPB is pressed while Forward runs, at 90 ms, when FwdPB is pressed while Reverse runs, and at 110 ms, when LubeOk drops.",
+              "checkpoint": "Forward ON, Reverse OFF at 30 ms; Forward OFF, Reverse ON at 90 ms; both OFF at 110 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter has no interlock, so pressing RevPB at 30 ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung. In the Ladder editor add a normally closed contact to each rung, between the LubeOk contact and the coil, and give it the coil of the other rung.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Reversing and contains 11 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 70 ms: RevPB is ignored at 30 ms while Forward runs, Stop drops Forward at 50 ms, and only then does RevPB start Reverse at 70 ms.",
+              "checkpoint": "Reverse falls once at 110 ms when LubeOk drops, and does not restart at 120 ms when LubeOk returns; a new FwdPB press starts Forward at 130 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why does the interlock use the other coil and not the other pushbutton? And why must LubeOk sit in series before the coil and not only in the start path? Move LubeOk into the start branch and see which assertion fails.",
+              "checkpoint": "The coil says what the motor is doing, a pushbutton only what someone asks: an interlock on RevPB would let Forward close while Reverse is held in. A permissive in the start path only lets a running motor ignore it. The scenario shows the logic only; real reversing starters also use mechanically interlocked contactors, and this is not a safety function."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "An interlock keeps a coil OFF while the other coil is ON. Which kind of contact passes power only while its variable is FALSE?"
+            },
+            {
+              "level": 2,
+              "text": "In the Forward rung add a normally closed contact on Reverse between LubeOk and the coil; in the Reverse rung add a normally closed contact on Forward in the same place. Leave StopPB, LubeOk and the seal-in contacts where they are."
+            }
+          ],
+          "faultCases": [
+            "The starter has no interlock, so pressing RevPB at 30 ms while Forward runs closes Reverse as well and both contactors are ON; add a normally closed contact on Reverse in the Forward rung and a normally closed contact on Forward in the Reverse rung."
+          ]
+        },
+        "es": {
+          "title": "Enclavamientos en diagrama de escalera: un motor con inversión de giro",
+          "summary": "Edite dos peldaños en diagrama de escalera para que un motor con inversión de giro nunca cierre a la vez sus contactores Forward y Reverse, y para que la pérdida del permisivo de lubricación apague cualquiera de los dos sentidos.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, contactores con enclavamiento mecánico, cableado, tiempos de hardware, HIL ni certificación.",
+          "objectives": [
+            "Distinga un enclavamiento, un contacto que mantiene una salida apagada mientras otra está encendida, de un permisivo, un contacto que debe estar cerrado para que una salida funcione.",
+            "Haga que dos bobinas se excluyan mutuamente con un contacto normalmente cerrado de cada una en el peldaño de la otra, en serie con Stop y el permisivo."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/Reversing.ld.json hay dos peldaños dibujados, uno por sentido de giro. Cada uno mantiene su bobina con una autorretención bajo su pulsador, y tiene StopPB y el permisivo LubeOk en serie. Agregue el enclavamiento: un contacto normalmente cerrado de Reverse en el peldaño de Forward, y un contacto normalmente cerrado de Forward en el peldaño de Reverse.",
+              "checkpoint": "Forward y Reverse nunca están en ON a la vez, un sentido en marcha ignora el otro pulsador, y la pérdida de LubeOk apaga cualquiera de los dos."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Forward arranca a los 10 ms. Prediga Forward y Reverse a los 30 ms, cuando se pulsa RevPB con Forward en marcha, a los 90 ms, cuando se pulsa FwdPB con Reverse en marcha, y a los 110 ms, cuando cae LubeOk.",
+              "checkpoint": "Forward en ON y Reverse en OFF a los 30 ms; Forward en OFF y Reverse en ON a los 90 ms; ambos en OFF a los 110 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los 30 ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse. En el editor de diagrama de escalera agregue en cada peldaño un contacto normalmente cerrado entre el contacto LubeOk y la bobina, y asígnele la bobina del otro peldaño.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Reversing y contiene 11 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 70 ms: RevPB se ignora a los 30 ms mientras Forward está en marcha, Stop apaga Forward a los 50 ms, y solo entonces RevPB arranca Reverse a los 70 ms.",
+              "checkpoint": "Reverse cae una vez a los 110 ms cuando cae LubeOk, y no vuelve a arrancar a los 120 ms cuando LubeOk regresa; una nueva pulsación de FwdPB arranca Forward a los 130 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué el enclavamiento usa la otra bobina y no el otro pulsador? ¿Y por qué LubeOk debe estar en serie antes de la bobina y no solo en el camino de arranque? Mueva LubeOk a la rama de arranque y vea qué aserción falla.",
+              "checkpoint": "La bobina dice lo que hace el motor, un pulsador solo lo que alguien pide: un enclavamiento con RevPB dejaría cerrar Forward con Reverse retenido. Un permisivo solo en el camino de arranque deja que un motor en marcha lo ignore. El escenario muestra solo la lógica; los arrancadores reales con inversión de giro usan además contactores con enclavamiento mecánico, y esto no es una función de seguridad."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Un enclavamiento mantiene una bobina en OFF mientras la otra está en ON. ¿Qué tipo de contacto deja pasar la energía solo cuando su variable es FALSE?"
+            },
+            {
+              "level": 2,
+              "text": "En el peldaño de Forward agregue un contacto normalmente cerrado de Reverse entre LubeOk y la bobina; en el peldaño de Reverse agregue un contacto normalmente cerrado de Forward en el mismo lugar. Deje StopPB, LubeOk y los contactos de autorretención donde están."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial no tiene enclavamiento, así que al pulsar RevPB a los 30 ms con Forward en marcha también se cierra Reverse y los dos contactores quedan en ON; agregue un contacto normalmente cerrado de Reverse en el peldaño de Forward y un contacto normalmente cerrado de Forward en el peldaño de Reverse."
+          ]
+        }
+      }
+    },
+    {
+      "id": "function-block-valves-fbd",
+      "version": 1,
+      "order": 32,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "function-block-pump-pair",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson needs four pushbuttons at the same time (FillPB, DrainPB, StopPB and AirOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
+            "es": "La lección necesita cuatro pulsadores a la vez (FillPB, DrainPB, StopPB y AirOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "valves_fbd_starter",
+        "program": "src/Valves.fbd.json"
+      },
+      "solution": {
+        "project": "valves_fbd",
+        "program": "src/Valves.fbd.json"
+      },
+      "scenario": {
+        "id": "Valves",
+        "path": "tests/valves.scenario.json",
+        "sha256": "e819d3fe88a4e3d77165d8c6da27fd24f19cfaa3dde3d0459e6ed1d794158c1e",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Valves.AirOk\":true,\"Valves.DrainPB\":false,\"Valves.FillPB\":false,\"Valves.StopPB\":false}},{\"atMs\":10,\"set\":{\"Valves.FillPB\":true}},{\"atMs\":20,\"set\":{\"Valves.FillPB\":false}},{\"atMs\":30,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":40,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":50,\"set\":{\"Valves.StopPB\":true}},{\"atMs\":60,\"set\":{\"Valves.StopPB\":false}},{\"atMs\":70,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":80,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":90,\"set\":{\"Valves.AirOk\":false}},{\"atMs\":100,\"set\":{\"Valves.AirOk\":true}},{\"atMs\":110,\"set\":{\"Valves.FillPB\":true}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Valves.DrainValve\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"condition\":{\"Valves.DrainValve\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Valves.DrainValve\":false},\"fromMs\":90,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"Valves\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Your own function block in Function Block Diagram: two valves, one block",
+          "summary": "Edit a Function Block Diagram so that a second instance of the project's function block ValveCtl commands the drain valve, with its inputs and its output wired.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.",
+          "objectives": [
+            "Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration.",
+            "Wire a second instance of the same function block, and see that each instance keeps a memory of its own."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "src/ValveCtl.st declares the function block ValveCtl: Open opens the valve and it stays open, Close closes it, and Permit must be TRUE for it to be open at all. In src/Valves.fbd.json the instance Fill is wired to FillPB, StopPB, AirOk and FillValve. The instance Drain is placed but not wired: wire DrainPB to Open, StopPB to Close and AirOk to Permit, and add an output block DrainValve fed from Drain.Cmd.",
+              "checkpoint": "Each valve opens on its own pushbutton, both close on StopPB, and losing AirOk closes either one."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "FillPB is pressed at 10 ms and DrainPB at 30 ms. Predict FillValve and DrainValve at 30 ms, at 70 ms, after StopPB and a new DrainPB press, and at 90 ms, when AirOk drops.",
+              "checkpoint": "Both ON at 30 ms, because each instance holds its own valve; only DrainValve at 70 ms; both OFF at 90 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at 30 ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block. ValveCtl is in the Project category of the palette, but the instance Drain is already placed, so only the wires and the output block are missing.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Valves and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 70 ms: both valves are open at 30 ms, StopPB closes both at 50 ms, and at 70 ms DrainPB opens the drain valve alone, because Fill remembers that it was closed.",
+              "checkpoint": "DrainValve rises at 30 ms and falls at 90 ms when AirOk drops; it does not reopen at 100 ms when AirOk returns, and FillPB opens only the fill valve at 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why does the program need two instances of ValveCtl and not one block wired to both valves? Wire DrainValve to Fill.Cmd and see which assertion fails.",
+              "checkpoint": "Cmd is the memory of one instance, so one instance can hold only one valve. Fixing ValveCtl once fixes every valve that uses it. The scenario shows the logic only; it does not show how a real valve moves."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Read the declaration in src/ValveCtl.st: which input opens the valve, which closes it, and which permits it? The instance Drain has the same ports as Fill."
+            },
+            {
+              "level": 2,
+              "text": "Draw DrainPB.OUT to Drain.Open, StopPB.OUT to Drain.Close and AirOk.OUT to Drain.Permit, then add an output block DrainValve and draw Drain.Cmd to its IN. Leave the instance Fill as it is."
+            }
+          ],
+          "faultCases": [
+            "The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at 30 ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block."
+          ]
+        },
+        "es": {
+          "title": "Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque",
+          "summary": "Edite un diagrama de bloques de función para que una segunda instancia del bloque de función ValveCtl del proyecto comande la válvula de vaciado, con sus entradas y su salida conectadas.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
+          "objectives": [
+            "Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración.",
+            "Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "src/ValveCtl.st declara el bloque de función ValveCtl: Open abre la válvula y la mantiene abierta, Close la cierra, y Permit debe ser TRUE para que pueda estar abierta. En src/Valves.fbd.json la instancia Fill está conectada a FillPB, StopPB, AirOk y FillValve. La instancia Drain está colocada pero sin conectar: conecte DrainPB a Open, StopPB a Close y AirOk a Permit, y agregue un bloque de salida DrainValve alimentado desde Drain.Cmd.",
+              "checkpoint": "Cada válvula se abre con su propio pulsador, las dos se cierran con StopPB, y la pérdida de AirOk cierra cualquiera de las dos."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "FillPB se pulsa a los 10 ms y DrainPB a los 30 ms. Prediga FillValve y DrainValve a los 30 ms, a los 70 ms, después de StopPB y de una nueva pulsación de DrainPB, y a los 90 ms, cuando cae AirOk.",
+              "checkpoint": "Ambas en ON a los 30 ms, porque cada instancia mantiene su propia válvula; solo DrainValve a los 70 ms; ambas en OFF a los 90 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los 30 ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida. ValveCtl está en la categoría Proyecto de la paleta, pero la instancia Drain ya está colocada, así que solo faltan los cables y el bloque de salida.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Valves y contiene 10 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 70 ms: las dos válvulas están abiertas a los 30 ms, StopPB cierra ambas a los 50 ms, y a los 70 ms DrainPB abre solo la válvula de vaciado, porque Fill recuerda que se cerró.",
+              "checkpoint": "DrainValve sube a los 30 ms y cae a los 90 ms cuando cae AirOk; no se vuelve a abrir a los 100 ms cuando AirOk regresa, y FillPB abre solo la válvula de llenado a los 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué el programa necesita dos instancias de ValveCtl y no un solo bloque conectado a las dos válvulas? Conecte DrainValve a Fill.Cmd y vea qué aserción falla.",
+              "checkpoint": "Cmd es la memoria de una instancia, así que una instancia puede mantener una sola válvula. Corregir ValveCtl una vez corrige todas las válvulas que lo usan. El escenario muestra solo la lógica; no muestra cómo se mueve una válvula real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Lea la declaración en src/ValveCtl.st: ¿qué entrada abre la válvula, cuál la cierra y cuál la permite? La instancia Drain tiene los mismos puertos que Fill."
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de DrainPB.OUT a Drain.Open, de StopPB.OUT a Drain.Close y de AirOk.OUT a Drain.Permit; luego agregue un bloque de salida DrainValve y trace un cable de Drain.Cmd a su IN. Deje la instancia Fill como está."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los 30 ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida."
+          ]
+        }
+      }
+    },
+    {
       "id": "verify-my-board",
       "version": 1,
       "order": 33,
@@ -5773,6 +6312,179 @@
           ],
           "faultCases": [
             "El programa inicial ignora el pulsador: mientras está presionado, el LED sigue parpadeando."
+          ]
+        }
+      }
+    },
+    {
+      "id": "modbus-coil-fbd",
+      "version": 1,
+      "order": 34,
+      "module": 10,
+      "level": "advanced",
+      "prerequisites": [
+        "modbus-register-round-trip",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson writes and reads a coil of the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and a server address in its firmware, which the course firmware does not set.",
+            "es": "La lección escribe y lee una bobina del servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "coil_echo_fbd_starter",
+        "program": "src/CoilEcho.fbd.json"
+      },
+      "solution": {
+        "project": "coil_echo_fbd",
+        "program": "src/CoilEcho.fbd.json"
+      },
+      "scenario": {
+        "id": "CoilEcho",
+        "path": "tests/coil-echo.scenario.json",
+        "sha256": "58bf66c6e6f3a65f8405e91c8224be4c43d8a1c5f10ab1f5fd37324768fa44cb",
+        "tickMs": 10,
+        "durationMs": 20000,
+        "assertions": 6,
+        "canonical": "{\"durationMs\":20000,\"events\":[{\"atMs\":0,\"set\":{\"CoilEcho.Send\":false}},{\"atMs\":10,\"set\":{\"CoilEcho.Send\":true}},{\"atMs\":10000,\"set\":{\"CoilEcho.Send\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"CoilEcho.Echo\":false,\"CoilEcho.Failed\":false,\"CoilEcho.Written\":false},\"kind\":\"AT\"},{\"condition\":{\"CoilEcho.Written\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"CoilEcho.Echo\":true},\"fromMs\":10,\"kind\":\"WITHIN\",\"withinMs\":9000},{\"condition\":{\"CoilEcho.Failed\":false},\"kind\":\"ALWAYS\"},{\"atMs\":9990,\"condition\":{\"CoilEcho.Echo\":true,\"CoilEcho.Written\":true},\"kind\":\"AT\"},{\"atMs\":10100,\"condition\":{\"CoilEcho.Echo\":false,\"CoilEcho.Written\":false},\"kind\":\"AT\"}],\"id\":\"CoilEcho\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Modbus in Function Block Diagram: write a coil and read it back",
+          "summary": "Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRITE_COIL has written it, and Echo reports the coil read.",
+          "scope": "The Modbus server of this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing, a real device, HIL or certification.",
+          "objectives": [
+            "Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil.",
+            "Chain two requests with a wire from the DONE output of the first block to the EN input of the second."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "In src/CoilEcho.fbd.json the block Wr (MB_WRITE_COIL) writes TRUE to coil 4 of a Modbus TCP server while Send is ON, and the block Rd (MB_READ_COIL) is wired to the same constants for the server and the coil. Echo is ON when Rd is done and the coil it read is ON, and Failed is ON when either block reports ERROR. The simulation of Studio answers every Modbus TCP request with a server of its own on this computer, so no device and no network are needed. Enable the read-back: Rd must run once the write is done.",
+              "checkpoint": "Written, Echo and Failed describe the exchange: the coil was written, the coil read back is ON, and nothing failed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Send turns ON at 10 ms and OFF at 10000 ms. Predict Written, Echo and Failed at 0 ms, while Send is ON, and after Send turns OFF. A block clears DONE when its EN falls.",
+              "checkpoint": "All three OFF at 0 ms; Written and Echo turn ON a few scans after Send and Failed stays OFF; Written and Echo are OFF again at 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done. Draw one wire, from the DONE output of Wr to the EN input of Rd, and leave the shared constants as they are.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the Modbus server of the simulation running.",
+              "checkpoint": "The scenario is named CoilEcho and contains 6 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "The scenario does not ask for Written and Echo at one exact scan. The server answers in real time while the runtime plays simulated time faster, so it asks for each to turn ON at some moment from 10 to 9010 ms, and it holds them to the same answer at 9990 ms.",
+              "checkpoint": "Written and Echo are both ON at 9990 ms, and both are OFF again at 10100 ms because Send fell at 10000 ms, Wr cleared DONE, and so Rd lost its EN as well."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "What would the scenario show if Rd read coil 5 instead of coil 4, or if Wr wrote FALSE? Wire a new constant 5 to Rd.ADDR and see which assertion fails.",
+              "checkpoint": "Coil 5 was never written and reads OFF, so Echo never turns ON; writing FALSE does the same. Sharing one constant between the two blocks is what keeps them on the same coil. The scenario shows how the blocks behave against the double that Studio starts. It does not show that a real Modbus device accepts the same function codes, addresses or timing: that has to be checked against that device."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Rd reads only while its EN is TRUE. Which output of Wr is TRUE once the coil has been written?"
+            },
+            {
+              "level": 2,
+              "text": "Draw a wire from Wr.DONE to Rd.EN. Do not wire Send to Rd.EN: the read could then run before the write is done."
+            }
+          ],
+          "faultCases": [
+            "The starter writes coil 4 but the EN input of Rd is not wired, so Rd never reads the coil and Echo stays OFF; wire Wr.DONE to Rd.EN, so that the read runs once the write is done."
+          ]
+        },
+        "es": {
+          "title": "Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla",
+          "summary": "Edite un diagrama de bloques de función para que MB_READ_COIL vuelva a leer la bobina 4 una vez que MB_WRITE_COIL la haya escrito, y Echo informe la bobina leída.",
+          "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
+          "objectives": [
+            "Llame a un bloque cliente Modbus en un diagrama de bloques de función, con sus entradas alimentadas desde constantes que comparten los dos bloques, para que la escritura y la lectura nombren el mismo servidor y la misma bobina.",
+            "Encadene dos solicitudes con un cable desde la salida DONE del primer bloque hasta la entrada EN del segundo."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "En src/CoilEcho.fbd.json el bloque Wr (MB_WRITE_COIL) escribe TRUE en la bobina 4 de un servidor Modbus TCP mientras Send está en ON, y el bloque Rd (MB_READ_COIL) está conectado a las mismas constantes del servidor y de la bobina. Echo está en ON cuando Rd terminó y la bobina leída está en ON, y Failed está en ON cuando cualquiera de los dos bloques informa ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hacen falta dispositivo ni red. Habilite la lectura de comprobación: Rd debe ejecutarse cuando la escritura termine.",
+              "checkpoint": "Written, Echo y Failed describen el intercambio: la bobina se escribió, la bobina que se volvió a leer está en ON y nada falló."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Send pasa a ON a los 10 ms y a OFF a los 10000 ms. Prediga Written, Echo y Failed a los 0 ms, mientras Send está en ON y después de que Send pasa a OFF. Un bloque borra DONE cuando su EN cae.",
+              "checkpoint": "Las tres en OFF a los 0 ms; Written y Echo pasan a ON unos ciclos después de Send y Failed sigue en OFF; Written y Echo vuelven a OFF a los 10100 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe la bobina 4 pero la entrada EN de Rd no está conectada, así que Rd nunca lee la bobina y Echo sigue en OFF; conecte Wr.DONE a Rd.EN para que la lectura se ejecute cuando la escritura termine. Trace un solo cable, desde la salida DONE de Wr hasta la entrada EN de Rd, y deje las constantes compartidas como están.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "checkpoint": "El escenario se llama CoilEcho y contiene 6 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "El escenario no pide Written y Echo en un ciclo exacto. El servidor responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que pide que cada una pase a ON en algún momento entre los 10 y los 9010 ms, y exige la misma respuesta a los 9990 ms.",
+              "checkpoint": "Written y Echo están en ON a los 9990 ms, y las dos vuelven a OFF a los 10100 ms porque Send cayó a los 10000 ms, Wr borró DONE y así Rd también perdió su EN."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Qué mostraría el escenario si Rd leyera la bobina 5 en lugar de la 4, o si Wr escribiera FALSE? Conecte una constante nueva 5 a Rd.ADDR y vea qué aserción falla.",
+              "checkpoint": "La bobina 5 nunca se escribió y se lee en OFF, así que Echo nunca pasa a ON; escribir FALSE produce lo mismo. Compartir una constante entre los dos bloques es lo que los mantiene en la misma bobina. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso debe comprobarse contra ese dispositivo."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Rd lee solo mientras su EN es TRUE. ¿Qué salida de Wr es TRUE cuando la bobina ya se escribió?"
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de Wr.DONE a Rd.EN. No conecte Send a Rd.EN: la lectura podría ejecutarse antes de que termine la escritura."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial escribe la bobina 4 pero la entrada EN de Rd no está conectada, así que Rd nunca lee la bobina y Echo sigue en OFF; conecte Wr.DONE a Rd.EN para que la lectura se ejecute cuando la escritura termine."
           ]
         }
       }

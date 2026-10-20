@@ -80,6 +80,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
+| [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](./rpi-pico-rp2040/analog-scaling-fbd.md) | `analog-scaling-fbd` |
 | [Verificar mi placa](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}

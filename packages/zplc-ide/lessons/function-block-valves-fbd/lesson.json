@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "function-block-valves-fbd",
+  "version": 1,
+  "order": 32,
+  "module": 7,
+  "level": "intermediate",
+  "prerequisites": [
+    "function-block-pump-pair",
+    "counter-batch-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs four pushbuttons at the same time (FillPB, DrainPB, StopPB and AirOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
+        "es": "La lección necesita cuatro pulsadores a la vez (FillPB, DrainPB, StopPB y AirOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "valves_fbd_starter",
+    "program": "src/Valves.fbd.json"
+  },
+  "solution": {
+    "project": "valves_fbd",
+    "program": "src/Valves.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Valves",
+    "path": "tests/valves.scenario.json",
+    "sha256": "e819d3fe88a4e3d77165d8c6da27fd24f19cfaa3dde3d0459e6ed1d794158c1e"
+  },
+  "regressionScenarios": []
+}

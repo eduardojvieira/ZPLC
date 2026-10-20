@@ -23,6 +23,7 @@ A command is not a fact: the plant must confirm it. Once a program can run a seq
 | [Command, feedback, and speed](../lessons/motor-plant-feedback.md) | `motor-plant-feedback` | ST | 20 |
 | [Tank level, faults, and reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
 | [Interlocks and permissives: a guard that stops the motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
+| [Interlocks in Ladder: a reversing motor](../lessons/interlock-reversing-ladder.md) | `interlock-reversing-ladder` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-6 <<< */}
 

@@ -11,6 +11,7 @@
 import type { Edge, Node } from '@xyflow/react';
 import { getDefaultPorts, type FBDModel } from '../../models/fbd';
 import { judgeConnection } from '../../models/pinTypes';
+import { fbdNeedsInstance } from '../../transpiler/fbdToST';
 import { findProjectBlock, projectPalette, type ProjectBlock } from '../../models/projectBlocks';
 import { FBD_VALUE_BLOCKS, fbdPaletteCategories } from './palette';
 import { connectBlocks, edgesToConnections, nodesToBlocks } from './graphModel';
@@ -76,7 +77,6 @@ export const FBD_EDITOR_COMMANDS: readonly string[] = ['copySelection', 'pasteSe
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 /** A variable reference: a name, or a member or element of one (`Pump.Run`, `Table[3]`). */
 const REFERENCE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*|\[[^\]]+\])*$/;
-const INSTANCE_BLOCKS = /^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/;
 
 const data = (node: Node): Record<string, unknown> => node.data as Record<string, unknown>;
 const blockType = (node: Node): string => String(data(node).type ?? '');
@@ -147,7 +147,8 @@ export function placeBlock(
 ): { nodes: Node[]; edges: Edge[]; node: Node } {
   const anchor = cursorNode(state.nodes);
   const id = freeId(type.toLowerCase().replace(/[^a-z0-9_]/g, '_'), state.nodes.map((node) => node.id));
-  const needsInstance = INSTANCE_BLOCKS.test(type) || findProjectBlock(projectBlocks, type)?.kind === 'FUNCTION_BLOCK';
+  // a block of a function block type is an instance the program declares: a timer, a Modbus or MQTT client, a block of the project
+  const needsInstance = fbdNeedsInstance(type, projectBlocks);
   const node = newBlockNode(
     type,
     id,

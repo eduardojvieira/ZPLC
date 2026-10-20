@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-reversing-ladder",
+  "version": 1,
+  "order": 31,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "interlock-guard-permissive",
+    "seal-in-ladder"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs four pushbuttons at the same time (FwdPB, RevPB, StopPB and LubeOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own.",
+        "es": "La lección necesita cuatro pulsadores a la vez (FwdPB, RevPB, StopPB y LubeOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "reversing_ladder_starter",
+    "program": "src/Reversing.ld.json"
+  },
+  "solution": {
+    "project": "reversing_ladder",
+    "program": "src/Reversing.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Reversing",
+    "path": "tests/reversing.scenario.json",
+    "sha256": "5b348e6316fdceca450886dada64c3e1d8cc40d12995bafc0b3999346a500c58"
+  },
+  "regressionScenarios": []
+}

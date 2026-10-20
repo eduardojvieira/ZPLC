@@ -22,6 +22,7 @@ Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques
 | --- | --- | --- | --- |
 | [Bloques de función: un biestable, dos bombas](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
 | [Estructuras y arreglos: un panel de tres llamadas](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
+| [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](../lessons/function-block-valves-fbd.md) | `function-block-valves-fbd` | FBD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-7 <<< */}
 

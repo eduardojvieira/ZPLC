@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "modbus-coil-fbd",
+  "version": 1,
+  "order": 34,
+  "module": 10,
+  "level": "advanced",
+  "prerequisites": [
+    "modbus-register-round-trip",
+    "counter-batch-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson writes and reads a coil of the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and a server address in its firmware, which the course firmware does not set.",
+        "es": "La lección escribe y lee una bobina del servidor Modbus TCP que Studio inicia en este equipo. La Raspberry Pi Pico no tiene interfaz de red, y la ESP32-S3 necesitaría credenciales de Wi-Fi y la dirección de un servidor en su firmware, que el firmware del curso no configura."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no device or network.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita dispositivo ni red."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "coil_echo_fbd_starter",
+    "program": "src/CoilEcho.fbd.json"
+  },
+  "solution": {
+    "project": "coil_echo_fbd",
+    "program": "src/CoilEcho.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "CoilEcho",
+    "path": "tests/coil-echo.scenario.json",
+    "sha256": "58bf66c6e6f3a65f8405e91c8224be4c43d8a1c5f10ab1f5fd37324768fa44cb"
+  },
+  "regressionScenarios": []
+}

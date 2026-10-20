@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "analog-scaling-fbd",
+  "version": 1,
+  "order": 30,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": [
+    "analog-scaling-integer",
+    "counter-batch-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation",
+    "hardware"
+  ],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "level_scale_fbd_starter",
+    "program": "src/LevelScale.fbd.json"
+  },
+  "solution": {
+    "project": "level_scale_fbd",
+    "program": "src/LevelScale.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "LevelScale",
+    "path": "tests/level-scale.scenario.json",
+    "sha256": "f825ce4b24aebf0db3fbe05bf9eef58b9a2ccfb8fba2c09849a8992e2c94b713"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 10,
+      "analogPercent": 5
+    }
+  }
+}

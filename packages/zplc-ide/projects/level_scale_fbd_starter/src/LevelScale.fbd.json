@@ -1,0 +1,602 @@
+{
+  "name": "LevelScale",
+  "description": "Starter: the product Raw times 100 is never divided by 4095, so the level is wrong.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Raw",
+        "type": "DINT",
+        "comment": "Stand-in for the potentiometer on AI0, in counts 0..4095"
+      },
+      {
+        "name": "Level",
+        "type": "DINT",
+        "comment": "Level in percent, 0..100"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Turns the stand-in potentiometer up while TRUE"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "HighLevel",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "High level lamp"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_enable",
+      "type": "variable",
+      "variableName": "Enable",
+      "direction": "read",
+      "comment": "Stand-in knob: TRUE turns the potentiometer up",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "in_raw",
+      "type": "input",
+      "variableName": "Raw",
+      "comment": "Raw as the last scan left it",
+      "position": {
+        "x": 40,
+        "y": 140
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "const_step",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 410,
+      "comment": "Counts added per scan",
+      "position": {
+        "x": 40,
+        "y": 220
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "add",
+      "type": "ADD",
+      "comment": "Turn the knob up by one step",
+      "position": {
+        "x": 240,
+        "y": 140
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ]
+    },
+    {
+      "id": "const_full",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 4095,
+      "comment": "Full scale of a 12-bit input",
+      "position": {
+        "x": 240,
+        "y": 240
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "min",
+      "type": "MIN",
+      "comment": "Not past full scale",
+      "position": {
+        "x": 440,
+        "y": 140
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ]
+    },
+    {
+      "id": "const_zero",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 0,
+      "comment": "Knob turned down",
+      "position": {
+        "x": 440,
+        "y": 240
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "sel",
+      "type": "SEL",
+      "comment": "Enable FALSE turns the knob back to 0",
+      "position": {
+        "x": 640,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "G",
+          "type": "ANY"
+        },
+        {
+          "name": "IN0",
+          "type": "ANY"
+        },
+        {
+          "name": "IN1",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY"
+        }
+      ]
+    },
+    {
+      "id": "var_raw",
+      "type": "variable",
+      "variableName": "Raw",
+      "comment": "Stand-in for the potentiometer on AI0, in counts 0..4095",
+      "position": {
+        "x": 840,
+        "y": 40
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "DINT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "const_100",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 100,
+      "comment": "Percent at full scale",
+      "position": {
+        "x": 40,
+        "y": 480
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "mul",
+      "type": "MUL",
+      "comment": "Raw times 100",
+      "position": {
+        "x": 240,
+        "y": 400
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ]
+    },
+    {
+      "id": "const_min",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 0,
+      "comment": "Lowest level",
+      "position": {
+        "x": 440,
+        "y": 560
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "const_max",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 100,
+      "comment": "Highest level",
+      "position": {
+        "x": 440,
+        "y": 640
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "limit",
+      "type": "LIMIT",
+      "comment": "Keeps the level between 0 and 100 percent",
+      "position": {
+        "x": 640,
+        "y": 400
+      },
+      "inputs": [
+        {
+          "name": "MN",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "IN",
+          "type": "ANY_NUM"
+        },
+        {
+          "name": "MX",
+          "type": "ANY_NUM"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY_NUM"
+        }
+      ]
+    },
+    {
+      "id": "var_level",
+      "type": "variable",
+      "variableName": "Level",
+      "comment": "Level in percent",
+      "position": {
+        "x": 840,
+        "y": 400
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "DINT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "const_threshold",
+      "type": "constant",
+      "dataType": "DINT",
+      "value": 75,
+      "comment": "High level threshold, percent",
+      "position": {
+        "x": 840,
+        "y": 560
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "cmp",
+      "type": "GE",
+      "comment": "Level at or above the threshold",
+      "position": {
+        "x": 1040,
+        "y": 400
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_high",
+      "type": "output",
+      "variableName": "HighLevel",
+      "comment": "High level lamp",
+      "position": {
+        "x": 1240,
+        "y": 400
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_in_raw_out_add_in1",
+      "from": {
+        "block": "in_raw",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_step_out_add_in2",
+      "from": {
+        "block": "const_step",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_add_out_min_in1",
+      "from": {
+        "block": "add",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "min",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_full_out_min_in2",
+      "from": {
+        "block": "const_full",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "min",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_var_enable_out_sel_g",
+      "from": {
+        "block": "var_enable",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel",
+        "port": "G"
+      }
+    },
+    {
+      "id": "conn_const_zero_out_sel_in0",
+      "from": {
+        "block": "const_zero",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel",
+        "port": "IN0"
+      }
+    },
+    {
+      "id": "conn_min_out_sel_in1",
+      "from": {
+        "block": "min",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_sel_out_var_raw_in",
+      "from": {
+        "block": "sel",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "var_raw",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_raw_out_mul_in1",
+      "from": {
+        "block": "var_raw",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "mul",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_100_out_mul_in2",
+      "from": {
+        "block": "const_100",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "mul",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_mul_out_limit_in",
+      "from": {
+        "block": "mul",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "limit",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_const_min_out_limit_mn",
+      "from": {
+        "block": "const_min",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "limit",
+        "port": "MN"
+      }
+    },
+    {
+      "id": "conn_const_max_out_limit_mx",
+      "from": {
+        "block": "const_max",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "limit",
+        "port": "MX"
+      }
+    },
+    {
+      "id": "conn_limit_out_var_level_in",
+      "from": {
+        "block": "limit",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "var_level",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_level_out_cmp_in1",
+      "from": {
+        "block": "var_level",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_threshold_out_cmp_in2",
+      "from": {
+        "block": "const_threshold",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_cmp_out_out_high_in",
+      "from": {
+        "block": "cmp",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_high",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-20",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

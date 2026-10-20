@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "id": "LevelScale",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "LevelScale.Enable": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "LevelScale.Enable": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "LevelScale.Enable": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "LevelScale.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "LevelScale.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "LevelScale.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "LevelScale.HighLevel": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "LevelScale.HighLevel": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "LevelScale.HighLevel": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 80,
+      "forMs": 20,
+      "condition": {
+        "LevelScale.HighLevel": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "LevelScale.HighLevel": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 110,
+      "withinMs": 0,
+      "condition": {
+        "LevelScale.HighLevel": false
+      }
+    }
+  ]
+}
