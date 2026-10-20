@@ -439,8 +439,11 @@ def load_manifest(path: Path) -> list[dict[str, Any]]:
 def find_board(
     boards: list[dict[str, Any]], *, zephyr_board: str | None = None, board_id: str | None = None
 ) -> dict[str, Any] | None:
+    # The firmware build joins BOARD and BOARD_QUALIFIERS, which Zephyr 4.4 sets without the leading slash
+    # ("rpi_picorp2040" for rpi_pico/rp2040): a target matches with or without the slashes.
+    wanted = zephyr_board.replace("/", "") if zephyr_board is not None else None
     for entry in boards:
-        if zephyr_board is not None and entry.get("zephyr_board") == zephyr_board:
+        if wanted is not None and str(entry.get("zephyr_board", "")).replace("/", "") == wanted:
             return entry
         if board_id is not None and entry.get("board_id") == board_id:
             return entry
