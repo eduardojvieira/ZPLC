@@ -189,7 +189,7 @@ describe('docs structure: a page is published only when both languages are compl
   });
 });
 
-describe('docs site: admonitions in the generator\'s own syntax and no version selector for one version (DOC-018, stopgap: the site has no search yet)', () => {
+describe('docs site: admonitions in the generator\'s own syntax and no version selector for one version (DOC-018)', () => {
   it('uses `:::` admonitions in every page and generated page, and none of the GitHub alert syntax', () => {
     for (const base of [EN_DIR, ES_DIR]) {
       for (const file of markdownFiles(ROOT, base)) {

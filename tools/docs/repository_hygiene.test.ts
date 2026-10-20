@@ -80,7 +80,7 @@ const SIGNATURES: Record<string, (head: Buffer) => boolean> = {
   '.svg': (head) => /^\s*(<\?xml|<svg)/.test(head.toString('utf8')),
 };
 
-describe('docs site: an image file is the format its name says (DOC-018, stopgap: the site has no search yet)', () => {
+describe('docs site: an image file is the format its name says (DOC-018)', () => {
   it('has no JPEG named .png, no PNG named .jpg, and so on, among the tracked images', () => {
     const wrong = trackedFiles()
       .filter((file) => extname(file).toLowerCase() in SIGNATURES)
