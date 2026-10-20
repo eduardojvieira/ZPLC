@@ -267,7 +267,7 @@ y lo que no, está en [Compatibilidad de hardware](../reference/capabilities-evi
 ## Actualizar
 
 ZPLC nunca se actualiza solo. Para saber si existe una versión más reciente,
-active **Buscar una versión más reciente al iniciar Studio** en Preferencias, o pulse
+active **Buscar una versión más reciente al iniciar ZPLC** en Preferencias, o pulse
 **Buscar ahora**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
 usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe

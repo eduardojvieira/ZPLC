@@ -262,7 +262,7 @@ not, is on [Hardware support](../reference/capabilities-evidence.md).
 ## Update
 
 ZPLC never updates itself. To find out whether a newer release exists, turn on
-**Check for a newer release when Studio starts** in Preferences, or press
+**Check for a newer release when ZPLC starts** in Preferences, or press
 **Check now**. The check is off by default; it asks the GitHub releases of this
 project for the latest published release, sends nothing about you, and shows a
 version and a link. It downloads and installs nothing. When a newer release
