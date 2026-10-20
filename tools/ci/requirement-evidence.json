@@ -1218,8 +1218,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
   ],
   "LNG-027": [
-    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-027 names, for each of the five languages, a journey that pauses, steps one cycle and resumes in the native simulation, and a different one that stops at a breakpoint","note":"the capability table names, for ST, IL, LD, FBD and SFC, journey 53a to 53e (pause, Step one cycle, resume, with the cycle counter as witness) and a journey that stops at a breakpoint of that language; the CI job that runs the journeys gives the pass state"},
     {"kind":"unit","ref":"packages/zplc-ide/src/hooks/useDebugController.capabilities.test.ts","test":"maps native adapter capability profiles into controller capabilities","note":"the controls Studio enables come from the capability profile the runtime reports"},
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-027 names, for each of the five languages, a journey that pauses, steps one cycle and resumes in the native simulation, and a different one that stops at a breakpoint","note":"the capability table names, for ST, IL, LD, FBD and SFC, journey 53a to 53e (pause, Step one cycle, resume, with the cycle counter as witness) and a journey that stops at a breakpoint of that language; the CI job that runs the journeys gives the pass state"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28ka A breakpoint on an FBD block stops execution","partial":true},
