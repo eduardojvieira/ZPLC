@@ -186,8 +186,11 @@ class FakeBoard(hil_devices.ShellDevice):
         if words[:3] == ["zplc", "status", "--json"]:
             cycles = int((self.now() - self.started) // 10) if self.state == "running" else 0
             misses = cycles // 1000 if "jitter-misses" in self.defects else 0
+            wide = 3000 if "jitter-wide" in self.defects else 0
+            tasks = [{"id": 0, "interval_us": 10000, "cycles": cycles, "period_min_us": 9990 if cycles > 1 else 0,
+                      "period_max_us": 10010 + wide if cycles > 1 else 0, "jitter_us": 20 + wide if cycles > 1 else 0}]
             return json.dumps({
-                "state": self.state, "uptime_ms": int(self.now() - self.boot), "reset_cause": self.cause,
+                "state": self.state, "uptime_ms": int(self.now() - self.boot), "reset_cause": self.cause, "tasks": tasks,
                 "deadline": {"misses": misses}, "fault": {"reason": self.fault, "task_id": None},
                 "stats": {"cycles": cycles, "overruns": misses}, "vm": {"error": 3 if self.fault == "vm_fault" else 0},
             }) + "\r\n"
@@ -364,8 +367,12 @@ class StepTests(Quiet):
     def test_scan_jitter_runs_ten_minutes_from_the_runtimes_own_statistics(self):
         good, bad = self.passes_and_fails("scan-jitter-10min", "jitter-misses")
         self.assertGreaterEqual(good["measurements"]["duration_s"], 600)
-        self.assertEqual(good["measurements"]["windows"], 20)
+        self.assertEqual(good["measurements"]["tasks"][0]["period_max_us"], 10010, "the runtime's own longest period")
+        self.assertEqual(good["measurements"]["jitter_us"], 20, "and the gap between the shortest and the longest")
         self.assertIn("deadline misses", bad["detail"])
+        wide, _ = self.step("scan-jitter-10min", ("jitter-wide",))
+        self.assertEqual(wide["result"], "fail", "a period far from the interval fails the step")
+        self.assertIn("13010", wide["detail"])
 
     def test_outputs_off_after_an_overrun_and_after_a_fatal_fault(self):
         good, _ = self.passes_and_fails("overrun-fault-outputs-off", "overrun-keeps-outputs")

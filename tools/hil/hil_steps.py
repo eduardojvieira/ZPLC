@@ -36,7 +36,7 @@ TIMER_PT_MS = 3000
 TIMER_TOLERANCE_MS = 100  # beyond the scan interval and twice the round trip of one read
 JITTER_S = 600  # HIL-010: at least ten minutes
 JITTER_SAMPLE_S = 30
-JITTER_PERIOD_TOLERANCE = 0.01  # the mean period over each sample window, as a fraction of the interval
+JITTER_PERIOD_TOLERANCE = 0.2  # every scan period, shortest and longest, as a fraction of the interval (the bench's bound)
 ANALOG_POINTS = ((0.0, 0.05), (0.5, 0.10), (1.0, 0.05))  # (fraction of travel, tolerance as a fraction of full scale)
 DEPLOY_CUTS = 20
 ATOMIC_WRITES = 100
@@ -380,47 +380,42 @@ class BenchSteps:
         return f"TON T#{TIMER_PT_MS}ms measured {measured:.0f} ms (error {measured - TIMER_PT_MS:+.0f} ms)"
 
     def scan_jitter(self):
-        """The runtime's own statistics over the run: no deadline miss, and every window's mean period on the interval."""
+        """The runtime's own measure of every scan over the run: each task's shortest and longest period, from the start
+        of one scan to the start of the next (`zplc status --json`, tasks[]), and no deadline miss."""
         interval = PROGRAMS["idle"][0]
         self.deploy_program("idle")
         self.tester.send("zplc start")
-        samples = []
         try:
             first = self.status()
             started = self.now()
             while self.now() - started < self.jitter_seconds * 1000:
                 self.wait(min(JITTER_SAMPLE_S, self.jitter_seconds))
-                samples.append(self.status())
+            last = self.status()
         finally:
             self.stop_and_clear()
-        windows, previous = [], first
-        for sample in samples:
-            cycles = sample.get("stats", {}).get("cycles", 0) - previous.get("stats", {}).get("cycles", 0)
-            elapsed = sample.get("uptime_ms", 0) - previous.get("uptime_ms", 0)
-            windows.append(elapsed / cycles if cycles > 0 else None)
-            previous = sample
-        last = samples[-1] if samples else first
         overruns = last.get("stats", {}).get("overruns", 0) - first.get("stats", {}).get("overruns", 0)
         misses = last.get("deadline", {}).get("misses", 0) - first.get("deadline", {}).get("misses", 0)
-        known = [w for w in windows if w is not None]
-        worst = max((abs(w - interval) / interval for w in known), default=None)
+        tasks = [t for t in last.get("tasks", []) if t.get("cycles", 0) > 1]
+        worst = max((abs(p - t["interval_us"]) / t["interval_us"] for t in tasks for p in (t["period_min_us"], t["period_max_us"])), default=None)
         self.measure(
-            duration_s=self.jitter_seconds, interval_ms=interval, windows=len(windows),
-            mean_period_ms=[round(w, 4) if w is not None else None for w in windows],
-            worst_window_deviation=None if worst is None else round(worst, 5), overruns=overruns, deadline_misses=misses,
+            duration_s=self.jitter_seconds, interval_ms=interval, tasks=tasks, overruns=overruns, deadline_misses=misses,
+            jitter_us=max((t["jitter_us"] for t in tasks), default=None),
+            worst_period_deviation=None if worst is None else round(worst, 5), tolerance=JITTER_PERIOD_TOLERANCE,
             last_overrun_us=last.get("deadline", {}).get("last_overrun_us"),
-            source="zplc status --json: stats.cycles, uptime_ms, stats.overruns, deadline.misses (the runtime prints no per-scan minimum or maximum)",
+            source="zplc status --json: tasks[].period_min_us, period_max_us, jitter_us (every scan since RUN), stats.overruns, deadline.misses",
         )
         problems = []
-        if not known or len(known) != len(windows):
-            problems.append("a window had no scan")
+        if not tasks:
+            problems.append("the image reports no scan periods (`zplc status --json` has no tasks[]): it predates the HIL-010 statistics")
         if overruns or misses:
             problems.append(f"{overruns} overruns and {misses} deadline misses")
-        if worst is not None and worst > JITTER_PERIOD_TOLERANCE:
-            problems.append(f"a window's mean period is {worst:.2%} off the {interval} ms interval")
+        for t in tasks:
+            if worst is not None and max(abs(t["period_min_us"] - t["interval_us"]), abs(t["period_max_us"] - t["interval_us"])) > JITTER_PERIOD_TOLERANCE * t["interval_us"]:
+                problems.append(f"task {t['id']}: periods from {t['period_min_us']} to {t['period_max_us']} us, outside {JITTER_PERIOD_TOLERANCE:.0%} of {t['interval_us']} us")
         if problems:
             raise AssertionError("; ".join(problems))
-        return f"{self.jitter_seconds} s: no overrun, no deadline miss, every {JITTER_SAMPLE_S} s window within {worst:.3%} of {interval} ms"
+        jitter = max(t["jitter_us"] for t in tasks)
+        return f"{self.jitter_seconds} s: no overrun, no deadline miss, every scan period within {worst:.2%} of {interval} ms (jitter {jitter} us)"
 
     def _fault_leaves_outputs_off(self, program: str, reason: str, wait_s: float):
         self.deploy_program(program)
