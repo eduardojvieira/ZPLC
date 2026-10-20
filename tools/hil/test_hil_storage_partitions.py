@@ -120,27 +120,31 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(found["a"], ["LittleFS and NVS store share storage_partition"])
         self.assertEqual(found["b"] + found["c"], [])
 
-    def test_io_008_littlefs_falls_back_to_the_storage_partition_as_the_firmware_does(self) -> None:
-        tree = dts(SLOT0, partition("storage_partition", 0x700000, 0x100000))
-        lines, found = check.check_build(tree, config("CONFIG_FILE_SYSTEM_LITTLEFS=y"))
+    def test_io_008_the_records_take_zplc_nvs_partition_and_littlefs_storage_partition_as_the_firmware_does(self) -> None:
+        tree = dts(SLOT0, partition("storage_partition", 0x600000, 0x100000) + "\n"
+                   + partition("zplc_nvs_partition", 0x700000, 0x700000))
+        lines, found = check.check_build(tree, config(*NVS_AND_LFS))
         self.assertEqual(found, {"a": [], "b": [], "c": []})
-        self.assertIn("LittleFS storage_partition 1024 KB at 0x700000 of qspi_flash, 16 x 64 KB assumed", lines)
+        self.assertEqual(lines[:2], [
+            "NVS store zplc_nvs_partition 7168 KB at 0x700000 of qspi_flash, 112 x 64 KB assumed",
+            "LittleFS storage_partition 1024 KB at 0x600000 of qspi_flash, 16 x 64 KB assumed",
+        ])
 
     def test_io_008_a_b_c_pass_with_a_partition_per_user_outside_the_slot(self) -> None:
-        tree = dts(SLOT0, partition("storage_partition", 0x700000, 0x100000) + "\n"
-                   + partition("lfs_partition", 0x800000, 0x600000))
+        tree = dts(SLOT0, partition("zplc_nvs_partition", 0x700000, 0x100000) + "\n"
+                   + partition("storage_partition", 0x800000, 0x600000))
         lines, found = check.check_build(tree, config(*NVS_AND_LFS))
         self.assertEqual(found, {"a": [], "b": [], "c": []})
         self.assertEqual(lines[-1], "image slot 0x0-0x80000 of flash0")
 
     def test_io_008_a_overlapping_user_partitions_and_foreign_partitions_fail(self) -> None:
-        tree = dts(SLOT0, partition("storage_partition", 0x700000, 0x100000) + "\n"
-                   + partition("lfs_partition", 0x7f0000, 0x7a0000) + "\n"
+        tree = dts(SLOT0, partition("zplc_nvs_partition", 0x700000, 0x100000) + "\n"
+                   + partition("storage_partition", 0x7f0000, 0x7a0000) + "\n"
                    + partition("airoc_firmware", 0xf80000, 0x80000))
         found = self.failures(tree, config(*NVS_AND_LFS))
-        self.assertIn("NVS store (storage_partition) overlaps partition lfs_partition", found["a"])
-        self.assertIn("LittleFS (lfs_partition) overlaps NVS store (storage_partition)", found["a"])
-        self.assertIn("LittleFS (lfs_partition) overlaps partition airoc_firmware", found["a"])
+        self.assertIn("NVS store (zplc_nvs_partition) overlaps partition storage_partition", found["a"])
+        self.assertIn("LittleFS (storage_partition) overlaps NVS store (zplc_nvs_partition)", found["a"])
+        self.assertIn("LittleFS (storage_partition) overlaps partition airoc_firmware", found["a"])
 
     def test_io_008_a_a_missing_partition_fails(self) -> None:
         found = self.failures(dts(SLOT0), config("CONFIG_NVS=y"))
@@ -190,7 +194,7 @@ class CheckTest(unittest.TestCase):
 
 class ReportTest(unittest.TestCase):
     SHARED = dts(SLOT0, partition("storage_partition", 0x700000, 0x700000))
-    SPLIT = dts(SLOT0, partition("storage_partition", 0x700000, 0x100000) + "\n" + partition("lfs_partition", 0x800000, 0x600000))
+    SPLIT = dts(SLOT0, partition("zplc_nvs_partition", 0x700000, 0x100000) + "\n" + partition("storage_partition", 0x800000, 0x600000))
 
     def run_report(self, tree: str, known_open: dict) -> tuple[list[str], int]:
         with tempfile.TemporaryDirectory() as tmp:
@@ -219,7 +223,7 @@ class ReportTest(unittest.TestCase):
     def test_io_008_a_passing_board_passes(self) -> None:
         lines, status = self.run_report(self.SPLIT, {})
         self.assertEqual(status, 0)
-        self.assertTrue(lines[0].startswith("PASS io-008 nucleo-h743zi: NVS store storage_partition 1024 KB"))
+        self.assertTrue(lines[0].startswith("PASS io-008 nucleo-h743zi: NVS store zplc_nvs_partition 1024 KB"))
 
     def test_io_008_a_build_without_its_devicetree_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -8,9 +8,10 @@ directory (`run.sh size` keeps one per board under $ZPLC_FW_WS/out/size/<board i
 The storage users are the ones the firmware mounts:
 
   - the key-value store of firmware/lib/zplc_core/src/hal/zephyr/zplc_hal_zephyr.c (program, RETAIN, settings and
-    credentials): NVS, or ZMS when the build enables it, on `storage_partition`;
+    credentials): NVS, or ZMS when the build enables it, on `zplc_nvs_partition` when the board defines it and on
+    `storage_partition` otherwise;
   - the LittleFS file system of firmware/app/src/zplc_config.c (the settings file and the certificate files) on
-    `lfs_partition`, or on `storage_partition` when the board has no `lfs_partition`.
+    `storage_partition`.
 
 Three checks per user:
 
@@ -157,12 +158,13 @@ def check_build(dts_text: str, config_text: str) -> tuple[list[str], dict[str, l
     failures: dict[str, list[str]] = {"a": [], "b": [], "c": []}
 
     users: list[tuple[str, str, int | None]] = []  # user, partition label, largest erase block it can mount
+    records = "zplc_nvs_partition" if "zplc_nvs_partition" in by_label else "storage_partition"
     if config.get("CONFIG_ZMS") == "y":
-        users.append(("ZMS store", "storage_partition", None))
+        users.append(("ZMS store", records, None))
     elif config.get("CONFIG_NVS") == "y":
-        users.append(("NVS store", "storage_partition", NVS_MAX_SECTOR))
+        users.append(("NVS store", records, NVS_MAX_SECTOR))
     if config.get("CONFIG_FILE_SYSTEM_LITTLEFS") == "y":
-        users.append(("LittleFS", "lfs_partition" if "lfs_partition" in by_label else "storage_partition", None))
+        users.append(("LittleFS", "storage_partition", None))
 
     chosen = next((node for node in tree.children if node.name == "chosen"), Node("chosen", [], None))
     flash = by_label.get(chosen.props.get("zephyr,flash", [""])[0].lstrip("&"))
