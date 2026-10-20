@@ -60,7 +60,7 @@ export const learnEs: Record<keyof typeof learnEn, string> = {
   'learn.learningObjectives': 'Objetivos de aprendizaje',
   'learn.lessonLanguage': 'Idioma de la lección',
   'learn.lesson': 'Lección',
-  'learn.theStarterFailsThis': 'El proyecto inicial falla este escenario del host hasta que se corrija la omisión indicada.',
+  'learn.theStarterFailsThis': 'El proyecto inicial no pasa este escenario del host hasta que se corrija la omisión indicada.',
   'learn.lessonProgress': 'Progreso de la lección',
   'learn.lessonEvidence': 'Evidencia de la lección',
   'learn.faultToCorrect': 'Falla por corregir:',
