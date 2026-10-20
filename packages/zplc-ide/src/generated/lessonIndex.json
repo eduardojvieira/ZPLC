@@ -112,48 +112,48 @@
         },
         "es": {
           "title": "Arranque y parada seguros",
-          "summary": "Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
-          "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.",
+          "summary": "Recorra un motor con autorretención, parada y protección por sobrecarga usando el ejemplo Motor Start Stop.",
+          "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.",
           "objectives": [
-            "Mantenga el motor encendido tras soltar Start con un seal-in.",
-            "Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo."
+            "Mantenga el motor encendido tras soltar Start mediante una autorretención.",
+            "Detenga el motor con Stop, EStop y Overload, y evite que un Start mantenido lo vuelva a arrancar por sí solo."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Motor.st, reemplace Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verifique que Reverse permanece FALSE.",
-              "checkpoint": "Forward sigue ON al soltar Start y cae con Stop, EStop o Overload."
+              "body": "En src/Motor.st, reemplace Forward := Start por una autorretención construida con Start, Stop, EStop y Overload; verifique que Reverse permanece en FALSE.",
+              "checkpoint": "Forward sigue en ON al soltar Start y cae con Stop, EStop u Overload."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe Motor.Forward a 0, 20, 40, 50, 90 y 140 ms.",
-              "checkpoint": "OFF a 0 ms aunque Start esté pulsado; ON a 20; OFF a 40 (EStop) y todavía OFF a 50 con Start pulsado; OFF a 90 (sobrecarga) y 140 (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a 70, 120 y 170 ms. Motor.Reverse permanece OFF."
+              "body": "Antes de ejecutar, prediga Motor.Forward a los 0, 20, 40, 50, 90 y 140 ms.",
+              "checkpoint": "OFF a los 0 ms aunque Start esté pulsado; ON a los 20; OFF a los 40 (EStop) y todavía OFF a los 50 con Start pulsado; OFF a los 90 (sobrecarga) y a los 140 (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a los 70, 120 y 170 ms. Motor.Reverse permanece en OFF."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorStartStop.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorStartStop.",
               "checkpoint": "El escenario requerido se llama MotorStartStop y contiene 27 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare la traza: EStop a 40 ms, sobrecarga a 90 ms y parada a 140 ms.",
-              "checkpoint": "EStop, Overload y Stop fuerzan Motor.Forward OFF, y mantener Start no lo reinicia."
+              "body": "Compare la traza: EStop a los 40 ms, sobrecarga a los 90 ms y parada a los 140 ms.",
+              "checkpoint": "EStop, Overload y Stop ponen Motor.Forward en OFF, y mantener Start pulsado no lo vuelve a arrancar."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion exacta NEVER comprueba cobertura lógica de este escenario.",
-              "checkpoint": "No demuestra seguridad física, temporización de hardware ni certificación."
+              "body": "La aserción NEVER exacta comprueba la cobertura lógica de este escenario.",
+              "checkpoint": "No demuestra seguridad física, tiempos del hardware ni certificación."
             }
           ],
           "hints": [
@@ -163,11 +163,11 @@
             },
             {
               "level": 2,
-              "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y solo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+              "text": "Borre primero la memoria cuando Stop, EStop u Overload sea TRUE; solo después deje que Start la active, y solo si Start se vio suelto desde la última parada, para que un Start mantenido no vuelva a arrancar el motor."
             }
           ],
           "faultCases": [
-            "El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
+            "El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada."
           ]
         }
       }
@@ -2065,9 +2065,9 @@
         "es": {
           "title": "Lógica booleana: un mando a dos manos con protección",
           "summary": "Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que exige un dispositivo real de mando a dos manos, y no son evidencia de seguridad, de HIL ni de certificación.",
           "objectives": [
-            "Escriba una condición que sea verdadera solo cuando varias entradas son verdaderas a la vez.",
+            "Escriba una condición que sea verdadera solo cuando varias entradas sean verdaderas a la vez.",
             "Use NOT para una lámpara de aviso y XOR para exactamente una de dos entradas."
           ],
           "stages": [
@@ -2080,19 +2080,19 @@
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, prediga las tres salidas en 20, 30 y 40 ms. Las entradas cambian cada 10 ms, así que avance un paso a la vez.",
-              "checkpoint": "solo PressEnable en ON en 20 ms; solo GuardLamp en ON en 30 ms; solo OneHandWarning en ON en 40 ms."
+              "body": "Antes de ejecutar, prediga las tres salidas a los 20, 30 y 40 ms. Las entradas cambian cada 10 ms, así que avance un paso a la vez.",
+              "checkpoint": "solo PressEnable en ON a los 20 ms; solo GuardLamp en ON a los 30 ms; solo OneHandWarning en ON a los 40 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y mire el resultado.",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa con cualquiera de las dos manos, así que PressEnable ya está en ON a los 10 ms con una sola mano. Reemplace la sentencia inicial por una condición para cada salida, guarde el archivo y observe el resultado.",
               "checkpoint": "Cada salida sigue su propia condición y el archivo está guardado."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama TwoHand y contiene 9 assertions."
             },
             {
@@ -2576,11 +2576,11 @@
           ]
         },
         "es": {
-          "title": "Enclavar una alarma: set y reset, y cuál gana",
+          "title": "Retener una alarma: set y reset, y cuál tiene prioridad",
           "summary": "Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno cuando la falla y el reconocimiento llegan juntos.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de gestión de alarmas de una máquina real, HIL ni certificación.",
           "objectives": [
-            "Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.",
+            "Mantenga una alarma después de que la falla haya desaparecido, hasta que se reconozca.",
             "Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset."
           ],
           "stages": [
@@ -2593,32 +2593,32 @@
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Fault da un pulso en ON a los 10 ms. Ack se pulsa a los 30 ms. A los 50 ms llegan juntos, y Ack sigue pulsado a los 60 ms. Prediga las dos salidas en 20, 30 y 50 ms.",
-              "checkpoint": "ambas en ON en 20 ms; ambas en OFF en 30 ms; solo SetFirst en ON en 50 ms."
+              "body": "Fault da un pulso en ON a los 10 ms. Ack se pulsa a los 30 ms. A los 50 ms llegan juntos, y Ack sigue pulsado a los 60 ms. Prediga las dos salidas a los 20, 30 y 50 ms.",
+              "checkpoint": "ambas en ON a los 20 ms; ambas en OFF a los 30 ms; solo SetFirst en ON a los 50 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
-              "checkpoint": "Cada salida es la Q1 de su propio enclavamiento."
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya desapareció. Llame a SetLatch con Fault como S1 y Ack como R, y a ResetLatch con Fault como S y Ack como R1. Copie cada Q1 a su salida y guarde el archivo.",
+              "checkpoint": "Cada salida es la Q1 de su propio biestable."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama AlarmLatch y contiene 10 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 20, 30 y 50 ms: la alarma sigue en ON a los 20 ms aunque Fault ya pasó, Ack la borra a los 30 ms, y solo los dos bloques difieren a los 50 ms.",
+              "body": "Compare 20, 30 y 50 ms: la alarma sigue en ON a los 20 ms aunque Fault ya desapareció, Ack la borra a los 30 ms, y los dos bloques solo difieren a los 50 ms.",
               "checkpoint": "Las salidas difieren solo cuando Fault y Ack llegan juntos."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe ganar cuando ambas se pulsan.",
-              "checkpoint": "Una parada o un reset normalmente debe ganar, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
+              "body": "¿Qué bloque elegiría para una orden de parada y cuál para una solicitud de arranque? Piense qué debe tener prioridad cuando se pulsan ambos.",
+              "checkpoint": "Una parada o un reset normalmente debe tener prioridad, así que le conviene el bloque dominante en reset; la elección es una decisión de diseño, no un valor por defecto."
             }
           ],
           "hints": [
@@ -2632,7 +2632,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya pasó."
+            "El programa inicial copia Fault a las dos salidas, así que pasan a OFF a los 20 ms cuando la falla ya desapareció."
           ]
         }
       }
@@ -2747,12 +2747,12 @@
           ]
         },
         "es": {
-          "title": "Autorretención en Ladder: un motor que se mantiene encendido",
-          "summary": "Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.",
+          "title": "Autorretención en diagrama de escalera: un motor que se mantiene encendido",
+          "summary": "Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.",
           "objectives": [
-            "Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.",
-            "Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane."
+            "Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.",
+            "Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad."
           ],
           "stages": [
             {
@@ -2765,31 +2765,31 @@
               "key": "predict",
               "title": "Prediga",
               "body": "Antes de ejecutar, prediga Motor a los 30 ms (Start se soltó a los 20 ms), a los 50 ms (se soltó Stop) y a los 70 ms (Start y Stop pulsados a la vez).",
-              "checkpoint": "En ON a los 30 ms; en OFF a los 50 ms, porque nadie pulsa Start; en OFF a los 70 ms, porque Stop gana."
+              "checkpoint": "En ON a los 30 ms; en OFF a los 50 ms, porque nadie pulsa Start; en OFF a los 70 ms, porque Stop tiene prioridad."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola. En el editor Ladder agregue un contacto en la segunda fila, bajo StartPB, y llámelo Motor.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma. En el editor de escalera, agregue un contacto en la segunda fila, debajo de StartPB, y asígnele la variable Motor.",
               "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama SealIn y contiene 11 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 20, 30 y 40 ms: Motor sigue en ON a los 30 ms con Start suelto, y cae a los 40 ms al pulsar Stop.",
+              "body": "Compare 20, 30 y 40 ms: Motor sigue en ON a los 30 ms con Start ya soltado, y cae a los 40 ms al pulsar Stop.",
               "checkpoint": "Motor sube una vez a los 10 ms y cae una vez a los 40 ms; no vuelve a arrancar a los 50 ms cuando se suelta Stop."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo al camino que se mantiene y vea qué assertion falla.",
-              "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los 70 ms para probar que Stop gana; no prueba una función de parada segura."
+              "body": "¿Por qué el contacto de Stop debe estar en serie antes de la rama? Muévalo a la rama de autorretención y vea qué aserción falla.",
+              "checkpoint": "Con Stop fuera del camino en serie, un motor que se mantiene solo no se puede detener. El escenario pulsa Start y Stop a la vez a los 70 ms para comprobar que Stop tiene prioridad; no demuestra una función de parada segura."
             }
           ],
           "hints": [
@@ -2803,7 +2803,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga sola."
+            "El programa inicial acciona Motor solo mientras StartPB está pulsado, así que se apaga en cuanto se suelta Start a los 20 ms; agregue un contacto normalmente abierto de Motor en paralelo con el contacto de StartPB para que la bobina se mantenga activada por sí misma."
           ]
         }
       }

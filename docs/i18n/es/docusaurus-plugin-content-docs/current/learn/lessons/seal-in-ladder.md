@@ -1,16 +1,16 @@
 ---
-title: "Autorretención en Ladder: un motor que se mantiene encendido"
+title: "Autorretención en diagrama de escalera: un motor que se mantiene encendido"
 sidebar_label: "seal-in-ladder"
 description: "La lección seal-in-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Autorretención en Ladder: un motor que se mantiene encendido
+# Autorretención en diagrama de escalera: un motor que se mantiene encendido
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/seal-in-ladder. Do not edit. >>> */}
 
-Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.
+Edite un peldaño en diagrama de escalera para que una pulsación de Start mantenga el motor encendido al soltar el botón, y una pulsación de Stop lo apague aunque Start siga pulsado.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 
 ## Objetivos
 
-- Lea un peldaño de Ladder como un camino de contactos por el que debe pasar la energía hasta la bobina.
-- Mantenga una bobina encendida con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop gane.
+- Lea un peldaño en diagrama de escalera como un camino de contactos por el que debe pasar la energía para llegar a la bobina.
+- Mantenga una bobina activada con un contacto de su propia salida en paralelo con Start, y deje Stop en serie para que Stop tenga prioridad.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.
 
 ## En una placa
 

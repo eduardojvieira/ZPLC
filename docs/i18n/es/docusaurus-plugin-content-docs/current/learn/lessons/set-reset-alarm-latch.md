@@ -1,12 +1,12 @@
 ---
-title: "Enclavar una alarma: set y reset, y cuál gana"
+title: "Retener una alarma: set y reset, y cuál tiene prioridad"
 sidebar_label: "set-reset-alarm-latch"
 description: "La lección set-reset-alarm-latch: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Enclavar una alarma: set y reset, y cuál gana
+# Retener una alarma: set y reset, y cuál tiene prioridad
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/set-reset-alarm-latch. Do not edit. >>> */}
 
@@ -24,7 +24,7 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 
 ## Objetivos
 
-- Mantenga una alarma después de que la falla desapareció, hasta que se reconozca.
+- Mantenga una alarma después de que la falla haya desaparecido, hasta que se reconozca.
 - Distinga el bloque SR, dominante en set, del bloque RS, dominante en reset.
 
 ## Etapas
@@ -38,7 +38,7 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece los requisitos de manejo de alarmas de una máquina real, ni HIL, ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de gestión de alarmas de una máquina real, HIL ni certificación.
 
 ## En una placa
 

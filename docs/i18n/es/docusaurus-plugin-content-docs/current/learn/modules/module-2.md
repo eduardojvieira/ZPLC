@@ -20,8 +20,8 @@ unlisted: true
 | --- | --- | --- | --- |
 | [Arranque y parada seguros](../lessons/motor-start-stop-safe.md) | `motor-start-stop-safe` | ST | 20 |
 | [Lógica booleana: un mando a dos manos con protección](../lessons/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` | ST | 15 |
-| [Enclavar una alarma: set y reset, y cuál gana](../lessons/set-reset-alarm-latch.md) | `set-reset-alarm-latch` | ST | 15 |
-| [Autorretención en Ladder: un motor que se mantiene encendido](../lessons/seal-in-ladder.md) | `seal-in-ladder` | LD | 20 |
+| [Retener una alarma: set y reset, y cuál tiene prioridad](../lessons/set-reset-alarm-latch.md) | `set-reset-alarm-latch` | ST | 15 |
+| [Autorretención en diagrama de escalera: un motor que se mantiene encendido](../lessons/seal-in-ladder.md) | `seal-in-ladder` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-2 <<< */}
 
