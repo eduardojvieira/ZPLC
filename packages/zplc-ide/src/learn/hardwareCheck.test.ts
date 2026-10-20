@@ -143,24 +143,53 @@ function deviceTrace(startMs: number, endMs: number, values: (programMs: number)
 }
 
 describe('the hardware check aligns a trace that starts with the run (LRN-024)', () => {
-  const button = (programMs: number) => programMs >= 1170 && programMs < 1370;
-  const verifyBoard = (programMs: number) => {
-    const led = blinkAt(programMs) || button(programMs);
-    return { 'VerifyBoard.Button': button(programMs), 'VerifyBoard.Led': led, 'VerifyBoard.OnBoardLed': led };
+  /** The program of verify-my-board with the button held from `pressMs` to `releaseMs` of program time: the LEDs follow Blink OR Button. */
+  const verifyBoard = (pressMs: number, releaseMs: number, variant: 'solution' | 'starter' | 'led-only-on-button' | 'off-on-button' | 'latched' | 'no-onboard' = 'solution') => (programMs: number) => {
+    const button = programMs >= pressMs && programMs < releaseMs;
+    const blink = blinkAt(programMs);
+    const led = variant === 'starter' ? blink
+      : variant === 'led-only-on-button' ? button
+        : variant === 'off-on-button' ? blink && !button
+          : variant === 'latched' ? blink || programMs >= pressMs
+            : blink || button;
+    return { 'VerifyBoard.Button': button, 'VerifyBoard.Led': led, 'VerifyBoard.OnBoardLed': variant === 'no-onboard' ? false : led };
   };
   const blinky = (programMs: number) => ({ 'Blinky.LED_Output': blinkAt(programMs) });
+  const verify = (press: number, release: number, variant?: Parameters<typeof verifyBoard>[2], traceEnd = release + 1600) =>
+    evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(0, traceEnd, verifyBoard(press, release, variant)), DEVICE_TRACE, HASH, true);
 
   it('LRN-024 passes verify-my-board on a trace whose time 0 is the first scan after Run, at the device-trace tolerance', () => {
-    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(0, 1700, verifyBoard), DEVICE_TRACE, HASH, true);
+    const result = verify(1160, 2360);
     expect(result.failures).toEqual([]);
     expect(result.passed).toBe(true);
   });
 
-  it('LRN-024 cannot align verify-my-board on a trace of a program that was already running', () => {
-    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(330, 2030, verifyBoard), DEVICE_TRACE, HASH);
-    expect(result.passed).toBe(false);
-    expect(result.failures.map((failure) => failure.index)).toContain(1); // AT 750: the blink is out of phase
+  it('LRN-024 passes verify-my-board when a person presses and releases the button at times of their own, with scan jitter', () => {
+    // The release is not 1.35 s after Run: a person presses once the LED has blinked, in any phase of the blink, and holds
+    // the button for a count of two. Each pair is (press, release) in program time.
+    for (const [press, release] of [[1310, 2440], [2437, 4237], [3050, 5100], [1830, 2900], [5270, 7010]] as const) {
+      const result = verify(press, release);
+      expect({ press, release, failures: result.failures.map((failure) => failure.index) }).toEqual({ press, release, failures: [] });
+    }
   });
+
+  it('LRN-024 fails verify-my-board for a program that does not do what the lesson asks, however the person times the button', () => {
+    const wrong = ['starter', 'led-only-on-button', 'off-on-button', 'latched', 'no-onboard'] as const;
+    for (const [press, release] of [[1160, 2360], [2437, 4237], [3050, 5100]] as const) {
+      for (const variant of wrong) expect({ variant, press, passed: verify(press, release, variant).passed }).toEqual({ variant, press, passed: false });
+    }
+  });
+
+  it('LRN-024 fails verify-my-board when the button is not held long enough to span a blink', () => {
+    expect(verify(2437, 2900).passed).toBe(false);
+  });
+
+  it('LRN-024 cannot align verify-my-board on a trace of a program that was already running', () => {
+    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(330, 3730, verifyBoard(1160, 2360)), DEVICE_TRACE, HASH);
+    expect(result.passed).toBe(false);
+    expect(result.failures.map((failure) => failure.expected['VerifyBoard.Led'])).toContain(true); // AT 750: the blink is out of phase
+  });
+
 
   it('LRN-024 passes blinky-ladder-timer-feedback from the start of the run, and not from the middle of it', () => {
     expect(evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(0, 1900, blinky), DEVICE_TRACE, HASH, true).passed).toBe(true);
@@ -168,8 +197,8 @@ describe('the hardware check aligns a trace that starts with the run (LRN-024)',
   });
 
   it('LRN-024 takes the inputs at scenario time 0 from the start of an anchored run: a button held at Run does not shift the scenario', () => {
-    const held = (programMs: number) => ({ ...verifyBoard(programMs), 'VerifyBoard.Button': programMs < 60 || button(programMs), 'VerifyBoard.Led': blinkAt(programMs) || programMs < 60 || button(programMs) });
-    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 1700, held), true)[0]).toBe(0);
-    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 1700, held))[0]).toBeGreaterThanOrEqual(60);
+    const held = (programMs: number) => ({ ...verifyBoard(1160, 2360)(programMs), 'VerifyBoard.Button': programMs < 60 || (programMs >= 1160 && programMs < 2360) });
+    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held), true)[0]).toBe(0);
+    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held))[0]).toBeGreaterThanOrEqual(60);
   });
 });

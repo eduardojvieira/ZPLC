@@ -6102,7 +6102,7 @@
     },
     {
       "id": "verify-my-board",
-      "version": 2,
+      "version": 3,
       "order": 33,
       "module": 0,
       "level": "foundation",
@@ -6141,11 +6141,11 @@
       "scenario": {
         "id": "VerifyBoard",
         "path": "tests/verify-board.scenario.json",
-        "sha256": "b6284bfc0ea87f3d9c1586a9fdfa4b740f112c239ba1465a71e9e09cfbcf799e",
+        "sha256": "cd89b30adb08298a69b5895ae8796933ec01f444928d88fb49175122caa3ebd5",
         "tickMs": 10,
-        "durationMs": 1600,
-        "assertions": 8,
-        "canonical": "{\"durationMs\":1600,\"events\":[{\"atMs\":0,\"set\":{\"VerifyBoard.Button\":false}},{\"atMs\":1150,\"set\":{\"VerifyBoard.Button\":true}},{\"atMs\":1350,\"set\":{\"VerifyBoard.Button\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"atMs\":750,\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"kind\":\"AT\"},{\"atMs\":1100,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"forMs\":160,\"fromMs\":1170,\"kind\":\"FOR\"},{\"atMs\":1450,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"atMs\":1580,\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"VerifyBoard.Led\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200}],\"id\":\"VerifyBoard\",\"schemaVersion\":1,\"tickMs\":10}"
+        "durationMs": 3500,
+        "assertions": 7,
+        "canonical": "{\"durationMs\":3500,\"events\":[{\"atMs\":0,\"set\":{\"VerifyBoard.Button\":false}},{\"atMs\":1150,\"set\":{\"VerifyBoard.Button\":true}},{\"atMs\":2350,\"set\":{\"VerifyBoard.Button\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":false},\"forMs\":380,\"fromMs\":20,\"kind\":\"FOR\"},{\"condition\":{\"VerifyBoard.Led\":true},\"fromMs\":400,\"kind\":\"RISING\",\"withinMs\":200},{\"atMs\":750,\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"kind\":\"AT\"},{\"condition\":{\"VerifyBoard.Led\":true,\"VerifyBoard.OnBoardLed\":true},\"forMs\":1000,\"fromMs\":1170,\"kind\":\"FOR\"},{\"condition\":{\"VerifyBoard.Led\":false,\"VerifyBoard.OnBoardLed\":false},\"fromMs\":2350,\"kind\":\"WITHIN\",\"withinMs\":600},{\"condition\":{\"VerifyBoard.Led\":true},\"fromMs\":2350,\"kind\":\"RISING\",\"withinMs\":1100}],\"id\":\"VerifyBoard\",\"schemaVersion\":1,\"tickMs\":10}"
       },
       "regressionScenarios": [],
       "hardware": {
@@ -6224,12 +6224,12 @@
               "key": "run",
               "title": "Run",
               "body": "Every physical step is yours; ZPLC starts none of them. Wire: with the USB cable unplugged, wire the parts of the wiring card of this lesson for your board (an LED with its 330 Ω resistor on DO0 and a push button on DI0), and check the wiring twice. Flash: write the prebuilt ZPLC firmware with the steps of the firmware card in the ZPLC application, after you check the SHA-256 of the file. Connect: connect the ZPLC application to the board over its serial port; the board reports which board its firmware was built for and the identity of its I/O description, and ZPLC refuses to deploy when they differ from the board you chose. That comparison is the identity check of this lesson. Deploy the program, then press RUN.",
-              "checkpoint": "The scenario is named VerifyBoard and contains 8 assertions."
+              "checkpoint": "The scenario is named VerifyBoard and contains 7 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Watch the LED blink about once a second, then hold the push button: the LED stays lit while you hold it, and it blinks again when you release it. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you press the button and grades the same scenario within the time tolerance of the lesson. Its result is labelled a hardware run, apart from any simulation pass.",
+              "body": "Watch the LED blink about once a second. After it has blinked once, press the push button and hold it for a count of two, then release it: the LED stays lit while you hold the button, and after you release it the LED goes off and blinks again. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you do this and grades the same scenario, taking the moments of the button from when you press and release it, within the time tolerance of the lesson. You do not need to be exact. Its result is labelled a hardware run, apart from any simulation pass.",
               "checkpoint": "The hardware check passed on your board."
             },
             {
@@ -6285,12 +6285,12 @@
               "key": "run",
               "title": "Ejecute",
               "body": "Cada paso físico lo realiza usted; ZPLC no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de la aplicación ZPLC, después de verificar el SHA-256 del archivo. Conectar: conecte la aplicación ZPLC a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y ZPLC rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego pulse RUN.",
-              "checkpoint": "El escenario se llama VerifyBoard y contiene 8 aserciones."
+              "checkpoint": "El escenario se llama VerifyBoard y contiene 7 aserciones."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Observe que el LED parpadea más o menos una vez por segundo; luego mantenga presionado el pulsador: el LED queda encendido mientras lo mantiene y vuelve a parpadear al soltarlo. En la Pico, el LED integrado hace lo mismo. Después ejecute la verificación de hardware de la lección: registra una traza de la placa mientras usted presiona el pulsador y califica el mismo escenario dentro de la tolerancia de tiempo de la lección. Su resultado se identifica como una ejecución en hardware, distinta de una aprobación en simulación.",
+              "body": "Observe que el LED parpadea más o menos una vez por segundo. Después de que parpadee una vez, presione el pulsador, manténgalo presionado mientras cuenta hasta dos y suéltelo: el LED queda encendido mientras mantiene el pulsador, y después de soltarlo el LED se apaga y vuelve a parpadear. En la Pico, el LED integrado hace lo mismo. Después ejecute la verificación de hardware de la lección: registra una traza de la placa mientras usted hace esto y califica el mismo escenario, tomando los momentos del pulsador de cuando usted lo presiona y lo suelta, dentro de la tolerancia de tiempo de la lección. No necesita ser exacto. Su resultado se identifica como una ejecución en hardware, distinta de una aprobación en simulación.",
               "checkpoint": "La verificación de hardware pasó en su placa."
             },
             {
