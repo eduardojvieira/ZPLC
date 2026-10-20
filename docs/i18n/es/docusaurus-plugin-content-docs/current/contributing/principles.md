@@ -92,5 +92,5 @@ bruto ni ejecutar un shell. ZPLC funciona por completo sin IA.
   muestra las capas a las que se refieren.
 - **Al revisar uno,** la plantilla de pull request hace las preguntas que estas
   reglas plantean.
-- **Cuando una regla estorba,** abra un issue que nombre la regla y el motivo. Un
+- **Cuando una regla estorba,** abra una incidencia que nombre la regla y el motivo. Un
   cambio a la constitución es un pull request propio.

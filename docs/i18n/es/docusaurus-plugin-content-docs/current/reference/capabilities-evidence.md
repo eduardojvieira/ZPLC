@@ -28,9 +28,9 @@ inferior.
 | Simulación nativa | El runtime nativo del host ejecutó el escenario con un reloj virtual. | Equivalencia con el destino Zephyr ni con una placa. | El modo **Simulate** de ZPLC |
 | Host empaquetado | Un instalador de escritorio empaquetado se inició en su propio sistema en la ejecución de la versión. | Firma del instalador, notarización ni comportamiento del hardware. | Las notas de cada versión |
 | Destino emulado | Una suite de Zephyr pasó en `native_sim` o en un destino QEMU Cortex-M. | La placa exacta, su sonda, el cableado ni la salida eléctrica. | La página de pruebas de firmware |
-| `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de soporte** de una placa, más abajo |
-| `community-reported` | Un usuario informó qué ocurrió en su propia placa, con la imagen exacta que ejecutó, mediante el formulario de reporte de placa. | Que el proyecto lo reprodujo, que se siguió un procedimiento ni ningún nivel de soporte: un reporte nunca cambia el nivel de una placa. | La columna de evidencia de una placa, más abajo |
-| `human-hil` | Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen de firmware identificada por su commit y su hash, y pasó. | Calificación de producción fuera del procedimiento registrado. | **Nivel de soporte** de una placa, más abajo |
+| `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de compatibilidad** de una placa, más abajo |
+| `community-reported` | Un usuario informó qué ocurrió en su propia placa, con la imagen exacta que ejecutó, mediante la plantilla de informe de placa. | Que el proyecto lo reprodujo, que se siguió un procedimiento ni ningún nivel de compatibilidad: un informe nunca cambia el nivel de una placa. | La columna de evidencia de una placa, más abajo |
+| `human-hil` | Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen de firmware identificada por su commit y su hash, y pasó. | Calificación de producción fuera del procedimiento registrado. | **Nivel de compatibilidad** de una placa, más abajo |
 | Calificado para producción | Existe un paquete de evidencia de producción gobernado aparte. | Certificación de seguridad, salvo que lo diga. | Ninguna placa lo tiene |
 
 Un resultado que una persona observó en un banco es una pista, no una
@@ -40,7 +40,7 @@ la versión del firmware, el commit y el hash de la imagen que probó.
 ## Placas
 
 La tabla se genera desde `firmware/app/boards/boards.json`, el único manifiesto de
-placas. El **Nivel de soporte** se deriva de los registros de evidencia que
+placas. El **Nivel de compatibilidad** se deriva de los registros de evidencia que
 referencia el manifiesto; nunca se fija a mano, y una placa sin ningún registro
 que pase se queda en `cross-build`.
 

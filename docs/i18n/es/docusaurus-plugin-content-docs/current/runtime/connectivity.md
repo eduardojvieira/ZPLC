@@ -72,7 +72,7 @@ Un controlador que nunca se configuró es seguro en una red de planta:
 
 - **Sin broker.** MQTT está apagado y no hay dirección de broker guardada. Nada resuelve ni se conecta hasta que un operador nombra un servidor y enciende MQTT; con MQTT encendido y sin broker el cliente informa `-EDESTADDRREQ` en `zplc mqtt status` y no lo intenta.
 - **TLS, verificado.** El transporte por defecto es TLS en el puerto 8883 y el certificado del broker se verifica contra la CA que instalaste. TCP plano (`mqtt_transport 0`) y TLS sin verificación (`mqtt_security 1`) son ajustes explícitos, nunca el valor por defecto.
-- **La verificación sigue activa en el firmware de release.** `mqtt_security 1` se rechaza salvo que la imagen se haya compilado con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y`, y una imagen que no lo permite no aplica un valor guardado de 1. En una imagen que sí lo permite, `zplc mqtt status` muestra `tls-verify: OFF` y `zplc status` muestra una advertencia mientras el ajuste siga así.
+- **La verificación sigue activa en el firmware de versión.** `mqtt_security 1` se rechaza salvo que la imagen se haya compilado con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y`, y una imagen que no lo permite no aplica un valor guardado de 1. En una imagen que sí lo permite, `zplc mqtt status` muestra `tls-verify: OFF` y `zplc status` muestra una advertencia mientras el ajuste siga así.
 
 El ajuste de seguridad solo significa algo sobre un transporte TLS. Con TCP plano o WS la sesión no tiene TLS diga lo que diga `mqtt_security`, y el estado muestra `tls-verify: n/a`.
 

@@ -307,7 +307,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         for report in community(board):
             lines.append(
                 f"  - `{report['ref']}`: "
-                + ("reportado por la comunidad" if spanish else "community-reported")
+                + ("informado por la comunidad" if spanish else "community-reported")
                 + f", firmware {report['firmware_version']}, commit `{str(report['commit'])[:12]}`, {report['result']}"
             )
         hardware = board.get("hardware")
@@ -439,7 +439,7 @@ def render_support_table(boards: list[dict[str, object]], spanish: bool) -> str:
         ]
         # a report from a user is listed beside the records and is never one of them (HIL-011)
         records += [
-            f"{'reportado por la comunidad' if spanish else 'community-reported'}: {item['result']} "
+            f"{'informado por la comunidad' if spanish else 'community-reported'}: {item['result']} "
             f"{'en' if spanish else 'on'} {item['firmware_version']} (`{str(item['commit'])[:7]}`)"
             for item in community(board)
         ]

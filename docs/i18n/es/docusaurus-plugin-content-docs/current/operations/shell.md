@@ -65,7 +65,7 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del desplazamiento opcional.
 - `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de la aplicación ZPLC consulta la misma memoria.
 
-Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
+Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de versión no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
 Las lecturas (`mpeek`, `mem`, `info`) salen de la instantánea que el ciclo publicó en su última confirmación, de modo que un
 valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en la captura
@@ -101,17 +101,17 @@ Estos comandos administran los ajustes que ZPLC guarda en el almacenamiento no v
 
 Los ajustes de un dispositivo que nunca se configuró son los valores por defecto: MQTT apagado, sin broker, y MQTT con TLS y el certificado del broker verificado (ver [Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)).
 
-`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de release lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
+`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de versión lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
 
 ### Memoria cruda (solo firmware de diagnóstico)
 
-El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de release no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
+El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de versión no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
 
 ```bash
 west build -b <board> firmware/app -- -DEXTRA_CONF_FILE=diagnostic.conf
 ```
 
-`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de release por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
+`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de versión por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
 
 ---
 

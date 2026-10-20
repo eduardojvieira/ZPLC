@@ -1,22 +1,22 @@
 ---
 slug: /reference/zephyr-workspace-setup
-title: Configuración del Workspace Zephyr
-sidebar_label: Workspace Zephyr
-description: Compile el runtime embebido ZPLC 2.0 desde un workspace Zephyr fijado.
+title: Configuración del espacio de trabajo de Zephyr
+sidebar_label: Espacio de trabajo de Zephyr
+description: Compile el runtime embebido de ZPLC 2.0 desde un espacio de trabajo de Zephyr con versiones fijadas.
 ---
 
-# Configuración del Workspace Zephyr
+# Configuración del espacio de trabajo de Zephyr
 
-Compile el runtime embebido desde las entradas fijadas del workspace Zephyr del
+Compile el runtime embebido desde las entradas fijadas del espacio de trabajo de Zephyr del
 repositorio. Una compilación cruzada correcta solo prueba que el perfil compila; no
 prueba la grabación, el arranque, la E/S, la temporización, la persistencia ni el HIL.
 
 ## Camino rápido
 
-1. Instale SDK/toolchain Zephyr y deje `west` disponible.
+1. Instale el SDK y la cadena de herramientas de Zephyr y deje `west` disponible.
 2. Active el entorno Zephyr para que exista `ZEPHYR_BASE`.
-3. Ubique ZPLC en el workspace como una copia del módulo o como un clon.
-4. Ejecute el comando exacto de la página generada de [Perfiles de placa](./boards.md).
+3. Ponga ZPLC en el espacio de trabajo como una copia del módulo o como un clon.
+4. Ejecute el comando exacto de la página generada [Placas soportadas](./boards.md).
 
 ## Anclas del repositorio
 
@@ -24,13 +24,13 @@ prueba la grabación, el arranque, la E/S, la temporización, la persistencia ni
 - `firmware/app/CMakeLists.txt`
 - `firmware/app/README.md`
 - `firmware/app/boards/boards.json`
-- [Fuentes de verdad](./source-of-truth.md)
+- [Fuente de verdad](./source-of-truth.md)
 
-## Forma del workspace
+## Estructura del espacio de trabajo
 
 ```mermaid
 flowchart TD
-  ROOT[Workspace Zephyr]
+  ROOT[Espacio de trabajo de Zephyr]
   ROOT --> WEST[metadatos de west]
   ROOT --> MODULES[modules/lib]
   MODULES --> ZPLC[copia de ZPLC]
@@ -60,5 +60,5 @@ un dispositivo no probado. Consulte [Límites de recuperación](../operations/re
 
 ## Páginas relacionadas
 
-- [Perfiles de placa](./boards.md)
+- [Placas soportadas](./boards.md)
 - [Compatibilidad de hardware](./capabilities-evidence.md)

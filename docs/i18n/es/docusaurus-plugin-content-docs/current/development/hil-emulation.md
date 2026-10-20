@@ -17,7 +17,7 @@ antes de tener una placa sobre la mesa.
 :::warning Emulado no es hardware
 Cada registro de una ejecución emulada indica `evidence_level: emulated` y nombra
 el emulador, su versión y el hash de su parche. Un registro emulado nunca eleva el
-nivel de soporte de una placa, y ninguna cifra de tiempos puede citarlo (HIL-016).
+nivel de compatibilidad de una placa, y ninguna cifra de tiempos puede citarlo (HIL-016).
 Un emulador modela el chip, no la placa: no demuestra nada sobre pines, tensiones,
 relojes reales, desgaste de la flash ni sobre los controladores frente al silicio.
 :::

@@ -62,8 +62,8 @@ nunca `hardware`.
 
 Cada registro indica además su nivel de evidencia: `hardware` para el banco de
 una persona, `emulated` para el banco emulado (con el emulador, su versión y el
-hash de su parche), `community-reported` para el reporte de un usuario, y
-ninguno para un sustituto. Solo `hardware` eleva el nivel de soporte de una
+hash de su parche), `community-reported` para el informe de un usuario, y
+ninguno para un sustituto. Solo `hardware` eleva el nivel de compatibilidad de una
 placa; un registro emulado nunca lo hace.
 
 ## Estado de salida
@@ -136,7 +136,7 @@ Una ejecución en hardware real que termina en pass o fail, de una imagen de
 firmware indicada con `--firmware-image` cuyo dispositivo informa un commit de
 40 dígitos de un árbol sin cambios sin confirmar, escribe además
 `<ejecución>.evidence.json` junto al registro de ejecución. Es el registro plano
-del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de soporte de
+del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de compatibilidad de
 una placa: esquema `zplc.hil-record/1`, `board_id`, versión de firmware, commit,
 el SHA-256 de la imagen y el resultado, con la lista de lo que la ejecución no
 cubrió. Cuando falta alguno de esos datos, el registro de ejecución dice por qué
@@ -145,15 +145,15 @@ a `evidence_refs` de la placa en `boards.json` es una edición suya, después de
 leer el registro de ejecución; una ejecución sobre un sustituto nunca escribe
 uno.
 
-### Un reporte de un usuario
+### Un informe de un usuario
 
 El resultado de otra persona en su placa entra en la misma lista, en un nivel
 inferior. El formulario «Board report» pide la placa, la versión de firmware, el
 commit, el SHA-256 de la imagen y el resultado. Quien mantiene el proyecto, tras
-leer el issue, ejecuta `python3 tools/hil/community_report.py` con esos valores y
-la dirección del issue, lo que escribe un registro `zplc.community-report/1`, y
+leer la incidencia, ejecuta `python3 tools/hil/community_report.py` con esos valores y
+la dirección de la incidencia, lo que escribe un registro `zplc.community-report/1`, y
 agrega el archivo a `evidence_refs` de la placa. La tabla de placas generada lo
-lista como `community-reported`. Es una pista: nunca sube el nivel de soporte y
+lista como `community-reported`. Es una pista: nunca sube el nivel de compatibilidad y
 nunca enciende el watchdog de hardware del perfil.
 
 Cuando una herramienta se inicia sin un terminal interactivo termina con estado
