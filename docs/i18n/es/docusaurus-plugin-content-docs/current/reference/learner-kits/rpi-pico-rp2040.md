@@ -69,15 +69,15 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Ciclo de scan y memoria de un ciclo](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./rpi-pico-rp2040/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./rpi-pico-rp2040/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Escriba un parpadeador en Structured Text](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
-| [Enclavar una alarma: set y reset, y cuál gana](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
-| [Autorretención en Ladder: un motor que se mantiene encendido](./rpi-pico-rp2040/seal-in-ladder.md) | `seal-in-ladder` |
-| [Contadores en diagrama de bloques de función: contar piezas hasta un lote](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
+| [Escriba un parpadeador en texto estructurado](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |
+| [Retener una alarma: set y reset, y cuál tiene prioridad](./rpi-pico-rp2040/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Autorretención en diagrama de escalera: un motor que se mantiene encendido](./rpi-pico-rp2040/seal-in-ladder.md) | `seal-in-ladder` |
+| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./rpi-pico-rp2040/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [Tipos, aritmética y comparación: un total y tres bandas](./rpi-pico-rp2040/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Escalado analógico: de cuentas crudas a un porcentaje](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
-| [Bloques de función: un enclavamiento, dos bombas](./rpi-pico-rp2040/function-block-pump-pair.md) | `function-block-pump-pair` |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](./rpi-pico-rp2040/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Bloques de función: un biestable, dos bombas](./rpi-pico-rp2040/function-block-pump-pair.md) | `function-block-pump-pair` |
 | [Estructuras y arreglos: un panel de tres llamadas](./rpi-pico-rp2040/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./rpi-pico-rp2040/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./rpi-pico-rp2040/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./rpi-pico-rp2040/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Verificar mi placa](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |

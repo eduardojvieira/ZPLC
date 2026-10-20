@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Escalado analógico: de cuentas crudas a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Escalado analógico: de cuentas en bruto a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "analog-scaling-integer"
 description: "Cómo cablear la lección analog-scaling-integer en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Escalado analógico: de cuentas crudas a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Escalado analógico: de cuentas en bruto a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/analog-scaling-integer. Do not edit. >>> */}
 
-El cableado de la lección [Escalado analógico: de cuentas crudas a un porcentaje](../../../learn/lessons/analog-scaling-integer.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Escalado analógico: de cuentas en bruto a un porcentaje](../../../learn/lessons/analog-scaling-integer.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Escalado analógico: de cuentas crudas a un porcenta
 
 ## Diagrama
 
-![Cableado de Escalado analógico: de cuentas crudas a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/analog-scaling-integer.es.svg)
+![Cableado de Escalado analógico: de cuentas en bruto a un porcentaje en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/analog-scaling-integer.es.svg)
 
 ## Tarjeta de cableado
 

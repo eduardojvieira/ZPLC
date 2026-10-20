@@ -1,48 +1,48 @@
 {
   "schemaVersion": 1,
   "title": "Proyecto final: una estación de empaque, de la descripción al programa probado",
-  "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa de Texto Estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
-  "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de una línea de empaque, comportamiento de funciones de seguridad, tiempos de sensores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+  "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa en texto estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida, y demuestre que funciona con un escenario que también comprueba lo que no debe ocurrir.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de una línea de empaque, el comportamiento de funciones de seguridad, tiempos de sensores ni el comportamiento de una máquina real, HIL ni certificación.",
   "objectives": [
-    "Convertir cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada.",
-    "Leer un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus assertions fallidas para encontrar el requisito que pasó por alto."
+    "Convierta cinco requisitos escritos en un solo programa en texto estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida.",
+    "Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que pasó por alto."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y se mantenga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida {{t:50}} ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borra la cuenta y BatchFull, y borra Fault solo cuando Part ya no está bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelve a funcionar solo con un nuevo Start.",
+      "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y la cinta siga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece activa {{t:50}} ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelva a funcionar solo con un nuevo Start.",
       "checkpoint": "La cinta funciona después de Start, se detiene con Stop, EStop, un lote lleno y un atasco, y nunca se reinicia sin un nuevo Start."
     },
     {
       "key": "predict",
       "title": "Prediga",
       "body": "Las piezas pasan por el sensor a los {{t:50}}, {{t:90}} y {{t:150}} ms. Prediga BatchFull a los {{t:130}} ms y a los {{t:190}} ms, y Belt a los {{t:190}} ms. Start se pulsa de nuevo a los {{t:200}} ms: prediga Belt a los {{t:230}} ms.",
-      "checkpoint": "{{v:Station.BatchFull=false@130|APAGADA}} a los {{t:130}} ms, con dos piezas; {{v:Station.BatchFull=true@190|ENCENDIDA}} a los {{t:190}} ms, con {{v:Station.Belt=false@190|la cinta detenida}}; {{v:Station.Belt=false@230|la cinta sigue apagada}} a los {{t:230}} ms, porque el lote sigue lleno."
+      "checkpoint": "{{v:Station.BatchFull=false@130|En OFF}} a los {{t:130}} ms, con dos piezas; {{v:Station.BatchFull=true@190|en ON}} a los {{t:190}} ms, con {{v:Station.Belt=false@190|la cinta detenida}}; {{v:Station.Belt=false@230|la cinta sigue apagada}} a los {{t:230}} ms, porque el lote sigue lleno."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
-      "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para detectar el atasco, la retención de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección. Lea cada assertion fallida: indica el instante, el valor esperado y el valor observado.",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
       "checkpoint": "El escenario se llama PackingStation y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare {{t:270}}, {{t:310}} y {{t:360}} ms: Reset vacía el lote a los {{t:240}} ms pero la cinta sigue apagada hasta un nuevo Start a los {{t:280}} ms, y después de la parada de emergencia a los {{t:320}} ms la cinta sigue apagada a los {{t:360}} ms hasta que se pulsa Start a los {{t:370}} ms. La pieza que bloquea el sensor desde los {{t:410}} ms levanta la falla, y Reset a los {{t:480}} ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los {{t:510}} ms y se pulsa Reset a los {{t:530}} ms.",
+      "body": "Compare {{t:270}}, {{t:310}} y {{t:360}} ms: Reset vacía el lote a los {{t:240}} ms pero la cinta sigue apagada hasta un nuevo Start a los {{t:280}} ms, y después de la parada de emergencia a los {{t:320}} ms la cinta sigue apagada a los {{t:360}} ms hasta que se pulsa Start a los {{t:370}} ms. La pieza que bloquea el sensor desde los {{t:410}} ms activa la falla, y Reset a los {{t:480}} ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los {{t:510}} ms y se pulsa Reset a los {{t:530}} ms.",
       "checkpoint": "A los {{t:490}} ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los {{t:550}} ms Fault está apagada y la cinta sigue apagada."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿A cuál de los cinco requisitos señaló la primera assertion fallida, y cuáles encontró solo al leer el escenario? Piense en una cosa más que la estación nunca debería hacer, y si el escenario la detectaría.",
-      "checkpoint": "La mayoría de las assertions comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+      "body": "¿A cuál de los cinco requisitos apuntó la primera aserción fallida, y cuáles encontró solo al leer el escenario? Piense en otra cosa que la estación nunca debería hacer, y en si el escenario la detectaría.",
+      "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una cinta que vuelve a arrancar sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el caso normal y aun así no supera estas comprobaciones. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
     }
   ],
   "hints": [
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
+    "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para detectar el atasco, la retención de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
   ]
 }

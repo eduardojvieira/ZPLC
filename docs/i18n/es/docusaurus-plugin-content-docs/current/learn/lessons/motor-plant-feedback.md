@@ -25,7 +25,7 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 ## Objetivos
 
 - Separe la orden al motor de la confirmación de que está en marcha.
-- Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed.
+- Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed.
 
 ## Etapas
 

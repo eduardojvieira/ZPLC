@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Enclavar una alarma: set y reset, y cuál gana en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Retener una alarma: set y reset, y cuál tiene prioridad en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "set-reset-alarm-latch"
 description: "Cómo cablear la lección set-reset-alarm-latch en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Enclavar una alarma: set y reset, y cuál gana en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Retener una alarma: set y reset, y cuál tiene prioridad en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/set-reset-alarm-latch. Do not edit. >>> */}
 
-El cableado de la lección [Enclavar una alarma: set y reset, y cuál gana](../../../learn/lessons/set-reset-alarm-latch.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Retener una alarma: set y reset, y cuál tiene prioridad](../../../learn/lessons/set-reset-alarm-latch.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Enclavar una alarma: set y reset, y cuál gana](../.
 
 ## Diagrama
 
-![Cableado de Enclavar una alarma: set y reset, y cuál gana en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/set-reset-alarm-latch.es.svg)
+![Cableado de Retener una alarma: set y reset, y cuál tiene prioridad en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/set-reset-alarm-latch.es.svg)
 
 ## Tarjeta de cableado
 

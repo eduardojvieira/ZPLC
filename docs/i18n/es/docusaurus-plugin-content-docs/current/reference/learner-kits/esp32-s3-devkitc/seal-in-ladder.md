@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Autorretención en Ladder: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Autorretención en diagrama de escalera: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "seal-in-ladder"
 description: "Cómo cablear la lección seal-in-ladder en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Autorretención en Ladder: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Autorretención en diagrama de escalera: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/seal-in-ladder. Do not edit. >>> */}
 
-El cableado de la lección [Autorretención en Ladder: un motor que se mantiene encendido](../../../learn/lessons/seal-in-ladder.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Autorretención en diagrama de escalera: un motor que se mantiene encendido](../../../learn/lessons/seal-in-ladder.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Autorretención en Ladder: un motor que se mantiene 
 
 ## Diagrama
 
-![Cableado de Autorretención en Ladder: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/seal-in-ladder.es.svg)
+![Cableado de Autorretención en diagrama de escalera: un motor que se mantiene encendido en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/seal-in-ladder.es.svg)
 
 ## Tarjeta de cableado
 

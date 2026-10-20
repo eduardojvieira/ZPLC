@@ -22,7 +22,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | --- | --- | --- | --- |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](../lessons/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` | ST | 15 |
 | [Flancos y contador de pulsos](../lessons/edge-counter-pulses.md) | `edge-counter-pulses` | ST | 15 |
-| [Contadores en diagrama de bloques de función: contar piezas hasta un lote](../lessons/counter-batch-fbd.md) | `counter-batch-fbd` | FBD | 20 |
+| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../lessons/counter-batch-fbd.md) | `counter-batch-fbd` | FBD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-3 <<< */}
 

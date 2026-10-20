@@ -22,7 +22,7 @@ Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya pued
 | --- | --- | --- | --- |
 | [Comando, realimentación y velocidad](../lessons/motor-plant-feedback.md) | `motor-plant-feedback` | ST | 20 |
 | [Nivel de tanque, fallas y reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
-| [Interbloqueos y permisivos: una protección que detiene el motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
+| [Enclavamientos y permisivos: una protección que detiene el motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-6 <<< */}
 

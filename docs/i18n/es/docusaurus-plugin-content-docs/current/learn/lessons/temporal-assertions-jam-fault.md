@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/temporal-assertions-jam-fault. Do not edit. >>> */}
 
-Enclave la falla por atasco y pruebe su temporización con assertions AT, WITHIN, FOR, UNTIL, RISING y FALLING.
+Retenga la falla por atasco y compruebe su temporización con aserciones AT, WITHIN, FOR, UNTIL, RISING y FALLING.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Enclave la falla por atasco y pruebe su temporización con assertions AT, WITHIN
 
 ## Objetivos
 
-- Enclave la falla por atasco y pruebe su temporización con assertions temporales.
-- Exija un Start nuevo antes de mover la cinta otra vez tras liberar la falla.
+- Retenga la falla por atasco y compruebe su temporización con aserciones temporales.
+- Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla.
 
 ## Etapas
 

@@ -4,15 +4,15 @@
   "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
   "scope": "La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.",
   "objectives": [
-    "Distinga una pieza metálica de una no metálica con una memoria que vive entre dos sensores.",
-    "Lea una línea de tiempo de entradas agendadas y anticipe las salidas antes de ejecutarla."
+    "Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.",
+    "Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Ubique",
       "body": "Use PartAtClassifier, MetalDetected y PartAtDiverter en src/Conveyor.st y agregue MetalLatched.",
-      "checkpoint": "MetalLatched se activa con clasificador+metal y se limpia al llegar al desviador."
+      "checkpoint": "MetalLatched se activa con clasificador+metal y se borra cuando la pieza llega al desviador."
     },
     {
       "key": "predict",
@@ -23,32 +23,32 @@
     {
       "key": "schedule",
       "title": "Lea el calendario",
-      "body": "El JSON agenda clasificador→desviador {{t:20}}→{{t:30}} ms y {{t:50}}→{{t:70}} ms, con tick de {{t:10}} ms hasta {{t:80}} ms. Start se pulsa solo a {{t:0}} ms, así que el programa debe retener el pedido de cinta.",
-      "checkpoint": "Las tres assertions son {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@30|AT@30 Belt=true/Diverter=true}}, {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@70|AT@70 Belt=true/Diverter=false}} y NEVER Diverter=true con Belt=false."
+      "body": "El JSON programa clasificador→desviador a {{t:20}}→{{t:30}} ms y {{t:50}}→{{t:70}} ms, con un tick de {{t:10}} ms hasta {{t:80}} ms. Start se pulsa solo a los {{t:0}} ms, así que el programa debe retener la solicitud de la cinta.",
+      "checkpoint": "Las tres aserciones son {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@30|AT@30 Belt=true/Diverter=true}}, {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@70|AT@70 Belt=true/Diverter=false}} y NEVER Diverter=true con Belt=false."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente ConveyorTwoParts.",
+      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorTwoParts.",
       "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Diagnostique",
-      "body": "La matriz de Tests prueba outputs host: compare las muestras de {{t:30}} y {{t:70}} ms.",
-      "checkpoint": "No prueba ni registra inputs, piezas físicas ni el estado interno MetalLatched."
+      "body": "La matriz de Pruebas demuestra las salidas del host: compare las muestras de {{t:30}} y {{t:70}} ms.",
+      "checkpoint": "No demuestra ni registra las entradas, las piezas físicas ni el estado interno MetalLatched."
     },
     {
       "key": "reflect",
       "title": "Límites",
-      "body": "Repita el mismo escenario para una decisión reproducible sobre outputs del host.",
-      "checkpoint": "No demuestra sensores o piezas físicas, timing de target, hardware, HIL ni certificación."
+      "body": "Repita el mismo escenario para tomar una decisión reproducible sobre las salidas del host.",
+      "checkpoint": "No demuestra sensores ni piezas físicas, los tiempos en el dispositivo de destino, hardware, HIL ni certificación."
     }
   ],
   "hints": [
@@ -58,10 +58,10 @@
     },
     {
       "level": 2,
-      "text": "Borre MetalLatched cuando la pieza llega al desviador, maneje DiverterCommand desde BeltCommand AND PartAtDiverter AND MetalLatched, y retenga el pedido de cinta tras la única pulsación de Start a {{t:0}} ms."
+      "text": "Borre MetalLatched cuando la pieza llegue al desviador, calcule DiverterCommand a partir de BeltCommand AND PartAtDiverter AND MetalLatched, y retenga la solicitud de la cinta tras la única pulsación de Start a los {{t:0}} ms."
     }
   ],
   "faultCases": [
-    "El starter nunca enclava metal para el desviador; retenga el pedido de cinta tras Start, enclave metal en el clasificador y liberalo recién cuando la pieza llega al desviador."
+    "El programa inicial nunca retiene el metal para el desviador; mantenga la solicitud de la cinta tras Start, memorice el metal en el clasificador y bórrelo solo cuando la pieza llegue al desviador."
   ]
 }

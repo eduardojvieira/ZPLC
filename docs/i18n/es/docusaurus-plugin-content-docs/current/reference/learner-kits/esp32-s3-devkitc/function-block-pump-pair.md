@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Bloques de función: un enclavamiento, dos bombas en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Bloques de función: un biestable, dos bombas en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "function-block-pump-pair"
 description: "Cómo cablear la lección function-block-pump-pair en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Bloques de función: un enclavamiento, dos bombas en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Bloques de función: un biestable, dos bombas en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair. Do not edit. >>> */}
 
-El cableado de la lección [Bloques de función: un enclavamiento, dos bombas](../../../learn/lessons/function-block-pump-pair.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Bloques de función: un biestable, dos bombas](../../../learn/lessons/function-block-pump-pair.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Bloques de función: un enclavamiento, dos bombas](.
 
 ## Diagrama
 
-![Cableado de Bloques de función: un enclavamiento, dos bombas en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/function-block-pump-pair.es.svg)
+![Cableado de Bloques de función: un biestable, dos bombas en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/function-block-pump-pair.es.svg)
 
 ## Tarjeta de cableado
 

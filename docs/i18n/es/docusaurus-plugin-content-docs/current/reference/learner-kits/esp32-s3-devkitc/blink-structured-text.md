@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Escriba un parpadeador en Structured Text en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Escriba un parpadeador en texto estructurado en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "blink-structured-text"
 description: "Cómo cablear la lección blink-structured-text en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Escriba un parpadeador en Structured Text en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Escriba un parpadeador en texto estructurado en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/blink-structured-text. Do not edit. >>> */}
 
-El cableado de la lección [Escriba un parpadeador en Structured Text](../../../learn/lessons/blink-structured-text.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Escriba un parpadeador en texto estructurado](../../../learn/lessons/blink-structured-text.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Escriba un parpadeador en Structured Text](../../../
 
 ## Diagrama
 
-![Cableado de Escriba un parpadeador en Structured Text en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/blink-structured-text.es.svg)
+![Cableado de Escriba un parpadeador en texto estructurado en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/blink-structured-text.es.svg)
 
 ## Tarjeta de cableado
 

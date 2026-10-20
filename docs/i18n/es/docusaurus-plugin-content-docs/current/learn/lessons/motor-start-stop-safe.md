@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/motor-start-stop-safe. Do not edit. >>> */}
 
-Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.
+Recorra un motor con autorretención, parada y protección por sobrecarga usando el ejemplo Motor Start Stop.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 
 ## Objetivos
 
-- Mantenga el motor encendido tras soltar Start con un seal-in.
-- Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo.
+- Mantenga el motor encendido tras soltar Start mediante una autorretención.
+- Detenga el motor con Stop, EStop y Overload, y evite que un Start mantenido lo vuelva a arrancar por sí solo.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.
+Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.
 
 ## Cableado
 

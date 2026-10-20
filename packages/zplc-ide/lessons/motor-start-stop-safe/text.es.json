@@ -1,48 +1,48 @@
 {
   "schemaVersion": 1,
   "title": "Arranque y parada seguros",
-  "summary": "Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor Start Stop.",
-  "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.",
+  "summary": "Recorra un motor con autorretención, parada y protección por sobrecarga usando el ejemplo Motor Start Stop.",
+  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de hardware ni de HIL.",
   "objectives": [
-    "Mantenga el motor encendido tras soltar Start con un seal-in.",
-    "Baje el motor con Stop, EStop y Overload, y evite que un Start mantenido lo rearranque solo."
+    "Mantenga el motor encendido tras soltar Start mediante una autorretención.",
+    "Detenga el motor con Stop, EStop y Overload, y evite que un Start mantenido lo vuelva a arrancar por sí solo."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Motor.st, reemplace Forward := Start por un seal-in armado con Start, Stop, EStop y Overload; verifique que Reverse permanece FALSE.",
-      "checkpoint": "Forward sigue ON al soltar Start y cae con Stop, EStop o Overload."
+      "body": "En src/Motor.st, reemplace Forward := Start por una autorretención construida con Start, Stop, EStop y Overload; verifique que Reverse permanece en FALSE.",
+      "checkpoint": "Forward sigue en ON al soltar Start y cae con Stop, EStop u Overload."
     },
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "Antes de ejecutar, anticipe Motor.Forward a {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}} y {{t:140}} ms.",
-      "checkpoint": "OFF a {{t:0}} ms aunque Start esté pulsado; ON a {{t:20}}; OFF a {{t:40}} (EStop) y todavía OFF a {{t:50}} con Start pulsado; OFF a {{t:90}} (sobrecarga) y {{t:140}} (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a {{t:70}}, {{t:120}} y {{t:170}} ms. Motor.Reverse permanece OFF."
+      "body": "Antes de ejecutar, prediga Motor.Forward a los {{t:0}}, {{t:20}}, {{t:40}}, {{t:50}}, {{t:90}} y {{t:140}} ms.",
+      "checkpoint": "OFF a los {{t:0}} ms aunque Start esté pulsado; ON a los {{t:20}}; OFF a los {{t:40}} (EStop) y todavía OFF a los {{t:50}} con Start pulsado; OFF a los {{t:90}} (sobrecarga) y a los {{t:140}} (Stop). Vuelve a ON solo tras soltar y volver a pulsar Start, a los {{t:70}}, {{t:120}} y {{t:170}} ms. Motor.Reverse permanece en OFF."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorStartStop.",
+      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorStartStop.",
       "checkpoint": "El escenario requerido se llama MotorStartStop y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Compare la traza: EStop a {{t:40}} ms, sobrecarga a {{t:90}} ms y parada a {{t:140}} ms.",
-      "checkpoint": "EStop, Overload y Stop fuerzan Motor.Forward OFF, y mantener Start no lo reinicia."
+      "body": "Compare la traza: EStop a los {{t:40}} ms, sobrecarga a los {{t:90}} ms y parada a los {{t:140}} ms.",
+      "checkpoint": "EStop, Overload y Stop ponen Motor.Forward en OFF, y mantener Start pulsado no lo vuelve a arrancar."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "La assertion exacta NEVER comprueba cobertura lógica de este escenario.",
-      "checkpoint": "No demuestra seguridad física, temporización de hardware ni certificación."
+      "body": "La aserción NEVER exacta comprueba la cobertura lógica de este escenario.",
+      "checkpoint": "No demuestra seguridad física, tiempos del hardware ni certificación."
     }
   ],
   "hints": [
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Borre la memoria primero cuando Stop, EStop u Overload sea TRUE; recién después deje que Start la active, y solo si Start se vio suelto desde la última parada, así un Start mantenido no rearranca el motor."
+      "text": "Borre primero la memoria cuando Stop, EStop u Overload sea TRUE; solo después deje que Start la active, y solo si Start se vio suelto desde la última parada, para que un Start mantenido no vuelva a arrancar el motor."
     }
   ],
   "faultCases": [
-    "El starter pierde el enclavamiento al soltar Start; implemente baja por Stop, EStop y sobrecarga, sin arrancar ni rearrancar mientras Start siga pulsado tras el encendido o una parada."
+    "El programa inicial pierde la autorretención al soltar Start; haga que Stop, EStop y Overload detengan el motor, y que nunca arranque ni vuelva a arrancar mientras Start siga pulsado tras el encendido o una parada."
   ]
 }

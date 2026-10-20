@@ -5,7 +5,7 @@
   "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
   "objectives": [
     "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
-    "Resetee la cuenta y CountReached con Reset."
+    "Ponga a cero la cuenta y CountReached con Reset."
   ],
   "stages": [
     {
@@ -23,13 +23,13 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario EdgeCounter.",
+      "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
       "checkpoint": "El escenario requerido se llama EdgeCounter y contiene {{assertions}} assertions."
     },
     {
@@ -52,10 +52,10 @@
     },
     {
       "level": 2,
-      "text": "Declare Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
+      "text": "Declare Count : CTU, llámelo en cada ciclo como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
     }
   ],
   "faultCases": [
-    "El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
+    "El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF."
   ]
 }

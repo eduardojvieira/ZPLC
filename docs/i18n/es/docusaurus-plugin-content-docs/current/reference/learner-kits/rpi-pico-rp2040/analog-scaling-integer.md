@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Escalado analógico: de cuentas crudas a un porcentaje en Raspberry Pi Pico (RP2040)"
+title: "Cableado: Escalado analógico: de cuentas en bruto a un porcentaje en Raspberry Pi Pico (RP2040)"
 sidebar_label: "analog-scaling-integer"
 description: "Cómo cablear la lección analog-scaling-integer en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Escalado analógico: de cuentas crudas a un porcentaje en Raspberry Pi Pico (RP2040)
+# Cableado: Escalado analógico: de cuentas en bruto a un porcentaje en Raspberry Pi Pico (RP2040)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/analog-scaling-integer. Do not edit. >>> */}
 
-El cableado de la lección [Escalado analógico: de cuentas crudas a un porcentaje](../../../learn/lessons/analog-scaling-integer.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Escalado analógico: de cuentas en bruto a un porcentaje](../../../learn/lessons/analog-scaling-integer.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Escalado analógico: de cuentas crudas a un porcenta
 
 ## Diagrama
 
-![Cableado de Escalado analógico: de cuentas crudas a un porcentaje en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/analog-scaling-integer.es.svg)
+![Cableado de Escalado analógico: de cuentas en bruto a un porcentaje en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/analog-scaling-integer.es.svg)
 
 ## Tarjeta de cableado
 

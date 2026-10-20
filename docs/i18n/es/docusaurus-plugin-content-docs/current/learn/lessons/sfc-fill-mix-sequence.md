@@ -1,16 +1,16 @@
 ---
-title: "Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar"
+title: "Una secuencia en diagrama funcional secuencial: llenar y luego mezclar"
 sidebar_label: "sfc-fill-mix-sequence"
 description: "La lección sfc-fill-mix-sequence: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar
+# Una secuencia en diagrama funcional secuencial: llenar y luego mezclar
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/sfc-fill-mix-sequence. Do not edit. >>> */}
 
-Complete un diagrama funcional de secuencias de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.
+Complete un diagrama funcional secuencial de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.
 
 ## Datos
 
@@ -24,7 +24,7 @@ Complete un diagrama funcional de secuencias de tres pasos agregando la transici
 
 ## Objetivos
 
-- Lea un diagrama funcional de secuencias como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que mueven la actividad.
+- Lea un diagrama funcional secuencial como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que trasladan la actividad.
 - Agregue una transición temporizada que use el tiempo transcurrido de un paso.
 
 ## Etapas
@@ -38,7 +38,7 @@ Complete un diagrama funcional de secuencias de tres pasos agregando la transici
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece volúmenes de proceso, calidad de mezcla ni tiempos de válvula en equipos reales, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales, HIL ni certificación.
 
 ## Cableado
 

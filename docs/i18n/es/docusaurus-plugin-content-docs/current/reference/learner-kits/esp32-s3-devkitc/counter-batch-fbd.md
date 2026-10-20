@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Contadores en diagrama de bloques de función: contar piezas hasta un lote en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "counter-batch-fbd"
 description: "Cómo cablear la lección counter-batch-fbd en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Contadores en diagrama de bloques de función: contar piezas hasta un lote en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd. Do not edit. >>> */}
 
-El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta un lote](../../../learn/lessons/counter-batch-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../../../learn/lessons/counter-batch-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Contadores en diagrama de bloques de función: conta
 
 ## Diagrama
 
-![Cableado de Contadores en diagrama de bloques de función: contar piezas hasta un lote en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/counter-batch-fbd.es.svg)
+![Cableado de Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/counter-batch-fbd.es.svg)
 
 ## Tarjeta de cableado
 

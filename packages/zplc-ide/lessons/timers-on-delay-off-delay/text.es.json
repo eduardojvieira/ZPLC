@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
   "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, los tiempos en el dispositivo de destino, HIL ni certificación.",
   "objectives": [
-    "Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.",
-    "Ignore una entrada que está en ON menos de un tiempo fijo, con TON."
+    "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
+    "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."
   ],
   "stages": [
     {
@@ -17,19 +17,19 @@
     {
       "key": "predict",
       "title": "Prediga",
-      "body": "El escenario pulsa Button a los {{t:100}} ms y lo suelta a los {{t:300}} ms. Sensor da un pulso en ON de {{t:100}} a {{t:140}} ms y vuelve a estar en ON de {{t:500}} a {{t:900}} ms. Prediga Light y Confirmed en {{t:200}}, {{t:450}}, {{t:650}} y {{t:800}} ms.",
-      "checkpoint": "{{v:Delays.Light=true,Delays.Confirmed=false@200|Light en ON, Confirmed en OFF}} en {{t:200}} ms; {{v:Delays.Light=true,Delays.Confirmed=false@450|Light en ON, Confirmed en OFF}} en {{t:450}} ms; {{v:Delays.Light=false,Delays.Confirmed=false@650|ambas en OFF}} en {{t:650}} ms; {{v:Delays.Light=false,Delays.Confirmed=true@800|Confirmed en ON, Light en OFF}} en {{t:800}} ms."
+      "body": "El escenario pulsa Button a los {{t:100}} ms y lo suelta a los {{t:300}} ms. Sensor da un pulso breve en ON de {{t:100}} a {{t:140}} ms y vuelve a estar en ON de {{t:500}} a {{t:900}} ms. Prediga Light y Confirmed a los {{t:200}}, {{t:450}}, {{t:650}} y {{t:800}} ms.",
+      "checkpoint": "{{v:Delays.Light=true,Delays.Confirmed=false@200|Light en ON, Confirmed en OFF}} a los {{t:200}} ms; {{v:Delays.Light=true,Delays.Confirmed=false@450|Light en ON, Confirmed en OFF}} a los {{t:450}} ms; {{v:Delays.Light=false,Delays.Confirmed=false@650|ambas en OFF}} a los {{t:650}} ms; {{v:Delays.Light=false,Delays.Confirmed=true@800|Confirmed en ON, Light en OFF}} a los {{t:800}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms. Llame a HoldTimer con Button como IN y un preajuste de T#300ms, y tome Light de su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-      "checkpoint": "Los dos temporizadores se llaman en cada scan y cada salida viene de la Q de su temporizador."
+      "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms. Llame a HoldTimer con Button como IN y un valor preestablecido de T#300ms, y asigne a Light su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
+      "checkpoint": "Los dos temporizadores se llaman en cada ciclo y cada salida proviene de la Q de su temporizador."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama Delays y contiene {{assertions}} assertions."
     },
     {
@@ -48,7 +48,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "TOF mantiene su Q en ON durante el tiempo de preajuste después de que IN baja, y TON sube Q solo cuando IN lleva ese tiempo en ON."
+      "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo cuando IN lleva ese tiempo en ON."
     },
     {
       "level": 2,

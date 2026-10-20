@@ -24,8 +24,8 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Objetivos
 
-- Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.
-- Ignore una entrada que está en ON menos de un tiempo fijo, con TON.
+- Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.
+- Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, los tiempos en el dispositivo de destino, HIL ni certificación.
 
 ## Cableado
 

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/structures-arrays-call-panel. Do not edit. >>> */}
 
-Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle FOR que mantenga cada llamada hasta que se reconozca e informe si hay alguna llamada, o todas, esperando.
+Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bucle FOR que retenga cada llamada hasta que se reconozca e informe si alguna llamada, o todas, están en espera.
 
 ## Datos
 
@@ -38,7 +38,7 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle F
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta de un panel de llamadas real ni tareas distintas de esa única tarea de 10 ms, HIL ni certificación.
 
 ## Cableado
 

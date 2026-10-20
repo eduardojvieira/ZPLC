@@ -64,15 +64,15 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Ciclo de scan y memoria de un ciclo](./esp32-s3-devkitc/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
-| [Escriba un parpadeador en Structured Text](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
-| [Enclavar una alarma: set y reset, y cuál gana](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
-| [Autorretención en Ladder: un motor que se mantiene encendido](./esp32-s3-devkitc/seal-in-ladder.md) | `seal-in-ladder` |
-| [Contadores en diagrama de bloques de función: contar piezas hasta un lote](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
+| [Escriba un parpadeador en texto estructurado](./esp32-s3-devkitc/blink-structured-text.md) | `blink-structured-text` |
+| [Retener una alarma: set y reset, y cuál tiene prioridad](./esp32-s3-devkitc/set-reset-alarm-latch.md) | `set-reset-alarm-latch` |
+| [Autorretención en diagrama de escalera: un motor que se mantiene encendido](./esp32-s3-devkitc/seal-in-ladder.md) | `seal-in-ladder` |
+| [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](./esp32-s3-devkitc/counter-batch-fbd.md) | `counter-batch-fbd` |
 | [Tipos, aritmética y comparación: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison.md) | `types-arithmetic-comparison` |
-| [Escalado analógico: de cuentas crudas a un porcentaje](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
-| [Bloques de función: un enclavamiento, dos bombas](./esp32-s3-devkitc/function-block-pump-pair.md) | `function-block-pump-pair` |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](./esp32-s3-devkitc/analog-scaling-integer.md) | `analog-scaling-integer` |
+| [Bloques de función: un biestable, dos bombas](./esp32-s3-devkitc/function-block-pump-pair.md) | `function-block-pump-pair` |
 | [Estructuras y arreglos: un panel de tres llamadas](./esp32-s3-devkitc/structures-arrays-call-panel.md) | `structures-arrays-call-panel` |
-| [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](./esp32-s3-devkitc/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` |
 | [Lista de instrucciones: el resultado actual y el orden de las instrucciones](./esp32-s3-devkitc/instruction-list-door-alarm.md) | `instruction-list-door-alarm` |
 | [Una lógica en cinco lenguajes: un portón que se mantiene abierto](./esp32-s3-devkitc/one-logic-five-languages.md) | `one-logic-five-languages` |
 | [Verificar mi placa](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |

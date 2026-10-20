@@ -20,7 +20,7 @@ Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Bloques de función: un enclavamiento, dos bombas](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
+| [Bloques de función: un biestable, dos bombas](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
 | [Estructuras y arreglos: un panel de tres llamadas](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-7 <<< */}

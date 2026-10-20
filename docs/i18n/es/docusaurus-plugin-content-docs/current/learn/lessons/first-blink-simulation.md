@@ -23,8 +23,8 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 
 ## Objetivos
 
-- Ejecute un programa contra una salida simulada sin ningún hardware.
-- Cambie un valor en Structured Text y vea cambiar la salida en la traza.
+- Ejecute un programa sobre una salida simulada, sin ningún hardware.
+- Cambie un valor en texto estructurado y vea cómo cambia la salida en la traza.
 
 ## Etapas
 
@@ -37,7 +37,7 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su equipo; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.
 
 ## En una placa
 

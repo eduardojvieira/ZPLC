@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/pedestrian-crossing-states. Do not edit. >>> */}
 
-Recorra estados de cruce peatonal con salidas de vehículo y peatón mutuamente consistentes.
+Recorra los estados de un cruce peatonal con salidas para vehículos y peatones coherentes entre sí.
 
 ## Datos
 
@@ -38,7 +38,7 @@ Recorra estados de cruce peatonal con salidas de vehículo y peatón mutuamente 
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de cruce físico, hardware, HIL ni certificación.
 
 ## En una placa
 

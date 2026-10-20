@@ -20,7 +20,7 @@ Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulac
 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
-| [Modbus TCP: escribir un registro y leerlo de vuelta](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
+| [Modbus TCP: escribir un registro y volver a leerlo](../lessons/modbus-register-round-trip.md) | `modbus-register-round-trip` | ST | 25 |
 | [MQTT: publicar un mensaje y recibirlo](../lessons/mqtt-publish-subscribe.md) | `mqtt-publish-subscribe` | ST | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-10 <<< */}

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "title": "Escalado analógico: de cuentas crudas a un porcentaje",
-  "summary": "Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+  "title": "Escalado analógico: de cuentas en bruto a un porcentaje",
+  "summary": "Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
   "objectives": [
-    "Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
-    "Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio."
+    "Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
+    "Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio."
   ],
   "stages": [
     {
@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama Scaling y contiene {{assertions}} assertions."
     },
     {
@@ -41,7 +41,7 @@
     {
       "key": "reflect",
       "title": "Reflexione",
-      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo ancho. Compruebe el ancho de INT en su destino antes de confiar en él.",
+      "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo de mayor rango. Compruebe el tamaño de INT en su dispositivo de destino antes de confiar en él.",
       "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
     }
   ],

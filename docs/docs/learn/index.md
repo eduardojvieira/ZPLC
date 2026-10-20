@@ -26,7 +26,7 @@ runs your saved program against the scenario of the lesson and lists every
 assertion that failed, with the time, the value it expected and the value it
 saw. A lesson is complete when every assertion of its scenario passed.
 
-Every lesson offers two levels of hint, and Studio records each level you open. The reference solution opens only on request, and the progress records that you saw it. A teacher can hide the solutions: see [Educators](./educators.md).
+Every lesson offers two levels of hint, and Studio records each level you open. The reference solution opens only on request, and the progress records that you saw it. A teacher can hide the solutions: see [Educators](./educators.md). The [course glossary](glossary.md) lists the terms the course uses in English and in Spanish.
 
 A lesson is locked until the lessons it requires are passed, and the home says
 which ones. If you would rather take them in any order, turn on **Unlock all

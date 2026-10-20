@@ -50,23 +50,23 @@ forzar.
 
 ## Cuándo llega un cambio al programa
 
-Un cambio se envía al runtime de inmediato, y el runtime lo aplica en un límite de
-scan: el programa lo lee al inicio del scan siguiente, nunca en medio de uno. Junto
-a la entrada, el panel muestra **Pendiente hasta el próximo scan** desde que se
+Un cambio se envía al runtime de inmediato, y el runtime lo aplica en el límite del
+ciclo: el programa lo lee al inicio del ciclo siguiente, nunca en medio de uno. Junto
+a la entrada, el panel muestra **Pendiente hasta el próximo ciclo** desde que se
 envía el cambio hasta que el runtime lo tiene, y luego **Aplicado** por un momento.
-Una salida muestra el valor que el programa escribió en su último scan, así que una
-salida que sigue a una entrada cambia un scan después que la entrada.
+Una salida muestra el valor que el programa escribió en su último ciclo, así que una
+salida que sigue a una entrada cambia un ciclo después que la entrada.
 
 ## Cuándo no se pueden operar las entradas
 
 Los controles se desactivan, y el panel dice por qué con palabras, cuando:
 
 - la simulación no está conectada o no está en ejecución: iníciela;
-- la simulación está en pausa: reanúdela o cambie un valor desde la tabla watch;
+- la simulación está en pausa: reanúdela o cambie un valor desde la tabla de observación;
 - la simulación se detuvo por una falla: reiníciela;
 - Studio está en modo hardware: el panel opera entradas solo en simulación; en una
-  placa, fuerce una entrada desde la tabla watch;
-- el simulador no aplica los cambios en un límite de scan: entonces las entradas
+  placa, fuerce una entrada desde la tabla de observación;
+- el simulador no aplica los cambios en el límite del ciclo: entonces las entradas
   son de solo lectura.
 
 ## Evidencia

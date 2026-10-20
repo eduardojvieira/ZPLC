@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/blinky-ladder-timer-feedback. Do not edit. >>> */}
 
-Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con assertions FOR y AT.
+Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con aserciones FOR y AT.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas
 
 ## Objetivos
 
-- Lea un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.
-- Completalo con una bobina SET y una bobina RESET manejadas por las salidas Q de los temporizadores.
+- Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.
+- Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores.
 
 ## Etapas
 

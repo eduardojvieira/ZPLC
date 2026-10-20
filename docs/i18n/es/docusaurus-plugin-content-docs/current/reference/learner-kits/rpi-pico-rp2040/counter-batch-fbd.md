@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Contadores en diagrama de bloques de función: contar piezas hasta un lote en Raspberry Pi Pico (RP2040)"
+title: "Cableado: Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en Raspberry Pi Pico (RP2040)"
 sidebar_label: "counter-batch-fbd"
 description: "Cómo cablear la lección counter-batch-fbd en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Contadores en diagrama de bloques de función: contar piezas hasta un lote en Raspberry Pi Pico (RP2040)
+# Cableado: Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en Raspberry Pi Pico (RP2040)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/counter-batch-fbd. Do not edit. >>> */}
 
-El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta un lote](../../../learn/lessons/counter-batch-fbd.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../../../learn/lessons/counter-batch-fbd.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Contadores en diagrama de bloques de función: conta
 
 ## Diagrama
 
-![Cableado de Contadores en diagrama de bloques de función: contar piezas hasta un lote en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/counter-batch-fbd.es.svg)
+![Cableado de Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en Raspberry Pi Pico (RP2040)](/img/wiring/rpi-pico-rp2040/counter-batch-fbd.es.svg)
 
 ## Tarjeta de cableado
 
