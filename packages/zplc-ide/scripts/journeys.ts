@@ -3855,6 +3855,8 @@ export const JOURNEYS: Journey[] = [
       while (!(await app.eval<boolean>(`document.activeElement?.textContent?.includes('Open project') === true`))) await app.press('Tab');
       await app.press('Enter');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+      // the Welcome screen closed with the button that opened the project: the focus must not fall to the page body (UX-028)
+      assert(await focused() !== '(page)', 'The focus fell to the page body when the project opened.');
 
       // 2. Edit: the project navigator holds Motor.st; Tab reaches its row and Enter opens the file.
       await app.press('Ctrl+Shift+E');
