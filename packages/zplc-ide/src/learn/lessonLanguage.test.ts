@@ -7,6 +7,7 @@ import { labSceneEs } from '../i18n/catalog/labScene';
 import { learnEs } from '../i18n/catalog/learn';
 import { learnHomeEs } from '../i18n/catalog/learnHome';
 import { translatorFor } from '../i18n';
+import { es } from '../i18n/es';
 import { expandText, textShape, type LessonTextExpanded } from './lessonPackage';
 import { loadLessonPackages } from './lessonPackageFiles';
 
@@ -101,6 +102,12 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
       ...[...value.matchAll(REGISTER)].map((match) => ({ catalog, key, found: match[0], use: 'usted or an impersonal form' })),
       ...WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.matchAll(pattern)].map((match) => ({ catalog, key, found: match[0], use }))),
     ]));
+    expect(found).toEqual([]);
+  });
+
+  it('UX-030 the Spanish of the whole application uses the glossary terms of the course', () => {
+    // A {placeholder} is a name in code, not Spanish: `{rung}` is not the word "rung".
+    const found = Object.entries(es).flatMap(([key, value]) => WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.replace(/\{\w+\}/g, '0').matchAll(pattern)].map((match) => ({ key, found: match[0], use }))));
     expect(found).toEqual([]);
   });
 

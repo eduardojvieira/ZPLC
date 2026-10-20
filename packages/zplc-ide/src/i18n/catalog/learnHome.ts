@@ -116,7 +116,7 @@ export const learnHomeEs: Record<keyof typeof learnHomeEn, string> = {
   'learn.home.transfer': 'Su progreso',
   'learn.home.transfer.too-large': 'El archivo es más grande de lo que puede ser un archivo de progreso. Su progreso no cambió.',
   'learn.home.transfer.not-json': 'El archivo no es un JSON válido, así que no es un archivo de progreso. Su progreso no cambió.',
-  'learn.home.transfer.not-progress': 'El archivo no es un archivo de progreso de Aprender. Su progreso no cambió.',
+  'learn.home.transfer.not-progress': 'El archivo no es un archivo de progreso del curso. Su progreso no cambió.',
   'learn.home.transfer.unknown-version': 'El archivo es de la versión {version}, que esta versión de Studio no puede leer. Su progreso no cambió.',
   'learn.home.transfer.unknown-version-unnumbered': 'El archivo tiene una versión que esta versión de Studio no puede leer. Su progreso no cambió.',
   'learn.home.transfer.malformed': 'El archivo de progreso está dañado y no se importó. Su progreso no cambió.',
