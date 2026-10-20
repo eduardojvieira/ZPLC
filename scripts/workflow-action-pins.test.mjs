@@ -88,7 +88,8 @@ function validateJobEnvContexts(workflowPath, workflow) {
 
 function validateCiCheckoutsUseExactSha(workflow) {
   const checkouts = [...workflow.matchAll(/^\s*uses:\s*actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.3\.0\n(?:\s+with:\n)?(?:\s+ref:\s*\$\{\{ github\.sha \}\}\n)?(?:\s+path:\s*zplc\n)?/gm)];
-  assert.equal(checkouts.length, 6, 'CI must keep exactly six pinned checkout steps');
+  // Seven since the FreeRTOS port job (IO-016) joined the workflow; each one is still bound to the caller SHA below.
+  assert.equal(checkouts.length, 7, 'CI must keep exactly seven pinned checkout steps');
   for (const checkout of checkouts) {
     assert.match(checkout[0], /\n\s+with:\n\s+ref:\s*\$\{\{ github\.sha \}\}/, 'every CI checkout must use the caller SHA');
   }
