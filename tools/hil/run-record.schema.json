@@ -480,7 +480,8 @@
               "fail",
               "error",
               "skipped",
-              "pending"
+              "pending",
+              "not-emulable"
             ]
           },
           "requirement": {

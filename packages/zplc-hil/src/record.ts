@@ -107,7 +107,7 @@ export function serialHash(vid: string | undefined, pid: string | undefined, ser
 }
 
 export interface RunStep {
-  id: string; title: string; kind: 'automatic' | 'physical'; result: 'pass' | 'fail' | 'error' | 'skipped' | 'pending';
+  id: string; title: string; kind: 'automatic' | 'physical'; result: 'pass' | 'fail' | 'error' | 'skipped' | 'pending' | 'not-emulable';
   requirement?: string; started_at?: string; ended_at?: string; confirmed_at?: string; confirmed_identity?: string; detail?: string;
   measurements?: Record<string, Json>;
 }

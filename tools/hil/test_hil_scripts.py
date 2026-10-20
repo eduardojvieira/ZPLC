@@ -54,7 +54,10 @@ FIXTURE_SCRIPTS = {
 # scripts that take their own command line and open the serial port themselves
 SERIAL_SCRIPTS = ["test_modbus_rtu_serial", "test_modbus_tcp", "test_comm_security"]
 # what a script is when it is not a device script: libraries, host checks with their own exit status, and unit tests
-LIBRARIES = {"zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard"}
+LIBRARIES = {
+    "zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard",
+    "bench", "hil_steps", "hil_endpoints",  # the bench of the chain, its measuring steps and its fieldbus endpoints (test_hil_bench.py)
+}
 # unit tests of the board I/O description (WS-29, IO-001): unittest modules of their own, not device scripts
 OTHER_UNIT_TESTS = {"test_board_io_description", "test_io_table_generator"}
 HOST_CHECKS = {
