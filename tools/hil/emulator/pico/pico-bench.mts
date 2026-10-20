@@ -20,7 +20,7 @@
 //     wire {pairs}              -> {}                  connect output -> input pairs (the bench wiring step)
 //     pins                      -> {levels, funcsel}   output levels and function selects of GP0..GP29
 //     cut {at_ms?}              -> {}                  power cut at that simulated time (now when absent)
-//   events: ready (USB enumerated), shell (its prompt was printed), pin {gpio, level, t_ms} on every output change, watchdog (the process exits 3).
+//   events: ready (USB enumerated), shell (its prompt was printed), settled (then quiet for 300 ms), pin {gpio, level, t_ms} on every output change, watchdog (the process exits 3).
 import { closeSync, createReadStream, createWriteStream, existsSync, openSync, readFileSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -115,12 +115,22 @@ cdc.onDeviceConnected = () => emit({ event: 'ready', t_ms: nowMs() });
 let shellTail: string | null = ''; // the shell has started when its prompt is printed: commands sent before that are lost
 cdc.onSerialData = (data: Uint8Array) => {
   ptyWrite(config.cdcFd, data);
+  lastOutput = nowMs();
   if (shellTail === null) return;
   shellTail = (shellTail + Buffer.from(data).toString('latin1')).slice(-64);
   if (shellTail.includes('zplc:~$')) {
     shellTail = null;
     emit({ event: 'shell', t_ms: nowMs() });
+    settle();
   }
+};
+// The boot is over when the shell has been quiet for 300 ms: the boot messages it prints would otherwise interleave
+// with the first answers, which a person waiting for the board to restart never sees.
+let lastOutput = 0;
+const settle = () => {
+  const quietMs = nowMs() - lastOutput;
+  if (quietMs >= 300) return emit({ event: 'settled', t_ms: nowMs() });
+  sim.clock.createAlarm(settle).schedule((300 - quietMs) * 1e6);
 };
 // A real host sends an OUT packet only when it has data; rp2040js's USBCDC answers every armed OUT buffer at once,
 // with a zero-length packet when its FIFO is empty, and Zephyr's CDC ACM re-arms: an interrupt storm. Hold the read.

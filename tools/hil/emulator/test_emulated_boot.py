@@ -52,11 +52,13 @@ class PicoBootTests(unittest.TestCase):
                 first = info(bench)
                 self.assertEqual(first["board"], "rpi_pico")
                 self.assertGreaterEqual(bench.now_ms(), 1500.0)  # simulated time
+                bench.sleep(5.0)
+                before = bench.now_ms()  # simulated time of this boot, over 5 s more than the uptime a boot needs
                 bench.power_cycle()
                 self.assertEqual(bench.port(), port)
                 again = info(bench)
                 self.assertEqual(again["board"], "rpi_pico")
-                self.assertLess(again["uptime_ms"], first["uptime_ms"] + 1000)
+                self.assertLess(again["uptime_ms"], before)
                 self.assertEqual(bench.boots, 3)  # the build, the flashed image, the power cycle
             finally:
                 bench.close()
@@ -72,10 +74,11 @@ class Esp32s3BootTests(unittest.TestCase):
                 bench.flash(ESP_IMAGE)
                 first = info(bench)
                 self.assertEqual((first["board"], first["memory"]["work_size"]), ("esp32s3_devkitc", 2048))
+                time.sleep(5.0)
                 bench.power_cycle()
                 self.assertEqual(bench.port(), port)
                 again = info(bench)
-                self.assertLess(again["uptime_ms"], first["uptime_ms"] + 1500)
+                self.assertLess(again["uptime_ms"], first["uptime_ms"] + 4000)
                 self.assertEqual(len((Path(work) / "flash.bin").read_bytes()), emu.ESP_FLASH_SIZE)
             finally:
                 bench.close()

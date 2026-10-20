@@ -194,7 +194,7 @@ class PicoBench:
         )
         threading.Thread(target=self._read, args=(self.process,), daemon=True).start()
         if not self.ready.wait(120):
-            raise RuntimeError(f"the emulated Pico did not start its shell on USB within 120 s (see {self.log_file})")
+            raise RuntimeError(f"the emulated Pico did not finish booting its shell on USB within 120 s (see {self.log_file})")
 
     def _read(self, process: subprocess.Popen) -> None:
         for line in process.stdout:
@@ -204,7 +204,7 @@ class PicoBench:
                 continue
             if "id" in message:
                 self.replies.pop(message["id"], queue.Queue()).put(message)
-            elif message.get("event") == "shell":
+            elif message.get("event") == "settled":
                 self.ready.set()
             elif message.get("event"):
                 self.events.append(message)
@@ -347,7 +347,15 @@ class Esp32s3Bench:
                 if time.monotonic() > deadline or not self.alive():
                     raise RuntimeError(f"QEMU did not open its UART0 socket (see {self.log_file})") from None
                 time.sleep(0.05)
+        self.tail, self.last_output = "", time.monotonic()
         threading.Thread(target=self._bridge, args=(link,), daemon=True).start()
+        # the boot is over when the shell has printed its prompt and then been quiet for 300 ms: the boot messages it
+        # prints would otherwise interleave with the first answers, which a person waiting for a restart never sees
+        deadline = time.monotonic() + 60
+        while "zplc:~$" not in self.tail or time.monotonic() - self.last_output < 0.3:
+            if time.monotonic() > deadline or not self.alive():
+                raise RuntimeError(f"the emulated ESP32-S3 did not finish booting its shell within 60 s (see {self.log_file})")
+            time.sleep(0.05)
 
     def _bridge(self, link: socket.socket) -> None:
         """Copy bytes between the bench's pty and QEMU's UART0 until QEMU goes away."""
@@ -361,6 +369,7 @@ class Esp32s3Bench:
                         if not data:
                             return
                         os.write(master, data)
+                        self.tail, self.last_output = (self.tail + data.decode("latin-1"))[-64:], time.monotonic()
                     if master in ready:
                         link.sendall(os.read(master, 4096))
                 except OSError:
