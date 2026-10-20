@@ -40,6 +40,11 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/counter-batch-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd.md)
+
 {/* <<< END GENERATED: learn/lessons/counter-batch-fbd <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

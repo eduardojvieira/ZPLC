@@ -40,6 +40,11 @@ Edite un peldaño de Ladder para que una pulsación de Start mantenga el motor e
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece una función de parada segura, cableado, tiempos de hardware, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/seal-in-ladder.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/seal-in-ladder.md)
+
 {/* <<< END GENERATED: learn/lessons/seal-in-ladder <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

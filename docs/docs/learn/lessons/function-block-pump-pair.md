@@ -40,6 +40,11 @@ Write the body of a function block that holds a start and stop latch, then use i
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/function-block-pump-pair.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair.md)
+
 {/* <<< END GENERATED: learn/lessons/function-block-pump-pair <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

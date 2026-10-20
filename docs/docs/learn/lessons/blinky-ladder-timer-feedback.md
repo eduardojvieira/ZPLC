@@ -40,6 +40,11 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 
 Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/blinky-ladder-timer-feedback.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/blinky-ladder-timer-feedback.md)
+
 {/* <<< END GENERATED: learn/lessons/blinky-ladder-timer-feedback <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

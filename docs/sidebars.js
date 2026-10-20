@@ -130,6 +130,8 @@ const sidebars = {
             'reference/boards',
             'reference/zephyr-workspace-setup',
             'reference/learner-kits/index',
+            'reference/learner-kits/rpi-pico-rp2040',
+            'reference/learner-kits/esp32-s3-devkitc',
           ],
         },
       ],

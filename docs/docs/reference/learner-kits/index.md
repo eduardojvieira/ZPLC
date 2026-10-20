@@ -32,6 +32,15 @@ A lesson on the hardware track lists it in `lesson.json` and adds a `hardware` b
   English and Spanish. A lesson that only runs on a board, such as "verify my board", lists
   `tracks: ["hardware"]` and says in `unsupported.simulation` why it has no simulation grade.
 
+## The two kits
+
+Each learner board has a kit page with its pin map generated from the board I/O description, the bill
+of materials, the prebuilt firmware file and where its SHA-256 is published, the flashing steps and the
+voltage limit. It lists every hardware lesson with a wiring page for that board.
+
+- [Raspberry Pi Pico (RP2040)](./rpi-pico-rp2040.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](./esp32-s3-devkitc.md)
+
 ## One kit for the whole course
 
 The course has one bill of materials, the same for either board: one board, a USB data cable, a

@@ -40,6 +40,11 @@ Use a CTU counter to count three discrete pulses and reset the count.
 
 Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/edge-counter-pulses.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/edge-counter-pulses.md)
+
 {/* <<< END GENERATED: learn/lessons/edge-counter-pulses <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

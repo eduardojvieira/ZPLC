@@ -40,6 +40,11 @@ Complete un diagrama funcional de secuencias de tres pasos agregando la transici
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece volúmenes de proceso, calidad de mezcla ni tiempos de válvula en equipos reales, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence.md)
+
 {/* <<< END GENERATED: learn/lessons/sfc-fill-mix-sequence <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

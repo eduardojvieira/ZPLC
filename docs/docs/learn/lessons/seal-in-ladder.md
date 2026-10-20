@@ -40,6 +40,11 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop function, wiring, hardware timing, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/seal-in-ladder.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/seal-in-ladder.md)
+
 {/* <<< END GENERATED: learn/lessons/seal-in-ladder <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

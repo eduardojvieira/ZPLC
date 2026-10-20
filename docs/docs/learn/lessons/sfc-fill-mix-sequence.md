@@ -40,6 +40,11 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish process volumes, mixing quality, valve timing on real equipment, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/sfc-fill-mix-sequence.md)
+
 {/* <<< END GENERATED: learn/lessons/sfc-fill-mix-sequence <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

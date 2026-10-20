@@ -40,6 +40,11 @@ Walk through a motor with seal-in, stop, and overload handling using the Motor S
 
 Tests provide native POSIX host evidence only; they are not hardware or HIL evidence.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe.md)
+
 {/* <<< END GENERATED: learn/lessons/motor-start-stop-safe <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

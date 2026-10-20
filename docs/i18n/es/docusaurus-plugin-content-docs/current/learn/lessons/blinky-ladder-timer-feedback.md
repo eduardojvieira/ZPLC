@@ -40,6 +40,11 @@ Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas
 
 La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/blinky-ladder-timer-feedback.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/blinky-ladder-timer-feedback.md)
+
 {/* <<< END GENERATED: learn/lessons/blinky-ladder-timer-feedback <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

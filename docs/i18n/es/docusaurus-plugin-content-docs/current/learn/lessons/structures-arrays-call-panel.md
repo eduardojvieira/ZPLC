@@ -40,6 +40,11 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un bucle F
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta de un panel de llamadas real ni tareas distintas de la tarea de 10 ms, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/structures-arrays-call-panel.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/structures-arrays-call-panel.md)
+
 {/* <<< END GENERATED: learn/lessons/structures-arrays-call-panel <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

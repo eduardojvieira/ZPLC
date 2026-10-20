@@ -40,6 +40,11 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 
 Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/one-logic-five-languages.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/one-logic-five-languages.md)
+
 {/* <<< END GENERATED: learn/lessons/one-logic-five-languages <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

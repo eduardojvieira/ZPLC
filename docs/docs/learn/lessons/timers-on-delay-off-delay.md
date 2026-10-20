@@ -40,6 +40,11 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/timers-on-delay-off-delay.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/timers-on-delay-off-delay.md)
+
 {/* <<< END GENERATED: learn/lessons/timers-on-delay-off-delay <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

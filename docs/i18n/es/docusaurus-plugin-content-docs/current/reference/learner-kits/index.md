@@ -35,6 +35,16 @@ Una lección de la ruta de hardware la incluye en `lesson.json` y agrega un bloq
   incluye `tracks: ["hardware"]` e indica en `unsupported.simulation` por qué no tiene calificación en
   simulación.
 
+## Los dos kits
+
+Cada placa del estudiante tiene una página de kit con su mapa de pines generado a partir de la
+descripción de E/S de la placa, la lista de materiales, el archivo de firmware precompilado y dónde se
+publica su SHA-256, los pasos para grabarlo y el límite de tensión. Enumera cada lección de hardware con
+una página de cableado para esa placa.
+
+- [Raspberry Pi Pico (RP2040)](./rpi-pico-rp2040.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](./esp32-s3-devkitc.md)
+
 ## Un solo kit para todo el curso
 
 El curso tiene una sola lista de materiales, la misma para cualquiera de las dos placas: una placa, un

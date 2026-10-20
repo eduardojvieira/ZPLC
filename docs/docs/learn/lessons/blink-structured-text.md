@@ -40,6 +40,11 @@ Build a blinker from a TON timer and a memory variable, and make it run only whi
 
 Tests provide native POSIX host evidence with one 10 ms task; they are not evidence of a physical lamp, hardware timing, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/blink-structured-text.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/blink-structured-text.md)
+
 {/* <<< END GENERATED: learn/lessons/blink-structured-text <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

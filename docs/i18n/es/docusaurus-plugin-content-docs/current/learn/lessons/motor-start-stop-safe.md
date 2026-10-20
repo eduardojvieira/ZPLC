@@ -40,6 +40,11 @@ Recorra un motor con enclavamiento, parada y sobrecarga usando el ejemplo Motor 
 
 La evidencia de Tests es del host nativo POSIX; no es evidencia de hardware ni HIL.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/motor-start-stop-safe.md)
+
 {/* <<< END GENERATED: learn/lessons/motor-start-stop-safe <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

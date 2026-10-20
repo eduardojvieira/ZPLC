@@ -40,6 +40,11 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish sensor wiring, debounce, counting accuracy at machine speed, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/counter-batch-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd.md)
+
 {/* <<< END GENERATED: learn/lessons/counter-batch-fbd <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

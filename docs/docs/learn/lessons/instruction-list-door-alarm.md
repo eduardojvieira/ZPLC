@@ -40,6 +40,11 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm requirements, siren timing or any real machine behaviour, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/instruction-list-door-alarm.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/instruction-list-door-alarm.md)
+
 {/* <<< END GENERATED: learn/lessons/instruction-list-door-alarm <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

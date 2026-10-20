@@ -41,6 +41,11 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 
 La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory.md)
+
 {/* <<< END GENERATED: learn/lessons/scan-cycle-one-scan-memory <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

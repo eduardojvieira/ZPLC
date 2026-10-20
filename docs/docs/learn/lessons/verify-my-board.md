@@ -41,6 +41,11 @@ Check that your board is the one you chose, that it blinks an LED and that it re
 
 The simulation check of this lesson proves the program. The hardware check grades a trace recorded from your board and is labelled a hardware run; it does not prove electrical limits.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/verify-my-board.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/verify-my-board.md)
+
 {/* <<< END GENERATED: learn/lessons/verify-my-board <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

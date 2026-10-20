@@ -40,6 +40,11 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el tiempo de respuesta, la redundancia ni el comportamiento ante fallos que exige un dispositivo real de mando a dos manos, y no es evidencia de seguridad, de HIL ni de certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/boolean-logic-two-hand-guard.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/boolean-logic-two-hand-guard.md)
+
 {/* <<< END GENERATED: learn/lessons/boolean-logic-two-hand-guard <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

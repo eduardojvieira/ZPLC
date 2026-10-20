@@ -41,6 +41,11 @@ Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un
 
 La verificación en simulación de esta lección prueba el programa. La verificación de hardware califica una traza registrada desde su placa y se identifica como una ejecución en hardware; no prueba límites eléctricos.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/verify-my-board.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/verify-my-board.md)
+
 {/* <<< END GENERATED: learn/lessons/verify-my-board <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.

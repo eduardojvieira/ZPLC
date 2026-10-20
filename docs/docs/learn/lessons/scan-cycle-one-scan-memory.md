@@ -41,6 +41,11 @@ Follow how one input produces the current output and a copy delayed by one scan.
 
 Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/scan-cycle-one-scan-memory.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory.md)
+
 {/* <<< END GENERATED: learn/lessons/scan-cycle-one-scan-memory <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

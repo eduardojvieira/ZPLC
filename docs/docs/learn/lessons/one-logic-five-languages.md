@@ -40,6 +40,11 @@ Fix a Structured Text program so that a gate holds itself open and closes on com
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish gate requirements, actuator timing or any real machine behaviour, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/one-logic-five-languages.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/one-logic-five-languages.md)
+
 {/* <<< END GENERATED: learn/lessons/one-logic-five-languages <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

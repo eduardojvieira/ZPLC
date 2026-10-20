@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 368" width="760" height="368" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-rpi-pico-rp2040-title">Cableado en Raspberry Pi Pico (RP2040)</title>
+<desc id="wiring-rpi-pico-rp2040-desc">Pulsador: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa. Actual: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38). Retardado: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38). Pulso de flanco ascendente: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (header pin 4, DO2) hasta GND (GND · pin 38).</desc>
+<rect width="760" height="368" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en Raspberry Pi Pico (RP2040)</text>
+<rect x="8" y="48" width="256" height="272" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP15</text>
+<text stroke="none" x="30" y="102" font-size="11">header pin 20 · DI0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Pulsador</text>
+<polyline points="264,88 334,88" fill="none"/>
+<circle cx="337" cy="88" r="3" fill="#ffffff"/>
+<circle cx="377" cy="88" r="3" fill="#ffffff"/>
+<polyline points="337,84 375,72" fill="none"/>
+<polyline points="356,78 356,64" fill="none"/>
+<polyline points="348,64 364,64" fill="none"/>
+<text stroke="none" x="357" y="110" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,88 712,88" fill="none"/>
+<rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GP0</text>
+<text stroke="none" x="30" y="166" font-size="11">header pin 1 · DO0</text>
+<text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Actual</text>
+<polyline points="264,152 300,152" fill="none"/>
+<polyline points="300,152 306,144 318,160 330,144 342,160 354,144 360,152" fill="none"/>
+<text stroke="none" x="330" y="138" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,152 392,152" fill="none"/>
+<polygon points="392,142 392,162 412,152" fill="#2a9d3a"/>
+<polyline points="412,142 412,162" fill="none"/>
+<polyline points="402,138 410,130" fill="none"/>
+<polyline points="408,140 416,132" fill="none"/>
+<text stroke="none" x="402" y="178" text-anchor="middle" font-size="11">LED verde</text>
+<polyline points="412,152 712,152" fill="none"/>
+<rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GP1</text>
+<text stroke="none" x="30" y="230" font-size="11">header pin 2 · DO1</text>
+<text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Retardado</text>
+<polyline points="264,216 300,216" fill="none"/>
+<polyline points="300,216 306,208 318,224 330,208 342,224 354,208 360,216" fill="none"/>
+<text stroke="none" x="330" y="202" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,216 392,216" fill="none"/>
+<polygon points="392,206 392,226 412,216" fill="#e9c300"/>
+<polyline points="412,206 412,226" fill="none"/>
+<polyline points="402,202 410,194" fill="none"/>
+<polyline points="408,204 416,196" fill="none"/>
+<text stroke="none" x="402" y="242" text-anchor="middle" font-size="11">LED amarillo</text>
+<polyline points="412,216 712,216" fill="none"/>
+<rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP2</text>
+<text stroke="none" x="30" y="294" font-size="11">header pin 4 · DO2</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Pulso de flanco ascendente</text>
+<polyline points="264,280 300,280" fill="none"/>
+<polyline points="300,280 306,272 318,288 330,272 342,288 354,272 360,280" fill="none"/>
+<text stroke="none" x="330" y="266" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,280 392,280" fill="none"/>
+<polygon points="392,270 392,290 412,280" fill="#d62828"/>
+<polyline points="412,270 412,290" fill="none"/>
+<polyline points="402,266 410,258" fill="none"/>
+<polyline points="408,268 416,260" fill="none"/>
+<text stroke="none" x="402" y="306" text-anchor="middle" font-size="11">LED rojo</text>
+<polyline points="412,280 712,280" fill="none"/>
+<polyline points="712,64 712,312" fill="none" stroke-width="3"/>
+<polyline points="700,312 724,312" fill="none"/>
+<polyline points="704,317 720,317" fill="none"/>
+<polyline points="708,322 716,322" fill="none"/>
+<text stroke="none" x="728" y="342" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+</svg>

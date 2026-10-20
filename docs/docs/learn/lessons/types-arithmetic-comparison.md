@@ -40,6 +40,11 @@ Keep a running total in an INT variable, add to it on each press, and turn it in
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.
 
+## Wiring
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/types-arithmetic-comparison.md)
+
 {/* <<< END GENERATED: learn/lessons/types-arithmetic-comparison <<< */}
 
 This page is generated: to change it, change its source and run `bun run docs:generate`.

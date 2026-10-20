@@ -40,6 +40,11 @@ Complete un programa en lista de instrucciones para que una alarma de puerta se 
 
 La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.
 
+## Cableado
+
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/instruction-list-door-alarm.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/instruction-list-door-alarm.md)
+
 {/* <<< END GENERATED: learn/lessons/instruction-list-door-alarm <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.
