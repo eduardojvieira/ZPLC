@@ -59,7 +59,7 @@ WIRING = {
         "plugged into this computer and named with --rtu-port."
     ),
     "network": (
-        "The ESP32-S3 joins the same Wi-Fi network as this computer (stored credentials: `wifi connect`); this computer "
+        "The ESP32-S3 joins the same Wi-Fi network as this computer (its credentials are stored with `zplc config set wifi_ssid` and `wifi_pass`; the board joins by itself after a restart); this computer "
         "serves the local Modbus TCP server and MQTT broker on its LAN address."
     ),
 }
