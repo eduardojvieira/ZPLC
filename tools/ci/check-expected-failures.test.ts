@@ -153,7 +153,7 @@ describe('check-expected-failures command (VF-027)', () => {
     const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, failing.length > 0 ? 1 : 0);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
-    expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ uncovered/);
+    expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ decided, \d+ uncovered/);
   });
 
   it('fails when the report cannot be read', () => {

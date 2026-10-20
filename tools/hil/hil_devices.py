@@ -297,6 +297,8 @@ class HostRuntimeDevice(ShellDevice):
                 "state": snapshot.get("state", "idle"),
                 "uptime_ms": snapshot.get("uptime_ms", 0),
                 "stats": {"cycles": stats.get("cycles", 0), "overruns": stats.get("overruns", 0), "active_tasks": stats.get("active_tasks", 0), "program_size": stats.get("program_size", 0)},
+                "deadline": snapshot.get("deadline", {}),
+                "fault": snapshot.get("fault", {"reason": "none", "task_id": None}),
                 "vm": {"pc": vm.get("pc", 0), "sp": vm.get("sp", 0), "halted": bool(vm.get("halted", False)), "error": vm.get("error", 0)},
                 "opi": opi,
             }

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """HIL-007: the serial port is a parameter or is detected from USB identifiers; no port is opened here."""
+# ---- HIL-007: the serial port is a parameter or is found from USB identifiers ----
 import unittest
 
 import hil_ports

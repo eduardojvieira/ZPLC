@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """HIL-009: the record of a run is machine-readable, bound to the firmware it tested, and refused when it does not fit its schema."""
+# ---- HIL-009: a run record is machine-readable, carries its evidence level, and is committed after the image it tested ----
 import copy
 import json
 import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -171,6 +173,125 @@ class WriteTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 write_record(value, directory)
             self.assertEqual(list(Path(directory).iterdir()), [])
+
+
+EMULATOR = {"name": "rp2040js", "version": "1.1.0", "patch_sha256": "b" * 64}
+
+
+class EvidenceLevelTests(unittest.TestCase):
+    """The HIL contract: every record says its evidence level, and only `hardware` is evidence of a board."""
+
+    def test_a_record_says_its_evidence_level_and_the_level_follows_what_ran(self):
+        self.assertEqual(record()["evidence_level"], "hardware")
+        for evidence in ("host-runtime", "fake"):
+            self.assertIsNone(new_record("chain", evidence, {"id": "b"}, "A")["evidence_level"])
+        emulated = new_record("chain", "emulated", {"id": "b"}, "A", emulator=EMULATOR)
+        self.assertEqual((emulated["evidence_level"], emulated["emulator"]), ("emulated", EMULATOR))
+
+    def test_a_record_without_its_level_or_with_another_level_is_refused(self):
+        value = record()
+        del value["evidence_level"]
+        self.assertIn("$: evidence_level is required", validate(value))
+        value["evidence_level"] = "nearly hardware"
+        self.assertTrue(validate(value))
+
+    def test_an_emulated_record_names_its_emulator_and_is_never_hardware(self):
+        value = record()
+        value["evidence"], value["evidence_level"] = "emulated", "emulated"
+        self.assertTrue(any("emulator" in p for p in validate(value)), validate(value))
+        value["emulator"] = dict(EMULATOR)
+        self.assertEqual(validate(value), [])
+        value["evidence_level"] = "hardware"
+        self.assertTrue(any("evidence_level" in p for p in validate(value)), validate(value))
+
+    def test_a_stand_in_run_has_no_level_and_cannot_claim_one(self):
+        value = new_record("chain", "host-runtime", {"id": "b"}, "A")
+        value["steps"], value["result"] = [dict(STEP)], "pass"
+        self.assertEqual(validate(value), [])
+        value["evidence_level"] = "hardware"
+        self.assertTrue(any("evidence_level" in p for p in validate(value)), validate(value))
+
+    def test_the_flat_evidence_record_carries_the_level_and_an_emulated_one_names_its_emulator(self):
+        base = record()
+        base["board"]["board_id"] = "rpi_pico"
+        base["firmware"] = {"version": "2.0.0", "commit": "0" * 40, "dirty": False, "image_sha256": "a" * 64}
+        summary, _ = hil_record.evidence_summary(base, "r.json")
+        self.assertEqual(summary["evidence_level"], "hardware")
+        emulated = copy.deepcopy(base)
+        emulated.update({"evidence": "emulated", "evidence_level": "emulated", "emulator": dict(EMULATOR)})
+        summary, _ = hil_record.evidence_summary(emulated, "r.json")
+        self.assertEqual((summary["evidence_level"], summary["emulator"]), ("emulated", EMULATOR))
+
+
+def git(directory, *args) -> str:
+    done = subprocess.run(["git", "-C", str(directory), *args], capture_output=True, text=True, check=True)
+    return done.stdout.strip()
+
+
+class BindingTests(unittest.TestCase):
+    """HIL-009: a record is committed after the image it tested, never in the commit the image was built from."""
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.directory.name)
+        git(self.root, "init", "-q", "-b", "main")
+        git(self.root, "config", "user.email", "bench@example.invalid")
+        git(self.root, "config", "user.name", "Bench")
+        self.image = self.commit("firmware.c", "int main;", "image")
+
+    def tearDown(self):
+        self.directory.cleanup()
+
+    def commit(self, name, text, message):
+        (self.root / name).parent.mkdir(parents=True, exist_ok=True)
+        (self.root / name).write_text(text)
+        git(self.root, "add", name)
+        git(self.root, "commit", "-q", "-m", message)
+        return git(self.root, "rev-parse", "HEAD")
+
+    def add_record(self, commit, name="records/b.json"):
+        return self.commit(name, json.dumps({"schema": "zplc.hil-record/1", "commit": commit}), "record")
+
+    def test_a_record_committed_after_its_image_is_bound(self):
+        self.add_record(self.image)
+        self.assertEqual(hil_record.binding_problems(self.root, ["records/b.json"]), [])
+
+    def test_a_record_edited_to_name_a_later_image_is_refused(self):
+        self.add_record(self.image)
+        later = self.commit("later.c", "x", "a later image")
+        self.commit("records/b.json", json.dumps({"schema": "zplc.hil-record/1", "commit": later}), "rename the image")
+        problems = hil_record.binding_problems(self.root, ["records/b.json"])
+        self.assertTrue(any("not a strict ancestor" in p for p in problems), problems)
+
+    def test_a_record_of_an_image_off_its_history_is_refused(self):
+        git(self.root, "checkout", "-q", "-b", "side")
+        side = self.commit("side.c", "y", "side")
+        git(self.root, "checkout", "-q", "main")
+        self.add_record(side)
+        problems = hil_record.binding_problems(self.root, ["records/b.json"])
+        self.assertTrue(any("not a strict ancestor" in p for p in problems), problems)
+
+    def test_an_uncommitted_record_or_one_without_a_commit_is_refused(self):
+        (self.root / "records").mkdir()
+        (self.root / "records/d.json").write_text(json.dumps({"schema": "zplc.hil-record/1", "commit": self.image}))
+        problems = hil_record.binding_problems(self.root, ["records/d.json"])
+        self.assertTrue(any("not committed" in p for p in problems), problems)
+        git(self.root, "add", "records/d.json")
+        git(self.root, "commit", "-q", "-m", "record")
+        self.assertEqual(hil_record.binding_problems(self.root, ["records/d.json"]), [])
+        problems = hil_record.binding_problems(self.root, ["firmware.c"])
+        self.assertTrue(any("names no 40-digit commit" in p for p in problems), problems)
+
+    def test_the_same_commit_is_not_a_strict_ancestor(self):
+        self.add_record(self.image)
+        added = git(self.root, "rev-parse", "HEAD")
+        self.assertEqual(hil_record.strict_ancestor(self.root, added, added), False)
+        self.assertEqual(hil_record.strict_ancestor(self.root, self.image, added), True)
+        self.assertEqual(hil_record.strict_ancestor(self.root, "f" * 40, added), None)
+
+    def test_every_record_the_manifest_references_is_bound(self):
+        refs = hil_record.manifest_record_refs()
+        self.assertEqual(hil_record.binding_problems(hil_record.ROOT, refs), [])
 
 
 class SchemaFileTests(unittest.TestCase):

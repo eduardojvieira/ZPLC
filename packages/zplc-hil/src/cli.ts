@@ -153,7 +153,8 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
 
     const final: RunRecord = {
       schema: 'zplc.hil.run-record/1', run_id: randomUUID().replaceAll('-', ''), kind: 'scenario',
-      evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, result: 'incomplete', started_at: started, ended_at: now(),
+      evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, evidence_level: opened.kind === 'serial' ? 'hardware' : null,
+      result: 'incomplete', started_at: started, ended_at: now(),
       board: { id: values.board },
       device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: opened.kind },
       firmware: { ...firmwareIdentity(identity.build), ...(values['firmware-image'] ? { image_sha256: sha256(readFileSync(resolve(values['firmware-image']))) } : {}) },

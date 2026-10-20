@@ -3,6 +3,8 @@
 
 No serial port is opened here. The chain runs against fake devices (`--dry-run --device null|host`) and scripted people.
 """
+# ---- HIL-003: the hardware chain exits with an error without an interactive terminal and needs the board identity typed for each physical step ----
+# ---- HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record ----
 import io
 import json
 import os
@@ -176,8 +178,10 @@ class BuildCommandAndTraceTests(QuietCase):
         self.assertEqual(code, 0)
         manifest = json.loads((ROOT / "firmware/app/boards/boards.json").read_text())
         wanted = next(b["build_command"] for b in manifest if b["ide_id"] == "rpi_pico")
-        self.assertEqual(record["firmware"]["build_command"], wanted)
+        self.assertEqual(record["firmware"]["build_command"], f"{wanted} -- -DCONFIG_ZPLC_HARDWARE_WATCHDOG=y", "the HIL build has the watchdog on (RT-020)")
         self.assertNotIn("EXTRA_CONF_FILE", record["firmware"]["build_command"])
+        _, plain, _ = self.chain("--no-watchdog-build")
+        self.assertEqual(plain["firmware"]["build_command"], wanted)
         self.assertRegex(record["firmware"]["commit"], r"^[0-9a-f]{40}$")
         self.assertRegex(record["firmware"]["options_hash"], r"^[0-9a-f]{8}$")
         self.assertNotIn("hil_trace", record["firmware"], "a host runtime has no such option, so the record does not say")
@@ -318,16 +322,15 @@ class IoDescriptionTests(QuietCase):
         self.assertNotIn("io", record["device"])
         self.assertEqual(code, 0)
 
-    def test_the_loopback_item_names_the_channels_of_the_description_and_leaves_the_wiring_to_the_person(self):
+    def test_a_dry_run_lists_the_measuring_steps_it_did_not_run_and_names_the_channels_of_the_description(self):
         _, (record,), _ = self.chain(self.good)
         item = self.step(record, "digital-loopback")
         channels = self.board["io"]["channels"]
         digital = [c["id"] for c in channels if c["kind"] == "digital"]
-        self.assertEqual(item["result"], "pending")
+        self.assertEqual(item["result"], "skipped", "a dry run runs a measuring step only when --steps names it")
         for channel_id in digital:
             self.assertIn(channel_id, item["detail"])
-        self.assertIn("TO BE FILLED", item["detail"])
-        self.assertNotRegex(item["detail"], r"(?i)\bwire\b[^.]* to ", "no wiring is invented")
+        self.assertIn("digital-loopback", record["coverage"]["pending"])
         analog = self.step(record, "analog-read")
         for channel_id in (c["id"] for c in channels if c["kind"] == "analog"):
             self.assertIn(channel_id, analog["detail"])

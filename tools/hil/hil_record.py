@@ -38,9 +38,29 @@ def _is(value, name: str) -> bool:
     }[name]
 
 
+LEVELS_OF_EVIDENCE = {"hardware": ("hardware", "community-reported"), "emulated": ("emulated",), "host-runtime": (None,), "fake": (None,)}
+"""The evidence levels a run of each kind may carry (HIL contract): only a hardware run is hardware evidence."""
+
+
+def evidence_level_problems(record) -> list[str]:
+    """What the schema cannot say: the level must follow what ran, and an emulated record names its emulator."""
+    if not isinstance(record, dict) or record.get("evidence") not in LEVELS_OF_EVIDENCE or "evidence_level" not in record:
+        return []
+    level, evidence = record["evidence_level"], record["evidence"]
+    problems = []
+    if level not in LEVELS_OF_EVIDENCE[evidence]:
+        problems.append(f"$.evidence_level: a run on {evidence} cannot be {level!r} evidence")
+    if level == "emulated" and "emulator" not in record:
+        problems.append("$: an emulated record names its emulator (name, version, patch_sha256)")
+    if level != "emulated" and "emulator" in record:
+        problems.append("$.emulator: only an emulated record names an emulator")
+    return problems
+
+
 def validate(value, schema: dict | None = None, path: str = "$") -> list[str]:
-    """The ways `value` does not fit `schema` (default: the record schema); an empty list is a valid record."""
-    schema = load_schema() if schema is None else schema
+    """The ways `value` does not fit `schema` (default: the record schema, and the evidence-level pairing); an empty list is a valid record."""
+    if schema is None:
+        return validate(value, load_schema(), path) + evidence_level_problems(value)
     errors: list[str] = []
     if "const" in schema and value != schema["const"]:
         return [f"{path}: must be {schema['const']!r}"]
@@ -220,12 +240,16 @@ def tool_versions(compiler_draft_counter: int | None = None) -> dict:
     }
 
 
-def new_record(kind: str, evidence: str, board: dict, operator: str) -> dict:
+def new_record(kind: str, evidence: str, board: dict, operator: str, emulator: dict | None = None) -> dict:
+    """A record of a run of `evidence` (hardware, emulated, host-runtime, fake); its evidence level follows from it."""
+    extra = {"emulator": emulator} if evidence == "emulated" else {}
     return {
         "schema": SCHEMA_ID,
         "run_id": uuid.uuid4().hex,
         "kind": kind,
         "evidence": evidence,
+        "evidence_level": evidence if evidence in ("hardware", "emulated") else None,
+        **extra,
         "result": "incomplete",
         "started_at": now(),
         "ended_at": now(),
@@ -275,11 +299,13 @@ def evidence_summary(record: dict, run_record: str) -> tuple[dict | None, str]:
     """The flat evidence record of a run for the board manifest, or why there is none.
 
     Only a run on real hardware that ended in pass or fail, of an image that was built from a clean tree, reports a
-    40-digit commit and is named by its hash, is evidence of a board. A person reads the run record and adds the file
-    to the board's `evidence_refs`; nothing here edits the manifest.
+    40-digit commit and is named by its hash, is evidence of a board. A run on an emulator bench gets the same flat
+    record at the `emulated` level, naming its emulator, so that the manifest can list it as emulated: it never raises a
+    support level. A person reads the run record and adds the file to the board's `evidence_refs`; nothing here edits
+    the manifest.
     """
     firmware, board = record.get("firmware", {}), record.get("board", {})
-    if record.get("evidence") != "hardware":
+    if record.get("evidence") not in ("hardware", "emulated"):
         return None, f"the run was on a stand-in ({record.get('evidence')}), which is not evidence of a board"
     if record.get("result") not in ("pass", "fail"):
         return None, f"the run is {record.get('result')}: nothing was proven either way"
@@ -295,6 +321,7 @@ def evidence_summary(record: dict, run_record: str) -> tuple[dict | None, str]:
     image = firmware.get("image_sha256")
     if not (isinstance(image, str) and re.fullmatch(r"[0-9a-f]{64}", image)):
         return None, "no --firmware-image was given, so the record cannot name the image that was flashed"
+    emulated = record.get("evidence_level") == "emulated"
     return {
         "schema": EVIDENCE_SCHEMA,
         "board_id": board["board_id"],
@@ -302,7 +329,9 @@ def evidence_summary(record: dict, run_record: str) -> tuple[dict | None, str]:
         "commit": commit,
         "image_sha256": image,
         "result": record["result"],
-        "evidence": "hardware",
+        "evidence": record["evidence"],
+        "evidence_level": record.get("evidence_level"),
+        **({"emulator": record.get("emulator")} if emulated else {}),
         "hil_trace": firmware.get("hil_trace"),
         "options_hash": firmware.get("options_hash"),
         "run_id": record["run_id"],
@@ -310,6 +339,51 @@ def evidence_summary(record: dict, run_record: str) -> tuple[dict | None, str]:
         "started_at": record["started_at"],
         "coverage": record.get("coverage"),
     }, ""
+
+
+MANIFEST = ROOT / "firmware" / "app" / "boards" / "boards.json"
+
+
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, timeout=30)
+
+
+def strict_ancestor(root: Path, image: str, added: str) -> bool | None:
+    """Whether `image` is a strict ancestor of `added` in the history at `root`; None when the history cannot say."""
+    if image == added:
+        return False
+    done = _git(root, "merge-base", "--is-ancestor", image, added)
+    return {0: True, 1: False}.get(done.returncode)
+
+
+def binding_problems(root: Path, refs) -> list[str]:
+    """HIL-009: every committed record names the commit of the image it tested, and that commit is a strict ancestor
+    of the commit that added the record (the latest commit that added the file), so a record is never committed in the
+    commit its image was built from, nor bound to an image its history does not contain."""
+    problems = []
+    for ref in refs:
+        added = _git(root, "log", "--diff-filter=A", "--format=%H", "-1", "--", ref).stdout.strip()
+        if not added:
+            problems.append(f"{ref}: not committed, so it is bound to no commit")
+            continue
+        try:
+            commit = json.loads((root / ref).read_text()).get("commit")
+        except (OSError, ValueError, AttributeError):
+            commit = None
+        if not (isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit)):
+            problems.append(f"{ref}: names no 40-digit commit of the image it tested")
+            continue
+        ancestor = strict_ancestor(root, commit, added)
+        if ancestor is None:
+            problems.append(f"{ref}: the image commit {commit} is not in this history (a shallow clone cannot check it)")
+        elif not ancestor:
+            problems.append(f"{ref}: the image commit {commit} is not a strict ancestor of {added}, the commit that added the record")
+    return problems
+
+
+def manifest_record_refs(manifest: Path = MANIFEST) -> list[str]:
+    """The `evidence_refs` of every board of the manifest."""
+    return [ref for board in json.loads(manifest.read_text()) for ref in board.get("evidence_refs", [])]
 
 
 if __name__ == "__main__":  # python3 tools/hil/hil_record.py <record.json>: check a record against the schema

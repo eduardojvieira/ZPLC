@@ -5,6 +5,7 @@ and makes no compiled file in the tree (HIL-006). No serial port is opened here:
     null          shows nothing, so every check against it must fail
     host-runtime  the native POSIX runtime of this tree (ZPLC_NATIVE_SIM_BIN names it); the passing paths need it
 """
+# ---- HIL-004: every device script fails its run when a check fails, or is listed as a bench utility ----
 import importlib
 import io
 import json
@@ -54,7 +55,10 @@ FIXTURE_SCRIPTS = {
 # scripts that take their own command line and open the serial port themselves
 SERIAL_SCRIPTS = ["test_modbus_rtu_serial", "test_modbus_tcp", "test_comm_security"]
 # what a script is when it is not a device script: libraries, host checks with their own exit status, and unit tests
-LIBRARIES = {"zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard"}
+LIBRARIES = {
+    "zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard",
+    "bench", "hil_steps", "hil_endpoints",  # the bench of the chain, its measuring steps and its fieldbus endpoints (test_hil_bench.py)
+}
 # unit tests of the board I/O description (WS-29, IO-001): unittest modules of their own, not device scripts
 OTHER_UNIT_TESTS = {"test_board_io_description", "test_io_table_generator"}
 HOST_CHECKS = {
@@ -62,6 +66,8 @@ HOST_CHECKS = {
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
     "run_chain",  # the chain for a board: test_hil_chain.py runs it on fake devices
     "validate_hil_trace_profile",  # test_hil_trace_profile.py; docs-and-truth runs it on the repository
+    "community_report",  # writes a community-reported record (HIL-011); test_hil_community.py checks it
+    "compare_sim",  # native simulation against a bench (HIL-015); test_hil_compare.py runs it on stand-ins
     "check_storage_partitions",  # IO-008, test_hil_storage_partitions.py; `run.sh size` runs it on every board build
 }
 

@@ -10,8 +10,9 @@
 //
 // What the MCP can do beside the stateless checks is run the repository's own native runtime for a scenario
 // (a child process that exits) and a local cross-build: both are listed below by the module that spawns them.
-// The hardware scenario and bench commands of HIL-003 and HIL-012 are not in the tree yet; their test is the
-// todo at the end of this file and is the other half of COM-030.
+// The other half of COM-030 is the last test of this file: the hardware scenario command (packages/zplc-hil) and the
+// bench commands of tools/hil (the chain of HIL-012 and the comparison of HIL-015), started without an interactive
+// terminal, exit with an error before they open anything.
 import { afterEach, describe, expect, test } from 'bun:test';
 import dgram from 'node:dgram';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
@@ -172,9 +173,23 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     expect(touched).toEqual([]);
   });
 
-  // HIL-003 and HIL-012: the hardware scenario run and the bench command are started by a person, through a
-  // command, and exit with an error when there is no interactive terminal. Neither command is in the tree
-  // (tools/hil holds device scripts of the shell grammar only), so there is nothing to start without a
-  // terminal yet; this is the test that goes here when they land.
-  test.todo('the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal', () => {});
+  // HIL-003 and HIL-012: the hardware scenario run and the bench commands are started by a person, through a
+  // command, and exit with an error when there is no interactive terminal (stdin here is not one). A serial port
+  // may not be opened by any of them in this run (ZPLC_HIL_FORBID_SERIAL).
+  test('the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal', () => {
+    const root = new URL('../../../../', import.meta.url).pathname;
+    const python = Bun.which('python3');
+    const project = join(root, 'packages/zplc-ide/projects/motor_start_stop');
+    const commands: string[][] = [
+      [process.execPath, join(root, 'packages/zplc-hil/src/cli.ts'), 'run', '--board', 'rpi_pico', '--workspace', project, '--scenario', join(project, 'tests/motor-start-stop.scenario.json')],
+      ...(python ? [[python, '-B', join(root, 'tools/hil/run_chain.py'), 'rpi_pico'], [python, '-B', join(root, 'tools/hil/compare_sim.py'), 'rpi_pico']] : []),
+    ];
+    expect(commands.length).toBe(3);
+    const env = { ...process.env, ZPLC_HIL_FORBID_SERIAL: '1', ZPLC_SERIAL_PORT: '' };
+    for (const command of commands) {
+      const done = Bun.spawnSync(command, { cwd: root, env, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' });
+      expect({ command: command.slice(1, 3).join(' '), exit: done.exitCode, says: done.stderr.toString().includes('interactive terminal') })
+        .toEqual({ command: command.slice(1, 3).join(' '), exit: 2, says: true });
+    }
+  }, 60_000);
 });

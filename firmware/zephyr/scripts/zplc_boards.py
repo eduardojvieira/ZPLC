@@ -23,6 +23,8 @@ SYSTEM_REGISTER_OFFSET = 0x0FF0
 """The last 16 bytes of the input image are the system registers: no input channel may reach them."""
 
 RECORD_SCHEMA = "zplc.hil-record/1"
+HARDWARE_LEVEL = "hardware"
+"""The only evidence level that raises a support level; `emulated` and `community-reported` never do (HIL contract)."""
 COMMUNITY_SCHEMA = "zplc.community-report/1"
 COMMUNITY_LEVEL = "community-reported"
 """A report from a user (HIL-011): listed beside the hardware records of a board, and never one of them."""
@@ -584,10 +586,17 @@ def description_hash(board: dict[str, Any]) -> str:
     return f"{fnv1a32(canonical_description(board)):08x}"
 
 
+def _evidence_level(record: dict[str, Any]) -> Any:
+    """The record's `evidence_level`. A record written before the level existed says `evidence`, and only a hardware run
+    wrote one; a record that says neither is read as one of those."""
+    return record.get("evidence_level", record.get("evidence", HARDWARE_LEVEL))
+
+
 def _record_applies(board_id: str, record: Any) -> bool:
     return (
         isinstance(record, dict)
         and record.get("schema") == RECORD_SCHEMA
+        and _evidence_level(record) == HARDWARE_LEVEL  # an emulated or reported run never raises the level
         and record.get("board_id") == board_id
         and _is_text(record.get("firmware_version"))
         and isinstance(record.get("commit"), str)

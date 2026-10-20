@@ -1581,6 +1581,9 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"derives the support level of a board from the evidence records it references (IO-015)"},
     {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"SupportLevelTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. The level is derived from evidence records and no hand-set field exists; no record exists yet."}
   ],
+  "IO-016": [
+    {"kind":"decided","ref":"docs/docs/runtime/port-interface.md","test":"Whether a second, non-Zephyr port ships in 2.0 is decision D-06","note":"Decided by D-06 with its default B: a second, non-Zephyr port is 2.x work, so IO-016 asks for no work in 2.0 (plan: recorded as decided). If the owner selects A, remove this record: IO-016 then needs a non-Zephyr port that builds in CI and passes the port conformance suite (a new package, L to XL, beside WP-91), and DOC-012 changes its wording."}
+  ],
   "IO-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/exampleProjects.test.ts","test":"example projects (IO-017)"}
   ],
@@ -2947,6 +2950,14 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
   ],
   "HIL-001": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/blocks/timers.test.ts","test":"HIL cases: timer blocks (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/blocks/timers_extended.test.ts","test":"HIL cases: counter blocks (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/blocks/timers_extended.test.ts","test":"HIL cases: extended timer blocks (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/arithmetic.test.ts","test":"HIL cases: arithmetic opcodes (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/control.test.ts","test":"HIL cases: control-flow opcodes (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/logic.test.ts","test":"HIL cases: logic opcodes (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/memory.test.ts","test":"HIL cases: memory opcodes (HIL-001)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"}
   ],
@@ -2958,14 +2969,17 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the hardware scenario command (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/guard.test.ts","test":"the human-presence guard (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"forces are released by the tool at the end and on abort (HIL-003)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"hardware runs are not reachable from MCP or AI tools (HIL-003, COM-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"no flag turns the guard off: an unknown one is an error of its own, not a bypass (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"no module that the MCP server loads, at import or while it serves its tools, is the HIL package or a serial library (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the tools MCP serves are the fixed list, and none of them names a device, a board or a physical action (HIL-003)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the tools MCP serves are the fixed list, and none of them names a device, a board or a physical action (HIL-003)"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-003: the hardware chain exits with an error without an interactive terminal and needs the board identity typed for each physical step"}
   ],
   "HIL-004": [
-    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"DeviceScriptsFailTests","note":"every opcode, fixture and project script exits non-zero on a device that shows nothing, and 77 on one that has no trace; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"DeviceScriptsFailTests","note":"every opcode, fixture and project script exits non-zero on a device that shows nothing, and 77 on one that has no trace; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_scripts.py","test":"HIL-004: every device script fails its run when a check fails, or is listed as a bench utility"}
   ],
   "HIL-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every expected value of the manifest names a real address of its type (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
@@ -2975,12 +2989,14 @@
   ],
   "HIL-006": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"no compiled fixture is tracked under tools/hil (HIL-006)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"no compiled fixture is tracked under tools/hil (HIL-006)"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_harness.py","test":"HIL-006: compiled fixtures are produced at run time and never tracked"}
   ],
   "HIL-007": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/ports.test.ts","test":"the serial port is a parameter or found from USB identifiers (HIL-007)"},
     {"kind":"unit","ref":"tools/hil/test_hil_ports.py","test":"ResolvePortTests","note":"a port is a parameter, the environment, or found by USB identifiers; two matches or none is an error that names what was seen; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
-    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"ScriptsAreSafeToImportAndRunTests","note":"no script needs pyserial to load or opens a port it was not given; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+    {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"ScriptsAreSafeToImportAndRunTests","note":"no script needs pyserial to load or opens a port it was not given; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_ports.py","test":"HIL-007: the serial port is a parameter or is found from USB identifiers"}
   ],
   "HIL-008": [
     {"kind":"unit","ref":"tools/hil/test_hil_harness.py","test":"TablesAreTheContractTests","note":"the opcode and error tables of the tester and the opcode scripts are the generated contract; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
@@ -2988,33 +3004,44 @@
   "HIL-009": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/record.test.ts","test":"the run record (HIL-009)","partial":true,"note":"the record is written, validated against its schema and shared by the Python and TypeScript tools; no hardware record exists yet, and the support level of the manifest is not yet derived from the records"},
     {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"IdentityTests","partial":true,"note":"the firmware fields are read from the real keys of zplc sys build --json, fed with the output of the generated formatter for the host runtime and for the Pico with and without the overlay; no hardware record exists yet and the manifest support level is not derived from records; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
-    {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"SchemaTests","partial":true,"note":"the record is validated against the schema that the TypeScript tool reads too; no hardware record exists yet; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+    {"kind":"unit","ref":"tools/hil/test_hil_record.py","test":"SchemaTests","partial":true,"note":"the record is validated against the schema that the TypeScript tool reads too; no hardware record exists yet; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_record.py","test":"HIL-009: a run record is machine-readable, carries its evidence level, and is committed after the image it tested"}
   ],
   "HIL-010": [
     {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"their safe level while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
-    {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"}
+    {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true}
   ],
   "HIL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/supportLevel.test.ts","test":"a report from a user is a lead and never raises the level, whatever its result (HIL-011)"},
     {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"test_every_shipped_profile_has_the_watchdog_off_and_says_why","note":"first clause: every board of the manifest has no evidence record, so it is cross-build, and its hardware watchdog is off with the reason; run by the docs-and-truth job of ci.yml"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"test_the_chain_runs_for_every_board_that_has_an_io_description","note":"second clause: the chain runs for each of the seven boards of the manifest, by IDE id and by manifest id, on the host runtime as a stand-in (never evidence of a board); run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package'"},
-    {"kind":"unit","ref":"tools/hil/test_hil_community.py","test":"RecordTests","note":"third clause: the board report form asks for the fields of a zplc.community-report/1 record, tools/hil/community_report.py writes it, the board table lists it at the community-reported level, and it never raises the support level nor turns the watchdog on; no real report exists yet, so the first one is the proof that a person can follow the steps"}
+    {"kind":"unit","ref":"tools/hil/test_hil_community.py","test":"RecordTests","note":"third clause: the board report form asks for the fields of a zplc.community-report/1 record, tools/hil/community_report.py writes it, the board table lists it at the community-reported level, and it never raises the support level nor turns the watchdog on; no real report exists yet, so the first one is the proof that a person can follow the steps"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_community.py","test":"HIL-011: a report from a user is recorded at the community-reported level and never raises a support level"}
   ],
   "HIL-012": [
-    {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal"},
+    {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-012: the chain says how long it takes, about 30 minutes on a person's bench"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record"}
   ],
   "HIL-013": [
     {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL trace, from the configuration or from the options the image reports (HIL-013)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"BuildCommandAndTraceTests","note":"the chain prints and records the build command, and fails when the image's trace option is not what the run asked for; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
-    {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"}
+    {"kind":"unit","ref":"tools/hil/test_hil_trace_profile.py","test":"ProfileTests","note":"no shipped board profile sets CONFIG_ZPLC_HIL_DEBUG=y and the overlay does (tools/hil/validate_hil_trace_profile.py, run by the docs-and-truth job of ci.yml); the Pico image built with the overlay differs from the release one in its options hash and lists HIL_DEBUG=y, and the image reports its options (REL-023)"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_trace_profile.py","test":"HIL-013: no shipped board profile turns the HIL trace on; it comes from the HIL overlay"}
+  ],
+  "HIL-015": [
+    {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true}
   ],
   "HIL-016": [
     {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)"}
   ],
   "HIL-017": [
-    {"kind":"unit","ref":"tools/hil/test_hil_crc.py","test":"CrcCrossTests","note":"the C loader and the TypeScript assembler are compared on the same bytes, and any disagreement or wrong loader verdict fails; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
+    {"kind":"unit","ref":"tools/hil/test_hil_crc.py","test":"CrcCrossTests","note":"the C loader and the TypeScript assembler are compared on the same bytes, and any disagreement or wrong loader verdict fails; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
+    {"kind":"py-test","ref":"tools/hil/test_hil_crc.py","test":"HIL-017: the CRC cross-check compares the C implementation with the TypeScript one"}
   ],
   "REL-001": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},

@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 """One command per board runs the whole hardware chain, and prompts the person for each physical step (HIL-012).
 
-    python3 tools/hil/run_chain.py rpi_pico [--port PORT] [--firmware-image build/zephyr/zephyr.uf2] [--out DIR]
+    python3 tools/hil/run_chain.py rpi_pico [--bench human|emulated] [--port PORT] [--firmware-image zephyr.uf2] [--out DIR]
 
-The chain: preflight (host checks, every fixture compiles) -> flash (a person flashes) -> identity handshake ->
-the person confirms what the device reports -> the person confirms the outputs are safe to drive -> deploy -> run ->
-the language fixtures -> force set and release -> stop. A run record is written for it (HIL-009), and the steps of
-HIL-010 that the tools cannot run yet are listed in the record as pending, with what each lacks, not left out.
+The chain: preflight (host checks, every fixture compiles) -> flash (the bench flashes: a person, or the emulator) ->
+identity handshake -> the person confirms what the device reports -> the person confirms the outputs are safe to drive
+-> deploy -> run -> the language fixtures -> force set and release -> stop -> the measuring steps of HIL-010 (digital
+loopback, analog read, timer accuracy, ten minutes of scan jitter, outputs off after an overrun and after a fatal
+fault, outputs safe after STOP and after link loss with forces active, watchdog reset time, a power cycle with RETAIN,
+20 power cuts during deploys, an atomic write and one fieldbus exchange; tools/hil/hil_steps.py). Each writes its
+measurements and verdict into the run record (HIL-009). The chain says how long it takes before it starts: about 31
+minutes on a person's bench (HIL-012), most of it the ten minutes of jitter, which run alone, and the 20 power cuts.
+
+The bench (tools/hil/bench.py, the HIL contract) is a person at a real board (`--bench human`, the default: every
+physical step is a prompt under the guard of HIL-003, and the record is `hardware` evidence) or an emulator
+(`--bench emulated`, from tools/hil/emulator/ when it is installed: no terminal needed, and the record is always
+`emulated`, which never raises a support level). Programs are always compiled for the board (`target.board`).
+
+The image under test is the HIL build: the manifest's build command with CONFIG_ZPLC_HARDWARE_WATCHDOG=y, because
+RT-020 asks for the record to be made with the watchdog on (`--no-watchdog-build` prints the plain command, and then
+the watchdog step fails and says why).
 
 The board's I/O description comes from firmware/app/boards/boards.json, the one manifest: the handshake compares it
 with what the image reports (`zplc sys io`, IO-004), and the pending loopback and analog items name its channels. A
@@ -25,12 +38,15 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
+import bench as benches
 import hil_guard
 import hil_record
+import hil_steps
 from hil_devices import DeviceError, SerialTransport, open_fake
-from hil_ports import PortError, resolve_port
+from hil_ports import PortError
 from language_tester import LanguageTester, fixtures_of
 from zplc_tester import CompileError, UploadError
 
@@ -53,36 +69,14 @@ def _channels(board: dict, kind: str, direction: str | None = None) -> str:
     return ", ".join(found) or "none"
 
 
-def pending_items(board: dict) -> list[tuple[str, str, str]]:
-    """What HIL-010 asks for that the chain does not run yet, and what each needs. The record carries this list.
-
-    The loopback and analog items name the channels of the board's I/O description. Which output is wired to which
-    input, and which voltage is applied, is not in the manifest and is not invented here: it is the bench run's.
-    """
-    loopback = (
-        f"digital outputs {_channels(board, 'digital', 'output')} and digital inputs {_channels(board, 'digital', 'input')} "
-        "of the board's I/O description; which output is wired to which input is a wiring step: TO BE FILLED from the bench run"
-    )
-    analog = (
-        f"analog inputs {_channels(board, 'analog')} of the board's I/O description; "
-        "the known voltage applied to each is a bench step: TO BE FILLED from the bench run"
-    )
-    return [("digital-loopback", "Digital loopback", loopback), ("analog-read", "Analog read", analog), *PENDING]
-
-
-# The rest of what HIL-010 asks for that the chain does not run yet, and what each needs.
-PENDING = [
-    ("timer-accuracy", "Timer accuracy", "needs a measurement fixture and a reference clock the person provides"),
-    ("scan-jitter-10min", "Scan jitter over ten minutes", "needs device-side scan timing (RT-0xx) the shell does not report"),
-    ("overrun-fault-outputs-off", "Outputs off after an overrun fault", "needs a fault-injection fixture and RT-019"),
-    ("stop-and-link-loss-safe", "Outputs safe after STOP and after loss of the link with forces active", "needs the device session of COM-020 and an unplug step"),
-    ("watchdog-reset-time", "Watchdog reset time", "needs a firmware image with the watchdog enabled (RT-020)"),
-    ("fatal-fault-outputs-off", "Outputs off after a forced fatal fault", "needs a fault-injection fixture"),
-    ("power-cycle-retain", "STOP and RETAIN restored after a power cycle", "needs a RETAIN fixture and a power-cycle step"),
-    ("deploy-power-interruption-x20", "No partial program after 20 power interruptions during deploy", "needs a power-interruption step repeated 20 times"),
-    ("atomic-write", "Atomic multi-byte write", "needs the atomic write of the framed protocol (COM-019) on the device"),
-    ("fieldbus-exchange", "One fieldbus exchange per board", "test_modbus_rtu_serial.py and test_modbus_tcp.py exist; they need a local endpoint the person provides"),
-]
+def not_selected(board: dict, step_id: str) -> str:
+    """Why a measuring step did not run in this run: a stand-in run runs them only when --steps names them."""
+    reason = "not run: a dry run, or a run on a fake device or the host runtime, runs the bench steps only when --steps names them"
+    if step_id == "digital-loopback":
+        return f"{reason}; on the bench it switches digital outputs {_channels(board, 'digital', 'output')} and reads digital inputs {_channels(board, 'digital', 'input')}"
+    if step_id == "analog-read":
+        return f"{reason}; on the bench it reads analog inputs {_channels(board, 'analog')}"
+    return reason
 
 
 def parse(argv=None) -> argparse.Namespace:
@@ -92,9 +86,16 @@ def parse(argv=None) -> argparse.Namespace:
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="directory for the run record (default: build/hil-records)")
     parser.add_argument("--operator", help="who is at the bench; asked for when not given")
     parser.add_argument("--firmware-image", help="the image that was flashed; its SHA-256 goes in the record")
-    parser.add_argument("--only", help="comma-separated fixture ids to run instead of every hardware fixture")
+    parser.add_argument("--only", help="comma-separated fixture ids to run instead of the blink fixtures of the five languages")
+    parser.add_argument("--all-fixtures", action="store_true", help="run every fixture tagged for hardware (HIL-005), about seven more minutes, instead of the five-language blinks")
     parser.add_argument("--hil-trace", action="store_true", help="the image under test is built with the HIL trace overlay (tools/hil/hil_debug.conf), for the opcode-level scripts; release firmware has no trace")
     parser.add_argument("--dry-run", action="store_true", help="run on a fake device with nobody asked; the record says so")
+    parser.add_argument("--bench", choices=("human", "emulated"), default="human", help="a person at a real board (default) or the emulator of tools/hil/emulator")
+    parser.add_argument("--steps", help=f"comma-separated HIL-010 measuring steps to run instead of all of them ({', '.join(s[0] for s in hil_steps.BenchSteps.STEPS)}); a run on a fake device runs none unless named")
+    parser.add_argument("--no-watchdog-build", action="store_true", help="print the manifest's plain build command; the watchdog step then fails, saying the image has no watchdog")
+    parser.add_argument("--rtu-port", help="the host side of the Modbus RTU line of the Pico: the USB-serial adapter wired to UART1")
+    parser.add_argument("--host-ip", help="the address of this computer that the ESP32-S3 reaches over Wi-Fi (default: found from the default route)")
+    parser.add_argument("--loopback-bin", help="the zplc_loopback binary of this tree (default: beside ZPLC_NATIVE_SIM_BIN)")
     parser.add_argument(
         "--device", choices=("host", "null"),
         help="use a fake device instead of a serial port (host: the native runtime of this tree, null: shows nothing). "
@@ -103,10 +104,16 @@ def parse(argv=None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def build_command(board: dict, with_trace: bool) -> str:
-    """The command that builds the image under test, from the repository root: the manifest's, and with the HIL trace overlay when asked."""
-    command = board["build_command"]
-    return f"{command} -- -DEXTRA_CONF_FILE={HIL_OVERLAY}" if with_trace else command
+WATCHDOG_OPTION = "-DCONFIG_ZPLC_HARDWARE_WATCHDOG=y"
+# HIL-010: blink in each of the five languages (two in ST: the master blinky and the generated Ladder blinky)
+BLINK_FIXTURES = ["st.master_blinky", "st.blinky_ld_gen", "il.blinky", "ld.blinky", "fbd.blinky", "sfc.blinky"]
+
+
+def build_command(board: dict, with_trace: bool, watchdog: bool = False) -> str:
+    """The command that builds the image under test, from the repository root: the manifest's, with the HIL trace overlay
+    when asked, and with the hardware watchdog on for the HIL build (RT-020)."""
+    options = [f"-DEXTRA_CONF_FILE={HIL_OVERLAY}"] * with_trace + [WATCHDOG_OPTION] * watchdog
+    return f"{board['build_command']} -- {' '.join(options)}" if options else board["build_command"]
 
 
 def board_io(board: dict) -> dict | None:
@@ -139,19 +146,22 @@ def find_board(name: str) -> dict:
     raise KeyError(f"{name}: not a board of the manifest ({', '.join(b['ide_id'] for b in boards)})")
 
 
-class Chain:
-    def __init__(self, args, io, board, opener=open_fake):
+class Chain(hil_steps.BenchSteps):
+    def __init__(self, args, io, board, opener=open_fake, bench=None):
         self.args, self.io, self.board, self.opener = args, io, board, opener
-        self.build_command = build_command(board, args.hil_trace)
+        self.build_command = build_command(board, args.hil_trace, watchdog=not args.no_watchdog_build)
         self.dry = args.dry_run
+        self.bench = bench or benches.StandInBench("a dry run")
         self.description = board_io(board)
+        emulated = getattr(self.bench, "level", None) == "emulated"
         self.record = hil_record.new_record(
-            "chain", "hardware",
+            "chain", "emulated" if emulated else "hardware",
             {"id": board["ide_id"], "zephyr_board": board.get("zephyr_board"), "board_id": board.get("board_id"), "io": self.description},
-            args.operator or "unknown",
+            args.operator or "unknown", emulator=getattr(self.bench, "emulator", None) if emulated else None,
         )
         self.tester: LanguageTester | None = None
         self.compiled: dict[str, list[int]] = {}
+        self.programs: dict[str, int] = {}
         self.stop = False
 
     # steps -----------------------------------------------------------------------------------------
@@ -167,18 +177,28 @@ class Chain:
             detail = function()
             if detail:
                 entry["detail"] = str(detail)
+        except benches.Unsupported as error:
+            entry["result"] = "not-emulable" if self.record["evidence_level"] == "emulated" else "skipped"
+            entry["detail"] = f"not run: {error}"
         except (hil_guard.IdentityMismatch, hil_guard.NotInteractive) as error:
             entry["result"], entry["detail"], self.stop = "fail", str(error), True
         except AssertionError as error:
             entry["result"], entry["detail"], self.stop = "fail", str(error), True
         except (DeviceError, PortError, CompileError, UploadError, OSError, RuntimeError) as error:
             entry["result"], entry["detail"], self.stop = "error", f"{type(error).__name__}: {error}", True
+        confirmation = getattr(self.bench, "last_confirmation", None)
+        if confirmation:  # a person confirmed a bench action of this step by typing the board's identity
+            entry.update(confirmation)
+            self.bench.last_confirmation = None
         entry["ended_at"] = hil_record.now()
 
     def physical(self, step_id, title, instruction, requirement=None, wait_first=False):
         def confirm():
             if self.dry:
                 return "dry run: confirmation not asked of anyone"
+            if self.record["evidence_level"] == "emulated":
+                self.record["steps"][-1]["result"] = "skipped"
+                return "an emulated bench has no person to confirm it"
             identity = self.tester.identity().get("board", "") if self.tester else ""
             if not identity:
                 raise AssertionError("the device did not report who it is, so the step cannot be confirmed")
@@ -190,7 +210,8 @@ class Chain:
 
     # the chain -------------------------------------------------------------------------------------
     def fixtures(self):
-        listed = fixtures_of(ids=self.args.only.split(",") if self.args.only else None, hardware=True if not self.args.only else None)
+        ids = self.args.only.split(",") if self.args.only else None if self.args.all_fixtures else BLINK_FIXTURES
+        listed = fixtures_of(ids=ids, hardware=True if not self.args.only else None)
         if not listed:
             raise AssertionError("no fixture is selected")
         return listed
@@ -212,14 +233,18 @@ class Chain:
         if fake:
             transport = self.opener(fake)
         else:
-            transport = SerialTransport(resolve_port(self.args.port, self.board["ide_id"], os.environ))
+            transport = SerialTransport(self.bench.port())
         self.tester = LanguageTester(transport=transport, board=self.board["ide_id"])
         if transport.kind == "serial":
             import time  # noqa: PLC0415
 
             time.sleep(1)  # the board resets when the port opens
         link = transport.kind if transport.kind in ("serial", "host-runtime") else "fake"
-        self.record["evidence"] = "hardware" if link == "serial" else link
+        emulated = getattr(self.bench, "level", None) == "emulated"
+        self.record["evidence"] = ("emulated" if emulated else "hardware") if link == "serial" else link
+        self.record["evidence_level"] = self.record["evidence"] if link == "serial" else None
+        if self.record["evidence_level"] != "emulated":
+            self.record.pop("emulator", None)
         self.record["device"]["link"] = link
 
     def handshake(self):
@@ -228,6 +253,7 @@ class Chain:
             raise AssertionError("the device did not answer `zplc sys info --json` with a board")
         self.record["device"].update({k: info.get(k) for k in ("board_profile", "zplc_version", "zephyr_version")})
         self.record["device"]["reported_board"] = info["board"]
+        self.bench.identity = info["board"]
         build = self.tester.build_identity()
         self.record["firmware"] = {k: v for k, v in hil_record.firmware_identity(build).items() if v is not None}
         self.record["firmware"]["build_command"] = self.build_command
@@ -336,7 +362,31 @@ class Chain:
             except Exception:  # the link may be gone; the device releases forces by itself then (COM-020)
                 pass
 
+    def selected_steps(self) -> set[str]:
+        """Every measuring step on a bench; on a fake device or the host runtime only those --steps names."""
+        if self.args.steps:
+            return set(self.args.steps.split(","))
+        return {s[0] for s in self.STEPS} if self.record["device"].get("link") == "serial" and not self.dry else set()
+
+    def estimate_seconds(self) -> int:
+        """How long the chain takes on this bench (HIL-012): the cost of each step, the ten minutes of jitter alone."""
+        try:
+            fixtures = len(self.fixtures())
+        except AssertionError:  # no fixture selected: the preflight says so
+            fixtures = 0
+        steps = [s[0] for s in self.STEPS if not self.args.steps or s[0] in self.args.steps.split(",")]
+        fixed = [k for k in hil_steps.STEP_SECONDS if k not in {s[0] for s in self.STEPS}]
+        return sum(hil_steps.STEP_SECONDS[k] for k in fixed + steps) + fixtures * hil_steps.FIXTURE_SECONDS
+
     def run(self) -> int:
+        self.started, self.estimate = time.monotonic(), self.estimate_seconds()
+        if not self.dry:
+            jitter = not self.args.steps or "scan-jitter-10min" in self.args.steps.split(",")
+            self.io.say(
+                f"The chain for {self.board['display_name']} takes about {round(self.estimate / 60)} minutes on this bench "
+                f"(the target is about {hil_steps.TARGET_SECONDS // 60})"
+                + ("; ten of them are the scan jitter step, which runs alone." if jitter else ".")
+            )
         self.step("preflight", "Host checks: the fixtures compile and the board is known", "automatic", self.preflight, "HIL-005")
         self.step("open", "Open the device link", "automatic", self.open_device, "HIL-007")
         # the flash is the person's: asked for before the device is asked who it is
@@ -351,13 +401,20 @@ class Chain:
         self.step("fixtures", "Run the language fixtures", "automatic", self.fixture_step, "HIL-005")
         self.step("force", "Force set and release", "automatic", self.force_step, "HIL-010")
         self.step("stop", "Stop: not running, outputs off", "automatic", self.stop_step, "HIL-010")
+        selected = self.selected_steps()
+        for step_id, title, method, requirement in self.STEPS:
+            if step_id in selected:
+                self.step(step_id, title, "automatic", getattr(self, method), requirement)
+            else:
+                self.record["steps"].append({"id": step_id, "title": title, "kind": "automatic", "result": "skipped", "requirement": requirement, "detail": not_selected(self.board, step_id)})
         self.release()
-        for item, title, reason in pending_items(self.board):
-            self.record["steps"].append({"id": item, "title": title, "kind": "automatic", "result": "pending", "requirement": "HIL-010", "detail": reason})
         self.record["coverage"] = {
             "requirement": "HIL-010",
             "done": [s["id"] for s in self.record["steps"] if s["result"] == "pass"],
-            "pending": [s["id"] for s in self.record["steps"] if s["result"] == "pending"],
+            "pending": [s["id"] for s in self.record["steps"] if s["result"] in ("pending", "skipped", "not-emulable")],
+        }
+        self.record.setdefault("measurements", {})["duration"] = {
+            "target_s": hil_steps.TARGET_SECONDS, "estimated_s": self.estimate, "actual_s": round(time.monotonic() - self.started),
         }
         if self.tester is not None:
             text = "\n".join(f"{direction}> {line}" for direction, line in self.tester.log)
@@ -368,37 +425,37 @@ class Chain:
         return 0 if self.record["result"] == "pass" else 1
 
     def flash_prompt(self):
-        said = (
-            f"\nPhysical step: flash the firmware image for {self.board['display_name']}\n"
-            f"  Build it with exactly this command, from the repository root:\n    {self.build_command}\n"
-            "  and flash it yourself, by the procedure of the bench guide (TO BE FILLED by the person who did the bench run, HIL-014).\n"
-            "  Nothing here flashes a board."
-        )
-        self.io.say(said)
         if self.dry:
             return f"dry run: nobody flashes anything; build command: {self.build_command}"
-        self.io.ask("  Press Enter when the board has restarted: ")
-        return f"build command: {self.build_command}"
+        self.bench.build_command = self.build_command
+        image = Path(self.args.firmware_image) if self.args.firmware_image else None
+        self.bench.flash(image)
+        return f"{'emulated: the image is loaded into the emulator' if self.record['evidence_level'] == 'emulated' else 'flashed by a person'}; build command: {self.build_command}"
 
 
-def run(args, io, stdout=None, opener=open_fake) -> int:
+def run(args, io, stdout=None, opener=open_fake, bench=None) -> int:
     out = stdout or sys.stdout
     try:
         board = find_board(args.board)
     except KeyError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
-    if not args.dry_run:
+    if bench is None and not args.dry_run:
         try:
-            hil_guard.require_interactive(io, "the hardware chain")
-        except hil_guard.NotInteractive as error:
+            if args.bench == "emulated":
+                bench = benches.load_emulator_bench(board)
+            else:
+                hil_guard.require_interactive(io, "the hardware chain")
+                bench = benches.HumanBench(io, board, args.port)
+        except (hil_guard.NotInteractive, benches.BenchMissing) as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
-        if not args.operator:
+    if not args.operator:
+        if getattr(bench, "level", None) == "hardware":
             args.operator = io.ask("Operator name for the record: ").strip() or "unknown"
-    elif not args.operator:
-        args.operator = os.environ.get("USER") or os.environ.get("USERNAME") or "dry-run"
-    chain = Chain(args, io, board, opener)
+        else:
+            args.operator = os.environ.get("USER") or os.environ.get("USERNAME") or "dry-run"
+    chain = Chain(args, io, board, opener, bench)
     code = chain.run()
     chain.record["operator"] = {"name": args.operator}
     stem = hil_record.record_stem(chain.record)
@@ -419,9 +476,9 @@ def run(args, io, stdout=None, opener=open_fake) -> int:
     return code
 
 
-def main(argv=None, io=None, stdout=None, opener=open_fake) -> int:
+def main(argv=None, io=None, stdout=None, opener=open_fake, bench=None) -> int:
     args = parse(argv)
-    return run(args, io or hil_guard.TerminalIo(), stdout, opener)
+    return run(args, io or hil_guard.TerminalIo(), stdout, opener, bench)
 
 
 if __name__ == "__main__":
