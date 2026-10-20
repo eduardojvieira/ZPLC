@@ -1,0 +1,40 @@
+{
+  "en": {
+    "heading": "Wiring on {board}",
+    "led": "{label}: {color} LED with a {ohms} resistor in series, from {pin} to GND ({ground}).",
+    "button": "{label}: push button between {pin} and GND ({ground}); the internal pull-up of the board reads it.",
+    "jumper": "{label}: jumper wire from {pin} to GND ({ground}); plugged in means on.",
+    "potentiometer": "{label}: {ohms} potentiometer, ends to 3V3 ({supply}) and GND ({analogGround}), wiper to {pin}.",
+    "capacitor": "{label}: capacitor from {pin} to GND ({ground}).",
+    "resistor": "{label}: {ohms} resistor from {pin} to GND ({ground}).",
+    "onBoard": "{label}: {pinName} ({location}, {id}) is on the board; it needs no wiring.",
+    "symbolLed": "{color} LED",
+    "symbolButton": "push button",
+    "symbolJumper": "jumper wire to GND",
+    "symbolPotentiometer": "{ohms} potentiometer",
+    "symbolCapacitor": "capacitor",
+    "symbolOnBoard": "on the board: no wiring",
+    "red": "red",
+    "green": "green",
+    "yellow": "yellow"
+  },
+  "es": {
+    "heading": "Cableado en {board}",
+    "led": "{label}: LED {color} con una resistencia de {ohms} en serie, desde {pin} hasta GND ({ground}).",
+    "button": "{label}: pulsador entre {pin} y GND ({ground}); lo lee la resistencia de pull-up interna de la placa.",
+    "jumper": "{label}: cable puente desde {pin} hasta GND ({ground}); conectado significa activado.",
+    "potentiometer": "{label}: potenciómetro de {ohms}, extremos a 3V3 ({supply}) y GND ({analogGround}), cursor a {pin}.",
+    "capacitor": "{label}: capacitor desde {pin} hasta GND ({ground}).",
+    "resistor": "{label}: resistencia de {ohms} desde {pin} hasta GND ({ground}).",
+    "onBoard": "{label}: {pinName} ({location}, {id}) está en la placa; no necesita cableado.",
+    "symbolLed": "LED {color}",
+    "symbolButton": "pulsador",
+    "symbolJumper": "cable puente a GND",
+    "symbolPotentiometer": "potenciómetro de {ohms}",
+    "symbolCapacitor": "capacitor",
+    "symbolOnBoard": "en la placa: sin cableado",
+    "red": "rojo",
+    "green": "verde",
+    "yellow": "amarillo"
+  }
+}

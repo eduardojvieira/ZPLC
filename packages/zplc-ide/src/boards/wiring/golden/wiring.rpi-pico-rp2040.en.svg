@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-rpi-pico-rp2040-title">Wiring on Raspberry Pi Pico (RP2040)</title>
+<desc id="wiring-rpi-pico-rp2040-desc">Lamp: red LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38). Warning: yellow LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38). Start: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it. Armed: jumper wire from GP14 (header pin 19, DI1) to GND (GND · pin 38); plugged in means on. Stop: push button between GP12 (header pin 16, DI3) and GND (GND · pin 38); the internal pull-up of the board reads it. Level: 10 kΩ potentiometer, ends to 3V3 (3V3(OUT) · pin 36) and GND (AGND · pin 33), wiper to GP26 (ADC0) (header pin 31, AI0).</desc>
+<rect width="760" height="496" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on Raspberry Pi Pico (RP2040)</text>
+<rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP0</text>
+<text stroke="none" x="30" y="102" font-size="11">header pin 1 · DO0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Lamp</text>
+<polyline points="264,88 300,88" fill="none"/>
+<polyline points="300,88 306,80 318,96 330,80 342,96 354,80 360,88" fill="none"/>
+<text stroke="none" x="330" y="74" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,88 392,88" fill="none"/>
+<polygon points="392,78 392,98 412,88" fill="#d62828"/>
+<polyline points="412,78 412,98" fill="none"/>
+<polyline points="402,74 410,66" fill="none"/>
+<polyline points="408,76 416,68" fill="none"/>
+<text stroke="none" x="402" y="114" text-anchor="middle" font-size="11">red LED</text>
+<polyline points="412,88 712,88" fill="none"/>
+<rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GP1</text>
+<text stroke="none" x="30" y="166" font-size="11">header pin 2 · DO1</text>
+<text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Warning</text>
+<polyline points="264,152 300,152" fill="none"/>
+<polyline points="300,152 306,144 318,160 330,144 342,160 354,144 360,152" fill="none"/>
+<text stroke="none" x="330" y="138" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,152 392,152" fill="none"/>
+<polygon points="392,142 392,162 412,152" fill="#e9c300"/>
+<polyline points="412,142 412,162" fill="none"/>
+<polyline points="402,138 410,130" fill="none"/>
+<polyline points="408,140 416,132" fill="none"/>
+<text stroke="none" x="402" y="178" text-anchor="middle" font-size="11">yellow LED</text>
+<polyline points="412,152 712,152" fill="none"/>
+<rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GP15</text>
+<text stroke="none" x="30" y="230" font-size="11">header pin 20 · DI0</text>
+<text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Start</text>
+<polyline points="264,216 334,216" fill="none"/>
+<circle cx="337" cy="216" r="3" fill="#ffffff"/>
+<circle cx="377" cy="216" r="3" fill="#ffffff"/>
+<polyline points="337,212 375,200" fill="none"/>
+<polyline points="356,206 356,192" fill="none"/>
+<polyline points="348,192 364,192" fill="none"/>
+<text stroke="none" x="357" y="238" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,216 712,216" fill="none"/>
+<rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP14</text>
+<text stroke="none" x="30" y="294" font-size="11">header pin 19 · DI1</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Armed</text>
+<polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
+<text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">jumper wire to GND</text>
+<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP12</text>
+<text stroke="none" x="30" y="358" font-size="11">header pin 16 · DI3</text>
+<text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Stop</text>
+<polyline points="264,344 334,344" fill="none"/>
+<circle cx="337" cy="344" r="3" fill="#ffffff"/>
+<circle cx="377" cy="344" r="3" fill="#ffffff"/>
+<polyline points="337,340 375,328" fill="none"/>
+<polyline points="356,334 356,320" fill="none"/>
+<polyline points="348,320 364,320" fill="none"/>
+<text stroke="none" x="357" y="366" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,344 712,344" fill="none"/>
+<rect x="20" y="386" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GP26 (ADC0)</text>
+<text stroke="none" x="30" y="422" font-size="11">header pin 31 · AI0</text>
+<text stroke="none" x="440" y="400" font-size="13" font-weight="bold">Level</text>
+<polyline points="264,388 380,388 380,394" fill="none"/>
+<polygon points="375,394 385,394 380,400" fill="#222222"/>
+<rect x="350" y="400" width="60" height="16" fill="#ffffff"/>
+<polyline points="350,408 330,408 330,426" fill="none"/>
+<text stroke="none" x="330" y="438" text-anchor="start" font-size="11">3V3(OUT) · pin 36</text>
+<text stroke="none" x="420" y="428" font-size="11">10 kΩ potentiometer</text>
+<polyline points="410,408 712,408" fill="none"/>
+<polyline points="712,64 712,440" fill="none" stroke-width="3"/>
+<polyline points="700,440 724,440" fill="none"/>
+<polyline points="704,445 720,445" fill="none"/>
+<polyline points="708,450 716,450" fill="none"/>
+<text stroke="none" x="728" y="470" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+</svg>

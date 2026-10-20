@@ -84,3 +84,11 @@ The lesson CI refuses a hardware lesson when:
 - the program of the lesson uses an input or output that no part is wired to, or a part is wired to a
   channel that the program does not use. An address that a board has no channel for passes only when
   the project declares it in `io.virtual`.
+
+## Wiring diagrams
+
+The wiring of a lesson on a board is drawn from `wiring.json` and the board I/O description: a strip of
+the board's header with the pins the lesson uses (GPIO, header position and channel id), each part as its
+schematic symbol, and the GND rail. Every part and pin carries a text label, so colour is never the only
+cue, and a text list of the same wiring (part by part, pin by pin) goes beside each diagram for a screen
+reader. The same inputs always give the same diagram.

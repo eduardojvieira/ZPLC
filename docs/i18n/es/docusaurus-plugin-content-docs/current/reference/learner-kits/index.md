@@ -89,3 +89,12 @@ La CI de lecciones rechaza una lección de hardware cuando:
 - el programa de la lección usa una entrada o una salida a la que no se cablea ninguna pieza, o una
   pieza se cablea a un canal que el programa no usa. Una dirección para la que una placa no tiene canal
   solo se acepta cuando el proyecto la declara en `io.virtual`.
+
+## Diagramas de cableado
+
+El cableado de una lección en una placa se dibuja a partir de `wiring.json` y de la descripción de E/S
+de la placa: una franja del conector de la placa con los pines que usa la lección (GPIO, posición en el
+conector e identificador de canal), cada pieza con su símbolo esquemático y la línea de GND. Cada pieza
+y cada pin llevan una etiqueta de texto, de modo que el color nunca es la única indicación, y junto a
+cada diagrama hay una lista de texto con el mismo cableado (pieza por pieza, pin por pin) para un lector
+de pantalla. Las mismas entradas siempre dan el mismo diagrama.
