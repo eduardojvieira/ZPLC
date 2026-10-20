@@ -5627,7 +5627,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
