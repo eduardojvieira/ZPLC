@@ -3,7 +3,7 @@
  * as text, the pin of each part, the voltage limit, the parts of the whole course, the firmware with the flashing steps the
  * learner follows, and the check on the board. Everything here is shown, nothing is done to the board (LRN-015).
  */
-import { useRef, type ReactNode } from 'react';
+import { Suspense, lazy, useRef, type ReactNode } from 'react';
 import type { LearnerKit } from '../boards/wiring/kit';
 import { renderWiringSvg, wiringCard } from '../boards/wiring/render';
 import { channelOf, partsFor, type WiringBoard, type WiringFile, type WiringLocale } from '../boards/wiring/wiring';
@@ -15,7 +15,9 @@ import { Button } from '../ui';
 import { LearnBoardCheck } from './LearnBoardCheck';
 import { LearnBoardPicker } from './LearnBoardTrack';
 import { BOARD_LABEL, chooseLearnerBoard } from './learnBoardWords';
-import { FirmwareImageCard } from './settings/FirmwareImageCard';
+
+// The firmware card lives with the settings, which the Welcome screen does not load at start (IDE-015): it loads with the lesson.
+const FirmwareImageCard = lazy(() => import('./settings/FirmwareImageCard').then((module) => ({ default: module.FirmwareImageCard })));
 
 export interface LearnBoardLessonViewProps {
   board: LearnerBoard | null;
@@ -82,7 +84,7 @@ export function LearnBoardLesson({ lessonId }: { lessonId: string }) {
   return (
     <LearnBoardLessonView
       board={board} wiringBoard={board ? learnerBoardOf(board) ?? null : null} wiring={entry.hardware.wiring} kit={LEARNER_KIT} locale={locale}
-      onChoose={(chosen) => chooseLearnerBoard(chosen, t)} firmware={<FirmwareImageCard ideId={board ? ideIdOf(board) : undefined} />} check={<LearnBoardCheck lessonId={lessonId} />}
+      onChoose={(chosen) => chooseLearnerBoard(chosen, t)} firmware={<Suspense fallback={null}><FirmwareImageCard ideId={board ? ideIdOf(board) : undefined} /></Suspense>} check={<LearnBoardCheck lessonId={lessonId} />}
     />
   );
 }

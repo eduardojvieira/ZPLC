@@ -1,6 +1,6 @@
 // The hardware surface of a lesson for the chosen board (LRN-013, LRN-014, LRN-016): the wiring as a diagram and as text,
 // the pin map of the lesson's channels, the voltage limit, the kit list, the firmware, and the check on the board.
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { wiringCard } from '../boards/wiring/render';
@@ -8,8 +8,12 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import { LEARNER_KIT, learnerBoardOf } from '../learn/learnerBoards';
 import type { BoardCheckStep } from '../learn/boardCheck';
 import { auditMarkup } from '../ui/audit';
-import { LearnBoardCheckView, type LearnBoardCheckViewProps } from './LearnBoardCheck';
-import { LearnBoardLessonView } from './LearnBoardLesson';
+import type { LearnBoardCheckViewProps } from './LearnBoardCheck';
+
+// The check reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
+await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null, getFileContent: () => null }));
+const { LearnBoardCheckView } = await import('./LearnBoardCheck');
+const { LearnBoardLessonView } = await import('./LearnBoardLesson');
 
 const WIRING = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'verify-my-board')!.hardware!.wiring;
 const render = (board: 'rpi-pico-rp2040' | 'esp32-s3-devkitc' | null): string => renderToStaticMarkup(
