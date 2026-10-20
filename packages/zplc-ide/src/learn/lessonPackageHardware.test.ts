@@ -70,8 +70,8 @@ describe('the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)', (
 
 describe('a program and its wiring, on each learner board (LRN-014)', () => {
   it('needs a part on every channel the program uses, and a use for every part it wires', () => {
-    expect(programWiringProblems(WIRING, BOARDS, ['%QX0.0', '%QX0.1', '%IX0.0', '%IX0.1', '%IX0.3', '%IW4'], [])).toEqual([]);
-    expect(programWiringProblems(WIRING, BOARDS, ['%QX0.0', '%QX0.1', '%IX0.0', '%IX0.3', '%IW4'], [])).toEqual([
+    expect(programWiringProblems(WIRING, BOARDS, ['%QX0.0', '%QX0.1', '%QX0.4', '%IX0.0', '%IX0.1', '%IX0.3', '%IW4'], ['%QX0.4'])).toEqual([]);
+    expect(programWiringProblems(WIRING, BOARDS, ['%QX0.0', '%QX0.1', '%QX0.4', '%IX0.0', '%IX0.3', '%IW4'], ['%QX0.4'])).toEqual([
       'part "armed" is wired to DI1 on Raspberry Pi Pico (RP2040), which the program does not use',
       'part "armed" is wired to DI1 on ESP32-S3-DevKitC-1 (N8R8), which the program does not use',
     ]);

@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 560" width="760" height="560" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-rpi-pico-rp2040-title">Wiring on Raspberry Pi Pico (RP2040)</title>
-<desc id="wiring-rpi-pico-rp2040-desc">Lamp: red LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38). Warning: yellow LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38). Start: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it. Armed: jumper wire from GP14 (header pin 19, DI1) to GND (GND · pin 38); plugged in means on. Stop: push button between GP12 (header pin 16, DI3) and GND (GND · pin 38); the internal pull-up of the board reads it. Level: 10 kΩ potentiometer, ends to 3V3 (3V3(OUT) · pin 36) and GND (AGND · pin 33), wiper to GP26 (ADC0) (header pin 31, AI0).</desc>
-<rect width="760" height="496" fill="#ffffff" stroke="none"/>
+<desc id="wiring-rpi-pico-rp2040-desc">Lamp: red LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38). Warning: yellow LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38). Start: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it. Armed: jumper wire from GP14 (header pin 19, DI1) to GND (GND · pin 38); plugged in means on. Stop: push button between GP12 (header pin 16, DI3) and GND (GND · pin 38); the internal pull-up of the board reads it. Level: 10 kΩ potentiometer, ends to 3V3 (3V3(OUT) · pin 36) and GND (AGND · pin 33), wiper to GP26 (ADC0) (header pin 31, AI0). On-board LED: GP25 (on-board LED, DO4) is on the board; it needs no wiring.</desc>
+<rect width="760" height="560" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on Raspberry Pi Pico (RP2040)</text>
-<rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
+<rect x="8" y="48" width="256" height="464" rx="8" fill="#eef3f8"/>
 <rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP0</text>
 <text stroke="none" x="30" y="102" font-size="11">header pin 1 · DO0</text>
@@ -73,9 +73,14 @@
 <text stroke="none" x="330" y="438" text-anchor="start" font-size="11">3V3(OUT) · pin 36</text>
 <text stroke="none" x="420" y="428" font-size="11">10 kΩ potentiometer</text>
 <polyline points="410,408 712,408" fill="none"/>
-<polyline points="712,64 712,440" fill="none" stroke-width="3"/>
-<polyline points="700,440 724,440" fill="none"/>
-<polyline points="704,445 720,445" fill="none"/>
-<polyline points="708,450 716,450" fill="none"/>
-<text stroke="none" x="728" y="470" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+<rect x="20" y="450" width="232" height="44" rx="4" fill="#ffffff" stroke-dasharray="4 3"/>
+<text stroke="none" x="30" y="468" font-size="13" font-weight="bold">GP25</text>
+<text stroke="none" x="30" y="486" font-size="11">on-board LED · DO4</text>
+<text stroke="none" x="440" y="464" font-size="13" font-weight="bold">On-board LED</text>
+<text stroke="none" x="280" y="476" font-size="11" font-style="italic">on the board: no wiring</text>
+<polyline points="712,64 712,504" fill="none" stroke-width="3"/>
+<polyline points="700,504 724,504" fill="none"/>
+<polyline points="704,509 720,509" fill="none"/>
+<polyline points="708,514 716,514" fill="none"/>
+<text stroke="none" x="728" y="534" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
 </svg>

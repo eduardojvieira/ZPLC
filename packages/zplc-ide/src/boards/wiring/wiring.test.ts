@@ -36,13 +36,13 @@ describe('the wiring file of a hardware lesson (LRN-013, LRN-014)', () => {
     expect(wiringBoardProblems(wrongWay, BOARDS)).toEqual(['part "start": a button is an input, but DO2 is an output']);
   });
 
-  it('tells an on-board channel from a header pin, so the BOOT button and the Pico LED need no wiring', () => {
+  it('tells an on-board channel from a header pin, so the Pico LED needs no wiring while every input is on the header (IO-009)', () => {
     const channel = (board: typeof PICO, id: string) => board.io.channels.find((entry) => entry.id === id)!;
     expect(isOnBoard(channel(PICO, 'DO4'))).toBe(true);
     expect(isOnBoard(channel(PICO, 'DO0'))).toBe(false);
-    expect(isOnBoard(channel(ESP32S3, 'DI3'))).toBe(true);
+    expect(isOnBoard(channel(ESP32S3, 'DI3'))).toBe(false);
     expect(externalParts(WIRING, PICO).map((part) => part.id)).toEqual(['lamp', 'warning', 'start', 'armed', 'stop', 'level']);
-    expect(externalParts(WIRING, ESP32S3).map((part) => part.id)).toEqual(['lamp', 'warning', 'start', 'armed', 'level']);
+    expect(externalParts(WIRING, ESP32S3).map((part) => part.id)).toEqual(['lamp', 'warning', 'start', 'armed', 'stop', 'level']);
     expect(partsFor({ schemaVersion: 1, parts: [{ ...WIRING.parts[0]!, boards: ['esp32-s3-devkitc'] }] }, PICO)).toEqual([]);
   });
 });

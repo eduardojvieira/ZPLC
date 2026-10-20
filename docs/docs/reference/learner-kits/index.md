@@ -83,8 +83,9 @@ channel ids (`DO0`, `DI1`, `AI0`), never GPIO numbers: the pins come from the bo
 | `potentiometer` | Ends on 3V3 and GND, wiper on the analog pin. |
 
 `boards` limits a part to some learner boards, for example the on-board LED of the Pico; without it, the
-part is wired on both boards. A channel that the board carries itself (the Pico's LED, the BOOT button of
-the ESP32-S3) needs no wiring.
+part is wired on both boards. A channel that the board carries itself, the on-board LED of the Pico, needs
+no wiring. Every input of both boards is a part on a header pin: the BOOT button of the ESP32-S3 is a
+strapping pin and is never one of them.
 
 The lesson CI refuses a hardware lesson when:
 

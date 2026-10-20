@@ -45,8 +45,11 @@ describe('the one bill of materials of the course (LRN-014)', () => {
   it('covers the parts every lesson needs on each board, counting what one lesson needs at once', () => {
     expect(bomProblems(bom, lessons, BOARDS)).toEqual([]);
     const fewer = bom.map((item) => (item.id === 'button' ? { ...item, quantity: 1 } : item));
-    // The Pico wires Start and Stop as buttons; the ESP32-S3 uses its BOOT button for Stop.
-    expect(bomProblems(fewer, lessons, BOARDS)).toEqual(['fixture on Raspberry Pi Pico (RP2040) needs 2 of button, the bill of materials has 1']);
+    // Every input is a part on the header of both boards (IO-009): Start and Stop are two buttons on each.
+    expect(bomProblems(fewer, lessons, BOARDS)).toEqual([
+      'fixture on Raspberry Pi Pico (RP2040) needs 2 of button, the bill of materials has 1',
+      'fixture on ESP32-S3-DevKitC-1 (N8R8) needs 2 of button, the bill of materials has 1',
+    ]);
     const noResistor = bom.filter((item) => item.id !== 'resistor-330');
     expect(bomProblems(noResistor, lessons, BOARDS)).toEqual([
       'fixture on Raspberry Pi Pico (RP2040) needs 2 of resistor 330 Ω, the bill of materials has 0',
@@ -55,8 +58,11 @@ describe('the one bill of materials of the course (LRN-014)', () => {
   });
 
   it('counts the jumper wires: one for a jumper used as a switch, two for every other part on the breadboard, two for the rails', () => {
-    // Pico: 1 jumper switch + 2 x 5 other parts + 2 rails = 13.
+    // On each board: 1 jumper switch + 2 x 5 other parts on the breadboard + 2 rails = 13; the on-board LED needs none.
     const tight = bom.map((item) => (item.id === 'jumper-wires' ? { ...item, quantity: 12 } : item));
-    expect(bomProblems(tight, lessons, BOARDS)).toEqual(['fixture on Raspberry Pi Pico (RP2040) needs 13 of jumper wire, the bill of materials has 12']);
+    expect(bomProblems(tight, lessons, BOARDS)).toEqual([
+      'fixture on Raspberry Pi Pico (RP2040) needs 13 of jumper wire, the bill of materials has 12',
+      'fixture on ESP32-S3-DevKitC-1 (N8R8) needs 13 of jumper wire, the bill of materials has 12',
+    ]);
   });
 });

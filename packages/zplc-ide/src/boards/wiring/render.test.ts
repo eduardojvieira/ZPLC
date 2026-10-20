@@ -26,8 +26,9 @@ describe('the wiring diagram of a lesson on a learner board (LRN-014)', () => {
     for (const text of ['Lamp', 'Warning', 'Start', 'Armed', 'Stop', 'Level', 'GPIO15', 'J1-8', 'DO0', 'GPIO5', 'J1-5', 'GPIO4', 'J1-4', '330 Ω', 'red LED', 'yellow LED', '10 kΩ', 'GND · J1-22', '3V3 · J1-1']) {
       expect({ text, found: svg.includes(text) }).toEqual({ text, found: true });
     }
-    // The BOOT button of the ESP32-S3 is on the board: it is named, and nothing is wired to it.
-    expect(svg).toContain('on-board BOOT button');
+    // The Pico's on-board LED is named and drawn as on the board, with nothing wired to it.
+    expect(renderWiringSvg(PICO, WIRING, 'en')).toContain('on the board: no wiring');
+    expect(svg).not.toContain('on the board: no wiring');
   });
 
   it('has an accessible title and description that a screen reader announces', () => {
@@ -50,7 +51,7 @@ describe('the wiring card: the same wiring as a text list, part by part (LRN-014
       'Warning: yellow LED with a 330 Ω resistor in series, from GPIO16 (J1-9, DO1) to GND (GND · J1-22).',
       'Start: push button between GPIO5 (J1-5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.',
       'Armed: jumper wire from GPIO6 (J1-6, DI1) to GND (GND · J1-22); plugged in means on.',
-      'Stop: GPIO0 (BOOT) (on-board BOOT button, DI3) is on the board; it needs no wiring.',
+      'Stop: push button between GPIO8 (J1-12, DI3) and GND (GND · J1-22); the internal pull-up of the board reads it.',
       'Level: 10 kΩ potentiometer, ends to 3V3 (3V3 · J1-1) and GND (GND · J1-22), wiper to GPIO4 (ADC1 channel 3) (J1-4, AI0).',
     ]);
   });
@@ -63,6 +64,7 @@ describe('the wiring card: the same wiring as a text list, part by part (LRN-014
       'Armado: cable puente desde GP14 (header pin 19, DI1) hasta GND (GND · pin 38); conectado significa activado.',
       'Parada: pulsador entre GP12 (header pin 16, DI3) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.',
       'Nivel: potenciómetro de 10 kΩ, extremos a 3V3 (3V3(OUT) · pin 36) y GND (AGND · pin 33), cursor a GP26 (ADC0) (header pin 31, AI0).',
+      'LED de la placa: GP25 (on-board LED, DO4) está en la placa; no necesita cableado.',
     ]);
   });
 });

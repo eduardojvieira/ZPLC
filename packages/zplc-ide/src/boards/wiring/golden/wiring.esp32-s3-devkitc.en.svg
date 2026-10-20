@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-esp32-s3-devkitc-title wiring-esp32-s3-devkitc-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-esp32-s3-devkitc-title">Wiring on ESP32-S3-DevKitC-1 (N8R8)</title>
-<desc id="wiring-esp32-s3-devkitc-desc">Lamp: red LED with a 330 Ω resistor in series, from GPIO15 (J1-8, DO0) to GND (GND · J1-22). Warning: yellow LED with a 330 Ω resistor in series, from GPIO16 (J1-9, DO1) to GND (GND · J1-22). Start: push button between GPIO5 (J1-5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it. Armed: jumper wire from GPIO6 (J1-6, DI1) to GND (GND · J1-22); plugged in means on. Stop: GPIO0 (BOOT) (on-board BOOT button, DI3) is on the board; it needs no wiring. Level: 10 kΩ potentiometer, ends to 3V3 (3V3 · J1-1) and GND (GND · J1-22), wiper to GPIO4 (ADC1 channel 3) (J1-4, AI0).</desc>
+<desc id="wiring-esp32-s3-devkitc-desc">Lamp: red LED with a 330 Ω resistor in series, from GPIO15 (J1-8, DO0) to GND (GND · J1-22). Warning: yellow LED with a 330 Ω resistor in series, from GPIO16 (J1-9, DO1) to GND (GND · J1-22). Start: push button between GPIO5 (J1-5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it. Armed: jumper wire from GPIO6 (J1-6, DI1) to GND (GND · J1-22); plugged in means on. Stop: push button between GPIO8 (J1-12, DI3) and GND (GND · J1-22); the internal pull-up of the board reads it. Level: 10 kΩ potentiometer, ends to 3V3 (3V3 · J1-1) and GND (GND · J1-22), wiper to GPIO4 (ADC1 channel 3) (J1-4, AI0).</desc>
 <rect width="760" height="496" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on ESP32-S3-DevKitC-1 (N8R8)</text>
 <rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
@@ -50,11 +50,18 @@
 <text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Armed</text>
 <polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
 <text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">jumper wire to GND</text>
-<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff" stroke-dasharray="4 3"/>
-<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO0 (BOOT)</text>
-<text stroke="none" x="30" y="358" font-size="11">on-board BOOT button · DI3</text>
+<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GPIO8</text>
+<text stroke="none" x="30" y="358" font-size="11">J1-12 · DI3</text>
 <text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Stop</text>
-<text stroke="none" x="280" y="348" font-size="11" font-style="italic">on the board: no wiring</text>
+<polyline points="264,344 334,344" fill="none"/>
+<circle cx="337" cy="344" r="3" fill="#ffffff"/>
+<circle cx="377" cy="344" r="3" fill="#ffffff"/>
+<polyline points="337,340 375,328" fill="none"/>
+<polyline points="356,334 356,320" fill="none"/>
+<polyline points="348,320 364,320" fill="none"/>
+<text stroke="none" x="357" y="366" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,344 712,344" fill="none"/>
 <rect x="20" y="386" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GPIO4 (ADC1 channel 3)</text>
 <text stroke="none" x="30" y="422" font-size="11">J1-4 · AI0</text>

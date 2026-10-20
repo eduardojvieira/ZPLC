@@ -19,7 +19,8 @@
  * plugs between the pin and GND to hold an input on (a maintained switch); a potentiometer has its ends on 3V3 and GND
  * and its wiper on the analog pin; an LED goes from the pin through its series resistor to GND. `boards` limits a part
  * to some learner boards (the Pico's on-board LED); without it the part is wired on both. A channel whose location in
- * the board description says "on-board" (the Pico LED, the BOOT button of the ESP32-S3) needs no wiring at all.
+ * the board description says "on-board" (the Pico LED) needs no wiring at all. Every input of both boards is on a header
+ * pin (IO-009): the BOOT button of the ESP32-S3 is a strapping pin and is never one of them.
  *
  * This module has no Node import: the lesson loader, the docs generator and Studio share it.
  */
@@ -110,7 +111,7 @@ export function validateWiring(value: unknown): string[] {
   return problems;
 }
 
-/** A channel the board carries itself (an on-board LED, the BOOT button): the learner wires nothing to it. */
+/** A channel the board carries itself (the Pico's on-board LED): the learner wires nothing to it. */
 export const isOnBoard = (channel: BoardChannel): boolean => /\bon-board\b/i.test(channel.location ?? '');
 
 export const channelOf = (board: WiringBoard, id: string): BoardChannel | undefined => board.io.channels.find((channel) => channel.id === id);

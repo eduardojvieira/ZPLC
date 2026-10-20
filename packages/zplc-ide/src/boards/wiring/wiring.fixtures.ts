@@ -50,14 +50,14 @@ export const ESP32S3: WiringBoard = {
     digital('DI0', 'input', '%IX0.0', 'GPIO5', 'J1-5'),
     digital('DI1', 'input', '%IX0.1', 'GPIO6', 'J1-6'),
     digital('DI2', 'input', '%IX0.2', 'GPIO7', 'J1-7'),
-    digital('DI3', 'input', '%IX0.3', 'GPIO0 (BOOT)', 'on-board BOOT button'),
+    digital('DI3', 'input', '%IX0.3', 'GPIO8', 'J1-12'),
     analog('AI0', 'GPIO4 (ADC1 channel 3)', 'J1-4'),
   ]),
 };
 
 export const BOARDS: readonly WiringBoard[] = [PICO, ESP32S3];
 
-/** Every kind of part the course uses, and an input on the BOOT channel of the ESP32-S3. */
+/** Every kind of part the course uses, and the on-board LED of the Pico, wired on the Pico only. */
 export const WIRING: WiringFile = {
   schemaVersion: 1,
   parts: [
@@ -67,5 +67,6 @@ export const WIRING: WiringFile = {
     { id: 'armed', kind: 'jumper', channel: 'DI1', label: { en: 'Armed', es: 'Armado' } },
     { id: 'stop', kind: 'button', channel: 'DI3', label: { en: 'Stop', es: 'Parada' } },
     { id: 'level', kind: 'potentiometer', channel: 'AI0', ohms: 10000, label: { en: 'Level', es: 'Nivel' } },
+    { id: 'onboard', kind: 'led', channel: 'DO4', boards: ['rpi-pico-rp2040'], label: { en: 'On-board LED', es: 'LED de la placa' } },
   ],
 };

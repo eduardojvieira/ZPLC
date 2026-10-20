@@ -89,8 +89,9 @@ firmware cambia en todos los diagramas.
 | `potentiometer` | Extremos en 3V3 y GND, cursor en el pin analógico. |
 
 `boards` limita una pieza a algunas placas del estudiante, por ejemplo el LED integrado de la Pico; sin
-ese campo, la pieza se cablea en las dos placas. Un canal que la placa ya incluye (el LED de la Pico, el
-botón BOOT de la ESP32-S3) no necesita cableado.
+ese campo, la pieza se cablea en las dos placas. Un canal que la placa ya incluye, el LED integrado de la
+Pico, no necesita cableado. Todas las entradas de ambas placas son piezas en un pin del conector: el botón
+BOOT de la ESP32-S3 es un pin de arranque (strapping) y nunca es una de ellas.
 
 La CI de lecciones rechaza una lección de hardware cuando:
 
