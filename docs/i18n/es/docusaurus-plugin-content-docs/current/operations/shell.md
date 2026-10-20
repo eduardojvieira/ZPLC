@@ -30,7 +30,7 @@ Inicie cada comando con `zplc`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime. Mientras MQTT esté habilitado sobre TLS con la verificación del certificado apagada, muestra además `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` en `--json`).
-- `zplc reset` - Recarga el programa cargado desde el program store y deja el planificador detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el planificador y limpia sus tareas.
+- `zplc reset` - Recarga el programa cargado desde el almacén de programas y deja el planificador detenido. El almacén es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el planificador y limpia sus tareas.
 - `zplc version` - Muestra qué compilación es: la versión, la confirmación desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones de la misma confirmación son la misma imagen. El mismo texto es `zplc sys build`.
 
 ---
@@ -62,7 +62,7 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg info` - Muestra el estado de la máquina virtual y el PC actual.
 - `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
-- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
+- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del desplazamiento opcional.
 - `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de la aplicación ZPLC consulta la misma memoria.
 
 Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
@@ -149,7 +149,7 @@ Para las placas con hardware de red, como la ESP32-S3 o las placas STM32F7.
 
 ## Certificados y seguridad (`zplc cert`)
 
-Un broker MQTT seguro, como AWS IoT Core, requiere certificados TLS guardados en la placa.
+Un broker MQTT seguro, como AWS IoT Núcleo, requiere certificados TLS guardados en la placa.
 
 - `zplc cert status` - Muestra si están instalados el certificado de la CA, el certificado del cliente y la clave privada, y sus tamaños.
 - `zplc cert begin <ca|client|key> <size>` - Inicia una carga del tamaño indicado.

@@ -155,9 +155,9 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 
 - `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
   y sigue adelante cuando un servicio falla;
-- `program_store_nvs` ejecuta el program store sobre NVS en el simulador de flash con un artefacto tan grande como
+- `program_store_nvs` ejecuta el almacén de programas sobre NVS en el simulador de flash con un artefacto tan grande como
   la región de código, y corta la energía en cada operación de una carga;
-- `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
+- `modbus_force` escribe por el servidor Modbus sobre el núcleo real y muestra que una variable forzada conserva su
   valor forzado;
 - `scheduler_admission` retiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura de
   fuera espera a la captura de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los
@@ -177,7 +177,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   función en `test_port_timing`, y la página de la [interfaz de puerto](../runtime/port-interface.md) lista la suite
   completa (IO-013).
 
-Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
+Las suites de host del núcleo suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
 (un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
 decisiones del núcleo del planificador y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
 ciclo se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
@@ -185,8 +185,8 @@ una falla y la política de watchdog), `test_safe_state` (el valor seguro que de
 pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
 `test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
 valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
-declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un header público;
-`test_public_headers` falla si un header público declara uno.
+declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un encabezado público;
+`test_public_headers` falla si un encabezado público declara uno.
 
 ### La descripción de E/S de la placa
 
@@ -202,7 +202,7 @@ tercer byte de imagen, y ningún fuente del firmware las nombra.
 a su palabra de la imagen de entrada y sigue a la tensión; `zplc.io_analog.missing` nombra un canal de conversor que
 el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que exista ninguna tarea.
 `zplc.hal_persist_keys` guarda, lee y borra cada clave que el runtime almacena (el almacén de programas, los chunks de
-RETAIN de ambos slots y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
+RETAIN de ambas ranuras y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
 identificador responde con un error.
 
 El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambie un `dt.pin` o un
@@ -317,9 +317,9 @@ nunca el texto de los overlays, y hace fallar una placa cuando:
   bloques de borrado enteros o tiene bloques que su backend no puede montar
   (NVS rechaza un sector de más de 64 KB; una NOR serie que no indica su tamaño
   de borrado se toma con 64 KB);
-- (c) un almacén queda dentro del slot de la imagen, la flash que el enlazador
+- (c) un almacén queda dentro de la ranura de la imagen, la flash que el enlazador
   puede llenar. Donde el enlazador no acota la imagen (la ESP32-S3 ignora
-  el tamaño de carga de Zephyr), el slot es el presupuesto de flash de la placa, que
+  el tamaño de carga de Zephyr), la ranura es el presupuesto de flash de la placa, que
   la verificación de tamaño de la misma ejecución hace cumplir.
 
 Una línea por placa indica PASS o FAIL con el mapa de particiones. Una placa

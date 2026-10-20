@@ -77,7 +77,7 @@ clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchan
 - una lectura sale de la instantánea de IPI, OPI, WORK y RETAIN que el ciclo publica en su confirmación. Un valor es íntegro y de
   un solo ciclo, y una lectura nunca espera a un ciclo;
 - una escritura se encola completa y el ciclo la aplica en la captura de entradas de su siguiente ciclo, por la interfaz
-  del core que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
+  del núcleo que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
   Mientras no corre ningún ciclo (detenido, en pausa o con falla) no hay captura que esperar y la escritura se aplica
   de inmediato;
 - una escritura que no cabe en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza

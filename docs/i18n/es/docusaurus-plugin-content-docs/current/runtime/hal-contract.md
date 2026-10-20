@@ -1,6 +1,6 @@
 # Contrato HAL
 
-`firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el core de ZPLC y cualquier plataforma concreta.
+`firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el núcleo de ZPLC y cualquier plataforma concreta.
 
 Eso incluye los destinos Zephyr, los runtimes host/POSIX, un puerto para navegador con WebAssembly (el runtime de la simulación en el navegador, compilado con el IDE) y los futuros puertos de placa.
 
@@ -8,11 +8,11 @@ Las funciones de abajo, el puerto del planificador y la suite de conformidad que
 
 ## Regla central
 
-El core portable no debe llamar directamente a las APIs de la plataforma.
+El núcleo portable no debe llamar directamente a las APIs de la plataforma.
 
-Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el core debe usarlo mediante `zplc_hal_*`.
+Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el núcleo debe usarlo mediante `zplc_hal_*`.
 
-El core portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
+El núcleo portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
 
 ## Superficie HAL por responsabilidad
 
@@ -41,7 +41,7 @@ La superficie pública de E/S es por canal:
 - `zplc_hal_adc_read()`
 - `zplc_hal_dac_write()`
 
-El core direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
+El núcleo direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
 uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S de la placa en
 `firmware/app/boards/boards.json` (ver [Placas Soportadas](../reference/boards.md)).
 
@@ -90,7 +90,7 @@ La HAL es dueña de:
 - `zplc_hal_persist_load()`
 - `zplc_hal_persist_delete()`
 
-Estas primitivas permiten que el core portable use un program store
+Estas primitivas permiten que el núcleo portable use un almacén de programas
 independiente del backend. No proporcionan asignación, restore ni retención
 end-to-end calificada de `RETAIN` a nivel de fuente; esas declaraciones no están
 soportadas hoy.

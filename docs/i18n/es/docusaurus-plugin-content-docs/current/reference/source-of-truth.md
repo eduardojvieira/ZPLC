@@ -20,7 +20,7 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 
 | Pregunta | Autoridad | Nota |
 |---|---|---|
-| Runtime C y HAL | Headers públicos e implementación en `firmware/lib/zplc_core/` | Los tests muestran el comportamiento demostrado. |
+| Runtime C y HAL | Encabezados públicos e implementación en `firmware/lib/zplc_core/` | Los tests muestran el comportamiento demostrado. |
 | Compatibilidad de bytecode/ISA | `zplc_isa.h`, salida del compilador y tests de compatibilidad | La versión del producto no es la ABI. |
 | Sesión nativa de desktop | `packages/zplc-ide/src/runtime/` y spec 009 | Las capabilities indican soporte o degradación. |
 | Schema y migración actual del proyecto | `packages/zplc-ide/zplc.schema.json` y su migrador actual | Autoridad del formato actual; no implica actualización automática de consumidores. |

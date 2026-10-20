@@ -181,7 +181,7 @@ Las herramientas manuales están en `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` e `inspect_event_grid.py` se ejecutan contra un broker local y
 responden los tópicos de aprovisionamiento. Comprueban el flujo de tópicos y las
 transiciones de estado del dispositivo. No demuestran que un bloque funcione con el
-Azure DPS, el Event Grid o el AWS IoT Core reales, y las comprobaciones del proyecto
+Azure DPS, el Event Grid o el AWS IoT Núcleo reales, y las comprobaciones del proyecto
 no registran ninguna ejecución de ellas.
 
 ## Vea también

@@ -40,7 +40,7 @@ los fragmentos de configuración, el manifiesto de capturas y las afirmaciones s
 
 `.github/workflows/deploy-docs.yml` se ejecuta en un pull request o en un push a `main` (o
 `master`) que cambia `docs/`, `tools/docs/`, `tools/hil/validate_docs_parity.py`, las
-cabeceras del core o `firmware/app/boards/boards.json`. Instala las dependencias, genera y
+cabeceras del núcleo o `firmware/app/boards/boards.json`. Instala las dependencias, genera y
 valida las referencias (`bun run generate:docs` y `bun run validate:docs` en `docs/`),
 construye el sitio y sube `docs/build` como artefacto.
 

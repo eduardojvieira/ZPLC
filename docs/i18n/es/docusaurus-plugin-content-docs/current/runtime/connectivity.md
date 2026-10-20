@@ -27,7 +27,7 @@ ZPLC muestra la configuración de Wi-Fi o Ethernet solo para las placas que tien
 El firmware implementa:
 
 - **Modbus**: Tanto Modbus RTU (Serial) como Modbus TCP (Red).
-- **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Core y Azure IoT Hub.
+- **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Núcleo y Azure IoT Hub.
 
 ## Configurar la conectividad
 
@@ -95,11 +95,11 @@ Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RU
 | Servidor Modbus TCP y RTU | Los bytes de las variables que enlazaste con `{modbus}`, a través del mapeo del servidor y de la escritura del intercambio que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
 | Tópicos MQTT de variables suscriptas (`DCMD`, tópicos de comando) | Los bytes de las variables que marcaste `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
 | Rebirth `NCMD`/`DCMD` de Sparkplug B | Hace que el nodo publique de nuevo sus certificados de nacimiento | RUN/STOP, forzados, descarga de programa |
-| Mensaje de Azure de nube a dispositivo | El payload del bloque `AZURE_C2D_RECV` que ejecuta su programa | RUN/STOP, forzados, descarga de programa |
+| Mensaje de Azure de nube a dispositivo | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa | RUN/STOP, forzados, descarga de programa |
 | Direct methods y device twin de Azure, shadow y jobs de AWS | Nada: se registran, y un direct method se responde `501` (no implementado) | RUN/STOP, forzados, descarga de programa |
 | Respuesta de aprovisionamiento (Azure DPS, AWS fleet) | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas | RUN/STOP, forzados, descarga de programa |
 
-Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio, y el objeto del intercambio por el que escriben se mide con la misma lista. Y dos pruebas ponen el código de entrada delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas: una envía cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`), y otra entrega tópicos y payloads hostiles (órdenes de stop, run, force y load en texto y JSON, cada valor de byte, el payload más largo, métricas de control de nodo de Sparkplug B) al cliente MQTT del producto con cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue una escritura a una variable enlazada, encolada a través del intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
+Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio, y el objeto del intercambio por el que escriben se mide con la misma lista. Y dos pruebas ponen el código de entrada delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas: una envía cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`), y otra entrega tópicos y contenidos hostiles (órdenes de stop, run, force y load en texto y JSON, cada valor de byte, el contenido más largo, métricas de control de nodo de Sparkplug B) al cliente MQTT del producto con cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue una escritura a una variable enlazada, encolada a través del intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
 
 ## Ajustes guardados
 

@@ -9,25 +9,25 @@ description: Cómo ZPLC almacena la lógica compilada verificada y la región RE
 
 # Persistencia y memoria retenida
 
-Para perfiles con un backend program-store habilitado y operativo, ZPLC puede
-confirmar transaccionalmente un artefacto `.zplc` desplegado y verificado. El
-restore publica el artefacto como lógicamente detenido/READY. El comportamiento
+Para perfiles con un backend de almacén de programas habilitado y operativo, ZPLC puede
+confirmar transaccionalmente un artefacto `.zplc` desplegado y verificado. La
+restauración publica el artefacto como lógicamente detenido/READY. El comportamiento
 de las salidas antes de ejecutar es específico del perfil de destino y requiere
 evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
 ## Backends de la plataforma
 
-El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
+El núcleo del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
 
 | Plataforma | Backend de Almacenamiento |
 |---|---|
-| **Perfil Zephyr** | Backend program-store cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL. |
-| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el program store y los registros `RETAIN`. |
+| **Perfil Zephyr** | Backend de almacén de programas cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL. |
+| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el almacén de programas y los registros `RETAIN`. |
 | **Simulador WASM** | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
 
 ## Persistencia del programa en hardware
 
-Cuando un perfil dispone de un backend program-store operativo, una carga
+Cuando un perfil dispone de un backend de almacén de programas operativo, una carga
 `.zplc` verificada puede confirmarse mediante ese backend.
 
 ```mermaid
@@ -39,7 +39,7 @@ flowchart LR
   Ready --> Start[zplc start explícito]
 ```
 
-Al iniciar, un program store habilitado puede proporcionar un artefacto válido
+Al iniciar, un almacén de programas habilitado puede proporcionar un artefacto válido
 para verificación y restore lógicamente detenido/READY. El comportamiento de
 las salidas antes de ejecutar es específico del perfil de destino y requiere
 evidencia registrada. La carga termina al completar la carga verificada; nunca
@@ -47,9 +47,9 @@ arranca la máquina. El arranque es una operación humana separada y explícita.
 La evidencia destino, power-cut, HIL y eléctrica sigue siendo específica del
 perfil exacto y no se ejecutó aquí.
 
-### Cómo guarda el store un programa
+### Cómo guarda el almacén un programa
 
-El store tiene dos slots, A y B, y un registro activo pequeño que nombra el slot que debe ejecutarse. Un slot es el
+El almacén tiene dos ranuras, A y B, y un registro activo pequeño que nombra la ranura que debe ejecutarse. Una ranura es el
 artefacto, un pie de 8 bytes (`ZPE1` y la longitud del artefacto) y un registro de metadatos de 32 bytes; todos los
 registros llevan un CRC-32 y la versión de formato. El runtime host y el firmware ejecutan el mismo código
 (`zplc_program_store.c`) sobre las llamadas de persistencia de la HAL, de modo que el orden de las escrituras que
@@ -59,42 +59,42 @@ Una carga escribe la ranura que no está activa, la relee y la verifica, escribe
 relee, y solo entonces escribe el registro activo: esa escritura es el único punto en que el programa nuevo pasa a
 ser el que se restaura. Después los metadatos se reescriben como confirmados.
 
-| Un corte de energía ... | Qué encuentra el siguiente restore |
+| Un corte de energía ... | Qué encuentra la siguiente restauración |
 |---|---|
-| antes de escribir el registro activo | El programa anterior. Un store que nunca tuvo uno está vacío. |
-| a mitad del payload nuevo | El programa anterior: un slot mitad viejo y mitad nuevo no pasa el CRC-32 de su artefacto y nunca se acepta. |
-| después del registro activo y antes de reescribir los metadatos | El programa nuevo: el slot se releyó antes de mover el puntero. |
-| que daña el registro activo | El slot confirmado completo más reciente. |
+| antes de escribir el registro activo | El programa anterior. Un almacén que nunca tuvo uno está vacío. |
+| a mitad del contenido nuevo | El programa anterior: una ranura a medias vieja y a medias nueva no pasa el CRC-32 de su artefacto y nunca se acepta. |
+| después del registro activo y antes de reescribir los metadatos | El programa nuevo: la ranura se releyó antes de mover el puntero. |
+| que daña el registro activo | La última ranura confirmada y completa. |
 
-Los registros que existen y no verifican nunca se toman por un store vacío: el restore los informa como no
-verificables y una carga se niega a escribir encima. Un store escrito por el primer firmware (una clave, `code_len`
+Los registros que existen y no verifican nunca se toman por un almacén vacío: la restauración los informa como no
+verificables y una carga se niega a escribir encima. Un almacén escrito por el primer firmware (una clave, `code_len`
 y `code`) se restaura tal cual y se migra en la siguiente carga.
 
-Un almacén clave-valor en flash guarda una entrada dentro de un sector de borrado, así que el payload se corta en
+Un almacén clave-valor en flash guarda una entrada dentro de un sector de borrado, así que el contenido se corta en
 trozos de `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 por defecto), cada uno bajo su propia clave. El mayor
 artefacto es un único número, `CONFIG_ZPLC_CODE_SIZE_MAX`: es la región de código, el mayor artefacto que acepta el
-loader, el tamaño de los buffers de recepción y de restore, el tamaño que informa `zplc sys info`
-(`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos slots
+cargador, el tamaño de los búferes de recepción y de restore, el tamaño que informa `zplc sys info`
+(`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos ranuras
 de ese tamaño, en trozos, no caben en la partición de almacenamiento. Por eso el perfil Raspberry Pi Pico fija 24576
 bytes (su partición de 128 KB también guarda los registros de RETAIN), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), y
-el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El buffer de staging de carga y la VM
+el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El búfer de staging de carga y la VM
 guardan cada uno un programa en RAM, así que un perfil gasta dos veces su tamaño de código. No hay una tercera copia
-residente: el buffer de staging conserva el artefacto cargado, y `zplc reset` recarga el programa desde el store, que
+residente: el búfer de staging conserva el artefacto cargado, y `zplc reset` recarga el programa desde el almacén, que
 guarda el mismo (un reset cancela una carga en curso).
 
 Una carga tiene que saber, antes de escribir, que existe un programa real al que volver, y eso significa leer ese
-programa y admitirlo, lo que necesita un buffer del tamaño de código. El store no tiene uno propio: lee el rollback
-en el buffer de staging cuando empieza una carga, mientras ese buffer está libre (`zplc load`, `zplc sched load` y el
+programa y admitirlo, lo que necesita un búfer del tamaño de código. El almacén no tiene uno propio: lee la reversión
+en el búfer de staging cuando empieza una carga, mientras ese búfer está libre (`zplc load`, `zplc sched load` y el
 inicio de una transferencia de programa del enlace de dispositivo), y la confirmación al final de la carga sigue adelante
 solo si el registro activo y los dos registros de metadatos son todavía los de los que se leyó la respuesta. El
 único que escribe esos registros es una confirmación, así que son los mismos salvo que la carga haya sido adelantada, y
-entonces no se escribe nada. Un store cuyos registros no verifican nada no da rollback, y la confirmación se niega como
-siempre. El payload del rollback se admitió cuando empezó la carga, no cuando terminó.
+entonces no se escribe nada. Un almacén cuyos registros no verifican nada no da rollback, y la confirmación se niega como
+siempre. El contenido de la reversión se admitió cuando empezó la carga, no cuando terminó.
 
 Lo que se ha demostrado: un corte de energía inyectado en cada operación de una carga y una escritura truncada en
-cada registro, en el host (`test_program_store`, que también barre la carga como lo hace el firmware, con el rollback
+cada registro, en el host (`test_program_store`, que también barre la carga como lo hace el firmware, con la reversión
 encontrado al inicio de la carga), y un corte de energía en cada operación de una carga del tamaño
-máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
+máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo búfer que
 usó la carga. Lo que no: un corte de energía en una placa. El controlador de flash, el
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
 perfil (HIL-010).
@@ -129,24 +129,24 @@ presupuesto de flash de abajo acota desde el otro lado.
 ### El registro
 
 Dos registros se alternan, de modo que un corte de energía durante un guardado
-nunca destruye el último bueno. Un guardado escribe el slot más antiguo con un
+nunca destruye el último bueno. Un guardado escribe la ranura más antigua con un
 número de secuencia uno por encima del más nuevo. Cada registro se corta en
 fragmentos de como máximo `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` bytes (1024 por
 defecto), guardados bajo las claves `retain_a0`, `retain_a1`, ... y
 `retain_b0`, ..., porque una entrada del almacenamiento puede ser menor que la
 región (NVS en un sector de 4 KB).
 
-| Offset | Tamaño | Campo |
+| Desplazamiento | Tamaño | Campo |
 |---|---|---|
-| 0 | 4 | magic `ZRTN` |
+| 0 | 4 | número mágico `ZRTN` |
 | 4 | 2 | versión de formato, 1 |
 | 6 | 2 | reservado, cero |
 | 8 | 4 | número de secuencia, nunca 0 |
 | 12 | 4 | identidad del programa: la palabra CRC32 de la cabecera del artefacto |
 | 16 | 4 | identidad del programa: la palabra de tamaño de código de la cabecera del artefacto |
 | 20 | 4 | hash de layout |
-| 24 | 4 | longitud del payload, el tamaño de la región `RETAIN` |
-| 28 | n | payload, los bytes de la región |
+| 24 | 4 | longitud del contenido, el tamaño de la región `RETAIN` |
+| 28 | n | contenido, los bytes de la región |
 | 28+n | 4 | CRC-32 de todos los bytes anteriores |
 
 El hash de layout es un CRC-32 sobre el tamaño de la región, la dirección de la
@@ -157,18 +157,18 @@ layout a nivel de variable para llevarlos a través de un cambio.
 
 ### Qué hace un reinicio
 
-El restore toma el registro válido con la secuencia más alta cuya identidad y
-layout coinciden. Si un registro falla su checksum, se prueba el otro. Si
+La restauración toma el registro válido con la secuencia más alta cuya identidad y
+layout coinciden. Si un registro falla su suma de verificación, se prueba el otro. Si
 ninguno coincide, la región se pone en cero y el estado dice por qué:
 
 | `reason` | Significado |
 |---|---|
 | `restored` | Se restauró un registro válido de este programa y layout. |
-| `none` | Ningún registro en ninguno de los dos slots: primer arranque, almacenamiento borrado, o sin backend de almacenamiento. |
+| `none` | Ningún registro en ninguno de las dos ranuras: primer arranque, almacenamiento borrado, o sin backend de almacenamiento. |
 | `identity_mismatch` | Existen registros válidos, escritos por otro programa. |
 | `layout_mismatch` | El mismo programa, pero otro tamaño de región, dirección o layout del runtime. |
 | `corrupt` | Existen registros y ninguno pasa las comprobaciones de formato y checksum. |
-| `io_error` | El backend de almacenamiento falló en ambos slots. Los guardados se rechazan hasta que un restore lea de nuevo el backend. |
+| `io_error` | El backend de almacenamiento falló en ambas ranuras. Los guardados se rechazan hasta que una restauración lea de nuevo el backend. |
 | `reset` | Un comando de reset inicializó la región. |
 | `not_restored` | No hay programa cargado. |
 
@@ -211,7 +211,7 @@ escenarios que lo comparan con el del host.
 
 `CONFIG_ZPLC_RETAIN_PERSIST` está desactivado por defecto. La ruta de escritura está cubierta por la
 suite `retain_persist` en `native_sim` (ambos anchos de palabra) y por la aserción de desgaste en tiempo
-de compilación; ninguna placa fue medida: una escritura en flash puede detener la captura de instrucciones
+de compilación; ninguna placa fue medida: una escritura en flash puede detener la búsqueda de instrucciones
 en partes que ejecutan desde la misma flash. Se establece `CONFIG_ZPLC_RETAIN_PERSIST=y` en el archivo de la placa, con
 los números de resistencia de la sección siguiente, cuando esa placa haya superado su registro de hardware
 (HIL-010). Hasta entonces la región `RETAIN` se inicializa en cada arranque en el firmware y el estado no
@@ -229,7 +229,7 @@ una región que cambia en cada intervalo. Para una placa:
 - la partición de almacenamiento absorbe los bytes de desgaste de la tabla por
   cada borrado de todos los sectores: los sectores menos el que NVS mantiene
   libre, menos los datos vivos que la recolección de basura copia en cada rotación
-  (los dos slots de programa y el registro de RETAIN que no se está escribiendo;
+  (las dos ranuras de programa y el registro de RETAIN que no se está escribiendo;
   en la Pico, unos 59.000 bytes);
 - la flash está especificada para un número de ciclos de borrado por sector.
 
@@ -266,7 +266,7 @@ ejecución, gasta el presupuesto de un año en días.
 
 ### Qué almacén ocupa qué partición
 
-Una placa con firmware tiene hasta dos almacenes en la flash: los registros de la HAL (los slots del programa,
+Una placa con firmware tiene hasta dos almacenes en la flash: los registros de la HAL (las ranuras del programa,
 `RETAIN`, las claves de configuración `cfg_00` a `cfg_99` y las credenciales) y, en las placas con red, el sistema de
 archivos de configuración (LittleFS: el archivo de configuración, los archivos de certificados y, donde las
 credenciales de Wi-Fi pasan por la configuración, esas credenciales). Dos almacenes en una misma partición se
@@ -280,7 +280,7 @@ nombra un archivo del sistema de archivos o uno de los dos registros de credenci
 guardado lo contiene y nunca se lee: ninguna configuración puede entregar el programa ni una clave del enlace del
 dispositivo a la pila TLS.
 
-| Placa | Registros de la HAL | Sistema de archivos de configuración | Slot de la imagen |
+| Placa | Registros de la HAL | Sistema de archivos de configuración | Ranura de la imagen |
 |---|---|---|---|
 | Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1e0000 |
 | Waveshare RP2040-Zero | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1e0000 |
@@ -293,10 +293,10 @@ dispositivo a la pila TLS.
 Las direcciones son las del devicetree de cada compilación. `tools/hil/check_storage_partitions.py` las lee del
 `zephyr.dts` y del `.config` que `run.sh size` conserva para cada placa, y falla cuando dos almacenes comparten o
 superponen una partición, cuando un almacén tiene menos de dos bloques de borrado o bloques que su backend no puede
-montar (NVS rechaza un sector de más de 64 KB), o cuando un almacén queda dentro del slot de la imagen, el rango de
+montar (NVS rechaza un sector de más de 64 KB), o cuando un almacén queda dentro de la ranura de la imagen, el rango de
 flash que el enlazador puede llenar con la imagen. Las dos placas RP2040 terminan su `code_partition` antes de los
 registros, de modo que el enlazador rechaza una imagen que crecería sobre ellos. El enlazador de la ESP32-S3 no acota
-la imagen (ignora el tamaño de carga de Zephyr y llega al final de la flash), así que su slot es el presupuesto de flash
+la imagen (ignora el tamaño de carga de Zephyr y llega al final de la flash), así que su ranura es el presupuesto de flash
 de la placa, que la verificación de tamaño de la misma ejecución hace cumplir. Las siete placas pasan, y
 `tools/hil/storage-partitions-open.json`, la lista de placas con una falla conocida, está vacía. CI ejecuta la misma
 verificación en cada compilación cruzada; ese paso está escrito y no se ejecutó aquí. Para las placas
@@ -311,7 +311,7 @@ guardadas a través de la configuración nunca se almacenaron; las claves de con
 arranque después de la actualización el sistema de archivos formatea `storage_partition`. En la GIGA R1, la Opta y la
 STM32F746G los registros de la HAL conservan el área que tenían, de modo que una placa conserva su programa guardado,
 sus valores `RETAIN` y sus claves de configuración; el sistema de archivos ocupa el área de aprovisionamiento de la
-biblioteca Arduino IoT Cloud (`kvs`) en las dos placas Arduino y el segundo slot de imagen de MCUboot en la
+biblioteca Arduino IoT Cloud (`kvs`) en las dos placas Arduino y la segunda ranura de imagen de MCUboot en la
 STM32F746G, que este firmware no usa. Una ESP32-S3 que ejecutó una imagen anterior guardaba sus registros en
 `storage_partition`: después de la actualización no se conservan el programa guardado, los valores `RETAIN` ni las
 claves de configuración de esa imagen. Una Nucleo-H743ZI nunca guardó ninguno. En esas dos placas, despliegue el

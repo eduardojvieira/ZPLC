@@ -7,7 +7,7 @@ tags: [runtime, embedded, hal]
 
 # Capa de abstracción de hardware (HAL): los puertos
 
-El [contrato HAL](./hal-contract.md) dice qué le pide el core portable a una plataforma.
+El [contrato HAL](./hal-contract.md) dice qué le pide el núcleo portable a una plataforma.
 Esta página dice qué hace con él cada puerto del árbol de código fuente y qué exige agregar
 uno. El contrato es `firmware/lib/zplc_core/include/zplc_hal.h`; los puertos son los cuatro
 directorios que están bajo `firmware/lib/zplc_core/src/hal/`.
@@ -87,7 +87,7 @@ valor por defecto y su rango.
 1. Agregue `src/hal/<plataforma>/zplc_hal_<plataforma>.c` junto a los demás puertos y
    defina cada función que declara `zplc_hal.h`. Responda `ZPLC_HAL_NOT_IMPL` para lo
    que la plataforma no puede hacer.
-2. Compílelo con el core: las fuentes portables son `src/core/*.c`, que no deben incluir
+2. Compílelo con el núcleo: las fuentes portables son `src/core/*.c`, que no deben incluir
    ninguna cabecera de plataforma (un objetivo de ese CMake las compila solas y se detiene
    ante una inclusión de plataforma), y el puerto se lista en el CMake de
    `firmware/lib/zplc_core` como se lista el puerto POSIX.
@@ -99,7 +99,7 @@ valor por defecto y su rango.
    python3 tools/ci/check_hal_contract.py
    ```
 
-4. Ejecute las pruebas del core (`bun run test:core`), que compilan el core con los
+4. Ejecute las pruebas del núcleo (`bun run test:core`), que compilan el núcleo con los
    sanitizadores de direcciones y de comportamiento indefinido. Un puerto que no es la
    compilación del host ejecuta la suite de conformidad en su propia compilación, como hace
    el puerto FreeRTOS con `bash tools/freertos/test.sh`.

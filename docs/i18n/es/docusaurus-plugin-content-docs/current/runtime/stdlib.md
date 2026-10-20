@@ -245,7 +245,7 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ## 8. Funciones de cadenas de texto
 
-Las cadenas son buffers acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
+Las cadenas son búferes acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
 
 Una función que arma una cadena (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) devuelve una cadena nueva y nunca modifica sus argumentos. Las posiciones empiezan en 1.
 
@@ -386,12 +386,12 @@ Un controlador PID discreto.
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
 
-### FIFO (buffer primero en entrar, primero en salir)
+### FIFO (búfer primero en entrar, primero en salir)
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
 - **Entradas:**
   - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
   - `POP` (BOOL): Un flanco de subida mueve el valor más antiguo a `DATA_OUT`.
-  - `RST` (BOOL): Vacía el buffer.
+  - `RST` (BOOL): Vacía el búfer.
   - `DATA_IN` (DINT): El valor a guardar.
   - `SIZE` (DINT): Capacidad, de 1 a 8. Una llamada que lo omite recibe 8, igual que un valor fuera de 1 a 8: una instancia tiene lugar para 8 valores.
 - **Salidas:**
@@ -399,7 +399,7 @@ Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
   - `COUNT` (DINT): Valores guardados.
   - `EMPTY` (BOOL): TRUE cuando `COUNT` es 0.
   - `FULL` (BOOL): TRUE cuando `COUNT` llegó a la capacidad.
-- **Comportamiento:** Un push en un buffer lleno y un pop de uno vacío no hacen nada.
+- **Comportamiento:** Un push en un búfer lleno y un pop de uno vacío no hacen nada.
 
-### LIFO (buffer último en entrar, primero en salir)
+### LIFO (búfer último en entrar, primero en salir)
 Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.

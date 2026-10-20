@@ -100,7 +100,7 @@ compila. Elija el `profile`:
 | --- | --- | --- |
 | `sparkplug-b` | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con carga protobuf |
 | `generic-broker` | Cualquier broker MQTT | Un mensaje de telemetría en JSON |
-| `aws-iot-core` | AWS IoT Core | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
+| `aws-iot-core` | AWS IoT Núcleo | Los mensajes genéricos; AWS IoT Núcleo autentica un dispositivo con un certificado de cliente y una clave |
 | `azure-iot-hub` | Azure IoT Hub | Mensajes de dispositivo a nube en los tópicos del hub |
 | `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetría en el tópico que usted nombra en `azureEventGridTopic`, o en el tópico genérico |
 

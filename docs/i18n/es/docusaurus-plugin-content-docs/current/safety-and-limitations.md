@@ -103,8 +103,8 @@ caso se corrige.
 - Ninguna de las placas soportadas tiene un almacén protegido: las credenciales se
   guardan con el resto de los ajustes y quien pueda leer la flash de la placa
   puede leerlas. Use una cuenta con solo los derechos que el controlador necesita.
-- Los instaladores no están firmados con una identidad de pago. Compruebe el
-  checksum de cada descarga: [Instalar ZPLC](./getting-started/install.md).
+- Los instaladores no están firmados con una identidad de pago. Compruebe la
+  suma de verificación de cada descarga: [Instalar ZPLC](./getting-started/install.md).
 - En la Nucleo-H743ZI y en la Arduino Opta, TLS está desactivado hasta que su
   generador de números aleatorios se haya verificado en la placa, y MQTT funciona
   sobre TCP sin cifrar.

@@ -19,7 +19,7 @@ El módulo se compila a partir de los archivos del runtime nativo y del firmware
 |---|---|---|
 | La VM y el cargador con su verificador | `firmware/lib/zplc_core/src/core` | El resultado de cada ciclo y el rechazo de un programa cuyo código el verificador no puede demostrar |
 | El núcleo del planificador | `zplc_sched_core.c` | Admisión, orden, fases de un ciclo, plazos, la retención de la falla y el estado seguro (RT-008, RT-009) |
-| Las reglas de retención | `zplc_retain.c` | El registro, su checksum, el hash de layout, la identidad del programa y dos ranuras alternadas (RT-025, RT-027) |
+| Las reglas de retención | `zplc_retain.c` | El registro, su suma de verificación, el hash de layout, la identidad del programa y dos ranuras alternadas (RT-025, RT-027) |
 | La sesión | `firmware/apps/posix_host/src/native_runtime_session.c` | Las mismas solicitudes y respuestas que el runtime nativo: cargar, iniciar, pausar, paso, puntos de parada, forzados, entradas de simulación |
 | El puerto del HAL | `firmware/lib/zplc_core/src/hal/wasm/zplc_hal_wasm.c` | Cinco llamadas hacia la página: un reloj, tres de persistencia y una línea de log |
 
