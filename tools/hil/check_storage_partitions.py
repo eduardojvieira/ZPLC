@@ -19,7 +19,9 @@ Three checks per user:
   (b) it is whole erase blocks of its flash, at least two of them, and the erase block is one the user can mount
       (NVS refuses a sector above 64 KB);
   (c) it does not overlap the image slot, the flash range the linker may fill with the image
-      (CONFIG_FLASH_LOAD_OFFSET and CONFIG_FLASH_LOAD_SIZE on the `zephyr,flash` device; a size of 0 runs to the end).
+      (CONFIG_FLASH_LOAD_OFFSET and CONFIG_FLASH_LOAD_SIZE on the `zephyr,flash` device). A size of 0 is a slot the
+      linker does not bound; it is held to the flash budget of the board (tools/firmware-test/size-budget.json),
+      which the size check fails an image above, and runs to the end of the flash for a board without a budget.
 
 A board whose failure is known and owned elsewhere is listed in storage-partitions-open.json with the checks that
 fail. The list only shrinks: a listed check that passes fails the run until its entry is removed.
@@ -36,6 +38,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 BOARDS_JSON = HERE.parents[1] / "firmware/app/boards/boards.json"
 OPEN_JSON = HERE / "storage-partitions-open.json"
+BUDGET_JSON = HERE.parents[1] / "tools/firmware-test/size-budget.json"
 
 #: NVS_MAX_SECTOR_SIZE of subsys/kvss/nvs/nvs_priv.h: NVS refuses a sector above it, and a sector is whole erase blocks.
 NVS_MAX_SECTOR = 64 * 1024
@@ -148,8 +151,12 @@ def flash_size(device: Node) -> int:
     return sum(cell << (32 * index) for index, cell in enumerate(reversed(reg[address_cells[0]:])))
 
 
-def check_build(dts_text: str, config_text: str) -> tuple[list[str], dict[str, list[str]]]:
-    """The storage users of one build, each with its partition, and the failures per check (a, b, c)."""
+def check_build(dts_text: str, config_text: str, flash_budget: int | None = None) -> tuple[list[str], dict[str, list[str]]]:
+    """The storage users of one build, each with its partition, and the failures per check (a, b, c).
+
+    A slot the linker does not bound (CONFIG_FLASH_LOAD_SIZE of 0: the ESP32-S3 linker ignores it and runs to the
+    end of the flash) is held to the flash budget of the board when one is given: the size check of the same mode
+    fails an image above it."""
     tree, config = parse_dts(dts_text), read_config(config_text)
     by_label = {label: node for node in tree.walk() for label in node.labels}
     partitions = [Partition(node) for node in tree.walk()
@@ -171,7 +178,14 @@ def check_build(dts_text: str, config_text: str) -> tuple[list[str], dict[str, l
     code = by_label.get(chosen.props.get("zephyr,code-partition", [""])[0].lstrip("&"))
     slot_start = int(config.get("CONFIG_FLASH_LOAD_OFFSET", "0"), 0)
     slot_size = int(config.get("CONFIG_FLASH_LOAD_SIZE", "0"), 0)
-    slot_end = slot_start + slot_size if slot_size else (flash_size(flash) if flash else 0)
+    slot_note = ""
+    if slot_size:
+        slot_end = slot_start + slot_size
+    elif flash_budget:
+        slot_end = slot_start + flash_budget
+        slot_note = " (the flash budget of the board: the linker does not bound it)"
+    else:
+        slot_end = flash_size(flash) if flash else 0
 
     lines, placed = [], []
     for user, label, largest_erase in users:
@@ -214,7 +228,7 @@ def check_build(dts_text: str, config_text: str) -> tuple[list[str], dict[str, l
     if not users:
         failures["a"].append("the build enables no storage user (CONFIG_NVS, CONFIG_ZMS, CONFIG_FILE_SYSTEM_LITTLEFS)")
     if flash is not None:
-        lines.append(f"image slot 0x{slot_start:x}-0x{slot_end:x} of {device_name(flash)}")
+        lines.append(f"image slot 0x{slot_start:x}-0x{slot_end:x} of {device_name(flash)}{slot_note}")
     return lines, failures
 
 
@@ -223,7 +237,13 @@ def board_id(config_text: str, boards: list[dict]) -> str | None:
     return next((board["board_id"] for board in boards if board["zephyr_board"] == target), None)
 
 
-def report(build_dirs: list[Path], boards: list[dict], known_open: dict[str, dict]) -> tuple[list[str], int]:
+def flash_budgets() -> dict[str, int]:
+    """The flash budget of every board, from the size check (tools/firmware-test/size-budget.json)."""
+    return {board: entry["budget"]["flash"] for board, entry in json.loads(BUDGET_JSON.read_text())["boards"].items()}
+
+
+def report(build_dirs: list[Path], boards: list[dict], known_open: dict[str, dict],
+           budgets: dict[str, int] | None = None) -> tuple[list[str], int]:
     out, status = [], 0
     for build in build_dirs:
         dts, config = build / "zephyr/zephyr.dts", build / "zephyr/.config"
@@ -233,7 +253,7 @@ def report(build_dirs: list[Path], boards: list[dict], known_open: dict[str, dic
             continue
         config_text = config.read_text()
         board = board_id(config_text, boards) or build.name
-        lines, failures = check_build(dts.read_text(), config_text)
+        lines, failures = check_build(dts.read_text(), config_text, (budgets or {}).get(board))
         listed = set(known_open.get(board, {}).get("checks", []))
         failing = {check for check, found in failures.items() if found}
         unlisted = failing - listed
@@ -259,7 +279,7 @@ def main(argv: list[str]) -> int:
         return 0 if argv else 2
     boards = json.loads(BOARDS_JSON.read_text())
     known_open = json.loads(OPEN_JSON.read_text())
-    lines, status = report([Path(arg) for arg in argv], boards, known_open)
+    lines, status = report([Path(arg) for arg in argv], boards, known_open, flash_budgets())
     print("\n".join(lines))
     return status
 

@@ -93,7 +93,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 | `qemu-m3` | Las suites Zephyr en `qemu_cortex_m3`, más las suites del núcleo | Comportamiento sobre un conjunto de instrucciones Cortex-M real con 64 KB de RAM, enums cortos y una pila de hilo de 1 KB por defecto | Tiempos: QEMU no es exacto por ciclo. Las regiones de memoria de la VM se reducen para caber |
 | `qemu-m0` | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM) | División, desplazamientos, conversión de float y acceso no alineado en un núcleo ARMv6-M sin división por hardware ni acceso no alineado | La suite completa de la VM: no cabe, vea los límites más abajo |
 | `app` | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta | El codificador produce las cargas esperadas en un host de 64 bits | El cliente MQTT, TLS ni ningún comportamiento de red |
-| `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado | Uso de pila y de heap en ejecución, ni que la imagen corra |
+| `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado, y que cada almacén de la imagen tenga una partición de flash propia (IO-008) | Uso de pila y de heap en ejecución, ni que la imagen corra |
 | `tidy` | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app` | Los archivos analizados no tienen ninguno de los defectos que buscan los chequeos habilitados | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
 
 ## Cómo leer el resultado
@@ -250,7 +250,10 @@ trabajo. Cada trabajo `zephyr-cross-build` comprueba la flash y la RAM de su
 placa frente a `size-budget.json` y escribe la tabla en el resumen del
 trabajo. La herramienta de informes tiene sus propias pruebas unitarias,
 `tools/firmware-test/test_fwtest.py`, que demuestran que la compuerta falla
-cuando un tamaño excede su presupuesto en un solo byte.
+cuando un tamaño excede su presupuesto en un solo byte. El mismo trabajo ejecuta
+luego la verificación de particiones de la sección siguiente sobre su
+compilación. Ese paso está escrito en `.github/workflows/ci.yml` y no se ejecutó
+aquí; `run.sh size` ejecuta la misma verificación en local.
 
 ## Presupuestos de tamaño
 
@@ -295,6 +298,40 @@ python3 tools/firmware-test/footprint_report.py \
 
 El informe solo lee archivos. Sus propias pruebas son
 `tools/firmware-test/test_footprint_report.py`.
+
+## Particiones de flash de los almacenes
+
+`run.sh size` también ejecuta `tools/hil/check_storage_partitions.py` (IO-008)
+sobre cada placa que compiló. La verificación lee el `zephyr.dts` y el `.config`
+que cada compilación conserva en `$ZPLC_FW_WS/out/size/<id de placa>/zephyr`,
+nunca el texto de los overlays, y hace fallar una placa cuando:
+
+- (a) dos almacenes comparten o superponen una partición, o un almacén se
+  superpone con otra partición. Los almacenes son los registros de la HAL (en
+  `zplc_nvs_partition`, o en `storage_partition` si la placa no la tiene) y el
+  sistema de archivos de configuración (LittleFS, en `storage_partition`);
+- (b) un almacén tiene menos de dos bloques de borrado de su flash, no ocupa
+  bloques de borrado enteros o tiene bloques que su backend no puede montar
+  (NVS rechaza un sector de más de 64 KB; una NOR serie que no indica su tamaño
+  de borrado se toma con 64 KB);
+- (c) un almacén queda dentro del slot de la imagen, la flash que el enlazador
+  puede llenar. Donde el enlazador no acota la imagen (la ESP32-S3 ignora
+  el tamaño de carga de Zephyr), el slot es el presupuesto de flash de la placa, que
+  la verificación de tamaño de la misma ejecución hace cumplir.
+
+Una línea por placa indica PASS o FAIL con el mapa de particiones. Una placa
+cuya falla es conocida y pertenece a otro trabajo puede figurar con las
+verificaciones que fallan en `tools/hil/storage-partitions-open.json`; la lista
+está vacía y solo se reduce. Para ejecutar la verificación sola sobre árboles de
+compilación que ya existen:
+
+```bash
+python3 tools/hil/check_storage_partitions.py ~/zplc-zephyr-ws/out/size/*/
+```
+
+Sus pruebas unitarias son `tools/hil/test_hil_storage_partitions.py`. Es
+evidencia a nivel de compilación: cómo se comporta la flash de una placa
+requiere el banco de HIL-010.
 
 ## Agregar una prueba
 

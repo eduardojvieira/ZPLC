@@ -21,11 +21,16 @@ static struct fs_mount_t certs_mount = {
     .mnt_point = "/certs",
 };
 
+/* A store that answers every key, as the HAL does for every record it has an identifier for (the program, the
+ * settings keys, the keys of the device link): what the reader asks for is what the tests below look at. */
+static unsigned int persist_loads;
+
 zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len)
 {
     static const char value[] = "stored";
 
-    if (key != NULL && strcmp(key, "pem") == 0 && len >= sizeof(value)) {
+    persist_loads++;
+    if (key != NULL && len >= sizeof(value)) {
         memcpy(data, value, sizeof(value));
         return ZPLC_HAL_OK;
     }
@@ -119,13 +124,38 @@ ZTEST(tls_credentials, test_persisted_reader_requires_a_nonempty_key)
     uint8_t out[8];
 
     memset(out, 0xA5, sizeof(out));
-    zassert_equal(zplc_tls_credential_read_pem("persist://pem", out, sizeof(out)), 6,
+    zassert_equal(zplc_tls_credential_read_pem("persist://aws_cert_pem", out, sizeof(out)), 6,
                   "persisted PEM");
     zassert_str_equal((char *)out, "stored", "persisted bytes");
+    memset(out, 0xA5, sizeof(out));
+    zassert_equal(zplc_tls_credential_read_pem("persist://aws_key_pem", out, sizeof(out)), 6,
+                  "persisted key PEM");
     memset(out, 0xA5, sizeof(out));
     zassert_equal(zplc_tls_credential_read_pem("persist://", out, sizeof(out)),
                   -EINVAL, "empty key");
     zassert_mem_equal(out, (uint8_t[8]){0}, sizeof(out), "empty key clears output");
+}
+
+/* ---- IO-008: a persist:// name that is not a credential record is refused, never read as PEM ---- */
+ZTEST(tls_credentials, test_persisted_reader_refuses_records_that_are_not_credentials)
+{
+    static const char *const refused[] = {
+        "persist://link_key", "persist://link_signkey", "persist://code", "persist://code_len",
+        "persist://cfg_07", "persist://retain_a0", "persist://program_v1_active", "persist://pem",
+        "persist://aws_cert_pem_", "persist://AWS_CERT_PEM",
+    };
+    uint8_t out[8];
+    unsigned int loads;
+    size_t index;
+
+    for (index = 0U; index < ARRAY_SIZE(refused); index++) {
+        memset(out, 0xA5, sizeof(out));
+        loads = persist_loads;
+        zassert_equal(zplc_tls_credential_read_pem(refused[index], out, sizeof(out)), -EACCES,
+                      "%s is refused", refused[index]);
+        zassert_equal(persist_loads, loads, "%s is never read from the store", refused[index]);
+        zassert_mem_equal(out, (uint8_t[8]){0}, sizeof(out), "%s leaves no bytes", refused[index]);
+    }
 }
 
 ZTEST_SUITE(tls_credentials, NULL, tls_credentials_setup, NULL, NULL,

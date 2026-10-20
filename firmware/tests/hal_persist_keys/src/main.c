@@ -12,6 +12,7 @@
  * simulator; a key the HAL has no identifier for must answer with an error that
  * the caller sees, not drop the data.
  */
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/fs/fs.h>
@@ -194,6 +195,83 @@ ZTEST(zplc_hal_persist_keys, test_the_settings_file_system_and_the_records_keep_
 
   zassert_ok(fs_unlink(probe), "remove the file");
   zassert_equal(zplc_hal_persist_delete("code"), ZPLC_HAL_OK, "remove the record");
+}
+
+/* The table of the stored settings, from zplc_config.c (built with CONFIG_ZTEST). */
+size_t zplc_config_test_row_count(void);
+const char *zplc_config_test_row(size_t index, uint8_t *value, size_t *length);
+
+struct credential_path_setting {
+  const char *name;
+  int (*set)(const char *path);
+  void (*get)(char *buf, size_t len);
+};
+
+static const struct credential_path_setting credential_paths[] = {
+    {"mqtt_ca_cert_path", zplc_config_set_mqtt_ca_cert_path, zplc_config_get_mqtt_ca_cert_path},
+    {"mqtt_client_cert_path", zplc_config_set_mqtt_client_cert_path, zplc_config_get_mqtt_client_cert_path},
+    {"mqtt_client_key_path", zplc_config_set_mqtt_client_key_path, zplc_config_get_mqtt_client_key_path},
+    {"aws_claim_cert_path", zplc_config_set_aws_claim_cert_path, zplc_config_get_aws_claim_cert_path},
+    {"aws_claim_key_path", zplc_config_set_aws_claim_key_path, zplc_config_get_aws_claim_key_path},
+};
+
+/* ---- IO-008: a certificate path names a file or a credential record of the store, never another record ---- */
+ZTEST(zplc_hal_persist_keys, test_a_certificate_path_cannot_name_a_record_that_is_not_a_credential) {
+  static const char *const refused[] = {"persist://link_key", "persist://link_signkey", "persist://code",
+                                        "persist://cfg_07", "persist://retain_a0", "persist://no_such_key"};
+  static const char *const accepted[] = {"persist://aws_cert_pem", "persist://aws_key_pem", "/lfs/certs/ca.pem", ""};
+  char path[96];
+  size_t setting;
+  size_t index;
+
+  for (setting = 0U; setting < ARRAY_SIZE(credential_paths); setting++) {
+    const struct credential_path_setting *s = &credential_paths[setting];
+
+    for (index = 0U; index < ARRAY_SIZE(accepted); index++) {
+      zassert_ok(s->set(accepted[index]), "%s takes %s", s->name, accepted[index]);
+      s->get(path, sizeof(path));
+      zassert_str_equal(path, accepted[index], "%s takes %s", s->name, accepted[index]);
+    }
+    zassert_ok(s->set("/lfs/certs/kept.pem"), "%s takes a file", s->name);
+    for (index = 0U; index < ARRAY_SIZE(refused); index++) {
+      zassert_equal(s->set(refused[index]), -EINVAL, "%s refuses %s", s->name, refused[index]);
+      s->get(path, sizeof(path));
+      zassert_str_equal(path, "/lfs/certs/kept.pem", "%s refuses %s and keeps its value", s->name, refused[index]);
+    }
+  }
+}
+
+/* ---- IO-008: a stored certificate path that names another record is not applied at the next start ---- */
+ZTEST(zplc_hal_persist_keys, test_a_stored_certificate_path_naming_another_record_is_not_applied) {
+  static const char name[] = "mqtt_client_key_path";
+  static const char value[] = "persist://link_signkey";
+  uint8_t record[3U + sizeof(name) + sizeof(value)];
+  uint8_t row_value[600];
+  size_t row_length;
+  char key[8];
+  char path[96];
+  size_t index;
+
+  for (index = 0U; index < zplc_config_test_row_count(); index++) {
+    if (strcmp(zplc_config_test_row(index, row_value, &row_length), name) == 0) {
+      break;
+    }
+  }
+  zassert_true(index < zplc_config_test_row_count(), "the setting is stored");
+
+  /* The record of zplc_config.c: name length, name, value length (little-endian), value. */
+  record[0] = (uint8_t)(sizeof(name) - 1U);
+  memcpy(&record[1], name, sizeof(name) - 1U);
+  record[sizeof(name)] = (uint8_t)(sizeof(value) - 1U);
+  record[sizeof(name) + 1U] = 0U;
+  memcpy(&record[sizeof(name) + 2U], value, sizeof(value) - 1U);
+  (void)snprintf(key, sizeof(key), "cfg_%02u", (unsigned)index);
+  zassert_equal(zplc_hal_persist_save(key, record, sizeof(name) + 1U + sizeof(value)), ZPLC_HAL_OK, "store it");
+
+  zassert_ok(zplc_config_init(), "a restart reads the stored settings");
+  zplc_config_get_mqtt_client_key_path(path, sizeof(path));
+  zassert_str_equal(path, "/lfs/certs/client.key", "the stored record name is refused and the default stays");
+  zassert_equal(zplc_hal_persist_delete(key), ZPLC_HAL_OK, "remove it");
 }
 
 ZTEST_SUITE(zplc_hal_persist_keys, NULL, NULL, NULL, NULL, NULL);

@@ -254,12 +254,17 @@ file, the certificate files and, where the Wi-Fi credentials go through the sett
 partition overwrite each other, so each one has its own (IO-008). The HAL takes `zplc_nvs_partition` when the board's
 devicetree defines it, and `storage_partition` otherwise; the settings file system mounts `storage_partition`. The
 build stops when a board that builds the file system has no `zplc_nvs_partition`, or when the two partitions overlap.
+A certificate or key setting (`mqtt_ca_cert_path`, `mqtt_client_cert_path`, `mqtt_client_key_path`,
+`aws_claim_cert_path`, `aws_claim_key_path`) names a file of the file system or one of the two credential records,
+`persist://aws_cert_pem` and `persist://aws_key_pem`. Any other `persist://` name is refused by `zplc config set`, is
+not applied when a stored value holds it, and is never read: no setting can hand the program or a key of the device
+link to the TLS stack.
 
 | Board | Records of the HAL | Settings file system | Image slot |
 |---|---|---|---|
-| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | 0x100 to the end of the 2 MB flash |
-| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | 0x100 to the end of the 2 MB flash |
-| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB at 0x400000 of the module SPI NOR | `storage_partition`, 192 KB at 0x3b0000 | 0 to the end of the 8 MB flash |
+| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1f0000 |
+| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB at 0x1f0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1f0000 |
+| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB at 0x400000 of the module SPI NOR | `storage_partition`, 192 KB at 0x3b0000 | 0 to 0x101c00, the flash budget of the board |
 | Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
 | Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
 | STM32F746G Discovery | NVS, `zplc_nvs_partition`, 15 MB at 0xa0000 of the external QSPI NOR | `storage_partition`, 640 KB at 0 of the QSPI NOR | 0 to 1 MB, the internal flash |
@@ -268,10 +273,12 @@ build stops when a board that builds the file system has no `zplc_nvs_partition`
 The addresses are those of the devicetree of each build. `tools/hil/check_storage_partitions.py` reads them from the
 `zephyr.dts` and `.config` that `run.sh size` keeps for every board, and fails when two stores share or overlap a
 partition, when a store holds fewer than two erase blocks or blocks its backend cannot mount (NVS refuses a sector
-above 64 KB), or when a store lies inside the image slot, the flash range the linker may fill with the image. The image
-slot of the two RP2040 boards and of the ESP32-S3 still runs to the end of the flash that holds the records, so an
-image that grew far enough would not be stopped by the linker; those boards are listed with that reason in
-`tools/hil/storage-partitions-open.json`. For the learner boards, a test of the board description also fails when two
+above 64 KB), or when a store lies inside the image slot, the flash range the linker may fill with the image. The two
+RP2040 boards end their `code_partition` before the records, so the linker refuses an image that would grow into
+them. The ESP32-S3 linker does not bound the image (it ignores the load size of Zephyr and runs to the end of the
+flash), so its slot is the flash budget of the board, which the size check of the same run fails an image above. All
+seven boards pass, and `tools/hil/storage-partitions-open.json`, the list of boards with a known failure, is empty.
+CI runs the same check on each cross-build; that step is authored and has not been run here. For the learner boards, a test of the board description also fails when two
 stores share a partition (it reads the Kconfig and overlay files of the board). All of this is build-level evidence:
 how the flash of each board behaves is the bench of HIL-010, and no board was measured.
 

@@ -482,6 +482,13 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
           exit "${status}"
 
+      # IO-008: each storage user of this build (the records of the HAL, the settings file system) has a flash
+      # partition of its own, of whole erase blocks it can mount, outside the image slot. The check reads the
+      # zephyr.dts and .config of the build above; it is build-level evidence, the flash of a board is HIL-010.
+      - name: Check the flash partitions of the storage users
+        shell: bash
+        run: python3 zplc/tools/hil/check_storage_partitions.py "${RUNNER_TEMP}/zplc-${{ matrix.id }}"
+
       - name: Keep cross-build firmware
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
