@@ -59,7 +59,7 @@ what works today.
 
 ## What is not here yet
 
-Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. A track for a learner board, and the lessons of five modules that are still empty,
+Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. The [hardware track](hardware-track.md) says how to choose your board and how a run on it is checked; its wiring cards and the check of a run from the lesson panel, and the lessons of five modules that are still empty,
 are future work. The [course outline](course-outline.md) says which. The lessons and the
 examples are host and simulation exercises: they do not show how a program
 behaves on a physical board.

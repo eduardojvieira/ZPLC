@@ -60,7 +60,7 @@ elemento, qué funciona hoy.
 
 ## Lo que todavía no está
 
-Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. Una vía para una placa de aprendizaje y las lecciones de cinco módulos que todavía
-están vacíos son trabajo futuro. El [esquema del curso](course-outline.md) dice cuáles. Las
+Cada lección enumera las vías que admite y, para una vía que no admite, dice por qué y qué hacer en su lugar. La [vía de hardware](hardware-track.md) explica cómo elegir su placa y cómo se comprueba una ejecución en ella; sus tarjetas de cableado y la comprobación de una ejecución desde el panel de la lección, y las lecciones de cinco módulos que todavía
+están vacíos, son trabajo futuro. El [esquema del curso](course-outline.md) dice cuáles. Las
 lecciones y los ejemplos son ejercicios de host y de simulación: no muestran cómo
 se comporta un programa en una placa física.
