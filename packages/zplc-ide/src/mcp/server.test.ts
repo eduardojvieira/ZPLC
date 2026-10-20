@@ -127,6 +127,36 @@ describe('local MCP adapter', () => {
     expect(await snapshot()).toEqual(before);
   });
 
+  test('cannot produce a hardware grade: no tool takes a trace, a track or a board, no answer is a grade record, and a hardware run is no pass (LRN-024, LRN-034)', async () => {
+    const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
+    const hardware = {
+      schemaVersion: 1, lessonId: 'edge-counter-pulses', lessonVersion: 1, track: 'hardware', scenarioId: 'S', scenarioSha256: hash, programSha256: hash,
+      runtimeVersion: '2.0.0', time: '2026-10-20T10:00:00.000Z', result: 'passed', assertions: { total: 1, passed: 1 }, failedAssertions: [],
+    };
+    const lesson = { state: 'in-progress', grade: null, passedAt: null, startedAt: '2026-10-20T10:00:00.000Z', hintsShown: [], solutionShown: false, hardware };
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 4, last: null, lessons: { 'edge-counter-pulses': lesson } }));
+    const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
+    const withUserData = { ...bound, userData: user };
+    const snapshot = async () => Object.fromEntries(await Promise.all((await readdir(userData)).sort().map(async (name) => [name, await readFile(join(userData, name), 'utf8')])));
+    const before = await snapshot();
+    const dispatcher = createMcpDispatcher(withUserData, operations()); const signal = new AbortController().signal;
+    const argumentsOf: Record<string, Record<string, unknown>> = {
+      scenario_run: { scenarioId: 'smoke' }, simulation_start: { scenarioId: 'smoke' }, trace_get: { scenarioId: 'smoke' },
+      simulation_step: { scenarioId: 'smoke', cursor: 0, traceSha256: hash }, runtime_snapshot: { scenarioId: 'smoke', cursor: 0, traceSha256: hash },
+    };
+    // A grade record is any object with a track and a scenario hash; no answer of any tool holds one.
+    const holdsGrade = (value: unknown): boolean => typeof value === 'object' && value !== null
+      && (('track' in value && 'scenarioSha256' in value) || Object.values(value).some(holdsGrade));
+    for (const tool of MCP_TOOL_NAMES.filter((name) => name !== 'firmware_build')) {
+      expect(holdsGrade(await dispatcher(tool, argumentsOf[tool] ?? {}, signal))).toBe(false);
+      expect(await dispatcher(tool, { ...argumentsOf[tool], track: 'hardware', board: 'rpi-pico-rp2040', trace: [{ atMs: 0, values: { Lamp: true } }] }, signal)).toMatchObject({ isError: true, structuredContent: { error: 'MCP_INVALID_ARGUMENTS' } });
+    }
+    expect(MCP_TOOL_NAMES.filter((name) => /hardware|grade|track|record|board_check|lesson/i.test(name))).toEqual([]);
+    // The course resource reads the hardware run and does not count it as a pass.
+    expect(await courseProgressResource(withUserData)).toMatchObject({ ok: true, mastered: [], completed: 0 });
+    expect(await snapshot()).toEqual(before);
+  });
+
   test('serializes only public data and rejects accessors, buffers, prototypes, symbols, and oversize results', () => {
     const root = '/not-for-output'; const source = 'secret source'; const value: Record<string, unknown> = { ok: true, summary: compilerSummary, evidence: evidence('compile'), root, source };
     Object.defineProperty(value, 'bytes', { value: Buffer.from('private'), enumerable: false });
