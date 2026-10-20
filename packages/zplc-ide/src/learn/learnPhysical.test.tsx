@@ -38,6 +38,9 @@ const electronAPI = new Proxy({}, {
 const spies = PHYSICAL.map((name) => spyOn(connectionManager, name).mockImplementation((async () => undefined) as never));
 const items = new Map<string, string>();
 const hadWindow = 'window' in globalThis;
+// The stores are shared by every test file of the run: each one this test changes is put back as it was.
+const stores = [useIDEStore, useAppSettings, useLearnUi, useLearnProgress, useLearnBoard] as Array<{ getState(): object; setState(state: object, replace: true): void }>;
+const saved = stores.map((store) => store.getState());
 
 beforeAll(() => {
   Object.assign(globalThis, { window: { electronAPI, localStorage: { getItem: (key: string) => items.get(key) ?? null, setItem: (key: string, value: string) => { items.set(key, value); }, removeItem: (key: string) => { items.delete(key); } } } });
@@ -47,6 +50,7 @@ afterAll(() => {
   if (!hadWindow) delete (globalThis as { window?: unknown }).window;
   delete (globalThis.navigator as { serial?: unknown }).serial;
   for (const spy of spies) spy.mockRestore();
+  stores.forEach((store, index) => store.setState(saved[index]!, true));
 });
 
 const grade = (track: 'simulation' | 'hardware'): GradeRecord => ({
