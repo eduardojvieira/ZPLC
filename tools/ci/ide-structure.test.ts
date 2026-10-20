@@ -143,7 +143,7 @@ describe('import cycles stopgap (IDE-033)', () => {
   });
 });
 
-describe('module size stopgap (IDE-014): listed modules may stay above the limit until they are split', () => {
+describe('module size (IDE-014): a hand-written module has at most the limit of lines', () => {
   it('reports a hand-written module above the limit that is not listed', () => {
     const problems = check([mod('src/big.ts', lines(101))]);
     expect(problems).toHaveLength(1);

@@ -1995,7 +1995,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28l A running Ladder keeps the window responsive","partial":true}
   ],
   "IDE-014": [
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size (IDE-014): a hand-written module has at most the limit of lines"}
   ],
   "IDE-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"the Monaco that is bundled (IDE-015)"},
