@@ -88,6 +88,9 @@ function(zplc_freertos_suite name file)
         set(SUITE_WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     endif()
     add_test(NAME ${name} COMMAND ${name} WORKING_DIRECTORY ${SUITE_WORKING_DIRECTORY})
+    # Suites run in parallel: each keeps its records in a directory of its own, never in the user's ~/.zplc.
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/persist)
+    set_tests_properties(${name} PROPERTIES ENVIRONMENT "ZPLC_PERSIST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/persist/${name}")
 endfunction()
 
 set(ZPLC_REPO_ROOT ${ZPLC_CORE_DIR}/../../..)

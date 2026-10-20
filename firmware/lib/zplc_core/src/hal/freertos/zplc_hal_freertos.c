@@ -37,6 +37,12 @@
  * Clock
  * ============================================================================ */
 
+/* The epoch of the HAL tick is arbitrary (the POSIX port counts from the boot of the host). The kernel counts from
+ * zero when it starts, and a scenario drives the runtime with logical instants such as 0, 13 or 26 ms: a real clock
+ * that begins at zero would, for a moment at every start, be one of them. Starting the tick 100 s in keeps the two
+ * apart for the first minutes of a run, and the 32-bit tick wraps as before. */
+#define ZPLC_FREERTOS_TICK_EPOCH_MS 100000U
+
 static int tick_override_active = 0;
 static uint32_t tick_override_ms = 0U;
 
@@ -60,7 +66,7 @@ uint32_t zplc_hal_tick(void)
         return tick_override_ms;
     }
     /* One tick is portTICK_PERIOD_MS milliseconds (1 at 1 kHz); the count is 32 bits and wraps like the HAL's tick. */
-    return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+    return (uint32_t)(ZPLC_FREERTOS_TICK_EPOCH_MS + xTaskGetTickCount() * portTICK_PERIOD_MS);
 }
 
 void zplc_hal_sleep(uint32_t ms)

@@ -53,6 +53,10 @@ static void test_the_tick_is_the_kernels(void) {
   CHECK((uint32_t)(after - before) >= 25U, "a sleep of 25 ms advances the tick by at least 25 ms");
   CHECK((uint32_t)(xTaskGetTickCount() - kernel_before) >= 25U, "and the tick count of the kernel by at least 25 ticks");
   CHECK(portTICK_PERIOD_MS == 1U, "the tick is 1 ms (FreeRTOSConfig.h)");
+  /* The epoch of the tick is arbitrary, but a scenario drives the runtime with instants of 0, 13, 26 ms and the like, and
+   * the suites of the core check that the real clock is not one of them (test_native_runtime_session.c). A kernel
+   * tick that counts from zero would be, for a moment, at every start. */
+  CHECK(before >= 60000U, "the tick does not start at zero: it is past the first minute of any scenario");
   zplc_hal_posix_set_tick_override(123456U);
   CHECK(zplc_hal_tick() == 123456U, "the logical clock of a scenario replaces it");
   zplc_hal_posix_clear_tick_override();
