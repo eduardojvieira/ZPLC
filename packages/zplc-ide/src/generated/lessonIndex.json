@@ -4126,7 +4126,7 @@
         "es": {
           "title": "Lista de instrucciones: el resultado actual y el orden de las instrucciones",
           "summary": "Complete un programa en lista de instrucciones para que una alarma de puerta se mantenga encendida al cerrar la puerta y se silencie con un botón, y vea que el orden de las instrucciones decide el resultado.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.",
           "objectives": [
             "Lea un programa en lista de instrucciones como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo.",
             "Use LD, AND, OR, ANDN y ST, y vea que mover una instrucción cambia la lógica."
@@ -4153,7 +4153,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama DoorAlarm y contiene 12 assertions."
             },
             {
@@ -4165,7 +4165,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué assertion falla.",
+              "body": "¿Qué pasa si ANDN Silence va antes de OR Siren? Intercambie las dos líneas y vea qué aserción falla.",
               "checkpoint": "Cada instrucción trabaja sobre el resultado de las líneas anteriores, así que OR Siren después de ANDN Silence devuelve el valor retenido. El escenario muestra solo la lógica; no es un sistema de alarma."
             }
           ],
@@ -4300,48 +4300,48 @@
         },
         "es": {
           "title": "Una lógica en cinco lenguajes: un portón que se mantiene abierto",
-          "summary": "Corrija un programa en Texto Estructurado para que un portón se mantenga abierto y se cierre con una orden, lea después la misma lógica en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias, y compruebe que un solo escenario califica los cinco.",
-          "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+          "summary": "Corrija un programa en texto estructurado para que un portón se mantenga abierto y se cierre con una orden; luego lea la misma lógica en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial, y compruebe que un solo escenario califica los cinco.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real, HIL ni certificación.",
           "objectives": [
-            "Mantener una salida encendida después de soltar su orden, y dejar que la orden de cierre gane, en Texto Estructurado.",
-            "Reconocer la misma condición, (Request OR Open) AND NOT Close, en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias."
+            "Mantenga una salida encendida después de soltar su solicitud, y deje que la orden de cierre tenga prioridad, en texto estructurado.",
+            "Reconozca la misma condición, (Request OR Open) AND NOT Close, en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Gate.st la salida Open sigue a Request solo mientras el pulsador está pulsado. Haga que se mantenga: Open se enciende cuando se pulsa Request o cuando Open ya está encendida, y nunca mientras se pulsa Close. La misma condición se escribe en los otros cuatro lenguajes así: Lista de instrucciones, LD Request, OR Open, ANDN Close, ST Open; Ladder, Request en paralelo con un contacto de Open, luego un contacto normalmente cerrado de Close y después la bobina Open; Diagrama de Bloques de Función, un bloque OR que alimenta un bloque AND cuya segunda entrada viene de un bloque NOT de Close; Gráfico Funcional de Secuencias, un paso IS_CLOSED y un paso IS_OPEN con una transición a IS_OPEN con Request AND NOT Close y una transición de regreso con Close.",
+              "body": "En src/Gate.st la salida Open sigue a Request solo mientras el pulsador está pulsado. Haga que se mantenga: Open está encendida cuando se pulsa Request o cuando Open ya está encendida, y nunca mientras se pulsa Close. La misma condición se escribe así en los otros cuatro lenguajes: en lista de instrucciones, LD Request, OR Open, ANDN Close, ST Open; en diagrama de escalera, Request en paralelo con un contacto de Open, luego un contacto normalmente cerrado de Close y después la bobina Open; en diagrama de bloques de función, un bloque OR que alimenta un bloque AND cuya segunda entrada viene de un bloque NOT de Close; en diagrama funcional secuencial, un paso IS_CLOSED y un paso IS_OPEN, con una transición a IS_OPEN con Request AND NOT Close y una transición de regreso con Close.",
               "checkpoint": "El portón se abre cuando se pulsa Request, sigue abierto después de soltar Request y se cierra cuando se pulsa Close."
             },
             {
               "key": "predict",
               "title": "Prediga",
               "body": "Request se pulsa a los 20 ms y se suelta a los 40 ms. Close se pulsa a los 80 ms. A los 130 ms se pulsan Request y Close juntos. Prediga Open a los 50, 100 y 150 ms.",
-              "checkpoint": "ENCENDIDA a los 50 ms, después de soltar Request; APAGADA a los 100 ms, porque se pulsó Close; APAGADA a los 150 ms, porque Close gana sobre Request."
+              "checkpoint": "En ON a los 50 ms, después de soltar Request; en OFF a los 100 ms, porque se pulsó Close; en OFF a los 150 ms, porque Close tiene prioridad sobre Request."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga ganando.",
-              "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga teniendo prioridad.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta su programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama GateLatch y contiene 11 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
               "body": "Compare los 50, 100 y 170 ms: Open se mantiene después de soltar Request, cae con Close y no vuelve a encenderse cuando Request y Close se sueltan juntos a los 160 ms. Se abre de nuevo a los 210 ms, después de la segunda pulsación a los 180 ms.",
-              "checkpoint": "El escenario nunca dice en qué lenguaje se escribió el programa: solo mira la salida. Por eso la misma calificación acepta las formas en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias de la misma condición."
+              "checkpoint": "El escenario nunca indica en qué lenguaje se escribió el programa: solo observa la salida. Por eso la misma calificación acepta las versiones en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial de la misma condición."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después cambie el orden para que la retención quede después de Close y vea qué assertion falla.",
-              "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes: una retención aplicada después de Close vuelve a encender la salida. Un diagrama o una escalera muestran el mismo orden como una imagen. El escenario muestra solo la lógica; no es un controlador de portón."
+              "body": "Elija uno de los otros lenguajes, elimine src/Gate.st, cree en la misma carpeta el archivo de ese lenguaje, agréguelo a la tarea de zplc.json, escriba la misma condición y pulse Comprobar. Después cambie el orden para que la retención quede después de Close y vea qué aserción falla.",
+              "checkpoint": "El orden de las operaciones decide el resultado en todos los lenguajes: una retención aplicada después de Close vuelve a encender la salida. Un gráfico o un diagrama de escalera muestran el mismo orden en forma de imagen. El escenario muestra solo la lógica; no es un controlador de portón."
             }
           ],
           "hints": [
@@ -4351,11 +4351,11 @@
             },
             {
               "level": 2,
-              "text": "Open := (Request OR Open) AND NOT Close; el OR mantiene la salida encendida y el AND NOT Close va al final para que Close gane."
+              "text": "Open := (Request OR Open) AND NOT Close; el OR mantiene la salida encendida y el AND NOT Close va al final para que Close tenga prioridad."
             }
           ],
           "faultCases": [
-            "El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga ganando."
+            "El programa inicial asigna a Open el valor Request AND NOT Close, de modo que Open cae en cuanto se suelta Request a los 40 ms; agregue la retención escribiendo (Request OR Open) AND NOT Close, para que la salida se mantenga encendida y Close siga teniendo prioridad."
           ]
         }
       }
@@ -4471,48 +4471,48 @@
         },
         "es": {
           "title": "Proyecto final: una estación de empaque, de la descripción al programa probado",
-          "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa de Texto Estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.",
-          "scope": "Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de una línea de empaque, comportamiento de funciones de seguridad, tiempos de sensores ni comportamiento real de ninguna máquina, HIL ni certificación.",
+          "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa en texto estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida, y demuestre que funciona con un escenario que también comprueba lo que no debe ocurrir.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de una línea de empaque, el comportamiento de funciones de seguridad, tiempos de sensores ni el comportamiento de una máquina real, HIL ni certificación.",
           "objectives": [
-            "Convertir cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada.",
-            "Leer un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus assertions fallidas para encontrar el requisito que pasó por alto."
+            "Convierta cinco requisitos escritos en un solo programa en texto estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida.",
+            "Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que pasó por alto."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y se mantenga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendida 50 ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borra la cuenta y BatchFull, y borra Fault solo cuando Part ya no está bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelve a funcionar solo con un nuevo Start.",
+              "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cinco pulsadores. Escriba src/Station.st de modo que: (1) Start encienda Belt y la cinta siga encendida al soltar Start; Stop o EStop la apaguen. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece activa 50 ms o más, el sensor está bloqueado: Fault se enciende y la cinta se detiene. (4) Reset borre la cuenta y BatchFull, y borre Fault solo cuando Part ya no esté bloqueada. (5) Después de cualquier parada, sea por Stop, EStop, un lote lleno o una falla, la cinta vuelva a funcionar solo con un nuevo Start.",
               "checkpoint": "La cinta funciona después de Start, se detiene con Stop, EStop, un lote lleno y un atasco, y nunca se reinicia sin un nuevo Start."
             },
             {
               "key": "predict",
               "title": "Prediga",
               "body": "Las piezas pasan por el sensor a los 50, 90 y 150 ms. Prediga BatchFull a los 130 ms y a los 190 ms, y Belt a los 190 ms. Start se pulsa de nuevo a los 200 ms: prediga Belt a los 230 ms.",
-              "checkpoint": "APAGADA a los 130 ms, con dos piezas; ENCENDIDA a los 190 ms, con la cinta detenida; la cinta sigue apagada a los 230 ms, porque el lote sigue lleno."
+              "checkpoint": "En OFF a los 130 ms, con dos piezas; en ON a los 190 ms, con la cinta detenida; la cinta sigue apagada a los 230 ms, porque el lote sigue lleno."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
-              "checkpoint": "El escenario visible debe pasar con evidencia de host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para detectar el atasco, la retención de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección. Lea cada assertion fallida: indica el instante, el valor esperado y el valor observado.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
               "checkpoint": "El escenario se llama PackingStation y contiene 16 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 270, 310 y 360 ms: Reset vacía el lote a los 240 ms pero la cinta sigue apagada hasta un nuevo Start a los 280 ms, y después de la parada de emergencia a los 320 ms la cinta sigue apagada a los 360 ms hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms levanta la falla, y Reset a los 480 ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
+              "body": "Compare 270, 310 y 360 ms: Reset vacía el lote a los 240 ms pero la cinta sigue apagada hasta un nuevo Start a los 280 ms, y después de la parada de emergencia a los 320 ms la cinta sigue apagada a los 360 ms hasta que se pulsa Start a los 370 ms. La pieza que bloquea el sensor desde los 410 ms activa la falla, y Reset a los 480 ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los 510 ms y se pulsa Reset a los 530 ms.",
               "checkpoint": "A los 490 ms Fault está encendida y la cinta apagada aunque se pulsó Reset; a los 550 ms Fault está apagada y la cinta sigue apagada."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿A cuál de los cinco requisitos señaló la primera assertion fallida, y cuáles encontró solo al leer el escenario? Piense en una cosa más que la estación nunca debería hacer, y si el escenario la detectaría.",
-              "checkpoint": "La mayoría de las assertions comprueban lo que no debe ocurrir: una cinta que se reinicia sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el camino feliz y aun así falla estas. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+              "body": "¿A cuál de los cinco requisitos apuntó la primera aserción fallida, y cuáles encontró solo al leer el escenario? Piense en otra cosa que la estación nunca debería hacer, y en si el escenario la detectaría.",
+              "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una cinta que vuelve a arrancar sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el caso normal y aun así no supera estas comprobaciones. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
             }
           ],
           "hints": [
@@ -4526,7 +4526,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para el atasco, el enclavamiento de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
+            "El programa inicial solo mantiene la cinta con una autorretención y deja que Stop la apague. Agregue el contador con Reset en su entrada R, el temporizador sobre Part para detectar el atasco, la retención de Fault que Reset libera solo cuando Part está libre, y después NOT EStop, NOT Fault y NOT BatchFull en la condición de Belt."
           ]
         }
       }
@@ -4642,19 +4642,19 @@
           ]
         },
         "es": {
-          "title": "Modbus TCP: escribir un registro y leerlo de vuelta",
-          "summary": "Escriba un registro de retención con un bloque Modbus TCP, léalo de vuelta cuando la escritura termine e informe si el valor que volvió es el que usted envió.",
+          "title": "Modbus TCP: escribir un registro y volver a leerlo",
+          "summary": "Escriba un registro de retención con un bloque Modbus TCP, vuelva a leerlo cuando termine la escritura e informe si el valor recibido es el que usted envió.",
           "scope": "El servidor Modbus de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un controlador, un variador o una pasarela reales acepten la misma solicitud, y no dice nada sobre el cableado, los tiempos de una red, un dispositivo real, HIL ni certificación.",
           "objectives": [
-            "Escribir un registro de retención con MB_WRITE_HREG y leerlo de vuelta con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
-            "Comparar el valor leído con el valor escrito e informar un ERROR de cualquiera de los dos bloques.",
-            "Decir qué muestra un doble de loopback y qué no muestra."
+            "Escriba un registro de retención con MB_WRITE_HREG y vuelva a leerlo con MB_READ_HREG, en ese orden, usando la salida DONE del primer bloque como disparo del segundo.",
+            "Compare el valor leído con el valor escrito, e informe un ERROR de cualquiera de los dos bloques.",
+            "Indique qué muestra un doble de loopback y qué no muestra."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de vuelta: lea el registro 8 cuando la escritura termine, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de Studio responde cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
+              "body": "En src/ModbusRegister.st el programa ya escribe el valor 1234 en el registro de retención 8 de un servidor Modbus TCP cuando Send pasa a ON. Agregue la lectura de comprobación: lea el registro 8 cuando termine la escritura, ponga Match en ON cuando el valor leído sea igual a 1234 y ponga Failed en ON cuando cualquiera de los dos bloques informe ERROR. La simulación de Studio responde a cada solicitud Modbus TCP con un servidor propio en este equipo, así que no hace falta ningún dispositivo ni ninguna red.",
               "checkpoint": "Written, Match y Failed describen el intercambio: la escritura terminó, el valor volvió sin cambios y nada falló."
             },
             {
@@ -4666,13 +4666,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial escribe el registro 8 pero nunca vuelve a leerlo, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE.",
               "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el servidor Modbus de la simulación en marcha.",
               "checkpoint": "El escenario se llama ModbusRegister y contiene 6 assertions."
             },
             {
@@ -4684,7 +4684,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué mostraría el escenario si el programa leyera el registro 9 en lugar del registro 8? Pruébelo y luego pruebe escribir 1235 comparando todavía con 1234.",
+              "body": "¿Qué mostraría el escenario si el programa leyera el registro 9 en lugar del registro 8? Pruébelo, y luego pruebe a escribir 1235 sin dejar de comparar con 1234.",
               "checkpoint": "El registro 9 nunca se escribió y vale 0, así que Match nunca pasa a ON; escribir 1235 y comparar con 1234 produce lo mismo. El escenario muestra cómo se comportan los bloques frente al doble que Studio inicia. No muestra que un dispositivo Modbus real acepte los mismos códigos de función, direcciones o tiempos: eso hay que comprobarlo con ese dispositivo."
             }
           ],
@@ -4699,7 +4699,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial escribe el registro 8 pero nunca lo lee de vuelta, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE."
+            "El programa inicial escribe el registro 8 pero nunca vuelve a leerlo, así que Match sigue en OFF; llame a MB_READ_HREG sobre el mismo registro cuando Wr.DONE sea TRUE, ponga Match en ON cuando Rd.DONE sea TRUE y Rd.VALUE sea igual a 1234, y ponga Failed en ON cuando Wr.ERROR o Rd.ERROR sea TRUE."
           ]
         }
       }
@@ -4817,50 +4817,50 @@
         },
         "es": {
           "title": "MQTT: publicar un mensaje y recibirlo",
-          "summary": "Únase al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve el registro del mensaje cuando vuelve durante un solo ciclo.",
+          "summary": "Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.",
           "scope": "El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
           "objectives": [
-            "Distinguir un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
-            "Publicar solo cuando la suscripción ya se mantiene, porque un mensaje enviado antes no se le entrega.",
-            "Conservar un mensaje que VALID informa durante un solo ciclo y comparar su PAYLOAD.",
-            "Decir qué muestra un broker de loopback y qué no muestra."
+            "Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
+            "Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.",
+            "Conserve un mensaje que VALID indica durante un solo ciclo, y compare su PAYLOAD.",
+            "Indique qué muestra un broker de loopback y qué no muestra."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/MqttLoop.st el programa se une al broker con MQTT_CONNECT y, una vez unido, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción se mantenga, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta ningún broker instalado ni ninguna red.",
+              "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
               "checkpoint": "Joined, Subscribed, Published y Heard siguen el intercambio en ese orden, y Failed sigue en OFF."
             },
             {
               "key": "predict",
               "title": "Prediga",
               "body": "Send pasa a ON a los 500 ms. Prediga Heard a los 0 ms y a los 39990 ms. Después prediga qué vería a los 39990 ms si Heard fuera solo el pin VALID de la suscripción.",
-              "checkpoint": "Heard está en OFF a los 0 ms y en ON a los 39990 ms. VALID está en ON durante un solo ciclo, así que sin un enclavamiento Heard volvería a OFF mucho antes de los 39990 ms."
+              "checkpoint": "Heard está en OFF a los 0 ms y en ON a los 39990 ms. VALID está en ON durante un solo ciclo, así que sin una retención Heard volvería a OFF mucho antes de los 39990 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se conecta al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON una vez que Sub.VALID sea TRUE con el contenido 'START'.",
               "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el broker de la simulación en marcha.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
               "checkpoint": "El escenario se llama MqttLoop y contiene 7 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "El escenario da a cada paso una ventana en lugar de un ciclo exacto: Joined y Subscribed entre los 0 y los 20000 ms, Published y Heard entre los 500 y los 30500 ms. El broker responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que solo una ventana se puede calificar igual cada vez.",
+              "body": "El escenario da a cada paso una ventana en lugar de un ciclo exacto: Joined y Subscribed entre los 0 y los 20000 ms, Published y Heard entre los 500 y los 30500 ms. El broker responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que solo una ventana se puede calificar siempre de la misma manera.",
               "checkpoint": "Heard sigue en ON a los 39990 ms, mucho después del único ciclo en que el mensaje era nuevo."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
               "body": "¿Qué ocurre si el programa publica en plant/cmd pero se suscribe a otro tema, o compara el contenido con otro texto? Pruebe cada caso.",
-              "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no compara como igual. El escenario muestra cómo se comportan los bloques frente al broker doble que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
+              "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
             }
           ],
           "hints": [
@@ -4874,7 +4874,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'."
+            "El programa inicial se conecta al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON una vez que Sub.VALID sea TRUE con el contenido 'START'."
           ]
         }
       }

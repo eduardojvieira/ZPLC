@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/one-logic-five-languages. Do not edit. >>> */}
 
-Corrija un programa en Texto Estructurado para que un portón se mantenga abierto y se cierre con una orden, lea después la misma lógica en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias, y compruebe que un solo escenario califica los cinco.
+Corrija un programa en texto estructurado para que un portón se mantenga abierto y se cierre con una orden; luego lea la misma lógica en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial, y compruebe que un solo escenario califica los cinco.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 
 ## Objetivos
 
-- Mantener una salida encendida después de soltar su orden, y dejar que la orden de cierre gane, en Texto Estructurado.
-- Reconocer la misma condición, (Request OR Open) AND NOT Close, en Lista de instrucciones, Ladder, Diagrama de Bloques de Función y Gráfico Funcional de Secuencias.
+- Mantenga una salida encendida después de soltar su solicitud, y deje que la orden de cierre tenga prioridad, en texto estructurado.
+- Reconozca la misma condición, (Request OR Open) AND NOT Close, en lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Corrija un programa en Texto Estructurado para que un portón se mantenga abiert
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de un portón, tiempos de actuadores ni comportamiento real de ninguna máquina, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de un portón, tiempos de actuadores ni el comportamiento de una máquina real, HIL ni certificación.
 
 ## En una placa
 

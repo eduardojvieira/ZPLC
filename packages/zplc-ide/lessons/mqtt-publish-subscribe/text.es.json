@@ -1,50 +1,50 @@
 {
   "schemaVersion": 1,
   "title": "MQTT: publicar un mensaje y recibirlo",
-  "summary": "Únase al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve el registro del mensaje cuando vuelve durante un solo ciclo.",
+  "summary": "Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.",
   "scope": "El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
   "objectives": [
-    "Distinguir un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
-    "Publicar solo cuando la suscripción ya se mantiene, porque un mensaje enviado antes no se le entrega.",
-    "Conservar un mensaje que VALID informa durante un solo ciclo y comparar su PAYLOAD.",
-    "Decir qué muestra un broker de loopback y qué no muestra."
+    "Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
+    "Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.",
+    "Conserve un mensaje que VALID indica durante un solo ciclo, y compare su PAYLOAD.",
+    "Indique qué muestra un broker de loopback y qué no muestra."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/MqttLoop.st el programa se une al broker con MQTT_CONNECT y, una vez unido, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción se mantenga, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta ningún broker instalado ni ninguna red.",
+      "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
       "checkpoint": "Joined, Subscribed, Published y Heard siguen el intercambio en ese orden, y Failed sigue en OFF."
     },
     {
       "key": "predict",
       "title": "Prediga",
       "body": "Send pasa a ON a los {{t:500}} ms. Prediga Heard a los {{t:0}} ms y a los {{t:39990}} ms. Después prediga qué vería a los {{t:39990}} ms si Heard fuera solo el pin VALID de la suscripción.",
-      "checkpoint": "{{v:MqttLoop.Heard=false@0|Heard está en OFF}} a los {{t:0}} ms y {{v:MqttLoop.Heard=true@39990|en ON}} a los {{t:39990}} ms. VALID está en ON durante un solo ciclo, así que sin un enclavamiento Heard volvería a OFF mucho antes de los {{t:39990}} ms."
+      "checkpoint": "{{v:MqttLoop.Heard=false@0|Heard está en OFF}} a los {{t:0}} ms y {{v:MqttLoop.Heard=true@39990|en ON}} a los {{t:39990}} ms. VALID está en ON durante un solo ciclo, así que sin una retención Heard volvería a OFF mucho antes de los {{t:39990}} ms."
     },
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial se conecta al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON una vez que Sub.VALID sea TRUE con el contenido 'START'.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con el broker de la simulación en marcha.",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
       "checkpoint": "El escenario se llama MqttLoop y contiene {{assertions}} assertions."
     },
     {
       "key": "observe",
       "title": "Observe",
-      "body": "El escenario da a cada paso una ventana en lugar de un ciclo exacto: Joined y Subscribed entre los {{t:0}} y los {{t:20000}} ms, Published y Heard entre los {{t:500}} y los {{t:30500}} ms. El broker responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que solo una ventana se puede calificar igual cada vez.",
+      "body": "El escenario da a cada paso una ventana en lugar de un ciclo exacto: Joined y Subscribed entre los {{t:0}} y los {{t:20000}} ms, Published y Heard entre los {{t:500}} y los {{t:30500}} ms. El broker responde en tiempo real mientras el runtime reproduce el tiempo simulado más rápido, así que solo una ventana se puede calificar siempre de la misma manera.",
       "checkpoint": "Heard sigue en ON a los {{t:39990}} ms, mucho después del único ciclo en que el mensaje era nuevo."
     },
     {
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Qué ocurre si el programa publica en plant/cmd pero se suscribe a otro tema, o compara el contenido con otro texto? Pruebe cada caso.",
-      "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no compara como igual. El escenario muestra cómo se comportan los bloques frente al broker doble que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
+      "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
     }
   ],
   "hints": [
@@ -58,6 +58,6 @@
     }
   ],
   "faultCases": [
-    "El programa inicial se une al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON cuando Sub.VALID sea TRUE con el contenido 'START'."
+    "El programa inicial se conecta al broker y se suscribe, pero nunca publica ni registra lo que recibe, así que Published y Heard quedan en OFF; llame a MQTT_PUBLISH con EN := Send AND Sub.DONE y mantenga Heard en ON una vez que Sub.VALID sea TRUE con el contenido 'START'."
   ]
 }

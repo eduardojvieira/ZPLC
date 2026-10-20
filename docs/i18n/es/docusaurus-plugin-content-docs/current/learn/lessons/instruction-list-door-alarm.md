@@ -38,7 +38,7 @@ Complete un programa en lista de instrucciones para que una alarma de puerta se 
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de alarmas, tiempos de sirena ni el comportamiento de una máquina real, HIL ni certificación.
 
 ## En una placa
 

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/capstone-packing-station. Do not edit. >>> */}
 
-Convierta la descripción escrita de una pequeña estación de empaque en un programa de Texto Estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada, y demuéstrelo con un escenario que también comprueba lo que no debe ocurrir.
+Convierta la descripción escrita de una pequeña estación de empaque en un programa en texto estructurado, con una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida, y demuestre que funciona con un escenario que también comprueba lo que no debe ocurrir.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Convierta la descripción escrita de una pequeña estación de empaque en un pro
 
 ## Objetivos
 
-- Convertir cinco requisitos escritos en un solo programa de Texto Estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla enclavada.
-- Leer un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus assertions fallidas para encontrar el requisito que pasó por alto.
+- Convierta cinco requisitos escritos en un solo programa en texto estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida.
+- Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que pasó por alto.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Convierta la descripción escrita de una pequeña estación de empaque en un pro
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia de host POSIX nativo con una tarea de 10 ms; no establecen requisitos de una línea de empaque, comportamiento de funciones de seguridad, tiempos de sensores ni comportamiento real de ninguna máquina, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran requisitos de una línea de empaque, el comportamiento de funciones de seguridad, tiempos de sensores ni el comportamiento de una máquina real, HIL ni certificación.
 
 ## En una placa
 

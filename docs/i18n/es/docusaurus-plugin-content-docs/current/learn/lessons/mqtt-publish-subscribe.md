@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/mqtt-publish-subscribe. Do not edit. >>> */}
 
-Únase al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve el registro del mensaje cuando vuelve durante un solo ciclo.
+Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.
 
 ## Datos
 
@@ -24,10 +24,10 @@ unlisted: true
 
 ## Objetivos
 
-- Distinguir un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.
-- Publicar solo cuando la suscripción ya se mantiene, porque un mensaje enviado antes no se le entrega.
-- Conservar un mensaje que VALID informa durante un solo ciclo y comparar su PAYLOAD.
-- Decir qué muestra un broker de loopback y qué no muestra.
+- Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.
+- Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.
+- Conserve un mensaje que VALID indica durante un solo ciclo, y compare su PAYLOAD.
+- Indique qué muestra un broker de loopback y qué no muestra.
 
 ## Etapas
 
