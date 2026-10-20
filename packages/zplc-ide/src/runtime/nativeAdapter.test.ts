@@ -716,6 +716,48 @@ describe('NativeAdapter', () => {
     expect(hits).toEqual([42]);
   });
 
+  describe('execution.pause reply racing a status.changed event that predates it', () => {
+    // The host delivers events and replies through different channels, so the `running` event of the
+    // first scan can reach the adapter after the pause reply. Nothing resumed the program: the pause stands.
+    it('stays paused when a stale running event arrives after the pause reply', async () => {
+      const eventApi = createEventApi();
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        onEvent: eventApi.onEvent,
+        request: async <TResult>(): Promise<TResult> => ({}) as TResult,
+      });
+      const states: string[] = [];
+      adapter.setEventHandlers({ onStateChange: (state) => states.push(state) });
+      await adapter.connect();
+      await adapter.start();
+      await adapter.pause();
+
+      eventApi.emit({ type: 'event', method: 'status.changed', params: nativeSnapshot({ state: 'running' }) });
+
+      expect(adapter.state).toBe('paused');
+      expect(states).toEqual(['idle', 'running', 'paused']);
+    });
+
+    it('runs again on a running event once the person resumes', async () => {
+      const eventApi = createEventApi();
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        onEvent: eventApi.onEvent,
+        request: async <TResult>(): Promise<TResult> => ({}) as TResult,
+      });
+      await adapter.connect();
+      await adapter.start();
+      await adapter.pause();
+      await adapter.resume();
+
+      eventApi.emit({ type: 'event', method: 'status.changed', params: nativeSnapshot({ state: 'running' }) });
+
+      expect(adapter.state).toBe('running');
+    });
+  });
+
   describe('execution.start and execution.resume replies racing a status.changed event', () => {
     // The runtime ticks (and emits status.changed) right after it answers start/resume, and the
     // host delivers events synchronously while it delivers replies through a promise, so a
