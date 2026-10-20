@@ -78,7 +78,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 | `STATUS` 2 | El par no respondió, o la solicitud superó su límite de tiempo: 8,8 s para Modbus con el tiempo de espera por defecto, 5 s para una publicación, 90 s para un aprovisionamiento | Compruebe el par y el enlace; un resultado tardío se descarta |
 | `STATUS` 4 | La sesión o el enlace no está conectado | Compruebe los ajustes con `zplc mqtt status` y `zplc net status` |
 | `STATUS` 5 | Todas las ranuras de solicitud están en uso | Espere a las solicitudes en curso: un `EN` ascendente mientras `BUSY` es TRUE no inicia nada |
-| `DONE` o `ERROR` sigue en TRUE | El resultado se mantiene mientras `EN` sigue en TRUE, y no se repite nada | Deje caer `EN` durante un ciclo para pedir de nuevo ([El handshake](../runtime/communication-function-blocks.md#el-handshake)) |
+| `DONE` o `ERROR` sigue en TRUE | El resultado se mantiene mientras `EN` sigue en TRUE, y no se repite nada | Deje que `EN` baje durante un ciclo para pedir de nuevo ([El handshake](../runtime/communication-function-blocks.md#el-handshake)) |
 | MQTT no hace nada en un dispositivo | MQTT está desactivado y no tiene broker hasta que un operador lo fija | [Valores seguros por defecto](../runtime/connectivity.md#valores-por-defecto-seguros) |
 | `zplc config set mqtt_security 1` se rechaza | Una imagen de versión no desactiva la verificación del certificado | Es a propósito; solo una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` lo acepta |
 

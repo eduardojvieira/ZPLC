@@ -35,7 +35,7 @@ aplicación anfitriona Sparkplug B.
 - El certificado de la CA del broker en el dispositivo, porque un controlador que
   nunca se configuró usa TLS en el puerto 8883 y comprueba el certificado del
   broker. MQTT está desactivado y no tiene broker hasta que un operador nombra uno
-  ([Valores seguros por defecto](../runtime/connectivity.md#valores-por-defecto-seguros)).
+  ([Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)).
 
 ## 1. Marque las variables
 
@@ -100,7 +100,7 @@ compila. Elija el `profile`:
 | --- | --- | --- |
 | `sparkplug-b` | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con carga protobuf |
 | `generic-broker` | Cualquier broker MQTT | Un mensaje de telemetría en JSON |
-| `aws-iot-core` | AWS IoT Núcleo | Los mensajes genéricos; AWS IoT Núcleo autentica un dispositivo con un certificado de cliente y una clave |
+| `aws-iot-core` | AWS IoT Core | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
 | `azure-iot-hub` | Azure IoT Hub | Mensajes de dispositivo a nube en los temas del hub |
 | `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico |
 
@@ -178,7 +178,7 @@ Los bloques siguen el único handshake de los doce bloques de comunicación
 
 - `MQTT_PUBLISH` envía un mensaje por cada flanco ascendente de `EN`. Mientras `EN` sigue
   en TRUE después del resultado, el resultado se mantiene y no se vuelve a enviar nada;
-  deje caer `EN` durante un ciclo para enviar otro. Una solicitud en curso se completa
+  deje que `EN` baje durante un ciclo para enviar otro. Una solicitud en curso se completa
   aunque `EN` caiga.
 - `DONE` significa que el cliente aceptó el mensaje para enviarlo. No se espera el acuse
   de un mensaje QoS 1 o 2.

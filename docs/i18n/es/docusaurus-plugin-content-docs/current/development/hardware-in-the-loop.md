@@ -88,7 +88,7 @@ falla:
 1. **Verificación previa.** La placa está en el manifiesto y los fixtures de la
    ejecución compilan con el compilador del repositorio, para la placa.
 2. **Grabación.** Usted graba la imagen. La herramienta no lo hace.
-3. **Protocolo de identidad.** La herramienta pregunta al dispositivo quién es
+3. **Intercambio de identidad.** La herramienta pregunta al dispositivo quién es
    (`zplc sys info --json`) y qué imagen es (`zplc sys build --json`: versión,
    commit, si el árbol estaba modificado, placa, ABI, draft y las opciones de
    compilación con su hash), y registra ambas cosas. El comando de compilación
@@ -103,7 +103,7 @@ falla:
    publicación no lleva traza, y `--hil-trace` pide la imagen que la lleva.
 6. **Confirmar la placa.** Usted escribe la identidad que informó el
    dispositivo. Pulsar Enter solo no confirma.
-7. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
+7. **Las salidas se pueden accionar.** Usted escribe la identidad otra vez,
    diciendo que nada conectado a las salidas puede lastimar a nadie.
 8. **Cargar, ejecutar.** Se carga un programa y el contador de ciclos debe
    avanzar.
@@ -132,7 +132,7 @@ pasos de medición solo cuando `--steps` los nombra.
 
 ### El registro de evidencia
 
-Una ejecución en hardware real que termina en pass o fail, de una imagen de
+Una ejecución en hardware real que termina en pass (aprobada) o fail (fallida), de una imagen de
 firmware indicada con `--firmware-image` cuyo dispositivo informa un commit de
 40 dígitos de un árbol sin cambios sin confirmar, escribe además
 `<ejecución>.evidence.json` junto al registro de ejecución. Es el registro plano
@@ -140,7 +140,7 @@ del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de compatibilid
 una placa: esquema `zplc.hil-record/1`, `board_id`, versión de firmware, commit,
 el SHA-256 de la imagen y el resultado, con la lista de lo que la ejecución no
 cubrió. Cuando falta alguno de esos datos, el registro de ejecución dice por qué
-no se escribió registro de evidencia (log `evidence-record`). Agregar el archivo
+no se escribió registro de evidencia (línea de registro `evidence-record`). Agregar el archivo
 a `evidence_refs` de la placa en `boards.json` es una edición suya, después de
 leer el registro de ejecución; una ejecución sobre un sustituto nunca escribe
 uno.
@@ -169,8 +169,8 @@ salidas. Los archivos compilados se hacen cuando una ejecución los necesita, en
 un directorio temporal que se elimina, y no se guardan en el repositorio.
 
 Los valores se leen mientras el programa corre. STOP pone las salidas en su
-estado seguro, de modo que una salida lee cero después, cualquiera que sea lo
-que el programa calculó.
+estado seguro, de modo que una salida lee cero después, cualquiera que sea el
+valor que el programa calculó.
 
 Los scripts de nivel de opcode leen tramas de traza HIL, que solo imprime una
 imagen de firmware compilada con `CONFIG_ZPLC_HIL_DEBUG=y`. El firmware de
@@ -306,7 +306,7 @@ La imagen bajo prueba es la imagen HIL: el comando de compilación de la placa c
 registro se haga con el watchdog activado. La imagen HIL activa el watchdog de
 hardware con los tiempos y las políticas de la entrada de la placa en
 `boards.json`, y dice lo que es: `zplc version` imprime una línea para ella y sus
-opciones de compilación incluyen `HIL_IMAGE=y`, que el saludo registra.
+opciones de compilación incluyen `HIL_IMAGE=y`, que el intercambio de identidad registra.
 `firmware/app/CMakeLists.txt` sigue rechazando una compilación que activa el
 watchdog por sí sola. La imagen HIL nunca es una imagen de versión: la recolección
 de la versión (`scripts/release/firmware-images.ts`) rechaza una compilación cuya
@@ -344,7 +344,7 @@ puerto marcado USB, y pulse RST si la placa queda en modo de descarga.
 | 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un ciclo y 3000 ms más un ciclo, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
 | 15 | Jitter de ciclo, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee la medida propia del runtime de cada ciclo: el período más corto y el más largo de cada tarea (`zplc status --json`, `tasks[]`) | Ningún desborde, ningún plazo incumplido, cada período de ciclo dentro del 20 % del intervalo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un ciclo que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
-| 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza desde la consola, en la sesión de su enlace, cierra el puerto y lo vuelve a abrir, con un programa que mantiene las salidas en bajo | Salidas apagadas tras STOP, y fuerzas liberadas al perder el enlace: por DTR en la Pico, por el tiempo de inactividad (30 s por omisión) en el ESP32-S3 | Todavía no se ejecutó | Se completa con los registros emulados |
+| 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza desde la consola, en la sesión de su enlace, cierra el puerto y lo vuelve a abrir, con un programa que mantiene las salidas en bajo | Salidas apagadas tras STOP, y fuerzas liberadas al perder el enlace: por DTR en la Pico, por el tiempo de inactividad (30 s por omisión) en la ESP32-S3 | Todavía no se ejecutó | Se completa con los registros emulados |
 | 18 | Tiempo de reinicio del watchdog | Ejecuta un ciclo que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 19 | Falla fatal | Divide por cero tras 20 ciclos de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |

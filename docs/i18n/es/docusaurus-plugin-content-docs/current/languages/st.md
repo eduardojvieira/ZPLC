@@ -2,11 +2,11 @@
 sidebar_position: 1
 ---
 
-# Structured Text (ST)
+# Texto estructurado (ST)
 
-Structured Text (ST) es la base semántica canónica de ZPLC.
+El texto estructurado (ST) es la base semántica canónica de ZPLC.
 
-Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia de Texto Estructurado](../reference/language-st.md) generada.
+Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia del texto estructurado](../reference/language-st.md) generada.
 
 ## Papel en ZPLC 2.0
 
@@ -20,7 +20,7 @@ La [suite histórica de lenguajes](./examples/v1-5-language-suite.md) es evidenc
 
 `packages/zplc-ide/src/compiler/index.ts` trata a ST distinto del resto:
 
-- `ST` evita la etapa de transpilation
+- `ST` evita la etapa de transpilación
 - los demás lenguajes se normalizan a ST antes de compilar
 
 Por eso ST es el mejor lugar para entender la semántica pública de automatización que el runtime debería ejecutar.
@@ -51,19 +51,19 @@ END_PROGRAM
 `Out1` es `FALSE` hasta que el temporizador cuenta 250 ms y `TRUE` desde entonces. CI compila este
 programa, lo ejecuta durante 30 ciclos de 10 ms y comprueba que `Out1` sea `TRUE`.
 
-## Superficies ST visibles hoy en el repo
+## Superficies ST visibles hoy en el repositorio
 
 El compilador y la stdlib muestran uso de ST con:
 
 - cuerpos de programa y variables
 - temporizadores como `TON`, `TOF`, `TP`
 - contadores como `CTU`, `CTD`, `CTUD`
-- funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
-- llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
+- funciones de cadena como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
+- llamadas a bloques de función de comunicación cuando el contrato del compilador y del runtime los respalda
 
 ## Tipos numéricos
 
-El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallas esperados de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
+El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallas esperadas de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
 
 | Tipo | Bits | Rango | Se ordena como | Caso de conformidad |
 |---|---|---|---|---|
@@ -125,7 +125,7 @@ El caso que figura junto a una fila o una regla es un programa de conformidad de
 | `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y negación de los enteros | Funciona con 64 bits | `cmp-015-lword-shifts-and-rotates-use-64-bits`, `cmp-015-lint-abs-and-negate` |
 | un contador de `FOR`, un selector de `CASE` con etiquetas y rangos de 64 bits | Funciona | `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-ulint-for-counter-up-to-the-top`, `cmp-015-lint-case-selector-and-labels`, `cmp-015-ulint-case-label-above-2-63` |
 | literales de todo el rango, en cualquier base, con tipo (`LINT#-9`) o sin él | Funciona | `cmp-015-lint-literals-over-the-full-range` |
-| `LREAL` `+`, `-`, `*`, `/`, negación, comparación | Funciona: IEEE 754 binary64, al más cercano par, el desbordamiento es un infinito, un NaN se propaga | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
+| `LREAL` `+`, `-`, `*`, `/`, negación, comparación | Funciona: IEEE 754 binary64, al par más cercano, el desbordamiento es un infinito, un NaN se propaga | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
 | literales `LREAL`, formas con exponente y valores iniciales | Funciona | `cmp-015-lreal-literals-with-exponent`, `cmp-015-lreal-double-precision` |
 | `LREAL` y `LINT` en arreglos, estructuras, parámetros y resultados de función, `RETAIN` | Funciona | `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`, `cmp-015-lreal-keeps-its-value-between-scans` |
 | `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND` | Funciona; exacto para un `LREAL` (`SQRT` está correctamente redondeada, 0.0 en 0.0 o menos) | `cmp-015-lreal-abs-sqrt-limit-select`, `cmp-015-lreal-trunc-and-round` |
@@ -149,7 +149,7 @@ Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisió
 
 - Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
 - Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Las unidades fuera de orden (`T#30m1h`) también se rechazan (`cmp-017-time-literal-units-out-of-order`).
-- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un preset de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
+- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un valor preestablecido de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
 - Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
 - El Watch de ZPLC muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
 - Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a un valor de 64 bits con signo, que permitiría duraciones negativas y rangos de más de 49 días, es una decisión abierta del propietario que se sigue bajo el requisito CMP-017. Esta página no anuncia ningún cambio.
@@ -255,18 +255,18 @@ Cómo se construye una llamada por interfaz: un bloque de función se incorpora 
 
 Cada regla de esta sección está cubierta por un caso de conformidad en `conformance/cmp` (CMP-042, CMP-043) y por `packages/zplc-compiler/src/compiler/unit.test.ts`.
 
-- **Una sola unidad.** Todos los archivos Structured Text de un proyecto (`src/*.st`) se compilan como una sola unidad, sin importar si una tarea ejecuta un programa que está en ellos. Un tipo, una función, un bloque de función, una interfaz o un `VAR_GLOBAL` declarado en cualquier archivo es visible para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`, `cmp-042-global-in-another-file`, `cmp-042-type-from-another-file-in-a-structure`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y Instruction List se compilan cuando una tarea los ejecuta.
+- **Una sola unidad.** Todos los archivos de texto estructurado de un proyecto (`src/*.st`) se compilan como una sola unidad, sin importar si una tarea ejecuta un programa que está en ellos. Un tipo, una función, un bloque de función, una interfaz o un `VAR_GLOBAL` declarado en cualquier archivo es visible para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`, `cmp-042-global-in-another-file`, `cmp-042-type-from-another-file-in-a-structure`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y la lista de instrucciones se compilan cuando una tarea los ejecuta.
 - **Una global es una sola variable.** Un `VAR_GLOBAL` tiene una dirección, compartida por todos los programas y todas las tareas, y un valor inicial que se aplica una vez, antes del primer ciclo de la tarea que se ejecute primero (`cmp-042-two-tasks-share-a-global`). Una función se compila una sola vez y los programas de ambas tareas la llaman (`cmp-042-function-from-another-file-in-two-programs`). Dos programas pueden declarar variables con el mismo nombre: cada uno conserva la suya.
 - **Una declaración repetida es un error en ambos lugares.** Un tipo, una función, un bloque de función o una interfaz declarados en dos archivos, o una global declarada dos veces, se informan en cada declaración, y el mensaje nombra ambos archivos y líneas (`cmp-042-function-block-declared-in-two-files-is-rejected`). Un error de un archivo se informa en ese archivo, sin importar qué programa use lo que el archivo declara.
-- **Una sola memoria.** Las variables de las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los búferes de trabajo de las funciones de cadena de todo el proyecto comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea (`cmp-043-programs-share-the-region`, `cmp-043-program-that-fills-the-region`). Un byte de ella, el último, es la bandera de inicialización.
-- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. Las direcciones que cambian porque se agregó otro archivo las informa el mapa de depuración, que lista cada una (véase [Modelo de Memoria](../runtime/memory-model.md)).
+- **Una sola memoria.** Las variables de las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los búferes de trabajo de las funciones de cadena de todo el proyecto comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea (`cmp-043-programs-share-the-region`, `cmp-043-program-that-fills-the-region`). Un byte de ella, el último, es el indicador de inicialización.
+- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. Las direcciones que cambian porque se agregó otro archivo las informa el mapa de depuración, que lista cada una (véase [Modelo de memoria](../runtime/memory-model.md)).
 - **Una falla de asignación dice qué necesita.** Un proyecto que no cabe es un error de compilación en la declaración que cruza el final de la región, y el mensaje indica los bytes requeridos, los bytes disponibles y los tres mayores consumidores: `WORK allocation exceeds the target memory profile: 9005 bytes required, 8192 bytes available (...). Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)` (`cmp-043-allocation-failure-states-bytes-and-consumers`). Un destino con menos memoria WORK tiene un límite menor: el proyecto se compila contra el perfil de la placa que nombra.
 
 - **Dónde encuentran una global el mapa y las herramientas.** El mapa de depuración lista una global una sola vez, en el POU del archivo que la declara (un archivo sin programa es un POU con el nombre de su archivo, `globals.st`), marcada `scope: "global"`, con la única dirección que usan todos los programas. Una señal de un escenario la nombra como `Programa.Global`, para cualquier programa del proyecto, o solo por su nombre, que se lee como vista desde el primer programa; la traza y la evidencia la llaman `Programa.Global`. Un watch en ZPLC toma el nombre de la global y muestra esa dirección. Una variable que pertenece a otro programa no es una señal de este (`packages/zplc-ide/src/test-engine/globals.test.ts`, `packages/zplc-ide/src/hooks/globalWatch.test.ts`).
 
 ## Entrada a la biblioteca estándar
 
-Ver [Biblioteca Estándar](./stdlib.md).
+Véase [Biblioteca estándar](./stdlib.md).
 
 ## Límites conocidos
 

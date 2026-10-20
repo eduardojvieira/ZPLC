@@ -1,4 +1,4 @@
-# Modelo de Memoria
+# Modelo de memoria
 
 El contrato público de memoria está definido sobre todo por:
 
@@ -37,7 +37,7 @@ flowchart LR
 
 - IPI
 - OPI
-- espacio de direcciones work y retain
+- espacio de direcciones WORK y RETAIN
 - segmento de código cargado
 
 ### Privado por instancia VM
@@ -46,7 +46,7 @@ flowchart LR
 - `sp`
 - `bp`
 - profundidad de llamadas
-- banderas y error
+- indicadores y error
 - puntos de parada
 - pila de evaluación
 - pila de llamadas
@@ -56,9 +56,9 @@ flowchart LR
 `zplc_isa.h` reserva los últimos 16 bytes de IPI para datos de sistema como:
 
 - tiempo de ciclo
-- uptime
+- tiempo de actividad
 - identificador de la tarea actual
-- banderas del runtime
+- indicadores del runtime
 
 ## Inicio de un programa
 
@@ -100,7 +100,7 @@ Los encabezados públicos también exponen límites como:
 - `ZPLC_STACK_MAX_DEPTH`
 - `ZPLC_CALL_STACK_MAX`
 - `ZPLC_MAX_BREAKPOINTS`
-- tamaños configurables para work, retain y code
+- tamaños configurables para WORK, RETAIN y CODE
 
 En Zephyr los tamaños se fijan con opciones de Kconfig. Estos son los valores por defecto de `firmware/zephyr/Kconfig`; el `prj.conf` de una placa puede reemplazarlos:
 

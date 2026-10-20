@@ -38,12 +38,12 @@ handler   .  S  p  p  R  .  .  .  .  .  S  p     S inicio, p consulta aún pendi
 
 Los valores son los que el programa lee después de la llamada del bloque en ese ciclo. Del ciclo 6 al 8 el resultado se retiene y el manejador no se llama.
 
-- **Un flanco ascendente, una solicitud.** Mientras `EN` sigue en `TRUE` después del resultado, el resultado se retiene y nada se repite: un `EN` retenido no envía un segundo mensaje, no aprovisiona por segunda vez ni escribe un segundo valor. Para hacer otra solicitud, deja que `EN` baje al menos un ciclo y vuelve a subirlo.
+- **Un flanco ascendente, una solicitud.** Mientras `EN` sigue en `TRUE` después del resultado, el resultado se retiene y nada se repite: un `EN` retenido no envía un segundo mensaje, no aprovisiona por segunda vez ni escribe un segundo valor. Para hacer otra solicitud, deje que `EN` baje al menos un ciclo y vuelva a subirlo.
 - **Una solicitud en curso se completa.** Si `EN` baja mientras `BUSY` es `TRUE`, la solicitud igual termina y su resultado se muestra durante un ciclo. Un disparo de un solo ciclo funciona. Un flanco ascendente mientras `BUSY` es `TRUE` no inicia nada.
 - **`EN` en `FALSE` borra `DONE` y `ERROR`.** `STATUS` conserva el código de la última solicitud hasta que empieza la siguiente.
 - **Un reset (`COMM_RESET`) devuelve el bloque a reposo**: `EN`, `BUSY`, `DONE`, `ERROR` y `STATUS` valen 0, una solicitud pendiente se suelta y su resultado tardío se descarta, no se entrega al próximo bloque que pida.
 - **El resultado puede llegar en el mismo ciclo** del flanco ascendente, sin `BUSY`, cuando la solicitud no necesita espera.
-- **Llama al bloque en cada ciclo.** El bloque avanza solo cuando se lo llama.
+- **Llame al bloque en cada ciclo.** El bloque avanza solo cuando se lo llama.
 
 ### Bloques de servicio
 
@@ -77,7 +77,7 @@ Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran y un `PAYLOAD` recibido se 
 
 | Qué | Límite |
 | --- | --- |
-| Una llamada de un bloque en el ciclo | Toma un bloqueo retenido unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a una flash. |
+| Una llamada de un bloque en el ciclo | Toma un cerrojo, retenido unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a una flash. |
 | Una solicitud Modbus | El cliente espera como máximo el doble del tiempo configurado (para conectar y luego por la respuesta); el bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo + 100 ms) x 8` después de la solicitud, es decir 8,8 s con el tiempo por defecto de 500 ms. |
 | `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH` | El hilo del cliente envía el mensaje en una pasada de su bucle; `ERROR` con `STATUS` 2 a los 5 s. |
 | Un aprovisionamiento (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | El servicio espera al broker 30 s en cada paso; `ERROR` con `STATUS` 2 a los 90 s. |
@@ -88,7 +88,7 @@ Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran y un `PAYLOAD` recibido se 
 
 ### Comunicaciones Modbus
 
-Se usan para interactuar con dispositivos de campo sin un mapeo implícito. `COUNT` es 1: una solicitud de más registros o bobinas se rechaza con `STATUS` 6.
+Se usan para interactuar con dispositivos de campo sin una asignación implícita. `COUNT` es 1: una solicitud de más registros o bobinas se rechaza con `STATUS` 6.
 
 - `MB_READ_HREG`: leer registros de retención (código de función 3); `VALUE` es el registro leído.
 - `MB_WRITE_HREG`: escribir un registro de retención (código de función 6); `VALUE` es el valor escrito.
@@ -125,15 +125,15 @@ La aplicación ZPLC inicia los pares por usted. Una sesión de simulación inici
 
 ## Contra qué se verificó cada bloque
 
-Ningún bloque se verificó contra un servicio real, y verificar uno no necesita una suscripción de pago. La verificación de cada bloque es de uno o dos tipos: el **manejador** (los pines, el handshake, los códigos de estado y la entrega a un trabajador, con el cliente reemplazado por un sustituto que responde lo que dice la prueba) y un **doble de protocolo** (el bloque contra un servidor escrito para la prueba que habla el protocolo por un socket de loopback). Un doble local prueba el comportamiento del bloque y del protocolo. No prueba que un dispositivo, un broker o un servicio de nube reales acepten el intercambio.
+Ningún bloque se verificó contra un servicio real, y verificar uno no necesita una suscripción de pago. La verificación de cada bloque es de uno o dos tipos: el **manejador** (los pines, el handshake, los códigos de estado y la entrega a un hilo de trabajo, con el cliente reemplazado por un sustituto que responde lo que dice la prueba) y un **doble de protocolo** (el bloque contra un servidor escrito para la prueba que habla el protocolo por un socket de loopback). Un doble local prueba el comportamiento del bloque y del protocolo. No prueba que un dispositivo, un broker o un servicio de nube reales acepten el intercambio.
 
 | Bloque | Manejador | Doble de protocolo | Servicio real |
 | --- | --- | --- | --- |
-| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en pedazos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | No |
+| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en fragmentos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | No |
 | `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Sí | El cliente MQTT del runtime de simulación, contra un broker en loopback: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa. El cliente del controlador (`zplc_mqtt.c`, el archivo que corre una placa) también se ejecuta en `native_sim` contra un broker escrito para la prueba en la interfaz de loopback: sesión, una publicación por solicitud, suscripción y mensaje, ausencia de `CONNACK` (error con un estado), conexión rechazada, sesión perdida, reset estando ocupado | No |
 | `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Sí | El cliente del controlador en `native_sim` contra el broker escrito para la prueba, con el perfil de cada servicio: un mensaje de la nube al dispositivo, un mensaje de Event Grid y un `NBIRTH` por solicitud, `STATUS` 10 con un perfil que no ofrece el servicio, `NOT_CONNECTED` sin sesión, reset estando ocupado. El intercambio con el servicio real de Azure o Sparkplug no se prueba | No |
 | `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que usted ejecuta, de uso manual | No |
 
 ## Disponibilidad por lenguaje
 
-El compilador registra todos los bloques de función de comunicación, por lo que puede instanciarlos en Structured Text (ST). No se ha verificado en esta versión que los editores de Ladder Diagram (LD) y de Function Block Diagram (FBD) ofrezcan cada bloque.
+El compilador registra todos los bloques de función de comunicación, por lo que puede instanciarlos en texto estructurado (ST). No se ha verificado en esta versión que los editores de diagrama de escalera (LD) y de diagrama de bloques de función (FBD) ofrezcan cada bloque.

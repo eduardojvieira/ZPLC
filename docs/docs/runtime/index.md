@@ -17,7 +17,7 @@ The ZPLC runtime provides a comprehensive virtual environment tailored for IEC 6
 - Loading `.zplc` bytecode programs and their metadata.
 - Instantiating Virtual Machines (VMs) with isolated execution contexts.
 - Enforcing structural memory boundaries (Process Images, internal Work memory, retained data).
-- Scheduling and orchestrating Cyclic/Event-based PLC tasks.
+- Scheduling and orchestrating cyclic PLC tasks.
 - Yielding physical I/O, networking, and storage operations to the underlying Hardware Abstraction Layer (HAL).
 
 ## Subsystem Architecture

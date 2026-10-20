@@ -83,7 +83,7 @@ así que no los busque hoy.
 - **Arch Linux (todavía no activo).** Hasta que exista el paquete de AUR, no se
   instala nada desde él. El paquete, `zplc-bin`, reempaquetará el `.deb` de la
   versión para `x86_64` y `aarch64`, con la suma de verificación de la versión y la
-  regla udev de las placas. Se instalará con un ayudante de AUR o con `makepkg -si`,
+  regla udev de las placas. Se instalará con un asistente de AUR o con `makepkg -si`,
   y solo cuando el proyecto lo cree. Sale del mismo archivo que el `.deb`, así que
   la suma que comprobaría es la misma.
 
@@ -267,7 +267,7 @@ y lo que no, está en [Compatibilidad de hardware](../reference/capabilities-evi
 ## Actualizar
 
 ZPLC nunca se actualiza solo. Para saber si existe una versión más reciente,
-active **Check for a newer release when ZPLC starts** en Preferences, o pulse
+active **Buscar una versión más reciente al iniciar Studio** en Preferencias, o pulse
 **Buscar ahora**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
 usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe

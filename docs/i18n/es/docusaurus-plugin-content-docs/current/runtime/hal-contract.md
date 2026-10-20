@@ -10,7 +10,7 @@ Las funciones de abajo, el puerto del planificador y la suite de conformidad que
 
 El núcleo portable no debe llamar directamente a las APIs de la plataforma.
 
-Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el núcleo debe usarlo mediante `zplc_hal_*`.
+Si algo pertenece a GPIO, tiempos, persistencia, red, sockets o sincronización, el núcleo debe usarlo mediante `zplc_hal_*`.
 
 El núcleo portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
 
@@ -18,7 +18,7 @@ El núcleo portable define la semántica de ejecución. La HAL se encarga de la 
 
 ```mermaid
 flowchart TD
-  Core[core ZPLC + scheduler] --> Timing[zplc_hal_tick / sleep]
+  Core[núcleo ZPLC + planificador] --> Timing[zplc_hal_tick / sleep]
   Core --> IO[zplc_hal_gpio_* / adc / dac]
   Core --> Persist[zplc_hal_persist_*]
   Core --> Net[zplc_hal_net_*]
@@ -27,9 +27,9 @@ flowchart TD
   Core --> Lifecycle[zplc_hal_init / shutdown]
 ```
 
-## Timing
+## Tiempos
 
-- `zplc_hal_tick()` provee el reloj del planificador en milisegundos
+- `zplc_hal_tick()` proporciona el reloj del planificador en milisegundos
 - `zplc_hal_sleep()` ofrece espera bloqueante fuera de la lógica PLC
 
 ## E/S digital y analógica
@@ -43,20 +43,20 @@ La superficie pública de E/S es por canal:
 
 El núcleo direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
 uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S de la placa en
-`firmware/app/boards/boards.json` (ver [Placas Soportadas](../reference/boards.md)).
+`firmware/app/boards/boards.json` (véase [Placas soportadas](../reference/boards.md)).
 
 ### La tabla de E/S
 
-El build de Zephyr convierte la entrada de la placa en una tabla constante, `zplc_io_table()`, con
-`firmware/zephyr/scripts/gen_io_table.py`. Cada fila lleva el id del canal, el nombre del pin, el byte y el bit de la
+La compilación de Zephyr convierte la entrada de la placa en una tabla constante, `zplc_io_table()`, con
+`firmware/zephyr/scripts/gen_io_table.py`. Cada fila lleva el identificador del canal, el nombre del pin, el byte y el bit de la
 imagen de proceso, el tipo, la dirección, el número de canal de la HAL, el valor seguro y si el canal es obligatorio.
 El planificador sincroniza la imagen a través de la tabla (`zplc_io_channel_at()`, `zplc_io_read_channel()`,
 `zplc_io_write_channel()`), de modo que agregar un canal a una placa es editar el JSON y el overlay de devicetree y no
-cambia ningún fuente C.
+cambia ningún archivo fuente de C.
 
 - La descripción y el devicetree deben coincidir. El archivo generado afirma, para cada canal, que el devicetree tiene
   el alias, que el alias está en el pin descrito y que el pin pertenece al controlador descrito; un desacuerdo detiene
-  el build con un mensaje que nombra el canal.
+  la compilación con un mensaje que nombra el canal.
 - Los periféricos se configuran en `zplc_hal_init()`, antes de que el runtime pueda entrar en RUN: cada GPIO y cada
   entrada analógica de la descripción, no en el primer ciclo. Un canal obligatorio que no se puede configurar hace
   fallar la inicialización.
@@ -80,7 +80,7 @@ que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 
 Una operación que una placa no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`; ese es el resultado definido de "no
 soportado". El planificador lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
-función que un puerto no implementa es una falla de build o de test, no un stub silencioso.
+función que un puerto no implementa es una falla de compilación o de prueba, no un sustituto silencioso.
 
 ## Persistencia
 
@@ -91,9 +91,9 @@ La HAL es dueña de:
 - `zplc_hal_persist_delete()`
 
 Estas primitivas permiten que el núcleo portable use un almacén de programas
-independiente del backend. No proporcionan asignación, restore ni retención
-end-to-end calificada de `RETAIN` a nivel de fuente; esas declaraciones no están
-soportadas hoy.
+independiente del backend. No proporcionan asignación, restauración ni retención
+de extremo a extremo calificada de `RETAIN` a nivel de fuente; esas afirmaciones no tienen
+respaldo hoy.
 
 ## Red y sockets
 
@@ -101,6 +101,7 @@ La superficie pública de red incluye:
 
 - `zplc_hal_net_init()`
 - `zplc_hal_net_get_ip()`
+
 Los puertos de Zephyr, POSIX, WebAssembly y FreeRTOS implementan estas funciones. La resolución de nombres y los sockets no forman
 parte de la interfaz de puerto: la aplicación abre sus propios sockets con tiempos de espera por socket mediante el resolvedor de
 Zephyr y SNTP. La HAL declaraba una función de DNS y cuatro de socket que nadie llamaba; se quitaron para que toda
@@ -108,14 +109,14 @@ función declarada tenga un llamador (IO-007).
 
 ## Sincronización
 
-El contrato también incluye mutexes:
+El contrato también incluye exclusiones mutuas (mutex):
 
 - `zplc_hal_mutex_create()`
 - `zplc_hal_mutex_lock()`
 - `zplc_hal_mutex_unlock()`
 - `zplc_hal_mutex_destroy()`
 
-## Logging y ciclo de vida
+## Registro y ciclo de vida
 
 - `zplc_hal_init()`
 - `zplc_hal_shutdown()`
@@ -123,7 +124,7 @@ El contrato también incluye mutexes:
 
 ## Se verifica en cada cambio
 
-`python3 tools/ci/check_hal_contract.py` lee `zplc_hal.h`, las fuentes de los tres puertos y los llamadores. Falla
+`python3 tools/ci/check_hal_contract.py` lee `zplc_hal.h`, las fuentes de los cuatro puertos y los llamadores. Falla
 cuando una función declarada no tiene implementación en un puerto, o no tiene llamador ni entrada en el registro, y
 cuando una entrada del registro quedó vieja. Es una verificación de texto: prueba que existen una definición y un
 sitio de llamada, no que el código detrás sea correcto.

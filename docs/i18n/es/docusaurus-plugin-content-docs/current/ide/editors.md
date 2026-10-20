@@ -261,7 +261,7 @@ pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y
 
 ## Edición con el teclado
 
-Toda acción de edición de los editores de Escalera, Bloques de Función y Diagrama Funcional Secuencial se puede hacer con el
+Toda acción de edición de los editores de diagrama de escalera, de diagrama de bloques de función y de diagrama funcional secuencial se puede hacer con el
 teclado (LNG-012): mover un cursor, insertar un elemento, enlazar una variable entre los símbolos declarados, conectar y
 borrar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera de la tabla de la
 que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.

@@ -116,6 +116,7 @@ The public networking-facing HAL surface includes:
 
 - `zplc_hal_net_init()`
 - `zplc_hal_net_get_ip()`
+
 The Zephyr, POSIX, WebAssembly, and FreeRTOS ports each implement these functions. Name resolution and sockets are not part
 of the port interface: the application opens its own sockets with per-socket timeouts through the Zephyr resolver
 and SNTP. The HAL used to declare a DNS function and four socket functions that nothing called; they were removed
@@ -142,7 +143,7 @@ The public lifecycle endpoints are:
 
 ## Checked on every change
 
-`python3 tools/ci/check_hal_contract.py` reads `zplc_hal.h`, the three port sources and the callers. It fails when a
+`python3 tools/ci/check_hal_contract.py` reads `zplc_hal.h`, the four port sources and the callers. It fails when a
 declared function has no implementation on a port, or no caller and no entry in the ledger, and when a ledger entry
 is stale. It is a text check: it proves that a definition and a call site exist, not that the code behind them is
 right.

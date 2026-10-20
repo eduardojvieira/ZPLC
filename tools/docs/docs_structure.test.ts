@@ -273,6 +273,14 @@ describe('the Spanish pages keep one standard term for each concept (DOC-015)', 
     [/\bissues?\b/i, 'incidencia'],
     [/\bchequeos?\b/i, 'comprobación'],
     [/\bsoporte de hardware\b/i, 'compatibilidad de hardware'],
+    [/\bAWS IoT N[úu]cleo\b/, 'AWS IoT Core (a product name is not translated)'],
+    [/\bdeje caer\b|\bdeja caer\b/i, 'deje que EN baje'],
+    [/\b(?:Placas Soportadas|Modelo de Memoria|Biblioteca Est[áa]ndar)\b/, 'sentence case in a link or heading'],
+    [/\b(?:Texto Estructurado|Lista de Instrucciones|Diagrama de Escalera|Diagrama de Bloques de Funci[óo]n|Diagrama Funcional Secuencial)\b/, 'the glossary names, in sentence case (texto estructurado, lista de instrucciones...)'],
+    [/\b(?:el|la|un|una) (?:build|checkout)s?\b/i, 'compilación, copia de trabajo'],
+    [/\blayouts?\b/i, 'disposición'],
+    [/\bflags\b/i, 'indicadores'],
+    [/\bgr[áa]ficos? (?:de funciones? secuenciales?|funcional de secuencias?)\b/i, 'diagrama funcional secuencial (the glossary)'],
     // second person singular of the preterite (tuteo): the pages address the reader with "usted" or an impersonal form
     [/\b(?:instal|enlaz|marc|configur|cre|escrib|elegi|abri|conect|guard)(?:aste|iste)\b/i, 'usted or an impersonal form'],
   ];
@@ -287,6 +295,7 @@ describe('the Spanish pages keep one standard term for each concept (DOC-015)', 
       // a generated region quotes descriptions that the source keeps in English; the Spanish strings of its generator are reviewed there
       const prose = text(page)
         .replace(/\{\/\* >>> GENERATED[\s\S]*?<<< \*\/\}/g, '')
+        .replace(/^````[\s\S]*?^````/gm, (block) => block.replace(/[^\n]/g, '')) // a four-backtick fence that shows a fence
         .replace(/^```[\s\S]*?^```/gm, (block) => block.replace(/[^\n]/g, ''))
         .replace(/`[^`\n]*`/g, '')
         .replace(/\]\([^)\n]*\)/g, ']()')

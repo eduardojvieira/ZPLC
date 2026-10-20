@@ -144,29 +144,29 @@ región (NVS en un sector de 4 KB).
 | 8 | 4 | número de secuencia, nunca 0 |
 | 12 | 4 | identidad del programa: la palabra CRC32 de la cabecera del artefacto |
 | 16 | 4 | identidad del programa: la palabra de tamaño de código de la cabecera del artefacto |
-| 20 | 4 | hash de layout |
+| 20 | 4 | hash de disposición |
 | 24 | 4 | longitud del contenido, el tamaño de la región `RETAIN` |
 | 28 | n | contenido, los bytes de la región |
 | 28+n | 4 | CRC-32 de todos los bytes anteriores |
 
-El hash de layout es un CRC-32 sobre el tamaño de la región, la dirección de la
+El hash de disposición es un CRC-32 sobre el tamaño de la región, la dirección de la
 región, la versión de la ISA, el contador de draft del contrato y la identidad
 del programa. Un programa que cambia en un byte tiene otra identidad, de modo
-que una recompilación descarta los valores retenidos; el runtime no tiene un
-layout a nivel de variable para llevarlos a través de un cambio.
+que una recompilación descarta los valores retenidos; el runtime no tiene una
+disposición a nivel de variable para llevarlos a través de un cambio.
 
 ### Qué hace un reinicio
 
 La restauración toma el registro válido con la secuencia más alta cuya identidad y
-layout coinciden. Si un registro falla su suma de verificación, se prueba el otro. Si
+disposición coinciden. Si un registro falla su suma de verificación, se prueba el otro. Si
 ninguno coincide, la región se pone en cero y el estado dice por qué:
 
 | `reason` | Significado |
 |---|---|
-| `restored` | Se restauró un registro válido de este programa y layout. |
+| `restored` | Se restauró un registro válido de este programa y disposición. |
 | `none` | Ningún registro en ninguno de las dos ranuras: primer arranque, almacenamiento borrado, o sin backend de almacenamiento. |
 | `identity_mismatch` | Existen registros válidos, escritos por otro programa. |
-| `layout_mismatch` | El mismo programa, pero otro tamaño de región, dirección o layout del runtime. |
+| `layout_mismatch` | El mismo programa, pero otro tamaño de región, dirección o disposición del runtime. |
 | `corrupt` | Existen registros y ninguno pasa las comprobaciones de formato y checksum. |
 | `io_error` | El backend de almacenamiento falló en ambas ranuras. Los guardados se rechazan hasta que una restauración lea de nuevo el backend. |
 | `reset` | Un comando de reset inicializó la región. |
@@ -240,7 +240,7 @@ defecto), de modo que una placa no puede salir con un intervalo que sus propios
 números no sostienen.
 
 Todos los números de abajo son estimaciones de ingeniería a partir de la clase
-de datasheet de la pieza y del layout de particiones del archivo de la placa.
+de datasheet de la pieza y de la disposición de las particiones del archivo de la placa.
 Ninguna placa se midió.
 
 | Placa | Partición de almacenamiento | RETAIN | Ciclos nominales | Bytes de desgaste | Intervalo | Vida estimada en el peor caso |
@@ -320,7 +320,7 @@ programa de nuevo y escriba de nuevo la configuración.
 ### Límites
 
 - No medido: los números de resistencia de arriba salen de la clase de datasheet
-  de las piezas, no de una medición, y los layouts de partición de GIGA, Opta y
+  de las piezas, no de una medición, y las disposiciones de partición de GIGA, Opta y
   F746G se leen de la descripción de la placa, no de una placa.
 - No demostrado: que un guardado sobreviva a un corte de energía en alguna
   placa. El formato del registro y el orden de las escrituras se prueban con
