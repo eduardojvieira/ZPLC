@@ -2545,6 +2545,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"UX-030 the Spanish of the whole application uses the glossary terms of the course"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or \"usted\"), and passes the neutral forms"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
@@ -2653,13 +2654,24 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the first lesson leads to a blink with the controls Studio shows"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"}
   ],
   "LRN-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 keeps the Learn home above the strip"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 marks the chosen board as pressed and says which it is in words"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-013 offers both learner boards in one labelled group, none chosen until the learner chooses"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"the board of the hardware track in the Learn home (LRN-013)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 ignores a stored value that is not a learner board, and works without storage or with one that throws"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 offers the Raspberry Pi Pico and the ESP32-S3-DevKitC-1, by their ids in boards.json"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"LRN-013 starts with no board, keeps the one the learner chooses, and reads it back after a restart"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnBoard.test.ts","test":"the board of the hardware track (LRN-013)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-013 requires the hardware block exactly when the lesson lists the hardware track, with its wiring file and tolerances"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
   ],
   "LRN-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
@@ -2671,6 +2683,20 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the bill of materials covers every hardware lesson (LRN-014)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"LRN-014 the lesson pages link the wiring of their lesson on each board"}
+  ],
+  "LRN-015": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 refuses a session that is not connected, and reads nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 refuses a session the learner has not started, and does not start it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 stops, keeping what it read, when the session stops running or a read fails, and never restarts it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"the hardware recorder starts no physical operation (LRN-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"LRN-015 drives every Learn control and no connect, deploy, RUN, STOP, force, raw serial or flash happens"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"Learn starts no physical operation by itself (LRN-015)"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds a call that connects, deploys, runs, stops, forces, writes, opens a port or flashes"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds an import of a module that reaches a device"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 guards the Learn modules and components, not their tests or other surfaces"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 holds for every Learn source of the repository"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"Learn starts no physical operation by itself (LRN-015)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
   ],
   "LRN-016": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"LRN-016 states the voltage limit in English and Spanish with the same facts"},
@@ -2726,7 +2752,26 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
   ],
   "LRN-024": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the tolerances of a board check (LRN-024)"}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps a passing hardware grade without passing the lesson, and a simulation pass without a hardware pass"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps the newest hardware grade on a merge, in either order"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 refuses a document that keeps a grade in the wrong place"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"a hardware run is kept apart from a simulation pass (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-024 has every string of the hardware track in English and Spanish"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-024 lists the lessons passed on hardware under their own label, and says when there is none"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"a pass on hardware is shown apart from a pass in simulation (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 finds each scenario input event at the first sample, after the previous one, that holds what the event sets"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 holds a reaction exactly at the tolerance and refuses one a sample beyond it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 is deterministic: the same trace and tolerances give the same result"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes a program whose outputs follow the learner\\'s presses within the lesson tolerance, however late the presses were"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 records the run with track \"hardware\", and the progress store accepts the record"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"the grade of a hardware check is labelled a hardware run (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"the hardware check aligns the scenario on the input events the learner made (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-024 ends when the learner says the run is done, keeping what it read"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-024 samples the lesson signals at the interval, as whole ms since the start, BOOL as booleans"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"the hardware recorder (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the tolerances of a board check (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot produce a hardware grade: no tool takes a trace, a track or a board, no answer is a grade record, and a hardware run is no pass (LRN-024, LRN-034)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
   ],
   "LRN-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
@@ -2736,6 +2781,11 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 fails a check on an empty trace instead of passing it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 fails, with nothing observed, every assertion that depends on an input event the learner never made"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 reports a late reaction with the time in the trace, the expected and observed values and the sample it read"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-026 reports the sample at which a FOR assertion stopped holding"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"a failed hardware check says which assertion, when, what was expected and what was observed (LRN-026)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
   ],
@@ -2752,14 +2802,19 @@
   "LRN-029": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 Learn follows the language of the application"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 draws the lessons and the Learn home in the language of the setting, and switches when the setting changes"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 names the tracks of a lesson \"Rutas\" in Spanish, because \"Pistas\" are its hints"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 es: addresses the learner as usted, never with voseo"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 has the same structure in English and Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, \"sí\", \"así\""},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"the voseo guard of the lesson text (LRN-029)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson and hint exists in English and Spanish with the same structure"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every part of the kit and every sentence of the voltage limit exists in both languages, in the register and the terms of the glossary"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant label exists in English and Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint addresses the learner with \"tú\" or voseo"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary"},
@@ -2777,6 +2832,7 @@
   ],
   "LRN-031": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
@@ -2807,7 +2863,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-034": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot produce a hardware grade: no tool takes a trace, a track or a board, no answer is a grade record, and a hardware run is no pass (LRN-024, LRN-034)"}
   ],
   "LRN-035": [
     {"kind":"unit","ref":"tools/docs/generate_course_pages.test.ts","test":"LRN-035 course pages: a page for every module and lesson, generated from the lesson packages","partial":true,"note":"a page for each of the 12 modules and 26 lessons, a module index and a plants page, in English and Spanish, generated from the lesson index and drift-checked by this test; they are unlisted from the sidebar and linked from the course outline. Open: a faceplate page, and a page for each learner board kit (no learner board kit exists in the repository yet); the scenario format page is reference/scenario-file.md"},
