@@ -303,14 +303,21 @@ describe('the committed evidence (VF-027)', () => {
     expect(manual.filter(({ check }) => !check.note).map(({ id }) => id)).toEqual([]);
   });
 
-  it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
-    const board = ['HIL-001', 'HIL-010', 'HIL-015', 'LRN-013', 'LRN-024'];
+  const expectGated = (ids: string[]) => {
     const gated = Object.entries(evidence).filter(([, checks]) => checks.some((check) => check.kind === 'gate' && check.note)).map(([id]) => id);
-    expect(gated).toEqual(expect.arrayContaining(board));
+    expect(gated).toEqual(expect.arrayContaining(ids));
     const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
     const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
     const { states } = coverage(full, evidence, listed);
-    expect(board.filter((id) => states.get(id) === 'covered')).toEqual([]);
+    expect(ids.filter((id) => states.get(id) === 'covered')).toEqual([]);
+  };
+
+  it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
+    expectGated(['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004']);
+  });
+
+  it('gates the requirements that need a hosted run, another operating system, a person or a decision of the owner', () => {
+    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'LRN-012', 'DOC-015', 'LRN-037', 'REL-031']);
   });
 
   it('lists every gated requirement with the evidence its gate still asks for', () => {

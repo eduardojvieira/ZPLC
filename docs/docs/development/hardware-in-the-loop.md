@@ -47,6 +47,7 @@ variable, then found from the USB identifiers of the board in
 `tools/hil/usb-ids.json`. When more than one device matches, or none does, the
 tool stops and lists what it saw; it never guesses. No port path is written in
 a script, and the tools run on Linux, macOS and Windows.
+CI runs their tests on Linux only; no run on macOS or Windows is recorded yet.
 
 ### Without a board
 

@@ -73,6 +73,8 @@ an HIL run before claiming target behavior. See
 [Hardware support](../reference/capabilities-evidence.md) and
 [Safety and limitations](../safety-and-limitations.md).
 
+No firmware build from Studio on macOS or Windows is recorded yet.
+
 ## On a failed connection or deploy
 
 Do not retry blindly. Re-inspect the selected board/profile and runtime ABI,
