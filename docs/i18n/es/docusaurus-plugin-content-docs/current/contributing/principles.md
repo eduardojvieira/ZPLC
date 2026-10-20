@@ -66,7 +66,7 @@ hay shell genérico ni acceso genérico al sistema de archivos.
 ### 7. Las afirmaciones se gradúan por evidencia
 
 Los resultados de host, QEMU, compilación para el destino, banco
-(hardware-in-the-loop) y manuales son niveles distintos, y un nivel inferior
+(hardware en el lazo) y manuales son niveles distintos, y un nivel inferior
 nunca prueba uno superior. Indique qué nivel respalda cada afirmación en la
 documentación, en un mensaje de commit y en un pull request. Véase
 [Compatibilidad de hardware](../reference/capabilities-evidence.md).
