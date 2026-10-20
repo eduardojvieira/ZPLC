@@ -43,7 +43,7 @@
             "pin": 0
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "header pin 1"
@@ -60,7 +60,7 @@
             "pin": 1
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "header pin 2"
@@ -77,7 +77,7 @@
             "pin": 2
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "header pin 4"
@@ -94,7 +94,7 @@
             "pin": 3
           },
           "safe": 0,
-          "electrical": "3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here).",
+          "electrical": "3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "header pin 5"
@@ -111,7 +111,7 @@
             "pin": 25
           },
           "safe": 0,
-          "electrical": "On-board green LED through its series resistor; not a field output.",
+          "electrical": "On-board green LED through its series resistor; not a field output. Raspberry Pi Pico and Pico 2 only: on the Pico W and Pico 2 W the LED is on the wireless chip.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "on-board LED"
@@ -198,7 +198,7 @@
             "eng_max": 3.3,
             "unit": "V"
           },
-          "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V.",
+          "electrical": "0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "header pin 31"

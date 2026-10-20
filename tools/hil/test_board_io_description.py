@@ -345,6 +345,16 @@ class ManifestTests(unittest.TestCase):
                 if item["kind"] == "digital":
                     self.assertIsNotNone(boards_lib.overlay_binding(item, ROOT), f"{board_id} {item['id']}")
 
+    def test_every_learner_pin_on_a_header_states_its_voltage_and_output_current_limit(self) -> None:
+        # LRN-016: the pin map generated from the description carries the limits a learner wires to.
+        for board_id in self.LEARNER_PINS:
+            for item in self.by_id(board_id)["io"]["channels"]:
+                if not item.get("location", "").startswith("header"):
+                    continue
+                self.assertIn("3.3 V", item["electrical"], f"{board_id} {item['id']}")
+                if item["direction"] == "output":
+                    self.assertIn("under 10 mA", item["electrical"], f"{board_id} {item['id']}")
+
     def test_the_learner_buttons_pull_up_and_are_active_low(self) -> None:
         for board_id in self.LEARNER_PINS:
             for item in self.by_id(board_id)["io"]["channels"]:
