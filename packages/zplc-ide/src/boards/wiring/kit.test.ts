@@ -9,6 +9,12 @@ describe('the learner kit of the course (LRN-014, LRN-016)', () => {
   it('is valid and names the two learner boards of boards.json', () => {
     expect(validateKit(kitFile)).toEqual([]);
     expect(joinLearnerBoards(kitFile as never, boardManifest).boards.map((board) => board.displayName)).toEqual(['Raspberry Pi Pico (RP2040)', 'ESP32-S3-DevKitC-1 (N8R8)']);
+    expect(joinLearnerBoards(kitFile as never, boardManifest).problems).toEqual([]);
+  });
+
+  it('LRN-029 refuses a kit board that boards.json does not mark as a learner board, whose Spanish text nothing checks', () => {
+    const unmarked = (boardManifest as Array<Record<string, unknown>>).map((entry) => (entry.board_id === 'rpi-pico-rp2040' ? { ...entry, learner: false } : entry));
+    expect(joinLearnerBoards(kitFile as never, unmarked).problems).toEqual(['kit.json: board "rpi-pico-rp2040" is not marked "learner": true in boards.json, so its Spanish text is not checked (LRN-029)']);
   });
 
   it('LRN-016 states the voltage limit in English and Spanish with the same facts', () => {

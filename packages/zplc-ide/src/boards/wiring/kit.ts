@@ -64,13 +64,15 @@ export function validateKit(value: unknown): string[] {
 
 /** The learner boards of the kit with their I/O description from the parsed boards.json; a board it cannot join is a problem. */
 export function joinLearnerBoards(kit: LearnerKit, manifest: unknown): { boards: WiringBoard[]; problems: string[] } {
-  const entries = Array.isArray(manifest) ? (manifest as Array<{ board_id?: unknown; display_name?: unknown; io?: unknown }>) : [];
+  const entries = Array.isArray(manifest) ? (manifest as Array<{ board_id?: unknown; display_name?: unknown; io?: unknown; learner?: unknown }>) : [];
   const boards: WiringBoard[] = [];
   const problems: string[] = [];
   for (const entry of kit.boards) {
     const board = entries.find((candidate) => candidate.board_id === entry.boardId);
     const io = board ? readBoardIo(board.io) : undefined;
     if (!board || !io || !isText(board.display_name)) { problems.push(`kit.json: board "${entry.boardId}" has no valid I/O description in boards.json`); continue; }
+    // zplc_boards.py requires the Spanish text of a board marked learner (LRN-029); an unmarked board would escape it.
+    if (board.learner !== true) problems.push(`kit.json: board "${entry.boardId}" is not marked "learner": true in boards.json, so its Spanish text is not checked (LRN-029)`);
     boards.push({ boardId: entry.boardId, displayName: board.display_name, io, supply: entry.supply, ground: entry.ground, analogGround: entry.analogGround });
   }
   return { boards, problems };

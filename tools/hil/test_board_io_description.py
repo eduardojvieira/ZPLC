@@ -448,6 +448,11 @@ class ManifestTests(unittest.TestCase):
             self.assertGreaterEqual(len(digital_in), 4, board_id)
             self.assertGreaterEqual(len(analog_in), 1, board_id)
 
+    def test_lrn_029_the_two_learner_boards_are_marked_learner_so_their_spanish_text_is_checked(self) -> None:
+        self.assertEqual(
+            {"rpi-pico-rp2040", "esp32-s3-devkitc"}, {entry["board_id"] for entry in self.boards if entry.get("learner") is True}
+        )
+
     def test_io_009_the_pico_maps_its_on_board_led_as_an_output(self) -> None:
         led = next(c for c in self.by_id("rpi-pico-rp2040")["io"]["channels"] if c["pin"] == "GP25")
         self.assertEqual(("output", "on-board LED"), (led["direction"], led["location"]))
