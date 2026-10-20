@@ -54,13 +54,13 @@ export async function checkOpenFiles(): Promise<void> {
     const file = byPath.get(reload.path)!;
     loadedFiles.set(file.id, { ...file, content: reload.content, isModified: false, diskContent: reload.content });
     changed = true;
-    note(`Reloaded ${file.name}: it was changed outside Studio.`);
+    note(`Reloaded ${file.name}: it was changed outside ZPLC.`);
   }
   if (changed) useIDEStore.setState({ loadedFiles });
   for (const path of plan.close) {
     const file = byPath.get(path)!;
     useIDEStore.getState().discardFile(file.id);
-    note(`Closed ${file.name}: it was deleted outside Studio.`);
+    note(`Closed ${file.name}: it was deleted outside ZPLC.`);
   }
   const open = new Set(files.map((file) => file.path));
   setConflicts((previous) => [

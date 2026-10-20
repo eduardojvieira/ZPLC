@@ -62,7 +62,7 @@ describe('the check on the board waits for the learner (LRN-015, LRN-024)', () =
   it('LRN-015 disables Check on board and says what is missing until the learner connected and started the program', () => {
     const out = check({ readiness: { ready: false, block: 'not-connected', reported: null } });
     expect(out).toMatch(/<button(?=[^>]*data-learn-board-check="true")(?=[^>]*disabled="")[^>]*>/);
-    expect(out).toContain('Connect Studio to your board first, from the toolbar.');
+    expect(out).toContain('Connect to your board first, from the toolbar.');
     expect(check({ readiness: { ready: false, block: 'not-running', reported: null } })).toContain('Deploy the lesson program to your board and run it first, from the toolbar.');
     expect(auditMarkup(out)).toEqual([]);
   });

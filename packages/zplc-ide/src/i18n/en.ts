@@ -28,7 +28,7 @@ import { moduleTextEn } from './catalog/moduleText';
 import { boardsEn } from './catalog/boards';
 
 /**
- * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
+ * The English catalog of ZPLC (UX-029): the source of truth for every user-visible string. A key is a dotted path
  * from the surface to the string; `{name}` marks a value the caller supplies, and a `.one` / `.other` pair is a plural
  * (`tn`). The Spanish catalog (`es.ts`) is typed against the keys written here, so a key added without its Spanish
  * text, or a Spanish key with no English one, does not compile. Text is in sentence case, without exclamation marks and
@@ -55,7 +55,7 @@ export const baseEn = {
   'preferences.autosave.off': 'Off',
   'preferences.autosave.after.one': 'After {count} second without typing',
   'preferences.autosave.after.other': 'After {count} seconds without typing',
-  'preferences.updates.check': 'Check for a newer release when Studio starts',
+  'preferences.updates.check': `Check for a newer release when ${PRODUCT_NAME} starts`,
   'preferences.minimap': 'Show the minimap in the code editor',
   'preferences.updates.now': 'Check now',
   'preferences.updates.checking': 'Checking…',
@@ -76,7 +76,7 @@ export const baseEn = {
   'updateNotice.dismiss': 'Dismiss',
   'updateNotice.dismissLabel': `Dismiss the notice about ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'How to update',
-  'updateNotice.untouched': 'Studio does not download or install anything. Your projects are folders you chose, so an update does not touch them.',
+  'updateNotice.untouched': `${PRODUCT_NAME} does not download or install anything. Your projects are folders you chose, so an update does not touch them.`,
   'updateNotice.step.win32Setup': 'Setup: download the new `setup-unsigned.exe` file, check its checksum and run it over the installed version.',
   'updateNotice.step.win32Portable': 'Portable: download the new `portable-unsigned.exe` file and replace the old one.',
   'updateNotice.step.darwin': 'Download the new `.dmg` (or `.zip`) file, check its checksum and drag the new application into "Applications", replacing the old one.',
@@ -86,7 +86,7 @@ export const baseEn = {
   'updateNotice.step.other': 'Download the new installer of your system from the release, check its checksum and install it over the old one.',
   // Serial port dialog
   'serialPort.title': 'Choose a serial port',
-  'serialPort.intro': 'Studio uses only the port you choose, for this connection. Choosing a port does not send a program or start anything.',
+  'serialPort.intro': `${PRODUCT_NAME} uses only the port you choose, for this connection. Choosing a port does not send a program or start anything.`,
   'serialPort.empty': 'No serial port was found. Plug in the board, then choose "Refresh".',
   'serialPort.list': 'Serial ports',
   'serialPort.noUsbId': 'No USB identifiers',
@@ -101,7 +101,7 @@ export const baseEn = {
   // Words shared by several surfaces
   'common.cancel': 'Cancel',
   // Welcome screen
-  'welcome.title': `${PRODUCT_NAME} 2.0`,
+  'welcome.title': PRODUCT_NAME,
   'welcome.intro': 'Open a project, create one in a folder, start the Learn course, or copy an example you can adapt.',
   'welcome.build': 'build {version}',
   'welcome.start.heading': 'Start',
@@ -137,7 +137,7 @@ export const baseEn = {
   'welcome.folderAccessUnavailable': 'Folder access is unavailable in this environment.',
   'welcome.storedInFolder': 'Projects and copied examples are stored in the folder you choose.',
   // Application shell
-  'app.workbenchFailed': 'Studio could not load the workbench: {message}',
+  'app.workbenchFailed': `${PRODUCT_NAME} could not load the workbench: {message}`,
   'app.workbenchLoading': 'Loading the workbench…',
   'app.resize': 'Resize the editor and the results panel',
   'common.retry': 'Retry',
@@ -321,7 +321,7 @@ export const baseEn = {
   'deploy.mismatch.noDevice': 'The device did not report valid system information.',
   'deploy.safe.none': 'Every output stays off while the old program stops, the new one is written and the PLC stays stopped.',
   'deploy.safe.declared': 'Every output stays at its safe value while the old program stops, the new one is written and the PLC stays stopped. Declared by the project: {values}. Every other output is off.',
-  'deploy.safe.scope': 'This is checked by host and simulator tests. Studio does not measure the pins of this board.',
+  'deploy.safe.scope': `This is checked by host and simulator tests. The ${PRODUCT_NAME} application does not measure the pins of this board.`,
   'deploy.safe.on': 'on',
   'deploy.safe.off': 'off',
   'deploy.transfer.framed': 'The chunks go in order. The device reports the size and CRC-32 of what it holds, and they must match what was announced.',
@@ -351,15 +351,15 @@ export const baseEn = {
   'notifications.cancelLabel': 'Cancel: {title}',
   // Recovery of unsaved work
   'recovery.title': 'Recover unsaved changes',
-  'recovery.intro': 'Studio did not close properly last time. These files had changes that were not saved. Restore puts the changes back in the editor, still unsaved; Discard removes them.',
+  'recovery.intro': `${PRODUCT_NAME} did not close properly last time. These files had changes that were not saved. Restore puts the changes back in the editor, still unsaved; Discard removes them.`,
   'recovery.keptAt': '{path} · kept at {time}',
   'recovery.discardLabel': 'Discard {name}',
   'recovery.restore': 'Restore',
   'recovery.restoreLabel': 'Restore {name}',
   'recovery.discardAll': 'Discard all',
   'recovery.restoreAll': 'Restore all',
-  // A file changed outside Studio
-  'externalChange.title': 'Changed outside Studio',
+  // A file changed outside ZPLC
+  'externalChange.title': `Changed outside ${PRODUCT_NAME}`,
   'externalChange.intro': 'These files have changes that are not saved, and they also changed on disk. Choose which version to keep.',
   'externalChange.deleted': 'Deleted on disk',
   'externalChange.changed': 'Changed on disk',

@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE Type Definitions
+ * ZPLC type definitions
  * 
  * Core types for the IEC 61131-3 Web IDE
  */

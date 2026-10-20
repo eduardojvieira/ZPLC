@@ -39,7 +39,7 @@ describe('region error', () => {
   });
 
   it('offers an extra recovery action when the region has one', () => {
-    const html = renderToStaticMarkup(<RegionError region="ZPLC Studio" error={new Error('boom')} onRetry={() => undefined} recovery={{ label: 'Close project', run: () => undefined }} />);
+    const html = renderToStaticMarkup(<RegionError region="ZPLC" error={new Error('boom')} onRetry={() => undefined} recovery={{ label: 'Close project', run: () => undefined }} />);
     expect(html).toContain('>Close project<');
     expect(renderToStaticMarkup(<RegionError region="Editor" error={new Error('boom')} onRetry={() => undefined} />)).not.toContain('Close project');
   });

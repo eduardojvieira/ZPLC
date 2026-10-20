@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE - Electron Main Process
+ * ZPLC - Electron Main Process
  * 
  * Handles window management, WebSerial permissions, and native integration.
  * This is the entry point for the Electron desktop application.
@@ -78,7 +78,7 @@ const serialPorts = createSerialPortBroker({
   newRequestId: () => randomUUID(),
 });
 let recoveryStore: ReturnType<typeof createRecoveryStore> | null = null;
-// Changes made outside Studio reach only the window that owns the folder, as relative paths (IDE-004).
+// Changes made outside ZPLC reach only the window that owns the folder, as relative paths (IDE-004).
 const projectWatcher = createProjectWatcher({
   send: (ownerId, change) => {
     const target = mainWindow?.webContents;
@@ -570,7 +570,7 @@ app.whenReady().then(async () => {
   });
 }).catch((error: unknown) => {
   // Without the audit log, the stores and the IPC handlers there is nothing safe to show: leave instead of idling without a window.
-  console.error('ZPLC IDE failed to start', error);
+  console.error('ZPLC failed to start', error);
   app.exit(1);
 });
 

@@ -9,7 +9,7 @@ import { Button } from '../ui';
 import { useT } from '../i18n';
 
 interface ErrorBoundaryProps {
-  /** Name shown to the user: "Editor", "Panel", "ZPLC Studio". */
+  /** Name shown to the user: "Editor", "Panel", "ZPLC". */
   region: string;
   /** Changing it clears a shown error, so a failing file or tab does not block the next one. */
   resetKey?: unknown;

@@ -1,6 +1,6 @@
 /**
  * @file connectionManager.ts
- * @brief Global Serial Connection Manager for ZPLC IDE
+ * @brief Global Serial Connection Manager for ZPLC
  * 
  * Manages a single shared SerialAdapter instance that can be used by:
  * - Toolbar (connect/disconnect, upload)

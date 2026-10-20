@@ -1,5 +1,5 @@
 /**
- * The languages of Studio and how the language setting becomes one of them (UX-029). Pure: no store and no React, so
+ * The languages of ZPLC and how the language setting becomes one of them (UX-029). Pure: no store and no React, so
  * the settings module can use it without a cycle.
  */
 export const LOCALES = ['en', 'es'] as const;

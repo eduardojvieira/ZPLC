@@ -121,7 +121,7 @@ async function connectApp(target: string, context: { answerFile: string | undefi
     }
     throw new Error(`Timed out waiting for ${description}${last instanceof Error ? `: ${last.message}` : ''}`);
   };
-  await until('real preload bridge and Welcome screen', async () => await evaluate<boolean>(`Boolean(window.electronAPI?.isElectron && document.body.innerText.includes('ZPLC Studio 2.0'))`) || undefined);
+  await until('real preload bridge and Welcome screen', async () => await evaluate<boolean>(`Boolean(window.electronAPI?.isElectron && document.querySelector('h1')?.textContent === 'ZPLC')`) || undefined);
   page.errors.splice(0); page.errorDetails.splice(0); // the headless bootstrap diagnostics are asserted by run-desktop-smoke.ts
   const app: App = {
     cdp: page,

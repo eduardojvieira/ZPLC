@@ -44,7 +44,7 @@ describe('UX-019 deploy dialog', () => {
   it('UX-019 states what the outputs do during the transfer and that the PLC stays stopped', () => {
     const out = body(deployRequest(facts, { running: false }));
     expect(out).toContain('Every output stays off while the old program stops, the new one is written and the PLC stays stopped.');
-    expect(out).toContain('Studio does not measure the pins of this board.');
+    expect(out).toContain('The ZPLC application does not measure the pins of this board.');
   });
 
   it('UX-019 highlights a mismatch by text and icon, gives its message, and offers only Close', () => {

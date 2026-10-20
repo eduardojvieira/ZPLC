@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from '../../productName';
 /** The text that plain modules (presentations, flows, keyboards) show, in English and in Spanish (UX-029, UX-030). Keys `module.*`. */
 export const moduleTextEn = {
   'toolchain.status.unavailable': 'Unavailable in this app',
@@ -50,7 +51,7 @@ export const moduleTextEn = {
   'archive.corrupt': 'The archive is damaged: a file does not match its checksum or declared size.',
   'archive.duplicate': 'The archive holds two files with the same name, so it was refused.',
   'archive.unsafe-path': 'The archive holds a file that would be written outside the project folder, so it was refused.',
-  'archive.unsupported': 'The archive uses something Studio does not read: encryption, a link, or a zip64 archive.',
+  'archive.unsupported': `The archive uses something ${PRODUCT_NAME} does not read: encryption, a link, or a zip64 archive.`,
   'archive.not-a-zip': 'The file is not a ZPLC project archive (a zip file).',
   'archive.invalid-path': 'The project holds a file name that an archive cannot carry on every system.',
   'archive.not-empty': 'The folder is not empty. Choose an empty folder to import into.',
@@ -85,7 +86,7 @@ export const moduleTextEn = {
   'store.copiedExample': 'Copied example project: {name}',
   'store.createdProject': 'Created new project: {name}',
   'store.creatingProject': 'Creating new project in: {name}...',
-  'store.ready': 'ZPLC IDE ready',
+  'store.ready': `${PRODUCT_NAME} ready`,
   'store.openedProject': 'Opened project: {name}',
   'store.openingFolder': 'Opening folder: {name}...',
   'labPlayback.pedestrian': 'Pedestrian crossing',
@@ -337,7 +338,7 @@ export const moduleTextEs: Record<keyof typeof moduleTextEn, string> = {
   'archive.corrupt': 'El archivo comprimido está dañado: un archivo no coincide con su suma de comprobación o con el tamaño declarado.',
   'archive.duplicate': 'El archivo comprimido contiene dos archivos con el mismo nombre, por lo que se rechazó.',
   'archive.unsafe-path': 'El archivo comprimido contiene un archivo que se escribiría fuera de la carpeta del proyecto, por lo que se rechazó.',
-  'archive.unsupported': 'El archivo comprimido usa algo que Studio no lee: cifrado, un enlace o un archivo zip64.',
+  'archive.unsupported': `El archivo comprimido usa algo que ${PRODUCT_NAME} no lee: cifrado, un enlace o un archivo zip64.`,
   'archive.not-a-zip': 'El archivo no es un archivo comprimido de proyecto de ZPLC (un archivo zip).',
   'archive.invalid-path': 'El proyecto contiene un nombre de archivo que un archivo comprimido no puede llevar en todos los sistemas.',
   'archive.not-empty': 'La carpeta no está vacía. Elija una carpeta vacía en la que importar.',
@@ -372,7 +373,7 @@ export const moduleTextEs: Record<keyof typeof moduleTextEn, string> = {
   'store.copiedExample': 'Proyecto de ejemplo copiado: {name}',
   'store.createdProject': 'Proyecto nuevo creado: {name}',
   'store.creatingProject': 'Creando un proyecto nuevo en: {name}...',
-  'store.ready': 'ZPLC IDE listo',
+  'store.ready': `${PRODUCT_NAME} listo`,
   'store.openedProject': 'Proyecto abierto: {name}',
   'store.openingFolder': 'Abriendo la carpeta: {name}...',
   'labPlayback.pedestrian': 'Cruce peatonal',

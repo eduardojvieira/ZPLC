@@ -53,7 +53,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'preferences.autosave.off': 'Desactivado',
   'preferences.autosave.after.one': 'Después de {count} segundo sin escribir',
   'preferences.autosave.after.other': 'Después de {count} segundos sin escribir',
-  'preferences.updates.check': 'Buscar una versión más reciente al iniciar Studio',
+  'preferences.updates.check': `Buscar una versión más reciente al iniciar ${PRODUCT_NAME}`,
   'preferences.minimap': 'Mostrar el minimapa en el editor de código',
   'preferences.updates.now': 'Buscar ahora',
   'preferences.updates.checking': 'Buscando…',
@@ -74,7 +74,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'updateNotice.dismiss': 'Descartar',
   'updateNotice.dismissLabel': `Descartar el aviso sobre ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'Cómo actualizar',
-  'updateNotice.untouched': 'Studio no descarga ni instala nada. Sus proyectos son carpetas que usted eligió, por lo que una actualización no las modifica.',
+  'updateNotice.untouched': `${PRODUCT_NAME} no descarga ni instala nada. Sus proyectos son carpetas que usted eligió, por lo que una actualización no las modifica.`,
   'updateNotice.step.win32Setup': 'Instalador: descargue el nuevo archivo `setup-unsigned.exe`, verifique su suma de comprobación y ejecútelo sobre la versión instalada.',
   'updateNotice.step.win32Portable': 'Portátil: descargue el nuevo archivo `portable-unsigned.exe` y reemplace el anterior.',
   'updateNotice.step.darwin': 'Descargue el nuevo archivo `.dmg` (o `.zip`), verifique su suma de comprobación y arrastre la nueva aplicación a "Aplicaciones", reemplazando la anterior.',
@@ -84,7 +84,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'updateNotice.step.other': 'Descargue desde la versión publicada el nuevo instalador de su sistema, verifique su suma de comprobación e instálelo sobre el anterior.',
   // Serial port dialog
   'serialPort.title': 'Elegir un puerto serie',
-  'serialPort.intro': 'Studio usa solamente el puerto que usted elija, para esta conexión. Elegir un puerto no envía ningún programa ni inicia nada.',
+  'serialPort.intro': `${PRODUCT_NAME} usa solamente el puerto que usted elija, para esta conexión. Elegir un puerto no envía ningún programa ni inicia nada.`,
   'serialPort.empty': 'No se encontró ningún puerto serie. Conecte la placa y luego elija "Actualizar".',
   'serialPort.list': 'Puertos serie',
   'serialPort.noUsbId': 'Sin identificadores USB',
@@ -99,7 +99,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   // Words shared by several surfaces
   'common.cancel': 'Cancelar',
   // Welcome screen
-  'welcome.title': `${PRODUCT_NAME} 2.0`,
+  'welcome.title': PRODUCT_NAME,
   'welcome.intro': 'Abra un proyecto, cree uno en una carpeta, inicie el curso de aprendizaje o copie un ejemplo que pueda adaptar.',
   'welcome.build': 'compilación {version}',
   'welcome.start.heading': 'Inicio',
@@ -135,7 +135,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'welcome.folderAccessUnavailable': 'El acceso a carpetas no está disponible en este entorno.',
   'welcome.storedInFolder': 'Los proyectos y los ejemplos copiados se guardan en la carpeta que usted elija.',
   // Application shell
-  'app.workbenchFailed': 'Studio no pudo cargar el área de trabajo: {message}',
+  'app.workbenchFailed': `${PRODUCT_NAME} no pudo cargar el área de trabajo: {message}`,
   'app.workbenchLoading': 'Cargando el área de trabajo…',
   'app.resize': 'Cambiar el tamaño del editor y del panel de resultados',
   'common.retry': 'Reintentar',
@@ -319,7 +319,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'deploy.mismatch.noDevice': 'El dispositivo no informó datos válidos del sistema.',
   'deploy.safe.none': 'Todas las salidas permanecen apagadas mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido.',
   'deploy.safe.declared': 'Todas las salidas permanecen en su valor seguro mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido. Declarado por el proyecto: {values}. Las demás salidas están apagadas.',
-  'deploy.safe.scope': 'Esto se comprueba con pruebas en el equipo y en el simulador. Studio no mide los pines de esta placa.',
+  'deploy.safe.scope': `Esto se comprueba con pruebas en el equipo y en el simulador. La aplicación ${PRODUCT_NAME} no mide los pines de esta placa.`,
   'deploy.safe.on': 'encendida',
   'deploy.safe.off': 'apagada',
   'deploy.transfer.framed': 'Los fragmentos se envían en orden. El dispositivo informa el tamaño y el CRC-32 de lo que guarda, y deben coincidir con lo anunciado.',
@@ -349,15 +349,15 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'notifications.cancelLabel': 'Cancelar: {title}',
   // Recovery of unsaved work
   'recovery.title': 'Recuperar cambios sin guardar',
-  'recovery.intro': 'Studio no se cerró correctamente la última vez. Estos archivos tenían cambios sin guardar. Restaurar devuelve los cambios al editor, todavía sin guardar; Descartar los elimina.',
+  'recovery.intro': `${PRODUCT_NAME} no se cerró correctamente la última vez. Estos archivos tenían cambios sin guardar. Restaurar devuelve los cambios al editor, todavía sin guardar; Descartar los elimina.`,
   'recovery.keptAt': '{path} · conservado a las {time}',
   'recovery.discardLabel': 'Descartar {name}',
   'recovery.restore': 'Restaurar',
   'recovery.restoreLabel': 'Restaurar {name}',
   'recovery.discardAll': 'Descartar todo',
   'recovery.restoreAll': 'Restaurar todo',
-  // A file changed outside Studio
-  'externalChange.title': 'Modificado fuera de Studio',
+  // A file changed outside ZPLC
+  'externalChange.title': `Modificado fuera de ${PRODUCT_NAME}`,
   'externalChange.intro': 'Estos archivos tienen cambios sin guardar y también cambiaron en el disco. Elija qué versión conservar.',
   'externalChange.deleted': 'Eliminado en el disco',
   'externalChange.changed': 'Modificado en el disco',

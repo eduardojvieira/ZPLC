@@ -145,7 +145,7 @@ export function Specimens() {
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="Gallery dialog" description="A modal dialog: Tab stays inside, Escape closes, focus returns." size="sm" footer={<Button onClick={() => setDialogOpen(false)}>Done</Button>}>
           <div style={{ padding: '12px 16px' }}><TextField label="Name" defaultValue="MainTask" /></div>
         </Dialog>
-        <DialogSurface modal={false} titleId={dialogTitle} descriptionId={dialogDescription} title="Recover unsaved changes" description="Studio did not close properly last time." size="sm" onClose={noop} footer={<><Button>Discard all</Button><Button variant="primary">Restore all</Button></>}>
+        <DialogSurface modal={false} titleId={dialogTitle} descriptionId={dialogDescription} title="Recover unsaved changes" description="ZPLC did not close properly last time." size="sm" onClose={noop} footer={<><Button>Discard all</Button><Button variant="primary">Restore all</Button></>}>
           <p style={{ padding: '12px 16px', margin: 0 }}>Two files had changes that were not saved.</p>
         </DialogSurface>
       </Specimen>

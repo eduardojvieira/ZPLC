@@ -24,7 +24,7 @@ const nucleo = image('nucleo_h743zi', { sha256: sha('n') });
 const nucleoElf = image('nucleo_h743zi', { file: `zplc-runtime-${VERSION}-nucleo-h743zi.elf`, format: 'elf', role: 'debug', flash: null, sha256: sha('d') });
 const giga = image('arduino_giga_r1', { flash: { runner: 'dfu-util', address: '0x08040000', args: { pid: '2341:0366', alt: '0', dfuse: 'true' } } });
 
-const result = (images: FirmwareImage[], folder = '/opt/ZPLC IDE/resources/firmware'): FirmwareImagesResult => ({ status: 'available', version: VERSION, commit: 'c'.repeat(40), folder, images });
+const result = (images: FirmwareImage[], folder = '/opt/ZPLC/resources/firmware'): FirmwareImagesResult => ({ status: 'available', version: VERSION, commit: 'c'.repeat(40), folder, images });
 const studio = { version: VERSION, platform: 'linux' };
 
 describe('the image of the selected board (REL-025)', () => {
@@ -34,7 +34,7 @@ describe('the image of the selected board (REL-025)', () => {
     const shown = presentFirmwareImage(all, 'rpi_pico', studio);
     expect(shown.kind).toBe('ready');
     if (shown.kind !== 'ready') return;
-    expect(shown.image).toMatchObject({ file: pico.file, sha256: sha('p'), bytes: 1000, offline: true, location: `/opt/ZPLC IDE/resources/firmware/${pico.file}` });
+    expect(shown.image).toMatchObject({ file: pico.file, sha256: sha('p'), bytes: 1000, offline: true, location: `/opt/ZPLC/resources/firmware/${pico.file}` });
     expect(shown.learner).toBe(true);
     expect(shown.versionNote).toBeNull();
   });
@@ -138,7 +138,7 @@ describe('the flashing steps (REL-025)', () => {
       expect(rp2040).toContain('BOOTSEL');
       expect(rp2040).toContain('RPI-RP2');
       expect(rp2040).toContain(`Copie ${pico.file}`);
-      expect(noFlashNotice()).toContain('Studio no graba');
+      expect(noFlashNotice()).toContain('La aplicación ZPLC no graba');
       const shown = presentFirmwareImage(result([pico, esp]), 'esp32s3_devkitc', studio);
       expect(shown.kind === 'ready' && shown.evidence).toContain('No se ha grabado');
     } finally {

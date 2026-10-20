@@ -128,7 +128,7 @@ describe('kit dialogs (UX-001, UX-025 stopgap)', () => {
   });
 
   it('names the dialog by its title, describes it, and gives the close button a name', () => {
-    const out = html(<Dialog open onClose={noop} title="Recover unsaved changes" description="Studio did not close properly.">Body</Dialog>);
+    const out = html(<Dialog open onClose={noop} title="Recover unsaved changes" description="ZPLC did not close properly.">Body</Dialog>);
     expect(out).toContain('role="dialog"');
     expect(out).toContain('aria-modal="true"');
     const labelled = /aria-labelledby="([^"]+)"/.exec(out)?.[1];

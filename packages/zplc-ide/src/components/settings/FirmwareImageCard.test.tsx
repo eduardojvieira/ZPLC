@@ -10,7 +10,7 @@ const pico: FirmwareImage = {
   board: 'rpi_pico', boardId: 'rpi-pico-rp2040', displayName: 'Raspberry Pi Pico (RP2040)', file: `zplc-runtime-${VERSION}-rpi-pico-rp2040.uf2`, format: 'uf2', role: 'flash',
   sha256: 'b'.repeat(64), bytes: 309760, evidenceLevel: 'cross-build', learner: true, flash: { runner: 'uf2', address: null, args: { 'board-id': 'RPI-RP2' } }, bundled: 'verified',
 };
-const result: FirmwareImagesResult = { status: 'available', version: VERSION, commit: 'c'.repeat(40), folder: '/opt/ZPLC IDE/resources/firmware', images: [pico] };
+const result: FirmwareImagesResult = { status: 'available', version: VERSION, commit: 'c'.repeat(40), folder: '/opt/ZPLC/resources/firmware', images: [pico] };
 const view = (shown: ReturnType<typeof presentFirmwareImage>) => renderToStaticMarkup(<FirmwareImageView presentation={shown} />);
 
 describe('the firmware image card (REL-025)', () => {
@@ -20,11 +20,11 @@ describe('the firmware image card (REL-025)', () => {
     expect(html).toContain('learner board, available offline');
     expect(html).toContain(pico.file);
     expect(html).toContain('b'.repeat(64));
-    expect(html).toContain('/opt/ZPLC IDE/resources/firmware/');
+    expect(html).toContain('/opt/ZPLC/resources/firmware/');
     expect(html).toContain('data-evidence="cross-build"');
     expect(html).toContain('aria-label="Flashing steps"');
     expect(html).toContain('RPI-RP2');
-    expect(html).toContain('Studio does not flash a board');
+    expect(html).toContain('The ZPLC application does not flash a board');
     expect(html).not.toContain('<button');
     expect(html).not.toContain('<input');
   });

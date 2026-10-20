@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from '../../productName';
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `workbench.*`. */
 export const workbenchEn = {
   'workbench.watch.title': 'Watch',
@@ -58,7 +59,7 @@ export const workbenchEn = {
   'workbench.migration.linesAdded.other': '{count} lines added',
   'workbench.migration.differenceIn': 'Difference in {file}',
   'workbench.migration.title': 'Migrate the project to version 2',
-  'workbench.migration.intro': 'This project is version {version}. Studio opened it as version 2 and has written nothing: the files on disk are as they were.',
+  'workbench.migration.intro': `This project is version {version}. ${PRODUCT_NAME} opened it as version 2 and has written nothing: the files on disk are as they were.`,
   'workbench.migration.onlyBefore': 'Only ',
   'workbench.migration.onlyAfter': ' changes; your programs are not touched. "Apply migration" writes the text below.',
   'workbench.migration.reading': 'Reading zplc.json…',
@@ -202,7 +203,7 @@ export const workbenchEs: Record<keyof typeof workbenchEn, string> = {
   'workbench.migration.linesAdded.other': '{count} líneas agregadas',
   'workbench.migration.differenceIn': 'Diferencia en {file}',
   'workbench.migration.title': 'Migrar el proyecto a la versión 2',
-  'workbench.migration.intro': 'Este proyecto es de la versión {version}. Studio lo abrió como versión 2 y no escribió nada: los archivos del disco están como estaban.',
+  'workbench.migration.intro': `Este proyecto es de la versión {version}. ${PRODUCT_NAME} lo abrió como versión 2 y no escribió nada: los archivos del disco están como estaban.`,
   'workbench.migration.onlyBefore': 'Solo cambia ',
   'workbench.migration.onlyAfter': '; sus programas no se tocan. «Aplicar migración» escribe el texto de abajo.',
   'workbench.migration.reading': 'Leyendo zplc.json…',

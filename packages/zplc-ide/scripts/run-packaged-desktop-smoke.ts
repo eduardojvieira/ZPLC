@@ -228,12 +228,12 @@ async function main(): Promise<void> {
     await waitFor('packaged Welcome screen', async () => await cdp!.evaluate(`(() => {
       const heading = document.querySelector('h1');
       const contrast = document.querySelector('select[data-theme-control]');
-      return heading?.textContent === 'ZPLC Studio 2.0' && contrast ? true : undefined;
+      return heading?.textContent === 'ZPLC' && contrast ? true : undefined;
     })()`) as boolean | undefined);
     const rendererBoundary = (await cdp.evaluate(`(() => ({
       node: ['process', 'require', 'module', 'Buffer'].map((key) => [key, typeof window[key]]),
       preload: Object.keys(window.electronAPI ?? {}).sort(),
-      welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
+      welcome: document.querySelector('h1')?.textContent === 'ZPLC',
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
     assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain', 'updateCheck', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);

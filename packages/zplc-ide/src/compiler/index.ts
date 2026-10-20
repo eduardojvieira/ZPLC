@@ -1,5 +1,5 @@
 /**
- * ZPLC IDE Compiler Module
+ * ZPLC compiler module
  *
  * SPDX-License-Identifier: MIT
  *

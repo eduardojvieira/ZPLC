@@ -26,7 +26,7 @@ const COMMANDS: MenuCommand[] = [
 const t = (key: string): string => `«${key}»`;
 const noop = () => undefined;
 const build = (platform: NodeJS.Platform, overrides: Partial<MenuBuildOptions> = {}) => buildMenuTemplate(platform, COMMANDS, t, {
-  isPackaged: true, appName: 'ZPLC Studio', categories: CATEGORIES, run: noop, requestReload: noop, ...overrides,
+  isPackaged: true, appName: 'ZPLC', categories: CATEGORIES, run: noop, requestReload: noop, ...overrides,
 });
 
 describe('application menu (UX-014)', () => {
@@ -54,7 +54,7 @@ describe('application menu (UX-014)', () => {
   });
 
   it('UX-014 puts the application menu first and a Window menu before Help on macOS', () => {
-    expect(topLevelLabels(build('darwin'))).toEqual(['ZPLC Studio', ...CATEGORIES.slice(0, 7).map((c) => t(c.titleKey)), t('menu.window'), t('menu.help')]);
+    expect(topLevelLabels(build('darwin'))).toEqual(['ZPLC', ...CATEGORIES.slice(0, 7).map((c) => t(c.titleKey)), t('menu.window'), t('menu.help')]);
   });
 
   it('UX-014 gives the macOS application menu the standard roles', () => {
@@ -93,7 +93,7 @@ describe('application menu (UX-014)', () => {
   });
 
   it('UX-014 translates every menu label with the translator it is given', () => {
-    const labels = flatten(build('linux')).map((item) => item.label).filter((label): label is string => label !== undefined && label !== 'ZPLC Studio');
+    const labels = flatten(build('linux')).map((item) => item.label).filter((label): label is string => label !== undefined && label !== 'ZPLC');
     expect(labels.every((label) => label.startsWith('«'))).toBe(true);
   });
 
@@ -152,7 +152,7 @@ describe('the Learn entry of the Help menu (LRN-001)', () => {
   for (const [locale, label] of [['en', 'Open the Learn home'], ['es', 'Abrir el inicio del curso']] as const) {
     it(`LRN-001 offers "${label}" in the Help menu of the registry, and choosing it sends the command id to the window (${locale})`, () => {
       const sent: string[] = [];
-      const template = buildMenuTemplate('linux', menuCommands, menuTranslator(locale), { isPackaged: true, appName: 'ZPLC Studio', categories: menuCategories, run: (id) => { sent.push(id); }, requestReload: noop });
+      const template = buildMenuTemplate('linux', menuCommands, menuTranslator(locale), { isPackaged: true, appName: 'ZPLC', categories: menuCategories, run: (id) => { sent.push(id); }, requestReload: noop });
       const help = template.find((menu) => menu.label === menuTranslator(locale)('menu.help'));
       const entry = flatten(help?.submenu as MenuItemConstructorOptions[]).find((item) => item.label === label);
       expect(entry).toBeDefined();

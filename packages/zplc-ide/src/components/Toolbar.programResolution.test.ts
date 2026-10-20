@@ -111,7 +111,7 @@ describe('canonical workspace build failures', () => {
   it('uses only the canonical workspace compiler and exposes recovery when unavailable', () => {
     expect(toolbarSource).toContain("window.electronAPI !== undefined || navigator.userAgent.includes('Electron/')");
     expect(toolbarSource).toContain("workspaceCompileRoute === 'canonical-unavailable'");
-    expect(toolbarSource).toContain('Build requires a saved folder opened in ZPLC Studio.');
+    expect(toolbarSource).toContain('Build requires a saved folder opened in ZPLC.');
     expect(toolbarSource).not.toContain('compileMultiTaskProject');
     expect(toolbarSource).not.toContain('compileSingleFileWithTask');
     expect(toolbarSource).not.toContain('onCreateFile=');

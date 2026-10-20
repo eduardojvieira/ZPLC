@@ -24,11 +24,18 @@ const setSystemLanguage = (value: string | undefined) => Object.defineProperty(g
 // bunfig.toml pins the system language of every test to English; each test restores it.
 afterEach(() => { setLanguage('auto'); setSystemLanguage('en-US'); });
 
+describe('UX-016 DOC-017 the catalogs call the application ZPLC (decision D-03)', () => {
+  it('UX-016 names it neither "ZPLC Studio", "ZPLC IDE" nor "Studio", in English or in Spanish', () => {
+    const naming = (catalog: Record<string, string>) => Object.entries(catalog).filter(([, text]) => /\bStudio\b|ZPLC IDE/.test(text)).map(([key]) => key);
+    expect({ en: naming(en), es: naming(es) }).toEqual({ en: [], es: [] });
+  });
+});
+
 describe('UX-029 translation: interpolation, plural and fallback', () => {
   it('UX-029 interpolates {name} values and leaves an unsupplied one visible', () => {
-    expect(format('ZPLC Studio {version} is available', { version: '2.1.0' })).toBe('ZPLC Studio 2.1.0 is available');
+    expect(format('ZPLC {version} is available', { version: '2.1.0' })).toBe('ZPLC 2.1.0 is available');
     expect(format('{a} and {a} and {b}', { a: 1 })).toBe('1 and 1 and {b}');
-    expect(translate('es', 'updateNotice.available', { version: '2.1.0' })).toBe('ZPLC Studio 2.1.0 está disponible');
+    expect(translate('es', 'updateNotice.available', { version: '2.1.0' })).toBe('ZPLC 2.1.0 está disponible');
   });
 
   it('UX-029 picks the plural form of the language with Intl.PluralRules', () => {
@@ -110,8 +117,8 @@ describe('UX-029 migrated components render in the language of the setting', () 
   it('UX-029 draws the update notice, its steps and the preferences in Spanish, with the plural of the tab size', () => {
     setLanguage('es');
     const notice = renderToStaticMarkup(<UpdateNoticeView notice={{ current: '2.0.0', latest: '2.1.0', releaseUrl: 'https://example.invalid/r', steps: updateSteps('darwin', t) }} onDismiss={() => undefined} />);
-    expect(notice).toContain('aria-label="Hay una versión más reciente de ZPLC Studio disponible"');
-    expect(notice).toContain('ZPLC Studio 2.1.0 está disponible');
+    expect(notice).toContain('aria-label="Hay una versión más reciente de ZPLC disponible"');
+    expect(notice).toContain('ZPLC 2.1.0 está disponible');
     expect(notice).toContain('Descargue el nuevo archivo');
     const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
     expect(preferences).toContain('>Preferencias<');

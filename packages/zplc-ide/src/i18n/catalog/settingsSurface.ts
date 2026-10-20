@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from '../../productName';
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `settingsSurface.*`. */
 export const settingsSurfaceEn = {
   'settings.communication.scope': 'v1.5 communication scope',
@@ -31,7 +32,7 @@ export const settingsSurfaceEn = {
   'settings.target.tierLabel': 'Board evidence tier',
   'settings.target.tier': 'Evidence tier:',
   'settings.target.records': '{count} HIL evidence records',
-  'settings.target.imageNote': 'The firmware image for this board is listed below with this evidence level. Studio never flashes a board: you follow the steps yourself.',
+  'settings.target.imageNote': `The firmware image for this board is listed below with this evidence level. The ${PRODUCT_NAME} application never flashes a board: you follow the steps yourself.`,
   'settings.target.noEvidence': 'No catalogued evidence for this custom target.',
   'settings.target.cpu': 'CPU (optional)',
   'settings.target.cpuPlaceholder': 'e.g., rp2040, stm32h747',
@@ -86,7 +87,7 @@ export const settingsSurfaceEs: Record<keyof typeof settingsSurfaceEn, string> =
   'settings.target.tierLabel': 'Nivel de evidencia de la placa',
   'settings.target.tier': 'Nivel de evidencia:',
   'settings.target.records': '{count} registros de evidencia HIL',
-  'settings.target.imageNote': 'La imagen de firmware de esta placa se muestra abajo con este nivel de evidencia. Studio nunca graba una placa: usted sigue los pasos por su cuenta.',
+  'settings.target.imageNote': `La imagen de firmware de esta placa se muestra abajo con este nivel de evidencia. La aplicación ${PRODUCT_NAME} nunca graba una placa: usted sigue los pasos por su cuenta.`,
   'settings.target.noEvidence': 'No hay evidencia catalogada para este destino personalizado.',
   'settings.target.cpu': 'CPU (opcional)',
   'settings.target.cpuPlaceholder': 'p. ej., rp2040, stm32h747',
