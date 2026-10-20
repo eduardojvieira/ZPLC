@@ -56,4 +56,10 @@ describe('emulated HIL bench (HIL-001, HIL-012)', () => {
       rmSync(resolve(tree, '..'), { recursive: true, force: true });
     }
   }, 60_000);
+
+  test('the Python emulated bench passes its tests (the boot test skips without an emulator and an image)', () => {
+    const result = run('python3', ['-B', '-m', 'unittest', 'test_bench_emulated', 'test_emulated_boot'], HERE);
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toMatch(/Ran \d+ tests/);
+  }, 300_000);
 });
