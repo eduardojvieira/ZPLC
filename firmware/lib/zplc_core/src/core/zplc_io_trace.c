@@ -33,6 +33,11 @@ static uint32_t sample_size(const zplc_io_trace_t *trace) {
   return ZPLC_IO_TRACE_SAMPLE_HEADER + (uint32_t)trace->in_bytes + (uint32_t)trace->out_bytes;
 }
 
+/* Where sample seq lives: slot seq % capacity. */
+static uint8_t *slot_of(const zplc_io_trace_t *trace, uint32_t seq) {
+  return trace->storage + (size_t)(seq % trace->capacity) * (size_t)sample_size(trace);
+}
+
 static uint32_t first_held(const zplc_io_trace_t *trace, uint32_t written) {
   return written > trace->capacity ? written - trace->capacity : 0U;
 }
@@ -135,7 +140,7 @@ int zplc_io_trace_get(const zplc_io_trace_t *trace, uint32_t seq, zplc_io_trace_
     return -1;
   }
   memset(sample, 0, sizeof(*sample));
-  slot = trace->storage + (seq % trace->capacity) * sample_size(trace);
+  slot = slot_of(trace, seq);
   sample->t_us = get_u32(slot);
   sample->batch = get_u32(slot + 4);
   memcpy(sample->in, slot + ZPLC_IO_TRACE_SAMPLE_HEADER, trace->in_bytes);
@@ -168,7 +173,7 @@ void zplc_io_trace_sched_hook(void *ctx, zplc_sched_trace_kind_t kind, uint16_t 
   /* The outputs of the scan were written: the sample is the image the scan latched and wrote. */
   trace->latched = 0U;
   seq = trace->written;
-  slot = trace->storage + (seq % trace->capacity) * sample_size(trace);
+  slot = slot_of(trace, seq);
   image = slot + ZPLC_IO_TRACE_SAMPLE_HEADER;
   put_u32(slot, (uint32_t)(trace->latch_us - trace->armed_us));
   put_u32(slot + 4, trace->latch_batch);
