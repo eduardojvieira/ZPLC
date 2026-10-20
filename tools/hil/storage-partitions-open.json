@@ -1,14 +1,1 @@
-{
-  "rpi-pico-rp2040": {
-    "checks": [
-      "c"
-    ],
-    "reason": "code_partition of the upstream board covers the whole 2 MB flash, storage_partition included, so the linker would let an image grow into the store; the learner board profile owns the overlay that shrinks it (IO-009, IO-008)"
-  },
-  "waveshare-rp2040-zero": {
-    "checks": [
-      "c"
-    ],
-    "reason": "code_partition of the upstream board covers the whole 2 MB flash, storage_partition included, so the linker would let an image grow into the store; firmware/app/boards/rp2040_zero_rp2040.overlay has to end it at 0x1f0000 (IO-011, IO-008)"
-  }
-}
+{}

@@ -12,7 +12,9 @@
  * firmware/app/boards/boards.json (waveshare-rp2040-zero); the build fails when
  * the description and this file disagree.
  *
- * Flash layout (2 MB): the last 64 KB is the NVS storage partition.
+ * Flash layout (2 MB): the last 64 KB is the NVS storage partition. The
+ * upstream code_partition runs to the end of the flash; it ends at 0x1f0000 here,
+ * so the linker refuses an image that would grow into the storage (IO-008).
  */
 
 / {
@@ -56,6 +58,11 @@
             reg = <0x1f0000 0x10000>;
         };
     };
+};
+
+/* The image slot ends where the NVS storage begins (IO-008). */
+&code_partition {
+    reg = <0x100 (0x1f0000 - 0x100)>;
 };
 
 &zephyr_udc0 {
