@@ -3,7 +3,7 @@ slug: /operations/recovery
 id: recovery
 title: Límites de recuperación
 sidebar_label: Recuperación
-description: Recupere una sesión ZPLC sin confundir evidencia host con prueba target o HIL.
+description: Recupere una sesión ZPLC sin confundir evidencia host con prueba destino o HIL.
 tags: [operations, recovery]
 ---
 

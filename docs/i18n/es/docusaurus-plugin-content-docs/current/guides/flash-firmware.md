@@ -20,7 +20,7 @@ El firmware de cada placa compila en integración continua y cabe en su presupue
 Nadie ha registrado una grabación en una placa, así que los pasos de abajo están
 escritos a partir de las herramientas de cada placa y no son un resultado: el nivel de
 todas las placas es `cross-build`
-([Soporte de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe
+([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe
 lo que vio con el formulario de reporte de placa de los issues del repositorio.
 :::
 

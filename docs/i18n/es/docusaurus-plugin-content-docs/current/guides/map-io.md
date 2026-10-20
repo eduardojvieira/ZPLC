@@ -20,7 +20,7 @@ canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valo
 seguro de cada salida. La aplicación ZPLC, la compilación, el firmware y la documentación leen
 ese único archivo, por lo que la tabla de pines de [Placas soportadas](../reference/boards.md)
 son los mismos datos que comprueba la compilación. Ningún pin se ha medido en un
-banco: [Soporte de hardware](../reference/capabilities-evidence.md).
+banco: [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
 ## 1. Encuentre los canales de su placa

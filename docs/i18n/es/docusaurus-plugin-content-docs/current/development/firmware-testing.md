@@ -17,7 +17,7 @@ Todo lo que se describe aquí es evidencia de host, de simulador o de
 compilación. Una ejecución correcta no demuestra que una placa arranque, que
 sus pines se comporten ni que un ciclo de escaneo mantenga su período en silicio
 real. Esas afirmaciones requieren los procedimientos de hardware en el lazo
-descritos en [Soporte de hardware](../reference/capabilities-evidence.md).
+descritos en [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 ## Qué necesita
 
@@ -93,7 +93,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 | `qemu-m3` | Las suites Zephyr en `qemu_cortex_m3`, más las suites del núcleo | Comportamiento sobre un conjunto de instrucciones Cortex-M real con 64 KB de RAM, enums cortos y una pila de hilo de 1 KB por defecto | Tiempos: QEMU no es exacto por ciclo. Las regiones de memoria de la VM se reducen para caber |
 | `qemu-m0` | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM) | División, desplazamientos, conversión de float y acceso no alineado en un núcleo ARMv6-M sin división por hardware ni acceso no alineado | La suite completa de la VM: no cabe, vea los límites más abajo |
 | `app` | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta | El codificador produce las cargas esperadas en un host de 64 bits | El cliente MQTT, TLS ni ningún comportamiento de red |
-| `app-native` | Solo emulación: `firmware/app` en `native_sim/native/64` con el mapa de canales de la Raspberry Pi Pico sobre GPIO y ADC emulados, arrancado y manejado por su shell; una protección comprueba que el comando de shell de emulación no puede habilitarse para una placa real | La aplicación, el shell, el despliegue y el almacenamiento del programa funcionan sobre el núcleo de Zephyr, y los mismos proyectos de referencia dan las mismas trazas que el runtime nativo ([Banco HIL emulado](hil-emulation.md)) | Pines, drivers, tiempos o cualquier aspecto de una placa física; nunca es un registro de hardware |
+| `app-native` | Solo emulación: `firmware/app` en `native_sim/native/64` con el mapa de canales de la Raspberry Pi Pico sobre GPIO y ADC emulados, arrancado y manejado por su shell; una protección comprueba que el comando de shell de emulación no puede habilitarse para una placa real | La aplicación, el shell, el despliegue y el almacenamiento del programa funcionan sobre el núcleo de Zephyr, y los mismos proyectos de referencia dan las mismas trazas que el runtime nativo ([Banco HIL emulado](hil-emulation.md)) | Pines, controladores, tiempos o cualquier aspecto de una placa física; nunca es un registro de hardware |
 | `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado, y que cada almacén de la imagen tenga una partición de flash propia (IO-008) | Uso de pila y de heap en ejecución, ni que la imagen corra |
 | `tidy` | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app` | Los archivos analizados no tienen ninguno de los defectos que buscan los chequeos habilitados | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
 
@@ -159,19 +159,19 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el core real y muestra que una variable forzada conserva su
   valor forzado;
-- `scheduler_admission` retiene un ciclo en el commit y en la escritura de salidas, para mostrar que una escritura de
-  fuera espera al latch de entradas y nunca al ciclo, y que el lock de la imagen está libre mientras se escriben los
+- `scheduler_admission` retiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura de
+  fuera espera a la captura de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los
   pines;
-- `scheduler_equivalence` conduce el scheduler Zephyr por los escenarios del núcleo común del scheduler y compara sus
+- `scheduler_equivalence` conduce el planificador de Zephyr por los escenarios del núcleo común del planificador y compara sus
   decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
-- `single_task` ejecuta la configuración de una tarea del núcleo: el latch de entradas de los pines, el plazo, el
-  fault y el estado seguro (RT-018);
+- `single_task` ejecuta la configuración de una tarea del núcleo: la captura de entradas de los pines, el plazo, la
+  falla y el estado seguro (RT-018);
 - `failsafe` ejercita el manejador de error fatal con un reinicio interceptado y muestra las salidas llevadas al
-  estado seguro, el registro del fault y la causa que informa el arranque siguiente; `failsafe_reboot` provoca un
-  fault real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
+  estado seguro, el registro de la falla y la causa que informa el arranque siguiente; `failsafe_reboot` provoca una
+  falla real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
 - `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
   alimentación desde la finalización de un ciclo, el tiempo de espera tomado del conjunto de tareas, un ciclo detenido que lo
-  deja expirar, y la política en STOP, en pausa y en un fault (RT-020);
+  deja expirar, y la política en STOP, en pausa y en una falla (RT-020);
 - `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
   Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma
   función en `test_port_timing`, y la página de la [interfaz de puerto](../runtime/port-interface.md) lista la suite
@@ -179,9 +179,9 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
 
 Las suites de host del core suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
 (un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
-decisiones del núcleo del scheduler y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
+decisiones del núcleo del planificador y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
 ciclo se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
-un fault y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
+una falla y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
 pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
 `test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
 valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
@@ -267,7 +267,7 @@ respetar. La política de margen está en el archivo: el presupuesto es la
 medición más 5 por ciento, redondeada hacia arriba a 256 bytes.
 
 Cuando un cambio hace que una imagen crezca más allá de su presupuesto, la
-compilación falla. Suba el presupuesto en el mismo commit e indique el motivo:
+compilación falla. Suba el presupuesto en la misma confirmación e indique el motivo:
 
 ```bash
 python3 tools/firmware-test/fwtest.py size \
@@ -390,4 +390,4 @@ requiere el banco de HIL-010.
 
 - [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
 - [Placas Soportadas](../reference/boards.md)
-- [Soporte de hardware](../reference/capabilities-evidence.md)
+- [Compatibilidad de hardware](../reference/capabilities-evidence.md)

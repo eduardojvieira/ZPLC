@@ -51,7 +51,7 @@ flowchart LR
 
 ## Registros de sistema reservados
 
-Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del scheduler/runtime:
+Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del planificador/runtime:
 
 | Registro | Dirección | Propósito |
 |---|---:|---|
@@ -77,7 +77,7 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Familia | Ejemplos | Rol |
 |---|---|---|
 | Sistema | `OP_NOP`, `OP_HALT`, `OP_BREAK`, `OP_GET_TICKS` | control básico y depuración |
-| Pila | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT` | manipulación del stack |
+| Pila | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT` | manipulación de la pila |
 | Acceso indirecto | `OP_LOADI8`, `OP_LOADI16`, `OP_LOADI32`, `OP_STOREI8`, `OP_STOREI16`, `OP_STOREI32` | direccionamiento calculado |
 | Strings | `OP_STRLEN`, `OP_STRCPY`, `OP_STRCAT`, `OP_STRCMP`, `OP_STRCLR` | operaciones seguras sobre `STRING` |
 | Aritmética | `OP_ADD`, `OP_SUB`, `OP_MUL`, `OP_DIV`, `OP_MOD` | entero y punto flotante |
@@ -110,14 +110,14 @@ rango de 16 bits.
 
 ## Valores de dos palabras: enteros de 64 bits y `LREAL`
 
-El stack de evaluación tiene palabras de 32 bits. Un valor `LINT`, `ULINT`, `LWORD` o `LREAL`
-ocupa dos palabras: la **palabra baja queda más abajo** en el stack y la alta arriba, tal como
+La pila de evaluación tiene palabras de 32 bits. Un valor `LINT`, `ULINT`, `LWORD` o `LREAL`
+ocupa dos palabras: la **palabra baja queda más abajo** en la pila y la alta arriba, tal como
 la deja `OP_LOAD64` y la toma `OP_STORE64`. Un `LREAL` es el patrón de bits IEEE 754 binary64
 en esas dos palabras.
 
 Los opcodes de las familias de 64 bits y de doble precisión están en la tabla de la
-[Runtime API](../reference/runtime-api.md), con sus efectos sobre el stack. El loader demuestra
-la profundidad del stack de cada camino a partir de esa tabla, así que un programa que usa
+[Runtime API](../reference/runtime-api.md), con sus efectos sobre la pila. El loader demuestra
+la profundidad de la pila de cada camino a partir de esa tabla, así que un programa que usa
 uno de ellos con muy pocas palabras se rechaza (`ZPLC_LOADER_ERR_STACK`). Son parte del
 núcleo en C: todos los runtimes los tienen a la vez.
 
@@ -184,8 +184,8 @@ contador actual.
 
 El header también publica límites que la toolchain y el runtime comparten:
 
-- `ZPLC_STACK_MAX_DEPTH` para el stack de evaluación
-- `ZPLC_CALL_STACK_MAX` para el stack de llamadas
+- `ZPLC_STACK_MAX_DEPTH` para la pila de evaluación
+- `ZPLC_CALL_STACK_MAX` para la pila de llamadas
 - `ZPLC_MAX_BREAKPOINTS` para la capacidad de depuración
 - IDs de tipos IEC como `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME` y `ZPLC_TYPE_STRING`
 
@@ -227,12 +227,12 @@ El compilador mide lo que el loader va a demostrar y lo registra en el artefacto
 (CMP-050, CMP-056):
 
 - `stack_size` de la definición de una tarea es la mayor cantidad de valores que la tarea
-  tiene a la vez en el stack de evaluación, y `call_depth` la mayor cantidad de marcos de
+  tiene a la vez en la pila de evaluación, y `call_depth` la mayor cantidad de marcos de
   llamada activos a la vez, con su propio cuerpo incluido (1 para una tarea que no llama a
   nada; 0 significa que el artefacto no lo declara). El loader rechaza una tarea que necesita
-  más de lo que declara, y una tarea cuya profundidad de llamadas supera el stack de llamadas
-  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita un
-  stack más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
+  más de lo que declara, y una tarea cuya profundidad de llamadas supera la pila de llamadas
+  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita una
+  pila más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
   llamadas anidadas más profundas que `ZPLC_CALL_STACK_MAX`.
 - El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el
   CRC-32 del segmento CODE seguido del segmento TASK tal como se escribe, nunca 0. El mapa de

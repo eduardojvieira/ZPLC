@@ -35,8 +35,8 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 | Nivel | Qué demuestra | Qué no demuestra |
 |---|---|---|
 | Host | Código y runtime locales | Timing físico o comportamiento eléctrico |
-| QEMU | Target emulado configurado | Periféricos o cableado de la placa |
-| Build de target | Que un profile compila | Que un dispositivo arranca o controla una máquina |
+| QEMU | Destino emulado configurado | Periféricos o cableado de la placa |
+| Build de destino | Que un profile compila | Que un dispositivo arranca o controla una máquina |
 | HIL | Comportamiento registrado en hardware identificado | Certificación o toda condición operativa |
 | Manual | Procedimiento observado por una persona | Automatización reproducible sin artifacts guardados |
 

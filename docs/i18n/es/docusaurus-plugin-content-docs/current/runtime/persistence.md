@@ -12,7 +12,7 @@ description: Cómo ZPLC almacena la lógica compilada verificada y la región RE
 Para perfiles con un backend program-store habilitado y operativo, ZPLC puede
 confirmar transaccionalmente un artefacto `.zplc` desplegado y verificado. El
 restore publica el artefacto como lógicamente detenido/READY. El comportamiento
-de las salidas antes de ejecutar es específico del perfil de target y requiere
+de las salidas antes de ejecutar es específico del perfil de destino y requiere
 evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
 ## Backends de la plataforma
@@ -41,10 +41,10 @@ flowchart LR
 
 Al iniciar, un program store habilitado puede proporcionar un artefacto válido
 para verificación y restore lógicamente detenido/READY. El comportamiento de
-las salidas antes de ejecutar es específico del perfil de target y requiere
+las salidas antes de ejecutar es específico del perfil de destino y requiere
 evidencia registrada. La carga termina al completar la carga verificada; nunca
 arranca la máquina. El arranque es una operación humana separada y explícita.
-La evidencia target, power-cut, HIL y eléctrica sigue siendo específica del
+La evidencia destino, power-cut, HIL y eléctrica sigue siendo específica del
 perfil exacto y no se ejecutó aquí.
 
 ### Cómo guarda el store un programa
@@ -85,17 +85,17 @@ guarda el mismo (un reset cancela una carga en curso).
 Una carga tiene que saber, antes de escribir, que existe un programa real al que volver, y eso significa leer ese
 programa y admitirlo, lo que necesita un buffer del tamaño de código. El store no tiene uno propio: lee el rollback
 en el buffer de staging cuando empieza una carga, mientras ese buffer está libre (`zplc load`, `zplc sched load` y el
-inicio de una transferencia de programa del enlace de dispositivo), y el commit al final de la carga sigue adelante
+inicio de una transferencia de programa del enlace de dispositivo), y la confirmación al final de la carga sigue adelante
 solo si el registro activo y los dos registros de metadatos son todavía los de los que se leyó la respuesta. El
-único que escribe esos registros es un commit, así que son los mismos salvo que la carga haya sido adelantada, y
-entonces no se escribe nada. Un store cuyos registros no verifican nada no da rollback, y el commit se niega como
+único que escribe esos registros es una confirmación, así que son los mismos salvo que la carga haya sido adelantada, y
+entonces no se escribe nada. Un store cuyos registros no verifican nada no da rollback, y la confirmación se niega como
 siempre. El payload del rollback se admitió cuando empezó la carga, no cuando terminó.
 
 Lo que se ha demostrado: un corte de energía inyectado en cada operación de una carga y una escritura truncada en
 cada registro, en el host (`test_program_store`, que también barre la carga como lo hace el firmware, con el rollback
 encontrado al inicio de la carga), y un corte de energía en cada operación de una carga del tamaño
 máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
-usó la carga. Lo que no: un corte de energía en una placa. El driver de flash, el
+usó la carga. Lo que no: un corte de energía en una placa. El controlador de flash, el
 tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
 perfil (HIL-010).
 
@@ -328,7 +328,7 @@ programa de nuevo e ingrese de nuevo la configuración.
 - No medido: cuánto tiempo detiene al procesador una escritura de flash. En
   piezas que ejecutan código desde la misma flash una escritura puede retener
   la captura de instrucciones durante un borrado; el guardado periódico corre en
-  su propia cola de trabajo, pero que un ciclo se retrase depende del driver de
+  su propia cola de trabajo, pero que un ciclo se retrase depende del controlador de
   flash y no se ha medido en ninguna placa.
 - No demostrado en una placa: que los dos almacenes de una placa conserven los
   datos del otro en su flash. Sus particiones están separadas en cada
@@ -342,7 +342,7 @@ programa de nuevo e ingrese de nuevo la configuración.
   especificada para 10.000 ciclos de borrado.
 - Una recompilación del programa, incluso una que solo mueve código, cambia su
   identidad y descarta los valores retenidos.
-- El modo de firmware de una sola tarea (scheduler desactivado) no persiste
+- El modo de firmware de una sola tarea (planificador desactivado) no persiste
   `RETAIN`.
 - No confíe en `RETAIN` para estado crítico de recuperación hasta que existan
   los registros de hardware del perfil exacto: un corte de energía en el momento

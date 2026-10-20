@@ -29,7 +29,7 @@ flowchart TB
 
 - **Memoria acotada en el runtime**: el núcleo en C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
 - **Separación mediante la HAL**: el núcleo y los adaptadores de hardware están separados para que cada comportamiento de la plataforma pueda inspeccionarse y probarse por su lado.
-- **Evidencia antes que afirmaciones**: los tiempos del planificador, la E/S, la persistencia, los protocolos y el soporte de placas solo se afirman para el perfil y la revisión que tienen la evidencia correspondiente. [Soporte de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
+- **Evidencia antes que afirmaciones**: los tiempos del planificador, la E/S, la persistencia, los protocolos y el soporte de placas solo se afirman para el perfil y la revisión que tienen la evidencia correspondiente. [Compatibilidad de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
 
 ## Componentes del producto
 

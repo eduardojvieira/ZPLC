@@ -8,7 +8,7 @@ tags: [runtime, zephyr, native-c]
 
 # Integrar código nativo en C
 
-ZPLC separa la lógica IEC editable por el usuario (el bytecode `.zplc`) de las operaciones de bajo nivel del firmware. Sin embargo, quien trabaja en integraciones OEM complejas suele necesitar drivers de alto rendimiento, SDK propietarios de proveedores o funciones de hardware complejas que no se corresponden con la lógica estándar.
+ZPLC separa la lógica IEC editable por el usuario (el bytecode `.zplc`) de las operaciones de bajo nivel del firmware. Sin embargo, quien trabaja en integraciones OEM complejas suele necesitar controladores de alto rendimiento, SDK propietarios de proveedores o funciones de hardware complejas que no se corresponden con la lógica estándar.
 
 Para esos casos, ZPLC permite extender el sistema embebido directamente en C con Zephyr RTOS.
 
@@ -16,7 +16,7 @@ Para esos casos, ZPLC permite extender el sistema embebido directamente en C con
 
 Es importante mantener la separación de responsabilidades:
 - **Use la lógica estándar de ZPLC (ST, SFC, LD)** para la automatización de planta, las operaciones generales, la lógica de secuencias, el control PID y la lógica de negocio.
-- **Use C nativo de Zephyr** para operaciones muy rígidas, como los drivers I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
+- **Use C nativo de Zephyr** para operaciones muy rígidas, como los controladores I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
 
 *Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC en el IDE.* Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
 

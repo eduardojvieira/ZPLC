@@ -17,7 +17,7 @@ y del flujo de despliegue de ZPLC, y **nadie la ha ejecutado en una placa**.
 El firmware de ambas placas compila en integración continua y cabe en su
 presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, cargado un programa
 en él ni visto cambiar una salida: el nivel de ambas placas es `cross-build`
-([Soporte de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
+([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
 dice que un paso funcione. Si lo sigue, usted es el primero, y su resultado es una
 pista hasta que se registre con la versión del firmware, el commit y el hash de la
 imagen: use la plantilla de informe de placa de las incidencias del repositorio y no
@@ -147,7 +147,7 @@ imagen es lo que lleva a una placa de `cross-build` a `human-hil`.
 
 ## Vea también
 
-- [Soporte de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
+- [Compatibilidad de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
 - [Placas soportadas](../reference/boards.md): los canales, pines y valores seguros.
 - [Despliegue y sesiones de runtime](../ide/deployment.md): las cuatro operaciones separadas.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

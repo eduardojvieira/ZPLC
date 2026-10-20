@@ -49,7 +49,7 @@ La aplicación ZPLC lee el mismo archivo. El editor de mapeo de E/S de la config
 
 ## Matriz de placas
 
-| Nombre visible | Board ID | IDE ID | Target Zephyr | Red | Nivel de soporte | Registros de evidencia |
+| Nombre visible | Board ID | IDE ID | Destino Zephyr | Red | Nivel de soporte | Registros de evidencia |
 | --- | --- | --- | --- | --- | --- | --- |
 | Raspberry Pi Pico (RP2040) | `rpi-pico-rp2040` | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build | 0 |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino-giga-r1-m7` | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build | 0 |
@@ -79,7 +79,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `rpi-pico-rp2040`
 - **IDE ID:** `rpi_pico`
-- **Zephyr target:** `rpi_pico/rp2040`
+- **Zephyr destino:** `rpi_pico/rp2040`
 - **Variant:** `rp2040`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -121,7 +121,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `arduino-giga-r1-m7`
 - **IDE ID:** `arduino_giga_r1`
-- **Zephyr target:** `arduino_giga_r1/stm32h747xx/m7`
+- **Zephyr destino:** `arduino_giga_r1/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -146,7 +146,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `esp32-s3-devkitc`
 - **IDE ID:** `esp32s3_devkitc`
-- **Zephyr target:** `esp32s3_devkitc/esp32s3/procpu`
+- **Zephyr destino:** `esp32s3_devkitc/esp32s3/procpu`
 - **Variant:** `esp32s3/procpu`
 - **Network:** Capacidad de red (Wi-Fi)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -173,17 +173,17 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 | DI2 | entrada | digital | `%IX0.2` | GPIO7 | pin 7 del conector J1 | profile |  | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
 | DI3 | entrada | digital | `%IX0.3` | GPIO8 | pin 12 del conector J1 | profile |  | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
 | DI4 | entrada | digital | `%IX0.4` | GPIO0 (botón BOOT) | botón BOOT de la placa | devicetree |  | Botón BOOT de la placa, activo en bajo con la resistencia de pull-up interna: una entrada adicional que no necesita cableado y no es una de las cuatro entradas del estudiante. Es un pin de configuración de arranque (strapping): no lo mantenga presionado mientras la placa se reinicia, o la placa arranca en modo de descarga. |
-| AI0 | entrada | analógico | `%IW4` | GPIO4 (ADC1_CH3) | pin 4 del conector J1 | profile |  | De 0 V a unos 3.1 V con atenuación de 12 dB (algunos chips llegan solo a unos 2.9 V); nunca aplique más de 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3 (pin 1 del conector J1) y GND (pin 22 del conector J1), con su cursor en este pin. 0..2885 -> 0.0 a 3.1 V. El driver ESP32 de Zephyr aplica la calibración de eFuse y devuelve la entrada en milivoltios dividida por 4 (ganancia 1/4) como cuentas de 4095 sobre su referencia de 1100 mV: V = raw x 4.4 / 4095, así que 3.1 V se lee como unas 2885 cuentas. ZPLC no lo calibra; el conversor no es lineal cerca de ambos extremos.. |
+| AI0 | entrada | analógico | `%IW4` | GPIO4 (ADC1_CH3) | pin 4 del conector J1 | profile |  | De 0 V a unos 3.1 V con atenuación de 12 dB (algunos chips llegan solo a unos 2.9 V); nunca aplique más de 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3 (pin 1 del conector J1) y GND (pin 22 del conector J1), con su cursor en este pin. 0..2885 -> 0.0 a 3.1 V. El controlador ESP32 de Zephyr aplica la calibración de eFuse y devuelve la entrada en milivoltios dividida por 4 (ganancia 1/4) como cuentas de 4095 sobre su referencia de 1100 mV: V = raw x 4.4 / 4095, así que 3.1 V se lee como unas 2885 cuentas. ZPLC no lo calibra; el conversor no es lineal cerca de ambos extremos.. |
 
 #### Sin mapear
 
-- `GPIO38 (LED RGB en la v1.1) o GPIO48 (LED RGB en la v1.0)`: el LED de la placa es un componente RGB direccionable que necesita el driver de tiras de LED
+- `GPIO38 (LED RGB en la v1.1) o GPIO48 (LED RGB en la v1.0)`: el LED de la placa es un componente RGB direccionable que necesita el controlador de tiras de LED
 
 ### STM32F746G Discovery
 
 - **Board ID:** `stm32f746g-disco`
 - **IDE ID:** `stm32f746g_disco`
-- **Zephyr target:** `stm32f746g_disco/stm32f746xx`
+- **Zephyr destino:** `stm32f746g_disco/stm32f746xx`
 - **Variant:** `stm32f746xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -207,7 +207,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `nucleo-h743zi`
 - **IDE ID:** `nucleo_h743zi`
-- **Zephyr target:** `nucleo_h743zi/stm32h743xx`
+- **Zephyr destino:** `nucleo_h743zi/stm32h743xx`
 - **Variant:** `stm32h743xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -232,7 +232,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `arduino-opta-wifi-m7`
 - **IDE ID:** `arduino_opta_wifi`
-- **Zephyr target:** `arduino_opta/stm32h747xx/m7`
+- **Zephyr destino:** `arduino_opta/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Capacidad de red (Wi-Fi)
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -267,7 +267,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 - **Board ID:** `waveshare-rp2040-zero`
 - **IDE ID:** `waveshare_rp2040_zero`
-- **Zephyr target:** `rp2040_zero/rp2040`
+- **Zephyr destino:** `rp2040_zero/rp2040`
 - **Variant:** `rp2040`
 - **Network:** Enfoque serial
 - **Nivel de soporte:** cross-build (sin registro de hardware)
@@ -289,4 +289,4 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 #### Sin mapear
 
-- `WS2812 RGB LED (GP16)`: an addressable LED needs the LED-strip driver; it is not a simple output
+- `WS2812 RGB LED (GP16)`: an addressable LED needs the LED-strip controlador; it is not a simple output

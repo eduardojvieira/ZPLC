@@ -29,7 +29,7 @@ flowchart TD
 
 ## Timing
 
-- `zplc_hal_tick()` provee el reloj del scheduler en milisegundos
+- `zplc_hal_tick()` provee el reloj del planificador en milisegundos
 - `zplc_hal_sleep()` ofrece espera bloqueante fuera de la lógica PLC
 
 ## E/S digital y analógica
@@ -50,7 +50,7 @@ uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S
 El build de Zephyr convierte la entrada de la placa en una tabla constante, `zplc_io_table()`, con
 `firmware/zephyr/scripts/gen_io_table.py`. Cada fila lleva el id del canal, el nombre del pin, el byte y el bit de la
 imagen de proceso, el tipo, la dirección, el número de canal de la HAL, el valor seguro y si el canal es obligatorio.
-El scheduler sincroniza la imagen a través de la tabla (`zplc_io_channel_at()`, `zplc_io_read_channel()`,
+El planificador sincroniza la imagen a través de la tabla (`zplc_io_channel_at()`, `zplc_io_read_channel()`,
 `zplc_io_write_channel()`), de modo que agregar un canal a una placa es editar el JSON y el overlay de devicetree y no
 cambia ningún fuente C.
 
@@ -79,7 +79,7 @@ que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 ### No soportado
 
 Una operación que una placa no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`; ese es el resultado definido de "no
-soportado". El scheduler lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
+soportado". El planificador lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
 función que un puerto no implementa es una falla de build o de test, no un stub silencioso.
 
 ## Persistencia

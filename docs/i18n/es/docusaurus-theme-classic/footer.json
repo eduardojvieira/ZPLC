@@ -16,7 +16,7 @@
     "description": "The label of footer link with label=Getting started linking to /docs/getting-started"
   },
   "link.item.label.Hardware support": {
-    "message": "Soporte de hardware",
+    "message": "Compatibilidad de hardware",
     "description": "The label of footer link with label=Hardware support linking to /docs/reference/capabilities-evidence"
   },
   "link.item.label.Reference": {

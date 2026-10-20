@@ -34,7 +34,7 @@ simular y revisar proyectos PLC en una carpeta que usted elige.
 La simulación POSIX nativa valida el comportamiento en el equipo anfitrión. No
 afirma tiempos exactos de la placa, E/S eléctrica, HIL ni calificación para
 producción. Los perfiles de placa solo tienen resultados de cross-build; consulte
-[soporte de hardware](../reference/capabilities-evidence.md).
+[compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 La IA puede preparar un cambio candidato aislado, pero solo una persona puede
 guardarlo o iniciar una operación física. Lea [IA y privacidad](./ai-privacy.md)

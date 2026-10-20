@@ -21,7 +21,7 @@ agregue una página.
 | runtime/index | docs/docs/runtime/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/index.md | runtime | yes | docs | in-progress |
 | runtime/hal-contract | docs/docs/runtime/hal-contract.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/hal-contract.md | runtime | yes | docs | in-progress |
 | runtime/memory-model | docs/docs/runtime/memory-model.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/memory-model.md | runtime | yes | docs | in-progress |
-| runtime/scheduler | docs/docs/runtime/scheduler.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/scheduler.md | runtime | yes | docs | in-progress |
+| runtime/planificador | docs/docs/runtime/planificador.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/planificador.md | runtime | yes | docs | in-progress |
 | runtime/connectivity | docs/docs/runtime/connectivity.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/connectivity.md | runtime | yes | docs | in-progress |
 | runtime/communication-function-blocks | docs/docs/runtime/communication-function-blocks.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/communication-function-blocks.md | runtime | yes | docs | in-progress |
 | runtime/isa | docs/docs/runtime/isa.md | docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/isa.md | runtime | yes | docs | in-progress |

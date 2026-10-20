@@ -37,6 +37,6 @@ prácticas.
 
 ## Placas
 
-- [Soporte de hardware](./capabilities-evidence.md): los niveles de evidencia y el nivel de cada placa.
+- [Compatibilidad de hardware](./capabilities-evidence.md): los niveles de evidencia y el nivel de cada placa.
 - [Placas soportadas](./boards.md): los canales de E/S, los pines y la huella de cada placa, generados desde el manifiesto de placas.
 - [Preparación del workspace de Zephyr](./zephyr-workspace-setup.md): las entradas de una compilación de firmware reproducible.

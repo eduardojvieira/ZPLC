@@ -37,7 +37,7 @@ en una recuperación de firmware.
 - El estado eléctrico de las salidas, los tiempos y el WCET, el comportamiento físico del watchdog, la persistencia ante un corte de energía, la recuperación del programa de grabación y la calificación para producción.
 - Cualquier afirmación de que el perfil de una placa funciona más allá de su nivel de evidencia registrado.
 
-Vea [Soporte de hardware](../reference/capabilities-evidence.md) para los niveles y
+Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) para los niveles y
 [Seguridad y limitaciones](../safety-and-limitations.md) para lo que ZPLC no es.
 
 ## Registro de escalamiento

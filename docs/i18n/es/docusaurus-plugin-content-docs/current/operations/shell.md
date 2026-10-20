@@ -30,8 +30,8 @@ Inicie cada comando con `zplc`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime. Mientras MQTT esté habilitado sobre TLS con la verificación del certificado apagada, muestra además `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` en `--json`).
-- `zplc reset` - Recarga el programa cargado desde el program store y deja el scheduler detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el scheduler y limpia sus tareas.
-- `zplc version` - Muestra qué compilación es: la versión, el commit desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones del mismo commit son la misma imagen. El mismo texto es `zplc sys build`.
+- `zplc reset` - Recarga el programa cargado desde el program store y deja el planificador detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el planificador y limpia sus tareas.
+- `zplc version` - Muestra qué compilación es: la versión, la confirmación desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones de la misma confirmación son la misma imagen. El mismo texto es `zplc sys build`.
 
 ---
 
@@ -52,8 +52,8 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg force clear_all` - Quita todos los forzados, de modo que el programa vuelve a controlar todas las direcciones.
 
 ### Control de la ejecución
-- `zplc dbg pause` - Pausa el scheduler entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
-- `zplc dbg resume` - Reanuda. Un ciclo detenido en un breakpoint continúa desde donde se detuvo, y el primer commit de ciclo vuelve a energizar las salidas desde la imagen conservada.
+- `zplc dbg pause` - Pausa el planificador entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
+- `zplc dbg resume` - Reanuda. Un ciclo detenido en un breakpoint continúa desde donde se detuvo, y la primera confirmación de ciclo vuelve a energizar las salidas desde la imagen conservada.
 - `zplc dbg step` - Termina el ciclo detenido en un breakpoint, o ejecuta un ciclo completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el ciclo ejecutado; las salidas quedan seguras.
 
 `zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Ver [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
@@ -67,8 +67,8 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 
 Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
-Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el ciclo publicó en su último commit, de modo que un
-valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en el latch
+Las lecturas (`mpeek`, `mem`, `info`) salen de la instantánea que el ciclo publicó en su última confirmación, de modo que un
+valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en la captura
 de entradas del siguiente ciclo por la interfaz que respeta los forces: una dirección forzada conserva su valor
 forzado. Mientras el runtime está detenido no hay ciclo y la escritura se aplica de inmediato.
 

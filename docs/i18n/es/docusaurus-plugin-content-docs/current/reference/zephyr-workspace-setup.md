@@ -61,4 +61,4 @@ un dispositivo no probado. Consulte [Límites de recuperación](../operations/re
 ## Páginas relacionadas
 
 - [Perfiles de placa](./boards.md)
-- [Soporte de hardware](./capabilities-evidence.md)
+- [Compatibilidad de hardware](./capabilities-evidence.md)

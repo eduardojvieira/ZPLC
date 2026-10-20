@@ -190,7 +190,7 @@ a pasar.
 | El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página | Host |
 | Los siete pasos funcionan en la aplicación real | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host |
 | El escenario pasa y falla como se describe | ZPLC ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador | Host |
-| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Soporte de hardware](../reference/capabilities-evidence.md) |
+| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) |
 
 Un resultado aprobado aquí es un resultado de host con el reloj virtual del simulador.
 

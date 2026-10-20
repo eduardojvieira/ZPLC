@@ -262,7 +262,7 @@ sudo usermod -aG dialout "$USER"
 El grupo es `dialout` en Debian, Ubuntu y Fedora, y `uucp` en Arch; use el grupo
 que imprime `ls -l`. Cierre la sesión y vuelva a abrirla para que el cambio se
 aplique. Es el procedimiento general de Linux; lo que se ha probado con una placa,
-y lo que no, está en [Soporte de hardware](../reference/capabilities-evidence.md).
+y lo que no, está en [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 ## Actualizar
 

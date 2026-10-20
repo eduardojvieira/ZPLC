@@ -31,13 +31,13 @@ en lugar de repetirlo.
   para evaluación: vea las [notas de la versión](./release-notes/index.md) y la
   [hoja de ruta](./contributing/roadmap.md).
 - **No declara ninguna placa.** Cada placa de la tabla de
-  [Soporte de hardware](./reference/capabilities-evidence.md) está en el nivel que
+  [Compatibilidad de hardware](./reference/capabilities-evidence.md) está en el nivel que
   indican sus registros, y hoy ese nivel es compilación cruzada para todas.
 
 ## Dónde se ha verificado cada parte
 
 Una verificación de un nivel nunca prueba uno superior. Los nombres de los niveles
-son los de [Soporte de hardware](./reference/capabilities-evidence.md#los-niveles).
+son los de [Compatibilidad de hardware](./reference/capabilities-evidence.md#los-niveles).
 
 | Parte | Verificado en | No verificado |
 | --- | --- | --- |

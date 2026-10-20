@@ -22,7 +22,7 @@ reportar.
 ### 1. El núcleo es C99 portable y pasa por la HAL
 
 El núcleo del runtime, en `firmware/lib/zplc_core/src/core/`, es ANSI C99 estricto
-y nunca llama a un driver, a un registro ni a una función del sistema operativo.
+y nunca llama a un controlador, a un registro ni a una función del sistema operativo.
 Todo pasa por las funciones `zplc_hal_*`. Las herramientas de escritorio y el
 front end del lenguaje siguen la misma regla: ninguno llega al hardware esquivando
 la HAL. El núcleo se compila con `-std=c99 -pedantic -Werror`, y el código de
@@ -69,7 +69,7 @@ Los resultados de host, QEMU, compilación para el destino, banco
 (hardware-in-the-loop) y manuales son niveles distintos, y un nivel inferior
 nunca prueba uno superior. Indique qué nivel respalda cada afirmación en la
 documentación, en un mensaje de commit y en un pull request. Véase
-[Soporte de hardware](../reference/capabilities-evidence.md).
+[Compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 ### 8. Inglés y español avanzan juntos, y una dependencia necesita una razón
 

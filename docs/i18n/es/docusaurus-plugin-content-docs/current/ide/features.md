@@ -462,7 +462,7 @@ consulte [IA y privacidad](./ai-privacy.md).
 
 ## Pausa, reanudación, paso y Stop
 
-La pausa, la reanudación y el paso conservan donde está el estado lógico del programa, y Stop lo descarta. La tabla vale para la simulación nativa y para el scheduler de Zephyr de una placa conectada.
+La pausa, la reanudación y el paso conservan donde está el estado lógico del programa, y Stop lo descarta. La tabla vale para la simulación nativa y para el planificador de Zephyr de una placa conectada.
 
 | Acción | Imagen de salidas | Forzados | El ciclo |
 |---|---|---|---|

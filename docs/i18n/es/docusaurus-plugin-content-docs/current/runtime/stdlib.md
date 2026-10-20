@@ -15,7 +15,7 @@ Esta página describe las funciones cubiertas hoy por la referencia. Valide el p
 
 ---
 
-## 1. Timers (Temporizadores)
+## 1. Temporizadores
 
 `PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
 
@@ -217,7 +217,7 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 
 ---
 
-## 7. Funciones de Bits
+## 7. Funciones de bits
 
 ### Operadores lógicos
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.

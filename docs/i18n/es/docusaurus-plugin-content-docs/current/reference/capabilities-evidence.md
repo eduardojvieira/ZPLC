@@ -1,13 +1,13 @@
 ---
 slug: /reference/capabilities-evidence
 id: capabilities-evidence
-title: Soporte de hardware
-sidebar_label: Soporte de hardware
+title: Compatibilidad de hardware
+sidebar_label: Compatibilidad de hardware
 description: "Los niveles de evidencia que usa ZPLC y el nivel de cada placa hoy, derivado de los registros de evidencia."
 tags: [reference, evidence, boards]
 ---
 
-# Soporte de hardware
+# Compatibilidad de hardware
 
 Esta es la única página que dice hasta dónde se ha demostrado que funciona cada
 placa. Todas las demás páginas que mencionan una placa o un nivel enlazan aquí.

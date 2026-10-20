@@ -27,7 +27,7 @@ maestro de terceros, y el cliente RTU solo se comprobó en sus parámetros de in
 
 - Una placa con la interfaz que quiere: Modbus TCP necesita una interfaz de red
   (Wi-Fi o Ethernet), y Modbus RTU necesita una interfaz serie que ofrezca el perfil
-  de la placa. [Soporte de hardware](../reference/capabilities-evidence.md) enumera
+  de la placa. [Compatibilidad de hardware](../reference/capabilities-evidence.md) enumera
   las placas y su clase de red.
 - Un proyecto, en ZPLC o a mano. El simulador de ZPLC inicia el runtime nativo sin
   los bloques de comunicación, así que allí un bloque Modbus responde `STATUS` 3: el

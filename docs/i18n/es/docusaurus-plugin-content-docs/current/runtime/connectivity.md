@@ -64,7 +64,7 @@ según el ancho del tag y solo cambia el mapeo del servidor RTU/TCP local. Nunca
 cambia la dirección remota compilada que usan los clientes de polling Modbus
 RTU/TCP. Trátelo como configuración de runtime: no asuma que persiste salvo
 que un flujo verificado de guardado/carga de configuración lo haya registrado
-para el target.
+para el destino.
 
 ## Valores por defecto seguros
 
