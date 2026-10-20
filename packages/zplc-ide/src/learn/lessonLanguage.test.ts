@@ -30,8 +30,11 @@ const PINNED_ELSEWHERE: ReadonlySet<string> = new Set(['Ciclo de scan y memoria 
 
 const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text).filter((value) => !PINNED_ELSEWHERE.has(value)) }));
 
-/** A whole word, in any case, that is not part of a longer word or code token (`ScanSnapshot` is not "scan"). */
-const word = (pattern: string): RegExp => new RegExp(`(?<![\\p{L}\\p{N}_])(?:${pattern})(?![\\p{L}\\p{N}_])`, 'giu');
+/**
+ * A whole word, in any case, that is not part of a longer word, a code token or a file path: `ScanSnapshot` is not
+ * "scan", and `tests/conveyor-jam-timing.scenario.json` is not "timing".
+ */
+const word = (pattern: string): RegExp => new RegExp(`(?<![\\p{L}\\p{N}_/-])(?:${pattern})(?![\\p{L}\\p{N}_/-]|\\.\\p{L})`, 'giu');
 
 /**
  * Forms that the "usted" register of D-10 never uses: the "tú" pronouns and possessives, the second-person verbs a lesson
@@ -104,7 +107,8 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
     expect([...'Si tú quieres, llamalo y recién después guardá.'.matchAll(REGISTER)].map((match) => match[0])).toEqual(['tú', 'quieres', 'llamalo', 'recién después']);
     const variants = (text: string) => WRONG_VARIANTS.flatMap(([pattern]) => [...text.matchAll(pattern)].map((match) => match[0]));
     expect(variants('El ciclo de scan del starter, un rung en Ladder y un fallo.')).toEqual(['ciclo de scan', 'rung', 'fallo', 'starter', 'Ladder']);
-    expect(variants('Un ciclo de escaneo, un peldaño en diagrama de escalera (LD) y una falla del programa inicial; src/ScanSnapshot.st.')).toEqual([]);
+    expect(variants('Un ciclo de escaneo, un peldaño en diagrama de escalera (LD) y una falla del programa inicial; src/ScanSnapshot.st y tests/scan-snapshot.scenario.json.')).toEqual([]);
+    expect(variants('La copia queda demorada un scan.')).toEqual(['scan']);
   });
 });
 
