@@ -28,13 +28,14 @@ const zplc_io_table_t *zplc_io_table(void);
 """
 
 
-def tree(directory: Path, *, posix: str, zephyr: str, wasm: str, user: str, ledger: dict | None = None) -> Path:
+def tree(directory: Path, *, posix: str, zephyr: str, wasm: str, user: str, freertos: str | None = None, ledger: dict | None = None) -> Path:
     core = directory / "firmware/lib/zplc_core"
     for relative, text in {
         "include/zplc_hal.h": HEADER,
         "src/hal/posix/zplc_hal_posix.c": posix,
         "src/hal/zephyr/zplc_hal_zephyr.c": zephyr,
         "src/hal/wasm/zplc_hal_wasm.c": wasm,
+        "src/hal/freertos/zplc_hal_freertos.c": FULL if freertos is None else freertos,
         "src/core/user.c": user,
     }.items():
         path = core / relative
@@ -60,6 +61,19 @@ class CheckerTests(unittest.TestCase):
 
     def test_a_complete_contract_has_no_findings(self) -> None:
         self.assertEqual([], self.check(posix=FULL, zephyr=FULL, wasm=FULL, user=USER))
+
+    def test_a_port_without_an_implementation_on_freertos_is_reported_with_its_name(self) -> None:
+        freertos = FULL.replace("zplc_hal_result_t zplc_hal_gpio_read(uint8_t c, uint8_t *v) { return 0; }\n", "")
+        findings = self.check(posix=FULL, zephyr=FULL, wasm=FULL, freertos=freertos, user=USER)
+        self.assertEqual(["zplc_hal_gpio_read has no implementation on the freertos port"], findings)
+
+    def test_the_freertos_port_may_split_its_hal_over_several_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = tree(Path(directory), posix=FULL, zephyr=FULL, wasm=FULL, user=USER,
+                        freertos=FULL.replace("uint32_t zplc_hal_tick(void) { return 0; }\n", ""))
+            persist = root / "firmware/lib/zplc_core/src/hal/freertos/zplc_persist_freertos.c"
+            persist.write_text("uint32_t zplc_hal_tick(void) { return 0; }\n")
+            self.assertEqual([], checker.check(root))
 
     def test_a_declaration_inside_a_comment_is_not_a_function(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

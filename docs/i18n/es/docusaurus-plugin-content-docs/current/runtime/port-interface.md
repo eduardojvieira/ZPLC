@@ -11,7 +11,7 @@ tags: [reference, generated]
 
 Un puerto es una plataforma que aloja el núcleo portable: la máquina virtual, el cargador, el núcleo del planificador y el almacenamiento del programa. El núcleo es dueño de lo que significa un programa; un puerto es dueño del reloj, los pines, el almacenamiento, los cerrojos y el hilo que llama al planificador. Un puerto se escribe contra dos encabezados y nada más, y pasa una suite de conformidad.
 
-Puertos del repositorio: el firmware de Zephyr (`firmware/lib/zplc_core/src/hal/zephyr`), el runtime POSIX del host con el que la aplicación ZPLC simula (`.../posix`) y el runtime WebAssembly (`.../wasm`). Si un segundo puerto que no sea de Zephyr se entrega en 2.0 es la decisión D-06 de la especificación de remediación; esta página y la suite son contra lo que se escribe un puerto así.
+Puertos del repositorio: el firmware de Zephyr (`firmware/lib/zplc_core/src/hal/zephyr`), el runtime POSIX del host con el que la aplicación ZPLC simula (`.../posix`), el runtime WebAssembly (`.../wasm`) y el puerto FreeRTOS (`.../freertos`). El puerto FreeRTOS es el segundo puerto embebido que no es de Zephyr: la decisión D-06 de la especificación de remediación resolvió entregarlo en 2.0, y se demuestra solo en el simulador POSIX de FreeRTOS, de modo que ninguna placa FreeRTOS está calificada. Esta página y la suite son contra lo que se escribe un puerto.
 
 ## La HAL
 
@@ -85,7 +85,7 @@ Sockets y resolución de nombres. El núcleo portable no los llama: las aplicaci
 
 ## El puerto del planificador
 
-Lo que un adaptador entrega al núcleo del planificador (`zplc_sched_port_t` de `firmware/lib/zplc_core/include/zplc_sched_core.h`). Todo miembro salvo `now_us` es opcional: un callback ausente es un paso que la plataforma no tiene. El núcleo no tiene sincronización propia; el adaptador aporta los cerrojos. Los adaptadores que existen son la sesión POSIX del runtime del host, el planificador de Zephyr y la configuración de una sola tarea del firmware.
+Lo que un adaptador entrega al núcleo del planificador (`zplc_sched_port_t` de `firmware/lib/zplc_core/include/zplc_sched_core.h`). Todo miembro salvo `now_us` es opcional: un callback ausente es un paso que la plataforma no tiene. El núcleo no tiene sincronización propia; el adaptador aporta los cerrojos. Los adaptadores que existen son la sesión POSIX del runtime del host, el planificador de Zephyr, la configuración de una sola tarea del firmware y el adaptador de FreeRTOS (un temporizador de software por tarea y una tarea del planificador).
 
 | Callback | Descripción fuente |
 | --- | --- |
@@ -122,6 +122,7 @@ Cada opcode del conjunto de instrucciones da su resultado en el puerto, incluido
 | Host POSIX | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.isa`, `zplc.core.vm_core`, `zplc.core.vm_arith_edges` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ### Pruebas negativas del cargador
 
@@ -132,6 +133,7 @@ Un programa mal formado, fuera de límites o construido para otro contrato se re
 | Host POSIX | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.loader_verify`, `zplc.legacy_program_admission` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ### Pruebas de fases y fallos del planificador
 
@@ -142,6 +144,7 @@ La admisión, el orden, las fases de un scan, los incumplimientos de plazo, el e
 | Host POSIX | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.scheduler_admission`, `zplc.scheduler_equivalence`, `zplc.scheduler_run_control`, `zplc.scheduler_watchdog`, `zplc.single_task`, `zplc.failsafe` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `packages/zplc-ide/src/runtime/wasmRuntime.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session`, `test_freertos_scheduler` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ### Autoprueba de tiempos
 
@@ -152,6 +155,7 @@ El reloj del puerto cuenta milisegundos, nunca retrocede, avanza durante una esp
 | Host POSIX | `test_port_timing` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.port_timing` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `test_port_timing` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_port_timing`, `test_hal_freertos` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ### Tabla de E/S
 
@@ -162,6 +166,7 @@ Los canales de la descripción de la placa llegan a la imagen de proceso a trav�
 | Host POSIX | `test_io_table`, `test_hal_posix_io_table` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.io_table.base`, `zplc.io_table.extended`, `zplc.io_analog.ok`, `zplc.io_analog.missing` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `test_io_table`, `test_hal_posix_io_table` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_io_table`, `test_hal_freertos_io_table` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ### Almacenamiento no volátil
 
@@ -172,12 +177,15 @@ El programa, la memoria retentiva, la configuración y las credenciales se guard
 | Host POSIX | `test_hal_posix_persist`, `test_program_store`, `test_retain` | `bun run test:core` (CMake y ctest, con los sanitizadores en CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.hal_persist_keys`, `zplc.program_store`, `zplc.program_store_nvs`, `zplc.retain_persist` | `bun run test:firmware` (Twister en `native_sim` de 64 y 32 bits, `qemu_cortex_m3` y `qemu_cortex_m0`) |
 | WebAssembly | `packages/zplc-ide/src/runtime/wasmPortSuites.test.ts`, `packages/zplc-ide/src/runtime/wasmRetain.test.ts` | `bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala) |
+| FreeRTOS (simulador POSIX) | `test_program_store`, `test_retain`, `test_hal_freertos` | `bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`) |
 
 ## Qué muestra la suite de los puertos hoy
 
 La autoprueba de tiempos informa el menor avance del tick que produce una espera de 1 ms. En el host POSIX es de 1 ms. En los destinos Zephyr de la suite (`native_sim` y QEMU Cortex-M3) el tick del kernel es de 10 ms (100 ticks por segundo, el valor por defecto del kernel) y una espera de 1 ms mueve el tick 20 ms, de modo que ni el reloj ni los temporizadores del kernel de estos destinos resuelven un intervalo menor que ese. La cifra pertenece a la configuración de compilación de la suite; no es una medición de una placa (HIL-010 es el banco).
 
 El puerto WebAssembly ejecuta todas las categorías. Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `tools/wasm-core/suites.ts` con el puerto de la HAL del runtime que la aplicación ZPLC entrega, y dan los mismos conteos (164 comprobaciones del núcleo del planificador, 2796 del sandbox). Se ejecutan en Bun, no en un motor de navegador: el reloj de la autoprueba de tiempos es `performance.now()` del anfitrión, con una resolución de 1 ms allí, y en un navegador ese reloj tiene la resolución, la fluctuación y la limitación de una pestaña en segundo plano que el navegador le da (IDE-025 es responsable de la prueba del adaptador en un motor de navegador). Un módulo no puede devolver su único hilo al anfitrión, de modo que la espera del puerto es una espera activa que lee el reloj del anfitrión; el runtime mismo nunca espera, porque el anfitrión lo consulta periódicamente. Su almacenamiento es el almacén de registros del anfitrión: la aplicación ZPLC guarda la memoria retentiva con el proyecto abierto y el programa guardado en la memoria de la página. El puerto no tiene enlace con un dispositivo ni red, de modo que no tiene configuración ni credenciales que guardar.
+
+El puerto FreeRTOS ejecuta todas las categorías en el simulador POSIX/GCC de FreeRTOS (FreeRTOS-Kernel V11.3.2, MIT, descargado en un commit fijado y no guardado en el repositorio; el job `freertos-port` de CI lo compila y lo ejecuta en Ubuntu). Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` contra la HAL de FreeRTOS y llamados desde una tarea del kernel, más suites propias: el adaptador del planificador (las trazas de referencia de los demás runtimes, liberaciones con temporizadores del kernel, el enganche de fallo y los pines seguros), la placa simulada detrás de la tabla de E/S, y el reloj, los cerrojos y los códigos de almacenamiento de la HAL. El simulador no es de tiempo real: cada tarea es un hilo del anfitrión y el tick del kernel es un ciclo que espera 1 ms, de modo que con carga el tick corre más lento que el reloj de pared (300 ticks tardaron entre 390 y 470 ms en un anfitrión con una carga promedio de 24). Por eso las pruebas acotan lo que el puerto puede prometer, no lo que hace una placa. La autoprueba de tiempos informa una resolución de 1 ms, el tick, contra sus propios límites (un piso de 50 ms de resolución y a lo sumo un segundo de exceso de espera). La prueba de liberaciones cuenta los scans en tiempo del kernel: nunca más de los que permiten los ticks, y al menos un tercio de la cuenta ideal, con el tiempo de pared impreso y no verificado. El reloj de microsegundos del adaptador del planificador lee el reloj monotónico del anfitrión, donde una placa lee su contador de ciclos. El almacenamiento es un archivo por clave, escrito con un nombre temporal, vaciado y renombrado, de modo que las suites del almacén de programas y de la memoria retentiva cortan la energía en cada operación; un puerto para una placa reemplaza ese archivo por su controlador de flash. El núcleo maneja solo las salidas digitales cuando fija el estado seguro, así que una salida analógica simulada conserva su última palabra. Ninguna de estas cifras es una medición de una placa (HIL-010 es el banco).
 
 {/* <<< END GENERATED: runtime/port-interface <<< */}
 

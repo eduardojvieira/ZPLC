@@ -268,6 +268,22 @@ jobs:
           ZPLC_FUZZ_ARTIFACTS: ${{ runner.temp }}/zplc-fuzz-artifacts
         run: tools/fuzz/run.sh 60 both
 
+  # IO-016 (decision D-06, option A): the second embedded port that is not Zephyr builds in CI and passes the port
+  # conformance suite. FreeRTOS-Kernel is fetched at the commit pinned in firmware/lib/zplc_core/src/hal/freertos/
+  # freertos.cmake (MIT; nothing of it is kept in the repository) and the suites run on its POSIX/GCC simulator.
+  # tools/freertos/test.sh is the command the maintainers run locally; this job runs the same one.
+  freertos-port:
+    name: FreeRTOS port (POSIX simulator)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Build the FreeRTOS port and run the port conformance suites
+        run: bash tools/freertos/test.sh "${{ runner.temp }}/zplc-freertos-build"
+
   zephyr-twister:
     name: Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-latest

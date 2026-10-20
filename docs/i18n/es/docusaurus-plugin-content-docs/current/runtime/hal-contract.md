@@ -101,7 +101,7 @@ La superficie pública de red incluye:
 
 - `zplc_hal_net_init()`
 - `zplc_hal_net_get_ip()`
-Los puertos de Zephyr, POSIX y WebAssembly implementan estas funciones. La resolución de nombres y los sockets no forman
+Los puertos de Zephyr, POSIX, WebAssembly y FreeRTOS implementan estas funciones. La resolución de nombres y los sockets no forman
 parte de la interfaz de puerto: la aplicación abre sus propios sockets con tiempos de espera por socket mediante el resolvedor de
 Zephyr y SNTP. La HAL declaraba una función de DNS y cuatro de socket que nadie llamaba; se quitaron para que toda
 función declarada tenga un llamador (IO-007).

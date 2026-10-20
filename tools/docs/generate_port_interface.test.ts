@@ -46,4 +46,23 @@ describe('port interface page: every function of the HAL and every callback of t
       expect(rows.join('\n')).toContain('wasmPortSuites.test.ts');
     }
   });
+
+  it('gives the FreeRTOS port a row of checks in every category, in both languages (IO-016)', () => {
+    for (const lang of ['en', 'es'] as const) {
+      const rows = portInterfaceBody(lang).split('\n').filter((line) => line.startsWith('| FreeRTOS'));
+      expect(rows).toHaveLength(6);
+      expect(rows.filter((row) => /Open:|Abierta:/.test(row))).toEqual([]);
+      expect(rows.join('\n')).toContain('test_freertos_scheduler');
+      expect(rows.join('\n')).toContain('test_hal_freertos_io_table');
+    }
+  });
+
+  it('says that the second port is decided and shipped, not pending, and states the tolerance of its timing (D-06, IO-016)', () => {
+    for (const lang of ['en', 'es'] as const) {
+      const body = portInterfaceBody(lang);
+      expect(body).toContain('FreeRTOS');
+      expect(body).not.toMatch(/decision D-06 of the remediation spec; this page|decisión D-06 de la especificación de remediación; esta página/);
+      expect(body).toMatch(/not a real-time|no es de tiempo real/);
+    }
+  });
 });

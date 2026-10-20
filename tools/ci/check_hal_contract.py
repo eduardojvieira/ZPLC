@@ -3,7 +3,7 @@
 
 Every function that firmware/lib/zplc_core/include/zplc_hal.h declares must
 
-* be defined by each port: POSIX, Zephyr and WASM (the Zephyr I/O table is defined by the file that
+* be defined by each port: POSIX, Zephyr, WASM and FreeRTOS (the Zephyr I/O table is defined by the file that
   firmware/zephyr/scripts/gen_io_table.py generates, so the generator's text counts for the Zephyr port);
 * have a caller somewhere in the firmware outside the port sources, the tests and the header, unless
   tools/ci/hal-contract.json lists it under `no_caller` with the reason. The ledger keeps a gap visible: an entry for a
@@ -31,6 +31,8 @@ PORTS = {
         Path("firmware/zephyr/scripts/gen_io_table.py"),
     ],
     "wasm": [CORE / "src/hal/wasm/zplc_hal_wasm.c"],
+    # The FreeRTOS port keeps its storage in a file of its own (a board port replaces it with its flash driver).
+    "freertos": [CORE / "src/hal/freertos/zplc_hal_freertos.c", CORE / "src/hal/freertos/zplc_persist_freertos.c"],
 }
 SOURCE_SUFFIXES = {".c", ".h", ".inc"}
 SKIP_PARTS = {"tests", "build", "node_modules"}
@@ -123,7 +125,7 @@ def main() -> int:
         print(f"ERROR: {finding}")
     if findings:
         return 1
-    print("The HAL contract is complete on the posix, zephyr and wasm ports.")
+    print("The HAL contract is complete on the posix, zephyr, wasm and freertos ports.")
     return 0
 
 

@@ -271,10 +271,12 @@ describe('the committed evidence (VF-027)', () => {
   const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided', 'gate'];
   const records = Object.entries(evidence).flatMap(([id, checks]) => checks.map((check) => ({ id, check })));
 
-  it('records the second port as decided by D-06 (default B), not as covered by a check', () => {
+  it('records the second port as shipped by D-06 (option A): checks that run it, a gate for the hosted CI run, and no decided record', () => {
     const port = ['IO', '016'].join('-'); // not in the title: a title that names it would be a check of it
-    expect(evidence[port]?.map((check) => check.kind)).toEqual(['decided']);
-    expect(evidence[port]?.[0]?.note).toContain('D-06');
+    const kinds = new Set(evidence[port]?.map((check) => check.kind));
+    expect(kinds.has('decided')).toBe(false);
+    expect([...kinds].sort()).toEqual(['c-test', 'gate', 'unit']);
+    expect(evidence[port]?.find((check) => check.kind === 'gate')?.note).toContain('freertos-port');
   });
 
   it('names only requirements of the index', () => {

@@ -586,10 +586,11 @@
     "requirement": "VF-006",
     "added": "2026-10-16",
     "reads": [
-      "firmware/lib/zplc_core/CMakeLists.txt"
+      "firmware/lib/zplc_core/CMakeLists.txt",
+      "firmware/lib/zplc_core/src/hal/freertos/freertos.cmake"
     ],
     "replacement": "artifact",
-    "reason": "Checks that every category of the port conformance manifest names a ctest and a scenario that exist, by matching add_test(NAME ...) in CMakeLists.txt as text. Replace by the list printed by ctest -N for the built suite, so the check compares the manifest with the produced test list."
+    "reason": "Checks that every category of the port conformance manifest names a ctest and a scenario that exist, by matching add_test(NAME ...) in CMakeLists.txt as text, and the FreeRTOS suites by matching zplc_freertos_suite(...) in freertos.cmake. Replace by the list printed by ctest -N for the built suite, so the check compares the manifest with the produced test list."
   },
   {
     "file": "tools/docs/generate_port_interface.test.ts",
