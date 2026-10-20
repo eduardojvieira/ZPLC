@@ -48,12 +48,14 @@ if [ "$(git -C "${RP}" rev-parse HEAD)" != "${RP2040JS_COMMIT}" ]; then
 fi
 if git -C "${RP}" apply --reverse --check "${PATCH}" 2> /dev/null; then
   say "rp2040js patch already applied"
-elif git -C "${RP}" apply --check "${PATCH}"; then
+else
+  if ! git -C "${RP}" apply --check "${PATCH}" 2> /dev/null; then
+    # another version of the patch (an older setup.sh): the clone is ours, so its tracked files go back to the commit
+    say "rp2040js carries another version of the patch: resetting its tracked files to ${RP2040JS_COMMIT:0:8}"
+    git -C "${RP}" checkout --quiet -- .
+  fi
   say "applying ${PATCH##*/}"
   git -C "${RP}" apply "${PATCH}"
-else
-  echo "setup.sh: ${PATCH} applies neither forwards nor backwards to ${RP}; reset that clone (git -C ${RP} checkout .)" >&2
-  exit 1
 fi
 if [ -f "${RP}/node_modules/.package-lock.json" ] && [ "${RP}/node_modules/.package-lock.json" -nt "${RP}/package-lock.json" ]; then
   say "rp2040js dependencies already installed"

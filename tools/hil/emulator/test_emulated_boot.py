@@ -22,6 +22,8 @@ HAVE_ESP = (emu.emu_dir() / "qemu-esp/qemu/bin/qemu-system-xtensa").is_file() an
 def shell(port: str, command: str, until: str, timeout: float = 10.0) -> str:
     fd = os.open(port, os.O_RDWR | os.O_NOCTTY)
     try:
+        while select.select([fd], [], [], 0.2)[0]:  # what the shell printed before (boot messages, a prompt)
+            os.read(fd, 4096)
         os.write(fd, command.encode() + b"\r")
         text, end = "", time.monotonic() + timeout
         while until not in text and time.monotonic() < end:
@@ -60,6 +62,25 @@ class PicoBootTests(unittest.TestCase):
                 self.assertEqual(again["board"], "rpi_pico")
                 self.assertLess(again["uptime_ms"], before)
                 self.assertEqual(bench.boots, 3)  # the build, the flashed image, the power cycle
+            finally:
+                bench.close()
+
+    def test_each_adc_read_converts_the_channel_it_selects(self):
+        """rp2040js kept START_ONCE set, so the driver's next write to CS started a conversion of the previous channel."""
+        with tempfile.TemporaryDirectory() as work:
+            bench = emu.EmulatorBench("rpi_pico", workdir=Path(work))
+            try:
+                bench.flash(PICO_IMAGE)
+                bench.sleep(1.5)
+                bench.request("adc", ch=4, raw=876)
+                bench.request("adc", ch=0, raw=2048)
+                bench.request("adc", ch=1, raw=100)
+                found = {}
+                for channel in (0, 4, 1, 0):
+                    text = shell(bench.port(), f"zplc adc read {channel}", "\r\n\x1b", timeout=5)
+                    match = re.search(rf"ADC Channel {channel}: (\d+)\r", text)
+                    found.setdefault(channel, []).append(int(match.group(1)) if match else None)
+                self.assertEqual(found, {0: [2048, 2048], 4: [876], 1: [100]})
             finally:
                 bench.close()
 

@@ -11,7 +11,7 @@ drivers against silicon. The guide is `docs/docs/development/hil-emulation.md`.
 | File | What it is |
 |---|---|
 | `setup.sh` | installs the emulators into `$ZPLC_EMU_DIR` (default `~/zplc-emu`); a second run changes nothing |
-| `rp2040js-zplc-emu.patch` | four fidelity fixes to rp2040js, applied by `setup.sh` |
+| `rp2040js-zplc-emu.patch` | five fidelity fixes to rp2040js, applied by `setup.sh` |
 | `build.sh` | builds the firmware images the benches run |
 | `pico/` | the Raspberry Pi Pico bench on rp2040js |
 | `esp32s3/` | the ESP32-S3 bench on Espressif QEMU, and its emulation-only build overlay |
@@ -32,7 +32,7 @@ versions, outside the repository; only the patch file is kept here.
   `0eecb2a34a5586c0e59110f77b9343b7b336e82fdb0e1a30e1dc1bab8a547e35`. It runs as a
   separate program; nothing here links to it.
 
-## The four rp2040js fixes
+## The five rp2040js fixes
 
 1. `ppb.ts`, SysTick: a write to SYST_CVR set the counter to 0, which fired the alarm
    at once, a SysTick storm under Zephyr's tickless driver. It now reloads from RVR
@@ -44,6 +44,10 @@ versions, outside the repository; only the patch file is kept here.
    SIE_STATUS.VBUS_DETECTED, as Zephyr's `usb_dc_rpi_pico` driver expects.
 4. `adc.ts`, reading the FIFO did not re-evaluate the FIFO interrupt level, an ADC
    interrupt storm and a stack overrun.
+5. `adc.ts`, START_ONCE stayed set in CS instead of clearing itself, so the next write
+   to CS (Zephyr's `adc_rpi_pico` driver sets ERR_STICKY before it selects the next
+   input) started a conversion of the previous input: every `adc read` returned the
+   channel read before it. Found by the emulated bench; it was not a ZPLC HAL defect.
 
 Offering these fixes to rp2040js upstream is a publication for the project owner to
 decide; nothing here sends them.

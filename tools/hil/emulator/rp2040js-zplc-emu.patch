@@ -1,5 +1,5 @@
 diff --git i/src/peripherals/adc.ts w/src/peripherals/adc.ts
-index a6aa487..dc83c41 100644
+index a6aa487..e2bd686 100644
 --- i/src/peripherals/adc.ts
 +++ w/src/peripherals/adc.ts
 @@ -254,6 +254,7 @@ export class RPADC extends BasePeripheral implements Peripheral {
@@ -10,6 +10,16 @@ index a6aa487..dc83c41 100644
            return value;
          }
        case DIV:
+@@ -278,6 +279,9 @@ export class RPADC extends BasePeripheral implements Peripheral {
+         if (value & CS_EN && !this.busy && (value & CS_START_ONE || value & CS_START_MANY)) {
+           this.startADCRead();
+         }
++        // zplc-emu patch: START_ONCE is self-clearing; kept set, the next write to CS (the driver clears ERR_STICKY
++        // through the SET alias before it selects the next input) started a conversion of the previous input.
++        this.cs &= ~CS_START_ONE;
+         break;
+       case FCS:
+         this.fcs &= ~(value & (FCS_OVER | FCS_UNDER)); // Write-clear bits
 diff --git i/src/peripherals/ppb.ts w/src/peripherals/ppb.ts
 index 917252e..80dc165 100644
 --- i/src/peripherals/ppb.ts
