@@ -1538,6 +1538,8 @@
   "IO-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"tells an on-board channel from a header pin, so the Pico LED needs no wiring while every input is on the header (IO-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)","partial":true,"note":"description and target-build level: the pins are proven by the loopback bench of HIL-010 (WP-85, WP-94)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/projects/bundledProjectsQuality.test.ts","test":"esp32s3_blinky names its pin as DO0, GPIO15 on header J1 pin 8 of the DevKitC-1, with no pending mapping (IO-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"names the ESP32-S3 pin of the DevKitC-1 learner profile, GPIO15 on header J1, and no pending mapping (IO-009)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
   "IO-010": [
@@ -2501,6 +2503,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor"}
   ],
   "UX-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"UX-029 gives the steps, the notice and the evidence in the language of the interface"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 gives an unavailable folder the reason in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 says the time in Spanish with the Spanish plural, and the month of an older date"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"UX-029 the Recent section speaks the language of the interface"},
@@ -2674,6 +2677,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true}
   ],
   "LRN-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"LRN-014 flashes the ESP32-S3 over the port marked USB in download mode with esptool v5, then presses RST"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the learner kit of the course (LRN-014, LRN-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"the one bill of materials of the course (LRN-014)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/render.test.ts","test":"the wiring card: the same wiring as a text list, part by part (LRN-014, LRN-037)"},
