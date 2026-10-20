@@ -300,6 +300,10 @@ class PicoBench:
 class Esp32s3Bench:
     """Espressif QEMU, machine esp32s3, with the emulation-only image of build.sh esp32s3."""
 
+    # QEMU ran the board's clock at a tenth to a third of the host's, depending on the load of the machine: the tester
+    # gives a program ten times the host time it would on a board. Timing steps measure QEMU here, not the firmware.
+    pace = 10.0
+
     NOT_EMULABLE = {
         "digital-loopback": "Espressif QEMU has no GPIO input/output model for the ESP32-S3",
         "analog": "Espressif QEMU has no SAR ADC model (the emulation image builds with adc0 off)",

@@ -598,6 +598,23 @@ class BenchTests(Quiet):
         self.assertIn("duration", record["measurements"])
 
 
+class PaceTests(Quiet):
+    def test_an_emulator_whose_board_clock_runs_behind_gives_programs_more_host_time(self):
+        """Espressif QEMU ran the ESP32-S3's clock at a tenth to a third of the host's, so a fixture's 100 scans of
+        50 ms did not fit the tester's wait in host time; the bench's pace scales that wait (and nothing on a board)."""
+        clock = Clock()
+
+        class SlowEmulator(FakeBench):
+            pace = 10.0
+
+        for bench, expected in ((FakeBench(clock, None), 1.0), (SlowEmulator(clock, None), 10.0)):
+            device = FakeBoard(clock)
+            args = run_chain.parse(["esp32s3_devkitc", "--dry-run", "--operator", "CI", "--device", "null"])
+            chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS["esp32s3_devkitc"], lambda name: device, bench)
+            chain.open_device()
+            self.assertEqual(chain.tester.pace, expected)
+
+
 class CompilePerBoardTests(Quiet):
     def test_every_step_program_compiles_for_both_learner_boards_with_the_boards_memory(self):
         values = {"host": "192.168.1.2", "modbus_port": 5020, "iterations": 3846}

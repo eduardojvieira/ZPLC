@@ -232,6 +232,8 @@ class Chain(hil_steps.BenchSteps):
         else:
             transport = SerialTransport(self.bench.port())
         self.tester = LanguageTester(transport=transport, board=self.board["ide_id"])
+        # an emulator whose board clock runs behind the host's gives a program that much more host time to run
+        self.tester.pace *= getattr(self.bench, "pace", 1.0)
         if transport.kind == "serial":
             import time  # noqa: PLC0415
 
