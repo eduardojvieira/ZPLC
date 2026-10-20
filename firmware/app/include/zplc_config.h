@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zplc_isa.h>
 
@@ -320,14 +321,37 @@ void zplc_config_set_mqtt_lwt_qos(zplc_mqtt_qos_t qos);
 bool zplc_config_get_mqtt_lwt_retain(void);
 void zplc_config_set_mqtt_lwt_retain(bool retain);
 
+/**
+ * @brief Whether a certificate or key path may be configured (IO-008).
+ *
+ * A path is a file of the settings file system (or empty: not set), or "persist://<name>" for one of the
+ * credential records the runtime stores in the HAL: aws_cert_pem and aws_key_pem, the certificate and the key of
+ * AWS fleet provisioning. Every other record of the HAL (the program, the settings keys, the keys of the device link)
+ * is refused, so that no setting can hand it to the TLS stack as a PEM.
+ */
+static inline bool zplc_config_credential_path_valid(const char *path) {
+  static const char prefix[] = "persist://";
+
+  if (path == NULL) {
+    return false;
+  }
+  if (strncmp(path, prefix, sizeof(prefix) - 1U) != 0) {
+    return true;
+  }
+  path += sizeof(prefix) - 1U;
+  return strcmp(path, "aws_cert_pem") == 0 || strcmp(path, "aws_key_pem") == 0;
+}
+
+/* The certificate and key path setters return 0, or -EINVAL and keep the old value when
+ * zplc_config_credential_path_valid() refuses the path. */
 void zplc_config_get_mqtt_ca_cert_path(char *buf, size_t len);
-void zplc_config_set_mqtt_ca_cert_path(const char *path);
+int zplc_config_set_mqtt_ca_cert_path(const char *path);
 
 void zplc_config_get_mqtt_client_cert_path(char *buf, size_t len);
-void zplc_config_set_mqtt_client_cert_path(const char *path);
+int zplc_config_set_mqtt_client_cert_path(const char *path);
 
 void zplc_config_get_mqtt_client_key_path(char *buf, size_t len);
-void zplc_config_set_mqtt_client_key_path(const char *path);
+int zplc_config_set_mqtt_client_key_path(const char *path);
 
 /* ============================================================================
  * Time Synchronization Configuration (SNTP / NTP)
@@ -460,10 +484,10 @@ void zplc_config_get_aws_fleet_template_name(char *buf, size_t len);
 void zplc_config_set_aws_fleet_template_name(const char *name);
 
 void zplc_config_get_aws_claim_cert_path(char *buf, size_t len);
-void zplc_config_set_aws_claim_cert_path(const char *path);
+int zplc_config_set_aws_claim_cert_path(const char *path);
 
 void zplc_config_get_aws_claim_key_path(char *buf, size_t len);
-void zplc_config_set_aws_claim_key_path(const char *path);
+int zplc_config_set_aws_claim_key_path(const char *path);
 
 int zplc_azure_dps_provision(void);
 int zplc_aws_fleet_provision(void);

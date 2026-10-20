@@ -306,6 +306,39 @@ static const struct cfg_item *cfg_find(const char *name) {
   return NULL;
 }
 
+/* IO-008: the settings that name a certificate or a key. Each is a file path or one of the credential records of
+ * the HAL (zplc_config_credential_path_valid()); a name of any other record is refused where it is set and where it
+ * is read back from the store, so the TLS stack is never handed the program or a key of the device link. */
+static const char *const cfg_credential_paths[] = {
+    "mqtt_ca_cert_path", "mqtt_client_cert_path", "mqtt_client_key_path", "aws_claim_cert_path", "aws_claim_key_path",
+};
+#define CFG_CREDENTIAL_PATH_MAX sizeof(config.mqtt_ca_cert_path)
+BUILD_ASSERT(sizeof(config.mqtt_client_cert_path) == CFG_CREDENTIAL_PATH_MAX &&
+                 sizeof(config.mqtt_client_key_path) == CFG_CREDENTIAL_PATH_MAX &&
+                 sizeof(config.aws_claim_cert_path) == CFG_CREDENTIAL_PATH_MAX &&
+                 sizeof(config.aws_claim_key_path) == CFG_CREDENTIAL_PATH_MAX,
+             "the certificate path settings have one size");
+
+static bool cfg_is_credential_path(const char *name) {
+  for (size_t i = 0U; i < ARRAY_SIZE(cfg_credential_paths); i++) {
+    if (strcmp(cfg_credential_paths[i], name) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static int cfg_set_credential_path(char *dest, size_t size, const char *path) {
+  if (!zplc_config_credential_path_valid(path)) {
+    LOG_WRN("certificate path '%s' refused: a file path, persist://aws_cert_pem or persist://aws_key_pem",
+            path != NULL ? path : "");
+    return -EINVAL;
+  }
+  strncpy(dest, path, size);
+  dest[size - 1U] = '\0';
+  return 0;
+}
+
 /* Applies one stored value to the in-memory setting it names. A value of
  * the wrong width is refused and leaves the setting as it was. */
 static int cfg_apply(const char *name, const uint8_t *value, size_t length) {
@@ -316,6 +349,12 @@ static int cfg_apply(const char *name, const uint8_t *value, size_t length) {
       char *text = (char *)item->ptr;
       size_t n = length < item->size ? length : (size_t)item->size - 1U;
 
+      if (cfg_is_credential_path(name)) {
+        char path[CFG_CREDENTIAL_PATH_MAX];
+
+        (void)snprintf(path, sizeof(path), "%.*s", (int)n, (const char *)value);
+        return cfg_set_credential_path(text, item->size, path);
+      }
       (void)snprintf(text, item->size, "%.*s", (int)n, (const char *)value);
       return 0;
     }
@@ -1219,9 +1258,8 @@ void zplc_config_get_mqtt_ca_cert_path(char *buf, size_t len) {
   buf[len - 1] = '\0';
 }
 
-void zplc_config_set_mqtt_ca_cert_path(const char *path) {
-  strncpy(config.mqtt_ca_cert_path, path, sizeof(config.mqtt_ca_cert_path));
-  config.mqtt_ca_cert_path[sizeof(config.mqtt_ca_cert_path) - 1] = '\0';
+int zplc_config_set_mqtt_ca_cert_path(const char *path) {
+  return cfg_set_credential_path(config.mqtt_ca_cert_path, sizeof(config.mqtt_ca_cert_path), path);
 }
 
 void zplc_config_get_mqtt_client_cert_path(char *buf, size_t len) {
@@ -1229,10 +1267,8 @@ void zplc_config_get_mqtt_client_cert_path(char *buf, size_t len) {
   buf[len - 1] = '\0';
 }
 
-void zplc_config_set_mqtt_client_cert_path(const char *path) {
-  strncpy(config.mqtt_client_cert_path, path,
-          sizeof(config.mqtt_client_cert_path));
-  config.mqtt_client_cert_path[sizeof(config.mqtt_client_cert_path) - 1] = '\0';
+int zplc_config_set_mqtt_client_cert_path(const char *path) {
+  return cfg_set_credential_path(config.mqtt_client_cert_path, sizeof(config.mqtt_client_cert_path), path);
 }
 
 void zplc_config_get_mqtt_client_key_path(char *buf, size_t len) {
@@ -1240,10 +1276,8 @@ void zplc_config_get_mqtt_client_key_path(char *buf, size_t len) {
   buf[len - 1] = '\0';
 }
 
-void zplc_config_set_mqtt_client_key_path(const char *path) {
-  strncpy(config.mqtt_client_key_path, path,
-          sizeof(config.mqtt_client_key_path));
-  config.mqtt_client_key_path[sizeof(config.mqtt_client_key_path) - 1] = '\0';
+int zplc_config_set_mqtt_client_key_path(const char *path) {
+  return cfg_set_credential_path(config.mqtt_client_key_path, sizeof(config.mqtt_client_key_path), path);
 }
 
 /* ============================================================================
@@ -1473,9 +1507,8 @@ void zplc_config_get_aws_claim_cert_path(char *buf, size_t len) {
   buf[len - 1] = '\0';
 }
 
-void zplc_config_set_aws_claim_cert_path(const char *path) {
-  strncpy(config.aws_claim_cert_path, path, sizeof(config.aws_claim_cert_path));
-  config.aws_claim_cert_path[sizeof(config.aws_claim_cert_path) - 1] = '\0';
+int zplc_config_set_aws_claim_cert_path(const char *path) {
+  return cfg_set_credential_path(config.aws_claim_cert_path, sizeof(config.aws_claim_cert_path), path);
 }
 
 void zplc_config_get_aws_claim_key_path(char *buf, size_t len) {
@@ -1483,9 +1516,8 @@ void zplc_config_get_aws_claim_key_path(char *buf, size_t len) {
   buf[len - 1] = '\0';
 }
 
-void zplc_config_set_aws_claim_key_path(const char *path) {
-  strncpy(config.aws_claim_key_path, path, sizeof(config.aws_claim_key_path));
-  config.aws_claim_key_path[sizeof(config.aws_claim_key_path) - 1] = '\0';
+int zplc_config_set_aws_claim_key_path(const char *path) {
+  return cfg_set_credential_path(config.aws_claim_key_path, sizeof(config.aws_claim_key_path), path);
 }
 
 /* Stubs — real implementations live in zplc_aws_fleet.c */
