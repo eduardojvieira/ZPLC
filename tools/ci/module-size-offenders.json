@@ -26,12 +26,5 @@
     "added": "2026-10-10",
     "lines": 940,
     "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
-  },
-  {
-    "file": "packages/zplc-ide/src/transpiler/ldToST.ts",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 829,
-    "reason": "Ladder to ST transpilation in one module; the visual-language work (WS-22a) edits it. Split by pass after that lands. Recorded size raised from 895 to 917 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   }
 ]
