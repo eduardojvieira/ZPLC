@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <errno.h>
+
 #include "program_store.h"
 
 static uint8_t s_program_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE];
@@ -18,3 +20,7 @@ volatile size_t program_expected_size;
 volatile size_t program_received_size;
 uint8_t *program_staging_buffer = s_program_staging_buf;
 volatile size_t program_staging_received_size;
+
+/* The Wi-Fi link is kept up by main.c; this suite has no radio and links the shell alone. */
+int zplc_wifi_request_connect(void) { return -ENOTSUP; }
+const char *zplc_wifi_status_name(void) { return "unsupported"; }
