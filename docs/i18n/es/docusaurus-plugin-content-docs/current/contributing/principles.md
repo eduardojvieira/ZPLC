@@ -76,6 +76,7 @@ documentación, en un mensaje de commit y en un pull request. Véase
 La documentación pública existe en ambos idiomas y cambia en ambos a la vez. Una
 dependencia nueva necesita una necesidad concreta y una justificación
 arquitectónica registrada.
+Hasta ahora solo se revisaron las páginas en español de Aprender y del entorno de trabajo de Studio; ninguna persona con dominio del español ha leído todavía las demás páginas en español.
 
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 

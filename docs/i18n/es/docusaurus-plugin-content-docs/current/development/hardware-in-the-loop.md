@@ -51,6 +51,7 @@ USB de la placa en `tools/hil/usb-ids.json`. Cuando coincide más de un
 dispositivo, o ninguno, la herramienta se detiene y lista lo que vio; nunca
 adivina. Ningún script escribe la ruta de un puerto, y las herramientas corren
 en Linux, macOS y Windows.
+La integración continua ejecuta sus pruebas solo en Linux; todavía no hay registrada ninguna ejecución en macOS ni en Windows.
 
 ### Sin placa
 

@@ -203,6 +203,12 @@ describe('serializeEvidence', () => {
     expect(lines.filter((line) => line.startsWith('  "'))).toEqual(['  "VF-001": [', '  "CMP-002": [']);
     expect(lines.filter((line) => line.startsWith('    {')).map((line) => JSON.parse(line.replace(/,$/, '')).ref)).toEqual(['a.test.ts', 'c.expect.json', 'B.test.ts', 'b.test.ts']);
   });
+
+  it('writes a gate after every other record of its requirement, a decision included', () => {
+    const evidence = { 'VF-001': [{ kind: 'gate' as const, ref: 'g.md', note: 'n' }, { kind: 'decided' as const, ref: 'd.md', note: 'n' }, { kind: 'unit' as const, ref: 'a.test.ts', test: 't' }] };
+    const lines = serializeEvidence(evidence, ['VF-001']).split('\n').filter((line) => line.startsWith('    {'));
+    expect(lines.map((line) => JSON.parse(line.replace(/,$/, '')).kind)).toEqual(['unit', 'decided', 'gate']);
+  });
 });
 
 describe('coverage', () => {
@@ -236,6 +242,16 @@ describe('coverage', () => {
     expect(overall).toEqual({ total: 5, covered: 1, partial: 0, decided: 1, uncovered: 3 });
   });
 
+  it('keeps a gated requirement out of covered whatever its checks, counts a gate alone as no check, and names every gated one', () => {
+    const gate: Check = { kind: 'gate', ref: 'docs/docs/development/hardware-in-the-loop.md', note: 'a hardware record of both learner boards' };
+    const { states, overall, kinds, gated } = coverage(index, { 'VF-001': [conformance('VF-001', 'passes'), gate], 'VF-003': [gate] }, listed);
+    expect(states.get('VF-001')).toBe('partial');
+    expect(states.get('VF-003')).toBe('uncovered');
+    expect(kinds.get('VF-001')).toEqual([]);
+    expect(gated).toEqual(['VF-001', 'VF-003']);
+    expect(overall).toEqual({ total: 5, covered: 0, partial: 1, decided: 0, uncovered: 4 });
+  });
+
   it('lets a failing case sit beside a passing one: the passing one covers, and the requirement is named as still failing', () => {
     const { states, withFailures } = coverage(index, { 'VF-002': [conformance('VF-002', 'fails'), conformance('VF-002', 'passes')], 'VF-001': [conformance('VF-001', 'passes')] }, listed);
     expect(states.get('VF-002')).toBe('covered');
@@ -252,7 +268,7 @@ describe('the committed evidence (VF-027)', () => {
   const root = new URL('../../', import.meta.url);
   const evidence = JSON.parse(readFileSync(new URL('tools/ci/requirement-evidence.json', root), 'utf8')) as Record<string, Check[]>;
   const index = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string }>;
-  const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided'];
+  const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided', 'gate'];
   const records = Object.entries(evidence).flatMap(([id, checks]) => checks.map((check) => ({ id, check })));
 
   it('records the second port as decided by D-06 (default B), not as covered by a check', () => {
@@ -283,9 +299,38 @@ describe('the committed evidence (VF-027)', () => {
   });
 
   it('explains every record that a person wrote', () => {
-    const manual = records.filter(({ check }) => check.kind === 'manual' || check.kind === 'hardware' || check.kind === 'decided');
+    const manual = records.filter(({ check }) => ['manual', 'hardware', 'decided', 'gate'].includes(check.kind));
     expect(manual.filter(({ check }) => !check.note).map(({ id }) => id)).toEqual([]);
   });
+
+  const expectGated = (ids: string[]) => {
+    const gated = Object.entries(evidence).filter(([, checks]) => checks.some((check) => check.kind === 'gate' && check.note)).map(([id]) => id);
+    expect(gated).toEqual(expect.arrayContaining(ids));
+    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
+    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
+    const { states } = coverage(full, evidence, listed);
+    expect(ids.filter((id) => states.get(id) === 'covered')).toEqual([]);
+  };
+
+  it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
+    expectGated(['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004']);
+  });
+
+  it('gates the requirements that need a hosted run, another operating system, a person or a decision of the owner', () => {
+    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'LRN-012', 'DOC-015', 'LRN-037', 'REL-031']);
+  });
+
+  it('lists every gated requirement with the evidence its gate still asks for', () => {
+    const run = Bun.spawnSync([process.execPath, 'tools/ci/requirement-coverage.ts', '--list'], { cwd: root.pathname });
+    expect(run.exitCode).toBe(0);
+    const out = run.stdout.toString();
+    const gates = records.filter(({ check }) => check.kind === 'gate');
+    expect(gates.length).toBeGreaterThan(0);
+    for (const { id, check } of gates) {
+      expect(out).toContain(`  ${id}! `);
+      expect(out).toContain(check.note!);
+    }
+  }, 60_000); // a whole scan of the tree in a child process: slow on a loaded machine, and its time is not what this measures
 
   it('adds up: every requirement of the index is covered, partial or uncovered', () => {
     const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);

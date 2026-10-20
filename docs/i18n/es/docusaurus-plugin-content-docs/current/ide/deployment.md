@@ -73,6 +73,8 @@ Zephyr y registre una ejecución HIL antes de afirmar cómo se comporta la placa
 Vea [Soporte de hardware](../reference/capabilities-evidence.md) y
 [Seguridad y limitaciones](../safety-and-limitations.md).
 
+Todavía no hay registrada ninguna compilación de firmware desde Studio en macOS ni en Windows.
+
 ## Si falla la conexión o el despliegue
 
 No reintente a ciegas. Vuelva a revisar la placa y el perfil elegidos y la ABI

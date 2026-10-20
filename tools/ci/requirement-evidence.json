@@ -53,7 +53,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_loader_verify.c","test":"libFuzzer target for zplc_loader_verify (VF-014)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_proto_frame.c","test":"libFuzzer target for the frame decoder of the device link protocol (COM-019, VF-014)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_proto_link.c","test":"libFuzzer target for the device engine of the device link protocol (COM-020, COM-021, VF-014)."},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"libFuzzer target that loads and RUNS artifacts the loader accepts (VF-014)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"libFuzzer target that loads and RUNS artifacts the loader accepts (VF-014)."},
+    {"kind":"gate","ref":"docs/docs/development/firmware-testing.md","test":"fuzzes the loader verification only, and no run of it is recorded yet","note":"Needs a recorded nightly run of the long fuzz. The nightly loader-fuzz job of nightly-quality.yml covers the loader verification only (the fuzzer that runs accepted artifacts has the short pull-request run alone), and the C fuzz targets prove the harness, not a nightly run."}
   ],
   "VF-015": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
@@ -1005,7 +1006,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53b Pause, step one cycle and resume a function block diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53c Pause, step one cycle and resume a sequential function chart","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53d Pause, step one cycle and resume an Instruction List program","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53e Pause, step one cycle and resume a Structured Text program","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53e Pause, step one cycle and resume a Structured Text program","partial":true},
+    {"kind":"gate","ref":"docs/docs/ide/editors.md","test":"the values on a board, stepping on hardware","note":"Needs a breakpoint on an IL line, a Ladder rung, an FBD block and an SFC step or transition that stops execution on a physical board, kept as a hardware record (HIL-009). The tests prove the debug map and the stops in simulation only."}
   ],
   "LNG-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/breakpoints.test.ts","test":"a breakpoint binds in every ST file of a project, by the project-relative path of its own file (LNG-005)"},
@@ -1421,7 +1423,8 @@
     {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RETAIN persistence of the Zephyr scheduler (RT-025, RT-026)."},
     {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: STOP stores the region and the next load restores it."},
     {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: a damaged record is detected by its checksum."},
-    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: a record of another program is not restored, and the status says why."}
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: a record of another program is not restored, and the status says why."},
+    {"kind":"gate","ref":"docs/docs/guides/retained-variables.md","test":"retention is off by default, and no board has been through a power cut under test","note":"Needs RETAIN persistence turned on in the shipped board profiles and a hardware record (HIL-009) of the power-cycle step of HIL-010 on the Raspberry Pi Pico and the ESP32-S3. Persistence is off by default in every shipped profile, and the C tests prove the records and the restore rules on the host and in the Zephyr suites only."}
   ],
   "RT-026": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
@@ -2099,7 +2102,8 @@
     {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026, IDE-026)","partial":true,"note":"built and run on Linux with no Bun or Node on the PATH and no checkout; the other five platform and architecture pairs are built and smoked only by the release workflow on their own runners (build-macos, build-windows, build-linux), and no run of it is recorded"}
   ],
   "IDE-027": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
+    {"kind":"gate","ref":"docs/docs/ide/deployment.md","test":"No firmware build from Studio on macOS or Windows is recorded yet","note":"Needs a recorded firmware build from Studio on macOS, and on Windows either a build or the message that says why it cannot and points to the prebuilt image, for example a hosted CI run on each system. The IPC test proves the toolchain inspection and the build path on Linux only."}
   ],
   "IDE-028": [
     {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
@@ -2678,7 +2682,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/curriculum.test.ts","test":"LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-012 the first lesson leads to a blink with the controls Studio shows"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"57 First launch to a blinking simulated output, following only what Studio shows"},
+    {"kind":"gate","ref":"docs/docs/learn/index.md","test":"How long a person takes is not measured yet","note":"Needs a timed first-use test in which a first-time user reaches a blinking simulated output within ten minutes, following only what Studio shows. Journey 57 follows the same controls without a person, and the time estimates of the lessons do not stand in for it."}
   ],
   "LRN-013": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/wiring.test.ts","test":"the wiring file of a hardware lesson (LRN-013, LRN-014)"},
@@ -2702,7 +2707,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of a lesson package (LRN-013, LRN-014, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true},
+    {"kind":"gate","ref":"docs/docs/learn/hardware-track.md","test":"No trace from a real board and no run on a physical board are part of this evidence","note":"Needs a person to run and check a hardware-track lesson's program on a physical Raspberry Pi Pico and ESP32-S3-DevKitC-1, kept as a hardware record (HIL-009). The tests and journeys prove the board choice, the wiring and the check in Studio, never a run on a board."}
   ],
   "LRN-014": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"LRN-014 flashes the ESP32-S3 over the port marked USB in download mode with esptool v5, then presses RST"},
@@ -2830,7 +2836,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"LRN-024 names the board and the ZPLC version the firmware reported, or null when it reported none"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"the read-only board session (LRN-015, LRN-024)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"62 Learn hardware track: the board choice and the hardware labels","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"63 Learn hardware track: the wiring of each board and the check that waits for the learner","partial":true},
+    {"kind":"gate","ref":"docs/docs/learn/hardware-track.md","test":"No trace from a real board and no run on a physical board are part of this evidence","note":"Needs a hardware check evaluated on a trace recorded from a physical Raspberry Pi Pico and ESP32-S3-DevKitC-1, kept as a hardware record (HIL-009). The tests prove the check on synthetic traces and the recorder on simulated sessions only."}
   ],
   "LRN-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
@@ -2952,7 +2959,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true},
+    {"kind":"gate","ref":"docs/docs/development/screen-reader-check.md","test":"nobody has run it yet","note":"Needs a person to run the screen-reader check of the main path on both systems and keep its results table with the release checklist (UX-028). The tests prove the text equivalents and labels in the page, not what a screen reader says."}
   ],
   "LRN-038": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
@@ -2968,11 +2976,13 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
-    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"}
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a run of packages/zplc-hil on a flashed Raspberry Pi Pico or ESP32-S3 that compiles, deploys through the control protocol and observes the device with no mocked step, kept as a hardware run record (HIL-009). The describeCases tables only compile their cases, and the runner and shell-link tests and the emulated bench reach no physical device."}
   ],
   "HIL-002": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a scenario file run on a physical board through the hardware runtime port, with time taken from device timestamps, kept as a hardware run record (HIL-009). The port tests run against fake devices and the native runtime."}
   ],
   "HIL-003": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the hardware scenario command (HIL-003)"},
@@ -2996,7 +3006,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every expected value of the manifest names a real address of its type (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"every phase of every language fixture holds on the native runtime (HIL-005)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"the manifest lists every language fixture of tools/hil, once (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"the manifest lists every language fixture of tools/hil, once (HIL-005)","partial":true,"note":"the host leg: every fixture compiles and holds its expected values on the native runtime; the leg on a board is run_chain.py at the bench and has no record yet"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs the language fixtures tagged for hardware run on a physical Raspberry Pi Pico and ESP32-S3 (steps 1 and 9 of the bench guide), kept as a hardware run record (HIL-009). The fixture test runs them on the native runtime only."}
   ],
   "HIL-006": [
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/hilFixtures.test.ts","test":"language fixtures of tools/hil (HIL-005, HIL-006)"},
@@ -3007,7 +3018,8 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/ports.test.ts","test":"the serial port is a parameter or found from USB identifiers (HIL-007)"},
     {"kind":"unit","ref":"tools/hil/test_hil_ports.py","test":"ResolvePortTests","note":"a port is a parameter, the environment, or found by USB identifiers; two matches or none is an error that names what was seen; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"unit","ref":"tools/hil/test_hil_scripts.py","test":"ScriptsAreSafeToImportAndRunTests","note":"no script needs pyserial to load or opens a port it was not given; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_ports.py","test":"HIL-007: the serial port is a parameter or is found from USB identifiers"}
+    {"kind":"py-test","ref":"tools/hil/test_hil_ports.py","test":"HIL-007: the serial port is a parameter or is found from USB identifiers"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"CI runs their tests on Linux only; no run on macOS or Windows is recorded yet","note":"Needs a recorded run of the HIL tools of tools/hil and packages/zplc-hil on macOS and on Windows, for example a hosted CI job on each. CI runs their tests on Linux only, and the port tests prove the detection of the port, not a run on those systems."}
   ],
   "HIL-008": [
     {"kind":"unit","ref":"tools/hil/test_hil_harness.py","test":"TablesAreTheContractTests","note":"the opcode and error tables of the tester and the opcode scripts are the generated contract; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"}
@@ -3024,7 +3036,8 @@
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true}
+    {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs hardware run records (HIL-009) of the Raspberry Pi Pico and the ESP32-S3, written by a person at the bench with run_chain.py, covering every step HIL-010 lists, from the flash by a person to the fieldbus exchange of each board. The scheduler C test, the Zephyr suites and the emulated bench prove the software legs only."}
   ],
   "HIL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/supportLevel.test.ts","test":"a report from a user is a lead and never raises the level, whatever its result (HIL-011)"},
@@ -3038,7 +3051,8 @@
     {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-012: the chain says how long it takes, about 30 minutes on a person's bench"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record"}
+    {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record"},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs the one-command chain of run_chain.py run by a person on each learner board, timed against the about 30 minutes the requirement names, kept as a hardware run record (HIL-009). The tests prove the chain on the emulated bench and its refusal without an interactive terminal only."}
   ],
   "HIL-013": [
     {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL trace, from the configuration or from the options the image reports (HIL-013)"},
@@ -3048,7 +3062,8 @@
   ],
   "HIL-015": [
     {"kind":"c-test","ref":"firmware/tests/app_native_emulation/module/emu_shell.c","test":"same program can be compared with the emulated Pico (HIL-015). It is never compiled"},
-    {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true}
+    {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true},
+    {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs compare_sim.py run against a physical Raspberry Pi Pico and ESP32-S3 (the comparison table of the page says 'Not run yet' for both), with every difference recorded and reflected in the simulator's capability profile. The emulation shell and the emulated bench compare against an emulated Pico, not a board."}
   ],
   "HIL-016": [
     {"kind":"unit","ref":"tools/docs/check_capability_claims.test.ts","test":"flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)"}
@@ -3114,7 +3129,8 @@
   ],
   "REL-016": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"every release build waits for the full CI and for the evidence of its own platform (REL-016)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"gate","ref":"RELEASING.md","test":"First run of the DMG on a Mac with Apple silicon | not yet recorded","note":"Needs a person to record the first-run checks of a draft on a real Mac and a real Windows machine in the Recorded runs table of RELEASING.md before publishing it, and, for GA, the hardware records of gate 6 made on the draft's firmware images. The test checks the workflow configuration only."}
   ],
   "REL-017": [
     {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"covers the standalone CLI and MCP executables, the bill of materials and the firmware images (REL-017)"},
@@ -3162,7 +3178,8 @@
     {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"labels a firmware image with the evidence level of its board and claims no launch (REL-022)"},
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"says which firmware job to read when the run published no firmware image (REL-022)"},
-    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"labels a firmware image with the evidence level of its board, from the manifest that travels with it (REL-022)"}
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"labels a firmware image with the evidence level of its board, from the manifest that travels with it (REL-022)"},
+    {"kind":"gate","ref":"docs/docs/tutorials/first-board.md","test":"The pipeline has not made a release yet","note":"Needs a hosted run of the release pipeline whose release carries the prebuilt runtime firmware of every board in the manifest, named, checksummed, attested and labelled with its evidence level. The tests check the naming and the manifest code, not a release the pipeline made."}
   ],
   "REL-023": [
     {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"what a build says (REL-022, REL-023)"},
@@ -3206,7 +3223,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"offers no input that selects what to upload, and a rehearsal that is on unless a person turns it off (REL-030)"},
     {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
-    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"the command line (REL-030)"}
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"the command line (REL-030)"},
+    {"kind":"gate","ref":"RELEASING.md","test":"Rehearsal (all jobs, nothing published) | not yet recorded","note":"Needs one rehearsal and one tag release made entirely by the hosted release pipeline, recorded in the Recorded runs table of RELEASING.md. The tests check the workflow configuration only."}
   ],
   "REL-031": [
     {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the title of a release says how complete a prerelease is (REL-031)"},
@@ -3214,7 +3232,8 @@
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the changelog holds only tagged versions (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)"},
     {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
-    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"},
+    {"kind":"gate","ref":"scripts/release/identity.json","test":"D-03 is open","note":"Needs the owner to take decision D-03, the product name and the appId, before the first Store or signed release. The tests check that the version and the identity each have one source, but the name itself is not decided."}
   ],
   "REL-032": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"keeps the reproducibility check, reads its result in the notes, and lets nothing else wait for it (REL-032)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer or a run of the workflow; only a hosted release run proves it (VF-021). The check itself (scripts/verify-reproducible-linux-payload.ts) is run by CI tests of its comparison logic and by the job on a hosted Linux runner. Authored in this run: the job publishes its verdict as an output (a job that continues on error reports success to its readers), the release notes read it and no other job waits for it; authored workflow, not executed in CI."}
@@ -3236,7 +3255,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"is done in the build jobs, and the draft waits for all three of them to finish, whatever they did (REL-036, REL-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/run-packaged-desktop-smoke.test.ts","test":"names an installed application by its executable, and refuses a missing file, a directory and a link (REL-036)","partial":true,"note":"checks the executable that an installer or an archive left is a real file; the installation and the launch happen only on hosted runners"},
     {"kind":"unit","ref":"tools/ci/release/install-record.test.ts","test":"the record that every published installer format was opened and launched on its own system","partial":true,"note":"a launch step writes a record that names the installer by checksum, how it was opened and the runner system and architecture, and the evidence job of the platform refuses an installer without a matching record; proven on stand-in files. The mounts, silent installs, container installs and launches run only on hosted runners and in Docker (authored, not executed in CI)"},
-    {"kind":"unit","ref":"tools/ci/release/run-outcome.test.ts","test":"the outcome of a release run","partial":true,"note":"the draft only receives the files of a platform whose build job, which launches every installer, succeeded (authored, not executed in CI)"}
+    {"kind":"unit","ref":"tools/ci/release/run-outcome.test.ts","test":"the outcome of a release run","partial":true,"note":"the draft only receives the files of a platform whose build job, which launches every installer, succeeded (authored, not executed in CI)"},
+    {"kind":"gate","ref":"docs/docs/release-notes/index.md","test":"no hosted release run has executed them yet","note":"Needs a hosted release run in which each build job installs or mounts and launches every installer format of its operating system before the draft is made. The test checks the workflow configuration only."}
   ],
   "DOC-001": [
     {"kind":"unit","ref":"tools/docs/test_validate_docs_pages.py","test":"test_endings_the_spec_rejects","note":"a page that stops mid-sentence, inside a code block or in the header of a table fails the docs validator; run by bun run check:docs and by the docs-and-truth job of ci.yml, over the English and the Spanish tree, and the tree of this repository holds (tools/docs/validate_docs_pages.py exits 0)"},
@@ -3306,7 +3326,8 @@
   ],
   "DOC-015": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)","partial":true},
-    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep the neutral usted register (DOC-015, D-10)"}
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep the neutral usted register (DOC-015, D-10)"},
+    {"kind":"gate","ref":"docs/docs/contributing/principles.md","test":"no fluent reviewer has read the other Spanish pages yet","note":"Needs a fluent reviewer to read the Spanish pages beyond Learn and the Studio workbench, the only ones reviewed in the 2.0 remediation. The docs test checks the usted register, not a reading by a fluent person."}
   ],
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}

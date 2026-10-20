@@ -240,6 +240,8 @@ partition check of the next section on its build. That step is authored in
 `.github/workflows/ci.yml` and has not been run here; `run.sh size` runs the same
 check locally.
 
+The nightly `loader-fuzz` job of `.github/workflows/nightly-quality.yml` fuzzes the loader verification only, and no run of it is recorded yet.
+
 ## Size budgets
 
 `tools/firmware-test/size-budget.json` records, for each board in

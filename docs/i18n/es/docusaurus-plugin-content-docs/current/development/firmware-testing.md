@@ -256,6 +256,8 @@ luego la verificación de particiones de la sección siguiente sobre su
 compilación. Ese paso está escrito en `.github/workflows/ci.yml` y no se ejecutó
 aquí; `run.sh size` ejecuta la misma verificación en local.
 
+El trabajo nocturno `loader-fuzz` de `.github/workflows/nightly-quality.yml` aplica fuzzing solo a la verificación del cargador, y todavía no hay registrada ninguna ejecución suya.
+
 ## Presupuestos de tamaño
 
 `tools/firmware-test/size-budget.json` registra, para cada placa de
