@@ -573,7 +573,7 @@ class WatchdogProfileTests(unittest.TestCase):
 
     def root_with_record(self, directory: str, result: str = "pass") -> None:
         record = {
-            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0",
+            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0", "evidence_level": "hardware",
             "commit": "0" * 40, "image_sha256": "a" * 64, "result": result,
         }
         path = Path(directory) / "records"
@@ -633,7 +633,7 @@ class SupportLevelTests(unittest.TestCase):
 
     def test_a_valid_record_gives_hardware_level_and_names_the_firmware_version(self) -> None:
         record = {
-            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0-rc.4",
+            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0-rc.4", "evidence_level": "hardware",
             "commit": "0123456789abcdef0123456789abcdef01234567", "image_sha256": "a" * 64, "result": "pass",
         }
         level = boards_lib.support_level_from_records("b", [("records/b.json", record)])
@@ -663,6 +663,8 @@ class SupportLevelTests(unittest.TestCase):
         self.assertEqual("cross-build", boards_lib.support_level_from_records("b", [("e.json", {**without, "evidence": "emulated"})])["level"])
         self.assertEqual("human-hil", boards_lib.support_level_from_records("b", [("h.json", {**without, "evidence": "hardware"})])["level"])
         self.assertEqual("human-hil", boards_lib.support_level_from_records("b", [("h.json", {**record, "evidence_level": "hardware"})])["level"])
+        self.assertEqual("cross-build", boards_lib.support_level_from_records("b", [("n.json", without)])["level"],
+                         "a record that names no level never counts as hardware (HIL-009)")
 
     def test_a_record_for_another_board_is_ignored(self) -> None:
         record = {

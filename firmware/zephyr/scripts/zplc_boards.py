@@ -623,9 +623,9 @@ def description_hash(board: dict[str, Any]) -> str:
 
 
 def _evidence_level(record: dict[str, Any]) -> Any:
-    """The record's `evidence_level`. A record written before the level existed says `evidence`, and only a hardware run
-    wrote one; a record that says neither is read as one of those."""
-    return record.get("evidence_level", record.get("evidence", HARDWARE_LEVEL))
+    """The record's `evidence_level`; a record written before the level existed says `evidence`. A record that says
+    neither names no level, and never counts as hardware evidence (HIL-009)."""
+    return record.get("evidence_level", record.get("evidence"))
 
 
 def _record_applies(board_id: str, record: Any) -> bool:
