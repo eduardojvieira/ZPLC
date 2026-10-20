@@ -68,6 +68,12 @@ describe('the printable outline of the course (LRN-033)', () => {
     }
   });
 
+  it('LRN-029 calls the tracks of a lesson "Rutas" in the Spanish outline, because "Pistas" are its hints', () => {
+    const page = renderOutline(LESSON_INDEX, 'es', 'markdown');
+    expect(page).toContain('Rutas');
+    expect(page).not.toContain('Pistas');
+  });
+
   it('LRN-033 prints as a self-contained page: print styles, escaped text, the right language, no script and no external file', () => {
     const page = renderOutline(LESSON_INDEX, 'es', 'html');
     expect(page.startsWith('<!doctype html>')).toBe(true);

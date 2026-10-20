@@ -44,7 +44,7 @@ export function verifyProgress(text: string, index: LessonIndex, options: { stri
 
 const LABELS = {
   en: { course: 'Course outline', objectives: 'Objectives', time: 'About {n} min', prerequisites: 'Requires', languages: 'Languages', tracks: 'Tracks', none: 'none', module: 'Module' },
-  es: { course: 'Esquema del curso', objectives: 'Objetivos', time: 'Unos {n} min', prerequisites: 'Requiere', languages: 'Lenguajes', tracks: 'Pistas', none: 'ninguna', module: 'Módulo' },
+  es: { course: 'Esquema del curso', objectives: 'Objetivos', time: 'Unos {n} min', prerequisites: 'Requiere', languages: 'Lenguajes', tracks: 'Rutas', none: 'ninguna', module: 'Módulo' },
 } as const;
 
 const escapeHtml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
