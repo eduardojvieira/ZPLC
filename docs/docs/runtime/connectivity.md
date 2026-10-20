@@ -31,7 +31,7 @@ The firmware implements:
 
 ## Configuring Connectivity
 
-Connectivity is defined in your project's `zplc.json` file. Through the IDE, you can:
+Connectivity is defined in your project's `zplc.json` file. Through ZPLC, you can:
 1. Configure Modbus RTU/TCP networks (baud rates, IP addresses, node IDs).
 2. Set up MQTT broker credentials and certificates.
 3. Map internal PLC variables directly to Modbus registers/coils or MQTT topics via **Communication Bindings**.

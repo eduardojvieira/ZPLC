@@ -75,9 +75,9 @@ Validate the source language, generated representation, diagnostics, and selecte
 
 ## Debugging and runtime evidence
 
-The IDE exposes inspection, simulation, and debugging features according to the active runtime capability profile. Native POSIX is a host-side logical runtime, not proof of hardware timing or target behavior. Hardware breakpoints, forces, deploy, and run controls must be treated as capability-specific and separately evidenced.
+The ZPLC application exposes inspection, simulation, and debugging features according to the active runtime capability profile. Native POSIX is a host-side logical runtime, not proof of hardware timing or target behavior. Hardware breakpoints, forces, deploy, and run controls must be treated as capability-specific and separately evidenced.
 
-In the native simulation on a Linux host, the IDE journeys stop the program at a breakpoint on a Structured Text line, an Instruction List line, a Ladder rung, a function block diagram block and a sequential function chart step, and mark the element where it stopped. A breakpoint on a board is not evidenced by these runs: it needs a hardware-in-the-loop run on that board.
+In the native simulation on a Linux host, the ZPLC application journeys stop the program at a breakpoint on a Structured Text line, an Instruction List line, a Ladder rung, a function block diagram block and a sequential function chart step, and mark the element where it stopped. A breakpoint on a board is not evidenced by these runs: it needs a hardware-in-the-loop run on that board.
 
 The same runs press Pause, Step one cycle and Resume in each of the five languages and read the cycle counter: it holds while the program is paused, advances by exactly one on a step and runs again after Resume.
 

@@ -60,7 +60,7 @@ config ZPLC_CODE_SIZE_MAX
       Largest artifact the runtime accepts, in bytes. This one value is the
       code region of the VM, the largest artifact the program store keeps and
       restores (RT-028), the size of the staging buffers and the size the
-      shell and the IDE handshake advertise. Program addresses are 16 bits
+      shell and the ZPLC application handshake advertise. Program addresses are 16 bits
       wide and the code region starts at 0x5000, so 45056 (0xB000) is the
       largest value.
 

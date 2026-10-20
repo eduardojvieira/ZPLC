@@ -71,7 +71,7 @@ restored as it is and migrated at the next deploy.
 A flash key-value store keeps an entry inside one erase sector, so a payload is cut into chunks of
 `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 by default), each under its own key. The largest artifact is one
 number, `CONFIG_ZPLC_CODE_SIZE_MAX`: it is the code region, the largest artifact the loader accepts, the size of the
-staging and restore buffers, the size `zplc sys info` reports (`max_artifact_size`) and the size the IDE is told for
+staging and restore buffers, the size `zplc sys info` reports (`max_artifact_size`) and the size ZPLC is told for
 the board (RT-028). The build fails when two slots of that size, in chunks, do not fit the storage partition. The
 Raspberry Pi Pico profile therefore sets 24576 bytes (its 128 KB partition also holds the RETAIN records), the STM32F746G Discovery
 profile 16384 and the Arduino Opta WiFi profile 32768 (their RAM), and the ESP32-S3 profile keeps its 8192; the

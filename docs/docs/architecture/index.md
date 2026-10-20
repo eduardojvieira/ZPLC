@@ -18,7 +18,7 @@ This separation protects deterministic runtime behavior in the underlying contro
 ```mermaid
 flowchart LR
   subgraph Engineering[Engineering Surfaces]
-    IDE[IDE UI]
+    IDE[ZPLC application UI]
     COMPILER[ZPLC Compiler Pipeline]
   end
 
@@ -40,16 +40,16 @@ flowchart LR
 
 ZPLC is easier to understand if you treat it as four boundaries instead of one monolithic application:
 
-1. **Authoring Boundary** — Users work in the IDE, manipulating `.st`, `.ld`, or visual models.
+1. **Authoring Boundary** — Users work in ZPLC, manipulating `.st`, `.ld`, or visual models.
 2. **Compilation Boundary** — Language-specific authoring converges to a canonical ST transpilation, generating the shared `.zplc` bytecode.
 3. **Runtime Boundary** — The C99 execution core interprets the bytecode deterministically on the target hardware.
 4. **Platform Boundary** — Hardware, persistence, timers, sockets, and OS services stay behind the Hardware Abstraction Layer (HAL).
 
 ## The Major Components
 
-### 1. The IDE
+### 1. The ZPLC application
 
-The IDE is the operator-facing and developer-facing engineering surface. It manages text authoring for Structured Text and Instruction List, visual authoring for Ladder Logic, FBD, and SFC, and project orchestration (compilation, deployment, debugging).
+The ZPLC application is the operator-facing and developer-facing engineering surface. It manages text authoring for Structured Text and Instruction List, visual authoring for Ladder Logic, FBD, and SFC, and project orchestration (compilation, deployment, debugging).
 
 ### 2. The Compiler
 

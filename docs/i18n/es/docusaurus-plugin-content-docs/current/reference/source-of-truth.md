@@ -43,6 +43,6 @@ los contratos y la evidencia registrada prevalecen sobre la prosa.
 ## Regla de actualización
 
 Primero cambia la implementación o el registro autoritativo; la documentación que
-lo describe se actualiza después. Una página afirma que el IDE, el compilador o
+lo describe se actualiza después. Una página afirma que la aplicación ZPLC, el compilador o
 la documentación consumen una fuente de forma automática solo cuando una prueba o la
 implementación lo demuestran.

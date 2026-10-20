@@ -3112,7 +3112,7 @@ zplc_io_trace_t *zplc_io_trace_board(void);
 
 ZPLC Virtual Machine Instruction Set Architecture Definitions
 
-This header defines the binary format and instruction set for the ZPLC VM. It is the contract between the compiler (IDE) and runtime (VM). See docs/ISA.md for the complete specification.
+This header defines the binary format and instruction set for the ZPLC VM. It is the contract between the compiler (the ZPLC application) and runtime (VM). See docs/ISA.md for the complete specification.
 
 Fuente: `firmware/lib/zplc_core/include/zplc_isa.h`
 

@@ -9,7 +9,7 @@ draft_reason: "A planning snapshot of March 2026, not a description of the produ
 **Status:** 🟡 In Progress  
 **Scope:** All remaining in-scope protocol gaps from Phase 1_5 through 1_5_2, focused on Modbus client work and MQTT/cloud completion.
 
-This document is the authoritative gap analysis and implementation contract for every connectivity feature that is **specified but not yet implemented** in the ZPLC runtime and IDE. It replaces `connectivity.md` as the canonical reference for this phase.
+This document is the authoritative gap analysis and implementation contract for every connectivity feature that is **specified but not yet implemented** in the ZPLC runtime and the ZPLC application. It replaces `connectivity.md` as the canonical reference for this phase.
 
 ---
 
@@ -17,20 +17,20 @@ This document is the authoritative gap analysis and implementation contract for 
 
 | # | Feature | Layer | Priority | Effort | Dependency | Current Status |
 |---|---------|-------|----------|--------|------------|----------------|
-| G1 | Modbus RTU **Client** (Master) | Firmware + IDE | 🔴 High | M | None | 🟡 Partial - config/API/polling scaffold exists; tag model and production validation still missing |
-| G2 | Modbus TCP **Client** (Master) | Firmware + IDE | 🔴 High | M | None | 🟡 Partial - client API and poll loop exist; persistent socket/gateway semantics still missing |
-| G3 | Azure C2D Messaging | Firmware + IDE | 🔴 High | S | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI |
+| G1 | Modbus RTU **Client** (Master) | Firmware + application | 🔴 High | M | None | 🟡 Partial - config/API/polling scaffold exists; tag model and production validation still missing |
+| G2 | Modbus TCP **Client** (Master) | Firmware + application | 🔴 High | M | None | 🟡 Partial - client API and poll loop exist; persistent socket/gateway semantics still missing |
+| G3 | Azure C2D Messaging | Firmware + application | 🔴 High | S | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI |
 | G4 | Sparkplug B Rebirth (NCMD/DCMD) | Firmware | 🔴 High | S | Sparkplug B ✅ | ✅ Implemented; NCMD pre-existed, DCMD rebirth added |
-| G5 | Azure DPS (Device Provisioning) | Firmware + IDE | 🟡 Medium | L | Azure IoT Hub ✅ | 🟡 Partial - dedicated DPS MQTT connect/subscribe/register/poll loop exists, but needs compile validation and broker validation |
-| G6 | AWS Fleet Provisioning | Firmware + IDE | 🟡 Medium | L | AWS IoT Core ✅ | 🟡 Partial - mutual-TLS MQTT exchange skeleton exists, but needs compile validation and broker validation |
-| G7 | Azure Event Grid (full impl) | Firmware + IDE | 🟡 Medium | M | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI, pending release validation |
+| G5 | Azure DPS (Device Provisioning) | Firmware + application | 🟡 Medium | L | Azure IoT Hub ✅ | 🟡 Partial - dedicated DPS MQTT connect/subscribe/register/poll loop exists, but needs compile validation and broker validation |
+| G6 | AWS Fleet Provisioning | Firmware + application | 🟡 Medium | L | AWS IoT Core ✅ | 🟡 Partial - mutual-TLS MQTT exchange skeleton exists, but needs compile validation and broker validation |
+| G7 | Azure Event Grid (full impl) | Firmware + application | 🟡 Medium | M | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI, pending release validation |
 
 **Effort key:** S = Small (less than 1 day), M = Medium (1–3 days), L = Large (3–7 days), XL = Extra Large (weeks)
 
 ### Release Reality Check (March 2026)
 
 - The document originally assumed all items were still untouched. That is no longer true.
-- The repo now contains firmware + IDE plumbing for the in-scope connectivity work.
+- The repo now contains firmware + application plumbing for the in-scope connectivity work.
 - The real release blockers are the items still marked `Partial` in the table above.
 - For release sign-off, `G5`, `G6`, and `G7` are the highest-risk gaps.
 
@@ -52,7 +52,7 @@ Note: the server/slave role already exists in runtime. The remaining work in thi
 
 **Current repo status:** `firmware/app/src/zplc_modbus_client.c` now exists and exposes the client API plus polling threads. What is still missing is a richer addressing/tag model (per-target slave metadata, multi-slave scheduling guarantees) and full HIL validation.
 
-**Language support status:** the IDE/compiler pipeline now supports Modbus server binding helpers across ST, IL, LD, FBD, and SFC-generated ST using:
+**Language support status:** the ZPLC application and compiler pipeline now supports Modbus server binding helpers across ST, IL, LD, FBD, and SFC-generated ST using:
 
 - `MODBUS_COIL(symbol, addr)`
 - `MODBUS_DISCRETE_INPUT(symbol, addr)`
@@ -247,7 +247,7 @@ config ZPLC_MODBUS_TCP_CLIENT
 
 ### Firmware Implementation
 
-**Current repo status:** Implemented in `firmware/app/src/zplc_mqtt.c`, `firmware/app/src/zplc_config.c`, and the IDE settings/runtime provisioning path.
+**Current repo status:** Implemented in `firmware/app/src/zplc_mqtt.c`, `firmware/app/src/zplc_config.c`, and the ZPLC application settings/runtime provisioning path.
 
 **Modified file:** `firmware/app/src/zplc_mqtt.c`
 
@@ -483,7 +483,7 @@ bool zplc_aws_fleet_is_provisioned(void);
 
 ### Problem
 
-`ZPLC_MQTT_PROFILE_AZURE_EVENT_GRID = 4` exists in the profile enum and the IDE dropdown, but **zero logic** is wired to it. When selected, the firmware behaves identically to `GENERIC_BROKER` — no Event Grid-specific topic routing, no CloudEvents schema encoding.
+`ZPLC_MQTT_PROFILE_AZURE_EVENT_GRID = 4` exists in the profile enum and the ZPLC application dropdown, but **zero logic** is wired to it. When selected, the firmware behaves identically to `GENERIC_BROKER` — no Event Grid-specific topic routing, no CloudEvents schema encoding.
 
 ### What Azure Event Grid MQTT requires
 

@@ -46,7 +46,7 @@ que pase se queda en `cross-build`.
 
 {/* >>> GENERATED (tools/docs/generate_board_reference.py): hardware-support-boards. Do not edit. >>> */}
 
-| Placa | ID del IDE | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |
+| Placa | ID de ZPLC | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |
 | --- | --- | --- | --- | --- | --- |
 | Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Orientada al puerto serie | `cross-build` | ninguno |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Orientada al puerto serie | `cross-build` | ninguno |

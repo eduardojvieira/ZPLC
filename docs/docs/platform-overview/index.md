@@ -36,7 +36,7 @@ flowchart TB
 1. **Core VM (`libzplc_core`)**: C99 bytecode interpreter, program validation, runtime state, and scheduler interfaces.
 2. **Hardware Abstraction Layer (HAL)**: adapters for platform facilities such as clocks, storage, I/O, and configured transports.
 3. **Compiler**: turns supported project workflows—centered on Structured Text—into `.zplc` bytecode.
-4. **IDE**: desktop engineering surface for authoring, diagnostics, and capability-aware runtime workflows.
+4. **ZPLC application**: desktop engineering surface for authoring, diagnostics, and capability-aware runtime workflows.
 
 ## Typical workflow
 

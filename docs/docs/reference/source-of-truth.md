@@ -43,5 +43,5 @@ recorded evidence outrank prose.
 ## Update rule
 
 The authoritative implementation or record changes first; the documentation that
-describes it follows. A page says that the IDE, compiler, or docs consume a
+describes it follows. A page says that the ZPLC application, compiler, or docs consume a
 source automatically only when a test or the implementation proves it.
