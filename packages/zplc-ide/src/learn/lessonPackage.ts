@@ -57,6 +57,27 @@ export interface LessonHardware {
 }
 /** The largest time tolerance a lesson may declare: a second is far beyond any scan, and a looser check proves nothing. */
 export const MAX_HARDWARE_TIME_TOLERANCE_MS = 1000;
+/**
+ * The sampling period of the hardware check (LRN-024), derived rather than measured: no board was attached where it was
+ * written. The recorder reads the lesson's signals through the Watch read of the serial session, waiting
+ * `HARDWARE_SAMPLE_INTERVAL_MS` between reads (Studio's own Watch polling default, `DEFAULT_DEBUG_POLLING_INTERVAL_MS`).
+ * One read is at most two `zplc dbg peek` round trips, the input image and the output image, of about 96 characters each
+ * at 115200 baud: 2 x 96 x 10 bits / 115200 bit/s = 16.7 ms, budgeted as `HARDWARE_READ_BUDGET_MS`. So a sample follows
+ * the one before it by at most `HARDWARE_SAMPLE_PERIOD_MS`.
+ */
+export const HARDWARE_SAMPLE_INTERVAL_MS = 100;
+export const HARDWARE_READ_BUDGET_MS = 20;
+export const HARDWARE_SAMPLE_PERIOD_MS = HARDWARE_SAMPLE_INTERVAL_MS + HARDWARE_READ_BUDGET_MS;
+
+/**
+ * LRN-024: the time tolerance of a hardware lesson covers one sampling period of the check and one scan of the lesson's
+ * program (the interval of its slowest task), or the check can fail a correct program: an output can change up to a scan
+ * after its input, and be read up to a period later still.
+ */
+export function hardwareToleranceProblems(timeMs: number, scanMs: number): string[] {
+  const least = HARDWARE_SAMPLE_PERIOD_MS + scanMs;
+  return timeMs >= least ? [] : [`manifest.hardware.tolerances.timeMs: ${timeMs} ms is less than one sampling period of the hardware check (${HARDWARE_SAMPLE_PERIOD_MS} ms) plus one scan of the program (${scanMs} ms); it must be at least ${least} ms`];
+}
 
 export interface LessonManifest {
   schemaVersion: typeof LESSON_SCHEMA_VERSION;

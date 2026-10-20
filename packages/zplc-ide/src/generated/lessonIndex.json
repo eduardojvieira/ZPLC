@@ -104,7 +104,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -841,7 +841,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -1223,7 +1223,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -1437,7 +1437,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -2209,7 +2209,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -2421,7 +2421,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -2613,7 +2613,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -2825,7 +2825,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -3026,7 +3026,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -3227,7 +3227,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -3631,7 +3631,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -3834,7 +3834,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -4064,7 +4064,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -4294,7 +4294,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -4497,7 +4497,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -4707,7 +4707,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -4912,7 +4912,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 10,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },
@@ -5648,7 +5648,7 @@
           ]
         },
         "tolerances": {
-          "timeMs": 50,
+          "timeMs": 130,
           "analogPercent": 5
         }
       },

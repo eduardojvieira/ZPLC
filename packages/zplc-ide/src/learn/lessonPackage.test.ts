@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { canonicalJson, citedFiles, expandQuotes, unmarkedTimes, validateChecks, validateManifest, validateText, type ScenarioFile } from './lessonPackage';
+import { HARDWARE_SAMPLE_PERIOD_MS, canonicalJson, citedFiles, expandQuotes, hardwareToleranceProblems, unmarkedTimes, validateChecks, validateManifest, validateText, type ScenarioFile } from './lessonPackage';
 
 const scenario: ScenarioFile = {
   schemaVersion: 1, id: 'S', tickMs: 10, durationMs: 100, events: [],
@@ -108,5 +108,15 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
 
   it('hashes the same bytes whatever the key order or whitespace of the file', () => {
     expect(canonicalJson({ b: 1, a: { d: [1, { z: 1, y: 2 }], c: 'x' } })).toBe('{"a":{"c":"x","d":[1,{"y":2,"z":1}]},"b":1}');
+  });
+});
+
+describe('the time tolerance of a hardware lesson (LRN-024)', () => {
+  it('LRN-024 covers one sampling period of the hardware check and one scan of the program', () => {
+    expect(HARDWARE_SAMPLE_PERIOD_MS).toBe(120);
+    expect(hardwareToleranceProblems(130, 10)).toEqual([]);
+    expect(hardwareToleranceProblems(200, 10)).toEqual([]);
+    expect(hardwareToleranceProblems(129, 10)).toEqual(['manifest.hardware.tolerances.timeMs: 129 ms is less than one sampling period of the hardware check (120 ms) plus one scan of the program (10 ms); it must be at least 130 ms']);
+    expect(hardwareToleranceProblems(10, 10)).toHaveLength(1);
   });
 });
