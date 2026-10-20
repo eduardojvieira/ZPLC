@@ -341,6 +341,22 @@ class SupportLevelTests(unittest.TestCase):
         level = boards_lib.support_level_from_records("b", [("records/b.json", record)])
         self.assertEqual("cross-build", level["level"])
 
+    def test_only_a_hardware_record_raises_the_level_never_an_emulated_one(self) -> None:
+        record = {
+            "schema": "zplc.hil-record/1", "board_id": "b", "firmware_version": "2.0.0", "evidence_level": "emulated",
+            "emulator": {"name": "rp2040js", "version": "1", "patch_sha256": None},
+            "commit": "0" * 40, "image_sha256": "a" * 64, "result": "pass",
+        }
+        self.assertEqual({"level": "cross-build", "records": []}, boards_lib.support_level_from_records("b", [("e.json", record)]))
+        for level in (None, "community-reported", "Hardware"):
+            other = {**record, "evidence_level": level}
+            self.assertEqual("cross-build", boards_lib.support_level_from_records("b", [("e.json", other)])["level"], level)
+        # a flat record written before the level existed carries `evidence`, which only a hardware run wrote
+        without = {k: v for k, v in record.items() if k != "evidence_level"}
+        self.assertEqual("cross-build", boards_lib.support_level_from_records("b", [("e.json", {**without, "evidence": "emulated"})])["level"])
+        self.assertEqual("human-hil", boards_lib.support_level_from_records("b", [("h.json", {**without, "evidence": "hardware"})])["level"])
+        self.assertEqual("human-hil", boards_lib.support_level_from_records("b", [("h.json", {**record, "evidence_level": "hardware"})])["level"])
+
     def test_a_record_for_another_board_is_ignored(self) -> None:
         record = {
             "schema": "zplc.hil-record/1", "board_id": "other", "firmware_version": "2.0.0",

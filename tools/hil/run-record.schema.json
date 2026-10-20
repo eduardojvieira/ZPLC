@@ -6,6 +6,7 @@
     "run_id",
     "kind",
     "evidence",
+    "evidence_level",
     "result",
     "started_at",
     "ended_at",
@@ -37,10 +38,47 @@
     "evidence": {
       "enum": [
         "hardware",
+        "emulated",
         "host-runtime",
         "fake"
       ],
-      "$comment": "hardware only for a run through a serial link to a board. A run on the host runtime or a fake is a test of the harness and is never evidence for a board."
+      "$comment": "What ran: hardware only for a run through a serial link to a board a person handles (the human bench); emulated for a run on an emulator bench. A run on the host runtime or a fake is a test of the harness and is never evidence for a board."
+    },
+    "evidence_level": {
+      "enum": [
+        "hardware",
+        "emulated",
+        "community-reported",
+        null
+      ],
+      "$comment": "The evidence level of the HIL contract. Only hardware feeds a board's support level; emulated never does. It follows `evidence` (hil_record.py and record.ts check the pairing): a hardware run is hardware (or community-reported), an emulated run is emulated, and a run on the host runtime or a fake has no level (null)."
+    },
+    "emulator": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "patch_sha256"
+      ],
+      "additionalProperties": false,
+      "$comment": "Required on an emulated record and absent on any other: the emulator and the version or patch it ran.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "patch_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
     },
     "result": {
       "enum": [

@@ -220,6 +220,7 @@ class Chain:
             time.sleep(1)  # the board resets when the port opens
         link = transport.kind if transport.kind in ("serial", "host-runtime") else "fake"
         self.record["evidence"] = "hardware" if link == "serial" else link
+        self.record["evidence_level"] = "hardware" if link == "serial" else None
         self.record["device"]["link"] = link
 
     def handshake(self):

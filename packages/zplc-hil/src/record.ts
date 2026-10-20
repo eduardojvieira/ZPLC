@@ -45,8 +45,28 @@ function is(value: unknown, name: string): boolean {
   }
 }
 
-/** The ways `value` does not fit the schema; an empty list is a valid record. */
-export function validate(value: unknown, schema: Schema = loadSchema(), path = '$'): string[] {
+/** The evidence levels a run of each kind may carry (HIL contract): only a hardware run is hardware evidence. */
+export const LEVELS_OF_EVIDENCE: Readonly<Record<RunRecord['evidence'], ReadonlyArray<RunRecord['evidence_level']>>> = {
+  hardware: ['hardware', 'community-reported'], emulated: ['emulated'], 'host-runtime': [null], fake: [null],
+};
+
+/** What the schema cannot say: the level must follow what ran, and only an emulated record names its emulator. */
+export function evidenceLevelProblems(value: unknown): string[] {
+  if (!is(value, 'object')) return [];
+  const record = value as Record<string, unknown>;
+  const allowed = LEVELS_OF_EVIDENCE[record.evidence as RunRecord['evidence']];
+  if (allowed === undefined || !('evidence_level' in record)) return [];
+  const level = record.evidence_level as RunRecord['evidence_level'];
+  const problems: string[] = [];
+  if (!allowed.includes(level)) problems.push(`$.evidence_level: a run on ${String(record.evidence)} cannot be ${JSON.stringify(level)} evidence`);
+  if (level === 'emulated' && !('emulator' in record)) problems.push('$: an emulated record names its emulator (name, version, patch_sha256)');
+  if (level !== 'emulated' && 'emulator' in record) problems.push('$.emulator: only an emulated record names an emulator');
+  return problems;
+}
+
+/** The ways `value` does not fit the schema (and, for a whole record, the evidence-level pairing); an empty list is a valid record. */
+export function validate(value: unknown, schema?: Schema, path = '$'): string[] {
+  if (schema === undefined) return [...validate(value, loadSchema(), path), ...evidenceLevelProblems(value)];
   if (schema.const !== undefined && value !== schema.const) return [`${path}: must be ${JSON.stringify(schema.const)}`];
   if (schema.enum && !schema.enum.includes(value as Json)) return [`${path}: must be one of ${JSON.stringify(schema.enum)}`];
   if (schema.type) {
@@ -93,7 +113,10 @@ export interface RunStep {
 }
 
 export interface RunRecord {
-  schema: 'zplc.hil.run-record/1'; run_id: string; kind: 'chain' | 'scenario' | 'script'; evidence: 'hardware' | 'host-runtime' | 'fake';
+  schema: 'zplc.hil.run-record/1'; run_id: string; kind: 'chain' | 'scenario' | 'script'; evidence: 'hardware' | 'emulated' | 'host-runtime' | 'fake';
+  /** The HIL contract's level: only `hardware` feeds a board's support level; null for a run on the host runtime or a fake. */
+  evidence_level: 'hardware' | 'emulated' | 'community-reported' | null;
+  emulator?: { name: string; version: string; patch_sha256: string | null };
   result: 'pass' | 'fail' | 'incomplete'; started_at: string; ended_at: string;
   board: { id: string; zephyr_board?: string | null };
   device: { reported_board: string; board_profile?: string | null; zplc_version?: string | null; zephyr_version?: string | null; serial_hash?: string | null; link?: 'serial' | 'host-runtime' | 'fake' };

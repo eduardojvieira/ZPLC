@@ -14,7 +14,7 @@ const python = Bun.which('python3');
 
 function record(): RunRecord {
   return {
-    schema: 'zplc.hil.run-record/1', run_id: 'a'.repeat(32), kind: 'scenario', evidence: 'hardware', result: 'pass',
+    schema: 'zplc.hil.run-record/1', run_id: 'a'.repeat(32), kind: 'scenario', evidence: 'hardware', evidence_level: 'hardware', result: 'pass',
     started_at: '2026-10-10T12:00:00.000Z', ended_at: '2026-10-10T12:00:05.000Z',
     board: { id: 'rpi_pico', zephyr_board: 'rpi_pico/rp2040' },
     device: { reported_board: 'rpi_pico', link: 'serial' }, firmware: {},
@@ -27,6 +27,19 @@ describe('the run record (HIL-009)', () => {
   test('a complete record is valid, and firmware fields may all be absent until the image reports them', () => {
     expect(validate(record())).toEqual([]);
     expect(validate({ ...record(), firmware: { commit: null, version: null, image_sha256: null } })).toEqual([]);
+  });
+
+  test('a record says its evidence level, which follows what ran, and only an emulated record names its emulator', () => {
+    const emulator = { name: 'rp2040js', version: '1.1.0', patch_sha256: null };
+    const { evidence_level: _level, ...without } = record();
+    expect(validate(without)).toContain('$: evidence_level is required');
+    expect(validate({ ...record(), evidence_level: 'nearly hardware' })).not.toEqual([]);
+    expect(validate({ ...record(), evidence: 'emulated', evidence_level: 'emulated' }).join(' ')).toContain('emulator');
+    expect(validate({ ...record(), evidence: 'emulated', evidence_level: 'emulated', emulator })).toEqual([]);
+    expect(validate({ ...record(), evidence: 'emulated', evidence_level: 'hardware', emulator }).join(' ')).toContain('evidence_level');
+    expect(validate({ ...record(), evidence: 'host-runtime', evidence_level: null })).toEqual([]);
+    expect(validate({ ...record(), evidence: 'host-runtime', evidence_level: 'hardware' }).join(' ')).toContain('evidence_level');
+    expect(validate({ ...record(), emulator }).join(' ')).toContain('emulator');
   });
 
   test('a missing field, an unknown one, a closed list and a hash shape are refused', () => {

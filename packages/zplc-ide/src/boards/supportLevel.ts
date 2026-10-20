@@ -18,12 +18,24 @@ export interface SupportLevelResult {
 }
 
 export const HIL_RECORD_SCHEMA = 'zplc.hil-record/1';
+/** The only evidence level that raises a support level; `emulated` and `community-reported` never do (HIL contract). */
+export const HARDWARE_LEVEL = 'hardware';
+
+/**
+ * The record's `evidence_level`. A record written before the level existed says `evidence`, and only a hardware run
+ * wrote one; a record that says neither is read as one of those.
+ */
+function evidenceLevel(record: Record<string, unknown>): unknown {
+  if ('evidence_level' in record) return record.evidence_level;
+  return 'evidence' in record ? record.evidence : HARDWARE_LEVEL;
+}
 
 function asApplicableRecord(boardId: string, value: unknown): { firmwareVersion: string; commit: string; result: 'pass' | 'fail' } | undefined {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   const { schema, board_id: board, firmware_version: version, commit, image_sha256: hash, result } = record;
   if (schema !== HIL_RECORD_SCHEMA || board !== boardId) return undefined;
+  if (evidenceLevel(record) !== HARDWARE_LEVEL) return undefined; // an emulated or reported run never raises the level
   if (typeof version !== 'string' || version.trim() === '') return undefined;
   if (typeof commit !== 'string' || !/^[0-9a-f]{40}$/.test(commit)) return undefined;
   if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) return undefined;
