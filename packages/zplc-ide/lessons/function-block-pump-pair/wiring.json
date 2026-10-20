@@ -30,7 +30,7 @@
     },
     {
       "id": "stop-b",
-      "kind": "jumper",
+      "kind": "button",
       "channel": "DI3",
       "label": {
         "en": "Stop pump B",

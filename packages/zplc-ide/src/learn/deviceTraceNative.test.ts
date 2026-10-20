@@ -42,17 +42,17 @@ describe('the device trace of the native runtime (LRN-024)', () => {
       await adapter.connect();
       await adapter.loadProgram(compiled.zplcFile);
       const button = variables.find((variable) => variable.name === 'VerifyBoard.Button')!;
-      // The learner: the program starts with the first step of the clock, and the button is held from 1170 ms to 1370 ms.
+      // The learner: the program starts with the first step of the clock, and the button is pressed once the LED has blinked, at a time of the learner's own (not the scenario's), and held for 1.8 s.
       let virtualMs = -10;
       const learner = async (ms: number) => {
         for (let step = 0; step < ms; step += 10) {
           virtualMs += 10;
-          await adapter.poke(button.address, virtualMs >= 1170 && virtualMs < 1370 ? 1 << (button.bitOffset ?? 0) : 0);
+          await adapter.poke(button.address, virtualMs >= 1780 && virtualMs < 3580 ? 1 << (button.bitOffset ?? 0) : 0);
           await adapter.scenarioStep(virtualMs);
         }
       };
       const recording = await recordDeviceTrace({ connected: true, state: 'running' }, trace, variables, {
-        awaitRun: true, durationMs: 1800, intervalMs: 100, now: () => Math.max(virtualMs, 0), wait: learner,
+        awaitRun: true, durationMs: 5200, intervalMs: 100, now: () => Math.max(virtualMs, 0), wait: learner,
       });
       expect(recording).toMatchObject({ ok: true, anchored: true });
       const samples = recording!.trace;

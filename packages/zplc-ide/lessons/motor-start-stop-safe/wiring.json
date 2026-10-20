@@ -30,11 +30,11 @@
     },
     {
       "id": "overload",
-      "kind": "jumper",
+      "kind": "button",
       "channel": "DI3",
       "label": {
-        "en": "Overload",
-        "es": "Sobrecarga"
+        "en": "Overload (press to simulate a trip)",
+        "es": "Sobrecarga (presione para simular un disparo)"
       }
     },
     {

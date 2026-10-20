@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "verify-my-board",
-  "version": 2,
+  "version": 3,
   "order": 33,
   "module": 0,
   "level": "foundation",
@@ -40,7 +40,7 @@
     "file": "scenario.json",
     "id": "VerifyBoard",
     "path": "tests/verify-board.scenario.json",
-    "sha256": "b6284bfc0ea87f3d9c1586a9fdfa4b740f112c239ba1465a71e9e09cfbcf799e"
+    "sha256": "cd89b30adb08298a69b5895ae8796933ec01f444928d88fb49175122caa3ebd5"
   },
   "regressionScenarios": [],
   "hardware": {

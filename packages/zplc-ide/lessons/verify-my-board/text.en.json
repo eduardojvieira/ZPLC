@@ -36,7 +36,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Watch the LED blink about once a second, then hold the push button: the LED stays lit while you hold it, and it blinks again when you release it. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you press the button and grades the same scenario within the time tolerance of the lesson. Its result is labelled a hardware run, apart from any simulation pass.",
+      "body": "Watch the LED blink about once a second. After it has blinked once, press the push button and hold it for a count of two, then release it: the LED stays lit while you hold the button, and after you release it the LED goes off and blinks again. On the Pico the on-board LED does the same. Then run the hardware check of the lesson: it records a trace from the board while you do this and grades the same scenario, taking the moments of the button from when you press and release it, within the time tolerance of the lesson. You do not need to be exact. Its result is labelled a hardware run, apart from any simulation pass.",
       "checkpoint": "The hardware check passed on your board."
     },
     {

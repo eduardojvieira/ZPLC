@@ -29,7 +29,7 @@ El cableado de la lección [Arranque y parada seguros](../../../learn/lessons/mo
 1. Arranque: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 2. Parada: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 3. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-4. Sobrecarga: cable puente desde GP12 (pin 16 del conector, DI3) hasta GND (GND · pin 38); conectado significa activado.
+4. Sobrecarga (presione para simular un disparo): pulsador entre GP12 (pin 16 del conector, DI3) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 5. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 6. Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).
 

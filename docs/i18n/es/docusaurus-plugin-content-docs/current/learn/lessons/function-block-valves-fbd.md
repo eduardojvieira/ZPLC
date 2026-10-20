@@ -18,7 +18,7 @@ Edite un diagrama de bloques de función para que una segunda instancia del bloq
 - Nivel: Intermedio
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
-- Rutas: Simulación
+- Rutas: Simulación, Hardware
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md), [counter-batch-fbd](./counter-batch-fbd.md)
 
@@ -40,9 +40,10 @@ Edite un diagrama de bloques de función para que una segunda instancia del bloq
 
 Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.
 
-## En una placa
+## Cableado
 
-La lección necesita cuatro pulsadores a la vez (FillPB, DrainPB, StopPB y AirOk), y el kit del estudiante tiene tres: en la Raspberry Pi Pico cada una de las cuatro entradas necesita su propio pulsador. Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/function-block-valves-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/function-block-valves-fbd.md)
 
 {/* <<< END GENERATED: learn/lessons/function-block-valves-fbd <<< */}
 

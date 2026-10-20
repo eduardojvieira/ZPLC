@@ -112,7 +112,6 @@ describe('the bill of materials covers every hardware lesson (LRN-014)', () => {
  * with the reason. The list is exact: a module that gains a hardware lesson must leave it.
  */
 const MODULES_WITHOUT_A_HARDWARE_LESSON: Record<number, string> = {
-  6: 'every module 6 lesson needs the simulated motor or tank plant (feedback, level, faults); the curriculum says "hardware in part" and the planned Ladder lesson of the module may take the track',
   10: 'the Raspberry Pi Pico has no network interface, and the ESP32-S3 firmware of the course configures no Wi-Fi credentials, Modbus TCP server or MQTT broker address',
   11: 'the capstone reads five digital inputs (Start, Stop, EStop, Part, Reset) and the learner boards have four',
 };

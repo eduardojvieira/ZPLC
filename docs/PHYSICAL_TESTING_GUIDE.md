@@ -102,8 +102,8 @@ Esta guía verifica:
 
 &flash0 {
     partitions {
-        storage_partition: partition@1f0000 {
-            reg = <0x1f0000 0x10000>;  /* 64KB NVS */
+        storage_partition: partition@1e0000 {
+            reg = <0x1e0000 0x20000>;  /* 128KB NVS */
         };
     };
 };

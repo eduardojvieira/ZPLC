@@ -36,7 +36,7 @@
     {
       "key": "observe",
       "title": "Observe",
-      "body": "Observe que el LED parpadea más o menos una vez por segundo; luego mantenga presionado el pulsador: el LED queda encendido mientras lo mantiene y vuelve a parpadear al soltarlo. En la Pico, el LED integrado hace lo mismo. Después ejecute la verificación de hardware de la lección: registra una traza de la placa mientras usted presiona el pulsador y califica el mismo escenario dentro de la tolerancia de tiempo de la lección. Su resultado se identifica como una ejecución en hardware, distinta de una aprobación en simulación.",
+      "body": "Observe que el LED parpadea más o menos una vez por segundo. Después de que parpadee una vez, presione el pulsador, manténgalo presionado mientras cuenta hasta dos y suéltelo: el LED queda encendido mientras mantiene el pulsador, y después de soltarlo el LED se apaga y vuelve a parpadear. En la Pico, el LED integrado hace lo mismo. Después ejecute la verificación de hardware de la lección: registra una traza de la placa mientras usted hace esto y califica el mismo escenario, tomando los momentos del pulsador de cuando usted lo presiona y lo suelta, dentro de la tolerancia de tiempo de la lección. No necesita ser exacto. Su resultado se identifica como una ejecución en hardware, distinta de una aprobación en simulación.",
       "checkpoint": "La verificación de hardware pasó en su placa."
     },
     {

@@ -96,7 +96,7 @@
     {
       "id": "button",
       "kind": "button",
-      "quantity": 3,
+      "quantity": 4,
       "name": {
         "en": "6×6 mm tactile push buttons",
         "es": "Pulsadores táctiles de 6×6 mm"

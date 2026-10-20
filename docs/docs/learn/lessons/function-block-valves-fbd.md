@@ -18,7 +18,7 @@ Edit a Function Block Diagram so that a second instance of the project's functio
 - Level: Intermediate
 - Estimated time: 20 minutes
 - Languages: FBD
-- Tracks: Simulation
+- Tracks: Simulation, Hardware
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md), [counter-batch-fbd](./counter-batch-fbd.md)
 
@@ -40,9 +40,10 @@ Edit a Function Block Diagram so that a second instance of the project's functio
 
 Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.
 
-## On a board
+## Wiring
 
-The lesson needs four pushbuttons at the same time (FillPB, DrainPB, StopPB and AirOk), and the learner kit holds three: on the Raspberry Pi Pico each of the four inputs needs a button of its own. Complete it in Simulation: its grade is the same each time and needs no board.
+- [Raspberry Pi Pico (RP2040)](../../reference/learner-kits/rpi-pico-rp2040/function-block-valves-fbd.md)
+- [ESP32-S3-DevKitC-1 (N8R8)](../../reference/learner-kits/esp32-s3-devkitc/function-block-valves-fbd.md)
 
 {/* <<< END GENERATED: learn/lessons/function-block-valves-fbd <<< */}
 

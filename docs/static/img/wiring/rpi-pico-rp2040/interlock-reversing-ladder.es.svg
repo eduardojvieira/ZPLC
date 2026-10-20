@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
+<title id="wiring-rpi-pico-rp2040-title">Cableado en Raspberry Pi Pico (RP2040)</title>
+<desc id="wiring-rpi-pico-rp2040-desc">Botón de avance: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Botón de retroceso: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Botón de parada: pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Lubricación correcta (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla de lubricación): cable puente desde GP12 (pin 16 del conector, DI3) hasta GND (GND · pin 38); conectado significa activado. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38). Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).</desc>
+<rect width="760" height="496" fill="#ffffff" stroke="none"/>
+<text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en Raspberry Pi Pico (RP2040)</text>
+<rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
+<rect x="20" y="66" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="84" font-size="13" font-weight="bold">GP15</text>
+<text stroke="none" x="30" y="102" font-size="11">pin 20 del conector · DI0</text>
+<text stroke="none" x="440" y="80" font-size="13" font-weight="bold">Botón de avance</text>
+<polyline points="264,88 334,88" fill="none"/>
+<circle cx="337" cy="88" r="3" fill="#ffffff"/>
+<circle cx="377" cy="88" r="3" fill="#ffffff"/>
+<polyline points="337,84 375,72" fill="none"/>
+<polyline points="356,78 356,64" fill="none"/>
+<polyline points="348,64 364,64" fill="none"/>
+<text stroke="none" x="357" y="110" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,88 712,88" fill="none"/>
+<rect x="20" y="130" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="148" font-size="13" font-weight="bold">GP14</text>
+<text stroke="none" x="30" y="166" font-size="11">pin 19 del conector · DI1</text>
+<text stroke="none" x="440" y="144" font-size="13" font-weight="bold">Botón de retroceso</text>
+<polyline points="264,152 334,152" fill="none"/>
+<circle cx="337" cy="152" r="3" fill="#ffffff"/>
+<circle cx="377" cy="152" r="3" fill="#ffffff"/>
+<polyline points="337,148 375,136" fill="none"/>
+<polyline points="356,142 356,128" fill="none"/>
+<polyline points="348,128 364,128" fill="none"/>
+<text stroke="none" x="357" y="174" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,152 712,152" fill="none"/>
+<rect x="20" y="194" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="212" font-size="13" font-weight="bold">GP13</text>
+<text stroke="none" x="30" y="230" font-size="11">pin 17 del conector · DI2</text>
+<text stroke="none" x="440" y="208" font-size="13" font-weight="bold">Botón de parada</text>
+<polyline points="264,216 334,216" fill="none"/>
+<circle cx="337" cy="216" r="3" fill="#ffffff"/>
+<circle cx="377" cy="216" r="3" fill="#ffffff"/>
+<polyline points="337,212 375,200" fill="none"/>
+<polyline points="356,206 356,192" fill="none"/>
+<polyline points="348,192 364,192" fill="none"/>
+<text stroke="none" x="357" y="238" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,216 712,216" fill="none"/>
+<rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP12</text>
+<text stroke="none" x="30" y="294" font-size="11">pin 16 del conector · DI3</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Lubricación correcta (permisivo sostenido: deje el cable puente conectado y retírelo un momento para simular una falla de lubricación)</text>
+<polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
+<text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">cable puente a GND</text>
+<rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP0</text>
+<text stroke="none" x="30" y="358" font-size="11">pin 1 del conector · DO0</text>
+<text stroke="none" x="440" y="336" font-size="13" font-weight="bold">Avance</text>
+<polyline points="264,344 300,344" fill="none"/>
+<polyline points="300,344 306,336 318,352 330,336 342,352 354,336 360,344" fill="none"/>
+<text stroke="none" x="330" y="330" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,344 392,344" fill="none"/>
+<polygon points="392,334 392,354 412,344" fill="#2a9d3a"/>
+<polyline points="412,334 412,354" fill="none"/>
+<polyline points="402,330 410,322" fill="none"/>
+<polyline points="408,332 416,324" fill="none"/>
+<text stroke="none" x="402" y="370" text-anchor="middle" font-size="11">LED verde</text>
+<polyline points="412,344 712,344" fill="none"/>
+<rect x="20" y="386" width="232" height="44" rx="4" fill="#ffffff"/>
+<text stroke="none" x="30" y="404" font-size="13" font-weight="bold">GP1</text>
+<text stroke="none" x="30" y="422" font-size="11">pin 2 del conector · DO1</text>
+<text stroke="none" x="440" y="400" font-size="13" font-weight="bold">Retroceso</text>
+<polyline points="264,408 300,408" fill="none"/>
+<polyline points="300,408 306,400 318,416 330,400 342,416 354,400 360,408" fill="none"/>
+<text stroke="none" x="330" y="394" text-anchor="middle" font-size="11">330 Ω</text>
+<polyline points="360,408 392,408" fill="none"/>
+<polygon points="392,398 392,418 412,408" fill="#e9c300"/>
+<polyline points="412,398 412,418" fill="none"/>
+<polyline points="402,394 410,386" fill="none"/>
+<polyline points="408,396 416,388" fill="none"/>
+<text stroke="none" x="402" y="434" text-anchor="middle" font-size="11">LED amarillo</text>
+<polyline points="412,408 712,408" fill="none"/>
+<polyline points="712,64 712,440" fill="none" stroke-width="3"/>
+<polyline points="700,440 724,440" fill="none"/>
+<polyline points="704,445 720,445" fill="none"/>
+<polyline points="708,450 716,450" fill="none"/>
+<text stroke="none" x="728" y="470" text-anchor="end" font-size="12" font-weight="bold">GND · pin 38</text>
+</svg>

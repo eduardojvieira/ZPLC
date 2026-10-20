@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-rpi-pico-rp2040-title">Wiring on Raspberry Pi Pico (RP2040)</title>
-<desc id="wiring-rpi-pico-rp2040-desc">Start pump A: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it. Stop pump A: push button between GP14 (header pin 19, DI1) and GND (GND · pin 38); the internal pull-up of the board reads it. Start pump B: push button between GP13 (header pin 17, DI2) and GND (GND · pin 38); the internal pull-up of the board reads it. Stop pump B: jumper wire from GP12 (header pin 16, DI3) to GND (GND · pin 38); plugged in means on. Pump A running: green LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38). Pump B running: yellow LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38).</desc>
+<desc id="wiring-rpi-pico-rp2040-desc">Start pump A: push button between GP15 (header pin 20, DI0) and GND (GND · pin 38); the internal pull-up of the board reads it. Stop pump A: push button between GP14 (header pin 19, DI1) and GND (GND · pin 38); the internal pull-up of the board reads it. Start pump B: push button between GP13 (header pin 17, DI2) and GND (GND · pin 38); the internal pull-up of the board reads it. Stop pump B: push button between GP12 (header pin 16, DI3) and GND (GND · pin 38); the internal pull-up of the board reads it. Pump A running: green LED with a 330 Ω resistor in series, from GP0 (header pin 1, DO0) to GND (GND · pin 38). Pump B running: yellow LED with a 330 Ω resistor in series, from GP1 (header pin 2, DO1) to GND (GND · pin 38).</desc>
 <rect width="760" height="496" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Wiring on Raspberry Pi Pico (RP2040)</text>
 <rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
@@ -44,8 +44,14 @@
 <text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP12</text>
 <text stroke="none" x="30" y="294" font-size="11">header pin 16 · DI3</text>
 <text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Stop pump B</text>
-<polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
-<text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">jumper wire to GND</text>
+<polyline points="264,280 334,280" fill="none"/>
+<circle cx="337" cy="280" r="3" fill="#ffffff"/>
+<circle cx="377" cy="280" r="3" fill="#ffffff"/>
+<polyline points="337,276 375,264" fill="none"/>
+<polyline points="356,270 356,256" fill="none"/>
+<polyline points="348,256 364,256" fill="none"/>
+<text stroke="none" x="357" y="302" text-anchor="middle" font-size="11">push button</text>
+<polyline points="380,280 712,280" fill="none"/>
 <rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP0</text>
 <text stroke="none" x="30" y="358" font-size="11">header pin 1 · DO0</text>

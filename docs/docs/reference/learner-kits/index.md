@@ -44,7 +44,7 @@ voltage limit. It lists every hardware lesson with a wiring page for that board.
 ## One kit for the whole course
 
 The course has one bill of materials, the same for either board: one board, a USB data cable, a
-breadboard, six LEDs with six 330 Ω resistors, three push buttons, two 10 kΩ resistors, a 10 kΩ
+breadboard, six LEDs with six 330 Ω resistors, four push buttons, two 10 kΩ resistors, a 10 kΩ
 potentiometer, a 100 nF capacitor and twenty jumper wires. The parts are reused from lesson to lesson:
 the lesson CI checks that the kit holds what each hardware lesson needs at once, on each board.
 

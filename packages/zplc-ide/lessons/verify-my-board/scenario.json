@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "VerifyBoard",
   "tickMs": 10,
-  "durationMs": 1600,
+  "durationMs": 3500,
   "events": [
     {
       "atMs": 0,
@@ -17,7 +17,7 @@
       }
     },
     {
-      "atMs": 1350,
+      "atMs": 2350,
       "set": {
         "VerifyBoard.Button": false
       }
@@ -33,47 +33,6 @@
       }
     },
     {
-      "kind": "AT",
-      "atMs": 750,
-      "condition": {
-        "VerifyBoard.Led": true,
-        "VerifyBoard.OnBoardLed": true
-      }
-    },
-    {
-      "kind": "AT",
-      "atMs": 1100,
-      "condition": {
-        "VerifyBoard.Led": false,
-        "VerifyBoard.OnBoardLed": false
-      }
-    },
-    {
-      "kind": "FOR",
-      "fromMs": 1170,
-      "forMs": 160,
-      "condition": {
-        "VerifyBoard.Led": true,
-        "VerifyBoard.OnBoardLed": true
-      }
-    },
-    {
-      "kind": "AT",
-      "atMs": 1450,
-      "condition": {
-        "VerifyBoard.Led": false,
-        "VerifyBoard.OnBoardLed": false
-      }
-    },
-    {
-      "kind": "AT",
-      "atMs": 1580,
-      "condition": {
-        "VerifyBoard.Led": true,
-        "VerifyBoard.OnBoardLed": true
-      }
-    },
-    {
       "kind": "FOR",
       "fromMs": 20,
       "forMs": 380,
@@ -85,6 +44,40 @@
       "kind": "RISING",
       "fromMs": 400,
       "withinMs": 200,
+      "condition": {
+        "VerifyBoard.Led": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 750,
+      "condition": {
+        "VerifyBoard.Led": true,
+        "VerifyBoard.OnBoardLed": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 1170,
+      "forMs": 1000,
+      "condition": {
+        "VerifyBoard.Led": true,
+        "VerifyBoard.OnBoardLed": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 2350,
+      "withinMs": 600,
+      "condition": {
+        "VerifyBoard.Led": false,
+        "VerifyBoard.OnBoardLed": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 2350,
+      "withinMs": 1100,
       "condition": {
         "VerifyBoard.Led": true
       }

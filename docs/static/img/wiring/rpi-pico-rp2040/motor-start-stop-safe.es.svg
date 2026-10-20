@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" role="img" aria-labelledby="wiring-rpi-pico-rp2040-title wiring-rpi-pico-rp2040-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">
 <title id="wiring-rpi-pico-rp2040-title">Cableado en Raspberry Pi Pico (RP2040)</title>
-<desc id="wiring-rpi-pico-rp2040-desc">Arranque: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Parada: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Sobrecarga: cable puente desde GP12 (pin 16 del conector, DI3) hasta GND (GND · pin 38); conectado significa activado. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38). Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).</desc>
+<desc id="wiring-rpi-pico-rp2040-desc">Arranque: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Parada: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Sobrecarga (presione para simular un disparo): pulsador entre GP12 (pin 16 del conector, DI3) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38). Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).</desc>
 <rect width="760" height="496" fill="#ffffff" stroke="none"/>
 <text stroke="none" x="16" y="30" font-size="15" font-weight="bold">Cableado en Raspberry Pi Pico (RP2040)</text>
 <rect x="8" y="48" width="256" height="400" rx="8" fill="#eef3f8"/>
@@ -43,9 +43,15 @@
 <rect x="20" y="258" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="276" font-size="13" font-weight="bold">GP12</text>
 <text stroke="none" x="30" y="294" font-size="11">pin 16 del conector · DI3</text>
-<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Sobrecarga</text>
-<polyline points="264,280 712,280" fill="none" stroke-dasharray="6 4"/>
-<text stroke="none" x="357" y="298" text-anchor="middle" font-size="11">cable puente a GND</text>
+<text stroke="none" x="440" y="272" font-size="13" font-weight="bold">Sobrecarga (presione para simular un disparo)</text>
+<polyline points="264,280 334,280" fill="none"/>
+<circle cx="337" cy="280" r="3" fill="#ffffff"/>
+<circle cx="377" cy="280" r="3" fill="#ffffff"/>
+<polyline points="337,276 375,264" fill="none"/>
+<polyline points="356,270 356,256" fill="none"/>
+<polyline points="348,256 364,256" fill="none"/>
+<text stroke="none" x="357" y="302" text-anchor="middle" font-size="11">pulsador</text>
+<polyline points="380,280 712,280" fill="none"/>
 <rect x="20" y="322" width="232" height="44" rx="4" fill="#ffffff"/>
 <text stroke="none" x="30" y="340" font-size="13" font-weight="bold">GP0</text>
 <text stroke="none" x="30" y="358" font-size="11">pin 1 del conector · DO0</text>

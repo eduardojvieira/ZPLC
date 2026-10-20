@@ -29,7 +29,7 @@ The wiring of the lesson [Function blocks: one latch, two pumps](../../../learn/
 1. Start pump A: push button between GPIO5 (header J1 pin 5, DI0) and GND (GND · J1-22); the internal pull-up of the board reads it.
 2. Stop pump A: push button between GPIO6 (header J1 pin 6, DI1) and GND (GND · J1-22); the internal pull-up of the board reads it.
 3. Start pump B: push button between GPIO7 (header J1 pin 7, DI2) and GND (GND · J1-22); the internal pull-up of the board reads it.
-4. Stop pump B: jumper wire from GPIO8 (header J1 pin 12, DI3) to GND (GND · J1-22); plugged in means on.
+4. Stop pump B: push button between GPIO8 (header J1 pin 12, DI3) and GND (GND · J1-22); the internal pull-up of the board reads it.
 5. Pump A running: green LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
 6. Pump B running: yellow LED with a 330 Ω resistor in series, from GPIO16 (header J1 pin 9, DO1) to GND (GND · J1-22).
 
