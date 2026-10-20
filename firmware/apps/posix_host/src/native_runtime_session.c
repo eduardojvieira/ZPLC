@@ -73,7 +73,7 @@ typedef struct {
     uint8_t has_active;
     uint32_t at_ms;
     uint8_t at_ms_state;
-    /* trace.arm: capacity, in_bytes, out_bytes; trace.read: from, count. */
+    /* trace.arm: capacity, in_bytes, out_bytes; trace.read: from, count (in that order). */
     uint32_t trace_values[3];
 } zplc_native_request_t;
 
@@ -778,8 +778,8 @@ static int parse_canonical_control_params(const char **cursor,
                                           const char *method,
                                           zplc_native_request_t *request)
 {
-    uint8_t seen = 0U;
-    uint8_t required;
+    uint16_t seen = 0U;
+    uint16_t required;
 
     if (strcmp(method, "memory.read") == 0) {
         required = 0x03U;
@@ -793,6 +793,10 @@ static int parse_canonical_control_params(const char **cursor,
         required = 0x08U;
     } else if (strcmp(method, "force.clear") == 0) {
         required = 0x01U;
+    } else if (strcmp(method, "trace.arm") == 0) {
+        required = 0x70U;
+    } else if (strcmp(method, "trace.read") == 0) {
+        required = 0x180U;
     } else {
         return -1;
     }
@@ -827,6 +831,21 @@ static int parse_canonical_control_params(const char **cursor,
             if (parse_canonical_json_uint32(cursor, &request->pc) != 0) return -1;
             request->pc_state = ZPLC_NATIVE_FIELD_VALID;
             seen |= 0x08U;
+        } else if (strcmp(key, "capacity") == 0 && (required & 0x10U) != 0U && (seen & 0x10U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[0]) != 0) return -1;
+            seen |= 0x10U;
+        } else if (strcmp(key, "in_bytes") == 0 && (required & 0x20U) != 0U && (seen & 0x20U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[1]) != 0) return -1;
+            seen |= 0x20U;
+        } else if (strcmp(key, "out_bytes") == 0 && (required & 0x40U) != 0U && (seen & 0x40U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[2]) != 0) return -1;
+            seen |= 0x40U;
+        } else if (strcmp(key, "from") == 0 && (required & 0x80U) != 0U && (seen & 0x80U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[0]) != 0) return -1;
+            seen |= 0x80U;
+        } else if (strcmp(key, "count") == 0 && (required & 0x100U) != 0U && (seen & 0x100U) == 0U) {
+            if (parse_canonical_json_uint32(cursor, &request->trace_values[1]) != 0) return -1;
+            seen |= 0x100U;
         } else {
             return -1;
         }
@@ -835,39 +854,6 @@ static int parse_canonical_control_params(const char **cursor,
             (*cursor)++;
             break;
         }
-        if (*(*cursor)++ != ',') return -1;
-    }
-    return seen == required ? 0 : -1;
-}
-
-/* trace.arm takes capacity, in_bytes and out_bytes; trace.read takes from and count. Every key is required. */
-static int parse_trace_params(const char **cursor, const char *method, zplc_native_request_t *request)
-{
-    static const char *const arm_keys[3] = {"capacity", "in_bytes", "out_bytes"};
-    static const char *const read_keys[3] = {"from", "count", NULL};
-    const char *const *keys = strcmp(method, "trace.arm") == 0 ? arm_keys : read_keys;
-    const uint8_t required = strcmp(method, "trace.arm") == 0 ? 0x07U : 0x03U;
-    uint8_t seen = 0U;
-
-    skip_json_space(cursor);
-    if (*(*cursor)++ != '{') return -1;
-    for (;;) {
-        char key[16];
-        uint8_t index;
-
-        skip_json_space(cursor);
-        if (**cursor == '}') { (*cursor)++; break; }
-        if (parse_canonical_json_string(cursor, key, sizeof(key)) != 0) return -1;
-        skip_json_space(cursor);
-        if (*(*cursor)++ != ':') return -1;
-        for (index = 0U; index < 3U; ++index) {
-            if (keys[index] != NULL && strcmp(key, keys[index]) == 0) break;
-        }
-        if (index == 3U || (seen & (1U << index)) != 0U ||
-            parse_canonical_json_uint32(cursor, &request->trace_values[index]) != 0) return -1;
-        seen |= (uint8_t)(1U << index);
-        skip_json_space(cursor);
-        if (**cursor == '}') { (*cursor)++; break; }
         if (*(*cursor)++ != ',') return -1;
     }
     return seen == required ? 0 : -1;
@@ -949,7 +935,9 @@ static int is_control_params_method(const char *method)
            strcmp(method, "breakpoint.add") == 0 ||
            strcmp(method, "breakpoint.remove") == 0 ||
            strcmp(method, "force.set") == 0 ||
-           strcmp(method, "force.clear") == 0;
+           strcmp(method, "force.clear") == 0 ||
+           strcmp(method, "trace.arm") == 0 ||
+           strcmp(method, "trace.read") == 0;
 }
 
 static int is_safe_request_id(const char *id)
@@ -1047,8 +1035,6 @@ static int parse_canonical_request(const char *line, zplc_native_request_t *requ
         if (parse_simulation_input_params(&cursor, request) != 0) return -1;
     } else if (strcmp(request->method, "scenario.step") == 0) {
         if (parse_scenario_step_params(&cursor, request) != 0) return -1;
-    } else if (strcmp(request->method, "trace.arm") == 0 || strcmp(request->method, "trace.read") == 0) {
-        if (parse_trace_params(&cursor, request->method, request) != 0) return -1;
     } else if (is_control_params_method(request->method)) {
         if (parse_canonical_control_params(&cursor, request->method, request) != 0) return -1;
     } else if (is_empty_params_method(request->method)) {

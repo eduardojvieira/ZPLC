@@ -446,6 +446,11 @@ const PROTOCOL_PARAMS: Record<string, string> = {
   active: 'The value of the input.',
   program_generation: 'The generation of the loaded program that the input belongs to.',
   at_ms: 'Time of the scan, in milliseconds of virtual time.',
+  capacity: 'Samples the I/O trace keeps; 0 keeps as many as its ring holds.',
+  in_bytes: 'Bytes of the input image each I/O trace sample keeps, from its first byte (at most 32).',
+  out_bytes: 'Bytes of the output image each I/O trace sample keeps, from its first byte (at most 32).',
+  from: 'Sequence number of the first I/O trace sample to read.',
+  count: 'Number of I/O trace samples to read, 1 to 32.',
 };
 
 export function protocolErrors(): string[] {

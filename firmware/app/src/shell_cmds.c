@@ -4742,11 +4742,9 @@ static int cmd_dbg_trace_clear(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg_trace,
-    SHELL_CMD_ARG(arm, NULL, "Arm the I/O trace: dbg trace arm <capacity> <in_bytes> <out_bytes>", cmd_dbg_trace_arm, 4,
-                  1),
+    SHELL_CMD_ARG(arm, NULL, "Arm the I/O trace: dbg trace arm <capacity> <in_bytes> <out_bytes>", cmd_dbg_trace_arm, 4, 1),
     SHELL_CMD_ARG(status, NULL, "State of the I/O trace (JSON)", cmd_dbg_trace_status, 1, 1),
-    SHELL_CMD_ARG(dump, NULL, "Samples of the I/O trace (JSON): dbg trace dump <from> <count>", cmd_dbg_trace_dump, 3,
-                  1),
+    SHELL_CMD_ARG(dump, NULL, "Samples of the I/O trace (JSON): dbg trace dump <from> <count>", cmd_dbg_trace_dump, 3, 1),
     SHELL_CMD_ARG(clear, NULL, "Disarm and empty the I/O trace", cmd_dbg_trace_clear, 1, 1),
     SHELL_SUBCMD_SET_END);
 #endif
