@@ -178,7 +178,7 @@ class BuildCommandAndTraceTests(QuietCase):
         self.assertEqual(code, 0)
         manifest = json.loads((ROOT / "firmware/app/boards/boards.json").read_text())
         wanted = next(b["build_command"] for b in manifest if b["ide_id"] == "rpi_pico")
-        self.assertEqual(record["firmware"]["build_command"], f"{wanted} -- -DCONFIG_ZPLC_HARDWARE_WATCHDOG=y", "the HIL build has the watchdog on (RT-020)")
+        self.assertEqual(record["firmware"]["build_command"], f"{wanted} -- -DCONFIG_ZPLC_HIL_IMAGE=y", "the HIL image variant, which has the watchdog on (RT-020)")
         self.assertNotIn("EXTRA_CONF_FILE", record["firmware"]["build_command"])
         _, plain, _ = self.chain("--no-watchdog-build")
         self.assertEqual(plain["firmware"]["build_command"], wanted)

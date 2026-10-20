@@ -152,6 +152,14 @@ class FakeBoard(hil_devices.ShellDevice):
         word = round(self.analog * 4095) + (800 if "analog-off" in self.defects else 0)
         return bytes([bits]) + bytes(7) + struct.pack("<H", min(word, 0xFFFF))
 
+    def drop_line(self):
+        """The host closed the port: DTR falls, and a device that reads it ends the session at once."""
+        if {"no-line-state", "link-loss-keeps-forces"} & self.defects:
+            return
+        for address in self.session_forces:
+            self.forces.pop(address, None)
+        self.session = False
+
     def memory_read(self, address, length):
         if address < 0x1000:
             return (self.inputs() + bytes(0x1000))[address : address + length]
@@ -197,8 +205,11 @@ class FakeBoard(hil_devices.ShellDevice):
         if words[:3] == ["zplc", "status", "--json"]:
             cycles = int((self.now() - self.started) // 10) if self.state == "running" else 0
             misses = cycles // 1000 if "jitter-misses" in self.defects else 0
+            wide = 3000 if "jitter-wide" in self.defects else 0
+            tasks = [{"id": 0, "interval_us": 10000, "cycles": cycles, "period_min_us": 9990 if cycles > 1 else 0,
+                      "period_max_us": 10010 + wide if cycles > 1 else 0, "jitter_us": 20 + wide if cycles > 1 else 0}]
             return json.dumps({
-                "state": self.state, "uptime_ms": int(self.now() - self.boot), "reset_cause": self.cause,
+                "state": self.state, "uptime_ms": int(self.now() - self.boot), "reset_cause": self.cause, "tasks": tasks,
                 "deadline": {"misses": misses}, "fault": {"reason": self.fault, "task_id": None},
                 "stats": {"cycles": cycles, "overruns": misses}, "vm": {"error": 3 if self.fault == "vm_fault" else 0},
             }) + "\r\n"
@@ -206,8 +217,10 @@ class FakeBoard(hil_devices.ShellDevice):
             address, length = int(words[3], 0), int(words[4], 0)
             return self.dump(self.memory_read(address, length), address)
         if command == "zplc dbg force":
-            if words[3] == "set":
+            if words[3] == "set":  # the console's force opens or joins the link's session (COM-020)
                 self.forces[int(words[4], 0)] = bytes.fromhex(words[5])
+                self.session, self.last_frame = True, self.now()
+                self.session_forces.add(int(words[4], 0))
                 return "OK: Forced\r\n"
             if words[3] == "clear_all":
                 self.forces.clear()
@@ -345,7 +358,7 @@ class StepTests(Quiet):
         args = run_chain.parse([board, "--dry-run", "--operator", "CI", *extra])
         chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS[board], lambda name: device, bench)
         chain.tester = LanguageTester(transport=device, board=board)
-        chain.record["firmware"]["build_options"] = options or {"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000", "RETAIN_PERSIST": "y"}
+        chain.record["firmware"]["build_options"] = options or {"HIL_IMAGE": "y", "HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000", "RETAIN_PERSIST": "y"}
         _, title, method, requirement = next(s for s in chain.STEPS if s[0] == step_id)
         chain.step(step_id, title, "automatic", getattr(chain, method), requirement)
         entry = chain.record["steps"][-1]
@@ -380,8 +393,12 @@ class StepTests(Quiet):
     def test_scan_jitter_runs_ten_minutes_from_the_runtimes_own_statistics(self):
         good, bad = self.passes_and_fails("scan-jitter-10min", "jitter-misses")
         self.assertGreaterEqual(good["measurements"]["duration_s"], 600)
-        self.assertEqual(good["measurements"]["windows"], 20)
+        self.assertEqual(good["measurements"]["tasks"][0]["period_max_us"], 10010, "the runtime's own longest period")
+        self.assertEqual(good["measurements"]["jitter_us"], 20, "and the gap between the shortest and the longest")
         self.assertIn("deadline misses", bad["detail"])
+        wide, _ = self.step("scan-jitter-10min", ("jitter-wide",))
+        self.assertEqual(wide["result"], "fail", "a period far from the interval fails the step")
+        self.assertIn("13010", wide["detail"])
 
     def test_outputs_off_after_an_overrun_and_after_a_fatal_fault(self):
         good, _ = self.passes_and_fails("overrun-fault-outputs-off", "overrun-keeps-outputs")
@@ -417,7 +434,12 @@ class StepTests(Quiet):
     def test_outputs_safe_after_stop_and_after_link_loss_with_forces_active(self):
         good, bad = self.passes_and_fails("stop-and-link-loss-safe", "link-loss-keeps-forces")
         self.assertEqual(good["measurements"]["session_idle_s"], 30)
+        self.assertEqual(good["measurements"]["released_by"], "line", "the fall of DTR ends the session, not the silence")
+        self.assertLess(good["measurements"]["released_within_ms"], 1000)
         self.assertIn("still on", bad["detail"])
+        idle, _ = self.step("stop-and-link-loss-safe", ("no-line-state",))
+        self.assertEqual((idle["result"], idle["measurements"]["released_by"]), ("pass", "idle time"),
+                         "a console that reports no line is released by the idle time")
         stuck, _ = self.step("stop-and-link-loss-safe", ("stop-keeps-forces",))
         self.assertIn("after STOP", stuck["detail"])
 
@@ -427,7 +449,10 @@ class StepTests(Quiet):
         self.assertEqual(good["measurements"]["reset_cause"], "watchdog")
         plain, _ = self.step("watchdog-reset-time", options={"SCHEDULER": "y"})
         self.assertEqual(plain["result"], "fail")
-        self.assertIn("CONFIG_ZPLC_HARDWARE_WATCHDOG=y", plain["detail"])
+        self.assertIn("CONFIG_ZPLC_HIL_IMAGE=y", plain["detail"])
+        shipped, _ = self.step("watchdog-reset-time", options={"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000"})
+        self.assertEqual(shipped["result"], "fail", "a record of RT-020 is made on the HIL image, never on another build")
+        self.assertIn("not the HIL image", shipped["detail"])
 
     def test_power_cycle_keeps_stop_program_and_retain(self):
         good, _ = self.passes_and_fails("power-cycle-retain", "retain-lost")

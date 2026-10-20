@@ -87,6 +87,14 @@ describe('what a build says (REL-022, REL-023)', () => {
     expect(hilTraceProblems(new Map(), { ...identity, options: 'A=1,HIL_DEBUG=y,Z=2' })).toHaveLength(1);
     expect(hilTraceProblems(new Map(), { ...identity, options: 'NO_HIL_DEBUG=y' })).toEqual([]);
   });
+
+  test('never accepts the HIL image of the RT-020 record run, from the configuration or from the options the image reports', () => {
+    const identity = parseIdentityHeader(header());
+    expect(hilTraceProblems(parseConfig('CONFIG_ZPLC_HIL_IMAGE=y'), identity)).toHaveLength(1);
+    expect(hilTraceProblems(parseConfig('# CONFIG_ZPLC_HIL_IMAGE is not set'), identity)).toEqual([]);
+    expect(hilTraceProblems(new Map(), { ...identity, options: 'A=1,HIL_IMAGE=y,Z=2' })).toHaveLength(1);
+    expect(hilTraceProblems(new Map(), { ...identity, options: 'NO_HIL_IMAGE=y' })).toEqual([]);
+  });
 });
 
 describe('the files of each board (REL-022)', () => {

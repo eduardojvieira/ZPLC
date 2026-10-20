@@ -300,13 +300,17 @@ demás pasos detiene, despliega o corta la energía. Por omisión ejecuta el
 parpadeo en los cinco lenguajes; `--all-fixtures` agrega cada fixture marcado
 para hardware (HIL-005), unos siete minutos más.
 
-La imagen bajo prueba es la compilación HIL: el comando de compilación de la
-placa con `-DCONFIG_ZPLC_HARDWARE_WATCHDOG=y`, que la cadena imprime, porque
-RT-020 pide que el registro se haga con el watchdog activado. Hoy
-`firmware/app/CMakeLists.txt` rechaza esa opción mientras `boards.json` mantiene
-el watchdog desactivado; hasta que se permita la compilación HIL,
-`--no-watchdog-build` imprime el comando sin la opción, y el paso del watchdog
-falla y dice por qué.
+La imagen bajo prueba es la imagen HIL: el comando de compilación de la placa con
+`-DCONFIG_ZPLC_HIL_IMAGE=y`, que la cadena imprime, porque RT-020 pide que el
+registro se haga con el watchdog activado. La imagen HIL activa el watchdog de
+hardware con los tiempos y las políticas de la entrada de la placa en
+`boards.json`, y dice lo que es: `zplc version` imprime una línea para ella y sus
+opciones de compilación incluyen `HIL_IMAGE=y`, que el saludo registra.
+`firmware/app/CMakeLists.txt` sigue rechazando una compilación que activa el
+watchdog por sí sola. La imagen HIL nunca es una imagen de versión: la recolección
+de la versión (`scripts/release/firmware-images.ts`) rechaza una compilación cuya
+configuración u opciones la nombran. `--no-watchdog-build` imprime el comando
+sin la opción, y el paso del watchdog falla y dice por qué.
 
 El paso de RETAIN necesita una imagen compilada con
 `-DCONFIG_ZPLC_RETAIN_PERSIST=y`. La persistencia de RETAIN está desactivada en
@@ -339,9 +343,9 @@ puerto marcado USB, y presione RST si la placa queda en modo de descarga.
 | 12 | Lazo digital | Fuerza cada salida, sola, a encendida y apagada y lee las entradas | Cada entrada sigue a su propia salida y ninguna otra cambia | Todavía no se ejecutó | Se completa con los registros emulados |
 | 13 | Lectura analógica | Le pide girar el potenciómetro a 0 %, 50 % y 100 % y lee AI0 | Dentro del 5 % de la escala completa en los extremos y del 10 % en el centro | Todavía no se ejecutó | Se completa con los registros emulados |
 | 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un scan y 3000 ms más un scan, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
-| 15 | Jitter de scan, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee las estadísticas del runtime cada 30 s | Ningún desborde, ningún plazo incumplido, el período medio de cada ventana dentro del 1 % | Todavía no se ejecutó | Se completa con los registros emulados |
+| 15 | Jitter de scan, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee la medida propia del runtime de cada scan: el período más corto y el más largo de cada tarea (`zplc status --json`, `tasks[]`) | Ningún desborde, ningún plazo incumplido, cada período de scan dentro del 20 % del intervalo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un scan que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
-| 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza en una sesión del enlace del dispositivo y guarda silencio durante el tiempo de inactividad de la sesión (30 s por omisión) | Salidas apagadas tras STOP, y fuerzas de la sesión liberadas tras el silencio | Todavía no se ejecutó | Se completa con los registros emulados |
+| 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza desde la consola, en la sesión de su enlace, cierra el puerto y lo vuelve a abrir, con un programa que mantiene las salidas en bajo | Salidas apagadas tras STOP, y fuerzas liberadas al perder el enlace: por DTR en la Pico, por el tiempo de inactividad (30 s por omisión) en el ESP32-S3 | Todavía no se ejecutó | Se completa con los registros emulados |
 | 18 | Tiempo de reinicio del watchdog | Ejecuta un scan que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 19 | Falla fatal | Divide por cero tras 20 scans de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |

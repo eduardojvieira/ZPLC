@@ -112,6 +112,9 @@ export function hilTraceProblems(config: Map<string, string>, identity: BuildIde
   const problems: string[] = [];
   if (config.get('CONFIG_ZPLC_HIL_DEBUG') === 'y') problems.push('the build sets CONFIG_ZPLC_HIL_DEBUG=y: an image with the HIL trace is never shipped');
   if (/(?:^|,)HIL_DEBUG=y(?:,|$)/.test(identity.options)) problems.push('the identity of the build lists HIL_DEBUG=y among its options');
+  // The HIL image turns the hardware watchdog on for the RT-020 record run only; it is never a release image.
+  if (config.get('CONFIG_ZPLC_HIL_IMAGE') === 'y') problems.push('the build sets CONFIG_ZPLC_HIL_IMAGE=y: the HIL image of the record run is never shipped (RT-020)');
+  if (/(?:^|,)HIL_IMAGE=y(?:,|$)/.test(identity.options)) problems.push('the identity of the build lists HIL_IMAGE=y among its options: the HIL image is never shipped (RT-020)');
   return problems;
 }
 

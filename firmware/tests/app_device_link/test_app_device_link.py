@@ -333,6 +333,50 @@ def main() -> int:
         check(json.loads(shell.run("zplc dbg force list --json"))["count"] == 0, "and the force is released")
         check(link.status_of(link.request("STOP")) == ERR["NO_SESSION"], "the session is gone")
 
+        # ---- COM-020, HIL-003: a force typed at the shell belongs to a session too ---------------------------
+        # The fixture does not write the output byte: a release gives it back the value it had before the force.
+        def output() -> int:
+            shell.take()  # what the running scheduler printed meanwhile ends with a prompt of its own
+            text = shell.run("zplc dbg peek 0x1000 1")
+            found = re.findall(r"\b[0-9a-fA-F]{2}\b", text)
+            check(bool(found), f"the output byte can be read ({text!r})")
+            return int(found[-1], 16)
+
+        def fresh(line: str) -> str:
+            shell.take()
+            return shell.run(line)
+
+        def forces() -> int:
+            shell.take()
+            return json.loads(shell.run("zplc dbg force list --json"))["count"]
+
+        check("OK" in shell.run("zplc start"), "the program runs (started at the shell)")
+        time.sleep(0.3)
+        program = output()
+        shell.take()
+        tasks = json.loads(shell.run("zplc status --json")).get("tasks", [])
+        check(len(tasks) == 1 and 0 < tasks[0]["period_min_us"] <= tasks[0]["period_max_us"]
+              and tasks[0]["jitter_us"] == tasks[0]["period_max_us"] - tasks[0]["period_min_us"],
+              f"zplc status --json reports the task's shortest and longest scan period and their gap (HIL-010): {tasks}")
+        forced = (~program) & 0xFF
+        check("OK:" in fresh(f"zplc dbg force set 0x1000 {forced:02x}"), "a force typed at the shell is accepted")
+        time.sleep(0.3)
+        check(forces() == 1 and output() == forced, "it drives the output")
+        check(link.status_of(link.request("SESSION_OPEN", open_payload())) == 0, "a client of the link opens a session")
+        time.sleep(0.3)
+        check(forces() == 0 and output() == program, "the shell's lease ends with it: the force is released, the output follows the program")
+
+        check("OK:" in fresh(f"zplc dbg force set 0x1000 {forced:02x}"), "a force typed in the open session")
+        closed = link.request("SESSION_CLOSE")
+        check(link.status_of(closed) == 0 and closed["payload"][1] == 1, "joins it: the close says one force went with it")
+        time.sleep(0.3)
+        check(forces() == 0 and output() == program, "and the output follows the program")
+
+        check("OK:" in fresh(f"zplc dbg force set 0x1000 {forced:02x}"), "a force typed with no session open")
+        time.sleep(IDLE_SECONDS + 1.5)
+        check(forces() == 0 and output() == program, "is released after the idle time of the lease it opened: the output follows the program")
+        check("OK" in fresh("zplc stop"), "the program stops")
+
         # ---- a device that holds a public key accepts only signed programs ---------------------------------
         check(link.status_of(link.request("SESSION_OPEN", open_payload())) == 0, "a session for the key")
         check(capabilities_now(link) & CAP["SIGNATURE"] != 0, "the image offers signed programs")

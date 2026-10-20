@@ -316,6 +316,15 @@ static void post_internal(zplc_proto_dev_t *dev, uint8_t id, const uint8_t *data
   (void)zplc_proto_event_post(dev, id, data, length);
 }
 
+static uint8_t current_forces(zplc_proto_dev_t *dev) {
+  zplc_proto_status_t status;
+
+  if (dev->ops->status != NULL && dev->ops->status(dev->ops->context, &status) == 0) {
+    return status.forces;
+  }
+  return 0U;
+}
+
 static void post_force_event(zplc_proto_dev_t *dev, uint8_t change, uint16_t address, uint8_t forces) {
   uint8_t data[4];
 
@@ -417,6 +426,65 @@ static void end_session(zplc_proto_dev_t *dev, uint8_t reason, int notify) {
   if (link != NULL) {
     link->rx_seq = 0U;
   }
+}
+
+static void begin_session(zplc_proto_dev_t *dev, zplc_proto_link_t *link, uint8_t authenticated) {
+  dev->session_open = 1U;
+  dev->session_authenticated = authenticated;
+  dev->owner = link;
+  dev->session_id = ++dev->last_session_id;
+  dev->last_activity_ms = now_ms(dev);
+  dev->owned_count = 0U;
+  dev->transfer_active = 0U;
+  dev->cred_active = 0U;
+  link->event_seq = 0U;
+  link->stats.sessions_opened++;
+}
+
+void zplc_proto_link_line(zplc_proto_link_t *link, int up) {
+  if (link->line_up != 0U && up == 0) {
+    zplc_proto_link_lost(link);
+  }
+  link->line_up = up != 0 ? 1U : 0U;
+}
+
+/* The console of a serial link is the person at its cable, as a frame on that link is: its commands open or join the
+ * link's session, so a force set at the console ends with that session like one set by a frame (COM-020). */
+int zplc_proto_session_lease(zplc_proto_link_t *link) {
+  zplc_proto_dev_t *dev = link->dev;
+
+  if (link->transport != ZPLC_PROTO_TRANSPORT_SERIAL) {
+    return (int)ZPLC_PROTO_ERR_AUTH_REQUIRED;
+  }
+  if (dev->session_open != 0U && dev->owner != link) {
+    return (int)ZPLC_PROTO_ERR_SESSION_BUSY;
+  }
+  if (dev->session_open == 0U) {
+    begin_session(dev, link, 0U);
+    link->rx_seq = 0U;
+  }
+  dev->last_activity_ms = now_ms(dev);
+  return 0;
+}
+
+void zplc_proto_session_force_changed(zplc_proto_link_t *link, uint8_t change, uint16_t address) {
+  zplc_proto_dev_t *dev = link->dev;
+  const int ours = dev->session_open != 0U && dev->owner == link;
+
+  if (change == (uint8_t)ZPLC_PROTO_FORCE_CHANGE_CLEARED_ALL) {
+    dev->owned_count = 0U; /* the force table is empty: no session owns anything in it */
+    post_force_event(dev, change, 0U, 0U);
+    return;
+  }
+  if (change == (uint8_t)ZPLC_PROTO_FORCE_CHANGE_SET && ours) {
+    owned_add(dev, address);
+  } else if (change == (uint8_t)ZPLC_PROTO_FORCE_CHANGE_CLEARED) {
+    owned_remove(dev, address);
+  }
+  if (ours) {
+    dev->last_activity_ms = now_ms(dev);
+  }
+  post_force_event(dev, change, address, current_forces(dev));
 }
 
 int zplc_proto_session_is_open(const zplc_proto_dev_t *dev) {
@@ -734,15 +802,6 @@ static void do_mem_write(const request_t *r) {
   respond(r->link, r->frame, (uint8_t)result, 0U);
 }
 
-static uint8_t current_forces(zplc_proto_dev_t *dev) {
-  zplc_proto_status_t status;
-
-  if (dev->ops->status != NULL && dev->ops->status(dev->ops->context, &status) == 0) {
-    return status.forces;
-  }
-  return 0U;
-}
-
 static void do_force_set(const request_t *r) {
   zplc_proto_dev_t *dev = r->link->dev;
   const uint16_t address = zplc_get_u16_le(r->payload + ZPLC_PROTO_FORCE_SET_REQ_ADDRESS_OFF);
@@ -903,17 +962,8 @@ static void do_session_open(const request_t *r) {
     zplc_secure_zero(session_key, sizeof(session_key));
   }
 
-  dev->session_open = 1U;
-  dev->session_authenticated = authenticated ? 1U : 0U;
-  dev->owner = link;
-  dev->session_id = ++dev->last_session_id;
-  dev->last_activity_ms = now_ms(dev);
-  dev->owned_count = 0U;
-  dev->transfer_active = 0U;
-  dev->cred_active = 0U;
+  begin_session(dev, link, authenticated ? 1U : 0U);
   link->rx_seq = r->frame->sequence;
-  link->event_seq = 0U;
-  link->stats.sessions_opened++;
 
   zplc_put_u32_le(b + ZPLC_PROTO_SESSION_OPEN_RSP_SESSION_ID_OFF - shift, dev->session_id);
   zplc_put_u16_le(b + ZPLC_PROTO_SESSION_OPEN_RSP_IDLE_TIMEOUT_S_OFF - shift, dev->idle_timeout_s);

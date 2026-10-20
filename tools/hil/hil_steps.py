@@ -36,7 +36,7 @@ TIMER_PT_MS = 3000
 TIMER_TOLERANCE_MS = 100  # beyond the scan interval and twice the round trip of one read
 JITTER_S = 600  # HIL-010: at least ten minutes
 JITTER_SAMPLE_S = 30
-JITTER_PERIOD_TOLERANCE = 0.01  # the mean period over each sample window, as a fraction of the interval
+JITTER_PERIOD_TOLERANCE = 0.2  # every scan period, shortest and longest, as a fraction of the interval (the bench's bound)
 ANALOG_POINTS = ((0.0, 0.05), (0.5, 0.10), (1.0, 0.05))  # (fraction of travel, tolerance as a fraction of full scale)
 DEPLOY_CUTS = 20
 ATOMIC_WRITES = 100
@@ -65,6 +65,13 @@ PROGRAMS = {
 PROGRAM Main
 VAR alive AT %MD480 : DINT; END_VAR
 alive := alive + 1;
+END_PROGRAM
+"""),
+    # the outputs the forces of the link-loss step drive, held low by the program: after a release they follow it
+    "hold": (10, """
+PROGRAM Main
+VAR q0 AT %QX0.0 : BOOL; q1 AT %QX0.1 : BOOL; q2 AT %QX0.2 : BOOL; q3 AT %QX0.3 : BOOL; END_VAR
+q0 := FALSE; q1 := FALSE; q2 := FALSE; q3 := FALSE;
 END_PROGRAM
 """),
     "timer": (10, f"""
@@ -379,47 +386,42 @@ class BenchSteps:
         return f"TON T#{TIMER_PT_MS}ms measured {measured:.0f} ms (error {measured - TIMER_PT_MS:+.0f} ms)"
 
     def scan_jitter(self):
-        """The runtime's own statistics over the run: no deadline miss, and every window's mean period on the interval."""
+        """The runtime's own measure of every scan over the run: each task's shortest and longest period, from the start
+        of one scan to the start of the next (`zplc status --json`, tasks[]), and no deadline miss."""
         interval = PROGRAMS["idle"][0]
         self.deploy_program("idle")
         self.tester.send("zplc start")
-        samples = []
         try:
             first = self.status()
             started = self.now()
             while self.now() - started < self.jitter_seconds * 1000:
                 self.wait(min(JITTER_SAMPLE_S, self.jitter_seconds))
-                samples.append(self.status())
+            last = self.status()
         finally:
             self.stop_and_clear()
-        windows, previous = [], first
-        for sample in samples:
-            cycles = sample.get("stats", {}).get("cycles", 0) - previous.get("stats", {}).get("cycles", 0)
-            elapsed = sample.get("uptime_ms", 0) - previous.get("uptime_ms", 0)
-            windows.append(elapsed / cycles if cycles > 0 else None)
-            previous = sample
-        last = samples[-1] if samples else first
         overruns = last.get("stats", {}).get("overruns", 0) - first.get("stats", {}).get("overruns", 0)
         misses = last.get("deadline", {}).get("misses", 0) - first.get("deadline", {}).get("misses", 0)
-        known = [w for w in windows if w is not None]
-        worst = max((abs(w - interval) / interval for w in known), default=None)
+        tasks = [t for t in last.get("tasks", []) if t.get("cycles", 0) > 1]
+        worst = max((abs(p - t["interval_us"]) / t["interval_us"] for t in tasks for p in (t["period_min_us"], t["period_max_us"])), default=None)
         self.measure(
-            duration_s=self.jitter_seconds, interval_ms=interval, windows=len(windows),
-            mean_period_ms=[round(w, 4) if w is not None else None for w in windows],
-            worst_window_deviation=None if worst is None else round(worst, 5), overruns=overruns, deadline_misses=misses,
+            duration_s=self.jitter_seconds, interval_ms=interval, tasks=tasks, overruns=overruns, deadline_misses=misses,
+            jitter_us=max((t["jitter_us"] for t in tasks), default=None),
+            worst_period_deviation=None if worst is None else round(worst, 5), tolerance=JITTER_PERIOD_TOLERANCE,
             last_overrun_us=last.get("deadline", {}).get("last_overrun_us"),
-            source="zplc status --json: stats.cycles, uptime_ms, stats.overruns, deadline.misses (the runtime prints no per-scan minimum or maximum)",
+            source="zplc status --json: tasks[].period_min_us, period_max_us, jitter_us (every scan since RUN), stats.overruns, deadline.misses",
         )
         problems = []
-        if not known or len(known) != len(windows):
-            problems.append("a window had no scan")
+        if not tasks:
+            problems.append("the image reports no scan periods (`zplc status --json` has no tasks[]): it predates the HIL-010 statistics")
         if overruns or misses:
             problems.append(f"{overruns} overruns and {misses} deadline misses")
-        if worst is not None and worst > JITTER_PERIOD_TOLERANCE:
-            problems.append(f"a window's mean period is {worst:.2%} off the {interval} ms interval")
+        for t in tasks:
+            if worst is not None and max(abs(t["period_min_us"] - t["interval_us"]), abs(t["period_max_us"] - t["interval_us"])) > JITTER_PERIOD_TOLERANCE * t["interval_us"]:
+                problems.append(f"task {t['id']}: periods from {t['period_min_us']} to {t['period_max_us']} us, outside {JITTER_PERIOD_TOLERANCE:.0%} of {t['interval_us']} us")
         if problems:
             raise AssertionError("; ".join(problems))
-        return f"{self.jitter_seconds} s: no overrun, no deadline miss, every {JITTER_SAMPLE_S} s window within {worst:.3%} of {interval} ms"
+        jitter = max(t["jitter_us"] for t in tasks)
+        return f"{self.jitter_seconds} s: no overrun, no deadline miss, every scan period within {worst:.2%} of {interval} ms (jitter {jitter} us)"
 
     def _fault_leaves_outputs_off(self, program: str, reason: str, **values):
         """Run a program that faults and wait, up to FAULT_WAIT_S on the bench clock, for the runtime to latch a fault.
@@ -462,9 +464,25 @@ class BenchSteps:
     def fatal_fault(self):
         return self._fault_leaves_outputs_off("fault", "vm_fault")
 
+    def drop_link(self) -> None:
+        """Lose the link as a person does: close the port and open it again. On a USB CDC ACM console (the Pico) DTR
+        falls when the host closes the port, and the device ends the session at once (COM-020)."""
+        transport = self.tester.ser
+        if hasattr(transport, "drop_line"):  # a fake board of the tests
+            transport.drop_line()
+            return
+        if getattr(transport, "kind", "") != "serial":
+            raise Unsupported("this device has no port to close")
+        self.reconnect()
+
+    def forces_on(self) -> bool:
+        return '"count":0' not in self.tester.send("zplc dbg force list --json").replace(" ", "")
+
     def stop_and_link_loss(self):
-        """Outputs safe after a commanded STOP with forces active, and after the link goes silent with forces active."""
-        self.deploy_program("idle")
+        """Outputs safe after a commanded STOP with forces active, and after the link is lost with forces active: the
+        console's force belongs to a session (COM-020), which ends when the line falls or, on a console that reports no
+        line, after the idle time; the outputs then follow the program, which holds them low."""
+        self.deploy_program("hold")
         self.tester.send("zplc start")
         self.tester.send(f"zplc dbg force set 0x{OPI:04x} 0f", wait_for="OK:")
         self.wait(0.1)
@@ -474,36 +492,44 @@ class BenchSteps:
         after_stop = self.outputs()
         self.tester.send("zplc dbg force clear_all")
         problems = [] if not after_stop else [f"outputs 0x{after_stop:02x} after STOP with forces active"]
-        link = ShellLink(self.tester)
-        idle = link.idle_seconds()
+        idle = ShellLink(self.tester).idle_seconds()
         self.tester.send("zplc start")
-        link.open_session()
-        link.request("FORCE_SET", OPI.to_bytes(2, "little") + b"\x0f")
+        self.tester.send(f"zplc dbg force set 0x{OPI:04x} 0f", wait_for="OK:")  # a lease of the link's session
         self.wait(0.1)
         forced_link = self.outputs()
-        silent_from = self.now()
-        self.wait(idle + 3)  # the tool says nothing: the device ends the session and releases its forces (COM-020)
-        listed = self.tester.send("zplc dbg force list --json").replace(" ", "")
+        uptime_before = self.status().get("uptime_ms", 0)
+        lost_at = self.now()
+        self.drop_link()
+        released_by, forces_left = "line", self.forces_on()
+        if forces_left:  # a console that reports no line (the ESP32-S3 USB-Serial/JTAG): the idle time is the backstop
+            self.wait(idle + 3)
+            released_by, forces_left = "idle time", self.forces_on()
+        released_ms = round(self.now() - lost_at)
         after_loss = self.outputs()
+        uptime_after = self.status().get("uptime_ms", uptime_before)
+        if uptime_after < uptime_before:
+            released_by = "reset"  # the board restarted when its port was closed: STOP after a reset (RT-022)
         self.stop_and_clear()
         self.measure(
             forced_outputs=forced, outputs_after_stop=after_stop, session_idle_s=idle, forced_by_session=forced_link,
-            silent_ms=round(self.now() - silent_from), outputs_after_link_loss=after_loss, forces_left='"count":0' not in listed,
-            link_loss="the tool fell silent for the session idle time; the shell link has no disconnect detection",
+            released_by=released_by, released_within_ms=released_ms, outputs_after_link_loss=after_loss,
+            forces_left=forces_left, uptime_before_ms=uptime_before, uptime_after_ms=uptime_after,
+            link_loss="the port was closed and opened again; the device ends the session when DTR falls, else after the idle time",
         )
         if forced != 0x0F or forced_link != 0x0F:
             problems.append(f"the forces did not reach the outputs (0x{forced:02x}, 0x{forced_link:02x})")
-        if '"count":0' not in listed or after_loss:
-            problems.append(f"after {idle} s of silence the session's forces are still on (outputs 0x{after_loss:02x})")
+        if forces_left or after_loss:
+            problems.append(f"after the link was lost and {idle} s of silence the session's forces are still on (outputs 0x{after_loss:02x})")
         if problems:
             raise AssertionError("; ".join(problems))
-        return f"outputs off after STOP and after {idle} s of silence on the link, with forces active"
+        return f"outputs off after STOP and after the link was lost with forces active: released by the {released_by} within {released_ms} ms"
 
     def watchdog_reset_time(self):
         """A program that never ends its scan: the hardware watchdog resets the board into STOP, outputs off (RT-020)."""
         options = self.record["firmware"].get("build_options") or {}
-        if options.get("HARDWARE_WATCHDOG") != "y":
-            raise AssertionError("the image under test was built with the hardware watchdog off: the watchdog step needs the HIL build (CONFIG_ZPLC_HARDWARE_WATCHDOG=y)")
+        if options.get("HIL_IMAGE") != "y":
+            watchdog = "with the hardware watchdog on" if options.get("HARDWARE_WATCHDOG") == "y" else "with the hardware watchdog off"
+            raise AssertionError(f"the image under test is not the HIL image ({watchdog}): the record of RT-020 is made on the HIL image variant (CONFIG_ZPLC_HIL_IMAGE=y)")
         timeout = int(options.get("HARDWARE_WATCHDOG_TIMEOUT_MS") or self.board["watchdog"]["timeout_ms"])
         self.deploy_program("hang")
         started = self.now()

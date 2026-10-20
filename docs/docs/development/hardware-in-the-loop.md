@@ -272,12 +272,16 @@ deploys or cuts the power. It runs the blink of the five languages by
 default; `--all-fixtures` adds every fixture tagged for hardware (HIL-005),
 about seven minutes more.
 
-The image under test is the HIL build: the board's build command with
-`-DCONFIG_ZPLC_HARDWARE_WATCHDOG=y`, which the chain prints, because RT-020
-asks for the record to be made with the watchdog on. Today
-`firmware/app/CMakeLists.txt` refuses that option while `boards.json` keeps the
-watchdog off; until the HIL build is allowed, `--no-watchdog-build` prints the
-plain command, and the watchdog step then fails and says why.
+The image under test is the HIL image: the board's build command with
+`-DCONFIG_ZPLC_HIL_IMAGE=y`, which the chain prints, because RT-020 asks for the
+record to be made with the watchdog on. The HIL image turns the hardware watchdog
+on with the timeouts and policies of the board's `boards.json` entry, and says
+what it is: `zplc version` prints a line for it and its build options list
+`HIL_IMAGE=y`, which the handshake records. A build that turns the watchdog on by
+itself is still refused by `firmware/app/CMakeLists.txt`. The HIL image is never a
+release image: the release collection (`scripts/release/firmware-images.ts`) refuses
+a build whose configuration or options name it. `--no-watchdog-build` prints
+the plain command, and the watchdog step then fails and says why.
 
 The RETAIN step needs an image built with `-DCONFIG_ZPLC_RETAIN_PERSIST=y`.
 RETAIN persistence is off in every shipped profile until a board has a hardware
@@ -308,9 +312,9 @@ RST if the board stays in download mode.
 | 12 | Digital loopback | Forces each output on and off alone and reads the inputs | Each input follows its own output, no other moves | Not run yet | Filled in from the emulated records |
 | 13 | Analog read | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0 | Within 5 % of full scale at the ends, 10 % in the middle | Not run yet | Filled in from the emulated records |
 | 14 | Timer accuracy | Runs a TON of 3 s and times its output from RUN with the bench clock | Between 3000 ms minus one scan and 3000 ms plus one scan, 100 ms and two read round trips | Not run yet | Filled in from the emulated records |
-| 15 | Scan jitter, ten minutes | Runs a 10 ms task for ten minutes and reads the runtime's statistics every 30 s | No overrun, no deadline miss, each window's mean period within 1 % | Not run yet | Filled in from the emulated records |
+| 15 | Scan jitter, ten minutes | Runs a 10 ms task for ten minutes and reads the runtime's own measure of every scan: each task's shortest and longest period (`zplc status --json`, `tasks[]`) | No overrun, no deadline miss, every scan period within 20 % of the interval | Not run yet | Filled in from the emulated records |
 | 16 | Overrun | Runs a 1 ms task that drives DO0 and loops for half of the image's VM instruction budget (a scan past the budget latches the VM watchdog fault instead) | The `deadline_miss` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
-| 17 | STOP and link loss with forces | Forces the outputs on and stops; then forces them in a device-link session and falls silent for the session's idle time (30 s by default) | Outputs off after STOP, and the session's forces released after the silence | Not run yet | Filled in from the emulated records |
+| 17 | STOP and link loss with forces | Forces the outputs on and stops; then forces them from the console, in the session of its link, closes the port and opens it again, with a program that holds the outputs low | Outputs off after STOP, and the forces released when the link is lost: by DTR on the Pico, by the idle time (30 s by default) on the ESP32-S3 | Not run yet | Filled in from the emulated records |
 | 18 | Watchdog reset time | Runs a scan that never ends | Reset cause `watchdog`, the reset between 90 % of the timeout and the timeout plus 500 ms, back in STOP with outputs off | Not run yet | Filled in from the emulated records |
 | 19 | Fatal fault | Divides by zero after 20 scans of a program that drives DO0 | The `vm_fault` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
 | 20 | Power cycle and RETAIN | Checks that the image was built with RETAIN persistence, counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board | STOP after power-up, the RETAIN value kept, the program still there | Not run yet | Filled in from the emulated records |

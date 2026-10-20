@@ -22,12 +22,12 @@ export const HIL_RECORD_SCHEMA = 'zplc.hil-record/1';
 export const HARDWARE_LEVEL = 'hardware';
 
 /**
- * The record's `evidence_level`. A record written before the level existed says `evidence`, and only a hardware run
- * wrote one; a record that says neither is read as one of those.
+ * The record's `evidence_level`; a record written before the level existed says `evidence`. A record that says neither
+ * names no level, and never counts as hardware evidence (HIL-009).
  */
 function evidenceLevel(record: Record<string, unknown>): unknown {
   if ('evidence_level' in record) return record.evidence_level;
-  return 'evidence' in record ? record.evidence : HARDWARE_LEVEL;
+  return 'evidence' in record ? record.evidence : undefined;
 }
 
 function asApplicableRecord(boardId: string, value: unknown): { firmwareVersion: string; commit: string; result: 'pass' | 'fail' } | undefined {
