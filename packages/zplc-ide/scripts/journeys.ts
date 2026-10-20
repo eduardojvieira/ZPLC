@@ -3847,7 +3847,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Learn tab', async () => await app.eval<boolean>(`document.querySelector('[data-activity="learn"]')?.getAttribute('aria-current') === 'true'`) || undefined);
       // The lesson of this example is chosen with the arrow keys of the lesson list, as a keyboard user would.
       await reach('the lesson list', `el.closest('[aria-label="Lesson"]') !== null && el.getAttribute('aria-pressed') === 'true'`, 'Tab', 80);
-      await reach('the Safe motor start-stop lesson', `el.textContent.trim().startsWith('Safe motor start-stop')`, 'ArrowRight', 6);
+      // The lesson list follows the course order, so the number of presses is bounded by the lessons that come before this one.
+      await reach('the Safe motor start-stop lesson', `el.textContent.trim().startsWith('Safe motor start-stop')`, 'ArrowRight', courseOrder(LESSON_INDEX).findIndex(({ id }) => id === 'motor-start-stop-safe'));
       await app.press('Enter');
       await app.until('the Safe motor start-stop lesson to be chosen', async () => await app.eval<boolean>(`document.getElementById('learn-title')?.textContent?.trim() === 'Safe motor start-stop'`) || undefined);
       await app.until('the Check button to be enabled', async () => await isEnabled('[data-learn-check]') || undefined);
