@@ -409,8 +409,10 @@ config ZPLC_RETAIN_PERSIST
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
       Off by default: the flash write path has been exercised on native_sim and
-      QEMU only, and on several boards the storage partition is also used by
-      another file system. Turn it on for a board once that board has passed its
+      QEMU only. The records have a partition of their own on every board
+      (zplc_nvs_partition, or storage_partition where no file system is built;
+      tools/hil/check_storage_partitions.py checks every build), but no board
+      has been measured. Turn it on for a board once that board has passed its
       hardware record (HIL-010).
 
       Restores the RETAIN region when a program is loaded or restored at boot,
@@ -420,7 +422,8 @@ config ZPLC_RETAIN_PERSIST
       the identity and the layout match; otherwise the region is initialised and
       the status says why. The stores go through zplc_hal_persist_*, so this
       needs a working persistence backend (CONFIG_NVS on the boards of this
-      repository).
+      repository, CONFIG_ZMS on the Nucleo-H743ZI, whose flash sectors are
+      above the 64 KB that NVS accepts).
 
       Periodic saves run on the normal-priority scheduler work queue, never in
       the scan batch and never with the memory lock held. Whether a flash write
