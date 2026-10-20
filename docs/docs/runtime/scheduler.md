@@ -227,7 +227,7 @@ Each board's profile (`watchdog` in `boards.json`) says whether its hardware wat
 
 - It is fed from the completion of a scan, never from a timer, an interrupt, the shell or the idle thread. A scan that stalls stops the feed and the watchdog resets the board.
 - Its timeout is the profile's, made longer when the task set needs it: more than two intervals of the slowest task, up to the longest the part accepts. A task set that does not fit is refused when it is started.
-- The default policy is **disarmed in STOP**, **fed from the control path while paused** (so a long breakpoint does not reset the board) and **left to expire in a latched fault**: the board resets into STOP with the cause recorded, and the record of the fault survives the reset. A part whose watchdog cannot be stopped is profiled to feed in STOP.
+- The default policy is **disarmed in STOP**, **fed from the control path while paused** (so a long breakpoint does not reset the board; feeding the watchdog does not hold the outputs, which are driven to their safe state while paused, and only the output image keeps the state of the paused scan) and **left to expire in a latched fault**: the board resets into STOP with the cause recorded, and the record of the fault survives the reset. A part whose watchdog cannot be stopped is profiled to feed in STOP.
 
 ### Evidence and what is not shown
 

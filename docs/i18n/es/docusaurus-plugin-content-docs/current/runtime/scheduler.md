@@ -228,7 +228,7 @@ El perfil de cada placa (`watchdog` en `boards.json`) dice si su watchdog de har
 
 - Se alimenta desde la finalización de un ciclo, nunca desde un temporizador, una interrupción, el shell o el hilo ocioso. Un ciclo que se detiene corta la alimentación y el watchdog reinicia la placa.
 - Su tiempo de espera es el del perfil, alargado cuando el conjunto de tareas lo necesita: más de dos intervalos de la tarea más lenta, hasta el máximo que acepta el componente. Un conjunto de tareas que no cabe se rechaza al iniciarlo.
-- La política por defecto es **desarmado en STOP**, **alimentado desde la ruta de control en pausa** (para que un punto de parada largo no reinicie la placa) y **dejado expirar en una falla retenida**: la placa se reinicia en STOP con la causa registrada, y el registro de la falla sobrevive al reset. Un componente cuyo watchdog no se puede detener se perfila para alimentarse en STOP.
+- La política por defecto es **desarmado en STOP**, **alimentado desde la ruta de control en pausa** (para que un punto de parada largo no reinicie la placa; alimentar el watchdog no mantiene las salidas, que se llevan a su estado seguro mientras dura la pausa, y solo la imagen de salidas conserva el estado del ciclo detenido) y **dejado expirar en una falla retenida**: la placa se reinicia en STOP con la causa registrada, y el registro de la falla sobrevive al reset. Un componente cuyo watchdog no se puede detener se perfila para alimentarse en STOP.
 
 ### Evidencia y lo que no se muestra
 
