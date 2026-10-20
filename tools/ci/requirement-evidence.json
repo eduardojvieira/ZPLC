@@ -1372,6 +1372,7 @@
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"A real processor fault, a real reboot, and the record after it (RT-019, RT-021)."}
   ],
   "RT-020": [
+    {"kind":"unit","ref":"scripts/release/firmware-images.test.ts","test":"never accepts the HIL image of the RT-020 record run, from the configuration or from the options the image reports"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"The hardware watchdog of a profile that has one (RT-020)."}
   ],
   "RT-021": [
