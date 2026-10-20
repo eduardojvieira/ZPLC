@@ -41,7 +41,7 @@ diez minutos desde el primer inicio. Cuando **Comenzar el curso** la haya abiert
 elija **Compilación** y luego **Compilar** en la barra de herramientas, después
 **Conectar** y **Ejecutar**: el programa se ejecuta en el simulador de su equipo.
 **Ejecutar** permanece desactivado hasta que el programa se compila. Abra la
-pestaña **Observación**: el panel **E/S en vivo** enumera las salidas del programa, y la
+pestaña **Observación**: el [panel **E/S en vivo**](./faceplate.md) enumera las salidas del programa, y la
 lámpara de la lección se enciende y se apaga.
 
 Toda lección de nivel Fundamentos o Intermedio se puede completar de esta manera,

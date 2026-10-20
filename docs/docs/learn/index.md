@@ -39,7 +39,7 @@ The first lesson ends in a blinking output in simulation, within ten minutes of
 the first launch. When **Start the course** has opened it, choose **Build** and
 then **Compile** on the toolbar, then **Connect** and **Run**: the program runs in
 the simulator on your computer. **Run** stays disabled until the program is built.
-Open the **Watch** tab: the **Live I/O** faceplate lists the outputs of the program, and the
+Open the **Watch** tab: the [**Live I/O** faceplate](./faceplate.md) lists the outputs of the program, and the
 lamp of the lesson turns on and off.
 
 Every Foundation and Intermediate lesson can be completed in this way, with no
