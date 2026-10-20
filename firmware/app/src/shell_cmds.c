@@ -4617,6 +4617,140 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 #endif
 
+#ifdef CONFIG_ZPLC_IO_TRACE
+#include <zplc_io_trace.h>
+
+/* LRN-024: the per-scan I/O trace of the board (zplc_io_trace.h), for the hardware check of a Learn lesson. Every
+ * answer is one JSON object; a trailing --json is accepted, as Studio's JSON commands add it. The trace only reads:
+ * none of these commands writes PLC memory, forces, or starts or stops the program. */
+static int trace_arg_u32(const char *text, uint32_t *out) {
+  char *end = NULL;
+  unsigned long value;
+
+  if (text == NULL || text[0] < '0' || text[0] > '9') {
+    return -EINVAL;
+  }
+  value = strtoul(text, &end, 10);
+  if (end == NULL || *end != '\0' || value > UINT32_MAX) {
+    return -EINVAL;
+  }
+  *out = (uint32_t)value;
+  return 0;
+}
+
+static void trace_print_status(const struct shell *sh) {
+  zplc_io_trace_status_t status;
+
+  zplc_io_trace_get_status(zplc_io_trace_board(), &status);
+  shell_print(sh,
+              "{\"t\":\"trace\",\"available\":%s,\"armed\":%s,\"capacity\":%u,\"in_bytes\":%u,\"out_bytes\":%u,"
+              "\"written\":%u,\"first\":%u,\"max_io_bytes\":%u,\"buffer_bytes\":%u}",
+              status.fed != 0U ? "true" : "false", status.armed != 0U ? "true" : "false",
+              (unsigned int)status.capacity, (unsigned int)status.in_bytes, (unsigned int)status.out_bytes,
+              (unsigned int)status.written, (unsigned int)status.first, (unsigned int)ZPLC_IO_TRACE_MAX_IO_BYTES,
+              (unsigned int)status.storage_size);
+}
+
+static int cmd_dbg_trace_status(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  trace_print_status(sh);
+  return 0;
+}
+
+static int cmd_dbg_trace_arm(const struct shell *sh, size_t argc, char **argv) {
+  uint32_t capacity;
+  uint32_t in_bytes;
+  uint32_t out_bytes;
+  int rc;
+
+  ARG_UNUSED(argc);
+  if (trace_arg_u32(argv[1], &capacity) != 0 || trace_arg_u32(argv[2], &in_bytes) != 0 ||
+      trace_arg_u32(argv[3], &out_bytes) != 0 || in_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES ||
+      out_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES) {
+    shell_error(sh, "ERROR: usage: dbg trace arm <capacity> <in_bytes> <out_bytes>, at most %u bytes each",
+                (unsigned int)ZPLC_IO_TRACE_MAX_IO_BYTES);
+    return -EINVAL;
+  }
+  rc = zplc_io_trace_arm(zplc_io_trace_board(), capacity, (uint16_t)in_bytes, (uint16_t)out_bytes);
+  if (rc == ZPLC_IO_TRACE_ERR_UNFED) {
+    shell_error(sh, "ERROR: no scheduler feeds the I/O trace on this build");
+    return -ENOTSUP;
+  }
+  if (rc < 0) {
+    shell_error(sh, "ERROR: the I/O trace cannot hold that capacity or sample");
+    return -EINVAL;
+  }
+  trace_print_status(sh);
+  return 0;
+}
+
+/* At most this many samples per dump: one line of about 5 KB with the widest samples. */
+#define TRACE_DUMP_MAX 32U
+
+static int cmd_dbg_trace_dump(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_io_trace_t *trace = zplc_io_trace_board();
+  zplc_io_trace_status_t status;
+  zplc_io_trace_sample_t sample;
+  uint32_t from;
+  uint32_t count;
+  uint32_t end;
+  uint32_t seq;
+
+  ARG_UNUSED(argc);
+  if (trace_arg_u32(argv[1], &from) != 0 || trace_arg_u32(argv[2], &count) != 0 || count == 0U ||
+      count > TRACE_DUMP_MAX) {
+    shell_error(sh, "ERROR: usage: dbg trace dump <from> <count>, count 1 to %u", (unsigned int)TRACE_DUMP_MAX);
+    return -EINVAL;
+  }
+  zplc_io_trace_get_status(trace, &status);
+  /* A reader that fell behind starts at the oldest sample held: the from it gets back says how many it lost. */
+  if (from < status.first) {
+    from = status.first;
+  }
+  if (from > status.written) {
+    from = status.written;
+  }
+  end = status.written - from > count ? from + count : status.written;
+  shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"trace_dump\",\"from\":%u,\"samples\":[", (unsigned int)from);
+  for (seq = from; seq < end; ++seq) {
+    if (zplc_io_trace_get(trace, seq, &sample) != 0) {
+      break; /* overwritten while it was read: the next dump starts at the oldest sample held */
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "%s[%u,%u,\"", seq == from ? "" : ",", (unsigned int)sample.t_us,
+                  (unsigned int)sample.batch);
+    for (uint32_t b = 0U; b < status.in_bytes; ++b) {
+      shell_fprintf(sh, SHELL_NORMAL, "%02X", sample.in[b]);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\",\"");
+    for (uint32_t b = 0U; b < status.out_bytes; ++b) {
+      shell_fprintf(sh, SHELL_NORMAL, "%02X", sample.out[b]);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\"]");
+  }
+  shell_fprintf(sh, SHELL_NORMAL, "],\"next\":%u}\n", (unsigned int)seq);
+  return 0;
+}
+
+static int cmd_dbg_trace_clear(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  zplc_io_trace_clear(zplc_io_trace_board());
+  trace_print_status(sh);
+  return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_dbg_trace,
+    SHELL_CMD_ARG(arm, NULL, "Arm the I/O trace: dbg trace arm <capacity> <in_bytes> <out_bytes>", cmd_dbg_trace_arm, 4,
+                  1),
+    SHELL_CMD_ARG(status, NULL, "State of the I/O trace (JSON)", cmd_dbg_trace_status, 1, 1),
+    SHELL_CMD_ARG(dump, NULL, "Samples of the I/O trace (JSON): dbg trace dump <from> <count>", cmd_dbg_trace_dump, 3,
+                  1),
+    SHELL_CMD_ARG(clear, NULL, "Disarm and empty the I/O trace", cmd_dbg_trace_clear, 1, 1),
+    SHELL_SUBCMD_SET_END);
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg, 
     SHELL_CMD(pause, NULL, "Pause VM execution", cmd_dbg_pause),
@@ -4635,6 +4769,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(task, NULL, "Task info", cmd_dbg_task, 2, 1),
     SHELL_CMD_ARG(watch, NULL, "Read a typed value: dbg watch <addr> [type]", cmd_dbg_watch, 2, 1),
     SHELL_CMD_ARG(timer, NULL, "Timer instance state: dbg timer <addr>", cmd_dbg_timer, 2, 0),
+#ifdef CONFIG_ZPLC_IO_TRACE
+    SHELL_CMD(trace, &sub_dbg_trace, "Per-scan trace of the I/O images (Learn hardware check)", NULL),
+#endif
     SHELL_SUBCMD_SET_END);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
