@@ -43,6 +43,7 @@
 #include <zplc_exchange.h>
 #include <zplc_failsafe.h>
 #include <zplc_hal.h>
+#include <zplc_io_trace.h>
 #include <zplc_isa.h>
 #include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
@@ -1734,6 +1735,10 @@ int zplc_sched_init(void) {
   /* Clear the task table; the state becomes IDLE: the scheduler is initialized. */
   memset(vms, 0, sizeof(vms));
   zplc_sched_core_init(&core, slots, CONFIG_ZPLC_MAX_TASKS, ZPLC_DEADLINE_MISS_LIMIT);
+#ifdef CONFIG_ZPLC_IO_TRACE
+  /* LRN-024: the per-scan I/O trace of the board is fed by the core at the end of every scan. */
+  zplc_sched_core_set_trace(&core, zplc_io_trace_sched_hook, zplc_io_trace_attach(zplc_io_trace_board()));
+#endif
 
   zplc_hal_log("[SCHED] Scheduler initialized\n");
 
