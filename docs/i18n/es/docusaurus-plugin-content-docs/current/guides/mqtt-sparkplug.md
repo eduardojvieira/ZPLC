@@ -27,10 +27,10 @@ aplicación anfitriona Sparkplug B.
 ## Qué necesita
 
 - Una placa con interfaz de red, y un broker que usted opere o en el que confíe. El
-  simulador de Studio no tiene broker ni sesión MQTT: inicia el runtime nativo sin los
+  simulador de ZPLC no tiene broker ni sesión MQTT: inicia el runtime nativo sin los
   bloques de comunicación. Ese runtime puede ejecutar los bloques MQTT contra un broker
   cuando se inicia con `ZPLC_NATIVE_COMM=1` y `ZPLC_NATIVE_MQTT_BROKER`
-  ([En simulación](../runtime/communication-function-blocks.md#en-simulación)); Studio
+  ([En simulación](../runtime/communication-function-blocks.md#en-simulación)); ZPLC
   todavía no lo inicia así.
 - El certificado de la CA del broker en el dispositivo, porque un controlador que
   nunca se configuró usa TLS en el puerto 8883 y comprueba el certificado del
@@ -111,7 +111,7 @@ que lo permite muestra `tls-verify: OFF` en el estado
 
 ## 3. Lleve los ajustes y el certificado a la placa
 
-Aprovisionar una placa es una acción humana en Studio, que envía estos ajustes por
+Aprovisionar una placa es una acción humana en ZPLC, que envía estos ajustes por
 el enlace serie. Puede comprobar lo que tiene el dispositivo con la consola:
 
 ```bash
@@ -167,7 +167,7 @@ Code := Send.STATUS;
 END_PROGRAM
 ```
 
-En el simulador de Studio el runtime no tiene manejador para el bloque, así que termina
+En el simulador de ZPLC el runtime no tiene manejador para el bloque, así que termina
 con `ERROR` en TRUE y `STATUS` 3: demuestra que el bloque compila e informa un estado, no
 que un mensaje se haya entregado. Con los bloques de comunicación activos y sin broker
 nombrado, el bloque responde `STATUS` 10 (no disponible). `STATUS` 4 significa que la

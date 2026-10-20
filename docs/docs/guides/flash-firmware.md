@@ -9,7 +9,7 @@ tags: [how-to, hardware, firmware]
 
 # Flash the firmware
 
-Flashing writes the ZPLC runtime to a board. **You start it.** Studio's assistant and
+Flashing writes the ZPLC runtime to a board. **You start it.** ZPLC's assistant and
 the MCP server never flash, deploy, force, start or stop a device, and nothing on
 this page does it for you. Building the image, flashing it, deploying a program and
 running it are four separate operations ([Deployment](../ide/deployment.md)).
@@ -28,7 +28,7 @@ A release of the pipeline carries one image of the runtime for every board of th
 manifest, named `zplc-runtime-<version>-<board>.<ext>`, with the checksums in
 `SHA256SUMS` and a manifest, `zplc-runtime-<version>.manifest.json`, that names for
 each image the flash runner, the address it is written to and the evidence level of the
-board. The installers of Studio carry the images of the two learner boards: **Project
+board. The installers of ZPLC carry the images of the two learner boards: **Project
 settings**, **Target** shows the file, its SHA-256 and these steps. Until the first
 release that has them, build the image yourself with the steps of
 [Your first board](../tutorials/first-board.md#1-get-the-firmware).
@@ -52,7 +52,7 @@ sha256sum --check --ignore-missing SHA256SUMS
 ## 2. Raspberry Pi Pico and Waveshare RP2040-Zero: download and boot mode
 
 The RP2040 boot ROM shows the board as a USB drive when it starts in boot mode, and
-takes a UF2 file copied to it. You do every step: Studio never writes a board.
+takes a UF2 file copied to it. You do every step: ZPLC never writes a board.
 
 1. Unplug the board. Hold its BOOT button (BOOTSEL on the Pico) and, with the button
    held, plug in the USB cable. Release the button.
@@ -74,7 +74,7 @@ download mode. The image is for the N8R8 board (8 MB flash, 8 MB octal PSRAM): i
 not start on the N8 or the N8R2 ([Board reference](../reference/boards.md)).
 
 1. Plug the cable into the port marked **USB**, the ESP32-S3's own USB port, not the one
-   marked UART: the ZPLC console and the connection of Studio use the **USB** port. On
+   marked UART: the ZPLC console and the connection of the ZPLC application use the **USB** port. On
    Linux it is `/dev/ttyACM<n>`, on macOS `/dev/cu.usbmodem<n>`, on Windows a `COM<n>`
    port.
 2. Hold BOOT, press and release RST, and release BOOT. The board is in download mode.
@@ -123,7 +123,7 @@ profile: [Recovery boundaries](../operations/recovery.md).
 
 Open the serial console of the board and run `zplc version`: it prints the version,
 the commit, the board and the build options of the image. They must be the ones of the
-file you wrote. Then [connect Studio](../tutorials/first-board.md#3-connect-zplc).
+file you wrote. Then [connect ZPLC](../tutorials/first-board.md#3-connect-zplc).
 
 ## What is verified, and what is not
 

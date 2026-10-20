@@ -28,12 +28,12 @@ at its interface parameters only.
   (Wi-Fi or Ethernet), and Modbus RTU needs a serial interface that the board's
   profile provides. [Hardware support](../reference/capabilities-evidence.md) lists
   the boards and their network class.
-- A project, in Studio or by hand. Studio's simulator starts the native runtime
+- A project, in ZPLC or by hand. The ZPLC simulator starts the native runtime
   without the communication blocks, so a Modbus block answers `STATUS` 3 there: the
-  program is written and checked in Studio, and the exchange is possible on a board.
+  program is written and checked in ZPLC, and the exchange is possible on a board.
   The native runtime can also run the Modbus TCP client against a server on the
   loopback interface ([In simulation](../runtime/communication-function-blocks.md#in-simulation));
-  Studio does not start those endpoints yet.
+  ZPLC does not start those endpoints yet.
 
 ## Make the controller a server
 
@@ -71,7 +71,7 @@ of the Modbus world:
 In the example, `Pressure` is the holding register at address 0 and `PumpRun` is the
 coil at address 1. Keep the ranges of two variables of the same area apart.
 
-In Studio you can make the same bindings without editing the source: the
+In ZPLC you can make the same bindings without editing the source: the
 **Communication** section of **Project Settings** lists them as **Communication
 Tags**, and each one is a `communication.bindings` entry of `zplc.json`. A tag has an
 area and an address on the wire, and the build writes the number of the table: a holding
@@ -101,12 +101,12 @@ register at address 5 is `{modbus:40006}`.
 ```
 
 The documentation check merges this fragment into a project and builds it, so it
-is a configuration that Studio accepts. `unitId` is the Modbus unit identifier, 1
+is a configuration that ZPLC accepts. `unitId` is the Modbus unit identifier, 1
 to 247. Turn on only the interfaces you use.
 
 ### 3. Put the settings on the board
 
-Provisioning a board is a human action in Studio: it sends the settings of the
+Provisioning a board is a human action in ZPLC: it sends the settings of the
 project to the device over the serial link. These are the commands it sends for
 the fragment above, which you can also type in the device shell:
 
@@ -161,7 +161,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-In Studio's simulator the runtime has no handler for the block, so it ends with
+In the ZPLC simulator the runtime has no handler for the block, so it ends with
 `ERROR` TRUE and `STATUS` 3. That proves that the block compiles, runs and reports a
 status; the exchange with a device is possible on a board. Read `STATUS` after
 `ERROR`: 0 is OK, 2 a timeout, 4 not connected, 5 every request slot in use, 6 invalid
@@ -185,7 +185,7 @@ The block follows the one handshake of the twelve communication blocks
 
 On the native runtime started with `ZPLC_NATIVE_COMM=1`, with a Modbus TCP server on the
 loopback interface, the same program makes the request; a Modbus RTU request there, with
-no serial device, answers `STATUS` 10. Studio does not start that configuration or the
+no serial device, answers `STATUS` 10. ZPLC does not start that configuration or the
 endpoints yet.
 
 ## What is verified, and what is not

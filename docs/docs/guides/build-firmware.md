@@ -10,7 +10,7 @@ tags: [how-to, hardware, firmware]
 # Build the firmware from source
 
 Building produces a runtime image for one board. It is a separate step from
-[flashing](./flash-firmware.md), deploying and running, and **you start each of those**: Studio's
+[flashing](./flash-firmware.md), deploying and running, and **you start each of those**: ZPLC's
 assistant and the MCP server never flash, deploy, force, start or stop a device.
 
 :::caution Authored, executed on a host only where stated

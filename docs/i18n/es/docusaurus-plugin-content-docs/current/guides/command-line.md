@@ -3,16 +3,16 @@ slug: /guides/command-line
 id: command-line
 title: Usar la línea de comandos
 sidebar_label: Línea de comandos
-description: "Valide, compile y pruebe un proyecto desde una terminal o un trabajo de CI con zplc-cli, las mismas operaciones que usan Studio y el servidor MCP."
+description: "Valide, compile y pruebe un proyecto desde una terminal o un trabajo de CI con zplc-cli, las mismas operaciones que usan la aplicación ZPLC y el servidor MCP."
 tags: [how-to, cli, ci]
 ---
 
 # Usar la línea de comandos
 
 `zplc-cli` ejecuta desde una terminal las operaciones de la API de herramientas de
-ZPLC: las mismas que usan Studio y el servidor MCP, con el mismo resultado. Úsela en
+ZPLC: las mismas que usan la aplicación ZPLC y el servidor MCP, con el mismo resultado. Úsela en
 un script o en un trabajo de integración continua para validar un proyecto,
-compilarlo y ejecutar sus pruebas de escenario sin abrir Studio.
+compilarlo y ejecutar sus pruebas de escenario sin abrir la aplicación ZPLC.
 
 :::note Lo que nunca hace
 `zplc-cli` nunca graba una placa, despliega un programa, fuerza un valor ni inicia o
@@ -85,7 +85,7 @@ ejecuta un escenario por su `id`. El runtime debe estar construido
 | `zplc-cli migrate-preview <workspace>` | Muestra qué cambiaría migrar un archivo de proyecto de versión 1 a versión 2 |
 | `zplc-cli migrate <workspace> --output <file>` | Escribe el archivo de proyecto de versión 2 que produce la migración |
 | `zplc-cli toolchain-inspect <repository>` | Informa qué requisitos de compilación de firmware tiene una copia del repositorio |
-| `zplc-cli firmware-build <repository> <ide-id>` | Una compilación cruzada local del firmware de una placa, nombrada por su identificador de Studio |
+| `zplc-cli firmware-build <repository> <ide-id>` | Una compilación cruzada local del firmware de una placa, nombrada por su identificador en la aplicación ZPLC |
 
 ## En un script
 
@@ -105,7 +105,7 @@ opción y código de salida, leídos de la fuente.
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | Los comandos imprimen lo que dice esta página y salen como ella dice | Los comandos se ejecutaron sobre el ejemplo para esta página; pruebas unitarias cubren cada operación | Host |
-| Un escenario da el mismo resultado desde la línea de comandos, Studio y el servidor MCP | Una prueba ejecuta cada proyecto incluido, cada escenario por separado, por los tres | Host |
+| Un escenario da el mismo resultado desde la línea de comandos, la aplicación ZPLC y el servidor MCP | Una prueba ejecuta cada proyecto incluido, cada escenario por separado, por los tres | Host |
 | El ejecutable independiente funciona sin Bun, Node ni copia del repositorio | Una prueba lo construye y lo ejecuta sin ningún entorno JavaScript en la ruta | Host |
 | `firmware-build` produce una imagen que se ejecuta | No probado: es una compilación cruzada | Ninguno |
 

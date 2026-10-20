@@ -3,7 +3,7 @@ slug: /guides/project-archive
 id: project-archive
 title: Exportar e importar un archivo de proyecto
 sidebar_label: Archivos de proyecto
-description: "Lleve un proyecto a otro equipo como un solo archivo y abra un proyecto que alguien le envió, con las comprobaciones que hace Studio antes de escribir nada."
+description: "Lleve un proyecto a otro equipo como un solo archivo y abra un proyecto que alguien le envió, con las comprobaciones que hace ZPLC antes de escribir nada."
 tags: [how-to, projects, archive]
 ---
 
@@ -16,7 +16,7 @@ mismo proyecto byte por byte.
 ## Exportar
 
 1. Guarde los archivos modificados del proyecto: el archivo contiene los ficheros
-   como están en el disco, así que Studio le pide guardar antes.
+   como están en el disco, así que ZPLC le pide guardar antes.
 2. Abra el menú **Compilación** de la barra de herramientas y elija **Export Project
    Archive**.
 3. Elija dónde escribir el archivo en el diálogo de guardado del sistema.
@@ -43,15 +43,15 @@ configuración sin sus secretos. Ese documento es para leer; no se importa.
    archivo. Todavía no se escribe nada: un diálogo dice qué contiene el archivo (sus
    archivos, carpetas y tamaño), de quién es el proyecto y, para un proyecto de
    versión 1, las líneas que cambia su migración en `zplc.json`.
-2. Elija **Elegir una carpeta e importar** y seleccione una carpeta vacía. Studio
+2. Elija **Elegir una carpeta e importar** y seleccione una carpeta vacía. ZPLC
    escribe allí los archivos byte por byte y abre el proyecto.
 
 Una carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta
 vacía de nuevo.
 
-## Qué rechaza Studio
+## Qué rechaza ZPLC
 
-Studio lee archivos que escribieron otras herramientas, almacenados o comprimidos, y
+ZPLC lee archivos que escribieron otras herramientas, almacenados o comprimidos, y
 rechaza uno que contenga una ruta absoluta, un `..`, un nombre que dos sistemas leen
 de forma distinta, un enlace, una entrada cifrada, dos archivos que difieren solo en
 mayúsculas, un archivo que no coincide con su suma de verificación, más de 4096
@@ -68,5 +68,5 @@ rechazado no se escribe nada.
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#archivos-de-proyecto): la descripción completa.
+- [Banco de trabajo de ZPLC](../ide/features.md#archivos-de-proyecto): la descripción completa.
 - [Migrar un proyecto de la versión 1](../ide/migration-v1-to-v2.md): qué muestra la importación para un proyecto antiguo.

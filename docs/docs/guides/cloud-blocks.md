@@ -132,7 +132,7 @@ Code := Register.STATUS;
 END_PROGRAM
 ```
 
-In Studio's simulator the runtime has no handler for the block, so it ends with `ERROR`
+In the ZPLC simulator the runtime has no handler for the block, so it ends with `ERROR`
 TRUE and `STATUS` 3. With the communication blocks on, every cloud block answers
 `STATUS` 10 (not available), because the simulation has no cloud service. The
 documentation check runs this, which proves that the block compiles and reports a status,

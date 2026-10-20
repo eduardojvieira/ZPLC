@@ -75,7 +75,7 @@ tabla de forzados. No deje un forzado en un controlador que nadie vigila.
 ## Qué está verificado y qué no
 
 Una fuerza siempre pertenece a una sesión (COM-020). Una fuerza escrita en la
-consola abre la sesión del enlace de la consola, o se une a la que Studio tiene en
+consola abre la sesión del enlace de la consola, o se une a la que la aplicación ZPLC tiene en
 él, y termina con ella: cuando la sesión se cierra o se toma, después del tiempo
 de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por omisión; otro comando
 de fuerza cuenta como actividad), y al instante cuando se pierde el enlace. En una
@@ -99,6 +99,6 @@ programa.
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#es-en-vivo): el faceplate de E/S en vivo y el límite de la depuración.
+- [Banco de trabajo de ZPLC](../ide/features.md#es-en-vivo): el faceplate de E/S en vivo y el límite de la depuración.
 - [La consola de ZPLC](../operations/shell.md): todos los comandos de depuración.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

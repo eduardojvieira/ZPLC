@@ -29,12 +29,12 @@ maestro de terceros, y el cliente RTU solo se comprobó en sus parámetros de in
   (Wi-Fi o Ethernet), y Modbus RTU necesita una interfaz serie que ofrezca el perfil
   de la placa. [Soporte de hardware](../reference/capabilities-evidence.md) enumera
   las placas y su clase de red.
-- Un proyecto, en Studio o a mano. El simulador de Studio inicia el runtime nativo sin
+- Un proyecto, en ZPLC o a mano. El simulador de ZPLC inicia el runtime nativo sin
   los bloques de comunicación, así que allí un bloque Modbus responde `STATUS` 3: el
-  programa se escribe y se revisa en Studio, y el intercambio es posible en una placa.
+  programa se escribe y se revisa en ZPLC, y el intercambio es posible en una placa.
   El runtime nativo también puede ejecutar el cliente Modbus TCP contra un servidor en la
   interfaz de loopback ([En simulación](../runtime/communication-function-blocks.md#en-simulación));
-  Studio todavía no inicia esos extremos.
+  ZPLC todavía no inicia esos extremos.
 
 ## Convierta el controlador en servidor
 
@@ -72,7 +72,7 @@ notación del mundo Modbus:
 En el ejemplo, `Pressure` es el registro de retención de la dirección 0 y `PumpRun` es la
 bobina de la dirección 1. Mantenga separados los rangos de dos variables de la misma área.
 
-En Studio puede hacer los mismos vínculos sin editar el código: la sección
+En ZPLC puede hacer los mismos vínculos sin editar el código: la sección
 **Comunicación** de **Project Settings** los enumera como **Etiquetas de comunicación**, y
 cada uno es una entrada `communication.bindings` de `zplc.json`. Una etiqueta
 tiene un área y una dirección en el cable, y la compilación escribe el número de la tabla:
@@ -102,12 +102,12 @@ un registro de retención en la dirección 5 es `{modbus:40006}`.
 ```
 
 La verificación de la documentación combina este fragmento con un proyecto y lo
-compila, por lo que es una configuración que Studio acepta. `unitId` es el
+compila, por lo que es una configuración que ZPLC acepta. `unitId` es el
 identificador de unidad Modbus, de 1 a 247. Active solo las interfaces que use.
 
 ### 3. Lleve los ajustes a la placa
 
-Aprovisionar una placa es una acción humana en Studio: envía los ajustes del
+Aprovisionar una placa es una acción humana en ZPLC: envía los ajustes del
 proyecto al dispositivo por el enlace serie. Estos son los comandos que envía para
 el fragmento anterior, que también puede escribir en la consola del dispositivo:
 
@@ -163,7 +163,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-En el simulador de Studio el runtime no tiene manejador para el bloque, así que termina
+En el simulador de ZPLC el runtime no tiene manejador para el bloque, así que termina
 con `ERROR` en TRUE y `STATUS` 3. Eso demuestra que el bloque compila, se ejecuta e
 informa un estado; el intercambio con un dispositivo es posible en una placa. Lea
 `STATUS` después de `ERROR`: 0 es correcto, 2 tiempo de espera agotado, 4 sin conexión,
@@ -189,7 +189,7 @@ El bloque sigue el único handshake de los doce bloques de comunicación
 
 En el runtime nativo iniciado con `ZPLC_NATIVE_COMM=1`, con un servidor Modbus TCP en la
 interfaz de loopback, el mismo programa hace la solicitud; una solicitud Modbus RTU allí,
-sin dispositivo serie, responde `STATUS` 10. Studio todavía no inicia esa configuración ni
+sin dispositivo serie, responde `STATUS` 10. ZPLC todavía no inicia esa configuración ni
 los extremos.
 
 ## Qué está verificado y qué no

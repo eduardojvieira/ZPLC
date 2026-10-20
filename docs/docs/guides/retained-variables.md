@@ -48,7 +48,7 @@ same program is loaded again:
 1. Build the project and run it in the simulator, as in
    [Blink without hardware](../tutorials/blink-without-hardware.md).
 2. Press **Stop**. The region is stored with the values of the last complete scan.
-3. Press **Run** again, or close and reopen Studio and run the same program. The
+3. Press **Run** again, or close and reopen ZPLC and run the same program. The
    counter continues from the value it had.
 
 The simulator keeps its store in the `.zplc` folder of your home directory, unless

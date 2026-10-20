@@ -3,7 +3,7 @@ slug: /guides/scenario-tests
 id: scenario-tests
 title: Escribir y ejecutar pruebas de escenario
 sidebar_label: Pruebas de escenario
-description: "Compruebe lo que hace un programa con un escenario guionado: escriba el archivo, ejecútelo en Studio o desde la línea de comandos y lea el resultado."
+description: "Compruebe lo que hace un programa con un escenario guionado: escriba el archivo, ejecútelo en ZPLC o desde la línea de comandos y lea el resultado."
 tags: [how-to, tests, scenarios, simulation]
 ---
 
@@ -79,7 +79,7 @@ arriba, de modo que es un escenario que pasa.
 
 ## 3. Ejecútelo
 
-**En Studio**, abra la pestaña **Pruebas** y presione **Ejecutar escenarios en el host**. Cada
+**En ZPLC**, abra la pestaña **Pruebas** y presione **Ejecutar escenarios en el host**. Cada
 escenario aparece como aprobado o fallido, con sus aserciones y el instante de cada
 una. Una aserción fallida muestra el instante, el valor esperado y el valor
 observado.
@@ -100,7 +100,7 @@ incluida `--json` para un resultado legible por máquina.
 ## 4. Hágalo útil
 
 - **Declare lo que nunca debe ocurrir** con `NEVER`: para dos salidas que no deben
-  estar activas a la vez, afírmelo. La pestaña **Enclavamientos** de Studio enumera cada
+  estar activas a la vez, afírmelo. La pestaña **Enclavamientos** de ZPLC enumera cada
   par que usted declaró en `safety.incompatibleOutputs` como cubierto o no, a partir
   de sus expectativas `NEVER`.
 - **Compruebe un flanco** con `RISING` y `FALLING` en lugar de un nivel, cuando

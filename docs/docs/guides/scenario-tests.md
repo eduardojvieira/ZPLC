@@ -3,7 +3,7 @@ slug: /guides/scenario-tests
 id: scenario-tests
 title: Write and run scenario tests
 sidebar_label: Scenario tests
-description: "Check what a program does with a scripted scenario: write the file, run it in Studio or from the command line, and read the result."
+description: "Check what a program does with a scripted scenario: write the file, run it in ZPLC or from the command line, and read the result."
 tags: [how-to, tests, scenarios, simulation]
 ---
 
@@ -78,7 +78,7 @@ scenario that passes.
 
 ## 3. Run it
 
-**In Studio**, open the **Tests** tab and press **Run host scenarios**. Each
+**In ZPLC**, open the **Tests** tab and press **Run host scenarios**. Each
 scenario is listed as passed or failed, with its assertions and the time of each.
 A failed assertion shows the instant, the value it expected and the value it
 observed.
@@ -99,7 +99,7 @@ assertion, and exits with 0 on a pass and 1 on a failure. To run one scenario by
 ## 4. Make it useful
 
 - **State what must never happen** with `NEVER`: for two outputs that must not be
-  on together, assert it. The **Interlocks** tab of Studio lists each pair you
+  on together, assert it. The **Interlocks** tab of ZPLC lists each pair you
   declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER`
   expectations.
 - **Check an edge** with `RISING` and `FALLING` rather than a level, when the

@@ -3,7 +3,7 @@ slug: /guides/map-io
 id: map-io
 title: Map variables to pins
 sidebar_label: Map I/O to pins
-description: "Connect the variables of a program to the inputs and outputs of a board, with the I/O description of the board and the I/O mapping editor of Studio."
+description: "Connect the variables of a program to the inputs and outputs of a board, with the I/O description of the board and the I/O mapping editor of ZPLC."
 tags: [how-to, io, boards, mapping]
 ---
 
@@ -17,7 +17,7 @@ and what the build and the deploy do when the address is wrong.
 :::note Where the truth is
 Every board has an I/O description in `firmware/app/boards/boards.json`: its
 channels, the IEC address and the pin of each, its electrical notes and the safe
-value of every output. Studio, the build, the firmware and the documentation read
+value of every output. The ZPLC application, the build, the firmware and the documentation read
 that one file, so the pin table of [Supported boards](../reference/boards.md) is the
 same data that the build checks. No pin has been measured on a bench:
 [Hardware support](../reference/capabilities-evidence.md).
@@ -55,7 +55,7 @@ channel say how the pin is wired.
 
 ## 3. Map them in the project
 
-The same placement is recorded in `zplc.json` under `io`. In Studio, open **Project
+The same placement is recorded in `zplc.json` under `io`. In ZPLC, open **Project
 Settings**: the **I/O Mapping** section lists the channels of the selected board
 with the pin names printed on it, and each row offers the channels of that board
 only, so a row cannot be put where the board has nothing.
@@ -81,12 +81,12 @@ fragment to the channels of its board, and merges the fragment into a project an
 builds it.
 
 An address that no pin of the board drives is not a channel. List it under
-`io.virtual` (Studio: **Keep as virtual (no pin)**) when you want a word or a bit of
+`io.virtual` (in ZPLC: **Keep as virtual (no pin)**) when you want a word or a bit of
 the process image that only a test or the debugger reads.
 
 ## 4. What happens when an address is wrong
 
-- **In Studio**, a row on an address the board does not have is flagged. The message
+- **In ZPLC**, a row on an address the board does not have is flagged. The message
   names the board, the address and the channels the board has.
 - **In the build**, a variable located where the board has no channel is an error
   that names the board and the variable, unless the address is listed under

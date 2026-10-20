@@ -3,7 +3,7 @@ slug: /guides/project-archive
 id: project-archive
 title: Export and import a project archive
 sidebar_label: Project archives
-description: "Move a project to another computer as one file, and open a project that someone sent you, with the checks Studio makes before it writes anything."
+description: "Move a project to another computer as one file, and open a project that someone sent you, with the checks ZPLC makes before it writes anything."
 tags: [how-to, projects, archive]
 ---
 
@@ -16,7 +16,7 @@ back byte for byte.
 ## Export
 
 1. Save the modified files of the project: the archive holds the files as they are
-   on disk, so Studio asks you to save first.
+   on disk, so ZPLC asks you to save first.
 2. Open the **Build** menu of the toolbar and choose **Export Project Archive**.
 3. Choose where to write the file in the system save dialog.
 
@@ -41,15 +41,15 @@ configuration without its secrets. That document is for reading; it does not imp
    Nothing is written yet: a dialog says what the archive holds (its files, folders
    and size), whose project it is and, for a version 1 project, the lines that
    migrating it changes in `zplc.json`.
-2. Choose **Choose a folder and import** and select an empty folder. Studio writes
+2. Choose **Choose a folder and import** and select an empty folder. ZPLC writes
    the files there byte for byte and opens the project.
 
 A folder that is not empty is refused, and an import that fails leaves the folder
 empty again.
 
-## What Studio refuses
+## What ZPLC refuses
 
-Studio reads archives that other tools wrote, stored or deflated, and refuses one
+ZPLC reads archives that other tools wrote, stored or deflated, and refuses one
 that holds an absolute path, a `..`, a name that two systems read differently, a
 link, an encrypted entry, two files that differ only by case, a file that does not
 match its checksum, more than 4096 files, a file over 16 MiB or more than 64 MiB in
@@ -65,5 +65,5 @@ all. Nothing from a refused archive is written.
 
 ## See also
 
-- [Studio workbench](../ide/features.md#project-archives): the full description.
+- [ZPLC workbench](../ide/features.md#project-archives): the full description.
 - [Migrate a version 1 project](../ide/migration-v1-to-v2.md): what the import shows for an old project.

@@ -69,7 +69,7 @@ overrides the program's own assignments. `zplc stop` clears the force table. Do 
 leave a force on a controller that nobody is watching.
 
 A force always belongs to a session (COM-020). A force typed at the console opens
-the session of the console's link, or joins the one Studio holds on it, and ends
+the session of the console's link, or joins the one the ZPLC application holds on it, and ends
 with it: when the session is closed or taken over, after the idle time
 (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s by default; another force command
 counts as activity), and at once when the link is lost. On a USB CDC ACM console
@@ -94,6 +94,6 @@ program.
 
 ## See also
 
-- [Studio workbench](../ide/features.md#live-io): the live I/O faceplate and the debugging boundary.
+- [ZPLC workbench](../ide/features.md#live-io): the live I/O faceplate and the debugging boundary.
 - [The ZPLC shell](../operations/shell.md): every debugging command.
 - [Safety and limitations](../safety-and-limitations.md).
