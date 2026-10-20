@@ -3,7 +3,7 @@
  * is valid or not; the learner needs to know which: too large, not JSON, not a progress file, a version this build does not
  * know (and which), or a progress file of a known version with a part that is damaged. Pure; it reads nothing but the text.
  */
-import { LEARN_PROGRESS_EXPORT_KIND, LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS, LEARN_PROGRESS_SCHEMA_VERSION, parseImport } from '../../electron/learnProgressModel';
+import { LEARN_PROGRESS_EXPORT_KIND, LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS, LEARN_PROGRESS_SCHEMA_VERSION, parseImport } from '../../shared/learnProgressModel';
 
 export type ProgressFileProblem = 'too-large' | 'not-json' | 'not-progress' | 'unknown-version' | 'malformed';
 export type ProgressFileDiagnosis = { ok: true } | { ok: false; problem: ProgressFileProblem; version: number | null };

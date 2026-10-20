@@ -78,7 +78,7 @@
       "packages/zplc-ide/electron/main.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the window close veto and the reload chords as text of main.ts: the window has no stand-in. The channels, the narrow preload namespace and the sender and message checks are proven by behaviour in ipcRegistry.test.ts and preload.test.ts. Replace by the VF-008 close-with-unsaved-changes journey."
+    "reason": "Pins that main.ts installs the window guards (guardWindowClose, guardReloadChord) and reloads only through them: the BrowserWindow has no stand-in. The guards themselves are proven by behaviour in windowGuards.test.ts, and the channels, the narrow preload namespace and the sender and message checks in ipcRegistry.test.ts and preload.test.ts. Replace by a main-process test against a stub electron module."
   },
   {
     "file": "packages/zplc-ide/electron/main.native-sim.test.ts",
@@ -87,8 +87,8 @@
     "reads": [
       "packages/zplc-ide/electron/firmwareBuildGateway.ts",
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/nativeSimulationEnvironment.ts",
-      "packages/zplc-ide/electron/nativeSimulationSupervisor.ts",
+      "packages/zplc-ide/shared/nativeSimulationEnvironment.ts",
+      "packages/zplc-ide/shared/nativeSimulationSupervisor.ts",
       "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/workspaceTestGateway.ts"
     ],

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import productManifest from '../../../../package.json';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getDefaultPorts, isFunctionBlock, type FBDBlock, type FBDConnection, type FBDModel, type FBDPort } from '../models/fbd';

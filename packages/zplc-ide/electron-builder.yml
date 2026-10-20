@@ -28,8 +28,8 @@ files:
   # Source maps stay in the build folders for debugging and never reach an installer (IDE-015).
   - "!**/*.map"
   # The folder dialog test hook exists only in builds made for the suite (VF-008). Keep these two last: a later pattern that matches them would bring them back.
-  - "!electron-dist/devFolderDialogHook.js"
-  - "!electron-dist/devFolderDialogHook.js.map"
+  - "!electron-dist/electron/devFolderDialogHook.js"
+  - "!electron-dist/electron/devFolderDialogHook.js.map"
 
 # Extra files to copy (icons, etc.)
 extraResources:

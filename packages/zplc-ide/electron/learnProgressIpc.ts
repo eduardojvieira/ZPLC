@@ -9,7 +9,7 @@
 import { LEARN_PROGRESS_CHANNEL } from './ipcContract.js';
 import type { IpcHandler } from './ipcRegistry.js';
 import { IPC_DENIED } from './ipcRegistry.js';
-import { LEARN_PROGRESS_MAX_BYTES, LEARN_PROGRESS_MAX_LESSONS, isLessonId, parseGradeRecord, parseLessonNote } from './learnProgressModel.js';
+import { LEARN_PROGRESS_MAX_BYTES, LEARN_PROGRESS_MAX_LESSONS, isLessonId, parseGradeRecord, parseLessonNote } from '../shared/learnProgressModel.js';
 import type { createLearnProgressStore } from './learnProgressStore.js';
 
 type Store = ReturnType<typeof createLearnProgressStore>;

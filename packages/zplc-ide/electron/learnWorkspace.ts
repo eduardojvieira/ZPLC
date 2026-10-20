@@ -9,7 +9,7 @@
 import { lstat, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { isLessonId } from './learnProgressModel.js';
+import { isLessonId } from '../shared/learnProgressModel.js';
 
 export interface PreparedLearnWorkspace {
   directory: string;

@@ -15,8 +15,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import productManifest from '../../../../package.json';
-import type { GradeRecord } from '../../electron/learnProgressModel';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import type { GradeRecord } from '../../shared/learnProgressModel';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { scenarioRun, type TestRunResult, type TestsRunOptions, type ToolEvidence } from '../cli/toolApi';
 import { readWorkspace } from '../cli/workspace';
 import { LESSON_INDEX } from '../generated/lessonIndex';

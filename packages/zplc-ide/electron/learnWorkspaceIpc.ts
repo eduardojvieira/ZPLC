@@ -8,7 +8,7 @@
 import { LEARN_WORKSPACE_CHANNEL } from './ipcContract.js';
 import type { IpcHandler } from './ipcRegistry.js';
 import { IPC_DENIED } from './ipcRegistry.js';
-import { isLessonId } from './learnProgressModel.js';
+import { isLessonId } from '../shared/learnProgressModel.js';
 import { prepareLearnWorkspace } from './learnWorkspace.js';
 
 export interface LearnWorkspaceDeps {

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 import productManifest from '../../../../package.json';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from './index';

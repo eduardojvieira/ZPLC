@@ -15,7 +15,7 @@
 //   - store subscriptions (IDE-013): a component or hook outside src/store/ must not subscribe to the whole store
 //     (`useIDEStore()`, or a selector that returns the state or its `debug` slice): it would render again on every
 //     change of the store, and a watched value changes ten times a second. Select the fields that it shows.
-//   - module size (IDE-014): a hand-written module of src/ or electron/ has at most MODULE_LINE_LIMIT lines.
+//   - module size (IDE-014): a hand-written module of src/, electron/ or shared/ has at most MODULE_LINE_LIMIT lines.
 //     Tests (.test.ts, .test.tsx) and declaration files (.d.ts) are not modules of the product and are not
 //     measured; there are no generated sources in these two folders. The modules above the limit when the rule
 //     was added are on tools/ci/module-size-offenders.json, one entry each with the lines it had. The list can
@@ -35,7 +35,7 @@ import ts from 'typescript';
 
 export const MODULE_LINE_LIMIT = 800;
 export const IDE_ROOT = 'packages/zplc-ide';
-const SOURCE_FOLDERS = [`${IDE_ROOT}/src/`, `${IDE_ROOT}/electron/`];
+const SOURCE_FOLDERS = [`${IDE_ROOT}/src/`, `${IDE_ROOT}/electron/`, `${IDE_ROOT}/shared/`];
 const OFFENDERS_PATH = new URL('./module-size-offenders.json', import.meta.url);
 const EXCEPTIONS_PATH = new URL('./layering-exceptions.json', import.meta.url);
 

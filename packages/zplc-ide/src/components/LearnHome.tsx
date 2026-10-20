@@ -4,7 +4,7 @@
  * none is; it opens with no project and no network.
  */
 import { useEffect, useRef } from 'react';
-import { LEARN_PROGRESS_MAX_BYTES, type LearnProgress } from '../../electron/learnProgressModel';
+import { LEARN_PROGRESS_MAX_BYTES, type LearnProgress } from '../../shared/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { useT } from '../i18n';
 import { buildCourseView, continueTarget } from '../learn/course';

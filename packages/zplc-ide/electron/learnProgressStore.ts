@@ -23,7 +23,7 @@ import {
   type GradeRecord,
   type LearnProgress,
   type LessonNote,
-} from './learnProgressModel.js';
+} from '../shared/learnProgressModel.js';
 
 export { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME };
 

@@ -17,7 +17,7 @@ function required(path: string): void { assert(existsSync(path), `Required Elect
 function preflight(): string {
   const runtime = executable(process.env.ZPLC_NATIVE_SIM_BIN);
   assert(runtime, 'ZPLC_NATIVE_SIM_BIN must name an executable native POSIX runtime. This smoke never builds it implicitly.');
-  required(join(packageRoot, 'electron-dist', 'main.js')); required(join(packageRoot, 'electron-dist', 'preload.cjs')); required(join(packageRoot, 'electron-dist', 'toolApi.js'));
+  required(join(packageRoot, 'electron-dist', 'electron', 'main.js')); required(join(packageRoot, 'electron-dist', 'preload.cjs')); required(join(packageRoot, 'electron-dist', 'toolApi.js'));
   assert(executable(join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron')), 'Installed Electron executable is missing. Run bun install first.');
   return runtime;
 }

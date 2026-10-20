@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'bun:test';
 import productManifest from '../../../../package.json';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../compiler';
 import { cellLocation } from '../conformance/cases';

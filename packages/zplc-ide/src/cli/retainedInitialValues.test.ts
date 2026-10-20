@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import productManifest from '../../../../package.json';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { compilerCompile } from './toolApi';

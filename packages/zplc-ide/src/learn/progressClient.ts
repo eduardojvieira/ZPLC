@@ -11,7 +11,7 @@ import {
   type GradeRecord,
   type LearnProgress,
   type LessonNote,
-} from '../../electron/learnProgressModel';
+} from '../../shared/learnProgressModel';
 
 export type ProgressBridge = NonNullable<NonNullable<Window['electronAPI']>['learnProgress']>;
 

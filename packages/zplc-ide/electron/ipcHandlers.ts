@@ -44,7 +44,7 @@ import { IPC_DENIED, type IpcHandler, type IpcHandlerTable } from './ipcRegistry
 import { isLessonCheckRequest, lessonCheckAnswer } from './lessonCheckProtocol.js';
 import { createLearnProgressHandlers } from './learnProgressIpc.js';
 import { createLearnWorkspaceHandlers } from './learnWorkspaceIpc.js';
-import type { NativeSimulationRequest } from './nativeSimulationIpc.js';
+import type { NativeSimulationRequest } from '../shared/nativeSimulationIpc.js';
 import {
   isAllowedAiProviderConfig,
   isAllowedAiProviderKey,

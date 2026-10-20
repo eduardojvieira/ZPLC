@@ -9,7 +9,7 @@
 import { useRef, useState } from 'react';
 
 import { parseLessonCheckAnswer } from '../../electron/lessonCheckProtocol';
-import type { GradeRecord } from '../../electron/learnProgressModel';
+import type { GradeRecord } from '../../shared/learnProgressModel';
 import type { LearnLessonGrade } from '../components/learnLesson';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useIDEStore } from '../store/useIDEStore';

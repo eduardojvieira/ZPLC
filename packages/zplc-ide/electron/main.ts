@@ -9,8 +9,8 @@ import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeSt
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
-import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from './nativeSimulationEnvironment.js';
+import { NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor.js';
+import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from '../shared/nativeSimulationEnvironment.js';
 import { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
@@ -24,13 +24,14 @@ import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
 import { loadFirmwareImages } from './firmwareImages.js';
-import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type MenuCategory, type MenuCommand } from './appMenu.js';
+import { buildMenuTemplate, describeApplicationMenu, type MenuCategory, type MenuCommand } from './appMenu.js';
 import { createShellPreferencesStore, windowSurface, type ShellPreferences } from './shellPreferences.js';
 import { migrateUserData } from './userDataMigration.js';
 import { createCloseGuard } from './closeGuard.js';
+import { completeGuardedAction, createReloadRequest, guardReloadChord, guardWindowClose } from './windowGuards.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
-import { spawnVector } from './spawnAllowList.js';
+import { spawnVector } from '../shared/spawnAllowList.js';
 import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
 import {
@@ -91,9 +92,9 @@ const projectWatcher = createProjectWatcher({
   },
 });
 const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });
-const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
+const toolApiUrl = pathToFileURL(path.join(__dirname, '..', 'toolApi.js')).href;
 /** The command registry's menu data, bundled from src/commands/menuEntry.ts by `electron:compile` (UX-014, UX-015). */
-const commandMenuUrl = pathToFileURL(path.join(__dirname, 'commandMenu.js')).href;
+const commandMenuUrl = pathToFileURL(path.join(__dirname, '..', 'commandMenu.js')).href;
 interface CommandMenuModule {
   menuCommands: MenuCommand[];
   menuCategories: MenuCategory[];
@@ -109,7 +110,7 @@ const shellPreferences = createShellPreferencesStore(app.getPath('userData'));
  * simulation, so that the worker finds the runtime it starts for scenarios.
  */
 function spawnToolWorker(): ToolWorkerProcess {
-  const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, 'toolWorker.js') });
+  const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, '..', 'toolWorker.js') });
   const environment: Record<string, string> = {};
   for (const [name, value] of Object.entries(nativeSimulationEnvironment(process.env, isDev, process.resourcesPath))) {
     if (typeof value === 'string') environment[name] = value;
@@ -145,7 +146,7 @@ const appVersion = app.getVersion();
 function expectedRendererUrl(): string {
   return isDev
     ? trustedDevelopmentRendererUrl(rendererDevelopmentPort)
-    : pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
+    : pathToFileURL(path.join(__dirname, '../../dist/index.html')).href;
 }
 
 function rendererOwnerIsCurrent(owner: RendererOwner): boolean {
@@ -212,11 +213,11 @@ function askRendererBeforeLosingWork(action: 'close' | 'reload'): void {
   webContents.send(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, action);
 }
 
-function requestReload(): void {
-  if (!mainWindow) return;
-  if (closeGuard.request('reload') === 'proceed') mainWindow.webContents.reload();
-  else askRendererBeforeLosingWork('reload');
-}
+const requestReload = createReloadRequest({
+  guard: closeGuard,
+  reload: () => { mainWindow?.webContents.reload(); },
+  ask: askRendererBeforeLosingWork,
+});
 
 /**
  * The native folder dialog of the main window: the only way a project root is chosen (IDE-001).
@@ -291,7 +292,7 @@ function createWindow(): void {
       contextIsolation: true,
       sandbox: true,
       webSecurity: true,
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, '..', 'preload.cjs'),
     },
     // macOS specific
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
@@ -320,11 +321,7 @@ function createWindow(): void {
 
   // Reload chords never reach the page or the menu: a packaged build cannot reload by keyboard, and a development host
   // reloads only through the unsaved-work guard (IDE-005).
-  webContents.on('before-input-event', (event, input) => {
-    if (!isReloadShortcut(input)) return;
-    event.preventDefault();
-    if (!app.isPackaged) requestReload();
-  });
+  guardReloadChord(webContents, { isPackaged: app.isPackaged, requestReload });
 
   webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('render-process-gone', () => closeGuard.release());
@@ -355,17 +352,12 @@ function createWindow(): void {
     }
   } else {
     // In production, load the built index.html
-    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
     rendererFile.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
   }
 
   // Closing with modified files asks first: save, discard or cancel (cancel keeps the window).
-  mainWindow.on('close', (event) => {
-    if (closeGuard.request('close') === 'ask') {
-      event.preventDefault();
-      askRendererBeforeLosingWork('close');
-    }
-  });
+  guardWindowClose(mainWindow, closeGuard, askRendererBeforeLosingWork);
 
   // Handle window close
   mainWindow.on('closed', () => {
@@ -456,11 +448,8 @@ function setupIPC(): void {
     appInfo: () => ({ version: appVersion, platform: process.platform, arch: process.arch, isPackaged: app.isPackaged }),
     isCurrent: rendererOwnerIsCurrent,
     closeGuard,
-    completeGuardedAction: (action) => {
-      if (action === 'reload') mainWindow?.webContents.reload();
-      // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
-      else mainWindow?.destroy();
-    },
+    // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
+    completeGuardedAction: (action) => completeGuardedAction(action, { reload: () => mainWindow?.webContents.reload(), destroy: () => mainWindow?.destroy() }),
     projectFiles,
     recoveryStore: () => recoveryStore,
     sessionStore: () => sessionStore,

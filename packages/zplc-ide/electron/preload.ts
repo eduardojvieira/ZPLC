@@ -13,7 +13,7 @@ import type {
   NativeSimulationEvent,
   NativeSimulationHelloResult,
   NativeSimulationRequest,
-} from './nativeSimulationIpc.js';
+} from '../shared/nativeSimulationIpc.js';
 
 import {
   AI_PROVIDER_CHANNEL,

@@ -2,7 +2,7 @@
 // the progress document, with each lesson locked, available, in progress or passed, and where to continue.
 import { describe, expect, it } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { emptyProgress, withGrade, withNote, withPassedIds, type GradeRecord, type LearnProgress } from '../../electron/learnProgressModel';
+import { emptyProgress, withGrade, withNote, withPassedIds, type GradeRecord, type LearnProgress } from '../../shared/learnProgressModel';
 import { buildCourseView, continueTarget, lessonStateOf, trackSupport } from './course';
 
 const FIRST = 'first-blink-simulation';

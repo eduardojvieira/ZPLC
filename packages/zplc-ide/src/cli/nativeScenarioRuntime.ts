@@ -2,8 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import productManifest from '../../../../package.json';
-import { withNativeCommunicationEnvironment } from '../../electron/nativeSimulationEnvironment';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { withNativeCommunicationEnvironment } from '../../shared/nativeSimulationEnvironment';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import type { ScenarioRuntimePort } from '../test-engine';
 

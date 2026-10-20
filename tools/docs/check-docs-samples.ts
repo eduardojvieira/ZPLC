@@ -170,7 +170,7 @@ export interface Outcome { sample: Sample; compiled: boolean; executed: boolean;
 export async function compileAndRun(sample: Sample, binary: string): Promise<Outcome> {
   const [{ compilerCompile }, { NativeSimulationSupervisor }, { NativeAdapter }] = await Promise.all([
     import('../../packages/zplc-ide/src/cli/toolApi'),
-    import('../../packages/zplc-ide/electron/nativeSimulationSupervisor'),
+    import('../../packages/zplc-ide/shared/nativeSimulationSupervisor'),
     import('../../packages/zplc-ide/src/runtime/nativeAdapter'),
   ]);
   const outcome: Outcome = { sample, compiled: false, executed: false, failures: [] };

@@ -4,7 +4,7 @@
  * unless everything is unlocked by the setting; a lesson already started or passed is never locked, so a learner is never
  * shut out of work they have in a workspace. Progress that has not loaded is the empty document, never an error.
  */
-import { emptyProgress, type LearnProgress } from '../../electron/learnProgressModel';
+import { emptyProgress, type LearnProgress } from '../../shared/learnProgressModel';
 import type { LessonIndex, LessonIndexEntry, LessonLevel, LessonLocale } from './lessonPackage';
 
 export type LessonState = 'locked' | 'available' | 'in-progress' | 'passed';

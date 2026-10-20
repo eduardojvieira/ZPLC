@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { LEARN_PROGRESS_LEGACY_FILENAME, type GradeRecord } from '../../electron/learnProgressModel';
+import { LEARN_PROGRESS_LEGACY_FILENAME, type GradeRecord } from '../../shared/learnProgressModel';
 import { createLearnProgressStore } from '../../electron/learnProgressStore';
 import { createProgressState } from './progressState';
 import type { ProgressBridge } from './progressClient';

@@ -11,7 +11,7 @@ import { PassThrough } from 'node:stream';
 
 import { createZplcFile } from '@zplc/compiler';
 
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { isAllowedNativeSimulationRequest, NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';

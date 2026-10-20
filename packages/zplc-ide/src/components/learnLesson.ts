@@ -1,7 +1,7 @@
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { LESSON_IDS, LESSON_INDEX, type LessonId } from '../generated/lessonIndex';
 import { createLearnContentV1, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
-import type { FailedAssertion } from '../../electron/learnProgressModel';
+import type { FailedAssertion } from '../../shared/learnProgressModel';
 import { failedAssertionsOf } from '../learn/gradeRecord';
 
 export type LearnLocale = 'es' | 'en';

@@ -835,7 +835,7 @@ export const JOURNEYS: Journey[] = [
   {
     // IDE-025: the native runtime cannot start, so the simulation runs on the WebAssembly runtime of the build, says that it
     // is degraded and why, and still runs a bundled project and holds a force. ZPLC_RUNTIME=wasm is the switch of an
-    // unpackaged app that stands in for "the native runtime is not there" (electron/nativeSimulationEnvironment.ts).
+    // unpackaged app that stands in for "the native runtime is not there" (shared/nativeSimulationEnvironment.ts).
     name: '8b Simulate on the WebAssembly runtime when the native one is off', example: 'motor_start_stop', proves: [], partly: ['IDE-025', 'RT-008', 'IDE-019'],
     environment: { ZPLC_RUNTIME: 'wasm' },
     run: async (app, { project }) => {

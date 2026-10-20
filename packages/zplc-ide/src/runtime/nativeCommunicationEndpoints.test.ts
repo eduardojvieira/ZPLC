@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import productManifest from '../../../../package.json';
-import { nativeSimulationEnvironment } from '../../electron/nativeSimulationEnvironment';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { nativeSimulationEnvironment } from '../../shared/nativeSimulationEnvironment';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { cellLocation } from '../conformance/cases';

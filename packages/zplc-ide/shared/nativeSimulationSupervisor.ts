@@ -127,6 +127,9 @@ function getDefaultSimulatorBinaryCandidates(options: Pick<SimulatorBinaryResolu
       : []),
     path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime'),
     path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
+    // The compiled copy runs from electron-dist/shared, one level deeper than the source in shared/.
+    path.resolve(currentDir, '../../../../firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(currentDir, '../../../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
     path.resolve(cwd, 'firmware/lib/zplc_core/build/zplc_runtime'),
     path.resolve(cwd, 'firmware/lib/zplc_core/build/zplc_runtime.exe'),
     path.resolve(cwd, '../firmware/lib/zplc_core/build/zplc_runtime'),

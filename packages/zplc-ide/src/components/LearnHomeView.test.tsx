@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../electron/learnProgressModel';
+import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../shared/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { buildCourseView, continueTarget } from '../learn/course';
 import { auditMarkup } from '../ui/audit';

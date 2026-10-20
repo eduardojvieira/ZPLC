@@ -1,5 +1,3 @@
-export { NATIVE_SIMULATION_CHANNEL } from './ipcContract.js';
-
 export interface NativeSimulationHelloResult {
   protocol_version: string;
   runtime_kind: string;

@@ -2,7 +2,7 @@
 // outline with the objectives of every lesson. Both read the generated index and the file given; no account, no server.
 import { describe, expect, it } from 'bun:test';
 
-import { emptyProgress, exportProgress, withGrade, withNote, withPassedIds, type GradeRecord } from '../../packages/zplc-ide/electron/learnProgressModel';
+import { emptyProgress, exportProgress, withGrade, withNote, withPassedIds, type GradeRecord } from '../../packages/zplc-ide/shared/learnProgressModel';
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { renderOutline, runEducator, verifyProgress } from './learn-educator';
 
