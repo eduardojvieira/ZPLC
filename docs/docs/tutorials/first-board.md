@@ -58,9 +58,9 @@ installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in ZPLC,
 open **Project settings**, **Target**, choose the board, and ZPLC shows the file,
 its SHA-256, where it is and the steps to flash it. ZPLC only shows them: you
 flash (step 2). The pipeline has not made a release yet, so today you build the
-firmware from the source, with the same script that continuous integration runs.
+firmware from the source, with the repository script, which wraps the same `west build` and size check as the continuous integration job.
 Set up the Zephyr workspace once
-(about 6 GB, see [Firmware testing](../development/firmware-testing.md#one-time-setup)),
+(about 6.6 GB, or about 15 GB with the Zephyr SDK and the build outputs; see [Firmware testing](../development/firmware-testing.md#one-time-setup)),
 then build the board:
 
 ```bash
@@ -127,7 +127,7 @@ safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)
 
 | Step | Evidence today | Status |
 | --- | --- | --- |
-| 1. Get the firmware | The build script runs in continuous integration and checks the flash and RAM budget | Builds in CI: `cross-build` |
+| 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script | Builds in CI: `cross-build` |
 | 2. Flash it | None | Not yet verified on hardware |
 | 3. Connect ZPLC | The Blink tutorial exercises connecting in the simulator; no board has been connected | Not yet verified on hardware |
 | 4. Deploy and run | The Blink tutorial exercises running in the simulator; no board has received a program | Not yet verified on hardware |

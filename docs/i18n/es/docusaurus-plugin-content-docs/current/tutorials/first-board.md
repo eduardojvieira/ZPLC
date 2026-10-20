@@ -59,9 +59,9 @@ notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi P
 de la ESP32-S3: en ZPLC, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 ZPLC muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. ZPLC
 solo las muestra: usted graba (paso 2). El canal todavía no ha hecho una versión,
-así que hoy usted compila el firmware desde el código fuente, con el mismo script que
-ejecuta la integración continua. Prepare el espacio
-de trabajo de Zephyr una vez (unos 6 GB, vea
+así que hoy usted compila el firmware desde el código fuente, con el script del repositorio, que envuelve el mismo `west build` y la misma
+comprobación de tamaño que el trabajo de integración continua. Prepare el espacio
+de trabajo de Zephyr una vez (unos 6,6 GB, o unos 15 GB con el SDK de Zephyr y las salidas de compilación; vea
 [Pruebas de firmware](../development/firmware-testing.md#preparación-única)), y
 luego compile la placa:
 
@@ -132,7 +132,7 @@ su estado seguro, apagado
 
 | Paso | Evidencia hoy | Estado |
 | --- | --- | --- |
-| 1. Obtenga el firmware | El script de compilación se ejecuta en integración continua y comprueba el presupuesto de flash y RAM | Compila en integración continua: `cross-build` |
+| 1. Obtenga el firmware | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
 | 2. Grábelo | Ninguna | Aún no verificado en hardware |
 | 3. Conecte ZPLC | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
 | 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa | Aún no verificado en hardware |

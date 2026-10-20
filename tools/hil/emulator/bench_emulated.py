@@ -149,6 +149,8 @@ class PicoBench:
     """rp2040js, through pico/pico-bench.mts."""
 
     emulator_name = "rp2040js"
+    # The emulator is too slow for the shell sampling that blink-count fixtures need: the chain reports them as not emulable.
+    blink_sampling = False
 
     def __init__(self, board: dict, workdir: Path):
         self.board, self.workdir = board, workdir

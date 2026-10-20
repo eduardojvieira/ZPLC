@@ -15,10 +15,10 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import { platform, release, arch } from 'node:os';
+import { platform, release as release_, arch } from 'node:os';
 
 import { REPOSITORY_ROOT } from './compile';
-import { HardwareRuntimePort, withHardwarePort } from './hardwarePort';
+import { HardwareRuntimePort, ScenarioTimingError, withHardwarePort } from './hardwarePort';
 import type { ReleaseReport, ScenarioRuntimePort } from './hardwarePort';
 import { confirmPhysicalStep, IdentityMismatchError, NotInteractiveError, requireInteractive, terminalIo } from './guard';
 import type { HumanIo } from './guard';
@@ -144,25 +144,51 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     process.once('SIGINT', abort);
     process.once('SIGTERM', abort);
     deps.signal?.addEventListener('abort', abort, { once: true });
-    const done = await withHardwarePort(opened, { toleranceMs, signal: controller.signal }, (port) => scenarios.runScenario(scenario, compiled.zplcFile!, port));
-    const outcome: { result: ScenarioRunResultLike; release: ReleaseReport; port: HardwareRuntimePort } = { result: done.value, release: done.release, port: done.port };
-    record({ id: 'scenario', title: `Scenario ${scenario.id}`, kind: 'automatic', result: outcome.result.passed ? 'pass' : 'fail',
-      detail: outcome.result.assertions.map((a) => `${a.kind} ${a.passed ? 'held' : `failed at ${a.atMs} ms`}`).join('; '),
-      measurements: { max_late_ms: outcome.port.maxLateMs, ticks: outcome.port.observations.length } });
-    record({ id: 'release', title: 'Forces released, board stopped', kind: 'automatic', result: outcome.release.ok ? 'pass' : 'fail', detail: outcome.release.errors.join('; ') });
+    // Every outcome writes a record: a run voided by the timing tolerance, or stopped by an error, is evidence too.
+    let port: HardwareRuntimePort | undefined;
+    let failure: Error | undefined;
+    let result: ScenarioRunResultLike | undefined;
+    let release: ReleaseReport | undefined;
+    try {
+      const done = await withHardwarePort(opened, { toleranceMs, signal: controller.signal }, (p) => { port = p; return scenarios.runScenario(scenario, compiled.zplcFile!, p); });
+      ({ value: result, release } = done);
+    } catch (error) {
+      failure = error instanceof AggregateError ? (error.errors[0] as Error) : (error as Error);
+      release = await port?.release(); // already made by withHardwarePort; this is its cached report
+    }
+    const voided = failure instanceof ScenarioTimingError;
+    if (result) {
+      record({ id: 'scenario', title: `Scenario ${scenario.id}`, kind: 'automatic', result: result.passed ? 'pass' : 'fail',
+        detail: result.assertions.map((a) => `${a.kind} ${a.passed ? 'held' : `failed at ${a.atMs} ms`}`).join('; '),
+        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 } });
+    } else {
+      record({ id: 'scenario', title: `Scenario ${scenario.id}`, kind: 'automatic', result: 'error',
+        detail: `${voided ? 'void: ' : ''}${failure?.message ?? 'the scenario did not run'}`,
+        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 } });
+      deps.stderr(`error: ${failure?.message ?? 'the scenario did not run'}`);
+    }
+    if (release) record({ id: 'release', title: 'Forces released, board stopped', kind: 'automatic', result: release.ok ? 'pass' : 'fail', detail: release.errors.join('; ') });
 
+    const reportedImage = identity.raw.image_sha256;
+    const imageSha256 = values['firmware-image'] ? sha256(readFileSync(resolve(values['firmware-image'])))
+      : typeof reportedImage === 'string' && /^[0-9a-f]{64}$/.test(reportedImage) ? reportedImage : undefined;
     const final: RunRecord = {
       schema: 'zplc.hil.run-record/1', run_id: randomUUID().replaceAll('-', ''), kind: 'scenario',
       evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, evidence_level: opened.kind === 'serial' ? 'hardware' : null,
       result: 'incomplete', started_at: started, ended_at: now(),
       board: { id: values.board },
       device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: opened.kind },
-      firmware: { ...firmwareIdentity(identity.build), ...(values['firmware-image'] ? { image_sha256: sha256(readFileSync(resolve(values['firmware-image']))) } : {}) },
+      firmware: { ...firmwareIdentity(identity.build), ...(imageSha256 ? { image_sha256: imageSha256 } : {}) },
       programs: [{ id: scenario.id, sha256: sha256(compiled.zplcFile) }],
       scenario: { id: scenario.id, sha256: sha256(scenarioBytes), tolerance_ms: toleranceMs },
-      tools: { harness: VERSION_OF_HARNESS, platform: `${platform()} ${release()} ${arch()}`, bun: process.versions.bun ?? null },
+      tools: { harness: VERSION_OF_HARNESS, platform: `${platform()} ${release_()} ${arch()}`, bun: process.versions.bun ?? null },
       operator: { name: operator },
       steps, tests: [], logs: [],
+      measurements: {
+        // A tick is sampled once the device clock has reached it, never earlier: the tolerance is the most it may be late.
+        tolerance_semantics: 'lateness-bound', tolerance_ms: toleranceMs, void: voided, max_late_ms: port?.maxLateMs ?? 0,
+        ticks: (port?.observations ?? []).map((o) => ({ atMs: o.atMs, deviceMs: o.deviceMs, lateMs: o.lateMs, cycles: o.cycles })),
+      },
     };
     final.result = summarize(final);
     const problems = validate(final);
@@ -175,7 +201,7 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     const file = join(directory, `${values.board}-${started.slice(0, 10)}-${final.run_id.slice(0, 8)}.json`);
     writeFileSync(file, `${JSON.stringify(final, null, 2)}\n`);
     deps.io.say(`${final.result.toUpperCase()}: ${file}`);
-    return final.result === 'pass' && outcome.release.ok ? 0 : 1;
+    return final.result === 'pass' && release?.ok === true && !failure ? 0 : 1;
   } catch (error) {
     if (error instanceof IdentityMismatchError || error instanceof NotInteractiveError) {
       deps.stderr(`error: ${error.message}`);

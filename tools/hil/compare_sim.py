@@ -90,6 +90,15 @@ def trace(tester: LanguageTester, program: list[int], stimulus: list[tuple[int, 
     return changes
 
 
+def first_difference(simulated: list[list[int]], bench: list[list[int]]) -> str:
+    """The first sample that differs, with its index (from 0), its time and the value on each side."""
+    describe = lambda trace, index, side: f"nothing {side}" if index >= len(trace) else f"0x{trace[index][1]:02x} at {trace[index][0]} ms {side}"  # noqa: E731
+    for index in range(max(len(simulated), len(bench))):
+        if index >= len(simulated) or index >= len(bench) or simulated[index][1] != bench[index][1]:
+            return f"the first differing sample is #{index}: {describe(simulated, index, 'in simulation')}, {describe(bench, index, 'on the bench')}"
+    return "no sample differs in value"
+
+
 def differences(simulated: list[list[int]], bench: list[list[int]], tolerance_ms: float) -> list[str]:
     """How two traces differ: the sequence of output values, then the time of each change (the last may fall off the end)."""
     found = []
@@ -97,6 +106,7 @@ def differences(simulated: list[list[int]], bench: list[list[int]], tolerance_ms
     common = min(len(values_a), len(values_b))
     if values_a[:common] != values_b[:common] or abs(len(values_a) - len(values_b)) > 1:
         found.append(f"the outputs change through {values_a} in simulation and {values_b} on the bench")
+        found.append(first_difference(simulated, bench))
     for (at_a, value), (at_b, _) in list(zip(simulated, bench))[1:common]:
         if abs(at_a - at_b) > tolerance_ms:
             found.append(f"the change to 0x{value:02x} comes at {at_a} ms in simulation and {at_b} ms on the bench")

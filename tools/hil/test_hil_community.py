@@ -118,7 +118,7 @@ class ReferenceTests(unittest.TestCase):
         record = community_report.record_from_report(REPORT, MANIFEST)
         reports = boards.community_reports_from_records(PICO["board_id"], [("records/user.json", record)])
         generator.community = lambda board: reports if board["board_id"] == PICO["board_id"] else []
-        for spanish, label in ((False, "community-reported: pass on 2.0.0-rc.4"), (True, "reportado por la comunidad: pass en 2.0.0-rc.4")):
+        for spanish, label in ((False, "community-reported: pass on 2.0.0-rc.4"), (True, "informado por la comunidad: pass en 2.0.0-rc.4")):
             with self.subTest("es" if spanish else "en"):
                 row = next(line for line in generator.render_support_table(MANIFEST, spanish).splitlines() if f"`{PICO['ide_id']}`" in line)
                 self.assertIn(label, row)

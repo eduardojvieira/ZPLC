@@ -376,7 +376,8 @@
         },
         "tolerance_ms": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0,
+          "description": "A lateness bound: a tick is sampled once the device clock has reached it, never earlier, and the run is void when a sample is later than this. Assertion windows are not widened by it."
         }
       }
     },

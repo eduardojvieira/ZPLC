@@ -219,7 +219,7 @@ A processor fault, a stack overflow, an assertion or a kernel panic does not lea
 
 ### After a reset the runtime waits in STOP (RT-022)
 
-Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**. The runtime never enters RUN on its own because of a reset (the function `zplc_reset_may_run` is 0 for every cause; running again after a clean power-on of a device a person enabled beforehand is a decision of the project owner, D-13, and is not made here). The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which is off by default. A deploy stops the running program before it transfers a byte, so that a transfer never runs beside a program that was in RUN.
+Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**. The runtime never enters RUN on its own because of a reset (the function `zplc_reset_may_run` is 0 for every cause; running again after a clean power-on of a device a person enabled beforehand is a decision of the project owner, D-13, and is not made here). The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which it is in the profile of every shipped board. A deploy stops the running program before it transfers a byte, so that a transfer never runs beside a program that was in RUN.
 
 ### The hardware watchdog (RT-020)
 
@@ -227,7 +227,7 @@ Each board's profile (`watchdog` in `boards.json`) says whether its hardware wat
 
 - It is fed from the completion of a scan, never from a timer, an interrupt, the shell or the idle thread. A scan that stalls stops the feed and the watchdog resets the board.
 - Its timeout is the profile's, made longer when the task set needs it: more than two intervals of the slowest task, up to the longest the part accepts. A task set that does not fit is refused when it is started.
-- The default policy is **disarmed in STOP**, **fed from the control path while paused** (so a long breakpoint does not reset the board) and **left to expire in a latched fault**: the board resets into STOP with the cause recorded, and the record of the fault survives the reset. A part whose watchdog cannot be stopped is profiled to feed in STOP.
+- The default policy is **disarmed in STOP**, **fed from the control path while paused** (so a long breakpoint does not reset the board; feeding the watchdog does not hold the outputs, which are driven to their safe state while paused, and only the output image keeps the state of the paused scan) and **left to expire in a latched fault**: the board resets into STOP with the cause recorded, and the record of the fault survives the reset. A part whose watchdog cannot be stopped is profiled to feed in STOP.
 
 ### Evidence and what is not shown
 

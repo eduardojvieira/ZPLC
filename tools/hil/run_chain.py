@@ -92,6 +92,7 @@ def parse(argv=None) -> argparse.Namespace:
     parser.add_argument("--hil-trace", action="store_true", help="the image under test is built with the HIL trace overlay (tools/hil/hil_debug.conf), for the opcode-level scripts; release firmware has no trace")
     parser.add_argument("--dry-run", action="store_true", help="run on a fake device with nobody asked; the record says so")
     parser.add_argument("--bench", choices=("human", "emulated"), default="human", help="a person at a real board (default) or the emulator of tools/hil/emulator")
+    parser.add_argument("--keep-going", action="store_true", help="a rehearsal option, for --bench emulated only: run and report every step after a failure instead of stopping at the first one (a failed preflight, open, flash or handshake still ends the run). A hardware run always stops at the first failure.")
     parser.add_argument("--steps", help=f"comma-separated HIL-010 measuring steps to run instead of all of them ({', '.join(s[0] for s in hil_steps.BenchSteps.STEPS)}); a run on a fake device runs none unless named")
     parser.add_argument("--no-watchdog-build", action="store_true", help="print the manifest's plain build command; the watchdog step then fails, saying the image has no watchdog")
     parser.add_argument("--rtu-port", help="the host side of the Modbus RTU line of the Pico: the USB-serial adapter wired to UART1")
@@ -105,6 +106,7 @@ def parse(argv=None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+SETUP_STEPS = {"preflight", "open", "flash", "handshake"}  # without these there is no device to carry on with
 WATCHDOG_OPTION = "-DCONFIG_ZPLC_HIL_IMAGE=y"  # the HIL image variant: the watchdog on, never shipped (RT-020)
 # HIL-010: blink in each of the five languages (two in ST: the master blinky and the generated Ladder blinky)
 BLINK_FIXTURES = ["st.master_blinky", "st.blinky_ld_gen", "il.blinky", "ld.blinky", "fbd.blinky", "sfc.blinky"]
@@ -164,6 +166,7 @@ class Chain(hil_steps.BenchSteps):
         self.compiled: dict[str, list[int]] = {}
         self.programs: dict[str, int] = {}
         self.stop = False
+        self.keep_going = bool(getattr(args, "keep_going", False)) and emulated
 
     # steps -----------------------------------------------------------------------------------------
     def step(self, step_id, title, kind, function, requirement=None):
@@ -182,16 +185,23 @@ class Chain(hil_steps.BenchSteps):
             entry["result"] = "not-emulable" if self.record["evidence_level"] == "emulated" else "skipped"
             entry["detail"] = f"not run: {error}"
         except (hil_guard.IdentityMismatch, hil_guard.NotInteractive) as error:
-            entry["result"], entry["detail"], self.stop = "fail", str(error), True
+            entry["result"], entry["detail"] = "fail", str(error)
+            self.stop = self.ends_run(step_id)
         except AssertionError as error:
-            entry["result"], entry["detail"], self.stop = "fail", str(error), True
+            entry["result"], entry["detail"] = "fail", str(error)
+            self.stop = self.ends_run(step_id)
         except (DeviceError, PortError, CompileError, UploadError, OSError, RuntimeError) as error:
-            entry["result"], entry["detail"], self.stop = "error", f"{type(error).__name__}: {error}", True
+            entry["result"], entry["detail"] = "error", f"{type(error).__name__}: {error}"
+            self.stop = self.ends_run(step_id)
         confirmation = getattr(self.bench, "last_confirmation", None)
         if confirmation:  # a person confirmed a bench action of this step by typing the board's identity
             entry.update(confirmation)
             self.bench.last_confirmation = None
         entry["ended_at"] = hil_record.now()
+
+    def ends_run(self, step_id):
+        """A failure stops the chain, except in an emulated rehearsal with --keep-going, where only a failed setup step does."""
+        return not self.keep_going or step_id in SETUP_STEPS
 
     def physical(self, step_id, title, instruction, requirement=None, wait_first=False):
         def confirm():
@@ -317,7 +327,14 @@ class Chain(hil_steps.BenchSteps):
     def fixture_step(self):
         limit = self.board.get("memory", {}).get("code_size_max")
         failed = 0
+        not_emulable = 0
+        blink_sampling = getattr(self.bench, "blink_sampling", True)
         for fixture in self.fixtures():
+            if not blink_sampling and any(c.get("op") == "toggles" for p in fixture["phases"] for c in p["expect"]):
+                not_emulable += 1
+                self.record["tests"].append({"id": fixture["id"], "title": fixture["title"], "result": "skipped",
+                                             "detail": f"not-emulable: {self.bench.emulator['name']} is too slow to count output changes over the shell, so this fixture is no evidence either way"})
+                continue
             size = len(self.compiled.get(fixture["id"], []))
             if limit and size > limit:
                 self.record["tests"].append({"id": fixture["id"], "title": fixture["title"], "result": "skipped", "detail": f"{size} bytes exceed the {limit} of this board"})
@@ -330,6 +347,8 @@ class Chain(hil_steps.BenchSteps):
             self.record["tests"].append({"id": fixture["id"], "title": fixture["title"], "result": "fail" if problems else "pass", "detail": "; ".join(problems)[:500]})
         if failed:
             raise AssertionError(f"{failed} fixtures failed")
+        if not_emulable and not any(t["result"] == "pass" for t in self.record["tests"]):
+            raise benches.Unsupported("every selected fixture counts output changes over the shell, which this emulator cannot sample fast enough")
 
     def force_step(self):
         self.tester.send("zplc dbg force clear_all")
@@ -457,6 +476,9 @@ def run(args, io, stdout=None, opener=open_fake, bench=None) -> int:
         except (hil_guard.NotInteractive, benches.BenchMissing) as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
+    if args.keep_going and getattr(bench, "level", None) != "emulated":
+        print("error: --keep-going is for an emulated bench (--bench emulated); a hardware run stops at the first failure", file=sys.stderr)
+        return 2
     if not args.operator:
         if getattr(bench, "level", None) == "hardware":
             args.operator = io.ask("Operator name for the record: ").strip() or "unknown"

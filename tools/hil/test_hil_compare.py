@@ -44,6 +44,12 @@ class TraceTests(unittest.TestCase):
         other = compare_sim.differences(sim, [[0, 1], [500, 0]], 100)
         self.assertTrue(any("change through" in d for d in other), other)
 
+    def test_the_first_differing_sample_is_named_with_its_index_time_and_both_values(self):
+        found = compare_sim.differences([[0, 0], [500, 1], [1000, 0]], [[0, 0], [510, 1], [990, 3]], 100)
+        self.assertTrue(any("first differing sample is #2" in d and "0x00 at 1000 ms in simulation" in d and "0x03 at 990 ms on the bench" in d for d in found), found)
+        longer = compare_sim.differences([[0, 0], [500, 1]], [[0, 0], [500, 1], [900, 0], [1300, 1]], 100)
+        self.assertTrue(any("first differing sample is #2" in d and "nothing in simulation" in d for d in longer), longer)
+
     def test_a_bench_comparison_needs_a_terminal_or_the_emulator(self):
         env = {k: v for k, v in os.environ.items() if k != "ZPLC_SERIAL_PORT"}
         done = subprocess.run([sys.executable, "-B", str(HERE / "compare_sim.py"), "rpi_pico"], capture_output=True, text=True, cwd=ROOT, env=env, stdin=subprocess.DEVNULL)

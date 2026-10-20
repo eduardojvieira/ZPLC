@@ -8,7 +8,7 @@ watchdog off until its record exists):
   accepted  the HIL image (-DCONFIG_ZPLC_HIL_IMAGE=y) builds, with the watchdog on, and says what it is: HIL_IMAGE=y in
             the build options `zplc sys build` reports, and the line `zplc version` prints, in the image itself
   RETAIN    the HIL image also keeps RETAIN across a power cycle (CONFIG_ZPLC_RETAIN_PERSIST, RT-025), which the RETAIN
-            step of the record needs, and it fits the Pico's storage partition; the shipped profile keeps it off
+            step of the record needs, and it fits the Pico's storage partition; the shipped profile has it on too (RT-025)
 
 It needs a west workspace whose `zplc` is this checkout, named by ZPLC_FW_WS (tools/firmware-test/setup.sh); without
 one it is skipped and says so, as in the CI job of the Python tests, which has no Zephyr workspace.
@@ -57,8 +57,8 @@ class HilImageRule(unittest.TestCase):
 
         code, text = west(work / "plain", cmake_only=True)
         self.assertEqual(code, 0, f"the shipped profile configures: {text[-2000:]}")
-        self.assertIn("# CONFIG_ZPLC_RETAIN_PERSIST is not set", (work / "plain" / "zephyr" / ".config").read_text(),
-                      "the shipped profile keeps RETAIN persistence off until the board has its record")
+        self.assertIn("CONFIG_ZPLC_RETAIN_PERSIST=y", (work / "plain" / "zephyr" / ".config").read_text(),
+                      "the shipped profile keeps RETAIN across a power cycle (RT-025)")
 
         code, text = west(work / "hil-image", "-DCONFIG_ZPLC_HIL_IMAGE=y")
         self.assertEqual(code, 0, f"the HIL image builds: {text[-3000:]}")

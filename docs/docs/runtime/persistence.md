@@ -199,13 +199,15 @@ runtime](./browser-runtime.md) lists the scenarios that hold it to the host's.
 
 ### Enabling it on a firmware board
 
-`CONFIG_ZPLC_RETAIN_PERSIST` is off by default. The write path is covered by the `retain_persist` suite
-on `native_sim` (both word sizes) and the build-time wear assertion, and no board has been measured: a
-flash write can stall instruction fetch on parts that execute from the same flash. Set `CONFIG_ZPLC_RETAIN_PERSIST=y` in the board
-file, with the endurance numbers of the next section, once that board has passed its hardware record
-(HIL-010). Until then the `RETAIN` region is initialised at every start on firmware and the status has no
-`retain` field. The HIL image that record is made on (`-DCONFIG_ZPLC_HIL_IMAGE=y`) turns it on, so that
-its power cycle step can measure it; it never ships.
+`CONFIG_ZPLC_RETAIN_PERSIST` is on in the profile of every shipped board (RT-025: `RETAIN` survives a power cycle), with
+the endurance numbers of the next section; the option itself defaults to off, so a board file of your own has to set
+`CONFIG_ZPLC_RETAIN_PERSIST=y`. The write path is covered by the `retain_persist` suite on `native_sim` (both word
+sizes) and the build-time wear assertion, and no board has been measured: a flash write can stall instruction fetch on
+parts that execute from the same flash. The build fails when the save interval of a profile would wear its flash out
+before `CONFIG_ZPLC_RETAIN_LIFE_YEARS`, so the table below is checked on every build. Being on is not a hardware record:
+that a value survives a power cycle on a board is what the power cycle step of HIL-010 measures, on the HIL image
+(`-DCONFIG_ZPLC_HIL_IMAGE=y`, which never ships). The image costs about 8.5 KB of RAM more on the RP2040 profiles, the
+two records of the region being kept in RAM while they are written.
 
 ### Flash wear budget per board
 

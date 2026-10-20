@@ -74,4 +74,49 @@ describe('the hardware scenario command (HIL-003)', () => {
       await rm(directory, { recursive: true, force: true });
     }
   }, 120_000);
+
+  test('a run voided by the timing tolerance still writes its record, with the void result, the tolerance and the ticks (HIL-002.03)', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'zplc-hil-cli-'));
+    try {
+      const link = new FakeLink();
+      link.tickPerStatus = 40;
+      const context = deps(person(['Ana', 'fake_board', 'fake_board']), { openLink: () => Promise.resolve(link) });
+      const code = await main([...RUN, '--board', 'fake_board', '--record-dir', directory, '--tolerance-ms', '1'], context);
+      expect(code).toBe(1);
+      expect(context.errors.join('\n')).toContain('the run is void');
+      const [file] = await readdir(directory);
+      const record = JSON.parse(await readFile(join(directory, file!), 'utf8')) as {
+        result: string; scenario: { tolerance_ms: number }; steps: Array<{ id: string; result: string; detail?: string }>;
+        measurements: { tolerance_semantics: string; void: boolean; ticks: Array<{ atMs: number; lateMs: number }> };
+      };
+      expect(validate(record)).toEqual([]);
+      expect(record.result).toBe('fail');
+      expect(record.scenario.tolerance_ms).toBe(1);
+      expect(record.steps.find((step) => step.id === 'scenario')).toMatchObject({ result: 'error' });
+      expect(record.steps.find((step) => step.id === 'scenario')?.detail).toContain('void');
+      expect(record.steps.map((step) => step.id)).toContain('release');
+      expect(record.measurements.void).toBe(true);
+      expect(record.measurements.tolerance_semantics).toBe('lateness-bound');
+      expect(record.measurements.ticks.length).toBeGreaterThan(0);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 120_000);
+
+  test('the image hash the device reports is in the record, without --firmware-image (HIL-002.07)', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'zplc-hil-cli-'));
+    try {
+      const link = new FakeLink();
+      link.tickPerStatus = 40;
+      const hash = 'ab'.repeat(32);
+      link.identity = () => Promise.resolve({ board: 'fake_board', raw: { board: 'fake_board', image_sha256: hash } });
+      const context = deps(person(['Ana', 'fake_board', 'fake_board']), { openLink: () => Promise.resolve(link) });
+      await main([...RUN, '--board', 'fake_board', '--record-dir', directory, '--tolerance-ms', '1'], context);
+      const [file] = await readdir(directory);
+      const record = JSON.parse(await readFile(join(directory, file!), 'utf8')) as { firmware: { image_sha256?: string } };
+      expect(record.firmware.image_sha256).toBe(hash);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 120_000);
 });

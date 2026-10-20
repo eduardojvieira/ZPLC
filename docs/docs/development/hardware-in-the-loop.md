@@ -181,8 +181,13 @@ board through the hardware runtime port of the scenario engine:
   and has completed a scan since the inputs were forced;
 - inputs are forced, not written, because the board rewrites its input image on
   every scan; the forced byte replaces all eight bits of it for the run;
-- a sample taken later than the declared tolerance, `--tolerance-ms` (50 ms by
-  default), voids the run, and the tolerance is written in the record;
+- the tolerance, `--tolerance-ms` (50 ms by default), is a lateness bound and
+  not a window around the tick: a sample is never taken before its tick, the
+  assertion windows of the scenario are not widened by it, and a sample taken
+  later than the tolerance voids the run;
+- a run voided by the tolerance, or stopped by an error, still writes its
+  record: the void result, the tolerance, the lateness of every tick sampled
+  (`measurements.ticks`) and the release of the forces;
 - every force the tool set is cleared at the end and on abort, and the board is
   left stopped. If the link is lost the device releases the forces itself.
 
@@ -192,7 +197,7 @@ Every hardware run writes a JSON record, described by
 `tools/hil/run-record.schema.json`, to `build/hil-records/` or the directory of
 `--out`. It holds the board and what the device reported, the firmware commit,
 version and ABI as the image reports them, the hash of every program and of the
-image you say you flashed, each step with its result and the time you confirmed
+image (the one you name with `--firmware-image`, else the one the device reports), each step with its result and the time you confirmed
 it, the tests, the tool versions, the operator and the raw shell log.
 
 Fields that the firmware image cannot report yet are `null`: the record says it
@@ -285,9 +290,8 @@ a build whose configuration or options name it. `--no-watchdog-build` prints
 the plain command, and the watchdog step then fails and says why.
 
 The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`),
-which the shipped profiles keep off until a board has its hardware record, so
-that the RETAIN step can measure it. On an image without it the step fails and
-says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
+which the shipped profiles set too, so that the RETAIN step can measure it. On an
+image without it the step fails and says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
 128 KB storage partition, which holds the two program slots, the two RETAIN
 records and a spare sector (RT-029).
 
@@ -310,7 +314,7 @@ RST if the board stays in download mode.
 | 10 | Force set and release | Sets, lists and clears a force | No force remains | Not run yet | Filled in from the emulated records |
 | 11 | Stop | Stops the board | Not running, output image zero | Not run yet | Filled in from the emulated records |
 | 12 | Digital loopback | Forces each output on and off alone and reads the inputs | Each input follows its own output, no other moves | Not run yet | Filled in from the emulated records |
-| 13 | Analog read | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0 | Within 5 % of full scale at the ends, 10 % in the middle | Not run yet | Filled in from the emulated records |
+| 13 | Analog read | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0 | The potentiometer is wired 3V3 to GND, so its top is 3.3 V. Within 5 % of the expected reading at 0 % and 100 %, 10 % in the middle. On the ESP32-S3 the converter spans 0 to 3.1 V (`raw_max` 2885), so 100 % saturates: the step expects full scale with 7 % of tolerance (a chip that stops near 2.9 V still passes), and 50 % (1.65 V) expects 53 % of full scale | Not run yet | Filled in from the emulated records |
 | 14 | Timer accuracy | Runs a TON of 3 s and times its output from RUN with the bench clock | Between 3000 ms minus one scan and 3000 ms plus one scan, 100 ms and two read round trips | Not run yet | Filled in from the emulated records |
 | 15 | Scan jitter, ten minutes | Runs a 10 ms task for ten minutes and reads the runtime's own measure of every scan: each task's shortest and longest period (`zplc status --json`, `tasks[]`) | No overrun, no deadline miss, every scan period within 20 % of the interval | Not run yet | Filled in from the emulated records |
 | 16 | Overrun | Runs a 1 ms task that drives DO0 and loops for half of the image's VM instruction budget (a scan past the budget latches the VM watchdog fault instead) | The `deadline_miss` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |

@@ -94,13 +94,26 @@ describe('the shell link speaks the firmware grammar (HIL-001)', () => {
     expect(shell.sent.some((line) => line.includes('sched'))).toBe(false);
   });
 
-  test('a chunk the device refuses is sent again, and a third refusal fails the deploy', async () => {
+  test('a chunk the device refuses fails the deploy at once, with the text of the device (HIL-001.05)', async () => {
     const shell = new Shell();
-    shell.failDataChunks = 2;
-    await new ShellLink(shell).load(Uint8Array.of(1, 2));
-    const refusing = new Shell();
-    refusing.failDataChunks = 3;
-    await expect(new ShellLink(refusing).load(Uint8Array.of(1, 2))).rejects.toBeInstanceOf(DeviceCommandError);
+    shell.failDataChunks = 1;
+    await expect(new ShellLink(shell).load(Uint8Array.of(1, 2))).rejects.toThrow(/chunk refused/);
+    expect(shell.sent.filter((line) => line.startsWith('zplc sched data'))).toHaveLength(1);
+  });
+
+  test('a chunk that gets no answer is sent again, and a third silence fails the deploy', async () => {
+    const silent = (misses: number): Shell => {
+      const shell = new Shell();
+      let left = misses;
+      const answer = shell.send.bind(shell);
+      shell.send = (line: string) => {
+        if (/^zplc sched data/.test(line) && left > 0) { left -= 1; shell.sent.push(line); return Promise.reject(new Error('no "OK:" after data')); }
+        return answer(line);
+      };
+      return shell;
+    };
+    await new ShellLink(silent(2)).load(Uint8Array.of(1, 2));
+    await expect(new ShellLink(silent(3)).load(Uint8Array.of(1, 2))).rejects.toThrow(/no "OK:"/);
   });
 
   test('memory is read from the dump and written a byte at a time', async () => {

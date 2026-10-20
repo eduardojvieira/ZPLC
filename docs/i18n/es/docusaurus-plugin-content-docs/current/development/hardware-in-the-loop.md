@@ -198,9 +198,13 @@ escenarios:
 - las entradas se fuerzan, no se escriben, porque la placa reescribe su imagen
   de entradas en cada ciclo; el byte forzado reemplaza sus ocho bits durante la
   ejecución;
-- una muestra tomada más tarde que la tolerancia declarada, `--tolerance-ms`
-  (50 ms por omisión), anula la ejecución, y la tolerancia queda en el
-  registro;
+- la tolerancia, `--tolerance-ms` (50 ms por omisión), es un límite de retraso
+  y no una ventana alrededor del tick: una muestra nunca se toma antes de su
+  tick, las ventanas de aserción del escenario no se ensanchan con ella, y una
+  muestra tomada más tarde que la tolerancia anula la ejecución;
+- una ejecución anulada por la tolerancia, o detenida por un error, también
+  escribe su registro: el resultado anulado, la tolerancia, el retraso de cada
+  tick muestreado (`measurements.ticks`) y la liberación de las fuerzas;
 - cada fuerza que fijó la herramienta se borra al final y al abortar, y la
   placa queda detenida. Si se pierde el enlace, el propio dispositivo libera
   las fuerzas.
@@ -211,7 +215,7 @@ Cada ejecución de hardware escribe un registro JSON, descrito por
 `tools/hil/run-record.schema.json`, en `build/hil-records/` o en el directorio
 de `--out`. Contiene la placa y lo que informó el dispositivo, el commit, la
 versión y el ABI del firmware según los informa la imagen, el hash de cada
-programa y de la imagen que usted dice haber grabado, cada paso con su
+programa y de la imagen (la que usted indica con `--firmware-image`, o si no la que informa el dispositivo), cada paso con su
 resultado y el momento en que usted lo confirmó, las pruebas, las versiones de
 las herramientas, la persona operadora y el registro crudo del shell.
 
@@ -314,9 +318,8 @@ configuración u opciones la nombran. `--no-watchdog-build` imprime el comando
 sin la opción, y el paso del watchdog falla y dice por qué.
 
 La imagen HIL también activa la persistencia de RETAIN
-(`CONFIG_ZPLC_RETAIN_PERSIST`), que los perfiles que se distribuyen mantienen
-desactivada hasta que una placa tenga su registro de hardware, para que el paso
-de RETAIN pueda medirla. Con una imagen sin ella el paso falla y dice que la
+(`CONFIG_ZPLC_RETAIN_PERSIST`), que los perfiles que se distribuyen también
+establecen, para que el paso de RETAIN pueda medirla. Con una imagen sin ella el paso falla y dice que la
 imagen no puede conservar RETAIN. La Pico y la RP2040-Zero tienen una partición
 de almacenamiento de 128 KB, que guarda las dos ranuras de programa, los dos
 registros de RETAIN y un sector de reserva (RT-029).
@@ -340,7 +343,7 @@ puerto marcado USB, y pulse RST si la placa queda en modo de descarga.
 | 10 | Fijar y liberar una fuerza | Fija, lista y borra una fuerza | No queda ninguna fuerza | Todavía no se ejecutó | Se completa con los registros emulados |
 | 11 | Detener | Detiene la placa | No está en ejecución, imagen de salidas en cero | Todavía no se ejecutó | Se completa con los registros emulados |
 | 12 | Lazo digital | Fuerza cada salida, sola, a encendida y apagada y lee las entradas | Cada entrada sigue a su propia salida y ninguna otra cambia | Todavía no se ejecutó | Se completa con los registros emulados |
-| 13 | Lectura analógica | Le pide girar el potenciómetro a 0 %, 50 % y 100 % y lee AI0 | Dentro del 5 % de la escala completa en los extremos y del 10 % en el centro | Todavía no se ejecutó | Se completa con los registros emulados |
+| 13 | Lectura analógica | Le pide girar el potenciómetro a 0 %, 50 % y 100 % y lee AI0 | El potenciómetro va de 3V3 a GND, así que su extremo superior son 3,3 V. Dentro del 5 % de la lectura esperada en 0 % y 100 %, y del 10 % en el centro. En la ESP32-S3 el conversor abarca de 0 a 3,1 V (`raw_max` 2885), de modo que el 100 % satura: el paso espera la escala completa con 7 % de tolerancia (un chip que se detiene cerca de 2,9 V sigue pasando), y el 50 % (1,65 V) espera el 53 % de la escala completa | Todavía no se ejecutó | Se completa con los registros emulados |
 | 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un ciclo y 3000 ms más un ciclo, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
 | 15 | Jitter de ciclo, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee la medida propia del runtime de cada ciclo: el período más corto y el más largo de cada tarea (`zplc status --json`, `tasks[]`) | Ningún desborde, ningún plazo incumplido, cada período de ciclo dentro del 20 % del intervalo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un ciclo que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
