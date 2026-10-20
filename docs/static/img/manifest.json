@@ -53,6 +53,96 @@
       "bytes": 126313,
       "width": 1440,
       "height": 900
+    },
+    {
+      "file": "editors/st-en.png",
+      "step": "The ST editor with the Blinky example, interface in English",
+      "sha256": "3bf19bf0bbf65cad6a90c09b3237e7703f4565f79f339d7f5d257723bfb9fea2",
+      "bytes": 128418,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/st-es.png",
+      "step": "The ST editor with the Blinky example, interface in Spanish",
+      "sha256": "a65d034e0ccef63f7ecb4ac777ff8c76c8609f256e9c346cb0a656e9738a123b",
+      "bytes": 147386,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/il-en.png",
+      "step": "The IL editor with the Blinky example, interface in English",
+      "sha256": "31aa38b23f2b51d038c93161620cf04815bfdd52b53da5e442793adbf92ffa76",
+      "bytes": 130470,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/il-es.png",
+      "step": "The IL editor with the Blinky example, interface in Spanish",
+      "sha256": "c2f3f502539d9e1e002f966e46b99838dda4728773dd1099b7cdecff4ecf251c",
+      "bytes": 153178,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/ld-en.png",
+      "step": "The LD editor with the Blinky example, interface in English",
+      "sha256": "5bbd82b3e392e64c7ce194bbb6472dabdfcc05794f4516516e249d9b452afc81",
+      "bytes": 127351,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/ld-es.png",
+      "step": "The LD editor with the Blinky example, interface in Spanish",
+      "sha256": "24aee9a4ceedd1495561dd348b8e7b6443981d39cd3cd8124b436758c09f4eb6",
+      "bytes": 141301,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/fbd-en.png",
+      "step": "The FBD editor with the Blinky example, interface in English",
+      "sha256": "5f4b3beaab3dce8461d0b47207835c55b27ff9fa730a083e5e42922ee4b9f72f",
+      "bytes": 113480,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/fbd-es.png",
+      "step": "The FBD editor with the Blinky example, interface in Spanish",
+      "sha256": "90e73aa922aa8e9cb8fc05a307638ea31f6a9c1e22b0d3641b1eddcacc3768b4",
+      "bytes": 120219,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/sfc-en.png",
+      "step": "The SFC editor with the Blinky example, interface in English",
+      "sha256": "8021efc2be204308fa04f0bfa5a49a325b3840884f17b8b960037a26dba3cbff",
+      "bytes": 109760,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
+    },
+    {
+      "file": "editors/sfc-es.png",
+      "step": "The SFC editor with the Blinky example, interface in Spanish",
+      "sha256": "0018f98225e67d180ac0d304a8f5c25e77ee1e2630f542dd3e894d97c5eb2974",
+      "bytes": 119529,
+      "width": 1366,
+      "height": 768,
+      "commit": "b2a30794cfba77b6562197ee026c926b36e4459f"
     }
   ]
 }

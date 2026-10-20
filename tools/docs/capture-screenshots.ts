@@ -4,6 +4,10 @@
 //   bun run docs:screenshots            run the tutorial journey in the real application and write docs/static/img/tutorials
 //                                       and docs/static/img/manifest.json (needs a display, the built runtime and the built
 //                                       application, as `bun run test:journeys` does)
+//   bun run docs:screenshots -- --editors
+//                                       headless Chromium against the Vite renderer (no display, no Electron): one picture of each language
+//                                       editor in English and in Spanish, for the language reference pages (DOC-006), into
+//                                       docs/static/img/editors; the manifest keeps the tutorial pictures and records the commit of these
 //   bun tools/docs/capture-screenshots.ts --check
 //                                       exit 1 when a page shows an image that the manifest does not list, a listed image is
 //                                       missing or changed, or a picture of the folder is not in the manifest
@@ -23,6 +27,11 @@ import { markdownFiles } from './check_doc_claims';
 const ROOT = new URL('../../', import.meta.url).pathname;
 export const IMAGE_DIR = 'docs/static/img';
 export const PICTURE_DIR = `${IMAGE_DIR}/tutorials`;
+/** The editor pictures of the language reference (DOC-006): `<language>-<locale>.png`, taken by packages/zplc-ide/scripts/capture-editor-shots.ts. */
+export const EDITOR_DIR = `${IMAGE_DIR}/editors`;
+export const EDITOR_LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
+export const EDITOR_LOCALES = ['en', 'es'] as const;
+export const EDITOR_COMMAND = 'bun run docs:screenshots -- --editors';
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
 /**
  * The wiring diagrams of the hardware lessons (LRN-014): drawings that tools/docs/generate_hardware_pages.ts writes from
@@ -42,7 +51,7 @@ export const PICTURES = [
 ] as const;
 export const JOURNEY = '56 Blink without hardware (the tutorial)';
 
-export interface ManifestImage { file: string; step: string; sha256: string; bytes: number; width: number; height: number }
+export interface ManifestImage { file: string; step: string; sha256: string; bytes: number; width: number; height: number; /** The commit of an image that was not captured with the rest (the editor pictures). */ commit?: string }
 export interface Manifest {
   schemaVersion: 1;
   command: string;
@@ -99,7 +108,7 @@ export function checkManifest(manifest: Manifest, pages: Array<{ page: string; t
       if (size.width !== image.width || size.height !== image.height) problems.push({ where: path, message: `the picture is ${size.width}x${size.height}, the manifest says ${image.width}x${image.height}` });
     } catch { problems.push({ where: path, message: 'is not a PNG file' }); }
   }
-  for (const path of listed) if (path.startsWith(`${PICTURE_DIR}/`) && !known.has(path)) problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
+  for (const path of listed) if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`)) && !known.has(path)) problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
   for (const { page, text } of pages) {
     for (const reference of imagesOf(text)) {
       const path = staticPathOf(reference);
@@ -157,6 +166,33 @@ function capture(): void {
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
 
+/** The editor pictures: the helper of the IDE package takes them, this script hashes them into the manifest. */
+function captureEditors(): void {
+  const cache = process.env.TMPDIR ?? join(process.env.HOME ?? ROOT, '.cache', 'zplc-doc-shots');
+  mkdirSync(cache, { recursive: true });
+  const scratch = mkdtempSync(join(cache, 'docs-editor-shots-'));
+  try {
+    const run = spawnSync('bun', ['run', 'scripts/capture-editor-shots.ts', scratch], {
+      cwd: join(ROOT, 'packages/zplc-ide'), env: { ...process.env, TMPDIR: cache }, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8',
+    });
+    if (run.status !== 0) { process.stderr.write(`${run.stdout}\n${run.stderr}\n`); throw new Error('the editor capture failed, so no picture is written'); }
+    const wanted = EDITOR_LANGUAGES.flatMap((language) => EDITOR_LOCALES.map((locale) => ({ language, locale, file: `${language}-${locale}.png` })));
+    const taken = readdirSync(scratch).filter((name) => name.endsWith('.png')).sort();
+    if (taken.join() !== wanted.map(({ file }) => file).sort().join()) throw new Error(`the capture took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.map(({ file }) => file).join(', ')}`);
+    mkdirSync(join(ROOT, EDITOR_DIR), { recursive: true });
+    const commit = git(['rev-parse', 'HEAD']);
+    const images: ManifestImage[] = wanted.map(({ language, locale, file }) => {
+      copyFileSync(join(scratch, file), join(ROOT, EDITOR_DIR, file));
+      const bytes = readFileSync(join(ROOT, EDITOR_DIR, file));
+      return { file: `editors/${file}`, step: `The ${language.toUpperCase()} editor with the Blinky example, interface in ${locale === 'en' ? 'English' : 'Spanish'}`, sha256: sha256(bytes), bytes: bytes.length, ...pngSize(bytes), commit };
+    });
+    const manifest = JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest;
+    manifest.images = [...manifest.images.filter((image) => !image.file.startsWith('editors/')), ...images];
+    writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`docs-screenshots: ${images.length} editor pictures of ${commit.slice(0, 8)} written to ${EDITOR_DIR}`);
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+}
+
 function check(): number {
   // With no manifest nothing is published: no page may show an image and no picture may be in the folder.
   const manifest: Manifest = existsSync(join(ROOT, MANIFEST))
@@ -164,12 +200,15 @@ function check(): number {
     : { schemaVersion: 1, command: '', journey: '', commit: '', worktreeClean: true, productVersion: '', images: [] };
   const hasManifest = manifest.commit !== '';
   const pages = PAGE_DIRS.flatMap((directory) => markdownFiles(ROOT, directory)).map((page) => ({ page, text: readFileSync(join(ROOT, page), 'utf8') }));
-  const listed = existsSync(join(ROOT, PICTURE_DIR)) ? readdirSync(join(ROOT, PICTURE_DIR)).map((name) => `${PICTURE_DIR}/${name}`) : [];
+  const listed = [PICTURE_DIR, EDITOR_DIR].flatMap((directory) => (existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : []));
   const problems = checkManifest(manifest, pages, (path) => (existsSync(join(ROOT, path)) ? new Uint8Array(readFileSync(join(ROOT, path))) : undefined), listed)
     .filter((problem) => hasManifest || !problem.message.includes('commit must be'));
   if (hasManifest && git(['rev-parse', '--is-shallow-repository']) === 'false') {
     const known = spawnSync('git', ['cat-file', '-e', `${manifest.commit}^{commit}`], { cwd: ROOT });
     if (known.status !== 0) problems.push({ where: MANIFEST, message: `commit ${manifest.commit} is not in the history of this repository` });
+    for (const image of manifest.images) {
+      if (image.commit && spawnSync('git', ['cat-file', '-e', `${image.commit}^{commit}`], { cwd: ROOT }).status !== 0) problems.push({ where: MANIFEST, message: `${image.file} was captured from commit ${image.commit}, which is not in the history of this repository` });
+    }
   }
   for (const problem of problems) console.error(`docs-screenshots: ${problem.where}: ${problem.message}`);
   if (problems.length === 0) {
@@ -182,5 +221,5 @@ function check(): number {
 
 if (import.meta.main) {
   if (process.argv.includes('--check')) process.exit(check());
-  capture();
+  if (process.argv.includes('--editors')) captureEditors(); else capture();
 }
