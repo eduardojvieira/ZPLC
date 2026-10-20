@@ -24,7 +24,7 @@ const packages = loaded.packages;
 const LOCALES = ['en', 'es'] as const;
 /** Rioplatense voseo: a verb ending in a stressed -á, -é or -í (agregá, tené, elegí) or an -ás/-és/-ís form (necesitás), or "vos". */
 const VOSEO = /\b(?:vos|[A-Za-zñ]+(?:á|é|í|ás|és|ís))(?![A-Za-zñ])/gi;
-const NOT_VOSEO = new Set(['está', 'esté', 'así', 'además', 'demás', 'qué', 'través', 'después', 'más', 'país']);
+const NOT_VOSEO = new Set(['está', 'esté', 'así', 'además', 'demás', 'qué', 'través', 'después', 'más', 'país', 'sí', 'aquí', 'ahí', 'allí']);
 
 let workRoot = '';
 let previousBinary: string | undefined;
