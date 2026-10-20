@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Your first board
 sidebar_label: Your first board
-description: "The steps to build the firmware, flash it, connect Studio, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3, not yet executed on a board."
+description: "The steps to build the firmware, flash it, connect ZPLC, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3, not yet executed on a board."
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -11,7 +11,7 @@ tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 
 This page lists the steps from firmware to a blinking LED on a Raspberry Pi Pico
 or an ESP32-S3. It is written from the board manifest and the deploy flow of
-Studio, and **nobody has executed it on a board**.
+ZPLC, and **nobody has executed it on a board**.
 
 :::danger Not executed on a board
 The firmware of both boards builds in continuous integration and fits its flash
@@ -33,11 +33,11 @@ checked.
 | | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
 | --- | --- | --- |
 | Build target | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
-| Studio board | `rpi_pico` | `esp32s3_devkitc` |
+| Board in ZPLC | `rpi_pico` | `esp32s3_devkitc` |
 | Example project | `pico_blinky` | `esp32s3_blinky` |
 | First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1) | `DO0`, `%QX0.0`, pin GPIO15 (header J1 pin 8) |
 | What to wire | An LED and a 330 Ω resistor from the pin to GND (header pin 3) | An LED and a 330 Ω resistor from the pin to GND (header J1 pin 22) |
-| Interface to Studio | The USB cable of the board | The USB cable, on the port marked USB (not UART) |
+| Interface to ZPLC | The USB cable of the board | The USB cable, on the port marked USB (not UART) |
 
 The channels and the safe value of every output, the electrical notes and which
 pins the board's devicetree proves are in [Supported boards](../reference/boards.md).
@@ -54,9 +54,9 @@ The rc.3 release has no prebuilt firmware: it was uploaded by hand. The release
 pipeline builds one image of the runtime for every board of the manifest for each
 release it makes, named `zplc-runtime-<version>-<board>.<ext>`, with the checksum
 in `SHA256SUMS` and the evidence level of the board in the release notes. Its
-installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in Studio,
-open **Project settings**, **Target**, choose the board, and Studio shows the file,
-its SHA-256, where it is and the steps to flash it. Studio only shows them: you
+installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in ZPLC,
+open **Project settings**, **Target**, choose the board, and ZPLC shows the file,
+its SHA-256, where it is and the steps to flash it. ZPLC only shows them: you
 flash (step 2). The pipeline has not made a release yet, so today you build the
 firmware from the source, with the same script that continuous integration runs.
 Set up the Zephyr workspace once
@@ -82,7 +82,7 @@ A build that finishes proves only that the firmware builds for the board.
 
 ## 2. Flash it (a person does this)
 
-Flashing writes the firmware to the device and is **never done by Studio's AI or MCP
+Flashing writes the firmware to the device and is **never done by ZPLC's AI or MCP
 features**. [Flash the firmware](../guides/flash-firmware.md) has the steps of every
 board and the command line; in short, use the board's own Zephyr procedure:
 
@@ -96,21 +96,21 @@ board and the command line; in short, use the board's own Zephyr procedure:
 If a board does not come back, use the recovery procedure of its profile:
 [Recovery boundaries](../operations/recovery.md).
 
-## 3. Connect Studio
+## 3. Connect ZPLC
 
 1. Open the project of the example, build it (**Build**, **Compile**) and choose
    **Hardware** in the toolbar instead of **Simulate**.
-2. Press **Connect**. A dialog of Studio lists each serial port with its name and
+2. Press **Connect**. A dialog of ZPLC lists each serial port with its name and
    its USB identifiers and marks the boards it knows. If the board is not listed,
    plug it in and press **Refresh**. Choose its port and press **Use this port**:
-   Studio uses only that port, and choosing it sends nothing to the board. On Linux
-   your user needs the serial group: [Install ZPLC Studio](../getting-started/install.md#linux-serial-port-access).
-3. Studio reads the identity of the runtime: board, profile and ABI. A project built
+   ZPLC uses only that port, and choosing it sends nothing to the board. On Linux
+   your user needs the serial group: [Install ZPLC](../getting-started/install.md#linux-serial-port-access).
+3. The ZPLC application reads the identity of the runtime: board, profile and ABI. A project built
    for another board is refused.
 
 ## 4. Deploy and run (a person does this)
 
-1. Press **Deploy**. Studio shows the program's SHA-256, its size, the number of
+1. Press **Deploy**. ZPLC shows the program's SHA-256, its size, the number of
    tasks and the board of the device, and asks you to confirm. A deploy stops the
    current program and leaves the runtime **stopped**: it does not run it.
 2. Check that the machine is in a state where an output may change.
@@ -129,7 +129,7 @@ safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)
 | --- | --- | --- |
 | 1. Get the firmware | The build script runs in continuous integration and checks the flash and RAM budget | Builds in CI: `cross-build` |
 | 2. Flash it | None | Not yet verified on hardware |
-| 3. Connect Studio | The Blink tutorial exercises connecting in the simulator; no board has been connected | Not yet verified on hardware |
+| 3. Connect ZPLC | The Blink tutorial exercises connecting in the simulator; no board has been connected | Not yet verified on hardware |
 | 4. Deploy and run | The Blink tutorial exercises running in the simulator; no board has received a program | Not yet verified on hardware |
 | 5. Observe | The Watch table is exercised in the simulator; no physical output has been seen to change | Not yet verified on hardware |
 

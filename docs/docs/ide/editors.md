@@ -1,6 +1,6 @@
 # Text and Visual Editors
 
-Studio has one workbench for ST, IL, LD, FBD, and SFC, but each visual language
+ZPLC has one workbench for ST, IL, LD, FBD, and SFC, but each visual language
 retains its own semantic model.
 
 ## Current authoring paths
@@ -33,14 +33,14 @@ the block with named arguments, so the order in which you wire the inputs does n
 
 ## Visual files on disk
 
-A Ladder, FBD or SFC file is JSON. Studio checks it against the shape its editor reads when you open it (LNG-011):
+A Ladder, FBD or SFC file is JSON. ZPLC checks it against the shape its editor reads when you open it (LNG-011):
 a file that is not JSON, or that is JSON of another shape, shows an error panel that names the file and its first five
 violations by path (`rungs[0].grid[1][2].element.type: ...`), counts the rest, and leaves the window and every other
 tab as they were. Correct the file and open it again; the build refuses the same file for the same reason.
 
 Opening a visual file and saving it without a change leaves it byte for byte as it was (LNG-014), whatever layout it was
 written in. A change that ends where it started, such as dragging an element away and back, does not rewrite the file
-either. The first real edit writes the whole file in the one form Studio uses: two-space JSON with a newline at the end
+either. The first real edit writes the whole file in the one form ZPLC uses: two-space JSON with a newline at the end
 (a number written `2.0` is written `2`; a Ladder rung written as a list of elements is written as a grid).
 
 ## Undo, redo and selection in the visual editors
@@ -100,7 +100,7 @@ An input has one source: a second wire into it is refused too. A wire may be sta
 ## Where a diagnostic points
 
 A diagnostic of a visual or IL file names the element it is about (LNG-003, LNG-026), not a line of the generated
-Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and Studio's
+Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and ZPLC's
 Problems panel selects it when you activate the problem:
 
 | Language | Element | Selected |
@@ -143,7 +143,7 @@ ones the runtime of the simulation and of a board take; stopping on a board has 
 
 ## Online values from the debug map
 
-While a program runs under Studio, each editor shows what the program holds (LNG-006), read through the debug map of the
+While a program runs under ZPLC, each editor shows what the program holds (LNG-006), read through the debug map of the
 build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated
 program holds its state, so no editor guesses a name from the one it sees: a state that the map does not give is shown as
 unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
@@ -214,13 +214,13 @@ Evidence level: host. `src/editors/arrange.test.ts` checks the arithmetic on box
 
 ## Focus in the visual editors
 
-A node, an edge, a toolbox button and the field that edits a name in Ladder, FBD and SFC show the same focus ring as every other control of Studio, in every theme: two pixels in the light and dark themes, three in high contrast, and the system highlight colour in forced-colours mode. The diagram library removes the outline of its nodes and edges, so `src/index.css` puts the ring back on them, and no visual-editor source carries a focus class of its own. `src/theme/focusRing.test.ts` fails when one does, or when the ring is missing from the nodes.
+A node, an edge, a toolbox button and the field that edits a name in Ladder, FBD and SFC show the same focus ring as every other control of ZPLC, in every theme: two pixels in the light and dark themes, three in high contrast, and the system highlight colour in forced-colours mode. The diagram library removes the outline of its nodes and edges, so `src/index.css` puts the ring back on them, and no visual-editor source carries a focus class of its own. `src/theme/focusRing.test.ts` fails when one does, or when the ring is missing from the nodes.
 
 Evidence level: host. The test reads the stylesheet and the sources; a journey that tabs to a node and reads its computed outline is in the themes journey (UX-027).
 
 ## Themes, forced colours and reduced motion in the editors
 
-The three visual editors and the code editor follow the light, dark and high-contrast themes, the system's forced-colours mode and the reduced-motion setting, like the rest of Studio. A visual editor is drawn only from the tokens of `src/theme/tokens.ts`: no source of `src/editors` carries a stock colour, a literal colour, a glow or a focus class of its own, and the kit guard list has no entry left for them. The contrast of text, muted labels, every signal state and the wire that carries TRUE is declared for the canvas and for a node, and `bun tools/ci/ux-tokens.ts` checks it in all three themes.
+The three visual editors and the code editor follow the light, dark and high-contrast themes, the system's forced-colours mode and the reduced-motion setting, like the rest of ZPLC. A visual editor is drawn only from the tokens of `src/theme/tokens.ts`: no source of `src/editors` carries a stock colour, a literal colour, a glow or a focus class of its own, and the kit guard list has no entry left for them. The contrast of text, muted labels, every signal state and the wire that carries TRUE is declared for the canvas and for a node, and `bun tools/ci/ux-tokens.ts` checks it in all three themes.
 
 Under reduced motion the stylesheet shortens every transition and animation, and the camera of a diagram, which script animates, takes its length from `animationMs` in `src/theme/motion.ts`: zero when the system asks for reduced motion. A wire is never animated; an active SFC step is a heavier wire in the TRUE colour.
 
@@ -292,7 +292,7 @@ coordinate (a block is put beside the cursor, then nudged with the arrow keys).
 
 ## What is drawn again when a value changes
 
-A watched value is read ten times a second while a program runs. Studio draws again only what shows it (IDE-013): the Watch
+A watched value is read ten times a second while a program runs. ZPLC draws again only what shows it (IDE-013): the Watch
 table, and the editor of the file that has the variable in it. The Explorer, the toolbar, the settings and the tab bar do not
 subscribe to the readings, and a reading that is the value it was publishes nothing. A component that needs five of 200
 watched values is drawn again when one of those five changes, not when another does.

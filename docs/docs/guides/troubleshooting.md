@@ -36,7 +36,7 @@ board has a problem that only a board shows: read the rows for connecting.
 | Windows says **Windows protected your PC**, or blocks the file with no **Run anyway** | The installer is unsigned: SmartScreen warns, and Smart App Control blocks every unsigned app | [First launch](../getting-started/install.md#first-launch) |
 | macOS says it cannot verify the app, or that it is damaged | The app has no developer identity and is not notarized | [First launch](../getting-started/install.md#macos) |
 | The checksum does not match | The download is incomplete, or it is not the published file | Download it again; do not open a file whose hash differs |
-| Studio from source says the simulator is missing | The native runtime is a separate program | `bun run build:runtime`, then start Studio again |
+| ZPLC from source says the simulator is missing | The native runtime is a separate program | `bun run build:runtime`, then start ZPLC again |
 
 ## Building
 
@@ -64,7 +64,7 @@ board has a problem that only a board shows: read the rows for connecting.
 | --- | --- | --- |
 | The serial port is refused on Linux | Your user is not in the serial group | [Linux: serial port access](../getting-started/install.md#linux-serial-port-access) |
 | Deploy is refused naming a board | The project was built for another board than the device reports | Select the right board, rebuild, and reflash if the firmware is not the one of the project |
-| Deploy is refused with two draft numbers | The program and the runtime come from different drafts of the binary contract. The current draft is 5: a program built before it is refused, and Studio refuses a device whose firmware reports an older one | Rebuild the program and reflash the board together ([Draft contract counter](../contributing/index.md#draft-contract-counter)); `tools/contract/restamp_artifacts.py` moves artifacts committed to a repository |
+| Deploy is refused with two draft numbers | The program and the runtime come from different drafts of the binary contract. The current draft is 5: a program built before it is refused, and the ZPLC application refuses a device whose firmware reports an older one | Rebuild the program and reflash the board together ([Draft contract counter](../contributing/index.md#draft-contract-counter)); `tools/contract/restamp_artifacts.py` moves artifacts committed to a repository |
 | The device received an earlier build | The deploy did not carry the current program | Build, then deploy again before **Run** |
 | A board does not come back after flashing | Firmware recovery is the board's own procedure | [Recovery boundaries](../operations/recovery.md) |
 
@@ -72,7 +72,7 @@ board has a problem that only a board shows: read the rows for connecting.
 
 | Symptom | What it means | What to do |
 | --- | --- | --- |
-| A communication block ends with `ERROR` and `STATUS` 3 | No handler: this runtime has no handler for the block. Studio's simulator starts the runtime without the communication blocks | Expected in Studio; the exchange needs a board ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
+| A communication block ends with `ERROR` and `STATUS` 3 | No handler: this runtime has no handler for the block. The ZPLC simulator starts the runtime without the communication blocks | Expected in the ZPLC simulator; the exchange needs a board ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
 | `STATUS` 10 | Not available: the service of the block is not in this runtime, or is off in the configuration. With the communication blocks on in simulation, a Modbus RTU request, every cloud block and an MQTT block with no broker answer it | Use a board, or a configuration that turns the service on |
 | `STATUS` 2 | The peer did not answer, or the request outlived its time limit: 8.8 s for Modbus with the default timeout, 5 s for a publish, 90 s for a provisioning | Check the peer and the link; a late result is dropped |
 | `STATUS` 4 | The session or the link is not connected | Check the settings with `zplc mqtt status` and `zplc net status` |
@@ -92,5 +92,5 @@ board has a problem that only a board shows: read the rows for connecting.
 
 ## See also
 
-- [Install ZPLC Studio](../getting-started/install.md), [Command line](./command-line.md) and [The ZPLC shell](../operations/shell.md).
+- [Install ZPLC](../getting-started/install.md), [Command line](./command-line.md) and [The ZPLC shell](../operations/shell.md).
 - [Safety and limitations](../safety-and-limitations.md).

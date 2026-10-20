@@ -24,14 +24,14 @@ por qué y qué hacer en su lugar.
 
 Cada lección tiene seis etapas (Objetivo, Prediga, Edite, Ejecute,
 Observe y Reflexione), dos niveles de pista y una solución de referencia que
-puede pedir ver. Studio registra que vio la solución.
+puede pedir ver. ZPLC registra que vio la solución.
 
 
 ## Por qué este orden
 
 Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior.
 
-Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en Studio muestra las mismas palabras, tomadas del mismo archivo del curso.
+Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en ZPLC muestra las mismas palabras, tomadas del mismo archivo del curso.
 
 
 Disponibles hoy: **33**. Planeadas: **0**. En total: **33**.
@@ -53,7 +53,7 @@ Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nom
 
 Fundamentos. Requiere el módulo: ninguno. Rutas: Simulación, Hardware.
 
-Antes de cualquier teoría, se ve algo en movimiento: un recorrido por Studio y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa.
+Antes de cualquier teoría, se ve algo en movimiento: un recorrido por ZPLC y la simulación que termina en una salida que parpadea en menos de diez minutos y, para la ruta de hardware, una verificación de su placa.
 
 | Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -242,7 +242,7 @@ Objetivos de las lecciones disponibles:
 
 Avanzado. Requiere el módulo: 7. Rutas: Simulación, Hardware.
 
-Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que Studio inicia en este equipo, así que no se necesita red ni placa.
+Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulación, Modbus y MQTT funcionan con servicios que ZPLC inicia en este equipo, así que no se necesita red ni placa.
 
 | Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
@@ -250,7 +250,7 @@ Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulac
 | `mqtt-publish-subscribe` MQTT: publicar un mensaje y recibirlo | Disponible | ST | Simulación | - | 25 | `modbus-register-round-trip` |
 | `modbus-coil-fbd` Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla | Disponible | FBD | Simulación | - | 25 | `modbus-register-round-trip`, `counter-batch-fbd` |
 
-Las lecciones de este módulo se califican con un servidor Modbus TCP y un broker MQTT que Studio inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
+Las lecciones de este módulo se califican con un servidor Modbus TCP y un broker MQTT que ZPLC inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
 
 Objetivos de las lecciones disponibles:
 

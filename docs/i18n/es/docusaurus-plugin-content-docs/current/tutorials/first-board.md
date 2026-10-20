@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: "Los pasos para compilar el firmware, grabarlo, conectar Studio, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
+description: "Los pasos para compilar el firmware, grabarlo, conectar ZPLC, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -11,7 +11,7 @@ tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 
 Esta página enumera los pasos desde el firmware hasta un LED que parpadea en una
 Raspberry Pi Pico o en un ESP32-S3. Está escrita a partir del manifiesto de placas
-y del flujo de despliegue de Studio, y **nadie la ha ejecutado en una placa**.
+y del flujo de despliegue de ZPLC, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
 El firmware de ambas placas compila en integración continua y cabe en su
@@ -33,11 +33,11 @@ lo cual está verificado.
 | | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
 | --- | --- | --- |
 | Destino de compilación | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
-| Placa en Studio | `rpi_pico` | `esp32s3_devkitc` |
+| Placa en ZPLC | `rpi_pico` | `esp32s3_devkitc` |
 | Proyecto de ejemplo | `pico_blinky` | `esp32s3_blinky` |
 | Primera salida digital | `DO0`, `%QX0.0`, pin GP0 (pin 1 del conector) | `DO0`, `%QX0.0`, pin GPIO15 (pin 8 del conector J1) |
 | Qué cablear | Un LED y una resistencia de 330 Ω del pin a GND (pin 3 del conector) | Un LED y una resistencia de 330 Ω del pin a GND (pin 22 del conector J1) |
-| Interfaz con Studio | El cable USB de la placa | El cable USB, en el puerto marcado USB (no UART) |
+| Interfaz con ZPLC | El cable USB de la placa | El cable USB, en el puerto marcado USB (no UART) |
 
 Los canales y el valor seguro de cada salida, las notas eléctricas y qué pines
 demuestra el devicetree de la placa están en [Placas soportadas](../reference/boards.md).
@@ -56,8 +56,8 @@ versiones compila una imagen del runtime para cada placa del manifiesto en cada
 versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
 suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
 notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi Pico y
-de la ESP32-S3: en Studio, abra **Configuración del proyecto**, **Destino**, elija la placa, y
-Studio muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. Studio
+de la ESP32-S3: en ZPLC, abra **Configuración del proyecto**, **Destino**, elija la placa, y
+ZPLC muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. ZPLC
 solo las muestra: usted graba (paso 2). El canal todavía no ha hecho una versión,
 así que hoy usted compila el firmware desde el código fuente, con el mismo script que
 ejecuta la integración continua. Prepare el espacio
@@ -86,7 +86,7 @@ Una compilación que termina demuestra solo que el firmware compila para la plac
 ## 2. Grábelo (lo hace una persona)
 
 Grabar escribe el firmware en el dispositivo y **nunca lo hacen las funciones de IA
-ni de MCP de Studio**. [Grabar el firmware](../guides/flash-firmware.md) tiene los pasos
+ni de MCP de ZPLC**. [Grabar el firmware](../guides/flash-firmware.md) tiene los pasos
 de cada placa y la línea de comandos; en resumen, use el procedimiento Zephyr propio de
 la placa:
 
@@ -100,21 +100,21 @@ la placa:
 Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 [Límites de la recuperación](../operations/recovery.md).
 
-## 3. Conecte Studio
+## 3. Conecte ZPLC
 
 1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simular**.
-2. Presione **Conectar**. Un diálogo de Studio lista cada puerto serie con su nombre
+2. Presione **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
    conéctela y presione **Actualizar**. Elija su puerto y presione **Usar este puerto**:
-   Studio usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
-   necesita el grupo del puerto serie: [Instalar ZPLC Studio](../getting-started/install.md#linux-acceso-al-puerto-serie).
-3. Studio lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
+   ZPLC usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
+   necesita el grupo del puerto serie: [Instalar ZPLC](../getting-started/install.md#linux-acceso-al-puerto-serie).
+3. La aplicación ZPLC lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
    para otra placa se rechaza.
 
 ## 4. Despliegue y ejecute (lo hace una persona)
 
-1. Presione **Cargar**. Studio muestra el SHA-256 del programa, su tamaño, la
+1. Presione **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
    cantidad de tareas y la placa del dispositivo, y le pide confirmar. Un despliegue
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
@@ -134,7 +134,7 @@ su estado seguro, apagado
 | --- | --- | --- |
 | 1. Obtenga el firmware | El script de compilación se ejecuta en integración continua y comprueba el presupuesto de flash y RAM | Compila en integración continua: `cross-build` |
 | 2. Grábelo | Ninguna | Aún no verificado en hardware |
-| 3. Conecte Studio | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
+| 3. Conecte ZPLC | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
 | 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa | Aún no verificado en hardware |
 | 5. Observe | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física | Aún no verificado en hardware |
 

@@ -13,9 +13,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 ## Editor
 
-Texto Estructurado se escribe en el editor de texto principal de ZPLC Studio, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.
+Texto Estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.
 
-Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de Studio, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
+Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
 
 ## Elementos
 

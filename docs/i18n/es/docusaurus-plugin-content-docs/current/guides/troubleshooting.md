@@ -37,7 +37,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 | Windows dice **Windows protected your PC**, o bloquea el archivo sin **Run anyway** | El instalador no está firmado: SmartScreen advierte, y Smart App Control bloquea toda aplicación sin firmar | [Primer inicio](../getting-started/install.md#primer-inicio) |
 | macOS dice que no puede verificar la aplicación, o que está dañada | La aplicación no tiene identidad de desarrollador y no está notarizada | [Primer inicio](../getting-started/install.md#macos) |
 | La suma de verificación no coincide | La descarga está incompleta, o no es el archivo publicado | Descárguelo de nuevo; no abra un archivo cuyo hash sea distinto |
-| Studio desde el código fuente dice que falta el simulador | El runtime nativo es un programa aparte | `bun run build:runtime` y vuelva a iniciar Studio |
+| ZPLC desde el código fuente dice que falta el simulador | El runtime nativo es un programa aparte | `bun run build:runtime` y vuelva a iniciar ZPLC |
 
 ## Compilar
 
@@ -65,7 +65,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 | --- | --- | --- |
 | El puerto serie se rechaza en Linux | Su usuario no está en el grupo del puerto serie | [Linux: acceso al puerto serie](../getting-started/install.md#linux-acceso-al-puerto-serie) |
 | El despliegue se rechaza nombrando una placa | El proyecto se compiló para otra placa distinta de la que informa el dispositivo | Elija la placa correcta, recompile y regrabe si el firmware no es el del proyecto |
-| El despliegue se rechaza con dos números de borrador | El programa y el runtime vienen de borradores distintos del contrato binario. El borrador actual es el 5: un programa compilado antes se rechaza, y Studio rechaza un dispositivo cuyo firmware informa uno anterior | Recompile el programa y regrabe la placa juntos ([Contador de borrador del contrato](../contributing/index.md#contador-de-borrador-del-contrato)); `tools/contract/restamp_artifacts.py` mueve los artefactos que se guardan en un repositorio |
+| El despliegue se rechaza con dos números de borrador | El programa y el runtime vienen de borradores distintos del contrato binario. El borrador actual es el 5: un programa compilado antes se rechaza, y la aplicación ZPLC rechaza un dispositivo cuyo firmware informa uno anterior | Recompile el programa y regrabe la placa juntos ([Contador de borrador del contrato](../contributing/index.md#contador-de-borrador-del-contrato)); `tools/contract/restamp_artifacts.py` mueve los artefactos que se guardan en un repositorio |
 | El dispositivo recibió una compilación anterior | El despliegue no llevó el programa actual | Compile y despliegue de nuevo antes de **Ejecutar** |
 | Una placa no vuelve después de grabar | La recuperación del firmware es el procedimiento propio de la placa | [Límites de la recuperación](../operations/recovery.md) |
 
@@ -73,7 +73,7 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| Un bloque de comunicación termina con `ERROR` y `STATUS` 3 | Sin manejador: este runtime no tiene manejador para el bloque. El simulador de Studio inicia el runtime sin los bloques de comunicación | Es lo esperado en Studio; el intercambio necesita una placa ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
+| Un bloque de comunicación termina con `ERROR` y `STATUS` 3 | Sin manejador: este runtime no tiene manejador para el bloque. El simulador de ZPLC inicia el runtime sin los bloques de comunicación | Es lo esperado en el simulador de ZPLC; el intercambio necesita una placa ([Modbus](./modbus.md), [MQTT](./mqtt-sparkplug.md)) |
 | `STATUS` 10 | No disponible: el servicio del bloque no está en este runtime, o está desactivado en la configuración. Con los bloques de comunicación activos en simulación, lo responden una solicitud Modbus RTU, todo bloque de nube y un bloque MQTT sin broker | Use una placa, o una configuración que active el servicio |
 | `STATUS` 2 | El par no respondió, o la solicitud superó su límite de tiempo: 8,8 s para Modbus con el tiempo de espera por defecto, 5 s para una publicación, 90 s para un aprovisionamiento | Compruebe el par y el enlace; un resultado tardío se descarta |
 | `STATUS` 4 | La sesión o el enlace no está conectado | Compruebe los ajustes con `zplc mqtt status` y `zplc net status` |
@@ -93,5 +93,5 @@ una placa tiene un problema que solo una placa muestra: lea las filas de conexi�
 
 ## Vea también
 
-- [Instalar ZPLC Studio](../getting-started/install.md), [Línea de comandos](./command-line.md) y [La consola de ZPLC](../operations/shell.md).
+- [Instalar ZPLC](../getting-started/install.md), [Línea de comandos](./command-line.md) y [La consola de ZPLC](../operations/shell.md).
 - [Seguridad y limitaciones](../safety-and-limitations.md).

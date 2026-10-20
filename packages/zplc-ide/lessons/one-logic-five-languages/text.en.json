@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
       "checkpoint": "The scenario is named GateLatch and contains {{assertions}} assertions."
     },
     {

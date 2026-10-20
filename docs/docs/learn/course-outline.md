@@ -22,7 +22,7 @@ and its board check is defined; no hardware run has been recorded on a board yet
 A lesson that does not offer a track says why and what to do instead.
 
 Each lesson has six stages (Objective, Predict, Edit, Run, Observe, Reflect), two
-levels of hint and a reference solution you may ask to see. Studio records that
+levels of hint and a reference solution you may ask to see. ZPLC records that
 you looked at the solution.
 
 
@@ -30,7 +30,7 @@ you looked at the solution.
 
 You see a result first: the tour of module 0 ends in a blinking output in simulation. The scan cycle comes next, because seal-in, edges and timers cannot be understood without it, and a first blink in Ladder and in Structured Text follows at once. Every later module builds on the ones before it, and communications and the capstone come last because they need everything before them.
 
-Each module below says why it sits where it does. The Learn home of Studio shows the same words, taken from the same course file.
+Each module below says why it sits where it does. The Learn home of ZPLC shows the same words, taken from the same course file.
 
 
 Available today: **33**. Planned: **0**. In all: **33**.
@@ -52,7 +52,7 @@ Each of the five languages is introduced by a lesson whose objective names it, a
 
 Foundation. Requires module: none. Tracks: Simulation, Hardware.
 
-You see something move before any theory: a tour of Studio and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.
+You see something move before any theory: a tour of ZPLC and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
@@ -241,7 +241,7 @@ Objectives of the available lessons:
 
 Advanced. Requires module: 7. Tracks: Simulation, Hardware.
 
-Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.
+Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that ZPLC starts on this computer, so no network or board is needed.
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
@@ -249,7 +249,7 @@ Communications come last because they need everything before them. In simulation
 | `mqtt-publish-subscribe` MQTT: publish a message and receive it | Available | ST | Simulation | - | 25 | `modbus-register-round-trip` |
 | `modbus-coil-fbd` Modbus in Function Block Diagram: write a coil and read it back | Available | FBD | Simulation | - | 25 | `modbus-register-round-trip`, `counter-batch-fbd` |
 
-The lessons of this module are graded against a Modbus TCP server and an MQTT broker that Studio starts inside the simulation session, on this computer, so no network, installed broker or board is needed. These are protocol doubles: they show how the blocks and their handshake behave, and they do not show that a real device, broker or cloud service accepts the same exchange. No hardware track exists for them because no trace of a real device has been recorded.
+The lessons of this module are graded against a Modbus TCP server and an MQTT broker that ZPLC starts inside the simulation session, on this computer, so no network, installed broker or board is needed. These are protocol doubles: they show how the blocks and their handshake behave, and they do not show that a real device, broker or cloud service accepts the same exchange. No hardware track exists for them because no trace of a real device has been recorded.
 
 Objectives of the available lessons:
 

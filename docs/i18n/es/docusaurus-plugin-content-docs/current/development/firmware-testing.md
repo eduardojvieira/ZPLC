@@ -135,7 +135,7 @@ la pila de red: éxito, ausencia de `CONNACK`, conexión rechazada, sesión perd
 `comm_modbus_fb` ejecutan los manejadores con un servicio sustituto, y `modbus_client_tcp` el cliente Modbus TCP contra un
 servidor escrito para la prueba. Los bloques de aprovisionamiento `AZURE_DPS_PROV` y `AWS_FLEET_PROV` se verifican solo en el
 manejador. Un doble prueba el comportamiento del protocolo, no que un servicio real lo acepte. En el host, `test_host_loopback`
-muestra los extremos que una sesión de Studio inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un
+muestra los extremos que una sesión de la aplicación ZPLC inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un
 canal que la placa no puede atender se cuenta y se informa (IO-007).
 
 Las suites de la VM nombran un perfil de memoria en el escenario, de modo que

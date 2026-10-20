@@ -24,7 +24,7 @@ Check that your board is the one you chose, that it blinks an LED and that it re
 
 ## Objectives
 
-- Check that the board Studio reaches is the board you chose.
+- Check that the board ZPLC reaches is the board you chose.
 - See an LED blink on the board.
 - Read a push button on the board.
 

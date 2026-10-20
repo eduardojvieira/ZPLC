@@ -20,7 +20,7 @@ El soporte de protocolos depende de las capacidades físicas de su placa objetiv
 
 Ningún intercambio por estas interfaces se ha probado en una placa; lo que se ha verificado está en las guías prácticas de [Modbus](../guides/modbus.md) y de [MQTT](../guides/mqtt-sparkplug.md).
 
-Studio muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
+ZPLC muestra la configuración de Wi-Fi o Ethernet solo para las placas que tienen ese hardware.
 
 ## Protocolos soportados
 
@@ -83,12 +83,12 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 ## Credenciales
 
 - Ningún comando imprime una contraseña, una clave, una clave SAS ni un certificado, y ninguna línea de log contiene alguno: `zplc config get` muestra `(set)` o `(not set)`, `zplc cert status` muestra solo presencia y tamaño, y el cliente MQTT registra códigos de error y rutas, no valores. La prueba del firmware fija un valor conocido para cada credencial y lo busca en la salida de todos los comandos que informan y en el log.
-- Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Trate la placa como si guardara el secreto, y usá en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
+- Las credenciales se guardan con el resto de los ajustes, y los certificados y claves como archivos o entradas del almacén no volátil del dispositivo. **Ninguna de las placas soportadas tiene un almacén protegido** (sin elemento seguro, sin flash cifrada por defecto): quien pueda leer la flash de la placa puede leerlas. Trate la placa como si guardara el secreto, y use en el broker o en la nube una cuenta con solo los permisos que el controlador necesita.
 - `config set` por el enlace serial lleva el valor en claro por ese enlace; cargue las credenciales por un enlace de confianza.
 
 ## Qué puede hacer un mensaje de la red
 
-Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en Studio, por el enlace serial.
+Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en la aplicación ZPLC, por el enlace serial.
 
 | Origen | Qué puede cambiar | Qué no alcanza |
 | --- | --- | --- |

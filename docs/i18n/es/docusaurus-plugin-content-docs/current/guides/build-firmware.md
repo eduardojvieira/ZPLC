@@ -11,7 +11,7 @@ tags: [how-to, hardware, firmware]
 
 La compilación produce una imagen del runtime para una placa. Es un paso aparte de
 [grabar](./flash-firmware.md), cargar y ejecutar, y **usted inicia cada uno**: el asistente de
-Studio y el servidor MCP nunca graban, despliegan, fuerzan, inician ni detienen un dispositivo.
+ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, inician ni detienen un dispositivo.
 
 :::caution Redactado, ejecutado en un anfitrión solo donde se indica
 Los comandos son los de los scripts del repositorio. Las compilaciones de Zephyr no se ejecutaron

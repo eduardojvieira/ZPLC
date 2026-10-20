@@ -1,15 +1,15 @@
 ---
 slug: /getting-started/install
 id: install
-title: Instalar ZPLC Studio
+title: Instalar ZPLC
 sidebar_label: Instalar
-description: "Descargue, verifique, abra, actualice y quite ZPLC Studio en Windows, macOS y Linux, desde los canales que existen hoy."
+description: "Descargue, verifique, abra, actualice y quite ZPLC en Windows, macOS y Linux, desde los canales que existen hoy."
 tags: [install, download, verify]
 ---
 
-# Instalar ZPLC Studio
+# Instalar ZPLC
 
-Esta página cubre la única forma de obtener hoy un Studio listo para usar: los
+Esta página cubre la única forma de obtener hoy ZPLC listo para usar: los
 archivos de una versión de GitHub. Dice qué es cada archivo, cómo comprobarlo, qué
 le pide su sistema la primera vez que lo abre, y cómo actualizarlo y quitarlo.
 
@@ -49,12 +49,12 @@ Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
 | Canal | Estado | Qué es |
 | --- | --- | --- |
 | [Versiones de GitHub](https://github.com/eduardojvieira/ZPLC/releases) | Activo | Instaladores para Windows, macOS y Linux, la línea de comandos y el servidor MCP independientes, una lista de materiales y sumas de verificación. |
-| Compilar desde el código fuente | Funciona en Linux y macOS | El camino de [Ejecutar Studio desde el código fuente](./index.md#ejecutar-studio-desde-el-código-fuente). |
+| Compilar desde el código fuente | Funciona en Linux y macOS | El camino de [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). |
 | Homebrew cask, Arch User Repository | Todavía no está activo | El canal puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
 | Microsoft Store, winget | Todavía no se puede enviar | Los canales necesitan una identidad de firma o una cuenta que el proyecto no tiene. |
 
 No instale ZPLC desde un gestor de paquetes ni una tienda: mientras un canal de la
-tabla no esté activo, cualquier paquete que diga ser ZPLC Studio no salió de este
+tabla no esté activo, cualquier paquete que diga ser ZPLC no salió de este
 proyecto.
 
 ## Homebrew y Arch Linux (todavía no están activos)
@@ -70,7 +70,7 @@ así que no los busque hoy.
   arquitectura, fijado por su SHA-256, con un solo comando completo:
 
   ```text
-  brew install --cask eduardojvieira/zplc/zplc-ide
+  brew install --cask eduardojvieira/zplc/zplc
   ```
 
   El cask quita de la aplicación instalada la marca de cuarentena de macOS
@@ -81,7 +81,7 @@ así que no los busque hoy.
   y sus pasos de arriba. Si el gestor de paquetes empieza a rechazar los cask que
   hacen esto, el cask ya no quitará la marca y valdrán los pasos del DMG.
 - **Arch Linux (todavía no activo).** Hasta que exista el paquete de AUR, no se
-  instala nada desde él. El paquete, `zplc-ide-bin`, reempaquetará el `.deb` de la
+  instala nada desde él. El paquete, `zplc-bin`, reempaquetará el `.deb` de la
   versión para `x86_64` y `aarch64`, con la suma de verificación de la versión y la
   regla udev de las placas. Se instalará con un ayudante de AUR o con `makepkg -si`,
   y solo cuando el proyecto lo cree. Sale del mismo archivo que el `.deb`, así que
@@ -123,10 +123,10 @@ antigua; desplácese hasta la versión preliminar 2.0.
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
 subieron a mano. Las versiones que hace el canal de publicación nombran los
 catorce archivos de instalación con una sola plantilla,
-`zplc-ide-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
+`zplc-<versión>-<sistema>-<arquitectura>[-<variante>].<extensión>`, en minúsculas
 y sin espacios (solo la extensión `AppImage` conserva sus mayúsculas). La variante es
 `setup` o `portable` en los dos archivos de Windows, y `unsigned` la sigue mientras
-esos archivos no lleven firma, por ejemplo `zplc-ide-<versión>-win-x64-setup-unsigned.exe`.
+esos archivos no lleven firma, por ejemplo `zplc-<versión>-win-x64-setup-unsigned.exe`.
 En macOS y Windows la arquitectura es `x64` o `arm64`; en Linux cada formato de
 paquete la escribe como lo hace su propia herramienta: `amd64` en el `.deb`, `x86_64`
 en el `.rpm` y en el AppImage, `aarch64` en el `.rpm` de arm64. El canal comprueba
@@ -171,13 +171,13 @@ inicio.
 
 1. Ejecute el archivo `Setup.exe` (o el archivo `Portable.exe`, que no necesita instalación).
 2. SmartScreen muestra **Windows protected your PC**. Seleccione **More info** y luego **Run anyway**. Como los archivos no están firmados, SmartScreen vuelve a preguntar con cada versión nueva. Consulte la [documentación de SmartScreen de Microsoft](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
-3. Si Windows bloquea el archivo y no ofrece **Run anyway**, Smart App Control está activado. Bloquea toda aplicación sin firmar y Microsoft no documenta ninguna excepción por aplicación. Desactívelo en Windows Security o [ejecute Studio desde el código fuente](./index.md#ejecutar-studio-desde-el-código-fuente). Consulte la [página de Smart App Control de Microsoft](https://support.microsoft.com/en-us/topic/what-is-smart-app-control-285ea03d-fa88-4d56-882e-6698afdb7003).
+3. Si Windows bloquea el archivo y no ofrece **Run anyway**, Smart App Control está activado. Bloquea toda aplicación sin firmar y Microsoft no documenta ninguna excepción por aplicación. Desactívelo en Windows Security o [ejecute ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). Consulte la [página de Smart App Control de Microsoft](https://support.microsoft.com/en-us/topic/what-is-smart-app-control-285ea03d-fa88-4d56-882e-6698afdb7003).
 
 ### macOS
 
-1. Abra el DMG, arrastre **ZPLC IDE** a Aplicaciones y ábralo.
+1. Abra el DMG, arrastre **ZPLC** a Aplicaciones y ábralo.
 2. macOS indica que no pudo verificar la aplicación, porque no está notarizada: la notarización necesita una membresía de pago del Apple Developer Program, y este proyecto no usa ningún servicio de pago. Elija **Done**, no **Move to Trash**.
-3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC IDE, confirme e ingrese su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
+3. Abra **System Settings** y luego **Privacy & Security**. En la sección **Security**, elija **Open Anyway** junto al mensaje de ZPLC, confirme e ingrese su contraseña. El botón queda disponible durante aproximadamente una hora después del intento fallido. Consulte las [instrucciones de Apple](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 Si macOS informa que la aplicación está dañada y ofrece solo **Move to Trash**, la
 causa es la marca de cuarentena que macOS puso en la descarga. Quitarla omite la
@@ -185,7 +185,7 @@ revisión de macOS sobre la aplicación, así que hágalo solo después de compr
 la suma de verificación coincide:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
+xattr -dr com.apple.quarantine "/Applications/ZPLC.app"
 ```
 
 ### Linux
@@ -228,7 +228,7 @@ chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
 
 ## Linux: acceso al puerto serie
 
-Studio abre un puerto serie solo cuando usted conecta una placa. En Linux, una
+ZPLC abre un puerto serie solo cuando usted conecta una placa. En Linux, una
 placa que aparece como `/dev/ttyACM0` o `/dev/ttyUSB0` pertenece a un grupo, y su
 usuario tiene que tener permiso para abrirla.
 
@@ -266,12 +266,12 @@ y lo que no, está en [Soporte de hardware](../reference/capabilities-evidence.m
 
 ## Actualizar
 
-Studio nunca se actualiza solo. Para saber si existe una versión más reciente,
-active **Check for a newer release when Studio starts** en Preferences, o presione
+ZPLC nunca se actualiza solo. Para saber si existe una versión más reciente,
+active **Check for a newer release when ZPLC starts** en Preferences, o presione
 **Buscar ahora**. La comprobación está desactivada por defecto; consulta las versiones
 de GitHub de este proyecto para obtener la última publicada, no envía nada sobre
 usted y muestra una versión y un enlace. No descarga ni instala nada. Cuando existe
-una versión más reciente, Studio muestra un aviso con su versión, la dirección de la
+una versión más reciente, ZPLC muestra un aviso con su versión, la dirección de la
 versión y el paso para su sistema; descártelo y volverá solo para una versión aún
 más reciente. Si no hay conexión, o la respuesta no se puede leer, no muestra nada.
 
@@ -285,14 +285,14 @@ actualización no las toca.
 
 | Sistema | Cómo |
 | --- | --- |
-| Windows, instalador | **Settings**, **Apps**, **Installed apps** y luego quite **ZPLC IDE**. |
+| Windows, instalador | **Settings**, **Apps**, **Installed apps** y luego quite **ZPLC**. |
 | Windows, portable | Elimine el archivo `Portable.exe`. |
-| macOS | Arrastre **ZPLC IDE** de Aplicaciones a la Papelera. |
-| Linux, RPM | `sudo dnf remove zplc-ide` |
-| Linux, DEB | `sudo apt remove zplc-ide` |
+| macOS | Arrastre **ZPLC** de Aplicaciones a la Papelera. |
+| Linux, RPM | `sudo dnf remove zplc` |
+| Linux, DEB | `sudo apt remove zplc` |
 | Linux, AppImage | Elimine el archivo. |
 
-Studio guarda sus preferencias, los proyectos recientes, el progreso de las
+ZPLC guarda sus preferencias, los proyectos recientes, el progreso de las
 lecciones y las copias de recuperación en la carpeta de datos de usuario de la
 aplicación para su cuenta; quitar la aplicación no la elimina. Las carpetas de sus
 proyectos nunca están dentro de ella.
@@ -307,9 +307,9 @@ proyectos nunca están dentro de ella.
 | macOS dice que la aplicación está dañada | La marca de cuarentena de la descarga, en una aplicación que no está notarizada. | Compruebe la suma de verificación y luego quite la marca con `xattr`. |
 | La suma de verificación no coincide | La descarga está incompleta, o no es el archivo publicado. | Descárguelo de nuevo. Si sigue siendo distinto, no lo abra. |
 | `gh attestation verify` falla | El archivo no lo construyó el flujo de trabajo del proyecto, o es un archivo de una versión hecha a mano, como rc.3. | Compruebe la suma de verificación y descargue desde la página de versiones de este repositorio. |
-| El AppImage no inicia | Otros AppImage de Electron necesitan `libfuse2` en Ubuntu 22.10 y posteriores, y ajustes adicionales para el sandbox de Chromium en Ubuntu 24.04 y posteriores. Ninguno de los dos casos se probó con ZPLC. | Use el `.rpm` o el `.deb` donde su sistema lo admita, o ejecute Studio desde el código fuente. |
+| El AppImage no inicia | Otros AppImage de Electron necesitan `libfuse2` en Ubuntu 22.10 y posteriores, y ajustes adicionales para el sandbox de Chromium en Ubuntu 24.04 y posteriores. Ninguno de los dos casos se probó con ZPLC. | Use el `.rpm` o el `.deb` donde su sistema lo admita, o ejecute ZPLC desde el código fuente. |
 | Se rechaza el puerto de una placa | Su usuario no está en el grupo del puerto serie. | Vea [Linux: acceso al puerto serie](#linux-acceso-al-puerto-serie). |
-| Studio no puede conectarse al simulador, en una compilación desde el código fuente | El runtime nativo es un programa aparte. | Constrúyalo primero y apunte Studio a él, como en [Ejecutar Studio desde el código fuente](./index.md#ejecutar-studio-desde-el-código-fuente). |
+| La aplicación ZPLC no puede conectarse al simulador, en una compilación desde el código fuente | El runtime nativo es un programa aparte. | Constrúyalo primero y apunte la aplicación a él, como en [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). |
 
 Si su problema no está aquí, abra una incidencia desde la plantilla de informe de
 error del [repositorio](https://github.com/eduardojvieira/ZPLC/issues). No incluya

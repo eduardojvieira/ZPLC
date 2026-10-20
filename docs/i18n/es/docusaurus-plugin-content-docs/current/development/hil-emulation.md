@@ -92,7 +92,7 @@ emulado no necesita terminal y no le pregunta a nadie: los pasos en los que una
 persona confirma la placa se registran como omitidos. Los registros se guardan en
 `build/hil-records/`.
 
-Para arrancar una placa y usar sus puertos a mano, por ejemplo desde Studio:
+Para arrancar una placa y usar sus puertos a mano, por ejemplo desde la aplicación ZPLC:
 
 ```bash
 python3 tools/hil/emulator/bench_emulated.py rpi_pico

@@ -1,13 +1,13 @@
 ---
 slug: /ide/features
 id: features
-title: Entorno de trabajo de Studio
+title: Entorno de trabajo de ZPLC
 sidebar_label: Entorno de trabajo
-description: El editor, el panel inferior, la simulación y el flujo de pruebas de ZPLC Studio 2.0.
+description: El editor, el panel inferior, la simulación y el flujo de pruebas de ZPLC.
 tags: [ide, user-guide]
 ---
 
-# Entorno de trabajo de Studio
+# Entorno de trabajo de ZPLC
 
 El entorno de trabajo mantiene la edición en el centro. Una barra de actividades y una
 barra lateral principal, a la izquierda, contienen el navegador del proyecto, la
@@ -109,7 +109,7 @@ La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto**, **Apren
 
 La pantalla de bienvenida lista, en **Recientes**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Olvidar** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
 
-Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recientes** o con **Abrir proyecto**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
+Para cada proyecto, ZPLC recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recientes** o con **Abrir proyecto**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de ZPLC, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca ZPLC.
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
 
@@ -125,7 +125,7 @@ Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos 
 | Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
 | Idioma | Automático, English, Español | Automático: sigue el idioma del sistema operativo y fija toda la interfaz y las lecciones de Aprender (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
 | Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
-| Check for a newer release when Studio starts | Activada o desactivada, y un botón **Buscar ahora** | Desactivada |
+| Check for a newer release when ZPLC starts | Activada o desactivada, y un botón **Buscar ahora** | Desactivada |
 
 El autoguardado escribe los archivos modificados con el mismo guardado que **Guardar todo**, sin una línea en Salida por cada guardado; un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un fallo cuesta como máximo lo escrito en el último segundo.
 
@@ -135,7 +135,7 @@ Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `sr
 
 ## Idioma de la interfaz
 
-La preferencia **Idioma** elige el idioma de Studio: **Automático**, **English** o **Español**. Automático, el valor por defecto, sigue el idioma del sistema operativo (`es`, `es-AR` y `es-MX` dan español; cualquier otro idioma da inglés). La elección se aplica de inmediato, sin reiniciar, y fija también el idioma de las lecciones de Aprender y el `lang` de la ventana. El texto en español es español latinoamericano neutro, con formas impersonales o de «usted», como en un manual industrial.
+La preferencia **Idioma** elige el idioma de ZPLC: **Automático**, **English** o **Español**. Automático, el valor por defecto, sigue el idioma del sistema operativo (`es`, `es-AR` y `es-MX` dan español; cualquier otro idioma da inglés). La elección se aplica de inmediato, sin reiniciar, y fija también el idioma de las lecciones de Aprender y el `lang` de la ventana. El texto en español es español latinoamericano neutro, con formas impersonales o de «usted», como en un manual industrial.
 
 Todo texto de la interfaz está en dos catálogos, `packages/zplc-ide/src/i18n/en.ts` (la fuente) y `es.ts`. Los textos de cada pantalla viven en un módulo propio, `packages/zplc-ide/src/i18n/catalog/<pantalla>.ts` (`console.ts`, `mqtt.ts`, `toolbarMsg.ts`, `examples.ts`, etc.), que reúne los dos idiomas y que `en.ts` y `es.ts` combinan. El nombre del producto se escribe una vez para el renderer (`src/productName.ts`) y una vez para el proceso principal (`electron/productName.ts`); los catálogos y el título de la ventana lo interpolan, y `electron/productName.test.ts` comprueba que ambos coinciden con el título de `index.html`. Para agregar un texto:
 
@@ -149,7 +149,7 @@ Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx`, `tools/ci/
 
 ## Menú de la aplicación, paleta de comandos y atajos
 
-Studio mantiene una sola lista de comandos, y toda forma de iniciar un comando la lee: el menú de la aplicación, la paleta de comandos, los atajos de teclado, las indicaciones de atajo de las descripciones emergentes y la referencia de atajos. Por eso un comando hace lo mismo desde cualquier lugar.
+ZPLC mantiene una sola lista de comandos, y toda forma de iniciar un comando la lee: el menú de la aplicación, la paleta de comandos, los atajos de teclado, las indicaciones de atajo de las descripciones emergentes y la referencia de atajos. Por eso un comando hace lo mismo desde cualquier lugar.
 
 - **Menú de la aplicación.** Archivo, Edición, Ver, Proyecto, Compilación, En línea, Depuración y Ayuda, en Windows, Linux y macOS por igual (macOS agrega su menú de la aplicación y un menú Ventana). El menú está en el idioma de la preferencia **Idioma** y cambia con ella. Una compilación empaquetada no tiene elementos de recarga ni de herramientas de desarrollo. El menú Ver conserva el zoom de la página: Acercar, Alejar y Tamaño real, con Ctrl y más, Ctrl y menos, y Ctrl y 0 (Cmd en macOS). El menú Edición contiene los elementos del portapapeles y de deshacer del sistema que usan los editores y los campos de texto.
 - **Paleta de comandos.** Pulse Ctrl+Mayús+P (Cmd+Mayús+P en macOS), escriba unas letras de un comando, elija con las flechas y pulse «Intro». La paleta lista todos los comandos, de modo que cada uno se alcanza desde el teclado aunque no tenga atajo. Un comando que no aplica ahora (por ejemplo Cargar sin conexión) aparece como no disponible y no se ejecuta.
@@ -181,7 +181,7 @@ Un indicador de carga aparece solo cuando una operación tarda más de 300 ms, d
 
 ## Inicio de la ventana
 
-Studio abre la ventana oculta y la muestra cuando la página ya se pintó, con el color del tema que usted eligió, de modo que un tema oscuro no parpadea en blanco al iniciar. El título de la ventana es el nombre del producto. El idioma y el tema se informan al proceso principal cada vez que cambian y se guardan en un archivo pequeño del directorio privado de datos de Studio, de modo que el siguiente inicio ya tiene el idioma del menú y el color de ventana correctos; un archivo ausente o dañado vuelve al inglés y al tema del sistema.
+ZPLC abre la ventana oculta y la muestra cuando la página ya se pintó, con el color del tema que usted eligió, de modo que un tema oscuro no parpadea en blanco al iniciar. El título de la ventana es el nombre del producto. El idioma y el tema se informan al proceso principal cada vez que cambian y se guardan en un archivo pequeño del directorio privado de datos de ZPLC, de modo que el siguiente inicio ya tiene el idioma del menú y el color de ventana correctos; un archivo ausente o dañado vuelve al inglés y al tema del sistema.
 
 Nivel de evidencia: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `src/components/panelStates.test.tsx`, `src/ui/kit.test.tsx` y `src/ui/logic/delay.test.ts` (requisitos UX-016 y UX-021) cubren el color de la ventana, las preferencias guardadas, los estados vacío, de carga y de error y el retraso de 300 ms. La ventana no se ha observado en Windows ni en macOS.
 
@@ -197,11 +197,11 @@ En el modo Archivos del navegador, el encabezado tiene **Nuevo archivo** y **Nue
 | **Eliminar** / **Eliminar carpeta** | Lo elimina del disco tras una confirmación que nombra los archivos con cambios sin guardar que contiene. |
 | **New folder...** | Sobre una carpeta: crea una carpeta dentro de ella. |
 
-Studio rechaza un nombre que ya existe, o que la compilación leería como igual al de otro programa (diferencias de mayúsculas, `main.ld` y `main.ld.json`, el mismo nombre en otra carpeta), y lo dice en el diálogo sin cambiar nada. Una carpeta vacía se muestra en el árbol.
+ZPLC rechaza un nombre que ya existe, o que la compilación leería como igual al de otro programa (diferencias de mayúsculas, `main.ld` y `main.ld.json`, el mismo nombre en otra carpeta), y lo dice en el diálogo sin cambiar nada. Una carpeta vacía se muestra en el árbol.
 
-Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Conservar mi versión** o **Cargar desde el disco** (para un archivo borrado, **Conservar mi versión** o **Cerrar archivo**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por Studio nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
+Un cambio hecho fuera de ZPLC se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Conservar mi versión** o **Cargar desde el disco** (para un archivo borrado, **Conservar mi versión** o **Cerrar archivo**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por ZPLC nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
+Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de ZPLC) de `bun run test:journeys` manejan la aplicación real.
 
 ## Cobertura de enclavamientos declarados
 
@@ -216,9 +216,9 @@ Nivel de evidencia: host. `src/components/InterlockCoverage.test.tsx` dibuja la 
 `workspaceSafetyPresentation.test.ts` cubre la respuesta, y el recorrido 33 de `bun run test:journeys` ejecuta la
 comprobación en la aplicación real.
 
-## Un resultado desde Studio, la CLI y las herramientas MCP
+## Un resultado desde la aplicación ZPLC, la CLI y las herramientas MCP
 
-Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Pruebas** de Studio, `zplc-cli test` y
+Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Pruebas** de la aplicación ZPLC, `zplc-cli test` y
 `zplc-cli scenario-run`, y las herramientas MCP `tests_run` y `scenario_run` llaman a la misma Tool API, sobre el mismo
 runtime POSIX nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`,
 `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash
@@ -228,7 +228,7 @@ CLI termina con código 1.
 
 Nivel de evidencia: host. `src/cli/scenarioParity.test.ts` ejecuta cada proyecto incluido, cada escenario por separado
 y un proyecto con una aserción que falla a través de la Tool API, la CLI, el despachador MCP y el presentador de
-Studio, y compara los resultados. No cubre una placa.
+ZPLC, y compara los resultados. No cubre una placa.
 
 ## Declaraciones y carpetas de biblioteca
 
@@ -252,7 +252,7 @@ de Declarations, en las paletas de los editores FBD y LD (el grupo **Project**) 
 editor ST.
 
 Un archivo Structured Text que no está en `src` ni directamente en una carpeta de biblioteca no lo lee ninguna
-compilación, y Studio lo dice como la compilación: el archivo se marca `not compiled` en el árbol, la sección lista su
+compilación, y ZPLC lo dice como la compilación: el archivo se marca `not compiled` en el árbol, la sección lista su
 carpeta con un botón **Incluir como biblioteca**, y **Compilación** informa `SOURCE_NOT_COMPILED`. Tampoco se lee una carpeta dentro de
 una biblioteca; lístela como biblioteca propia. Una carpeta de biblioteca que se renombra o se elimina queda en la
 lista, marcada "not in the project", hasta que usted la quita. Un proyecto que espera que se aplique su migración de
@@ -274,10 +274,10 @@ proyecto equivalente:
 2. **Elegir una carpeta e importar** pide una carpeta vacía, escribe allí los archivos byte por byte y abre el proyecto. Una
    carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta vacía otra vez.
 
-El archivo contiene los archivos tal como están en disco, por eso Studio le pide guardar antes los archivos
+El archivo contiene los archivos tal como están en disco, por eso ZPLC le pide guardar antes los archivos
 modificados. Deja fuera lo que el árbol del proyecto oculta (`node_modules`, `.git`, `build`, `dist` y `.vscode`) y los
 enlaces. Un archivo hecho en una máquina tiene los mismos bytes que uno hecho en otra: entradas ordenadas por ruta,
-guardadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. Studio lee archivos que escribieron otras
+guardadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. ZPLC lee archivos que escribieron otras
 herramientas (guardados o comprimidos) y rechaza uno que contenga una ruta absoluta, un `..`, un nombre que dos
 sistemas leen distinto, un enlace, una entrada cifrada, dos archivos que solo difieren en mayúsculas, un archivo que no
 coincide con su suma de verificación, más de 4096 archivos, un archivo de más de 16 MiB o más de 64 MiB en total.
@@ -290,15 +290,15 @@ un proyecto en la aplicación real y compara las dos carpetas.
 
 ## Cerrar con cambios sin guardar
 
-Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancelar** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Guardar todo y cerrar**, **Descartar los cambios y cerrar** y **Seguir editando**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
+ZPLC nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancelar** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Guardar todo y cerrar**, **Descartar los cambios y cerrar** y **Seguir editando**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
 
 Nivel de evidencia: host. El recorrido 10 (cerrar con cambios sin guardar: pestaña y ventana) y el recorrido 22 (Close Project pregunta antes de cerrar) de `bun run test:journeys` manejan la aplicación real; `packages/zplc-ide/electron/appMenu.test.ts` y `closeGuardIpc.test.ts` fijan el menú y los atajos de recarga. El atajo de recarga no se puede inyectar en el proceso principal con el protocolo de DevTools que usan los recorridos, así que la pregunta de recarga está cubierta por pruebas unitarias y por la lectura del manejador registrado, no por un recorrido.
 
 ## Recuperar trabajo sin guardar
 
-Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Descartar**, o cerrar el proyecto o la ventana y responder **Guardar** o **Descartar** elimina la copia, de modo que una salida normal no deja nada.
+ZPLC guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Descartar**, o cerrar el proyecto o la ventana y responder **Guardar** o **Descartar** elimina la copia, de modo que una salida normal no deja nada.
 
-Si Studio se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recuperar cambios sin guardar** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restaurar** devuelve el texto al editor, todavía sin guardar; **Descartar** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca Studio.
+Si ZPLC se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recuperar cambios sin guardar** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restaurar** devuelve el texto al editor, todavía sin guardar; **Descartar** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca ZPLC.
 
 Límites: un proyecto conserva copias de a lo sumo 64 archivos y unos 64 MB de texto. Los cambios en la configuración del proyecto (`zplc.json`) todavía no se copian.
 
@@ -390,7 +390,7 @@ detiene su runtime nativo.
 Un éxito se va solo tras unos segundos. Un fallo, una advertencia (por ejemplo un
 dispositivo que recibió una compilación anterior) y una cancelación permanecen
 hasta que usted las descarta. La notificación es un resumen: todos los mensajes que
-Studio escribía antes en el panel Salida siguen ahí.
+ZPLC escribía antes en el panel Salida siguen ahí.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
 el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
@@ -402,14 +402,14 @@ notificación de despliegue necesita un dispositivo y no la cubre ningún recorr
 
 ## Qué se carga al iniciar
 
-La pantalla de bienvenida es lo primero que muestra Studio, y se carga sin el editor de código, los editores visuales
+La pantalla de bienvenida es lo primero que muestra ZPLC, y se carga sin el editor de código, los editores visuales
 ni la configuración del proyecto. Cada uno se carga la primera vez que abre un archivo de su tipo o la configuración, y
-el área del editor dice "Loading editor..." durante ese instante. Studio incluye la parte de Monaco que usa (el editor,
+el área del editor dice "Loading editor..." durante ese instante. ZPLC incluye la parte de Monaco que usa (el editor,
 la búsqueda, el plegado, las sugerencias, el hover, ir a la definición y a las referencias, y la vista de diferencias),
 y no sus servicios de lenguaje de CSS, HTML, JSON y TypeScript ni sus otros lenguajes. El instalador no contiene mapas
 de fuentes.
 
-Nivel de evidencia: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila Studio y lee los fragmentos que la
+Nivel de evidencia: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila ZPLC y lee los fragmentos que la
 página de bienvenida carga al iniciar y los archivos que empaqueta el instalador; el recorrido 29 (la pantalla de
 bienvenida no carga ningún editor) de `bun run test:journeys` comprueba lo mismo en el host de desarrollo de la
 aplicación real. No se inspeccionó ningún instalador empaquetado.
@@ -439,10 +439,10 @@ Aprender tiene dos partes: el **inicio de Aprender**, una página que muestra el
 - 33 lecciones, en español y en inglés (el selector está en el panel; por defecto sigue el idioma de la aplicación). Cada lección es un paquete de datos, `packages/zplc-ide/lessons/<id>/`, con su texto en ambos idiomas, objetivos de aprendizaje, dos niveles de pista, un escenario de referencia con su hash de contenido y el proyecto de ejemplo del que usted parte: un archivo en Structured Text, o un archivo Ladder en la lección 5.
 - Las lecciones están en un curso: `packages/zplc-ide/lessons/course.json` enumera en orden los doce módulos del currículo, cada uno con un nivel (Fundamentos, Intermedio, Avanzado), el módulo que requiere y las pistas que ofrece (Simulación, Hardware), y cada lección indica su módulo, nivel, prerrequisitos y pistas en su propio manifiesto. Una lección que no admite una pista explica por qué y qué hacer en su lugar. El generador `bun tools/ci/generate-lesson-index.ts` valida el archivo y la ubicación de cada lección (el módulo existe, mismo nivel, pistas que el módulo ofrece, ningún prerrequisito en un módulo posterior) e incorpora el curso al índice de lecciones generado. Todos los módulos tienen ahora al menos una lección; un módulo sin ninguna se mostraría vacío, sin inventar ninguna lección. Las lecciones del módulo 10 (Modbus y MQTT) se califican en Simulación contra un servidor Modbus TCP y un broker MQTT que la sesión de simulación inicia en este equipo; son dobles de protocolo y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio.
 - Cada lección recorre seis etapas (en inglés Objective, Predict, Edit, Run, Observe y Reflect), el punto de control esperado de cada etapa permanece oculto hasta que usted lo pide, y las dos pistas se abren a pedido. Cada pista que usted abre queda registrada en su progreso. La solución de referencia se abre solo después de que usted lo confirma, y el progreso registra que la vio.
-- **Abrir el espacio de trabajo**, en la vista Aprender de la barra lateral (o **Iniciar** en el inicio de Aprender), crea el espacio de trabajo de la lección a partir de su proyecto inicial y lo abre, sin paso de copia. La aplicación de escritorio guarda el espacio de trabajo en su propia carpeta de datos de usuario, `learn-workspaces/<id de la lección>`, de modo que no aparece ningún diálogo de carpeta y no se copia nada a mano; cada inicio posterior lo vuelve a abrir con sus ediciones intactas. (Una versión de navegador que no puede darle esa carpeta a la aplicación pide una carpeta la primera vez, como antes.) La lección sigue visible junto al editor: en la barra de actividades de Learn ocupa la barra lateral primaria, y cuando usted cambia a Proyecto, Búsqueda o Pruebas pasa a la barra lateral secundaria, junto al Inspector, que queda a una elección de distancia. **Restaurar el proyecto inicial** devuelve los archivos del proyecto inicial después de que usted lo confirma; los archivos que usted agregó se conservan. Usted edita su espacio de trabajo, lo guarda y presiona **Verificar** (**Check** en inglés). Studio ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Pruebas**; esa ejecución no es la calificación.
-- Studio guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y cada nivel de pista mostrado (el nivel 1 y el nivel 2 se registran por separado) y si se mostró la solución (la solución de referencia se abre a pedido). Un archivo de progreso escrito por una versión anterior, que guardaba solo el nivel de pista más alto, se lee y se migra la próxima vez que se guarda. El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Exportar progreso** e **Importar progreso** en inglés) trasladan, en el inicio de Aprender, el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce. Un archivo rechazado dice por qué (demasiado grande, no es JSON, no es un archivo de progreso, una versión que este Studio no puede leer, o dañado) y deja su progreso como estaba.
+- **Abrir el espacio de trabajo**, en la vista Aprender de la barra lateral (o **Iniciar** en el inicio de Aprender), crea el espacio de trabajo de la lección a partir de su proyecto inicial y lo abre, sin paso de copia. La aplicación de escritorio guarda el espacio de trabajo en su propia carpeta de datos de usuario, `learn-workspaces/<id de la lección>`, de modo que no aparece ningún diálogo de carpeta y no se copia nada a mano; cada inicio posterior lo vuelve a abrir con sus ediciones intactas. (Una versión de navegador que no puede darle esa carpeta a la aplicación pide una carpeta la primera vez, como antes.) La lección sigue visible junto al editor: en la barra de actividades de Learn ocupa la barra lateral primaria, y cuando usted cambia a Proyecto, Búsqueda o Pruebas pasa a la barra lateral secundaria, junto al Inspector, que queda a una elección de distancia. **Restaurar el proyecto inicial** devuelve los archivos del proyecto inicial después de que usted lo confirma; los archivos que usted agregó se conservan. Usted edita su espacio de trabajo, lo guarda y presiona **Verificar** (**Check** en inglés). ZPLC ejecuta su programa guardado contra el escenario del paquete de la lección, identificado por su hash de contenido, en un proceso propio que **Cancelar** detiene; los archivos de escenario de su carpeta nunca se leen, de modo que editar un escenario allí no produce un aprobado. Una lección se da por completada cuando todas las aserciones de ese escenario pasaron. Una verificación que falla enumera cada aserción que falló con su instante, los valores esperados y observados, y la dirección de esa muestra en la traza registrada. El registro de calificación contiene el identificador y la versión de la lección, el hash del escenario, el hash del programa, la versión del runtime y la hora. Todavía puede ejecutar el escenario de su carpeta desde **Pruebas**; esa ejecución no es la calificación.
+- ZPLC guarda su progreso en un único archivo versionado de su directorio de datos de usuario: lecciones aprobadas con su registro de calificación, lecciones en curso, la última lección (el panel la vuelve a abrir), y cada nivel de pista mostrado (el nivel 1 y el nivel 2 se registran por separado) y si se mostró la solución (la solución de referencia se abre a pedido). Un archivo de progreso escrito por una versión anterior, que guardaba solo el nivel de pista más alto, se lee y se migra la próxima vez que se guarda. El archivo de progreso de una versión anterior se migra y se deja donde estaba. **Exportar progreso** e **Importar progreso** (**Exportar progreso** e **Importar progreso** en inglés) trasladan, en el inicio de Aprender, el documento completo como un archivo; una importación se valida, se combina con la calificación más reciente primero y conserva las lecciones que esta versión no conoce. Un archivo rechazado dice por qué (demasiado grande, no es JSON, no es un archivo de progreso, una versión que esta versión de ZPLC no puede leer, o dañado) y deja su progreso como estaba.
 - El **inicio de Aprender** es una página propia que se abre sin un proyecto abierto y sin red: desde **Aprender** en la pantalla de bienvenida, desde el elemento **Aprender** de la barra de actividades y desde **Abrir el inicio del curso** en el menú Ayuda. Enumera las pistas (Simulación, Hardware) y los doce módulos en orden, cada uno con su nivel, el módulo que requiere y su tiempo estimado, y bajo cada módulo sus lecciones con su estado en palabras, nunca solo con color: Bloqueada, Disponible, En curso o Aprobada. Una lección indica qué pistas admite y, para una pista que no admite, su propia razón y qué hacer en su lugar (escritas en el paquete de la lección, en los dos idiomas). **Continuar** retoma la última lección en la que trabajó, o comienza el curso si usted es un estudiante nuevo. Escape o **Cerrar** vuelve al editor, que queda como estaba.
-- Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el inicio dice cuáles. **Desbloquear todas las lecciones**, en el inicio, levanta el bloqueo de todas: es un ajuste guardado y Studio anuncia el cambio. Una lección que usted ya inició o aprobó no vuelve a bloquearse. En la vista Aprender de la barra lateral no se puede elegir una lección bloqueada.
+- Una lección está bloqueada hasta que se aprueban las lecciones que requiere, y el inicio dice cuáles. **Desbloquear todas las lecciones**, en el inicio, levanta el bloqueo de todas: es un ajuste guardado y ZPLC anuncia el cambio. Una lección que usted ya inició o aprobó no vuelve a bloquearse. En la vista Aprender de la barra lateral no se puede elegir una lección bloqueada.
 - **Aula: ocultar las soluciones de referencia**, en el inicio de Aprender, es un ajuste guardado de este equipo. Mientras está activado, Aprender no ofrece ninguna solución de referencia y lo dice. Para docentes, `bun tools/ci/learn-educator.ts` verifica un archivo de progreso exportado contra los hash de las lecciones e imprime el esquema del curso; vea [Docentes](../learn/educators.md). Nada de esto necesita una cuenta ni un servidor.
 - Aprender nunca inicia una operación física: solo copia un proyecto y abre **Pruebas**.
 - Un resultado es evidencia de host de la simulación nativa, no evidencia de hardware.
@@ -475,12 +475,12 @@ Una falla borra la imagen y los forzados igual que Stop. En una placa, la pausa,
 
 ## Accesibilidad
 
-Studio está construido para que su recorrido principal pueda usarse con teclado y con un lector de pantalla. Aquí se indica qué demuestran las comprobaciones automáticas y qué no.
+ZPLC está construido para que su recorrido principal pueda usarse con teclado y con un lector de pantalla. Aquí se indica qué demuestran las comprobaciones automáticas y qué no.
 
 - **Nombres.** Cada campo de un formulario tiene una etiqueta que el lector de pantalla lee con él, y cada botón que muestra solo un icono tiene un nombre. Una regla de CI (la guarda del kit de componentes) hace fallar la compilación ante un campo o un botón de solo icono sin nombre, y una comprobación en la aplicación en ejecución enumera cualquier control sin nombre en las pantallas principales.
-- **Anuncios.** Studio mantiene dos regiones vivas ocultas para toda la ventana: una cortés para los resultados y una asertiva para las fallas. El resultado de una compilación, un guardado, un despliegue, una ejecución de pruebas y un cambio de conexión se anuncia por ellas, con su detalle, igual que una variable que se fuerza o se libera. Un error, y un forzado que ya no está confirmado, se anuncian de inmediato. Si el programa está en ejecución o detenido se lee de la barra de estado, que conserva su propio estado persistente.
+- **Anuncios.** ZPLC mantiene dos regiones vivas ocultas para toda la ventana: una cortés para los resultados y una asertiva para las fallas. El resultado de una compilación, un guardado, un despliegue, una ejecución de pruebas y un cambio de conexión se anuncia por ellas, con su detalle, igual que una variable que se fuerza o se libera. Un error, y un forzado que ya no está confirmado, se anuncian de inmediato. Si el programa está en ejecución o detenido se lee de la barra de estado, que conserva su propio estado persistente.
 - **Teclado.** El recorrido desde abrir un proyecto hasta una lección de Aprender puede completarse solo con el teclado: abrir, editar, compilar, simular, observar, forzar, la pregunta de despliegue y la verificación de la lección. Tab y Mayús+Tab recorren la pantalla en orden de lectura, y la paleta de comandos (Ctrl+Mayús+P) llega a todos los comandos. Un comando que muestra un panel, como **Mostrar las variables vigiladas**, deja el foco en él. En el editor de código Tab escribe un tabulador; pulse Ctrl+M para que Tab mueva el foco fuera, y púlselo de nuevo para volver. Escape cierra un diálogo, la paleta y la referencia de atajos y devuelve el foco al control que los abrió, y Tab sale de un diagrama después de su último nodo.
-- **Controles y densidad.** Todo botón, campo, menú, diálogo, descripción emergente y árbol de Studio sale de un único kit de componentes propio (incluidos el cuadro combinado, el árbol, la tabla de datos y el aviso), que se muestra en la galería de las compilaciones de desarrollo, y una regla de CI hace fallar la compilación ante un control sin kit, una descripción nativa, un color de paleta estándar o un texto menor de 11 píxeles. La preferencia **Densidad** (Cómoda o Compacta) cambia el tamaño de controles, filas y espaciado de toda la ventana. El nivel de evidencia es host: una ventana en Linux, no en Windows ni macOS.
+- **Controles y densidad.** Todo botón, campo, menú, diálogo, descripción emergente y árbol de ZPLC sale de un único kit de componentes propio (incluidos el cuadro combinado, el árbol, la tabla de datos y el aviso), que se muestra en la galería de las compilaciones de desarrollo, y una regla de CI hace fallar la compilación ante un control sin kit, una descripción nativa, un color de paleta estándar o un texto menor de 11 píxeles. La preferencia **Densidad** (Cómoda o Compacta) cambia el tamaño de controles, filas y espaciado de toda la ventana. El nivel de evidencia es host: una ventana en Linux, no en Windows ni macOS.
 - **Zoom.** Ctrl y más, Ctrl y menos, y Ctrl y 0 (Cmd en macOS) amplían, reducen y restablecen la página. Están en el menú **Ver**.
 - **Qué se comprueba.** El contraste se calcula a partir de los colores de los temas claro, oscuro y de alto contraste. Además se ejecuta una comprobación en la aplicación real, en Bienvenida, los editores (Texto Estructurado, Ladder, diagrama de bloques de función y gráfico de funciones secuenciales), cada pestaña del panel de resultados, las barras laterales, la configuración, la paleta de comandos, la referencia de atajos y la pregunta de despliegue, en cada uno de los tres temas. Para cada texto visible calcula el contraste con aquello sobre lo que se dibuja (4,5 a 1, o 3 a 1 para texto grande), y falla ante un control sin nombre, un control que no muestra nada cuando tiene el foco del teclado, un identificador repetido, una referencia a algo que no está en la página, una pantalla sin región principal y un diálogo sin nombre. Estas comprobaciones son estructurales y calculadas; no son una prueba con un lector de pantalla. Revisar el recorrido principal con un lector de pantalla en Windows y en macOS es una tarea manual que se hace antes del lanzamiento general, y su resultado se registra en la lista de verificación de la versión.
 
@@ -498,7 +498,7 @@ Nivel de evidencia: host. `packages/zplc-ide/src/components/consoleAttention.tes
 
 ## Crear un proyecto
 
-**Nuevo proyecto** (en la pantalla de bienvenida y en el menú Archivo) pide cuatro cosas: el nombre del proyecto, la carpeta donde va, el destino (la simulación en este equipo, o una placa del manifiesto) y el lenguaje del primer programa (Texto Estructurado, Lista de Instrucciones, Diagrama de Escalera, Diagrama de Bloques de Función o Gráfico Funcional de Secuencias). El nombre empieza siendo el de la carpeta que elija hasta que escriba otro. La carpeta contiene el proyecto mismo: Studio no crea una carpeta dentro de ella y rechaza una carpeta que ya tenga un `zplc.json`, un `.gitignore` o el primer programa. El proyecto que crea tiene `src/main` en el lenguaje elegido, una lista de variables globales, una tarea principal que ejecuta ese programa y el destino elegido, y compila sin cambios.
+**Nuevo proyecto** (en la pantalla de bienvenida y en el menú Archivo) pide cuatro cosas: el nombre del proyecto, la carpeta donde va, el destino (la simulación en este equipo, o una placa del manifiesto) y el lenguaje del primer programa (Texto Estructurado, Lista de Instrucciones, Diagrama de Escalera, Diagrama de Bloques de Función o Gráfico Funcional de Secuencias). El nombre empieza siendo el de la carpeta que elija hasta que escriba otro. La carpeta contiene el proyecto mismo: ZPLC no crea una carpeta dentro de ella y rechaza una carpeta que ya tenga un `zplc.json`, un `.gitignore` o el primer programa. El proyecto que crea tiene `src/main` en el lenguaje elegido, una lista de variables globales, una tarea principal que ejecuta ese programa y el destino elegido, y compila sin cambios.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/newProject.test.ts` compila el primer programa de cada lenguaje y comprueba la tarea que lo ejecuta; el recorrido 2b maneja el diálogo y compila el proyecto nuevo en la aplicación real.
 

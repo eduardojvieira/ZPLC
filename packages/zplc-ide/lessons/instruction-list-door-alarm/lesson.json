@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "instruction-list-door-alarm",
-  "version": 2,
+  "version": 3,
   "order": 24,
   "module": 9,
   "level": "advanced",

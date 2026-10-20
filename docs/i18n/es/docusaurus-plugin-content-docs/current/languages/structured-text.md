@@ -8,7 +8,7 @@ tags: [languages, st, iec61131-3]
 
 # Structured Text (ST)
 
-Structured Text (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de ZPLC Studio y del compilador.
+Structured Text (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de la aplicación ZPLC y del compilador.
 
 ## Sintaxis básica
 

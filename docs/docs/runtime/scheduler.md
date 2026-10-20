@@ -146,7 +146,7 @@ The five rules above are the same in simulation and on a target. These are not, 
 | Speed and jitter | The VM runs on a host processor under a general-purpose operating system. | The VM runs on the board's processor. A program that is in time in simulation can miss on a target, and the reverse. |
 | Reporting of a miss | The warning flag, the count, the last overrun, the configurable limit and the fault reason of the table above. | The same fields, from the same core (`deadline` and `fault` of `zplc sched status --json`), with the count of each task, the total and the state `error` once latched. The limit is `CONFIG_ZPLC_DEADLINE_MISS_LIMIT`. |
 
-The WebAssembly runtime of Studio runs the same scheduler core and the same session as the native simulation, and a test holds its decisions to the shared trace of the core (admission, order, input latch, deadline misses, fault latch and commit, for three tasks and for one). Its clock is the clock of the page, in whole milliseconds, so the rows above that name the host clock apply to the clock of the browser, and a background tab can run late. See [Browser runtime](./browser-runtime.md).
+The WebAssembly runtime of the ZPLC application runs the same scheduler core and the same session as the native simulation, and a test holds its decisions to the shared trace of the core (admission, order, input latch, deadline misses, fault latch and commit, for three tasks and for one). Its clock is the clock of the page, in whole milliseconds, so the rows above that name the host clock apply to the clock of the browser, and a background tab can run late. See [Browser runtime](./browser-runtime.md).
 
 ## Pause, resume, step and stop
 
@@ -197,13 +197,13 @@ What is checked, and where:
 
 | Where | What is refused |
 |---|---|
-| The build (Studio, the command line, MCP) | A `safe` that is not `true` or `false`; one on a row that is not a digital output bit (`%QW0`, `%QB0`); one on an input or on a `virtual` row; two rows for one output; an output the selected board has no digital channel for. The message names the output, the address and the board, and there is no artifact to deploy. |
+| The build (the ZPLC application, the command line, MCP) | A `safe` that is not `true` or `false`; one on a row that is not a digital output bit (`%QW0`, `%QB0`); one on an input or on a `virtual` row; two rows for one output; an output the selected board has no digital channel for. The message names the output, the address and the board, and there is no artifact to deploy. |
 | The loader | A segment that is not whole entries, an entry outside the output image, a value other than 0 or 1, an output twice, or more than 64 entries. |
 | The firmware, at deploy and at boot restore | A declaration for an output that is not a digital output channel of the board's I/O table (a project for another board). The program is not stored and is not run. |
 
 The declared values are in force from the load that commits the program, before the first scan, and the load drives them to the pins: a restored program waits in STOP with its declared outputs on. Replacing it with a program that declares nothing returns the pins to the board's level at that load. The output process image is the logical state of the program and is zeroed in STOP whatever the pin shows.
 
-What this does not state: the time between a power-on and the instant the firmware drives the pins is the part's reset state, and a board that must have a pin on there needs hardware that does it (see [Boards](../reference/boards.md)); the deploy confirmation that shows a person the declared values before they are written to a device is a Studio screen and is not part of this page.
+What this does not state: the time between a power-on and the instant the firmware drives the pins is the part's reset state, and a board that must have a pin on there needs hardware that does it (see [Boards](../reference/boards.md)); the deploy confirmation that shows a person the declared values before they are written to a device is a screen of the ZPLC application and is not part of this page.
 
 ## Fail-safe runtime: faults, reset cause and watchdog
 

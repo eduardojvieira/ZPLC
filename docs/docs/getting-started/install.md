@@ -1,15 +1,15 @@
 ---
 slug: /getting-started/install
 id: install
-title: Install ZPLC Studio
+title: Install ZPLC
 sidebar_label: Install
-description: "Download, verify, open, update and remove ZPLC Studio on Windows, macOS and Linux, from the channels that exist today."
+description: "Download, verify, open, update and remove ZPLC on Windows, macOS and Linux, from the channels that exist today."
 tags: [install, download, verify]
 ---
 
-# Install ZPLC Studio
+# Install ZPLC
 
-This page covers the one way to get a ready-made Studio today: the files of a
+This page covers the one way to get ZPLC ready to run today: the files of a
 GitHub release. It says what each file is, how to check it, what your system
 asks the first time you open it, and how to update and remove it.
 
@@ -48,12 +48,12 @@ The steps of each system are under [First launch](#first-launch).
 | Channel | State | What it is |
 | --- | --- | --- |
 | [GitHub releases](https://github.com/eduardojvieira/ZPLC/releases) | Live | Installers for Windows, macOS and Linux, the standalone command line and MCP server, a bill of materials and checksums. |
-| Build from source | Works on Linux and macOS | The path of [Run Studio from source](./index.md#run-studio-from-source). |
+| Build from source | Works on Linux and macOS | The path of [Run ZPLC from source](./index.md#run-zplc-from-source). |
 | Homebrew cask, Arch User Repository | Not live yet | The pipeline can write both for every published release ([below](#homebrew-and-arch-linux-not-live-yet)); there is nothing to install until the project creates the tap and the AUR package. |
 | Microsoft Store, winget | Not yet submittable | The channels need a signing identity or an account the project does not have. |
 
 Do not install ZPLC from a package manager or a store: until a channel above is
-live, any package that says it is ZPLC Studio did not come from this project.
+live, any package that says it is ZPLC did not come from this project.
 
 ## Homebrew and Arch Linux (not live yet)
 
@@ -68,7 +68,7 @@ today.
   architecture, pinned by its SHA-256, with one fully qualified command:
 
   ```text
-  brew install --cask eduardojvieira/zplc/zplc-ide
+  brew install --cask eduardojvieira/zplc/zplc
   ```
 
   The cask removes the macOS quarantine flag from the installed application
@@ -79,7 +79,7 @@ today.
   the package manager starts to reject casks that do this, the cask will no longer
   remove the flag and the steps of the DMG apply.
 - **Arch Linux (not yet live).** Until the AUR package exists, nothing installs
-  from it. The package, `zplc-ide-bin`, will repackage the `.deb` of the release
+  from it. The package, `zplc-bin`, will repackage the `.deb` of the release
   for `x86_64` and `aarch64`, with the checksum of the release and the udev rule of
   the boards. It will be installed with an AUR helper or `makepkg -si`, and only
   after the project creates it. It is built from the same file as the `.deb`, so
@@ -120,10 +120,10 @@ prerelease.
 
 The rc.3 files were built by a preview build and uploaded by hand. Releases that
 the release pipeline makes name all fourteen installer files from one template,
-`zplc-ide-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
+`zplc-<version>-<system>-<architecture>[-<variant>].<extension>`, in lower case
 with no spaces (only the `AppImage` extension keeps its capitals). The variant is
 `setup` or `portable` for the two Windows files, and `unsigned` follows it while the
-Windows files carry no signature, for example `zplc-ide-<version>-win-x64-setup-unsigned.exe`.
+Windows files carry no signature, for example `zplc-<version>-win-x64-setup-unsigned.exe`.
 On macOS and Windows the architecture is `x64` or `arm64`; on Linux each package
 format spells it as its own tooling does: `amd64` for the `.deb`, `x86_64` for the
 `.rpm` and the AppImage, `aarch64` for the arm64 `.rpm`. The pipeline checks the
@@ -167,20 +167,20 @@ neither changes what Windows or macOS ask you at the first launch.
 
 1. Run the `Setup.exe` file (or the `Portable.exe` file, which needs no installation).
 2. SmartScreen shows **Windows protected your PC**. Select **More info**, then **Run anyway**. Because the files are unsigned, SmartScreen asks again for every new version. See [Microsoft's SmartScreen documentation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
-3. If Windows blocks the file and offers no **Run anyway**, Smart App Control is on. It blocks every unsigned app and Microsoft documents no override for a single app. Turn it off in Windows Security, or [run Studio from source](./index.md#run-studio-from-source). See [Microsoft's Smart App Control page](https://support.microsoft.com/en-us/topic/what-is-smart-app-control-285ea03d-fa88-4d56-882e-6698afdb7003).
+3. If Windows blocks the file and offers no **Run anyway**, Smart App Control is on. It blocks every unsigned app and Microsoft documents no override for a single app. Turn it off in Windows Security, or [run ZPLC from source](./index.md#run-zplc-from-source). See [Microsoft's Smart App Control page](https://support.microsoft.com/en-us/topic/what-is-smart-app-control-285ea03d-fa88-4d56-882e-6698afdb7003).
 
 ### macOS
 
-1. Open the DMG, drag **ZPLC IDE** to Applications and open it.
+1. Open the DMG, drag **ZPLC** to Applications and open it.
 2. macOS says it could not verify the app, because the app is not notarized: notarization needs a paid Apple Developer Program membership, and this project uses no paid service. Choose **Done**, not **Move to Trash**.
-3. Open **System Settings**, then **Privacy & Security**. In the **Security** section, choose **Open Anyway** next to the ZPLC IDE message, confirm, and enter your password. The button stays available for about an hour after the failed attempt. See [Apple's instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
+3. Open **System Settings**, then **Privacy & Security**. In the **Security** section, choose **Open Anyway** next to the ZPLC message, confirm, and enter your password. The button stays available for about an hour after the failed attempt. See [Apple's instructions](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
 
 If macOS reports that the app is damaged and offers only **Move to Trash**, the
 cause is the quarantine flag that macOS put on the download. Removing it skips
 macOS's check of the app, so do it only after the checksum matches:
 
 ```bash
-xattr -dr com.apple.quarantine "/Applications/ZPLC IDE.app"
+xattr -dr com.apple.quarantine "/Applications/ZPLC.app"
 ```
 
 ### Linux
@@ -223,7 +223,7 @@ chmod +x ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage
 
 ## Linux: serial port access
 
-Studio opens a serial port only when you connect a board yourself. On Linux a
+ZPLC opens a serial port only when you connect a board yourself. On Linux a
 board that shows up as `/dev/ttyACM0` or `/dev/ttyUSB0` belongs to a group, and
 your user has to be allowed to open it.
 
@@ -261,12 +261,12 @@ not, is on [Hardware support](../reference/capabilities-evidence.md).
 
 ## Update
 
-Studio never updates itself. To find out whether a newer release exists, turn on
-**Check for a newer release when Studio starts** in Preferences, or press
+ZPLC never updates itself. To find out whether a newer release exists, turn on
+**Check for a newer release when ZPLC starts** in Preferences, or press
 **Check now**. The check is off by default; it asks the GitHub releases of this
 project for the latest published release, sends nothing about you, and shows a
 version and a link. It downloads and installs nothing. When a newer release
-exists, Studio shows a notice with its version, the address of the release and
+exists, ZPLC shows a notice with its version, the address of the release and
 the step for your system; dismiss it and it comes back only for a still newer
 release. When you are offline, or the answer cannot be read, it shows nothing.
 
@@ -279,14 +279,14 @@ chose, so an update does not touch them.
 
 | System | How |
 | --- | --- |
-| Windows, setup | **Settings**, **Apps**, **Installed apps**, then remove **ZPLC IDE**. |
+| Windows, setup | **Settings**, **Apps**, **Installed apps**, then remove **ZPLC**. |
 | Windows, portable | Delete the `Portable.exe` file. |
-| macOS | Drag **ZPLC IDE** from Applications to the Trash. |
-| Linux, RPM | `sudo dnf remove zplc-ide` |
-| Linux, DEB | `sudo apt remove zplc-ide` |
+| macOS | Drag **ZPLC** from Applications to the Trash. |
+| Linux, RPM | `sudo dnf remove zplc` |
+| Linux, DEB | `sudo apt remove zplc` |
 | Linux, AppImage | Delete the file. |
 
-Studio keeps its preferences, recent projects, lesson progress and recovery
+ZPLC keeps its preferences, recent projects, lesson progress and recovery
 copies in the user-data folder of the application for your account; removing the
 application does not remove it. Your project folders are never inside it.
 
@@ -300,9 +300,9 @@ application does not remove it. Your project folders are never inside it.
 | macOS says the app is damaged | The quarantine flag of the download, on an app that is not notarized. | Check the checksum, then remove the flag with `xattr`. |
 | The checksum does not match | The download is incomplete, or it is not the published file. | Download it again. If it still differs, do not open it. |
 | `gh attestation verify` fails | The file was not built by the project's workflow, or it is a file of a release made by hand, such as rc.3. | Check the checksum and download from the releases page of this repository. |
-| The AppImage does not start | Other Electron AppImages need `libfuse2` on Ubuntu 22.10 and later, and extra settings for the Chromium sandbox on Ubuntu 24.04 and later. Neither was tried with ZPLC. | Use the `.rpm` or `.deb` where your system supports it, or run Studio from source. |
+| The AppImage does not start | Other Electron AppImages need `libfuse2` on Ubuntu 22.10 and later, and extra settings for the Chromium sandbox on Ubuntu 24.04 and later. Neither was tried with ZPLC. | Use the `.rpm` or `.deb` where your system supports it, or run ZPLC from source. |
 | The port of a board is refused | Your user is not in the serial group. | See [Linux: serial port access](#linux-serial-port-access). |
-| Studio cannot connect to the simulator, in a build from source | The native runtime is a separate program. | Build it first and point Studio to it, as in [Run Studio from source](./index.md#run-studio-from-source). |
+| The ZPLC application cannot connect to the simulator, in a build from source | The native runtime is a separate program. | Build it first and point the application to it, as in [Run ZPLC from source](./index.md#run-zplc-from-source). |
 
 If your problem is not here, open an issue from the bug report template of the
 [repository](https://github.com/eduardojvieira/ZPLC/issues). Do not put

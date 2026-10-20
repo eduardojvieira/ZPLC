@@ -98,6 +98,6 @@ hasta ese ciclo.
 
 ## Vea también
 
-- [Banco de trabajo de Studio](../ide/features.md#límite-de-la-depuración): lo que muestran las variables observadas, las trazas y los forzados.
+- [Banco de trabajo de ZPLC](../ide/features.md#límite-de-la-depuración): lo que muestran las variables observadas, las trazas y los forzados.
 - [La consola de ZPLC](../operations/shell.md): los comandos de depuración de un dispositivo.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

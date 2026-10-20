@@ -53,8 +53,8 @@
         "es": "Cable USB de datos que encaje en el conector de la placa"
       },
       "note": {
-        "en": "A charge-only cable does not carry data, and Studio cannot reach the board through it.",
-        "es": "Un cable solo de carga no transmite datos, y Studio no puede comunicarse con la placa a través de él."
+        "en": "A charge-only cable does not carry data, and ZPLC cannot reach the board through it.",
+        "es": "Un cable solo de carga no transmite datos, y ZPLC no puede comunicarse con la placa a través de él."
       }
     },
     {

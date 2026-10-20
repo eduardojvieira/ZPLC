@@ -17,7 +17,7 @@ output; it opens no network port and no serial port.
 
 :::danger The assistant cannot touch a machine
 No tool of the server flashes a board, deploys a program, forces a value, starts or
-stops a device, opens a serial port or runs a shell. Those actions stay in Studio,
+stops a device, opens a serial port or runs a shell. Those actions stay in ZPLC,
 where a person chooses them. The only tool that is not read-only, `firmware_build`,
 runs a local cross-build and stops there.
 :::
@@ -32,7 +32,7 @@ the server prints `ZPLC MCP workspace is unavailable` and exits with 1:
 zplc-mcp --workspace /home/me/plants/line-3
 ```
 
-From a checkout, the same server runs from the Studio package:
+From a checkout, the same server runs from the package of the ZPLC application:
 
 ```bash
 bun run --cwd=packages/zplc-ide mcp --workspace /home/me/plants/line-3
@@ -46,7 +46,7 @@ what a project folder cannot hold:
 - `--repository <directory>` is a checkout of ZPLC. It is what `boards_list`,
   `toolchain_inspect` and `firmware_build` need; without it they answer
   `MCP_CAPABILITY_UNAVAILABLE`.
-- `--user-data <directory>` is the folder where Studio keeps the lesson progress, for
+- `--user-data <directory>` is the folder where ZPLC keeps the lesson progress, for
   the `zplc://course/progress` resource.
 
 ## 2. Connect an assistant
@@ -123,9 +123,9 @@ simulated run, not of the plant.
 3. For a change that moves an output, read the [safety page](../safety-and-limitations.md)
    and ask for `safety_check`, which checks the coverage of the incompatible outputs that
    the project declares, before the change goes near a board.
-4. Put a program on a board only from Studio, where a person chooses the action.
+4. Put a program on a board only from ZPLC, where a person chooses the action.
 
-AI inside Studio follows the same boundary and has its own data rules:
+AI inside ZPLC follows the same boundary and has its own data rules:
 [AI, privacy and human review](../ide/ai-privacy.md).
 
 ## What is verified, and what is not

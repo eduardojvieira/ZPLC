@@ -93,6 +93,6 @@ failing scenario: the failure gives the instant, and you can run to that scan.
 
 ## See also
 
-- [Studio workbench](../ide/features.md#debugging-boundary): what watches, traces and forces show.
+- [ZPLC workbench](../ide/features.md#debugging-boundary): what watches, traces and forces show.
 - [The ZPLC shell](../operations/shell.md): the debugging commands of a device.
 - [Safety and limitations](../safety-and-limitations.md).

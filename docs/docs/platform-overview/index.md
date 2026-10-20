@@ -15,7 +15,7 @@ ZPLC (Zephyr PLC) combines a portable ANSI C99 execution core with TypeScript en
 
 ```mermaid
 flowchart TB
-  IDE[ZPLC IDE]
+  IDE[ZPLC application]
   Compiler[Compiler]
   Runtime[Runtime core]
   Boards[Board profiles]

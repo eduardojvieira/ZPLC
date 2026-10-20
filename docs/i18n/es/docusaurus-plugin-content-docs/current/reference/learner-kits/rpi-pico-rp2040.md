@@ -45,7 +45,7 @@ Alimentación: 3V3 en 3V3(OUT) · pin 36, GND en GND · pin 38, la tierra de un 
 | Pieza | Cantidad | Notas |
 | --- | --- | --- |
 | Una placa del estudiante: una Raspberry Pi Pico o Pico H, o una ESP32-S3-DevKitC-1 N8R8 | 1 | La Pico W y la Pico 2 W no son compatibles: su LED integrado está en el chip inalámbrico. |
-| Cable USB de datos que encaje en el conector de la placa | 1 | Un cable solo de carga no transmite datos, y Studio no puede comunicarse con la placa a través de él. |
+| Cable USB de datos que encaje en el conector de la placa | 1 | Un cable solo de carga no transmite datos, y ZPLC no puede comunicarse con la placa a través de él. |
 | Protoboard de 830 puntos | 1 | La DevKitC-1 es ancha: dos medias protoboards una junto a otra dejan una fila libre a cada lado. |
 | LED de 5 mm: rojos, verdes y amarillos | 6 | No azules ni blancos: necesitan unos 3 V y encienden poco con 3.3 V. |
 | Resistencias de 330 Ω, una en serie con cada LED | 6 |   |
@@ -57,7 +57,7 @@ Alimentación: 3V3 en 3V3(OUT) · pin 36, GND en GND · pin 38, la tierra de un 
 
 ## Firmware
 
-Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-runtime-<versión>-rpi-pico-rp2040.uf2`. Su SHA-256 se publica en el archivo `SHA256SUMS` de la versión, y la tarjeta de firmware de Studio lo muestra junto al archivo. [Grabar el firmware](../../guides/flash-firmware.md) da los pasos. Usted realiza cada uno: Studio nunca graba una placa.
+Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-runtime-<versión>-rpi-pico-rp2040.uf2`. Su SHA-256 se publica en el archivo `SHA256SUMS` de la versión, y la tarjeta de firmware de la aplicación ZPLC lo muestra junto al archivo. [Grabar el firmware](../../guides/flash-firmware.md) da los pasos. Usted realiza cada uno: ZPLC nunca graba una placa.
 
 ## Lecciones de la ruta de hardware
 

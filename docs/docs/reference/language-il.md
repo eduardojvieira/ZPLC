@@ -15,7 +15,7 @@ The status of every element on this page is read off the executed conformance te
 
 Instruction List is written in a text editor. The source is parsed and translated to Structured Text before it is compiled, so the data types, functions and function blocks are those of Structured Text.
 
-A real screenshot of this editor, captured by automation from the current version of Studio, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
+A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
 
 ## Elements
 

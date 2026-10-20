@@ -48,7 +48,7 @@ cargar el mismo programa:
 1. Compile el proyecto y ejecútelo en el simulador, como en
    [Blink sin hardware](../tutorials/blink-without-hardware.md).
 2. Presione **Detener**. La región se guarda con los valores del último ciclo completo.
-3. Presione **Ejecutar** de nuevo, o cierre y vuelva a abrir Studio y ejecute el mismo
+3. Presione **Ejecutar** de nuevo, o cierre y vuelva a abrir ZPLC y ejecute el mismo
    programa. El contador continúa desde el valor que tenía.
 
 El simulador guarda su almacén en la carpeta `.zplc` de su directorio personal, salvo

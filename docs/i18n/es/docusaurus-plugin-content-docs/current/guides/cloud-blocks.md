@@ -134,7 +134,7 @@ Code := Register.STATUS;
 END_PROGRAM
 ```
 
-En el simulador de Studio el runtime no tiene manejador para el bloque, así que termina
+En el simulador de ZPLC el runtime no tiene manejador para el bloque, así que termina
 con `ERROR` en TRUE y `STATUS` 3. Con los bloques de comunicación activos, todo bloque de
 nube responde `STATUS` 10 (no disponible), porque la simulación no tiene servicio de nube.
 La verificación de la documentación ejecuta esto, lo que demuestra que el bloque compila e

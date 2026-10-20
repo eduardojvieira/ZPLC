@@ -3,7 +3,7 @@ slug: /guides/map-io
 id: map-io
 title: Vincular variables a pines
 sidebar_label: Vincular E/S a pines
-description: "Conecte las variables de un programa a las entradas y salidas de una placa, con la descripción de E/S de la placa y el editor de mapeo de E/S de Studio."
+description: "Conecte las variables de un programa a las entradas y salidas de una placa, con la descripción de E/S de la placa y el editor de mapeo de E/S de ZPLC."
 tags: [how-to, io, boards, mapping]
 ---
 
@@ -17,7 +17,7 @@ se trata y qué hacen la compilación y el despliegue cuando la dirección es er
 :::note Dónde está la verdad
 Cada placa tiene una descripción de E/S en `firmware/app/boards/boards.json`: sus
 canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valor
-seguro de cada salida. Studio, la compilación, el firmware y la documentación leen
+seguro de cada salida. La aplicación ZPLC, la compilación, el firmware y la documentación leen
 ese único archivo, por lo que la tabla de pines de [Placas soportadas](../reference/boards.md)
 son los mismos datos que comprueba la compilación. Ningún pin se ha medido en un
 banco: [Soporte de hardware](../reference/capabilities-evidence.md).
@@ -55,7 +55,7 @@ pulsado: las notas eléctricas del canal dicen cómo se cablea el pin.
 
 ## 3. Vincúlelas en el proyecto
 
-La misma ubicación se registra en `zplc.json` bajo `io`. En Studio, abra **Project
+La misma ubicación se registra en `zplc.json` bajo `io`. En ZPLC, abra **Project
 Settings**: la sección **I/O Mapping** enumera los canales de la placa seleccionada
 con los nombres de pin impresos en ella, y cada fila ofrece solo los canales de esa
 placa, de modo que una fila no puede ponerse donde la placa no tiene nada.
@@ -81,12 +81,12 @@ La verificación de la documentación contrasta cada dirección de `inputs` y
 proyecto y lo compila.
 
 Una dirección que ningún pin de la placa maneja no es un canal. Enumérela en
-`io.virtual` (Studio: **Mantener como virtual (sin pin)**) cuando quiera una palabra o un
+`io.virtual` (en ZPLC: **Mantener como virtual (sin pin)**) cuando quiera una palabra o un
 bit de la imagen de proceso que solo lee una prueba o el depurador.
 
 ## 4. Qué ocurre cuando una dirección es errónea
 
-- **En Studio**, una fila en una dirección que la placa no tiene se marca. El
+- **En ZPLC**, una fila en una dirección que la placa no tiene se marca. El
   mensaje nombra la placa, la dirección y los canales que la placa tiene.
 - **En la compilación**, una variable ubicada donde la placa no tiene canal es un
   error que nombra la placa y la variable, salvo que la dirección esté enumerada en

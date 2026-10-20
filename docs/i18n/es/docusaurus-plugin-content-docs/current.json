@@ -40,7 +40,7 @@
     "description": "The label for category 'Concepts' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Studio": {
-    "message": "Studio",
+    "message": "Aplicación ZPLC",
     "description": "The label for category 'Studio' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Runtime": {

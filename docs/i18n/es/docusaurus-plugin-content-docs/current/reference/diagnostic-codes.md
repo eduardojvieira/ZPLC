@@ -11,7 +11,7 @@ tags: [reference, generated]
 
 Cada error de una compilación lleva un **código**: un nombre para el tipo de problema, como `UNKNOWN_IDENTIFIER`. La frase del mensaje nombra el identificador, los tipos y los números de este caso y puede reformularse; el código no cambia, de modo que un script, una prueba o una persona que busque en esta página pueden confiar en él. Un código nunca se reutiliza para otro significado ni se elimina.
 
-El código se informa donde esté el error: el campo `code` de cada diagnóstico de la línea de comandos (`--json`), de la API de herramientas y de las herramientas MCP; el final de la línea que imprime `zplc-cli`, entre corchetes; la etiqueta del problema en la pestaña Problems de Studio; y el marcador del editor. Cada diagnóstico tiene además la posición donde empieza (`line` y `column`, desde 1), la posición justo después de donde termina (`endLine` y `endColumn`), el archivo del proyecto (`path`) y la fase que lo encontró (`phase`).
+El código se informa donde esté el error: el campo `code` de cada diagnóstico de la línea de comandos (`--json`), de la API de herramientas y de las herramientas MCP; el final de la línea que imprime `zplc-cli`, entre corchetes; la etiqueta del problema en la pestaña Problems de ZPLC; y el marcador del editor. Cada diagnóstico tiene además la posición donde empieza (`line` y `column`, desde 1), la posición justo después de donde termina (`endLine` y `endColumn`), el archivo del proyecto (`path`) y la fase que lo encontró (`phase`).
 
 Las advertencias de una compilación que tiene éxito tienen sus propios códigos: vea [Flujo del compilador](../ide/compiler.md#advertencias).
 

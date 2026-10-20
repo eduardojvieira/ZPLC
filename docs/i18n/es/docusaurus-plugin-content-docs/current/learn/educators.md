@@ -12,7 +12,7 @@ tags: [learn, lessons, educators, classroom]
 Todo lo de esta página funciona en el propio equipo del docente. Aprender no necesita
 una cuenta ni un servidor, y nada de lo que sigue envía datos de un estudiante a
 ninguna parte. Los comandos se ejecutan desde una copia del repositorio con
-[Bun](https://bun.sh) y leen el índice de lecciones que viene con Studio.
+[Bun](https://bun.sh) y leen el índice de lecciones que viene con ZPLC.
 
 ## Ocultar las soluciones de referencia
 
@@ -47,7 +47,7 @@ incorrecta. Agregue `--strict` para fallar también con las lecciones `unverifie
 
 Es una comprobación de coherencia contra los hashes de las lecciones, no una defensa
 contra un estudiante que edita el archivo a mano: un registro de calificación es
-evidencia de lo que Studio registró en el equipo del estudiante. Cuando sea importante, pida al
+evidencia de lo que ZPLC registró en el equipo del estudiante. Cuando sea importante, pida al
 estudiante que pulse **Comprobar** en su presencia.
 
 ## Imprimir el esquema del curso

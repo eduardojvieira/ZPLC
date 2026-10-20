@@ -19,7 +19,7 @@ repeating it.
 - **It is not a safety PLC.** ZPLC makes no safety integrity claim, and no part
   of it has been certified or assessed against a functional-safety standard.
 - **It must not control machinery** or protect people: not as an emergency stop,
-  an interlock or a guard. The interlock view of Studio checks that your
+  an interlock or a guard. The interlock view of ZPLC checks that your
   scenarios assert a pair of outputs never on together; it checks the scenarios,
   not the machine.
 - **It does not guarantee timing.** A task interval is the period of a release
@@ -42,7 +42,7 @@ ones of [Hardware support](./reference/capabilities-evidence.md#the-levels).
 | Compiler and virtual machine | The host, with the address and undefined-behaviour sanitizers, by the conformance suite and the C suites | A board |
 | Scheduler, process image, retentive memory, communication handlers | `native_sim` and the QEMU Cortex-M3 and Cortex-M0 targets, which emulate a processor and no board | Timing, interrupts, drivers, flash behaviour and electrical state of a real board |
 | Firmware of each board | Built for the board and held to its flash and RAM budget | Booting, flashing, running a program, any output |
-| Studio and the simulator | The development host on Linux, by the end-to-end journeys; installers are launched on their own system in the release run | A physical board; a clean machine of each system, by a person (the recorded runs of `RELEASING.md` are empty) |
+| The ZPLC application and the simulator | The development host on Linux, by the end-to-end journeys; installers are launched on their own system in the release run | A physical board; a clean machine of each system, by a person (the recorded runs of `RELEASING.md` are empty) |
 | Modbus, MQTT, Sparkplug B and the cloud blocks | The handlers against stand-ins, the Modbus TCP client and the simulation runtime's MQTT client against servers written for the test on a loopback socket, hostile input through the product's own client, and the Modbus server framing and areas | A live broker, a cloud service or a device on a wire; the controller's MQTT client against a broker; Modbus RTU on a wire |
 | Outputs when the program pauses, stops or faults | The host and `native_sim`, which has a GPIO emulator | The physical level of a pin on a board |
 
@@ -99,7 +99,7 @@ list of expected failures, so a limit leaves the list when its case is fixed.
   the other settings and anybody who can read the flash of the board can read
   them. Use an account with only the rights the controller needs.
 - The installers are not signed with a paid identity. Check the checksum of
-  every download: [Install ZPLC Studio](./getting-started/install.md).
+  every download: [Install ZPLC](./getting-started/install.md).
 - On the Nucleo-H743ZI and the Arduino Opta, TLS is off until their random
   generator has been verified on the board, and MQTT runs over plain TCP.
 - Report a vulnerability through a private advisory, as the

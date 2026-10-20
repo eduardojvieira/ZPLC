@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Run",
-      "body": "Press Check. Studio runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson, with the motor plant answering your outputs.",
       "checkpoint": "The scenario is named MotorInterlock and contains {{assertions}} assertions."
     },
     {

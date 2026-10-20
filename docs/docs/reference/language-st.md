@@ -13,9 +13,9 @@ The status of every element on this page is read off the executed conformance te
 
 ## Editor
 
-Structured Text is written in the primary text editor of ZPLC Studio, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.
+Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.
 
-A real screenshot of this editor, captured by automation from the current version of Studio, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
+A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
 
 ## Elements
 

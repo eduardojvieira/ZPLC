@@ -1,7 +1,7 @@
 ---
 title: "Protocolo de enlace con el dispositivo"
 sidebar_label: "Protocolo de enlace"
-description: "El protocolo con tramas que hablan Studio y un dispositivo: trama, límites, capacidades, errores, mensajes y eventos, leídos de su definición."
+description: "El protocolo con tramas que hablan la aplicación ZPLC y un dispositivo: trama, límites, capacidades, errores, mensajes y eventos, leídos de su definición."
 tags: [reference, generated]
 ---
 
@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/device-protocol. Do not edit. >>> */}
 
-El protocolo de enlace con el dispositivo es como hablan Studio y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 44 mensajes y 8 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de Studio. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
+El protocolo de enlace con el dispositivo es como hablan la aplicación ZPLC y un dispositivo: un protocolo binario con tramas y versión, con longitud, número de secuencia y suma de verificación en cada trama, negociación de capacidades y códigos de error explícitos. Funciona sobre UART, USB serie y TCP. Esta es la versión `1` del protocolo: 44 mensajes y 8 eventos. La consola de texto del dispositivo se mantiene: es el protocolo anterior y la consola de recuperación, y `zplc sys info --json` conserva sus claves. Esta página se lee de `tools/contract/protocol.json`, la definición única de la que se generan el códec C del firmware y el códec TypeScript de la aplicación ZPLC. El runtime nativo habla el mismo protocolo por la entrada y la salida estándar cuando se inicia con `--device-link`; `--device-link-network` le aplica las reglas de un enlace de red, para poder ejercitarlas sin un socket.
 
 ## Sesiones
 

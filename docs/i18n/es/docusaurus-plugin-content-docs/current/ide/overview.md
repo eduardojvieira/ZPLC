@@ -1,6 +1,6 @@
-# Arquitectura de Studio y modelo de proyecto
+# Arquitectura de la aplicación ZPLC y modelo de proyecto
 
-Studio presenta a los editores y a las herramientas un proyecto guardado en una
+ZPLC presenta a los editores y a las herramientas un proyecto guardado en una
 carpeta; el renderer no tiene acceso privilegiado al sistema de archivos, a la
 shell ni a los dispositivos.
 
@@ -30,7 +30,7 @@ nombres de canal, de modo que no hay una segunda copia que se desalinee.
   contrato con exactamente un manejador, y se niega a arrancar si a un canal le
   falta o si un manejador no tiene canal.
 - **Primero el emisor y el mensaje.** Cada llamada se comprueba antes de que corra
-  su manejador: el emisor debe ser el documento de confianza de Studio de la
+  su manejador: el emisor debe ser el documento de confianza de ZPLC de la
   ventana y los argumentos deben ajustarse al esquema de ese canal. Cualquier otra
   cosa se deniega con un mensaje fijo.
 - **Un preload estrecho.** El preload expone un método por operación y nada
@@ -81,7 +81,7 @@ ejecución, no lo que dice su código fuente:
   compilación empaquetada), y una petición a otro origen la rechaza `connect-src`;
 - un permiso distinto de serial (notificaciones, ubicación, cámara, micrófono,
   lectura del portapapeles, MIDI) se rechaza, mientras que serial sigue disponible
-  para el documento de Studio;
+  para el documento de ZPLC;
 - `window.open`, un enlace que abre una ventana nueva y la navegación a otro origen
   se rechazan, y la ventana conserva después su documento, su carpeta y su IPC;
 - una operación de proyecto con una ruta con `..`, una ruta absoluta o de unidad,

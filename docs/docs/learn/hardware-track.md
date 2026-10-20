@@ -19,7 +19,7 @@ No check on either board has been recorded yet: see the end of this page.
 At the bottom of the Learn home, the **Hardware track** strip has a **Your board** group with
 both boards, and every hardware lesson repeats that group at the top of its **On your board**
 section. Choose the one you have. With the keyboard, move to the group with Tab, move between
-the boards with the arrow keys and press Enter or Space. Studio says the board you chose and
+the boards with the arrow keys and press Enter or Space. ZPLC says the board you chose and
 keeps it on this computer.
 
 ## What a lesson shows for your board
@@ -31,17 +31,17 @@ In the lesson panel, **On your board** shows, for the board you chose:
 - the voltage limit, which a button above the diagram takes you to;
 - the parts of the whole course;
 - the firmware image for the board with its SHA-256, and the flashing steps you follow
-  yourself: Studio does not flash a board;
+  yourself: ZPLC does not flash a board;
 - **Check on board**.
 
 ## You start every physical operation
 
 Learn never connects to a board, deploys, runs, stops, forces a value or flashes firmware by
-itself. You do each of these with the usual Studio controls. **Check on board** stays disabled,
+itself. You do each of these with the usual ZPLC controls. **Check on board** stays disabled,
 and says what is missing, until:
 
 1. you chose a board;
-2. Studio is connected to it;
+2. ZPLC is connected to it;
 3. the lesson program is built and deployed to the board, and is either stopped or running;
 4. the board reports which board it is, and it is the board you chose. A board that reports
    another board, or none, is named as the problem.
@@ -79,7 +79,7 @@ expected and observed values, and which sample of the trace it read.
 A board flashed with the learner firmware keeps a trace of its own scans (`zplc dbg trace`, see
 the [shell commands](../reference/shell-commands.md)): at the end of every scan it keeps
 the time the scan read its inputs, the scan's number since **Run**, and the bytes of the input and
-output images that hold the lesson's signals, in a ring of 2048 bytes. Studio reads the ring
+output images that hold the lesson's signals, in a ring of 2048 bytes. ZPLC reads the ring
 about every 100 ms, not at every scan, and grades one sample per scan. Keeping the trace never changes the program:
 it does not write memory, force a value, or start or stop anything.
 
@@ -88,7 +88,7 @@ assertion names. With the device trace it must be at least one scan of the slowe
 lesson's starter project plus an assumed jitter margin of 10 ms: an output changes up to one scan after
 its input, and the margin covers the 1 ms resolution of the trace's timestamps, the kernel tick
 that releases a scan, and the time a scan takes before its outputs are written. Every hardware
-lesson runs a 10 ms task, so each declares 20 ms, and Studio refuses a lesson that declares less.
+lesson runs a 10 ms task, so each declares 20 ms, and ZPLC refuses a lesson that declares less.
 
 A board whose firmware has no device trace is read the way it was before: through the same read
 that fills the Watch table, every 100 ms. One read is at most two `zplc dbg peek` commands of
@@ -142,8 +142,8 @@ lists those lessons, and on the lesson's progress line. It does not pass a lesso
 graded in simulation, and a pass in simulation is not a pass on hardware. The one exception is
 verify-my-board, which has only the hardware track: its check on the board is its pass. Your
 progress keeps the newest hardware pass of each lesson apart from its simulation grade, with the
-hash of the program (the SHA-256 of the artifact Studio deployed to the board in this session,
-or of the build's debug map when Studio did not deploy it) and the ZPLC version the board
+hash of the program (the SHA-256 of the artifact ZPLC deployed to the board in this session,
+or of the build's debug map when ZPLC did not deploy it) and the ZPLC version the board
 reported. A progress file of an earlier version is read and converted.
 
 ## Before you wire anything
@@ -161,6 +161,6 @@ reported. A progress file of an earlier version is read and converted.
 - The check is proven on the development host against synthetic traces: traces built by the
   tests to look like what a board reports. The recorder and the steps of the check are proven
   against simulated sessions. The board choice, the wiring of each board, the labels and the
-  disabled check with its reason are proven in Studio on Linux.
+  disabled check with its reason are proven in ZPLC on Linux.
 - No trace from a real board and no run on a physical board are part of this evidence. Runs on
   both boards are hardware-in-the-loop evidence that is still to be recorded.

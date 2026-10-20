@@ -50,7 +50,7 @@ Start from the pair of the board that is closest to yours.
 
 ## 2. Describe the board in the manifest
 
-Add one entry to `firmware/app/boards/boards.json`. Studio, the command line, the
+Add one entry to `firmware/app/boards/boards.json`. The ZPLC application, the command line, the
 build and the hardware support page all read this file, so it is the only place that
 says what the board is. This is the shape of an entry, for a board that does not
 exist:

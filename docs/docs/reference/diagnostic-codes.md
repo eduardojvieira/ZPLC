@@ -11,7 +11,7 @@ tags: [reference, generated]
 
 Every error of a build carries a **code**: a name for the kind of problem, such as `UNKNOWN_IDENTIFIER`. The sentence of the message names the identifier, the types and the numbers of this one and may be reworded; the code does not change, so a script, a test or a person who searches this page can rely on it. A code is never reused for another meaning and never removed.
 
-The code is reported wherever the error is: the `code` field of every diagnostic of the command line (`--json`), of the Tool API and of the MCP tools; the end of the line that `zplc-cli` prints, in brackets; the label of the problem in the Problems tab of Studio; and the marker of the editor. Each diagnostic also has the position where it starts (`line` and `column`, from 1), the position just after where it ends (`endLine` and `endColumn`), the project file (`path`) and the phase that found it (`phase`).
+The code is reported wherever the error is: the `code` field of every diagnostic of the command line (`--json`), of the Tool API and of the MCP tools; the end of the line that `zplc-cli` prints, in brackets; the label of the problem in the Problems tab of ZPLC; and the marker of the editor. Each diagnostic also has the position where it starts (`line` and `column`, from 1), the position just after where it ends (`endLine` and `endColumn`), the project file (`path`) and the phase that found it (`phase`).
 
 The warnings of a build that succeeds have codes of their own: see [Compiler workflow](../ide/compiler.md#warnings).
 

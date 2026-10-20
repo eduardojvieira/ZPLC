@@ -10,7 +10,7 @@ tags: [how-to, hardware, firmware]
 # Grabar el firmware
 
 Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de
-Studio y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un
+ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un
 dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla,
 cargar un programa y ejecutarlo son cuatro operaciones separadas
 ([Despliegue](../ide/deployment.md)).
@@ -30,7 +30,7 @@ Una versión del canal lleva una imagen del runtime para cada placa del manifies
 con el nombre `zplc-runtime-<versión>-<placa>.<ext>`, con las sumas de verificación en
 `SHA256SUMS` y un manifiesto, `zplc-runtime-<versión>.manifest.json`, que nombra para
 cada imagen el runner de grabación, la dirección en la que se escribe y el nivel de
-evidencia de la placa. Los instaladores de Studio llevan las imágenes de las dos placas
+evidencia de la placa. Los instaladores de ZPLC llevan las imágenes de las dos placas
 de aprendizaje: **Configuración del proyecto**, **Destino** muestra el archivo, su SHA-256 y estos
 pasos. Hasta la primera versión que las tenga, compile usted la imagen con los pasos de
 [Su primera placa](../tutorials/first-board.md#1-obtenga-el-firmware).
@@ -55,7 +55,7 @@ sha256sum --check --ignore-missing SHA256SUMS
 
 La ROM de arranque del RP2040 muestra la placa como una unidad USB cuando arranca en
 modo de arranque, y acepta un archivo UF2 copiado en ella. Usted realiza cada paso:
-Studio nunca escribe en una placa.
+ZPLC nunca escribe en una placa.
 
 1. Desconecte la placa. Mantenga pulsado su botón BOOT (BOOTSEL en la Pico) y, con el
    botón pulsado, conecte el cable USB. Suelte el botón.
@@ -77,7 +77,7 @@ arranca en modo de descarga. La imagen es para la placa N8R8 (8 MB de flash, 8 M
 octal): no arranca en la N8 ni en la N8R2 ([Referencia de placas](../reference/boards.md)).
 
 1. Conecte el cable al puerto marcado **USB**, el puerto USB propio del ESP32-S3, no al
-   marcado UART: la consola de ZPLC y la conexión de Studio usan el puerto **USB**. En
+   marcado UART: la consola de ZPLC y la conexión de la aplicación ZPLC usan el puerto **USB**. En
    Linux es `/dev/ttyACM<n>`, en macOS `/dev/cu.usbmodem<n>` y en Windows un puerto
    `COM<n>`.
 2. Mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT. La placa está en modo de
@@ -127,7 +127,7 @@ procedimiento de recuperación de su perfil: [Límites de recuperación](../oper
 
 Abra la consola serie de la placa y ejecute `zplc version`: imprime la versión, el
 commit, la placa y las opciones de compilación de la imagen. Deben ser las del archivo
-que escribió. Luego [conecte Studio](../tutorials/first-board.md#3-conecte-studio).
+que escribió. Luego [conecte ZPLC](../tutorials/first-board.md#3-conecte-zplc).
 
 ## Qué está verificado y qué no
 

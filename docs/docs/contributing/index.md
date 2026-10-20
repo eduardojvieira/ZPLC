@@ -38,14 +38,14 @@ running, so read them as an order of magnitude.
 | Set-up | `bun run setup` | about 10 s | Dependencies installed, compiler built, native runtime built |
 | C core and host runtime | `bun run test:core` | about 1 min, the first run included | The C suites pass under the address and undefined-behaviour sanitizers |
 | Compiler | `bun run test:compiler:ci` | about 6 s | Compiler and assembler tests pass, and every failure is a listed one |
-| Studio, CLI, conformance | `bun run test:ide:ci` | about 1 min | The Studio suites and the conformance cases behave as listed |
-| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
-| Studio structure | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 800 lines, except those on `tools/ci/module-size-offenders.json`; both that list and the one import it allows (`tools/ci/layering-exceptions.json`) can only shrink |
+| Application, CLI, conformance | `bun run test:ide:ci` | about 1 min | The suites of the application and the conformance cases behave as listed |
+| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the application builds |
+| Application structure | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 800 lines, except those on `tools/ci/module-size-offenders.json`; both that list and the one import it allows (`tools/ci/layering-exceptions.json`) can only shrink |
 | C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
 | Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
 | Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |
 | Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
-| Studio journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |
+| Application journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |
 | Firmware on Linux | `bun run setup:firmware`, then `bun run test:firmware` | about 6 min once, then about 4 min | Zephyr suites pass on `native_sim`, QEMU and the size budgets |
 | Documentation | `bun run check:docs` | about 15 s warm, 1 min cold | References are fresh, every name a page mentions exists, no sentence claims a capability that nothing executed backs, pages are complete, English and Spanish pages match in structure, every sample and configuration fragment marked as such builds and gives the result its fence states, every image is a captured one, and the site builds |
 | Release rehearsal | `bun run release:rehearsal` | about 5 s | The checks the release workflow runs before it builds anything |
@@ -74,7 +74,7 @@ without explicit authorization.
 ## Adding a lesson
 
 A lesson is a data package, so adding one needs no change to application code (LRN-027). Lesson ids
-have one source, the manifests: Studio, the progress store and the MCP course resource read an index
+have one source, the manifests: the ZPLC application, the progress store and the MCP course resource read an index
 generated from them, and CI fails on a hand-written list of ids (LRN-028).
 
 1. Make the exercise as two example projects under `packages/zplc-ide/projects/`: a starter that
@@ -195,9 +195,9 @@ the refusal shows both:
 | Where | What happens on a mismatch |
 |---|---|
 | Loader (`zplc_loader_verify`) | Returns `ZPLC_LOADER_ERR_DRAFT` (`-17`). The counter is read before the version, the flags and the CRC, because another draft may lay the rest out differently. `zplc_loader_artifact_draft_counter` reads it without trusting anything else. |
-| Native simulation | `program.load` fails with the sentence above and the loaded program keeps running. Studio says it before sending anything. The runtime reports its counter in `session.hello` (`draft_counter`). |
+| Native simulation | `program.load` fails with the sentence above and the loaded program keeps running. The ZPLC application says it before sending anything. The runtime reports its counter in `session.hello` (`draft_counter`). |
 | Firmware upload | `zplc load` and `zplc sched load` answer `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` reports `draft_counter`. |
-| Studio hardware deploy | The preflight compares the artifact with the `draft_counter` of the connected board and refuses before anything is sent. |
+| Hardware deploy from the ZPLC application | The preflight compares the artifact with the `draft_counter` of the connected board and refuses before anything is sent. |
 | CLI | `zplc-cli compile` states the counter of what it built. |
 
 An artifact built before the counter carries 0, and a firmware image that does

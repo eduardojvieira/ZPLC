@@ -1,15 +1,15 @@
 ---
 slug: /ide
 id: index
-title: ZPLC Studio 2.0
-sidebar_label: Studio
+title: The ZPLC application
+sidebar_label: ZPLC application
 description: Folder-backed PLC authoring, validation, simulation, evidence, and human-controlled hardware workflows.
 tags: [ide, tooling]
 ---
 
-# ZPLC Studio 2.0
+# The ZPLC application
 
-Studio is the desktop workbench for creating, compiling, testing, simulating,
+ZPLC is the desktop workbench for creating, compiling, testing, simulating,
 and reviewing PLC projects in a folder selected by the user.
 
 ## Quick path

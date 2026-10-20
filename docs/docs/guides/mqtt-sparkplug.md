@@ -26,10 +26,10 @@ no TLS handshake on a board and no Sparkplug B host application has been tested.
 ## What you need
 
 - A board with a network interface, and a broker you operate or trust.
-  Studio's simulator has no broker and no MQTT session: it starts the native runtime
+  The ZPLC simulator has no broker and no MQTT session: it starts the native runtime
   without the communication blocks. That runtime can run the MQTT blocks against a
   broker when it is started with `ZPLC_NATIVE_COMM=1` and `ZPLC_NATIVE_MQTT_BROKER`
-  ([In simulation](../runtime/communication-function-blocks.md#in-simulation)); Studio
+  ([In simulation](../runtime/communication-function-blocks.md#in-simulation)); ZPLC
   does not start it that way yet.
 - The broker's CA certificate on the device, because a controller that was never
   configured uses TLS on port 8883 and checks the broker's certificate. MQTT is off
@@ -109,7 +109,7 @@ shows `tls-verify: OFF` in the status
 
 ## 3. Put the settings and the certificate on the board
 
-Provisioning a board is a human action in Studio, which sends these settings over
+Provisioning a board is a human action in ZPLC, which sends these settings over
 the serial link. You can check what the device has with the shell:
 
 ```bash
@@ -164,7 +164,7 @@ Code := Send.STATUS;
 END_PROGRAM
 ```
 
-In Studio's simulator the runtime has no handler for the block, so it ends with `ERROR`
+In the ZPLC simulator the runtime has no handler for the block, so it ends with `ERROR`
 TRUE and `STATUS` 3: it proves that the block compiles and reports a status, not that a
 message was delivered. With the communication blocks on and no broker named, the block
 answers `STATUS` 10 (not available). `STATUS` 4 means that the session is not connected,

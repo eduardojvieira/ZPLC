@@ -18,7 +18,7 @@ por la entrada y la salida estándar; no abre ningún puerto de red ni serie.
 :::danger El asistente no puede tocar una máquina
 Ninguna herramienta del servidor graba una placa, despliega un programa, fuerza un
 valor, arranca o detiene un dispositivo, abre un puerto serie ni ejecuta una shell. Esas
-acciones quedan en Studio, donde las elige una persona. La única herramienta que no es de
+acciones quedan en ZPLC, donde las elige una persona. La única herramienta que no es de
 solo lectura, `firmware_build`, hace una compilación cruzada local y ahí termina.
 :::
 
@@ -32,7 +32,7 @@ otra carpeta el servidor imprime `ZPLC MCP workspace is unavailable` y termina c
 zplc-mcp --workspace /home/me/plants/line-3
 ```
 
-Desde un checkout, el mismo servidor se ejecuta desde el paquete de Studio:
+Desde un checkout, el mismo servidor se ejecuta desde el paquete de la aplicación ZPLC:
 
 ```bash
 bun run --cwd=packages/zplc-ide mcp --workspace /home/me/plants/line-3
@@ -45,7 +45,7 @@ agregan lo que una carpeta de proyecto no puede contener:
 
 - `--repository <directorio>` es un checkout de ZPLC. Lo necesitan `boards_list`,
   `toolchain_inspect` y `firmware_build`; sin ella responden `MCP_CAPABILITY_UNAVAILABLE`.
-- `--user-data <directorio>` es la carpeta donde Studio guarda el progreso de las
+- `--user-data <directorio>` es la carpeta donde ZPLC guarda el progreso de las
   lecciones, para el recurso `zplc://course/progress`.
 
 ## 2. Conectar un asistente
@@ -124,9 +124,9 @@ evidencia de una ejecución simulada, no de la planta.
 3. Para un cambio que mueve una salida, lea la [página de seguridad](../safety-and-limitations.md)
    y pida `safety_check`, que comprueba la cobertura de las salidas incompatibles que el
    proyecto declara, antes de que el cambio se acerque a una placa.
-4. Ponga un programa en una placa solo desde Studio, donde una persona elige la acción.
+4. Ponga un programa en una placa solo desde ZPLC, donde una persona elige la acción.
 
-La IA dentro de Studio sigue el mismo límite y tiene sus propias reglas de datos:
+La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos:
 [IA, privacidad y revisión humana](../ide/ai-privacy.md).
 
 ## Qué está verificado y qué no

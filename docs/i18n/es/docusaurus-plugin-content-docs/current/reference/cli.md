@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/cli. Do not edit. >>> */}
 
-`zplc-cli` es la línea de comandos de la API de herramientas de ZPLC, las mismas operaciones que usan Studio y el [servidor MCP](./mcp.md): 12 comandos. Nunca graba, despliega, fuerza ni pone en marcha un dispositivo. Cada comando recibe una carpeta de espacio de trabajo (o, para una compilación, la raíz del repositorio); `--json` imprime una línea de JSON, con la evidencia de la operación, en lugar de texto. Cada diagnóstico de una compilación fallida tiene un `code` (la lista son los [códigos de diagnóstico](./diagnostic-codes.md)), su mensaje, dónde empieza (`line`, `column`), dónde termina (`endLine`, `endColumn`) y su archivo (`path`); la salida de texto termina la línea con el código entre corchetes.
+`zplc-cli` es la línea de comandos de la API de herramientas de ZPLC, las mismas operaciones que usan la aplicación ZPLC y el [servidor MCP](./mcp.md): 12 comandos. Nunca graba, despliega, fuerza ni pone en marcha un dispositivo. Cada comando recibe una carpeta de espacio de trabajo (o, para una compilación, la raíz del repositorio); `--json` imprime una línea de JSON, con la evidencia de la operación, en lugar de texto. Cada diagnóstico de una compilación fallida tiene un `code` (la lista son los [códigos de diagnóstico](./diagnostic-codes.md)), su mensaje, dónde empieza (`line`, `column`), dónde termina (`endLine`, `endColumn`) y su archivo (`path`); la salida de texto termina la línea con el código entre corchetes.
 
 Esta tabla se lee del archivo fuente `packages/zplc-ide/src/cli/index.ts`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 

@@ -15,7 +15,7 @@ folder stays unchanged until you explicitly save; that save updates its
 
 ## Quick path
 
-1. Open the existing project folder in Studio, or import its archive from the Welcome screen: the import dialog
+1. Open the existing project folder in ZPLC, or import its archive from the Welcome screen: the import dialog
    shows the same difference before it writes anything.
 2. Choose **Review the difference** in the migration notice of the Explorer. The dialog lists the lines of
    `zplc.json` that migrating removes and adds; only `zplc.json` changes, and your programs are not touched.
@@ -25,7 +25,7 @@ folder stays unchanged until you explicitly save; that save updates its
 
 ## From a terminal
 
-To see what the migration would change without opening Studio, and to write the
+To see what the migration would change without opening the ZPLC application, and to write the
 version 2 project file where you choose, use the command line
 ([Use the command line](../guides/command-line.md)):
 
@@ -45,7 +45,7 @@ as it was. Review the file, then copy it over `zplc.json` when you accept it.
 | --- | --- |
 | Project model | An explicit Save writes `schemaVersion: 2` to the workspace’s `zplc.json`. |
 | Original folder | Stays unchanged during preview; Save updates the selected workspace’s original `zplc.json`. |
-| Preview | The Studio view is a preview; it is not a promise that every legacy construct is supported. |
+| Preview | The ZPLC view is a preview; it is not a promise that every legacy construct is supported. |
 | Evidence | Compile, test, and POSIX simulation results apply to the saved workspace and are host evidence only. |
 
 ## Golden scope
@@ -66,7 +66,7 @@ bypass a diagnostic.
 | Part | Verified | Level |
 | --- | --- | --- |
 | `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and the two commands above run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host |
-| Studio shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
+| ZPLC shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
 | The saved version 2 form keeps what the project does | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host |
 | The migrated project behaves the same on a board | Not claimed: no target, electrical or timing equivalence | None |
 

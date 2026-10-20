@@ -11,7 +11,7 @@ tags: [learn, lessons, glossary, spanish]
 
 The course exists in English and in Spanish. This page fixes the word each
 language uses for every concept the lessons teach, so that a lesson, its hints,
-the plant labels and the Studio controls that a lesson names all say the same
+the plant labels and the ZPLC controls that a lesson names all say the same
 thing.
 
 ## The Spanish register
@@ -31,12 +31,12 @@ languages, because they are what the program contains.
 | English | Spanish | Note |
 |---|---|---|
 | scan cycle | ciclo de escaneo | One pass of the program is "un ciclo". |
-| rung | peldaño | The Ladder editor of Studio uses the same word. |
+| rung | peldaño | The Ladder editor of ZPLC uses the same word. |
 | contact, normally open, normally closed | contacto, normalmente abierto (NA), normalmente cerrado (NC) | |
 | coil | bobina | |
 | seal-in | autorretención | |
 | latch (an SR or RS block) | biestable | To latch a value is "retener" it. |
-| interlock | enclavamiento | The Interlocks tab of Studio is "Enclavamientos". |
+| interlock | enclavamiento | The Interlocks tab of ZPLC is "Enclavamientos". |
 | permissive | permisivo | |
 | set, reset | set, reset (activar, desactivar) | The SET and RESET coils keep their names. |
 | on-delay timer | temporizador con retardo a la conexión (TON) | |
@@ -71,7 +71,7 @@ languages, because they are what the program contains.
 | bill of materials | lista de materiales | |
 | breadboard | protoboard | |
 
-The Studio controls that a lesson names are written as Studio shows them: **Check**
+The ZPLC controls that a lesson names are written as ZPLC shows them: **Check**
 is **Comprobar**, and the Tests panel is **Pruebas**.
 
 ## How the course keeps to it

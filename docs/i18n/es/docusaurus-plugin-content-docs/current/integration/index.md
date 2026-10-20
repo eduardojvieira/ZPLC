@@ -20,7 +20,7 @@ flowchart LR
   A[Compilar el proyecto a .zplc] --> B{Destino de ejecución}
   B --> D[Simulación SoftPLC nativa en el equipo]
   B --> E[Runtime de hardware Zephyr]
-  E --> F[Depuración en línea desde Studio]
+  E --> F[Depuración en línea desde la aplicación ZPLC]
 ```
 
 ## Integrar ZPLC en un firmware propio
@@ -45,7 +45,7 @@ Como ZPLC resuelve la lógica de los protocolos dentro del motor de la máquina 
 
 ## Grabar el hardware
 
-Para poner en marcha un microcontrolador nuevo, debe grabar el firmware base de ZPLC para Zephyr antes de que Studio pueda transmitir bytecode `.zplc` por el puerto serie.
+Para poner en marcha un microcontrolador nuevo, debe grabar el firmware base de ZPLC para Zephyr antes de que la aplicación ZPLC pueda transmitir bytecode `.zplc` por el puerto serie.
 
 En general, ZPLC se apoya en los procedimientos estándar de grabación de Zephyr:
 

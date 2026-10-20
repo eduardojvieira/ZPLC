@@ -24,7 +24,7 @@
     "description": "The label of footer link with label=Reference linking to /docs/reference"
   },
   "link.item.label.Studio": {
-    "message": "Studio",
+    "message": "Aplicación ZPLC",
     "description": "The label of footer link with label=Studio linking to /docs/ide"
   },
   "link.item.label.Release notes": {

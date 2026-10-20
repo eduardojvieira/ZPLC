@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "blink-structured-text",
-  "version": 2,
+  "version": 3,
   "order": 14,
   "module": 1,
   "level": "foundation",

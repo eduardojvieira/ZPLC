@@ -20,7 +20,7 @@ Protocol support depends on the physical capabilities of your target board. ZPLC
 
 No exchange over any of these interfaces has been tested on a board; what has been verified is in the how-to pages for [Modbus](../guides/modbus.md) and [MQTT](../guides/mqtt-sparkplug.md).
 
-Studio shows the Wi-Fi or Ethernet settings only for boards that have that hardware.
+ZPLC shows the Wi-Fi or Ethernet settings only for boards that have that hardware.
 
 ## Supported Protocols
 
@@ -87,7 +87,7 @@ TLS needs random numbers that nobody can predict. A firmware build that enables 
 
 ## What a message from the network can do
 
-No message that arrives from Modbus, MQTT or a cloud service changes RUN/STOP, sets or clears a force, or downloads a program. Those actions exist only in the diagnostic shell and in Studio, on the serial link.
+No message that arrives from Modbus, MQTT or a cloud service changes RUN/STOP, sets or clears a force, or downloads a program. Those actions exist only in the diagnostic shell and in the ZPLC application, on the serial link.
 
 | Source | What it can change | What it cannot reach |
 | --- | --- | --- |

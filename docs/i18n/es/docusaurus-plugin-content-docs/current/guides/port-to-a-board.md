@@ -53,7 +53,7 @@ Parta del par de la placa más cercana a la suya.
 
 ## 2. Describir la placa en el manifiesto
 
-Agregue una entrada a `firmware/app/boards/boards.json`. Studio, la línea de comandos, la
+Agregue una entrada a `firmware/app/boards/boards.json`. La aplicación ZPLC, la línea de comandos, la
 compilación y la página de soporte de hardware leen este archivo, así que es el único
 lugar que dice qué es la placa. Esta es la forma de una entrada, para una placa que no
 existe:

@@ -40,11 +40,11 @@ Join the broker of the simulation, subscribe to a topic, publish a message on it
 
 ## What the evidence covers
 
-The MQTT broker in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.
+The MQTT broker in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real broker, cloud service or device accepts the same session, topics or quality of service, and it says nothing about network timing, HIL, or certification.
 
 ## On a board
 
-The lesson talks to the MQTT broker that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a broker in its firmware, which the course firmware does not set. Complete it in Simulation: its grade is the same each time and needs no broker or network.
+The lesson talks to the MQTT broker that ZPLC starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a broker in its firmware, which the course firmware does not set. Complete it in Simulation: its grade is the same each time and needs no broker or network.
 
 {/* <<< END GENERATED: learn/lessons/mqtt-publish-subscribe <<< */}
 

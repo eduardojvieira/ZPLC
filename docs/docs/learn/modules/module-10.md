@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-10. Do not edit. >>> */}
 
-Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that Studio starts on this computer, so no network or board is needed.
+Communications come last because they need everything before them. In simulation, Modbus and MQTT run against endpoints that ZPLC starts on this computer, so no network or board is needed.
 
 - Level: Advanced
 - Tracks: Simulation, Hardware

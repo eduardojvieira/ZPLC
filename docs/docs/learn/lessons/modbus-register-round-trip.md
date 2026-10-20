@@ -39,11 +39,11 @@ Write one holding register through a Modbus TCP block, read it back once the wri
 
 ## What the evidence covers
 
-The Modbus server in this lesson is a loopback double that Studio starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.
+The Modbus server in this lesson is a loopback double that ZPLC starts inside the simulation session, on this computer. The scenario shows how the blocks and their handshake behave against that double; it does not show that a real controller, drive or gateway accepts the same request, and it says nothing about wiring, network timing or a real device, HIL, or certification.
 
 ## On a board
 
-The lesson talks to the Modbus TCP server that Studio starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set. Complete it in Simulation: its grade is the same each time and needs no device or network.
+The lesson talks to the Modbus TCP server that ZPLC starts on this computer. The Raspberry Pi Pico has no network interface, and the ESP32-S3 would need Wi-Fi credentials and the address of a server in its firmware, which the course firmware does not set. Complete it in Simulation: its grade is the same each time and needs no device or network.
 
 {/* <<< END GENERATED: learn/lessons/modbus-register-round-trip <<< */}
 

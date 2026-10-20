@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
       "checkpoint": "El escenario se llama MotorInterlock y contiene {{assertions}} aserciones."
     },
     {

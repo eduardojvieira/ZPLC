@@ -38,14 +38,14 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 | Preparación | `bun run setup` | unos 10 s | Dependencias instaladas, compilador construido, runtime nativo construido |
 | Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
 | Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
-| Studio, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de Studio y los casos de conformidad se comportan como está listado |
-| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y Studio compila |
-| Estructura de Studio | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del store importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
+| Aplicación, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de la aplicación y los casos de conformidad se comportan como está listado |
+| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y la aplicación compila |
+| Estructura de la aplicación | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del store importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 800 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
 | Análisis estático de C | `bun run lint:c` | unos 15 s | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa |
 | Fuentes de las pruebas | `bun run check:test-sources` | menos de 1 s | Ninguna prueba lee el texto del código del producto ni compara el ensamblador que emitió el compilador, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json` |
 | Contrato binario | `bun run contract:check` | unos 1 s | Los archivos generados coinciden con `contract.json` |
 | Simulación | `bun run simulate packages/zplc-ide/projects/motor_plant` | menos de 1 s | Las pruebas de escenario del proyecto pasan en el runtime nativo |
-| Recorridos de Studio | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
+| Recorridos de la aplicación | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
 | Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
 | Documentación | `bun run check:docs` | unos 15 s en caliente, 1 min en frío | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
 | Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el flujo de trabajo de publicación ejecuta antes de construir nada |
@@ -74,7 +74,7 @@ sin autorización explícita.
 ## Agregar una lección
 
 Una lección es un paquete de datos, de modo que agregar una no requiere cambiar el código de la
-aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, los manifiestos: Studio,
+aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, los manifiestos: la aplicación ZPLC,
 el almacén de progreso y el recurso de curso de MCP leen un índice generado a partir de ellos, y CI
 falla ante una lista de identificadores escrita a mano (LRN-028).
 
@@ -197,9 +197,9 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 | Dónde | Qué pasa ante una diferencia |
 |---|---|
 | Loader (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los flags y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
-| Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. Studio la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
+| Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. La aplicación ZPLC la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
 | Carga al firmware | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`. |
-| Carga a hardware desde Studio | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
+| Carga a hardware desde la aplicación ZPLC | El preflight compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
 | CLI | `zplc-cli compile` indica el contador de lo que construyó. |
 
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware

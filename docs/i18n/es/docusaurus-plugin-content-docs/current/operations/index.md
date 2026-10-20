@@ -20,7 +20,7 @@ en una recuperación de firmware.
 3. Mantenga las acciones físicas bajo autoridad humana explícita y el procedimiento del sitio.
 4. Use los [límites de recuperación](./recovery.md) cuando falle la conexión, el programa o el firmware.
 
-## Qué puede mostrar Studio
+## Qué puede mostrar ZPLC
 
 - Los diagnósticos del compilador, los resultados de las pruebas, la traza de la simulación en el host y el estado que informa un runtime conectado.
 - El perfil de la placa seleccionada y su nivel de evidencia.

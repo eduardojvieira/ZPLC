@@ -75,5 +75,5 @@ The board manifest is `firmware/app/boards/boards.json`; it replaced the version
 
 ## Source-of-Truth Rule
 
-The manifest is only a navigation contract. The truth for runtime APIs, boards, Studio workflows
+The manifest is only a navigation contract. The truth for runtime APIs, boards, ZPLC application workflows
 and release scope lives in the files named in the [source of truth](./source-of-truth.md).

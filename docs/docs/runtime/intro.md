@@ -9,7 +9,7 @@ tags: [runtime, embedded, vm]
 # ZPLC runtime
 
 ZPLC is a portable C99 PLC runtime behind a hardware-abstraction layer (HAL).
-Studio, the native host runtime, and Zephyr profiles use verified `.zplc`
+The ZPLC application, the native host runtime, and Zephyr profiles use verified `.zplc`
 artifacts and the same runtime contracts. It is not a certified safety PLC.
 
 ## Quick path

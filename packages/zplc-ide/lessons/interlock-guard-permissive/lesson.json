@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "interlock-guard-permissive",
-  "version": 2,
+  "version": 3,
   "order": 18,
   "module": 6,
   "level": "intermediate",

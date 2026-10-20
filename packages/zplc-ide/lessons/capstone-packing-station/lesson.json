@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "capstone-packing-station",
-  "version": 2,
+  "version": 3,
   "order": 26,
   "module": 11,
   "level": "advanced",

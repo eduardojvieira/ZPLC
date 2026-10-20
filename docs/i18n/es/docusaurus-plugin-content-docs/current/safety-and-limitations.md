@@ -21,7 +21,7 @@ en lugar de repetirlo.
   norma de seguridad funcional.
 - **No debe controlar maquinaria** ni proteger personas: ni como parada de
   emergencia, ni como enclavamiento, ni como resguardo. La vista de enclavamientos
-  de Studio comprueba que sus escenarios afirmen que un par de salidas nunca está
+  de ZPLC comprueba que sus escenarios afirmen que un par de salidas nunca está
   activo a la vez; comprueba los escenarios, no la máquina.
 - **No garantiza tiempos.** El intervalo de una tarea es el período de una
   liberación y el plazo de un ciclo. Ninguna placa tiene un tiempo de ciclo, un
@@ -44,7 +44,7 @@ son los de [Soporte de hardware](./reference/capabilities-evidence.md#los-nivele
 | Compilador y máquina virtual | El host, con los sanitizadores de direcciones y de comportamiento indefinido, mediante la suite de conformidad y las suites en C | Una placa |
 | Planificador, imagen de proceso, memoria retentiva, manejadores de comunicación | `native_sim` y los destinos QEMU Cortex-M3 y Cortex-M0, que emulan un procesador y no una placa | Tiempos, interrupciones, controladores, comportamiento de la flash y estado eléctrico de una placa real |
 | Firmware de cada placa | Compilado para la placa y sujeto a su presupuesto de flash y RAM | Arrancarlo, grabarlo, ejecutar un programa, cualquier salida |
-| Studio y el simulador | El host de desarrollo en Linux, mediante los recorridos de extremo a extremo; los instaladores se inician en su propio sistema en la ejecución de la versión | Una placa física; una máquina limpia de cada sistema, por una persona (las ejecuciones registradas de `RELEASING.md` están vacías) |
+| La aplicación ZPLC y el simulador | El host de desarrollo en Linux, mediante los recorridos de extremo a extremo; los instaladores se inician en su propio sistema en la ejecución de la versión | Una placa física; una máquina limpia de cada sistema, por una persona (las ejecuciones registradas de `RELEASING.md` están vacías) |
 | Modbus, MQTT, Sparkplug B y los bloques de nube | Los manejadores contra sustitutos, el cliente Modbus TCP y el cliente MQTT del runtime de simulación contra servidores escritos para la prueba sobre un socket de loopback, entrada hostil a través del cliente propio del producto, y el entramado y las áreas del servidor Modbus | Un broker en vivo, un servicio de nube o un dispositivo en un cable; el cliente MQTT del controlador contra un broker; Modbus RTU en un cable |
 | Salidas cuando el programa se pausa, se detiene o falla | El host y `native_sim`, que tiene un emulador de GPIO | El nivel físico de un pin en una placa |
 
@@ -104,7 +104,7 @@ caso se corrige.
   guardan con el resto de los ajustes y quien pueda leer la flash de la placa
   puede leerlas. Use una cuenta con solo los derechos que el controlador necesita.
 - Los instaladores no están firmados con una identidad de pago. Compruebe el
-  checksum de cada descarga: [Instalar ZPLC Studio](./getting-started/install.md).
+  checksum de cada descarga: [Instalar ZPLC](./getting-started/install.md).
 - En la Nucleo-H743ZI y en la Arduino Opta, TLS está desactivado hasta que su
   generador de números aleatorios se haya verificado en la placa, y MQTT funciona
   sobre TCP sin cifrar.

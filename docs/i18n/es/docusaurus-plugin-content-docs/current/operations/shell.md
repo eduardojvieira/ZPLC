@@ -63,7 +63,7 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
-- `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de Studio consulta la misma memoria.
+- `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de la aplicación ZPLC consulta la misma memoria.
 
 Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
@@ -86,7 +86,7 @@ El planificador decide cuándo se ejecuta cada tarea. Estos comandos están disp
 - `zplc sched status` - Muestra el estado del planificador, como `RUNNING` o `HALTED`.
 - `zplc sched tasks` - Lista las tareas configuradas con su prioridad y las mediciones de tiempo de ciclo.
 - `zplc sched load <size>` - Prepara el runtime para recibir un programa `.zplc` del tamaño indicado, en bytes.
-- `zplc sched data <hex>` - Envía el siguiente fragmento del programa, en hexadecimal, sin pasar por Studio.
+- `zplc sched data <hex>` - Envía el siguiente fragmento del programa, en hexadecimal, sin pasar por la aplicación ZPLC.
 
 ---
 
@@ -175,6 +175,6 @@ ZPLC puede sincronizar el reloj mediante SNTP.
 Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
 
 - `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen y, en `memory`, `code_size` y `max_artifact_size`, el mayor programa que acepta la placa (`CONFIG_ZPLC_CODE_SIZE_MAX`); un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
-- `zplc sys build` - Muestra la identidad de la imagen de firmware, igual que `zplc version`. Con `--json` la imprime como un objeto con `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` y `options`. `commit` vale `unknown` cuando la imagen se construyó desde un archivo de fuentes sin historial de git. Es un comando aparte porque el saludo de Studio acepta exactamente las claves de `zplc sys info --json`.
-- `zplc sys io` - Muestra la identidad de la descripción de E/S de la placa con la que se construyó la imagen. Con `--json` la imprime como un objeto con `schema`, `board_id`, `hash`, `channels`, `input_bytes` y `output_bytes`. Studio compara el hash con la descripción que tiene para la placa y rechaza un programa que usa E/S en un firmware que informa otra o ninguna, o que toca una dirección para la que la placa no tiene canal (ver [Placas Soportadas](../reference/boards.md)). Es un comando aparte por la misma razón que `zplc sys build`: las claves de `zplc sys info --json` no cambian.
+- `zplc sys build` - Muestra la identidad de la imagen de firmware, igual que `zplc version`. Con `--json` la imprime como un objeto con `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` y `options`. `commit` vale `unknown` cuando la imagen se construyó desde un archivo de fuentes sin historial de git. Es un comando aparte porque el saludo de la aplicación ZPLC acepta exactamente las claves de `zplc sys info --json`.
+- `zplc sys io` - Muestra la identidad de la descripción de E/S de la placa con la que se construyó la imagen. Con `--json` la imprime como un objeto con `schema`, `board_id`, `hash`, `channels`, `input_bytes` y `output_bytes`. La aplicación ZPLC compara el hash con la descripción que tiene para la placa y rechaza un programa que usa E/S en un firmware que informa otra o ninguna, o que toca una dirección para la que la placa no tiene canal (ver [Placas Soportadas](../reference/boards.md)). Es un comando aparte por la misma razón que `zplc sys build`: las claves de `zplc sys info --json` no cambian.
 - `zplc sys reboot` - Reinicia la placa con un reinicio por software.

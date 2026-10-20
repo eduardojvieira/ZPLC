@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "MQTT: publicar un mensaje y recibirlo",
   "summary": "Conéctese al broker de la simulación, suscríbase a un tema, publique un mensaje en él y conserve constancia del mensaje, que llega de vuelta durante un solo ciclo.",
-  "scope": "El broker MQTT de esta lección es un doble de loopback que Studio inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
+  "scope": "El broker MQTT de esta lección es un doble de loopback que ZPLC inicia dentro de la sesión de simulación, en este equipo. El escenario muestra cómo se comportan los bloques y su protocolo de intercambio frente a ese doble; no muestra que un broker, un servicio en la nube o un dispositivo reales acepten la misma sesión, los mismos temas o la misma calidad de servicio, y no dice nada sobre los tiempos de una red, HIL ni certificación.",
   "objectives": [
     "Distinga un bloque de servicio (MQTT_CONNECT, MQTT_SUBSCRIBE), que informa su estado en cada ciclo, de un bloque de solicitud (MQTT_PUBLISH), que envía una vez por cada flanco ascendente de EN.",
     "Publique solo cuando la suscripción ya esté activa, porque un mensaje enviado antes no se le entrega.",
@@ -13,7 +13,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. Studio inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
+      "body": "En src/MqttLoop.st el programa se conecta al broker con MQTT_CONNECT y, una vez conectado, se suscribe al tema plant/cmd con MQTT_SUBSCRIBE. Agregue el publicador y el receptor: cuando Send esté en ON y la suscripción esté activa, publique el contenido START en plant/cmd; ponga Heard en ON cuando la suscripción entregue el contenido START, y manténgalo en ON después. Failed informa un ERROR de cualquiera de los tres bloques. ZPLC inicia un broker para la simulación en este equipo, así que no hace falta instalar ningún broker ni tener una red.",
       "checkpoint": "Joined, Subscribed, Published y Heard siguen el intercambio en ese orden, y Failed sigue en OFF."
     },
     {
@@ -31,7 +31,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
       "checkpoint": "El escenario se llama MqttLoop y contiene {{assertions}} aserciones."
     },
     {
@@ -44,7 +44,7 @@
       "key": "reflect",
       "title": "Reflexione",
       "body": "¿Qué ocurre si el programa publica en plant/cmd pero se suscribe a otro tema, o compara el contenido con otro texto? Pruebe cada caso.",
-      "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que Studio inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
+      "checkpoint": "Cada caso deja Heard en OFF: el broker entrega un mensaje solo a una suscripción al mismo tema, y el programa ignora un contenido que no coincide con el texto comparado. El escenario muestra cómo se comportan los bloques frente al doble del broker que ZPLC inicia. No muestra que un broker real acepte la misma sesión, los mismos temas o la misma calidad de servicio: eso hay que comprobarlo con ese broker."
     }
   ],
   "hints": [
