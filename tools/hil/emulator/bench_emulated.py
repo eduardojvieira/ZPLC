@@ -264,7 +264,10 @@ class PicoBench:
         if self.alive():
             self.process.stdin.write(json.dumps({"id": 0, "cmd": "cut"}) + "\n")
             self.process.stdin.flush()
-            self.process.wait(30)
+            try:
+                self.process.wait(30)
+            except subprocess.TimeoutExpired:
+                self.kill()
         self.start(write_image=False)
 
     def set_analog(self, channel: str, fraction: float) -> None:

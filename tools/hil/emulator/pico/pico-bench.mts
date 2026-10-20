@@ -20,8 +20,8 @@
 //     wire {pairs}              -> {}                  connect output -> input pairs (the bench wiring step)
 //     pins                      -> {levels, funcsel}   output levels and function selects of GP0..GP29
 //     cut {at_ms?}              -> {}                  power cut at that simulated time (now when absent)
-//   events: ready (USB enumerated), shell (its prompt was printed), settled (then quiet for 300 ms), pin {gpio, level, t_ms} on every output change, watchdog (the process exits 3).
-import { closeSync, createReadStream, createWriteStream, existsSync, openSync, readFileSync, writeSync } from 'node:fs';
+//   events: ready (USB enumerated), shell (its prompt was printed), settled (then quiet for 300 ms), pin {gpio, level, t_ms} on every output change, watchdog (then the process ends, a reset).
+import { createReadStream, createWriteStream, existsSync, openSync, readFileSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -41,6 +41,9 @@ mcu.logger = new ConsoleLogger(LogLevel.Error);
 const log = createWriteStream(config.log, { flags: 'a' });
 const nowMs = () => sim.clock.nanos / 1e6;
 const emit = (message: object) => process.stdout.write(JSON.stringify(message) + '\n');
+// process.exit() waits for the thread pool, where the reads of the ptys block forever: the end is always a kill,
+// which is also what a power cut is. The flash file already holds every write.
+const die = () => process.kill(process.pid, 'SIGKILL');
 // A pty master is no tty to libuv (uv_tty_init fails on it): read it in the thread pool, write it at once.
 const ptyReader = (fd: number) => createReadStream('', { fd, autoClose: false, highWaterMark: 4096 });
 const ptyWrite = (fd: number, data: Uint8Array) => { writeSync(fd, data); };
@@ -103,7 +106,7 @@ wire(config.wiring);
 (mcu.peripherals[0x40058] as { onWatchdogTrigger: () => void }).onWatchdogTrigger = () => {
   // rp2040js does not reset the chip: the bench starts a new process on the same flash file
   emit({ event: 'watchdog', t_ms: nowMs() });
-  process.exit(3);
+  die();
 };
 mcu.uart[0].onByte = (byte: number) => log.write(String.fromCharCode(byte));
 mcu.uart[1].onByte = (byte: number) => ptyWrite(config.rtuFd, Uint8Array.of(byte));
@@ -156,8 +159,7 @@ ptyReader(config.cdcFd).on('data', (data: string | Buffer) => {
 // ---------------------------------------------------------------- control channel
 const powerCut = () => {
   log.write(`\n[bench] power cut at ${nowMs().toFixed(3)} ms\n`);
-  closeSync(flashFd);
-  process.exit(137);
+  die();
 };
 const at = (ms: number, callback: () => void) => sim.clock.createAlarm(callback).schedule(Math.max(0, ms - nowMs()) * 1e6);
 createInterface({ input: process.stdin }).on('line', (line: string) => {
@@ -180,7 +182,7 @@ createInterface({ input: process.stdin }).on('line', (line: string) => {
     default: return answer({ error: `unknown command ${cmd}` });
   }
 });
-process.stdin.on('end', () => process.exit(0)); // the bench went away
+process.stdin.on('end', die); // the bench went away
 
 // ---------------------------------------------------------------- run, never ahead of the wall clock
 // Host programs (the device link, a Modbus RTU endpoint) answer in wall time; an idle core would otherwise jump its

@@ -65,6 +65,20 @@ class PicoBootTests(unittest.TestCase):
             finally:
                 bench.close()
 
+    def test_a_power_cut_ends_the_emulator_at_once_and_the_board_boots_again(self):
+        """Node's exit waits for the thread pool, where the pty reads block: a cut has to be a kill."""
+        with tempfile.TemporaryDirectory() as work:
+            bench = emu.EmulatorBench("rpi_pico", workdir=Path(work))
+            try:
+                bench.flash(PICO_IMAGE)
+                started = time.monotonic()
+                bench.cut_power_during_deploy(1, 20)
+                self.assertLess(time.monotonic() - started, 20.0)
+                self.assertEqual(info(bench)["board"], "rpi_pico")
+                self.assertEqual(bench.boots, 2)
+            finally:
+                bench.close()
+
     def test_each_adc_read_converts_the_channel_it_selects(self):
         """rp2040js kept START_ONCE set, so the driver's next write to CS started a conversion of the previous channel."""
         with tempfile.TemporaryDirectory() as work:
