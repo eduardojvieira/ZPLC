@@ -1,5 +1,5 @@
 {
-  "description": "The port conformance suite (IO-013): what a port of the runtime has to pass, and the check that runs it on each port. Every leg names real suites, or says why it is open and who owns it. The WebAssembly legs name the C suites that tools/wasm-core/suites.ts builds with the HAL port of that runtime (key \"wasm\"). tools/ci/port-conformance.test.ts checks the names against the tree; tools/docs/generate_port_interface.ts prints this file in the port interface page.",
+  "description": "The port conformance suite (IO-013): what a port of the runtime has to pass, and the check that runs it on each port. Every leg names real suites, or says why it is open and who owns it. The WebAssembly legs name the C suites that tools/wasm-core/suites.ts builds with the HAL port of that runtime (key \"wasm\"); the FreeRTOS leg names the suites that firmware/lib/zplc_core/src/hal/freertos/freertos.cmake registers (key \"freertos\"). tools/ci/port-conformance.test.ts checks the names against the tree; tools/docs/generate_port_interface.ts prints this file in the port interface page.",
   "ports": [
     {
       "id": "posix",
@@ -32,6 +32,17 @@
       "how": {
         "en": "`bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them)",
         "es": "`bun tools/wasm-core/suites.ts` (las suites C del núcleo, compiladas con la HAL de WebAssembly) y los archivos `wasm*.test.ts` de `bun run test:ide` (con clang y lld; CI los instala)"
+      }
+    },
+    {
+      "id": "freertos",
+      "name": {
+        "en": "FreeRTOS (POSIX simulator)",
+        "es": "FreeRTOS (simulador POSIX)"
+      },
+      "how": {
+        "en": "`bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job)",
+        "es": "`bash tools/freertos/test.sh` (CMake y ctest de la compilación FreeRTOS, que descarga FreeRTOS-Kernel en un commit fijado; CI lo ejecuta en el job `freertos-port`)"
       }
     }
   ],
@@ -75,6 +86,14 @@
               "test": "the core in WebAssembly gives the results of the conformance cases (IDE-025)"
             }
           ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_isa",
+            "test_vm_core",
+            "test_vm_arith_edges",
+            "test_opcode_coverage"
+          ]
         }
       }
     },
@@ -113,6 +132,13 @@
               "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
               "test": "the verifier of the loader is on the path that loads a program in WebAssembly (IDE-025)"
             }
+          ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_loader_verify",
+            "test_sandbox",
+            "test_sandbox_regions"
           ]
         }
       }
@@ -160,6 +186,16 @@
               "test": "the scheduler of the WebAssembly runtime decides what the native runtime decides (RT-008)"
             }
           ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_sched_core",
+            "test_sched_equivalence",
+            "test_single_task",
+            "test_failsafe",
+            "test_native_runtime_session",
+            "test_freertos_scheduler"
+          ]
         }
       }
     },
@@ -187,6 +223,12 @@
         "wasm": {
           "wasm": [
             "test_port_timing"
+          ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_port_timing",
+            "test_hal_freertos"
           ]
         }
       }
@@ -220,6 +262,12 @@
           "wasm": [
             "test_io_table",
             "test_hal_posix_io_table"
+          ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_io_table",
+            "test_hal_freertos_io_table"
           ]
         }
       }
@@ -264,6 +312,13 @@
               "file": "packages/zplc-ide/src/runtime/wasmRetain.test.ts",
               "test": "RETAIN records kept with the project (RT-027)"
             }
+          ]
+        },
+        "freertos": {
+          "freertos": [
+            "test_program_store",
+            "test_retain",
+            "test_hal_freertos"
           ]
         }
       }
