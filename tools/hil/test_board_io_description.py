@@ -224,6 +224,65 @@ class DevicetreeCrossCheckTests(unittest.TestCase):
         self.assertIn("GPIO_ACTIVE_LOW", binding["flags"])
 
 
+RTU_OVERLAY = """
+&pinctrl {
+    uart1_default: uart1_default {
+        group1 { pinmux = <UART1_TX_P4>; };
+        group2 { pinmux = <UART1_RX_P5>; input-enable; };
+    };
+};
+&uart0 { status = "disabled"; };
+&uart1 {
+    status = "okay";
+    pinctrl-0 = <&uart1_default>;
+    pinctrl-names = "default";
+    modbus0: modbus0 { compatible = "zephyr,modbus-serial"; status = "okay"; };
+};
+"""
+
+
+class FieldbusPortTests(unittest.TestCase):
+    """IO-009, COM-012: a fieldbus port names its UART and pins, and no pin of a serial port is an I/O channel's pin."""
+
+    def port(self, **overrides: object) -> dict[str, object]:
+        base: dict[str, object] = {
+            "id": "RTU0", "protocol": "modbus-rtu", "uart": "uart1", "tx": "GP4", "rx": "GP5",
+            "location": "header pins 6 and 7", "electrical": "3.3 V logic UART", "source": "board.overlay",
+        }
+        base.update(overrides)
+        return base
+
+    def errors(self, ports: list[dict[str, object]], overlay: str = RTU_OVERLAY) -> list[str]:
+        entry = board([channel(), channel(id="DO1", address="%QX0.1", pin="GP1", dt={"alias": "led1", "controller": "gpio0", "pin": 1})])
+        entry["fieldbus"] = ports
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(overlay)
+            for item in entry["io"]["channels"]:  # type: ignore[index]
+                item["source"] = "board.overlay"
+            return boards_lib.validate_fieldbus(entry, Path(directory))
+
+    def test_io_009_a_modbus_rtu_port_on_free_pins_bound_by_its_overlay_is_valid(self) -> None:
+        self.assertEqual([], self.errors([self.port()]))
+
+    def test_io_009_a_port_pin_that_is_an_io_channel_pin_is_reported(self) -> None:
+        errors = self.errors([self.port(tx="GP1")])
+        self.assertTrue(any("RTU0" in text and "GP1" in text and "DO1" in text for text in errors), errors)
+
+    def test_io_009_an_overlay_uart_pinctrl_on_an_io_channel_pin_is_reported(self) -> None:
+        overlay = RTU_OVERLAY.replace("UART1_TX_P4", "UART1_TX_P0")
+        errors = self.errors([self.port()], overlay)
+        self.assertTrue(any("uart1_default" in text and "DO0" in text for text in errors), errors)
+
+    def test_io_009_a_port_whose_overlay_has_no_modbus_serial_node_on_its_uart_is_reported(self) -> None:
+        overlay = RTU_OVERLAY.replace('compatible = "zephyr,modbus-serial";', "")
+        errors = self.errors([self.port()], overlay)
+        self.assertTrue(any("RTU0" in text and "zephyr,modbus-serial" in text for text in errors), errors)
+
+    def test_io_009_a_port_whose_uart_pins_are_not_the_described_ones_is_reported(self) -> None:
+        errors = self.errors([self.port(tx="GP8", rx="GP9")])
+        self.assertTrue(any("RTU0" in text and "GP8" in text for text in errors), errors)
+
+
 class StorageUsersTests(unittest.TestCase):
     """IO-008: the persistent stores of a board's firmware, and the flash partition each one takes."""
 
@@ -409,6 +468,13 @@ class ManifestTests(unittest.TestCase):
             users = boards_lib.storage_users(self.by_id(board_id), ROOT)
             self.assertIn("nvs", users, board_id)
             self.assertEqual(len(users), len(set(users.values())), f"{board_id}: {users}")
+
+    def test_io_009_the_pico_has_a_modbus_rtu_port_on_pins_no_io_channel_uses(self) -> None:
+        entry = self.by_id("rpi-pico-rp2040")
+        ports = [port for port in entry.get("fieldbus", []) if port["protocol"] == "modbus-rtu"]
+        self.assertEqual(1, len(ports), "the Pico needs one Modbus RTU port (COM-012, HIL-010)")
+        self.assertEqual(("uart1", "GP4", "GP5"), (ports[0]["uart"], ports[0]["tx"], ports[0]["rx"]))
+        self.assertEqual([], boards_lib.validate_fieldbus(entry, ROOT))
 
     def test_io_009_the_t_display_s3_settings_are_a_separate_profile_that_matches_its_overlay(self) -> None:
         profile = json.loads(TDISPLAY_PROFILE.read_text())

@@ -299,7 +299,19 @@
         }
       ],
       "unmapped": []
-    }
+    },
+    "fieldbus": [
+      {
+        "id": "RTU0",
+        "protocol": "modbus-rtu",
+        "uart": "uart1",
+        "tx": "GP4",
+        "rx": "GP5",
+        "location": "header pins 6 (TX) and 7 (RX), GND on header pin 8",
+        "electrical": "3.3 V logic UART, not RS-485 and not RS-232: connect an RS-485 transceiver for 3.3 V (a MAX3485 class module) for a bus, or a 3.3 V USB-serial adapter for a computer. Never connect 5 V or RS-232 levels to these pins.",
+        "source": "firmware/app/boards/rpi_pico_rp2040.overlay"
+      }
+    ]
   },
   {
     "board_id": "arduino-giga-r1-m7",

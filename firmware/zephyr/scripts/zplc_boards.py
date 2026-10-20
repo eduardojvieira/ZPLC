@@ -318,6 +318,7 @@ def validate_manifest(boards: Any, root: Path | None = None) -> list[str]:
         errors.extend(validate_io_description(entry, root))
         if root is not None:
             errors.extend(devicetree_mismatches(entry, root))
+        errors.extend(validate_fieldbus(entry, root))
         errors.extend(validate_watchdog(entry, root))
     return errors
 
@@ -357,6 +358,103 @@ def _kconfig(paths: Iterable[Path]) -> dict[str, str]:
             if match:
                 values[match.group(1) or match.group(3)] = match.group(2) if match.group(1) else "n"
     return values
+
+
+FIELDBUS_PROTOCOLS = {"modbus-rtu": "zephyr,modbus-serial"}
+FIELDBUS_REQUIRED = ("id", "protocol", "uart", "tx", "rx", "location", "electrical", "source")
+_REFERENCE = re.compile(r"&(\w+)\s*\{")
+_NODE_WITH_LABEL = re.compile(r"\b([A-Za-z_]\w*)\s*:\s*[\w,.@-]+\s*\{")
+_PINMUX = re.compile(r"\bpinmux\s*=\s*([^;]*);")
+_PINMUX_PIN = re.compile(r"_(?:P|GPIO)(\d+)\b")
+
+
+def _block(text: str, brace: int) -> str:
+    """The text between the brace at `brace` and its partner."""
+    depth = 0
+    for index in range(brace, len(text)):
+        depth += {"{": 1, "}": -1}.get(text[index], 0)
+        if depth == 0:
+            return text[brace + 1:index]
+    return text[brace + 1:]
+
+
+def _gpio_of_number(number: int) -> tuple[str, int]:
+    return ("gpio0", number) if number < 32 else ("gpio1", number - 32)
+
+
+def _overlay_texts(board: dict[str, Any], root: Path) -> dict[str, str]:
+    """The overlays a board names (support assets, channel and port sources), without comments."""
+    names = [*board.get("support_assets", []), *(c.get("source") for c in board.get("io", {}).get("channels", []))]
+    names += [port.get("source") for port in board.get("fieldbus", []) if isinstance(port, dict)]
+    return {
+        name: _COMMENT.sub("", (root / name).read_text())
+        for name in dict.fromkeys(names)
+        if isinstance(name, str) and name.endswith(".overlay") and (root / name).is_file()
+    }
+
+
+def validate_fieldbus(board: dict[str, Any], root: Path | None = None) -> list[str]:
+    """The serial ports of a board (IO-009, COM-012): no pin of a port, and no pin a pinctrl group of its overlays
+    muxes, is the pin of an I/O channel; with a repository root, the overlay of a port enables its UART with the
+    described TX and RX pins and the child node its protocol needs (zephyr,modbus-serial for Modbus RTU)."""
+    name = board.get("board_id", "?")
+    errors: list[str] = []
+    taken: dict[tuple[str, int], str] = {}
+    for channel in board.get("io", {}).get("channels", []):
+        gpio = gpio_of_pin_name(channel.get("pin", "")) if isinstance(channel.get("pin"), str) else None
+        if gpio is not None:
+            taken[gpio] = channel.get("id", "?")
+    ports = board.get("fieldbus", [])
+    if not isinstance(ports, list):
+        return [f"{name}: fieldbus must list the serial ports of the board"]
+    for port in ports:
+        if not isinstance(port, dict) or any(key not in port for key in FIELDBUS_REQUIRED):
+            errors.append(f"{name}: a fieldbus port needs {', '.join(FIELDBUS_REQUIRED)}")
+            continue
+        where = f"{name}: fieldbus port {port['id']}"
+        if port["protocol"] not in FIELDBUS_PROTOCOLS:
+            errors.append(f"{where}: protocol must be one of {', '.join(FIELDBUS_PROTOCOLS)}")
+            continue
+        pins = {}
+        for role in ("tx", "rx"):
+            gpio = gpio_of_pin_name(port[role]) if isinstance(port[role], str) else None
+            if gpio is None:
+                errors.append(f"{where}: {role} {port[role]!r} is not a pin name")
+                continue
+            pins[role] = gpio
+            if gpio in taken:
+                errors.append(f"{where}: {role} {port[role]} is the pin of channel {taken[gpio]}")
+        if root is None or not str(port["source"]).endswith(".overlay") or not (root / port["source"]).is_file():
+            continue
+        text = _COMMENT.sub("", (root / port["source"]).read_text())
+        bodies = [_block(text, match.end() - 1) for match in _REFERENCE.finditer(text) if match.group(1) == port["uart"]]
+        body = "\n".join(bodies)
+        if not re.search(r'\bstatus\s*=\s*"okay"', body) or f'"{FIELDBUS_PROTOCOLS[port["protocol"]]}"' not in body:
+            errors.append(
+                f"{where}: {port['source']} does not enable {port['uart']} with a {FIELDBUS_PROTOCOLS[port['protocol']]} child"
+            )
+        group = re.search(r"pinctrl-0\s*=\s*<\s*&(\w+)", body)
+        muxed = _pinctrl_groups(text).get(group.group(1), set()) if group else set()
+        if muxed != set(pins.values()):
+            errors.append(f"{where}: the pinctrl of {port['uart']} in {port['source']} is not on {port['tx']} and {port['rx']}")
+    if root is not None:
+        for source, text in _overlay_texts(board, root).items():
+            for label, gpios in _pinctrl_groups(text).items():
+                errors.extend(
+                    f"{name}: pinctrl group {label} of {source} muxes {gpio[0]} {gpio[1]}, the pin of channel {taken[gpio]}"
+                    for gpio in sorted(gpios) if gpio in taken
+                )
+    return errors
+
+
+def _pinctrl_groups(text: str) -> dict[str, set[tuple[str, int]]]:
+    """The GPIOs that each labelled pinctrl group of an overlay muxes (UART1_TX_P4, UART1_TX_GPIO17, ...)."""
+    groups: dict[str, set[tuple[str, int]]] = {}
+    for match in _NODE_WITH_LABEL.finditer(text):
+        pins = {_gpio_of_number(int(number)) for mux in _PINMUX.findall(_block(text, match.end() - 1)) for number in _PINMUX_PIN.findall(mux)}
+        if pins:
+            groups[match.group(1)] = pins
+    return groups
 
 
 def storage_users(board: dict[str, Any], root: Path) -> dict[str, str]:

@@ -63,7 +63,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 162.5 | 170.2 | 166.1 | 174.5 | 8.0 | 4.0 | 24.0 |
+| `rpi-pico-rp2040` | 173.7 | 182.5 | 169.4 | 178.0 | 8.0 | 4.0 | 24.0 |
 | `arduino-giga-r1-m7` | 212.8 | 223.5 | 229.9 | 241.5 | 8.0 | 4.0 | 44.0 |
 | `esp32-s3-devkitc` | 987.0 | 1031.0 | 2381.1 | 2493.0 | 2.0 | 1.0 | 8.0 |
 | `stm32f746g-disco` | 297.7 | 312.8 | 209.7 | 220.2 | 8.0 | 4.0 | 16.0 |
@@ -108,6 +108,12 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 | AI2 | input | analog | `%IW6` | GP28 (ADC2) | header pin 34 | devicetree |  | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. 0..4095 -> 0.0 to 3.3 V. |
 | AI3 | input | analog | `%IW7` | VSYS/3 (ADC3) | internal | devicetree |  | Internal: the supply voltage divided by 3, no external connection. 0..4095 -> 0.0 to 3.3 V. VSYS = 3 x the input voltage. |
 | AI4 | input | analog | `%IW8` | Temperature sensor (ADC4) | internal | devicetree |  | Internal die temperature sensor, no external connection. 0..4095 -> 0.0 to 3.3 V. RP2040 datasheet: T [degC] = 27 - (V - 0.706) / 0.001721 with V = raw * 3.3 / 4095. |
+
+#### Fieldbus ports
+
+| Port | Protocol | UART | TX | RX | Location | Electrical |
+| --- | --- | --- | --- | --- | --- | --- |
+| RTU0 | modbus-rtu | `uart1` | GP4 | GP5 | header pins 6 (TX) and 7 (RX), GND on header pin 8 | 3.3 V logic UART, not RS-485 and not RS-232: connect an RS-485 transceiver for 3.3 V (a MAX3485 class module) for a bus, or a 3.3 V USB-serial adapter for a computer. Never connect 5 V or RS-232 levels to these pins. |
 
 ### Arduino GIGA R1 (STM32H747 M7)
 
