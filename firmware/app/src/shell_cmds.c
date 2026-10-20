@@ -49,6 +49,7 @@
 #include "zplc_lock.h"
 #include "zplc_parse.h"
 #include "zplc_time.h"
+#include "zplc_wifi_boot.h"
 #include "program_admission.h"
 #include "program_store.h"
 #include "program_boot_restore.h"
@@ -710,6 +711,16 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     }
     shell_fprintf(sh, SHELL_NORMAL, "\"reset_cause\":\"%s\",",
                   zplc_reset_cause_name(zplc_failsafe_report()->cause));
+    /* HIL-010.32: the Wi-Fi link the firmware keeps up by itself, and the address it got. */
+    {
+      char ip[16] = {0};
+
+      if (zplc_hal_net_get_ip(ip, sizeof(ip)) == ZPLC_HAL_OK && ip[0] != '\0') {
+        shell_fprintf(sh, SHELL_NORMAL, "\"wifi\":{\"state\":\"%s\",\"ip\":\"%s\"},", zplc_wifi_status_name(), ip);
+      } else {
+        shell_fprintf(sh, SHELL_NORMAL, "\"wifi\":{\"state\":\"%s\",\"ip\":null},", zplc_wifi_status_name());
+      }
+    }
     /* COM-014: a standing warning, not an event: present for as long as
      * the session is configured to skip the certificate check. */
     zplc_io_unsupported_get(&io_unsupported);
@@ -3488,6 +3499,7 @@ static int cmd_net_status(const struct shell *sh, size_t argc, char **argv) {
   }
 
 #ifdef CONFIG_WIFI
+  shell_print(sh, "WiFi link: %s", zplc_wifi_status_name());
   struct wifi_iface_status status = {0};
   int rc = net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status, sizeof(status));
   if (rc == 0) {
@@ -3992,45 +4004,20 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
   shell_error(sh, "ERROR: WiFi not enabled in this build");
   return -ENOTSUP;
 #else
-  char ssid[64] = {0};
-  char pass[64] = {0};
-  uint8_t security = 0;
+  int rc = zplc_wifi_request_connect();
 
-  zplc_config_get_wifi_ssid(ssid, sizeof(ssid));
-  zplc_config_get_wifi_pass(pass, sizeof(pass));
-  security = zplc_config_get_wifi_security();
-
-  if (ssid[0] == '\0') {
+  if (rc == -EINVAL) {
     shell_error(sh, "ERROR: No SSID configured (use zplc config set wifi_ssid)");
     return -EINVAL;
   }
-
-  struct net_if *iface = net_if_get_default();
-  if (iface == NULL) {
+  if (rc == -ENODEV) {
     shell_error(sh, "ERROR: No network interface available");
     return -ENODEV;
   }
-
-  struct wifi_connect_req_params params = {0};
-  params.ssid        = (const uint8_t *)ssid;
-  params.ssid_length = (uint8_t)strlen(ssid);
-  params.security    = (enum wifi_security_type)security;
-
-  if (security != WIFI_SECURITY_TYPE_NONE && pass[0] != '\0') {
-    params.psk        = (const uint8_t *)pass;
-    params.psk_length = (uint8_t)strlen(pass);
-  }
-
-  params.channel = WIFI_CHANNEL_ANY;
-  params.band    = WIFI_FREQ_BAND_UNKNOWN;
-  params.mfp     = WIFI_MFP_OPTIONAL;
-
-  int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params, sizeof(params));
-  if (rc == 0 || rc == -EALREADY) {
-    shell_print(sh, "OK: WiFi connect requested for SSID '%s'", ssid);
+  if (rc == 0) {
+    shell_print(sh, "OK: WiFi connect requested for the stored network");
   } else {
-    shell_print(sh, "WARN: WiFi connect request returned %d for SSID '%s'",
-                rc, ssid);
+    shell_print(sh, "WARN: WiFi connect request returned %d", rc);
   }
   return 0;
 #endif /* CONFIG_WIFI */
