@@ -2917,6 +2917,54 @@ static void test_force_overrides(void)
                 "Maximum-size force bytes round-trip exactly");
 }
 
+/* COM-020: a released force gives each byte the value the program (or an external write) last gave it, so the outputs
+ * follow the program after a session ends. A byte the program never wrote goes back to what it was before the force:
+ * an output nobody drives does not stay on with the forced value. */
+static void test_a_released_force_gives_the_value_back_to_the_program(void)
+{
+    const uint8_t on = 0x0FU;
+    const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
+    const uint8_t external[4] = {0x05, 0x06, 0x07, 0x08};
+    const uint8_t *opi;
+    const uint8_t *work;
+    uint8_t code[32];
+    size_t len = 0;
+
+    printf("\n=== Test: a released force gives the value back to the program ===\n");
+
+    zplc_core_init();
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output nobody drives");
+    TEST_ASSERT_EQ(opi[0], 0x0F, "The output takes the forced value");
+    TEST_ASSERT_EQ(zplc_force_clear(ZPLC_MEM_OPI_BASE), 0, "Release it");
+    TEST_ASSERT_EQ(opi[0], 0x00, "The output goes back to its value before the force, not the forced one");
+
+    zplc_core_init();
+    work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+    len = emit_push32(code, len, 0xAABBCCDD);
+    len = emit_store32(code, len, 0x2000);
+    len = emit_op(code, len, OP_HALT);
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0, "Force a variable the program writes");
+    zplc_test_load_raw(code, len);
+    zplc_core_run(0);
+    TEST_ASSERT_EQ(work[0], 0x44, "The program's write does not reach a forced byte");
+    TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Release it");
+    TEST_ASSERT(work[0] == 0xDD && work[1] == 0xCC && work[2] == 0xBB && work[3] == 0xAA,
+                "The variable holds what the program wrote while it was forced");
+
+    zplc_core_init();
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0, "Force an input");
+    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, external, 4), 0, "An external write while it is forced");
+    zplc_force_clear_all();
+    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x08070605U, "Clearing every force gives the input what the external write wrote");
+
+    zplc_core_init();
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output again");
+    zplc_force_clear_all();
+    TEST_ASSERT_EQ(opi[0], 0x00, "Clearing every force releases it the same way");
+}
+
 static void test_comm_status_reads_fb_status_word(void)
 {
     uint8_t code[16];
@@ -3153,6 +3201,7 @@ int main(void)
 
     /* Force Override Tests */
     test_force_overrides();
+    test_a_released_force_gives_the_value_back_to_the_program();
 
     /* Communication opcode regression tests */
     test_comm_status_reads_fb_status_word();
