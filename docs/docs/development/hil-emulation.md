@@ -1,6 +1,5 @@
 ---
 slug: /development/hil-emulation
-unlisted: true
 title: Emulated HIL Bench
 sidebar_label: Emulated HIL Bench
 description: Run the HIL chain of the learner boards on emulators on a Linux machine, what an emulated run proves and what it does not, and the licenses of the emulators.

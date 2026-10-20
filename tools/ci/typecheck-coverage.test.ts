@@ -16,11 +16,7 @@ const root = resolve(import.meta.dir, '../..');
  * Tracked files that no project checks, and why. Empty today: add a file here only with the reason and the owner
  * of the fix, and remove it with the exclusion that keeps it out of its project.
  */
-const UNCHECKED: Record<string, string> = {
-  // It type-checks with the settings of tsconfig.tools.json; that root project is outside the emulated bench's
-  // change, so the merge adds "tools/hil/emulator/**/*.mts" to its include and removes this line (ws-hil-emu).
-  'tools/hil/emulator/pico/pico-bench.mts': 'not in the include of tsconfig.tools.json yet',
-};
+const UNCHECKED: Record<string, string> = {};
 
 /** Projects that only point at other projects (`tsc -b`) and select no file themselves. */
 const SOLUTIONS = ['packages/zplc-ide/tsconfig.json'];

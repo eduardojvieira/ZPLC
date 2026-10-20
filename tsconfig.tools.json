@@ -28,6 +28,7 @@
     "tools/contract/**/*.ts",
     "tools/docs/**/*.ts",
     "tools/fuzz/**/*.ts",
+    "tools/hil/emulator/**/*.mts",
     "tools/wasm-core/**/*.ts",
     "scripts/**/*.ts",
     "packages/zplc-hil/tests/**/*.ts",

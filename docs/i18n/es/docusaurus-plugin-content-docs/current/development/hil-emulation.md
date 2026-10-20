@@ -1,6 +1,5 @@
 ---
 slug: /development/hil-emulation
-unlisted: true
 title: Banco HIL emulado
 sidebar_label: Banco HIL emulado
 description: Ejecute la cadena HIL de las placas de aprendizaje en emuladores en una máquina Linux; qué demuestra una ejecución emulada y qué no, y las licencias de los emuladores.
