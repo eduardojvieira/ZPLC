@@ -1713,7 +1713,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"COM-012: the Zephyr Modbus client reads its timeout in MICROseconds."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_modbus_client_pdu.c","test":"The frames of the Modbus clients, and the unit of their timeouts (COM-006, COM-012)."},
     {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-006, COM-012, COM-018: the Modbus TCP client of the product against a"},
-    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-012: the interface of an RTU client waits for a response for rx_timeout MICROseconds. A value in"}
+    {"kind":"c-test","ref":"firmware/tests/modbus_client_tcp/src/main.c","test":"COM-012: the interface of an RTU client waits for a response for rx_timeout MICROseconds. A value in"},
+    {"kind":"c-test","ref":"firmware/tests/wifi_link/src/main.c","test":"HIL-010.32, .33 (COM-012): the Wi-Fi link the firmware keeps up by itself."}
   ],
   "COM-013": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"COM-013: the whole of WORK and of RETAIN can be bound. The upper half of WORK was refused \"until the"},
@@ -1925,8 +1926,8 @@
   "IDE-005": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005): which keys are reload chords"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"reload shortcuts (IDE-005)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"window close and application quit (IDE-005)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"the answer of the user (IDE-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"window close and application quit (IDE-005)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press","partial":true}
@@ -2031,8 +2032,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
-    {"kind":"unit","ref":"packages/zplc-ide/shared/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
   ],
   "IDE-018": [
@@ -2153,8 +2154,8 @@
   ],
   "IDE-033": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"import cycles (IDE-033)"},
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions (IDE-033)"},
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering (IDE-033): the store keeps off the components and the command line keeps off the Electron host"}
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering (IDE-033): the store keeps off the components and the command line keeps off the Electron host"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions (IDE-033)"}
   ],
   "UX-001": [
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
@@ -2860,12 +2861,15 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/deviceTraceRecorder.test.ts","test":"the device-trace recorder (LRN-024, LRN-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/deviceTraceRecorder.test.ts","test":"the layout of a device trace (LRN-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 cannot align verify-my-board on a trace of a program that was already running"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 fails verify-my-board for a program that does not do what the lesson asks, however the person times the button"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 fails verify-my-board when the button is not held long enough to span a blink"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 finds each scenario input event at the first sample, after the previous one, that holds what the event sets"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 holds a reaction exactly at the tolerance and refuses one a sample beyond it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 is deterministic: the same trace and tolerances give the same result"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes a program whose outputs follow the learner\\'s presses within the lesson tolerance, however late the presses were"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes blinky-ladder-timer-feedback from the start of the run, and not from the middle of it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes verify-my-board on a trace whose time 0 is the first scan after Run, at the device-trace tolerance"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes verify-my-board when a person presses and releases the button at times of their own, with scan jitter"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 records the run with track \"hardware\", and the progress store accepts the record"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 takes the inputs at scenario time 0 from the start of an anchored run: a button held at Run does not shift the scenario"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"the grade of a hardware check is labelled a hardware run (LRN-024)"},
@@ -2962,9 +2966,9 @@
   ],
   "LRN-031": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)"},
     {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true},
@@ -2972,8 +2976,8 @@
   ],
   "LRN-032": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
-    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
@@ -3089,11 +3093,14 @@
     {"kind":"py-test","ref":"tools/hil/test_hil_record.py","test":"HIL-009: a run record is machine-readable, carries its evidence level, and is committed after the image it tested"}
   ],
   "HIL-010": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_failsafe.c","test":"HIL-010.24: an Espressif MWDT counts 500 us ticks (80 MHz APB / 40000), two to the millisecond; Zephyr's driver"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_failsafe.c","test":"HIL-010.24: the RP2040 keeps the power-on flag of the boot before until a power-on clears it, and its watchdog reason"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"HIL-010: the period of a task, from the start of one of its scans to the start of the next: its shortest and longest"},
     {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"their safe level while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"record (HIL-010). This suite drives the scheduler against the model of the part that a test build carries,","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
+    {"kind":"c-test","ref":"firmware/tests/wifi_link/src/main.c","test":"HIL-010.32, .33 (COM-012): the Wi-Fi link the firmware keeps up by itself."},
     {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-010 stopgap: the software leg; every measuring step passes on a sound fake board and fails on one with its defect","partial":true},
     {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs hardware run records (HIL-009) of the Raspberry Pi Pico and the ESP32-S3, written by a person at the bench with run_chain.py, covering every step HIL-010 lists, from the flash by a person to the fieldbus exchange of each board. The scheduler C test, the Zephyr suites and the emulated bench prove the software legs only."}
   ],
