@@ -25,6 +25,7 @@ import { settingsSurfaceEs } from './catalog/settingsSurface';
 import { labSceneEs } from './catalog/labScene';
 import { workbenchEs } from './catalog/workbench';
 import { moduleTextEs } from './catalog/moduleText';
+import { boardsEs } from './catalog/boards';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -625,4 +626,5 @@ export const es: Record<MessageKey, string> = {
   ...labSceneEs,
   ...workbenchEs,
   ...moduleTextEs,
+  ...boardsEs,
 };

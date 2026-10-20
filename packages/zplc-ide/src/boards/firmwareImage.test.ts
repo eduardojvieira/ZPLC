@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { FirmwareImage, FirmwareImagesResult } from '../../electron/firmwareImagesProtocol';
-import { NO_FLASH_NOTICE, flashSteps, orderedFlashImages, presentFirmwareImage } from './firmwareImage';
+import { useAppSettings } from '../store/useAppSettings';
+import { flashSteps, noFlashNotice, orderedFlashImages, presentFirmwareImage } from './firmwareImage';
 
 const VERSION = '2.0.0-rc.4';
 const sha = (character: string) => character.repeat(64);
@@ -92,10 +93,14 @@ describe('the flashing steps (REL-025)', () => {
     expect(steps[1]).toContain(sha('p'));
   });
 
-  it('writes the ESP32-S3 image at the address and with the flash parameters of its own build', () => {
-    const text = flashSteps(esp, 'linux', true).join('\n');
-    expect(text).toContain('esptool --chip esp32s3 --port <port> write-flash --flash-mode dio --flash-freq 80m --flash-size 8MB 0x00000000');
-    expect(text).toContain(esp.file);
+  it('LRN-014 flashes the ESP32-S3 over the port marked USB in download mode with esptool v5, then presses RST', () => {
+    const steps = flashSteps(esp, 'linux', true);
+    const text = steps.join('\n');
+    expect(text).toContain('port marked USB');
+    expect(text).toContain('Hold BOOT, press and release RST, and release BOOT');
+    expect(text).toContain(`\`esptool --chip esp32s3 --port <port> write-flash 0x00000000 ${esp.file}\``);
+    expect(text).not.toContain('--flash-mode');
+    expect(steps.findIndex((step) => step.startsWith('Press RST'))).toBeGreaterThan(steps.findIndex((step) => step.includes('write-flash')));
   });
 
   it('writes a DFU board and an ST-LINK board at the address of their build, with the identifier that the build names', () => {
@@ -116,8 +121,28 @@ describe('the flashing steps (REL-025)', () => {
   });
 
   it('is written for a person: Studio runs none of it, and the card says so', () => {
-    expect(NO_FLASH_NOTICE).toContain('does not flash');
+    expect(noFlashNotice()).toContain('does not flash');
     const shown = presentFirmwareImage(result([pico, esp]), 'rpi_pico', studio);
-    expect(shown.kind === 'ready' && shown.notice).toBe(NO_FLASH_NOTICE);
+    expect(shown.kind === 'ready' && shown.notice).toBe(noFlashNotice());
+  });
+
+  it('UX-029 gives the steps, the notice and the evidence in the language of the interface', () => {
+    const before = useAppSettings.getState().settings.language;
+    try {
+      useAppSettings.getState().update({ language: 'es' });
+      const esp32 = flashSteps(esp, 'linux', true).join('\n');
+      expect(esp32).toContain('puerto marcado USB');
+      expect(esp32).toContain(`\`esptool --chip esp32s3 --port <puerto> write-flash 0x00000000 ${esp.file}\``);
+      expect(esp32).toContain('Pulse RST');
+      const rp2040 = flashSteps(pico, 'linux', true).join('\n');
+      expect(rp2040).toContain('BOOTSEL');
+      expect(rp2040).toContain('RPI-RP2');
+      expect(rp2040).toContain(`Copie ${pico.file}`);
+      expect(noFlashNotice()).toContain('Studio no graba');
+      const shown = presentFirmwareImage(result([pico, esp]), 'esp32s3_devkitc', studio);
+      expect(shown.kind === 'ready' && shown.evidence).toContain('No se ha grabado');
+    } finally {
+      useAppSettings.getState().update({ language: before });
+    }
   });
 });
