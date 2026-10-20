@@ -3027,11 +3027,14 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/memory.test.ts","test":"HIL cases: memory opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"a chunk the device refuses fails the deploy at once, with the text of the device (HIL-001.05)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
     {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
     {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a run of packages/zplc-hil on a flashed Raspberry Pi Pico or ESP32-S3 that compiles, deploys through the control protocol and observes the device with no mocked step, kept as a hardware run record (HIL-009). The describeCases tables only compile their cases, and the runner and shell-link tests and the emulated bench reach no physical device."}
   ],
   "HIL-002": [
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"a run voided by the timing tolerance still writes its record, with the void result, the tolerance and the ticks (HIL-002.03)"},
+    {"kind":"unit","ref":"packages/zplc-hil/tests/cli.test.ts","test":"the image hash the device reports is in the record, without --firmware-image (HIL-002.07)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/hardwarePort.test.ts","test":"the scenario engine on a hardware runtime port (HIL-002)"},
     {"kind":"gate","ref":"docs/docs/development/hardware-in-the-loop.md","test":"No step of this guide has been run on a physical board yet","note":"Needs a scenario file run on a physical board through the hardware runtime port, with time taken from device timestamps, kept as a hardware run record (HIL-009). The port tests run against fake devices and the native runtime."}
