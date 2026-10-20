@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/types-arithmetic-comparison. Do not edit. >>> */}
 
-Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.
+Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.
 
 ## Datos
 
@@ -24,7 +24,7 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 
 ## Objetivos
 
-- Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL.
+- Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.
 - Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
 
 ## Etapas
@@ -38,7 +38,7 @@ Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto, HIL ni certificación.
 
 ## En una placa
 

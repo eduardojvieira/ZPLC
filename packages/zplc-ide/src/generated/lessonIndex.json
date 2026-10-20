@@ -1189,7 +1189,7 @@
           "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.",
           "objectives": [
             "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
-            "Resetee la cuenta y CountReached con Reset."
+            "Ponga a cero la cuenta y CountReached con Reset."
           ],
           "stages": [
             {
@@ -1207,13 +1207,13 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario EdgeCounter.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario EdgeCounter.",
               "checkpoint": "El escenario requerido se llama EdgeCounter y contiene 7 assertions."
             },
             {
@@ -1236,11 +1236,11 @@
             },
             {
               "level": 2,
-              "text": "Declare Count : CTU, llamalo en cada scan como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
+              "text": "Declare Count : CTU, llámelo en cada ciclo como Count(CU := PulseInput, R := Reset, PV := 3) y copie Count.Q a CountReached."
             }
           ],
           "faultCases": [
-            "El starter nunca cuenta; agregue un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague."
+            "El programa inicial nunca cuenta; agregue un CTU con PV=3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo devuelva a OFF."
           ]
         }
       }
@@ -2236,10 +2236,10 @@
         "es": {
           "title": "Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión",
           "summary": "Use un temporizador TOF para mantener una luz encendida después de soltar un botón, y un TON para ignorar un pulso de sensor demasiado corto.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece antirrebote eléctrico, respuesta del sensor, tiempos del target, HIL ni certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta del sensor, los tiempos en el dispositivo de destino, HIL ni certificación.",
           "objectives": [
-            "Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF.",
-            "Ignore una entrada que está en ON menos de un tiempo fijo, con TON."
+            "Mantenga una salida encendida durante un tiempo fijo después de que su entrada caiga, con TOF.",
+            "Ignore una entrada que permanezca en ON menos de un tiempo fijo, con TON."
           ],
           "stages": [
             {
@@ -2251,19 +2251,19 @@
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "El escenario pulsa Button a los 100 ms y lo suelta a los 300 ms. Sensor da un pulso en ON de 100 a 140 ms y vuelve a estar en ON de 500 a 900 ms. Prediga Light y Confirmed en 200, 450, 650 y 800 ms.",
-              "checkpoint": "Light en ON, Confirmed en OFF en 200 ms; Light en ON, Confirmed en OFF en 450 ms; ambas en OFF en 650 ms; Confirmed en ON, Light en OFF en 800 ms."
+              "body": "El escenario pulsa Button a los 100 ms y lo suelta a los 300 ms. Sensor da un pulso breve en ON de 100 a 140 ms y vuelve a estar en ON de 500 a 900 ms. Prediga Light y Confirmed a los 200, 450, 650 y 800 ms.",
+              "checkpoint": "Light en ON, Confirmed en OFF a los 200 ms; Light en ON, Confirmed en OFF a los 450 ms; ambas en OFF a los 650 ms; Confirmed en ON, Light en OFF a los 800 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un preajuste de T#300ms, y tome Light de su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
-              "checkpoint": "Los dos temporizadores se llaman en cada scan y cada salida viene de la Q de su temporizador."
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia las entradas a las salidas, así que Light ya está en OFF a los 450 ms y Confirmed pasa a ON con el pulso de 100 ms. Llame a HoldTimer con Button como IN y un valor preestablecido de T#300ms, y asigne a Light su salida Q. Haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed. Guarde el archivo.",
+              "checkpoint": "Los dos temporizadores se llaman en cada ciclo y cada salida proviene de la Q de su temporizador."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Delays y contiene 10 assertions."
             },
             {
@@ -2282,7 +2282,7 @@
           "hints": [
             {
               "level": 1,
-              "text": "TOF mantiene su Q en ON durante el tiempo de preajuste después de que IN baja, y TON sube Q solo cuando IN lleva ese tiempo en ON."
+              "text": "TOF mantiene su Q en ON durante el tiempo preestablecido después de que IN cae, y TON pone Q en ON solo cuando IN lleva ese tiempo en ON."
             },
             {
               "level": 2,
@@ -2918,9 +2918,9 @@
           ]
         },
         "es": {
-          "title": "Contadores en diagrama de bloques de función: contar piezas hasta un lote",
+          "title": "Contadores en diagrama de bloques de función: contar piezas hasta completar un lote",
           "summary": "Edite un diagrama de bloques de función para que un contador CTU cuente tres piezas, encienda BatchFull y se borre con Reset.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado del sensor, el antirrebote, la exactitud del conteo a la velocidad de la máquina, HIL ni certificación.",
           "objectives": [
             "Lea un diagrama de bloques de función como bloques cuyos puertos de salida se conectan a los puertos de entrada de otros bloques.",
             "Conecte un contador CTU: un flanco ascendente en CU cuenta, R lo borra y Q es TRUE cuando la cuenta llega al valor preestablecido PV."
@@ -2947,7 +2947,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama BatchCount y contiene 10 assertions."
             },
             {
@@ -2959,7 +2959,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué assertion falla.",
+              "body": "¿Qué cuenta el contador, el nivel de PartSensor o su flanco ascendente? Intercambie las dos entradas y vea qué aserción falla.",
               "checkpoint": "CTU cuenta flancos ascendentes, así que los 20 ms que la primera pieza permanece frente al sensor cuentan una vez. El escenario muestra solo la lógica; no muestra cómo rebota un sensor real."
             }
           ],
@@ -3270,10 +3270,10 @@
         },
         "es": {
           "title": "Tipos, aritmética y comparación: un total y tres bandas",
-          "summary": "Mantenga un total en una variable INT, súmele en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, HIL ni certificación.",
+          "summary": "Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsación y conviértalo en tres resultados BOOL con operadores de comparación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador concreto, HIL ni certificación.",
           "objectives": [
-            "Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL.",
+            "Use una variable INT para un número y una variable BOOL para un sí o un no, y vea que una comparación convierte un número en un BOOL.",
             "Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez."
           ],
           "stages": [
@@ -3281,7 +3281,7 @@
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/TypedSteps.st están escritas la variable INT Total y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10). Escriba la aritmética: en cada flanco ascendente de Step sume 5 a Total, y mientras Reset sea TRUE ponga Total en 0.",
-              "checkpoint": "Total va de 0 a 5, 10 y 15, y las tres salidas muestran en qué banda está."
+              "checkpoint": "Total pasa por 0, 5, 10 y 15, y las tres salidas muestran en qué banda está."
             },
             {
               "key": "predict",
@@ -3298,19 +3298,19 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama TypedSteps y contiene 8 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 20, 40 y 60 ms: cada vez está en ON exactamente una de las tres salidas, y Reset a los 80 ms devuelve Low.",
+              "body": "Compare 20, 40 y 60 ms: cada vez está en ON exactamente una de las tres salidas, y Reset a los 80 ms vuelve a poner Low en ON.",
               "checkpoint": "Exact está en ON solo en el total de 10, desde los 40 ms; la primera pulsación larga sumó 5 una vez, no dos."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué pasa si escribe Exact como Total >= 10? ¿Y si suma 5 en cada ciclo mientras Step es TRUE? Pruebe cada caso y vea qué assertion falla.",
+              "body": "¿Qué pasa si escribe Exact como Total >= 10? ¿Y si suma 5 en cada ciclo mientras Step es TRUE? Pruebe cada caso y vea qué aserción falla.",
               "checkpoint": "Una comparación da un BOOL, y = no es lo mismo que >=. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni lo que ocurre cuando un INT se desborda."
             }
           ],
@@ -3440,12 +3440,12 @@
           ]
         },
         "es": {
-          "title": "Escalado analógico: de cuentas crudas a un porcentaje",
-          "summary": "Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
+          "title": "Escalado analógico: de cuentas en bruto a un porcentaje",
+          "summary": "Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.",
           "objectives": [
-            "Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
-            "Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio."
+            "Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.",
+            "Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio."
           ],
           "stages": [
             {
@@ -3469,7 +3469,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama Scaling y contiene 9 assertions."
             },
             {
@@ -3481,7 +3481,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo ancho. Compruebe el ancho de INT en su destino antes de confiar en él.",
+              "body": "¿Por qué se usa DINT en esta lección? Raw por 100 llega a 100000, más de lo que cabe en un entero de 16 bits, así que el producto intermedio necesita un tipo de mayor rango. Compruebe el tamaño de INT en su dispositivo de destino antes de confiar en él.",
               "checkpoint": "El producto se forma antes de la división, así que su rango decide el tipo, no el rango de Raw. El escenario comprueba solo los dos umbrales; no comprueba el redondeo de otros valores."
             }
           ],

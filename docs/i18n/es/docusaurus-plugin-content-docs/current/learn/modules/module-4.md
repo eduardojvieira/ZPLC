@@ -19,7 +19,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Tipos, aritmética y comparación: un total y tres bandas](../lessons/types-arithmetic-comparison.md) | `types-arithmetic-comparison` | ST | 20 |
-| [Escalado analógico: de cuentas crudas a un porcentaje](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
+| [Escalado analógico: de cuentas en bruto a un porcentaje](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

@@ -1,16 +1,16 @@
 ---
-title: "Escalado analógico: de cuentas crudas a un porcentaje"
+title: "Escalado analógico: de cuentas en bruto a un porcentaje"
 sidebar_label: "analog-scaling-integer"
 description: "La lección analog-scaling-integer: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Escalado analógico: de cuentas crudas a un porcentaje
+# Escalado analógico: de cuentas en bruto a un porcentaje
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/analog-scaling-integer. Do not edit. >>> */}
 
-Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.
+Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y active una advertencia al 50 por ciento y una alarma al 80 por ciento.
 
 ## Datos
 
@@ -24,8 +24,8 @@ Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y ac
 
 ## Objetivos
 
-- Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.
-- Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio.
+- Escale una cuenta en bruto a unidades de ingeniería con una multiplicación seguida de una división, en ese orden.
+- Vea que la división entera descarta el resto, y elija un tipo entero con rango suficiente para el producto intermedio.
 
 ## Etapas
 
@@ -38,7 +38,7 @@ Escale una cuenta cruda de 0 a 1000 a un porcentaje con aritmética entera, y ac
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud, el ruido ni la calibración de una entrada analógica real, HIL ni certificación.
 
 ## En una placa
 

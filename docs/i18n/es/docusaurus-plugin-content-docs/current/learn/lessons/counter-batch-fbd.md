@@ -1,12 +1,12 @@
 ---
-title: "Contadores en diagrama de bloques de función: contar piezas hasta un lote"
+title: "Contadores en diagrama de bloques de función: contar piezas hasta completar un lote"
 sidebar_label: "counter-batch-fbd"
 description: "La lección counter-batch-fbd: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Contadores en diagrama de bloques de función: contar piezas hasta un lote
+# Contadores en diagrama de bloques de función: contar piezas hasta completar un lote
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/counter-batch-fbd. Do not edit. >>> */}
 
@@ -38,7 +38,7 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado del sensor, el antirrebote, la exactitud del conteo a velocidad de máquina, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado del sensor, el antirrebote, la exactitud del conteo a la velocidad de la máquina, HIL ni certificación.
 
 ## En una placa
 

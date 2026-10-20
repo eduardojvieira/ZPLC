@@ -25,7 +25,7 @@ Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
 ## Objetivos
 
 - Cuente tres flancos ascendentes de PulseInput con un contador CTU.
-- Resetee la cuenta y CountReached con Reset.
+- Ponga a cero la cuenta y CountReached con Reset.
 
 ## Etapas
 
