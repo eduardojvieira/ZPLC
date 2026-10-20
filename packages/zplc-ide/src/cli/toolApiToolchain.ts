@@ -1,6 +1,6 @@
 // The local firmware-build prerequisites, the board list and the firmware build of the Tool API (IDE-014: split out of toolApi.ts).
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { spawnAllowed, type SpawnEntry, type ToolchainProbe } from '../../electron/spawnAllowList';
+import { spawnAllowed, type SpawnEntry, type ToolchainProbe } from '../../shared/spawnAllowList';
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { load } from 'js-yaml';

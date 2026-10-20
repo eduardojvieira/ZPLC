@@ -87,8 +87,8 @@
     "reads": [
       "packages/zplc-ide/electron/firmwareBuildGateway.ts",
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/nativeSimulationEnvironment.ts",
-      "packages/zplc-ide/electron/nativeSimulationSupervisor.ts",
+      "packages/zplc-ide/shared/nativeSimulationEnvironment.ts",
+      "packages/zplc-ide/shared/nativeSimulationSupervisor.ts",
       "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/workspaceTestGateway.ts"
     ],

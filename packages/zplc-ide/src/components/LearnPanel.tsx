@@ -10,7 +10,7 @@ import { useAppSettings } from '../store/useAppSettings';
 import { useT, type MessageKey } from '../i18n';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { describeFailure } from '../learn/gradeRecord';
-import type { GradeRecord, LessonNote } from '../../electron/learnProgressModel';
+import type { GradeRecord, LessonNote } from '../../shared/learnProgressModel';
 import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';

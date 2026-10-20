@@ -1676,7 +1676,7 @@
     {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"(COM-002, COM-003, COM-004, COM-008, COM-018)."}
   ],
   "COM-009": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/nativeSimulationEnvironment.test.ts","test":"asks the runtime for its own loopback Modbus and MQTT endpoints, and for no other peer (COM-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/nativeSimulationEnvironment.test.ts","test":"asks the runtime for its own loopback Modbus and MQTT endpoints, and for no other peer (COM-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeAdapter.test.ts","test":"tells the console what the simulated communication endpoints are, or that they did not start (COM-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeCommunicationEndpoints.test.ts","test":"COM-009 the endpoints that the Studio session starts"},
@@ -2016,7 +2016,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
   ],
@@ -2137,9 +2137,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a tab of its own","partial":true}
   ],
   "IDE-033": [
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"import cycles stopgap (IDE-033)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions stopgap (IDE-033)","partial":true},
-    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering stopgap (IDE-033): one command-line import of electron/ is listed","partial":true}
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"import cycles (IDE-033)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions (IDE-033)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering (IDE-033): the store keeps off the components and the command line keeps off the Electron host"}
   ],
   "UX-001": [
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
@@ -2660,7 +2660,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
   ],
   "LRN-010": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"records every hint level shown, not only the highest, and merges them as a union (LRN-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"records every hint level shown, not only the highest, and merges them as a union (LRN-010)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
@@ -2811,10 +2811,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
   ],
   "LRN-024": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps a passing hardware grade without passing the lesson, and a simulation pass without a hardware pass"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 keeps the newest hardware grade on a merge, in either order"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-024 refuses a document that keeps a grade in the wrong place"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"a hardware run is kept apart from a simulation pass (LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"LRN-024 keeps a passing hardware grade without passing the lesson, and a simulation pass without a hardware pass"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"LRN-024 keeps the newest hardware grade on a merge, in either order"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"LRN-024 refuses a document that keeps a grade in the wrong place"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"a hardware run is kept apart from a simulation pass (LRN-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardLesson.test.tsx","test":"LRN-024 guides the learner step by step while it records"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardLesson.test.tsx","test":"the check on the board waits for the learner (LRN-015, LRN-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnBoardTrack.test.tsx","test":"LRN-024 has every string of the hardware track in English and Spanish"},
@@ -2944,8 +2944,8 @@
   ],
   "LRN-031": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
@@ -2954,7 +2954,7 @@
   ],
   "LRN-032": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/shared/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}

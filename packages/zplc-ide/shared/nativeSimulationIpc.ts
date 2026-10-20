@@ -1,4 +1,4 @@
-export { NATIVE_SIMULATION_CHANNEL } from './ipcContract.js';
+export { NATIVE_SIMULATION_CHANNEL } from '../electron/ipcContract.js';
 
 export interface NativeSimulationHelloResult {
   protocol_version: string;

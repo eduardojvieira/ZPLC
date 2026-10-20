@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import { emptyProgress, exportProgress as exportDocument, withGrade, withNote, type GradeRecord } from '../../electron/learnProgressModel';
+import { emptyProgress, exportProgress as exportDocument, withGrade, withNote, type GradeRecord } from '../../shared/learnProgressModel';
 import { exportProgress, importProgress, noteLesson, readProgress, recordGrade, type ProgressBridge } from './progressClient';
 
 const HASH = 'a'.repeat(64);

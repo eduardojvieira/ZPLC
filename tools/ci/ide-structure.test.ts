@@ -2,7 +2,7 @@
 // The fixtures are small in-memory projects; the last block runs the rules over the repository itself.
 import { describe, expect, it } from 'bun:test';
 
-import { checkIdeStructure, checkRepository, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
+import { checkIdeStructure, checkRepository, readExceptions, readOffenders, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
 
 const IDE = 'packages/zplc-ide/';
 const mod = (path: string, text = ''): SourceModule => ({ path: `${IDE}${path}`, text });
@@ -10,7 +10,7 @@ const lines = (count: number): string => `${'export const x = 1;\n'.repeat(count
 const offender = (file: string, count: number): Offender => ({ file: `${IDE}${file}`, requirement: 'IDE-014', added: '2026-10-10', lines: count, reason: 'split it' });
 const check = (modules: SourceModule[], offenders: Offender[] = [], limit = 100) => checkIdeStructure(modules, { limit, offenders });
 
-describe('layering stopgap (IDE-033): one command-line import of electron/ is listed', () => {
+describe('layering (IDE-033): the store keeps off the components and the command line keeps off the Electron host', () => {
   it('reports a store module that imports a component, naming both files', () => {
     const problems = check([
       mod('src/store/useThing.ts', "import { helper } from '../components/helper';\n"),
@@ -86,7 +86,7 @@ describe('ratchetOffenders', () => {
   });
 });
 
-describe('layering exceptions stopgap (IDE-033)', () => {
+describe('layering exceptions (IDE-033)', () => {
   const modules = [
     mod('src/cli/run.ts', "import { supervise } from '../../electron/supervisor';\n"),
     mod('electron/supervisor.ts', 'export const supervise = 1;\n'),
@@ -108,7 +108,7 @@ describe('layering exceptions stopgap (IDE-033)', () => {
   });
 });
 
-describe('import cycles stopgap (IDE-033)', () => {
+describe('import cycles (IDE-033)', () => {
   it('reports a cycle with its path, once', () => {
     const problems = check([
       mod('src/a.ts', "import { b } from './b';\nexport const a = b;\n"),
@@ -198,4 +198,9 @@ describe('the repository', () => {
   it('has no layering violation, no import cycle and no module above the limit that is not listed', () => {
     expect(checkRepository()).toEqual([]);
   }, 60_000);
+
+  it('lists no layering exception and no module above the limit: every rule holds without an allowance', () => {
+    expect(readExceptions()).toEqual([]);
+    expect(readOffenders()).toEqual([]);
+  });
 });

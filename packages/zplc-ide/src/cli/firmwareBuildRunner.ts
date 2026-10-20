@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { spawnVector } from '../../electron/spawnAllowList';
+import { spawnVector } from '../../shared/spawnAllowList';
 import { lstat, mkdir, mkdtemp, open, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';

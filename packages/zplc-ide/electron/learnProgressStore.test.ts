@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, createLearnProgressStore } from './learnProgressStore';
-import { exportProgress, parseProgress, type GradeRecord } from './learnProgressModel';
+import { exportProgress, parseProgress, type GradeRecord } from '../shared/learnProgressModel';
 
 const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });

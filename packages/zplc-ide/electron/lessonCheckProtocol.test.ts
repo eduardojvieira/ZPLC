@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { isLessonCheckRequest, lessonCheckAnswer, parseLessonCheckAnswer } from './lessonCheckProtocol';
-import type { GradeRecord } from './learnProgressModel';
+import type { GradeRecord } from '../shared/learnProgressModel';
 
 const HASH = 'a'.repeat(64);
 const WORKSPACE_ID = '11111111-1111-4111-8111-111111111111';

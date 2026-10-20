@@ -5,7 +5,7 @@
  * A record is a function of the program and of the scenario: running the same program against the same scenario gives
  * the same record, whatever the time of day, except for `time`, which the caller passes in.
  */
-import type { FailedAssertion, GradeRecord } from '../../electron/learnProgressModel';
+import type { FailedAssertion, GradeRecord } from '../../shared/learnProgressModel';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
 
 export interface ObservedAssertion { kind: string; passed: boolean; atMs?: number }

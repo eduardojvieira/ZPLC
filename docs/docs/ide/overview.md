@@ -42,7 +42,7 @@ their channel names from it, so there is no second copy to drift.
 Evidence level: host. `electron/ipcRegistry.test.ts` runs the real handler table
 and registry against stand-ins for Electron and the stores, `electron/preload.test.ts`
 runs the real preload against a stand-in and compares what it invokes with the
-contract, and `electron/spawnAllowList.test.ts` shows the argument vectors
+contract, and `shared/spawnAllowList.test.ts` shows the argument vectors
 (requirement IDE-017). It is not packaged-application evidence.
 
 ## Work that does not block the window

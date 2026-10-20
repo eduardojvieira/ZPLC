@@ -1,7 +1,7 @@
 // A progress file the learner chose is refused with a precise reason (LRN-032): too large, not JSON, not a progress file,
 // a version this build does not know, or a progress file with a damaged part. Only the right ones are accepted.
 import { describe, expect, it } from 'bun:test';
-import { emptyProgress, exportProgress, withNote } from '../../electron/learnProgressModel';
+import { emptyProgress, exportProgress, withNote } from '../../shared/learnProgressModel';
 import { diagnoseProgressFile } from './progressFile';
 
 const valid = exportProgress(withNote(emptyProgress(), { lessonId: 'motor-start-stop-safe', hint: 1 }, '2026-10-19T10:00:00.000Z'));

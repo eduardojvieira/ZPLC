@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 import { ZPLC_CONSTANTS, compileToBinary } from '@zplc/compiler';
 
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { isAllowedNativeSimulationRequest } from '../../electron/security';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { bytesToHex } from './debugAdapter';

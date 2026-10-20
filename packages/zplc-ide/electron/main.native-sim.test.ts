@@ -5,8 +5,8 @@ import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
-import { NativeSimulationSupervisor } from './nativeSimulationSupervisor';
-import { resolveDefaultSimulatorBinaryPathForTests } from './nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor';
+import { resolveDefaultSimulatorBinaryPathForTests } from '../shared/nativeSimulationSupervisor';
 
 const NATIVE_MESSAGE_TYPE = {
   REQUEST: 'request',
@@ -77,6 +77,7 @@ async function startReadySession(
 
 const TEST_FILE_PATH = fileURLToPath(import.meta.url);
 const ELECTRON_DIR = path.dirname(TEST_FILE_PATH);
+const SHARED_DIR = path.join(ELECTRON_DIR, '..', 'shared');
 
 describe('NativeSimulationSupervisor', () => {
   let child: FakeChildProcess;
@@ -559,18 +560,18 @@ describe('NativeSimulationSupervisor', () => {
 
   it('uses explicit .js extensions for Electron runtime imports', () => {
     const mainSource = readFileSync(path.join(ELECTRON_DIR, 'main.ts'), 'utf8');
-    const supervisorSource = readFileSync(path.join(ELECTRON_DIR, 'nativeSimulationSupervisor.ts'), 'utf8');
+    const supervisorSource = readFileSync(path.join(SHARED_DIR, 'nativeSimulationSupervisor.ts'), 'utf8');
     const preloadSource = readFileSync(path.join(ELECTRON_DIR, 'preload.ts'), 'utf8');
     const firmwareBuildGatewaySource = readFileSync(path.join(ELECTRON_DIR, 'firmwareBuildGateway.ts'), 'utf8');
     const workspaceTestGatewaySource = readFileSync(path.join(ELECTRON_DIR, 'workspaceTestGateway.ts'), 'utf8');
 
-    expect(mainSource).toContain("from './nativeSimulationSupervisor.js'");
+    expect(mainSource).toContain("from '../shared/nativeSimulationSupervisor.js'");
     expect(mainSource).toContain("from './ipcContract.js'");
     expect(mainSource).toContain("from './ipcHandlers.js'");
     expect(mainSource).toContain("from './ipcRegistry.js'");
     expect(supervisorSource).toContain("from './nativeSimulationIpc.js'");
     expect(preloadSource).toContain("import type {");
-    expect(preloadSource).toContain("} from './nativeSimulationIpc.js'");
+    expect(preloadSource).toContain("} from '../shared/nativeSimulationIpc.js'");
     expect(firmwareBuildGatewaySource).toContain("from './security.js'");
     expect(workspaceTestGatewaySource).toContain("from './security.js'");
     expect(preloadSource).toContain("} from './ipcContract.js'");
@@ -897,7 +898,7 @@ describe('NativeSimulationSupervisor', () => {
   });
 
   it('keeps packaged native runtime lookup ahead of repo build fallbacks', () => {
-    const supervisorSource = readFileSync(path.join(ELECTRON_DIR, 'nativeSimulationSupervisor.ts'), 'utf8');
+    const supervisorSource = readFileSync(path.join(SHARED_DIR, 'nativeSimulationSupervisor.ts'), 'utf8');
     const packagedRuntimePath = '/tmp/zplc-packaged-app/Contents/Resources/native-runtime/zplc_runtime';
     const repoRuntimePath = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
     const resolvedPath = resolveDefaultSimulatorBinaryPathForTests({
@@ -912,7 +913,7 @@ describe('NativeSimulationSupervisor', () => {
   });
 
   it('keeps a packaged native runtime pinned despite inherited development overrides', () => {
-    const environmentSource = readFileSync(path.join(ELECTRON_DIR, 'nativeSimulationEnvironment.ts'), 'utf8');
+    const environmentSource = readFileSync(path.join(SHARED_DIR, 'nativeSimulationEnvironment.ts'), 'utf8');
     const bundledRuntime = '/tmp/zplc-packaged-app/resources/native-runtime/zplc_runtime';
     const repoRuntime = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
 

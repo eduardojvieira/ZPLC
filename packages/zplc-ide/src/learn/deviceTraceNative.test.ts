@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect } from 'bun:test';
 
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { compilerCompile } from '../cli/toolApi';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { nativeDeviceTrace } from '../runtime/deviceTrace';

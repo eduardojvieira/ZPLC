@@ -100,10 +100,10 @@ describe('the installer payload (IDE-015)', () => {
 
   it('holds no source map of the compiled main process, preload or tool bundle', () => {
     const patterns = builderFilePatterns();
-    for (const map of ['electron-dist/main.js.map', 'electron-dist/projectFiles.js.map', 'electron-dist/preload.cjs.map', 'electron-dist/toolApi.js.map']) {
+    for (const map of ['electron-dist/electron/main.js.map', 'electron-dist/electron/projectFiles.js.map', 'electron-dist/shared/spawnAllowList.js.map', 'electron-dist/preload.cjs.map', 'electron-dist/toolApi.js.map']) {
       expect(packagedByPatterns(patterns, map)).toBe(false);
     }
-    expect(packagedByPatterns(patterns, 'electron-dist/main.js')).toBe(true);
+    expect(packagedByPatterns(patterns, 'electron-dist/electron/main.js')).toBe(true);
   });
 });
 

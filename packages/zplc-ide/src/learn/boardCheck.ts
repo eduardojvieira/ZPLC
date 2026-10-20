@@ -19,7 +19,7 @@
  * The program hash of the grade is the SHA-256 of the artifact the deploy flow last sent (`src/store/deployedProgram.ts`), or,
  * when no deploy of this session is known, of the build's debug map: a build is a function of its sources.
  */
-import type { GradeRecord } from '../../electron/learnProgressModel';
+import type { GradeRecord } from '../../shared/learnProgressModel';
 import type { WiringBoard, WiringFile, WiringLocale } from '../boards/wiring/wiring';
 import { partsFor } from '../boards/wiring/wiring';
 import type { DebugMap } from '../compiler';

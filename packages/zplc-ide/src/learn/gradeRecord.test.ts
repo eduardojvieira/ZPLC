@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { describeExpectation, describeFailure, failedAssertionsOf, gradeRecordOf, snapshotUri } from './gradeRecord';
-import { parseGradeRecord } from '../../electron/learnProgressModel';
+import { parseGradeRecord } from '../../shared/learnProgressModel';
 import type { ScenarioFile } from './lessonPackage';
 
 const TRACE = 'e'.repeat(64);

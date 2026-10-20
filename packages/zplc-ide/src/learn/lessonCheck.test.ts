@@ -3,7 +3,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseGradeRecord } from '../../electron/learnProgressModel';
+import { parseGradeRecord } from '../../shared/learnProgressModel';
 import { gradeRecordedScenarioLesson, learnLessonCatalog } from '../components/learnLesson';
 import { presentWorkspaceTestResult } from '../components/workspaceTestPresentation';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';

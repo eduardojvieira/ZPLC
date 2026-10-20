@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'bun:test';
 
 import productManifest from '../../../../package.json';
-import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { cellLocation, cellSize, CELL_TYPES, type CellType } from '../conformance/cases';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';

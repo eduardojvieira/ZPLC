@@ -44,7 +44,7 @@ nombres de canal, de modo que no hay una segunda copia que se desalinee.
 Nivel de evidencia: host. `electron/ipcRegistry.test.ts` ejecuta la tabla real de
 manejadores y el registro real contra sustitutos de Electron y de los almacenes,
 `electron/preload.test.ts` ejecuta el preload real contra un sustituto y compara lo
-que invoca con el contrato, y `electron/spawnAllowList.test.ts` muestra los
+que invoca con el contrato, y `shared/spawnAllowList.test.ts` muestra los
 vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación
 empaquetada.
 

@@ -11,7 +11,7 @@ import { create } from 'zustand';
 import {
   emptyProgress, exportProgress as exportDocument, mergeProgress, parseImport, withNote, withPassedIds,
   type GradeRecord, type LearnProgress, type LessonNote,
-} from '../../electron/learnProgressModel';
+} from '../../shared/learnProgressModel';
 import { diagnoseProgressFile, type ProgressFileProblem } from './progressFile';
 import { exportProgress, importProgress, noteLesson, readProgress, recordGrade, type ProgressBridge } from './progressClient';
 import { readLearnMastery, recordLearnMastery } from '../components/learnLesson';

@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it, mock, spyOn } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type { GradeRecord } from '../../electron/learnProgressModel';
+import type { GradeRecord } from '../../shared/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import type { IDebugAdapter, WatchVariable } from '../runtime/debugAdapter';
 import type { DeviceTrace } from '../runtime/deviceTrace';

@@ -12,7 +12,7 @@
 // against a learner who edits the file by hand. The tool says so; it does not claim more.
 import { readFile } from 'node:fs/promises';
 
-import { parseImport } from '../../packages/zplc-ide/electron/learnProgressModel';
+import { parseImport } from '../../packages/zplc-ide/shared/learnProgressModel';
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import type { LessonIndex, LessonLocale } from '../../packages/zplc-ide/src/learn/lessonPackage';

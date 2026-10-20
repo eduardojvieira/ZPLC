@@ -125,14 +125,14 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     }
 
     // Processes: the graph spawns the repository's own tools and nothing else, and every command is an entry of
-    // the closed list of electron/spawnAllowList.ts (IDE-017): the local cross-build, the stateless runs of the
+    // the closed list of shared/spawnAllowList.ts (IDE-017): the local cross-build, the stateless runs of the
     // host runtime for a scenario (toolApi), and the supervisor of that host runtime, which Studio's simulation
     // shares. A module that imports child_process, or asks the list, and is not named here is a new way out and
     // must be added on purpose.
     // (an edge is the specifier as written or the resolved absolute path, so the list is matched by its file name)
     const importing = (target: RegExp) => modules.filter((path) => metafile.inputs[path]!.imports.some((edge) => target.test(edge.path))).sort();
-    expect(importing(/^(?:node:)?child_process$/)).toEqual(['electron/spawnAllowList.ts', 'src/cli/firmwareBuildRunner.ts']);
-    expect(importing(/(?:^|\/)spawnAllowList(?:\.(?:js|ts))?$/)).toEqual(['electron/nativeSimulationSupervisor.ts', 'src/cli/firmwareBuildRunner.ts', 'src/cli/toolApi.ts']);
+    expect(importing(/^(?:node:)?child_process$/)).toEqual(['shared/spawnAllowList.ts', 'src/cli/firmwareBuildRunner.ts']);
+    expect(importing(/(?:^|\/)spawnAllowList(?:\.(?:js|ts))?$/)).toEqual(['shared/nativeSimulationSupervisor.ts', 'src/cli/firmwareBuildRunner.ts', 'src/cli/toolApiToolchain.ts']);
   });
 
   test('running the tools and reading the resources opens no socket, port or datagram', async () => {

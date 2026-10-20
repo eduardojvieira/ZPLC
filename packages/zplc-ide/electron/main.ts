@@ -9,8 +9,8 @@ import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeSt
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
-import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from './nativeSimulationEnvironment.js';
+import { NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor.js';
+import { nativeRuntimeSwitchedOff, nativeSimulationEnvironment } from '../shared/nativeSimulationEnvironment.js';
 import { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
 import { createToolExecutionAudit } from './toolExecutionAudit.js';
@@ -29,7 +29,7 @@ import { createShellPreferencesStore, windowSurface, type ShellPreferences } fro
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
-import { spawnVector } from './spawnAllowList.js';
+import { spawnVector } from '../shared/spawnAllowList.js';
 import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
 import {
@@ -86,9 +86,9 @@ const projectWatcher = createProjectWatcher({
   },
 });
 const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });
-const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
+const toolApiUrl = pathToFileURL(path.join(__dirname, '..', 'toolApi.js')).href;
 /** The command registry's menu data, bundled from src/commands/menuEntry.ts by `electron:compile` (UX-014, UX-015). */
-const commandMenuUrl = pathToFileURL(path.join(__dirname, 'commandMenu.js')).href;
+const commandMenuUrl = pathToFileURL(path.join(__dirname, '..', 'commandMenu.js')).href;
 interface CommandMenuModule {
   menuCommands: MenuCommand[];
   menuCategories: MenuCategory[];
@@ -104,7 +104,7 @@ const shellPreferences = createShellPreferencesStore(app.getPath('userData'));
  * simulation, so that the worker finds the runtime it starts for scenarios.
  */
 function spawnToolWorker(): ToolWorkerProcess {
-  const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, 'toolWorker.js') });
+  const { command, args } = spawnVector({ kind: 'tool-worker', script: path.join(__dirname, '..', 'toolWorker.js') });
   const environment: Record<string, string> = {};
   for (const [name, value] of Object.entries(nativeSimulationEnvironment(process.env, isDev, process.resourcesPath))) {
     if (typeof value === 'string') environment[name] = value;
@@ -140,7 +140,7 @@ const appVersion = app.getVersion();
 function expectedRendererUrl(): string {
   return isDev
     ? trustedDevelopmentRendererUrl(rendererDevelopmentPort)
-    : pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
+    : pathToFileURL(path.join(__dirname, '../../dist/index.html')).href;
 }
 
 function rendererOwnerIsCurrent(owner: RendererOwner): boolean {
@@ -286,7 +286,7 @@ function createWindow(): void {
       contextIsolation: true,
       sandbox: true,
       webSecurity: true,
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, '..', 'preload.cjs'),
     },
     // macOS specific
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
@@ -350,7 +350,7 @@ function createWindow(): void {
     }
   } else {
     // In production, load the built index.html
-    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
     rendererFile.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
   }
 

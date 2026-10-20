@@ -9,7 +9,7 @@ import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from
 import * as toolApi from '../cli/toolApi';
 import { LESSON_IDS as LEARN_LESSON_IDS, LESSON_INDEX } from '../generated/lessonIndex';
 import { passedIn } from '../learn/course';
-import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, LEARN_PROGRESS_MAX_BYTES, emptyProgress, migrateLegacyMastery, parseProgress, type LearnProgress } from '../../electron/learnProgressModel';
+import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, LEARN_PROGRESS_MAX_BYTES, emptyProgress, migrateLegacyMastery, parseProgress, type LearnProgress } from '../../shared/learnProgressModel';
 
 const MAX_OUTPUT_BYTES = 512 * 1024;
 const shortText = z.string().min(1).max(256);

@@ -7,7 +7,7 @@
  * taken by the worker from the generated index. The answer is a grade record (validated exactly) or a short, fixed reason
  * with the codes of the diagnostics; no message, path or evidence of the run is released.
  */
-import { isLessonId, parseGradeRecord, type GradeRecord } from './learnProgressModel.js';
+import { isLessonId, parseGradeRecord, type GradeRecord } from '../shared/learnProgressModel.js';
 
 export interface LessonCheckRequest { workspaceId: string; rootId: string; lessonId: string }
 

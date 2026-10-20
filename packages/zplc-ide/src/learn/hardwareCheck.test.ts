@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'bun:test';
 
-import { parseGradeRecord } from '../../electron/learnProgressModel';
+import { parseGradeRecord } from '../../shared/learnProgressModel';
 import { alignEvents, evaluateHardwareTrace, hardwareGradeRecordOf, traceSha256Of, type HardwareSample } from './hardwareCheck';
 import type { ScenarioFile } from './lessonPackage';
 

@@ -77,13 +77,13 @@ describe('electron-builder.yml packaging of the dev-only module', () => {
   const packaged = packagedByPatterns;
 
   it('still packages the compiled main process', () => {
-    for (const compiled of ['electron-dist/main.js', 'electron-dist/preload.cjs', 'electron-dist/projectFiles.js', 'dist/index.html']) {
+    for (const compiled of ['electron-dist/electron/main.js', 'electron-dist/preload.cjs', 'electron-dist/electron/projectFiles.js', 'electron-dist/shared/spawnAllowList.js', 'dist/index.html']) {
       expect(packaged(patterns, compiled)).toBe(true);
     }
   });
 
   it('leaves the compiled hook module and its source map out of the archive, with no later pattern bringing them back', () => {
-    for (const compiled of ['electron-dist/devFolderDialogHook.js', 'electron-dist/devFolderDialogHook.js.map']) {
+    for (const compiled of ['electron-dist/electron/devFolderDialogHook.js', 'electron-dist/electron/devFolderDialogHook.js.map']) {
       expect(packaged(patterns, compiled)).toBe(false);
     }
   });

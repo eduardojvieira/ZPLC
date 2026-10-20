@@ -25,7 +25,7 @@
  * The scenario format holds boolean conditions only, so `analogPercent` has nothing to compare yet; it is carried so that
  * the tolerances the lesson declares reach the check unchanged.
  */
-import type { FailedAssertion, GradeRecord } from '../../electron/learnProgressModel';
+import type { FailedAssertion, GradeRecord } from '../../shared/learnProgressModel';
 import { snapshotUri } from './gradeRecord';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
 
