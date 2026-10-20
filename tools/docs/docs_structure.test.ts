@@ -104,7 +104,7 @@ describe('docs structure: the sidebar is organised by reader intent (DOC-002)', 
   });
 });
 
-describe('docs structure: the navigation and the footer are localised through the translation files (DOC-015, stopgap: no fluent reviewer has read the Spanish pages in the register of D-10)', () => {
+describe('docs structure: the navigation and the footer are localised through the translation files (DOC-015)', () => {
   interface Label { label?: string; title?: string; type?: string; items?: Label[] }
   interface Config { themeConfig: { navbar: { title: string; logo: { alt: string }; items: Label[] }; footer: { copyright: string; links: Label[] } } }
   const messages = (file: string) => JSON.parse(text(`docs/i18n/es/docusaurus-theme-classic/${file}.json`)) as Record<string, { message: string }>;
@@ -210,7 +210,7 @@ describe('docs site: admonitions in the generator\'s own syntax and no version s
 
 
 // DOC-015 / decision D-10: the Spanish pages speak in one register, neutral with "usted". The voseo and tuteo forms that were
-// found in the pages are the ones listed; a new one in a page fails here (a fluent reviewer's read remains the owner's).
+// found in the pages are the ones listed; a new one in a page fails here.
 describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', () => {
   const voseo = /(?<![\w`/.-])(?:[A-Za-zñ]{3,}(?:á|é|í)(?:lo|la|los|las)?|tu|tus|tienes|puedes|quieres|debes|necesitas|ingreses|asumas|confíes)(?![\wáéíóú])/g;
   const allowed = new Set(['allá', 'está', 'será', 'esté', 'aquí', 'así', 'allí', 'relé', 'también', 'además', 'según', 'quizá', 'ahí', 'sí', 'mí']);
@@ -247,6 +247,56 @@ describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', ()
       lines.forEach((line, index) => {
         const match = VOSEO_MARKERS.exec(line.replace(/`[^`]*`/g, '').replace(/(?<!\*)\*\p{L}+\*(?!\*)/gu, ''));
         if (match) found.push(`${file}:${index + 1}: ${match[0]}`);
+      });
+    }
+    expect(found).toEqual([]);
+  });
+});
+
+// DOC-015: the review of the Spanish pages found these wrong or non-standard variants. Each one is a word that the glossary
+// (docs/docs/learn/glossary.md) or the review replaced by a standard Spanish term; a new use of one fails here, so the pages keep
+// one term for one concept. The list is short and explicit on purpose: when a review finds a new wrong form, it is added.
+describe('the Spanish pages keep one standard term for each concept (DOC-015)', () => {
+  const DENIED: [RegExp, string][] = [
+    [/\b[Ss]cans?\b/, 'ciclo (the glossary: a pass of the program is "un ciclo")'],
+    [/\bfallos?\b/i, 'falla (the glossary)'],
+    [/\bstarters?\b/i, 'proyecto inicial (the glossary)'],
+    [/\bschedulers?\b/i, 'planificador'],
+    [/\b[Tt]imers?\b/, 'temporizador'],
+    [/\b[Pp]ayloads?\b/, 'contenido (the glossary)'],
+    [/\bt[óo]picos?\b/i, 'tema (the glossary: an MQTT topic)'],
+    [/\bsuscriptas?\b/i, 'suscrita'],
+    [/\bpedidos?\b/i, 'solicitud (the glossary: a request)'],
+    [/\bpresion(?:e|ar|a|an)\b/i, 'pulse, pulsar'],
+    [/\bingrese\b/i, 'escriba'],
+    [/\breportes?\b/i, 'informe'],
+    [/\bissues?\b/i, 'incidencia'],
+    [/\bchequeos?\b/i, 'comprobación'],
+    [/\bsoporte de hardware\b/i, 'compatibilidad de hardware'],
+    // second person singular of the preterite (tuteo): the pages address the reader with "usted" or an impersonal form
+    [/\b(?:instal|enlaz|marc|configur|cre|escrib|elegi|abri|conect|guard)(?:aste|iste)\b/i, 'usted or an impersonal form'],
+  ];
+  // These three pages carry text that the source keeps in English by design (the C headers, the Kconfig help and the notes of a board),
+  // so a word of the list can appear in them as a quotation.
+  const QUOTING = new Set([`${ES_DIR}/reference/runtime-api.md`, `${ES_DIR}/reference/kconfig.md`, `${ES_DIR}/reference/boards.md`]);
+
+  it('has no denied variant in the prose of a page', () => {
+    const found: string[] = [];
+    for (const page of markdownFiles(ROOT, ES_DIR)) {
+      if (QUOTING.has(page) || page.startsWith(`${ES_DIR}/learn/`)) continue;
+      // a generated region quotes descriptions that the source keeps in English; the Spanish strings of its generator are reviewed there
+      const prose = text(page)
+        .replace(/\{\/\* >>> GENERATED[\s\S]*?<<< \*\/\}/g, '')
+        .replace(/^```[\s\S]*?^```/gm, (block) => block.replace(/[^\n]/g, ''))
+        .replace(/`[^`\n]*`/g, '')
+        .replace(/\]\([^)\n]*\)/g, ']()')
+        .replace(/^(?:slug|id|tags):.*$/gm, '')
+        .replace(/\w+(?:[-_/.]\w+)+/g, ''); // a kebab-case id, a path or an identifier is not prose
+      prose.split('\n').forEach((line, index) => {
+        for (const [pattern, use] of DENIED) {
+          const match = pattern.exec(line);
+          if (match) found.push(`${page}:${index + 1}: "${match[0]}", use ${use}`);
+        }
       });
     }
     expect(found).toEqual([]);

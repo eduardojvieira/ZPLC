@@ -34,7 +34,7 @@ El firmware implementa:
 La conectividad se define en el archivo `zplc.json` de su proyecto. A través del IDE, puede:
 1. Configurar redes Modbus RTU/TCP (baud rates, direcciones IP, node IDs).
 2. Configurar credenciales de brokers MQTT y certificados.
-3. Mapear variables de PLC internas directamente hacia registros/bobinas Modbus o tópicos MQTT a través de **Bindings de Comunicación**.
+3. Mapear variables de PLC internas directamente hacia registros/bobinas Modbus o temas MQTT a través de **Bindings de Comunicación**.
 
 El runtime maneja automáticamente la retransmisión del protocolo por debajo mientras su lógica de PLC ejecuta.
 
@@ -50,7 +50,7 @@ Las cuatro áreas de un servidor Modbus son cuatro espacios de direcciones: una 
 | cualquier otro número, un `BOOL` | Bobina | `N` | leerla (función 1) y escribirla (5, 15) |
 | cualquier otro número, otro tipo | Registro de retención | `N` | leerlo (función 3) y escribirlo (6, 16) |
 
-Una variable se sirve en una sola área. Un pedido de una dirección que ninguna variable tiene en el área que pide se responde con la excepción 2 (dirección de datos ilegal), aunque otra área tenga una variable con ese número. Las entradas discretas y los registros de entrada no tienen función de escritura, y el servidor no los escribe. Una variable de 32 bits ocupa dos registros consecutivos; un área de bits lleva un bit por variable.
+Una variable se sirve en una sola área. Una solicitud de una dirección que ninguna variable tiene en el área que pide se responde con la excepción 2 (dirección de datos ilegal), aunque otra área tenga una variable con ese número. Las entradas discretas y los registros de entrada no tienen función de escritura, y el servidor no los escribe. Una variable de 32 bits ocupa dos registros consecutivos; un área de bits lleva un bit por variable.
 
 El proyecto dice el área con los ayudantes `MODBUS_COIL`, `MODBUS_DISCRETE_INPUT`, `MODBUS_INPUT_REGISTER` y `MODBUS_HOLDING_REGISTER` y con el área de un tag de comunicación: la dirección que das es la dirección en el cable, y la compilación escribe el número de la tabla (un registro de retención en la dirección 5 es `{modbus:40006}`). Una dirección que ya está en la notación de su área (40001 para un registro de retención) se conserva; una que está en la notación de otra área, o que la notación no puede escribir (un registro de entrada pasada la 9998), es un error de compilación en la línea del ayudante.
 
@@ -71,7 +71,7 @@ para el destino.
 Un controlador que nunca se configuró es seguro en una red de planta:
 
 - **Sin broker.** MQTT está apagado y no hay dirección de broker guardada. Nada resuelve ni se conecta hasta que un operador nombra un servidor y enciende MQTT; con MQTT encendido y sin broker el cliente informa `-EDESTADDRREQ` en `zplc mqtt status` y no lo intenta.
-- **TLS, verificado.** El transporte por defecto es TLS en el puerto 8883 y el certificado del broker se verifica contra la CA que instalaste. TCP plano (`mqtt_transport 0`) y TLS sin verificación (`mqtt_security 1`) son ajustes explícitos, nunca el valor por defecto.
+- **TLS, verificado.** El transporte por defecto es TLS en el puerto 8883 y el certificado del broker se verifica contra la CA que se instaló. TCP plano (`mqtt_transport 0`) y TLS sin verificación (`mqtt_security 1`) son ajustes explícitos, nunca el valor por defecto.
 - **La verificación sigue activa en el firmware de versión.** `mqtt_security 1` se rechaza salvo que la imagen se haya compilado con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y`, y una imagen que no lo permite no aplica un valor guardado de 1. En una imagen que sí lo permite, `zplc mqtt status` muestra `tls-verify: OFF` y `zplc status` muestra una advertencia mientras el ajuste siga así.
 
 El ajuste de seguridad solo significa algo sobre un transporte TLS. Con TCP plano o WS la sesión no tiene TLS diga lo que diga `mqtt_security`, y el estado muestra `tls-verify: n/a`.
@@ -92,14 +92,14 @@ Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RU
 
 | Origen | Qué puede cambiar | Qué no alcanza |
 | --- | --- | --- |
-| Servidor Modbus TCP y RTU | Los bytes de las variables que enlazaste con `{modbus}`, a través del mapeo del servidor y de la escritura del intercambio que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
-| Tópicos MQTT de variables suscriptas (`DCMD`, tópicos de comando) | Los bytes de las variables que marcaste `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
+| Servidor Modbus TCP y RTU | Los bytes de las variables que se enlazaron con `{modbus}`, a través del mapeo del servidor y de la escritura del intercambio que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
+| Temas MQTT de variables suscritas (`DCMD`, temas de comando) | Los bytes de las variables que se marcaron con `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
 | Rebirth `NCMD`/`DCMD` de Sparkplug B | Hace que el nodo publique de nuevo sus certificados de nacimiento | RUN/STOP, forzados, descarga de programa |
 | Mensaje de Azure de nube a dispositivo | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa | RUN/STOP, forzados, descarga de programa |
 | Direct methods y device twin de Azure, shadow y jobs de AWS | Nada: se registran, y un direct method se responde `501` (no implementado) | RUN/STOP, forzados, descarga de programa |
 | Respuesta de aprovisionamiento (Azure DPS, AWS fleet) | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas | RUN/STOP, forzados, descarga de programa |
 
-Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio, y el objeto del intercambio por el que escriben se mide con la misma lista. Y dos pruebas ponen el código de entrada delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas: una envía cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`), y otra entrega tópicos y contenidos hostiles (órdenes de stop, run, force y load en texto y JSON, cada valor de byte, el contenido más largo, métricas de control de nodo de Sparkplug B) al cliente MQTT del producto con cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue una escritura a una variable enlazada, encolada a través del intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
+Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio, y el objeto del intercambio por el que escriben se mide con la misma lista. Y dos pruebas ponen el código de entrada delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas: una envía cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`), y otra entrega temas y contenidos hostiles (órdenes de stop, run, force y load en texto y JSON, cada valor de byte, el contenido más largo, métricas de control de nodo de Sparkplug B) al cliente MQTT del producto con cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue una escritura a una variable enlazada, encolada a través del intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
 
 ## Ajustes guardados
 

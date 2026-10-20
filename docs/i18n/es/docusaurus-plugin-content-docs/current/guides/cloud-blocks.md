@@ -30,7 +30,7 @@ fila lo diga.
 | --- | --- | --- |
 | `AZURE_DPS_PROV` | Registra el dispositivo en el Azure Device Provisioning Service y devuelve el hub asignado | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
 | `AZURE_C2D_RECV` | Recibe un mensaje de la nube al dispositivo de Azure IoT Hub | `azureC2dEnabled`, perfil `azure-iot-hub` |
-| `AZURE_EG_PUB` | Publica un evento en un tópico de Azure Event Grid | perfil `azure-event-grid-mqtt`, `azureEventGridTopic` |
+| `AZURE_EG_PUB` | Publica un evento en un tema de Azure Event Grid | perfil `azure-event-grid-mqtt`, `azureEventGridTopic` |
 | `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath` |
 | `SPB_REBIRTH` | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento | perfil `sparkplug-b` |
 
@@ -179,7 +179,7 @@ registran en el log
 
 Las herramientas manuales están en `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` e `inspect_event_grid.py` se ejecutan contra un broker local y
-responden los tópicos de aprovisionamiento. Comprueban el flujo de tópicos y las
+responden los temas de aprovisionamiento. Comprueban el flujo de temas y las
 transiciones de estado del dispositivo. No demuestran que un bloque funcione con el
 Azure DPS, el Event Grid o el AWS IoT Núcleo reales, y las comprobaciones del proyecto
 no registran ninguna ejecución de ellas.

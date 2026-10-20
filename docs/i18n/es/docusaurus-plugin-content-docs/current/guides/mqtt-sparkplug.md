@@ -15,7 +15,7 @@ sesión y leer lo que envía el controlador, para un perfil de broker genérico 
 Sparkplug B.
 
 :::warning Estado de esta página
-Verificado solo en el host y en `native_sim`: el cliente frente a tópicos y cargas
+Verificado solo en el host y en `native_sim`: el cliente frente a temas y cargas
 hostiles bajo cada uno de sus cinco perfiles, la decodificación de las cargas de
 comandos, los manejadores de los bloques de función contra sustitutos y el cliente MQTT
 del runtime de simulación contra un broker escrito para la prueba sobre un socket de
@@ -101,8 +101,8 @@ compila. Elija el `profile`:
 | `sparkplug-b` | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con carga protobuf |
 | `generic-broker` | Cualquier broker MQTT | Un mensaje de telemetría en JSON |
 | `aws-iot-core` | AWS IoT Núcleo | Los mensajes genéricos; AWS IoT Núcleo autentica un dispositivo con un certificado de cliente y una clave |
-| `azure-iot-hub` | Azure IoT Hub | Mensajes de dispositivo a nube en los tópicos del hub |
-| `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetría en el tópico que usted nombra en `azureEventGridTopic`, o en el tópico genérico |
+| `azure-iot-hub` | Azure IoT Hub | Mensajes de dispositivo a nube en los temas del hub |
+| `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico |
 
 Mantenga `securityLevel` en `tls-server-verify` o más estricto. Desactivar la
 verificación es un ajuste explícito que una imagen de versión rechaza, y una imagen
@@ -150,7 +150,7 @@ renacimiento lo hace publicar de nuevo sus mensajes de nacimiento y nada más.
 ## Use los bloques de función en su lugar
 
 `MQTT_CONNECT` informa el estado de la sesión que abre la configuración del
-dispositivo (no la abre); `MQTT_PUBLISH` envía un mensaje a un tópico por cada flanco
+dispositivo (no la abre); `MQTT_PUBLISH` envía un mensaje a un tema por cada flanco
 ascendente de `EN`; `MQTT_SUBSCRIBE` mantiene una suscripción y entrega sus mensajes.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
@@ -197,7 +197,7 @@ Los bloques siguen el único handshake de los doce bloques de comunicación
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Tópicos y cargas hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, en los cinco perfiles | Prueba del cliente del producto con espías en cada autoridad | Host y `native_sim` |
+| Temas y cargas hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, en los cinco perfiles | Prueba del cliente del producto con espías en cada autoridad | Host y `native_sim` |
 | Las cargas de comandos de cada tipo admitido se decodifican, y una malformada se rechaza | Prueba unitaria del decodificador | Host y `native_sim` |
 | Manejadores de bloques: pines, handshake, códigos de estado, límites, traspaso al hilo del cliente | Prueba con un cliente sustituto | Host y `native_sim` |
 | El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, sobre sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |

@@ -95,7 +95,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 | `app` | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta | El codificador produce las cargas esperadas en un host de 64 bits | El cliente MQTT, TLS ni ningún comportamiento de red |
 | `app-native` | Solo emulación: `firmware/app` en `native_sim/native/64` con el mapa de canales de la Raspberry Pi Pico sobre GPIO y ADC emulados, arrancado y manejado por su shell; una protección comprueba que el comando de shell de emulación no puede habilitarse para una placa real | La aplicación, el shell, el despliegue y el almacenamiento del programa funcionan sobre el núcleo de Zephyr, y los mismos proyectos de referencia dan las mismas trazas que el runtime nativo ([Banco HIL emulado](hil-emulation.md)) | Pines, controladores, tiempos o cualquier aspecto de una placa física; nunca es un registro de hardware |
 | `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado, y que cada almacén de la imagen tenga una partición de flash propia (IO-008) | Uso de pila y de heap en ejecución, ni que la imagen corra |
-| `tidy` | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app` | Los archivos analizados no tienen ninguno de los defectos que buscan los chequeos habilitados | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
+| `tidy` | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app` | Los archivos analizados no tienen ninguno de los defectos que buscan las comprobaciones habilitadas | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
 
 ## Cómo leer el resultado
 
@@ -218,8 +218,8 @@ is not on pin 7`. `python3 tools/hil/test_io_table_generator.py` fija el texto q
 
 ## Análisis estático
 
-`clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Todo chequeo que habilita es un error, así que la
-lista de ese archivo es el conjunto que el código cumple. Cada chequeo desactivado figura con su motivo, y una
+`clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Toda comprobación que habilita es un error, así que la
+lista de ese archivo es el conjunto que el código cumple. Cada comprobación desactivada figura con su motivo, y una
 línea que debe quedar como está lleva un comentario `NOLINT` con su motivo. `run.sh tidy` ejecuta
 `tools/ci/run_clang_tidy.py`, que hace dos pasadas:
 
@@ -231,8 +231,8 @@ línea que debe quedar como está lleva un comentario `NOLINT` con su motivo. `r
   `firmware/app`. Necesita la base de datos de compilación de un `west build`, así que se ejecuta cuando existe
   `$ZPLC_FW_WS/out/size/arduino-opta-wifi-m7` (`run.sh size arduino-opta-wifi-m7` la crea) o cuando se pasa
   `--zephyr-build <directorio>` al script. En otro caso se omite y la ejecución lo dice. El núcleo y el HAL de
-  Zephyr no deben informar nada. Los hallazgos que `firmware/app` ya tenía cuando se agregó el chequeo se
-  cuentan por placa, archivo y chequeo en `tools/ci/clang-tidy-app-baseline.json`: un hallazgo nuevo hace
+  Zephyr no deben informar nada. Los hallazgos que `firmware/app` ya tenía cuando se agregó la comprobación se
+  cuentan por placa, archivo y comprobación en `tools/ci/clang-tidy-app-baseline.json`: un hallazgo nuevo hace
   fallar la pasada, y uno corregido pide bajar el conteo con `--update-baseline`.
 
 `-Werror` se aplica a todo destino que el repositorio compila: los destinos de host del núcleo mediante un
@@ -371,7 +371,7 @@ requiere el banco de HIL-010.
   trabajo compila una placa y luego ejecuta la prueba de host.
 - La línea base de `firmware/app` de la pasada de Zephyr es la lista de
   hallazgos que faltan por corregir allí; `tools/ci/clang-tidy-app-baseline.json`
-  guarda un conteo por placa, archivo y chequeo. La pasada se probó contra
+  guarda un conteo por placa, archivo y comprobación. La pasada se probó contra
   compilaciones locales de placa con una versión de `clang-tidy`; la primera
   ejecución en integración continua mostrará si las líneas base también valen
   con la del runner.
