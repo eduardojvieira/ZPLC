@@ -7,6 +7,8 @@
  * Two parts. The first runs the self-test against the clock of the POSIX HAL, which is the point. The second hands
  * the same function a clock that is broken in each way the self-test claims to find, so that a port whose clock is
  * wrong cannot pass because the check never looked.
+ *
+ * tools/wasm-core/suites.ts runs this file on the WebAssembly HAL, with ZPLC_TEST_PORT_NAME naming that port.
  */
 
 #include <stdint.h>
@@ -16,6 +18,10 @@
 #include <zplc_hal.h>
 
 #include "zplc_port_timing_suite.h"
+
+#ifndef ZPLC_TEST_PORT_NAME
+#define ZPLC_TEST_PORT_NAME "POSIX"
+#endif
 
 static int test_count = 0;
 static int fail_count = 0;
@@ -64,11 +70,11 @@ static void test_the_clock_of_the_posix_port(void) {
   zplc_port_clock_t clock = {zplc_hal_tick, zplc_hal_sleep};
   int code = zplc_port_timing_selftest(&clock, why, sizeof(why), &report);
 
-  printf("\n=== Test: the clock of the POSIX HAL (resolution %lu ms, a sleep of 50 ms took %lu ms) ===\n",
+  printf("\n=== Test: the clock of the " ZPLC_TEST_PORT_NAME " HAL (resolution %lu ms, a sleep of 50 ms took %lu ms) ===\n",
          (unsigned long)report.resolution_ms, (unsigned long)report.sleep_50_ms);
-  TEST_ASSERT(code == ZPLC_PORT_TIMING_OK, why[0] != '\0' ? why : "the POSIX clock passes the timing self-test");
+  TEST_ASSERT(code == ZPLC_PORT_TIMING_OK, why[0] != '\0' ? why : "the clock of the port passes the timing self-test");
   TEST_ASSERT(report.resolution_ms >= 1U && report.resolution_ms <= ZPLC_PORT_TIMING_MAX_RESOLUTION_MS,
-              "the smallest advance of a sleep of 1 ms on the POSIX tick is between 1 ms and the floor of the suite");
+              "the smallest advance of a sleep of 1 ms on the tick of the port is between 1 ms and the floor of the suite");
   TEST_ASSERT(report.sleep_50_ms >= 50U, "a sleep of 50 ms takes at least 50 ms by the tick");
 }
 
@@ -118,7 +124,7 @@ static void test_the_self_test_finds_a_broken_clock(void) {
 }
 
 int main(void) {
-  printf("ZPLC port conformance: timing self-test (POSIX)\n");
+  printf("ZPLC port conformance: timing self-test (" ZPLC_TEST_PORT_NAME ")\n");
   test_the_clock_of_the_posix_port();
   test_the_self_test_finds_a_broken_clock();
   printf("\n%d tests, %d failed\n", test_count, fail_count);
