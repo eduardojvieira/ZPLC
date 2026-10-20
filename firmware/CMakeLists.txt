@@ -61,6 +61,7 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_exchange.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sched_core.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_single_task.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_io_trace.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_failsafe.c
   )
 

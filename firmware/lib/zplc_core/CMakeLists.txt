@@ -89,6 +89,7 @@ add_library(zplc_core STATIC
     src/core/zplc_exchange.c
     src/core/zplc_sched_core.c
     src/core/zplc_single_task.c
+    src/core/zplc_io_trace.c
     src/core/zplc_failsafe.c
     src/core/zplc_proto.c
     src/core/zplc_proto_dev.c
@@ -104,8 +105,8 @@ target_include_directories(zplc_core PUBLIC
 )
 
 # RT-029: the core compiles without a Zephyr header. Every file of src/core is compiled here, in a build whose
-# include path is include/ and nothing else, with the one Kconfig symbol that adds code to the core switched on
-# (CONFIG_ZPLC_HIL_DEBUG). A Zephyr header or a Zephyr type in src/core stops this target, which is part of the
+# include path is include/ and nothing else, with the Kconfig symbols that add code to the core switched on
+# (CONFIG_ZPLC_HIL_DEBUG, CONFIG_ZPLC_IO_TRACE). A Zephyr header or a Zephyr type in src/core stops this target, which is part of the
 # default build, so it stops every host build and every ctest run. The glob means a new core file is covered
 # without an edit here.
 file(GLOB ZPLC_CORE_PORTABLE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.c)
@@ -114,6 +115,8 @@ target_include_directories(zplc_core_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 target_compile_definitions(zplc_core_portable PRIVATE
     ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
     CONFIG_ZPLC_HIL_DEBUG=1
+    CONFIG_ZPLC_IO_TRACE=1
+    CONFIG_ZPLC_IO_TRACE_BUFFER_SIZE=256
 )
 
 # =============================================================================
@@ -577,6 +580,35 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_single_task COMMAND test_single_task)
+
+# Test: the per-scan I/O trace, fed by the scheduler core's trace port (LRN-024). Also run under the sanitizers.
+add_executable(test_io_trace
+    tests/test_io_trace.c
+    src/core/zplc_io_trace.c
+    src/core/zplc_single_task.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_io_trace PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+target_compile_definitions(test_io_trace PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_io_trace PRIVATE rt)
+endif()
+
+add_test(NAME test_io_trace COMMAND test_io_trace)
 
 # Test: the safe value a project declares for an output decides the level of its pin (RT-023). It brings its own
 # board (an I/O table and a recording pin driver) and no HAL: the core's HAL needs are a mutex and a tick.
