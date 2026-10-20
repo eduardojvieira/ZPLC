@@ -317,24 +317,17 @@ class Esp32s3Bench:
         self.process = subprocess.Popen(
             [str(qemu), "-nographic", "-machine", "esp32s3", "-m", "8M", "-global", "ssi_psram.is_octal=true",
              "-drive", f"file={self.flash_file},if=mtd,format=raw", "-serial", "pty", "-monitor", "none", "-no-reboot"],
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=self.log_file.open("a"), text=True,
         )
-        deadline = time.monotonic() + 30
-        for line in self.process.stderr:
-            match = re.search(r"(/dev/pts/\d+)", line)
+        self.pty = ""
+        for line in self.process.stdout:  # QEMU names the pty on stdout before it starts the guest
+            match = re.search(r"char device redirected to (/dev/pts/\d+)", line)
             if match:
                 self.pty = match.group(1)
                 break
-            if time.monotonic() > deadline:
-                break
         if not self.pty:
-            raise RuntimeError("QEMU did not report the pty of its UART0")
-        threading.Thread(target=self._log, args=(self.process,), daemon=True).start()
-
-    def _log(self, process: subprocess.Popen) -> None:
-        with self.log_file.open("a") as log:
-            for line in process.stderr:
-                log.write(line)
+            raise RuntimeError(f"QEMU did not report the pty of its UART0 (see {self.log_file})")
+        threading.Thread(target=self.process.stdout.read, daemon=True).start()  # drain the rest
 
     def kill(self) -> None:
         if self.process is not None:

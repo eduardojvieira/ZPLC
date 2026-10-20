@@ -15,6 +15,8 @@ import bench_emulated as emu
 
 PICO_IMAGE = Path(os.environ.get("ZPLC_EMU_IMAGE") or emu.fw_out() / "emu-pico/zephyr/zephyr.uf2")
 HAVE_PICO = (emu.emu_dir() / "rp2040js/node_modules/tsx").is_dir() and PICO_IMAGE.is_file()
+ESP_IMAGE = emu.fw_out() / "emu-esp32s3/zephyr/zephyr.bin"
+HAVE_ESP = (emu.emu_dir() / "qemu-esp/qemu/bin/qemu-system-xtensa").is_file() and ESP_IMAGE.is_file()
 
 
 def shell(port: str, command: str, until: str, timeout: float = 10.0) -> str:
@@ -55,6 +57,23 @@ class PicoBootTests(unittest.TestCase):
                 self.assertEqual(again["board"], "rpi_pico")
                 self.assertLess(again["uptime_ms"], first["uptime_ms"] + 1000)
                 self.assertEqual(bench.boots, 2)
+            finally:
+                bench.close()
+
+
+@unittest.skipUnless(HAVE_ESP, f"needs Espressif QEMU in {emu.emu_dir()} (setup.sh) and {ESP_IMAGE} (build.sh esp32s3)")
+class Esp32s3BootTests(unittest.TestCase):
+    def test_the_emulation_image_boots_in_qemu_answers_on_uart0_and_reboots_on_a_power_cycle(self):
+        with tempfile.TemporaryDirectory() as work:
+            bench = emu.EmulatorBench("esp32s3_devkitc", workdir=Path(work))
+            try:
+                bench.flash(ESP_IMAGE)
+                first = info(bench)
+                self.assertEqual((first["board"], first["memory"]["work_size"]), ("esp32s3_devkitc", 2048))
+                bench.power_cycle()
+                again = info(bench)
+                self.assertLess(again["uptime_ms"], first["uptime_ms"] + 1500)
+                self.assertEqual(len((Path(work) / "flash.bin").read_bytes()), emu.ESP_FLASH_SIZE)
             finally:
                 bench.close()
 
