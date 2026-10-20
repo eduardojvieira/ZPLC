@@ -31,7 +31,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **28**. Planeadas: **1**. En total: **29**.
+Disponibles hoy: **29**. Planeadas: **1**. En total: **30**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -119,11 +119,13 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 |---|---|---|---|---|---|---|
 | `types-arithmetic-comparison` Tipos, aritmética y comparación: un total y tres bandas | Disponible | ST | Simulación | - | 20 | `edge-counter-pulses` |
 | `analog-scaling-integer` Escalado analógico: de cuentas crudas a un porcentaje | Disponible | ST | Simulación | - | 20 | `types-arithmetic-comparison` |
+| `analog-scaling-fbd` Escalado analógico en diagrama de bloques de función: una alarma de nivel alto | Disponible | FBD | Simulación | - | 20 | `analog-scaling-integer`, `counter-batch-fbd` |
 
 Objetivos de las lecciones disponibles:
 
 - **Tipos, aritmética y comparación: un total y tres bandas**: Use una variable INT para un número y una BOOL para un verdadero o falso, y vea que una comparación convierte un número en un BOOL. Sume a un número solo en el flanco ascendente de una entrada, para que un botón mantenido varios ciclos cuente una vez.
 - **Escalado analógico: de cuentas crudas a un porcentaje**: Escale una cuenta cruda a unidades de ingeniería con una multiplicación seguida de una división, en ese orden. Vea que la división entera descarta el resto, y elija un tipo entero lo bastante ancho para el producto intermedio.
+- **Escalado analógico en diagrama de bloques de función: una alarma de nivel alto**: Escale cuentas analógicas crudas a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas. Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas crudas.
 
 
 ## Módulo 5: Máquinas de estado y secuencias

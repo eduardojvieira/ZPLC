@@ -34,6 +34,7 @@ export const LESSON_IDS = [
   "capstone-packing-station",
   "modbus-register-round-trip",
   "mqtt-publish-subscribe",
+  "analog-scaling-fbd",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

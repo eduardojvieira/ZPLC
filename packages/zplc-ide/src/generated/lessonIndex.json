@@ -4878,6 +4878,178 @@
           ]
         }
       }
+    },
+    {
+      "id": "analog-scaling-fbd",
+      "version": 1,
+      "order": 30,
+      "module": 4,
+      "level": "intermediate",
+      "prerequisites": [
+        "analog-scaling-integer",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson turns a stand-in potentiometer with a BOOL input at exact 10 ms steps, and no check against a trace recorded from a real potentiometer on AI0 has been written yet.",
+            "es": "La lección gira un potenciómetro sustituto con una entrada BOOL en pasos exactos de 10 ms, y todavía no se ha escrito una verificación contra una traza registrada desde un potenciómetro real en AI0."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "level_scale_fbd_starter",
+        "program": "src/LevelScale.fbd.json"
+      },
+      "solution": {
+        "project": "level_scale_fbd",
+        "program": "src/LevelScale.fbd.json"
+      },
+      "scenario": {
+        "id": "LevelScale",
+        "path": "tests/level-scale.scenario.json",
+        "sha256": "f825ce4b24aebf0db3fbe05bf9eef58b9a2ccfb8fba2c09849a8992e2c94b713",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 9,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"LevelScale.Enable\":false}},{\"atMs\":10,\"set\":{\"LevelScale.Enable\":true}},{\"atMs\":110,\"set\":{\"LevelScale.Enable\":false}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"atMs\":80,\"condition\":{\"LevelScale.HighLevel\":true},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"LevelScale.HighLevel\":true},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"LevelScale.HighLevel\":false},\"kind\":\"AT\"},{\"condition\":{\"LevelScale.HighLevel\":true},\"forMs\":20,\"fromMs\":80,\"kind\":\"FOR\"},{\"condition\":{\"LevelScale.HighLevel\":true},\"fromMs\":80,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"LevelScale.HighLevel\":false},\"fromMs\":110,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"LevelScale\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Analog scaling in Function Block Diagram: a high level alarm",
+          "summary": "Edit a Function Block Diagram that scales raw analog counts from 0 to 4095 into a level in percent with MUL, DIV and LIMIT blocks, and lights HighLevel at 75 percent.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task and a stand-in for the potentiometer; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+          "objectives": [
+            "Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts.",
+            "Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input: in src/LevelScale.fbd.json the blocks at the top stand in for a potentiometer on AI0, raising Raw by 410 counts on each scan while Enable is TRUE, up to 4095, and turning it back to 0 when Enable is FALSE. The blocks below multiply Raw by 100 and limit the result to 0..100 before they compare it with 75. Add the division by 4095, so that Level is the level in percent.",
+              "checkpoint": "Level follows Raw in percent, and HighLevel turns ON once Level reaches 75 percent."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Enable rises at 10 ms, so Raw is 410 after that scan, 2870 at 70 ms and 3280 at 80 ms. Work out Level at those times and predict HighLevel at 10, 70 and 80 ms.",
+              "checkpoint": "OFF at 10 ms, with Level at 10; OFF at 70 ms, with Level at 70; ON at 80 ms, with Level at 80."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT. Place a DIV block and a constant 4095 of type DINT, wire MUL.OUT to DIV.IN1 and the constant to DIV.IN2, then wire DIV.OUT to LIMIT.IN in place of the wire from MUL.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named LevelScale and contains 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch Level and compare 70, 80 and 100 ms: Level climbs by 10 percent per scan, HighLevel rises at 80 ms, and at 100 ms Raw has reached 4095 and Level stays at 100.",
+              "checkpoint": "HighLevel rises once at 80 ms and falls once at 110 ms, when Enable drops and the stand-in turns Raw back to 0."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why multiply before dividing, and why does this diagram use DINT? Raw times 100 reaches 409500, more than a 16-bit INT holds. What would LIMIT protect against if the sensor reported a value outside 0..4095?",
+              "checkpoint": "Dividing first loses the remainder, so Level would stay 0 until full scale. LIMIT keeps the value inside 0..100 whatever the input does; the scenario checks the threshold only, not the clamp, the rounding or a real potentiometer."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "The level in percent is Raw times 100 divided by 4095. Which block is missing from the starter, and between which two blocks does it go?"
+            },
+            {
+              "level": 2,
+              "text": "Place a DIV block, wire MUL.OUT to its IN1 and a DINT constant 4095 to its IN2, then wire DIV.OUT to LIMIT.IN. Leave the constant 75 and the wire to HighLevel as they are."
+            }
+          ],
+          "faultCases": [
+            "The starter multiplies Raw by 100 but never divides by 4095, so LIMIT clamps the product to 100 from the first scan and HighLevel lights at 10 ms; insert a DIV block that divides the product by 4095 between MUL and LIMIT."
+          ]
+        },
+        "es": {
+          "title": "Escalado analógico en diagrama de bloques de función: una alarma de nivel alto",
+          "summary": "Edite un diagrama de bloques de función que escala cuentas analógicas crudas de 0 a 4095 a un nivel en porcentaje con los bloques MUL, DIV y LIMIT, y enciende HighLevel al 75 por ciento.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms y un sustituto del potenciómetro; no establece la exactitud, el ruido ni la calibración de una entrada analógica real, el cableado, HIL ni certificación.",
+          "objectives": [
+            "Escale cuentas analógicas crudas a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas.",
+            "Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas crudas."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Las entradas del escenario son BOOL, así que esta lección no lee una entrada analógica real: en src/LevelScale.fbd.json los bloques de arriba sustituyen a un potenciómetro en AI0, suman 410 cuentas a Raw en cada ciclo mientras Enable es TRUE, hasta 4095, y lo devuelven a 0 cuando Enable es FALSE. Los bloques de abajo multiplican Raw por 100 y limitan el resultado a 0..100 antes de compararlo con 75. Agregue la división por 4095 para que Level sea el nivel en porcentaje.",
+              "checkpoint": "Level sigue a Raw en porcentaje, y HighLevel pasa a ON cuando Level llega al 75 por ciento."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "Enable sube a los 10 ms, así que Raw vale 410 después de ese ciclo, 2870 a los 70 ms y 3280 a los 80 ms. Calcule Level en esos momentos y prediga HighLevel a los 10, 70 y 80 ms.",
+              "checkpoint": "En OFF a los 10 ms, con Level en 10; en OFF a los 70 ms, con Level en 70; en ON a los 80 ms, con Level en 80."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095. Coloque un bloque DIV y una constante 4095 de tipo DINT, conecte MUL.OUT a DIV.IN1 y la constante a DIV.IN2, y luego conecte DIV.OUT a LIMIT.IN en lugar del cable que viene de MUL.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama LevelScale y contiene 9 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Observe Level y compare 70, 80 y 100 ms: Level sube 10 por ciento por ciclo, HighLevel sube a los 80 ms, y a los 100 ms Raw ya llegó a 4095 y Level se queda en 100.",
+              "checkpoint": "HighLevel sube una vez a los 80 ms y cae una vez a los 110 ms, cuando Enable cae y el sustituto devuelve Raw a 0."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué se multiplica antes de dividir, y por qué este diagrama usa DINT? Raw por 100 llega a 409500, más de lo que cabe en un INT de 16 bits. ¿De qué protegería LIMIT si el sensor entregara un valor fuera de 0..4095?",
+              "checkpoint": "Si se divide primero se pierde el resto, y Level quedaría en 0 hasta el fondo de escala. LIMIT mantiene el valor dentro de 0..100 haga lo que haga la entrada; el escenario comprueba solo el umbral, no el recorte, el redondeo ni un potenciómetro real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "El nivel en porcentaje es Raw por 100 dividido por 4095. ¿Qué bloque falta en el programa inicial, y entre qué dos bloques va?"
+            },
+            {
+              "level": 2,
+              "text": "Coloque un bloque DIV, conecte MUL.OUT a su IN1 y una constante DINT 4095 a su IN2, y luego conecte DIV.OUT a LIMIT.IN. Deje como están la constante 75 y el cable hacia HighLevel."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial multiplica Raw por 100 pero nunca divide por 4095, así que LIMIT recorta el producto a 100 desde el primer ciclo y HighLevel se enciende a los 10 ms; inserte entre MUL y LIMIT un bloque DIV que divida el producto por 4095."
+          ]
+        }
+      }
     }
   ],
   "course": {

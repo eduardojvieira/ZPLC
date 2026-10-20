@@ -31,7 +31,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **28**. Planned: **1**. In all: **29**.
+Available today: **29**. Planned: **1**. In all: **30**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -119,11 +119,13 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 |---|---|---|---|---|---|---|
 | `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands | Available | ST | Simulation | - | 20 | `edge-counter-pulses` |
 | `analog-scaling-integer` Analog scaling: from raw counts to a percentage | Available | ST | Simulation | - | 20 | `types-arithmetic-comparison` |
+| `analog-scaling-fbd` Analog scaling in Function Block Diagram: a high level alarm | Available | FBD | Simulation | - | 20 | `analog-scaling-integer`, `counter-batch-fbd` |
 
 Objectives of the available lessons:
 
 - **Types, arithmetic and comparison: a total and three bands**: Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL. Add to a number only on the rising edge of an input, so that a button held for several scans counts once.
 - **Analog scaling: from raw counts to a percentage**: Scale a raw count to engineering units with a multiplication followed by a division, in that order. See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product.
+- **Analog scaling in Function Block Diagram: a high level alarm**: Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts. Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold.
 
 
 ## Module 5: State machines and sequences

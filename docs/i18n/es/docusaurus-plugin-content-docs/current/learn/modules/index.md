@@ -16,7 +16,7 @@ unlisted: true
 | [1: Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo](./module-1.md) | Fundamentos | 3 |
 | [2: Lógica booleana y enclavamiento: contactos, bobinas, autorretención, set y reset, parada segura](./module-2.md) | Fundamentos | 4 |
 | [3: Temporizadores, flancos y contadores](./module-3.md) | Fundamentos | 3 |
-| [4: Datos: tipos, aritmética, comparación y escalado analógico](./module-4.md) | Intermedio | 2 |
+| [4: Datos: tipos, aritmética, comparación y escalado analógico](./module-4.md) | Intermedio | 3 |
 | [5: Máquinas de estado y secuencias](./module-5.md) | Intermedio | 2 |
 | [6: Realimentación, fallos e interbloqueos](./module-6.md) | Intermedio | 3 |
 | [7: Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas](./module-7.md) | Intermedio | 2 |
