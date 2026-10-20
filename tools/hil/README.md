@@ -92,9 +92,14 @@ does not report is absent, not guessed), the I/O description it reports (`zplc s
 `firmware/app/boards/boards.json` has for the board, the SHA-256 of every program and of the image the person says was flashed, each step with its
 result and the time a person confirmed it by typing the identity the device reported, the tests with their results,
 the tool versions, the operator and the raw shell log. `evidence` says how it was made: `hardware` only for a serial
-link to a board, never for the host runtime or a fake. A record is bound to the image it tested and is committed
-afterwards, never in the commit the image was built from; the steps of HIL-010 that the chain cannot run yet are in it
-as `pending`, each with what it lacks.
+link to a board, `emulated` for the emulated bench, never `hardware` for the host runtime or a fake; `evidence_level`
+is the level of the HIL contract (only `hardware` raises a support level, and an emulated record names its emulator).
+A record is bound to the image it tested and is committed afterwards, never in the commit the image was built from:
+`test_hil_record.py` checks that the image commit of every record the manifest references is a strict ancestor of the
+commit that added it. The measuring steps of HIL-010 (`hil_steps.py`) write their measurements and verdicts in it; a
+step the bench cannot do is `skipped` or `not-emulable`, never passed. `bench.py` is the bench (a person, the
+emulator, or a stand-in), `hil_endpoints.py` the local fieldbus endpoints, and `compare_sim.py` compares the
+reference projects in native simulation and on a bench (HIL-015).
 
 A hardware run that ends in pass or fail, of an image named with `--firmware-image` whose device reports a 40-digit
 commit and a clean tree, also writes `<run>.evidence.json`: the flat `zplc.hil-record/1` record that
@@ -108,4 +113,5 @@ log says when it was not written and why. Adding it to `evidence_refs` of the bo
 | Flash the image | a person; no tool here flashes |
 | Name the port when more than one device matches | a person (`--port`) |
 | Type the identity the device reports at each physical step | a person; `run_chain.py` and `zplc-hil run` refuse without an interactive terminal and have no flag that skips it |
-| Wiring for the loopback, analog and fieldbus items of HIL-010 | a person; the bench guide (HIL-014) is TO BE FILLED by the one who does the bench run |
+| Wiring for the loopback, analog and fieldbus items of HIL-010 | a person, by the bench guide (HIL-014, docs/docs/development/hardware-in-the-loop.md) |
+| Turn the potentiometer, cut the power, plug the board back in | a person, at the prompt of the chain, typing the identity the device reports |
