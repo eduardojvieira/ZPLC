@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/edge-counter-pulses. Do not edit. >>> */}
 
-Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
+Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 
 ## Datos
 
@@ -38,7 +38,7 @@ Use un contador CTU para contar tres pulsos discretos y resetear la cuenta.
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.
 
 ## Cableado
 

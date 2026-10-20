@@ -1,16 +1,16 @@
 ---
-title: "Cableado: Ciclo de scan y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)"
+title: "Cableado: Ciclo de escaneo y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "scan-cycle-one-scan-memory"
 description: "Cómo cablear la lección scan-cycle-one-scan-memory en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
 
-# Cableado: Ciclo de scan y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)
+# Cableado: Ciclo de escaneo y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/scan-cycle-one-scan-memory. Do not edit. >>> */}
 
-El cableado de la lección [Ciclo de scan y memoria de un ciclo](../../../learn/lessons/scan-cycle-one-scan-memory.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Ciclo de escaneo y memoria de un ciclo](../../../learn/lessons/scan-cycle-one-scan-memory.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -22,7 +22,7 @@ El cableado de la lección [Ciclo de scan y memoria de un ciclo](../../../learn/
 
 ## Diagrama
 
-![Cableado de Ciclo de scan y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/scan-cycle-one-scan-memory.es.svg)
+![Cableado de Ciclo de escaneo y memoria de un ciclo en ESP32-S3-DevKitC-1 (N8R8)](/img/wiring/esp32-s3-devkitc/scan-cycle-one-scan-memory.es.svg)
 
 ## Tarjeta de cableado
 

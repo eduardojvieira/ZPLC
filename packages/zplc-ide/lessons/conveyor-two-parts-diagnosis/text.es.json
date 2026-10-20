@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Diagnóstico reproducible: dos piezas, una decisión",
   "summary": "Use el calendario versionado para distinguir una pieza metálica de una no metálica sin inventar observabilidad.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y entradas programadas por el escenario; no son evidencia de sensores ni de piezas físicas, de los tiempos en el dispositivo de destino, de hardware, de HIL ni de certificación.",
   "objectives": [
     "Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores.",
     "Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla."
@@ -36,7 +36,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo ConveyorTwoParts.",
-      "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama ConveyorTwoParts y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

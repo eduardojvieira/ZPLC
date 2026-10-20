@@ -66,7 +66,7 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Arranque y parada seguros](./rpi-pico-rp2040/motor-start-stop-safe.md) | `motor-start-stop-safe` |
 | [Oscilador TON y realimentación de salida](./rpi-pico-rp2040/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` |
 | [Flancos y contador de pulsos](./rpi-pico-rp2040/edge-counter-pulses.md) | `edge-counter-pulses` |
-| [Ciclo de scan y memoria de un ciclo](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
+| [Ciclo de escaneo y memoria de un ciclo](./rpi-pico-rp2040/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` |
 | [Lógica booleana: un mando a dos manos con protección](./rpi-pico-rp2040/boolean-logic-two-hand-guard.md) | `boolean-logic-two-hand-guard` |
 | [Temporizadores: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./rpi-pico-rp2040/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` |
 | [Escriba un parpadeador en texto estructurado](./rpi-pico-rp2040/blink-structured-text.md) | `blink-structured-text` |

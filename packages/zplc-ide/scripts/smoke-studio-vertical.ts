@@ -309,9 +309,9 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   await waitFor('Spanish Blinky Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Oscilador TON y realimentación de salida') ? true : undefined`) === true ? true : undefined);
   await assertLesson('Oscilador TON y realimentación de salida', 'Copiar ejemplo Oscilador TON y realimentación de salida');
   await screenshot('learn-blinky-es-1366.png');
-  await selectLesson('Comando, realimentación y velocidad');
-  await waitFor('Spanish motor plant Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Comando, realimentación y velocidad') ? true : undefined`) === true ? true : undefined);
-  await assertLesson('Comando, realimentación y velocidad', 'Copiar ejemplo Comando, realimentación y velocidad');
+  await selectLesson('Orden, realimentación y velocidad');
+  await waitFor('Spanish motor plant Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Orden, realimentación y velocidad') ? true : undefined`) === true ? true : undefined);
+  await assertLesson('Orden, realimentación y velocidad', 'Copiar ejemplo Orden, realimentación y velocidad');
   assert(await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.')`) === true, 'Spanish Motor Plant Learn scope is not host-only');
   await screenshot('learn-motor-plant-es-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'English'); if (!button || button.disabled) return false; button.click(); return true; })()`);
@@ -320,7 +320,7 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   assert(await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.')`) === true, 'English Motor Plant Learn scope is not host-only');
   await screenshot('learn-motor-plant-en-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'Español'); if (!button || button.disabled) return false; button.click(); return true; })()`);
-  await waitFor('restored Spanish motor plant Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Comando, realimentación y velocidad') ? true : undefined`) === true ? true : undefined);
+  await waitFor('restored Spanish motor plant Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Orden, realimentación y velocidad') ? true : undefined`) === true ? true : undefined);
   await selectLesson('Flancos y contador de pulsos');
   await waitFor('Spanish edge counter Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Flancos y contador de pulsos') ? true : undefined`) === true ? true : undefined);
   await assertLesson('Flancos y contador de pulsos', 'Copiar ejemplo Flancos y contador de pulsos');
@@ -333,9 +333,9 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   await screenshot('learn-edge-counter-en-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'Español'); if (!button || button.disabled) return false; button.click(); return true; })()`);
   await waitFor('restored Spanish edge counter Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Flancos y contador de pulsos') ? true : undefined`) === true ? true : undefined);
-  await selectLesson('Ciclo de scan y memoria de un ciclo');
-  await waitFor('Spanish scan snapshot Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ciclo de scan y memoria de un ciclo') ? true : undefined`) === true ? true : undefined);
-  await assertLesson('Ciclo de scan y memoria de un ciclo', 'Copiar ejemplo Ciclo de scan y memoria de un ciclo', 7);
+  await selectLesson('Ciclo de escaneo y memoria de un ciclo');
+  await waitFor('Spanish scan snapshot Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ciclo de escaneo y memoria de un ciclo') ? true : undefined`) === true ? true : undefined);
+  await assertLesson('Ciclo de escaneo y memoria de un ciclo', 'Copiar ejemplo Ciclo de escaneo y memoria de un ciclo', 7);
   assert(await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.')`) === true, 'Spanish Scan Snapshot Learn scope is not host-only');
   await screenshot('learn-scan-snapshot-es-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'English'); if (!button || button.disabled) return false; button.click(); return true; })()`);
@@ -344,7 +344,7 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   assert(await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.')`) === true, 'English Scan Snapshot Learn scope is not host-only');
   await screenshot('learn-scan-snapshot-en-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'Español'); if (!button || button.disabled) return false; button.click(); return true; })()`);
-  await waitFor('restored Spanish scan snapshot Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ciclo de scan y memoria de un ciclo') ? true : undefined`) === true ? true : undefined);
+  await waitFor('restored Spanish scan snapshot Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ciclo de escaneo y memoria de un ciclo') ? true : undefined`) === true ? true : undefined);
   await selectLesson('Assertions temporales y falla por atasco');
   await waitFor('Spanish temporal assertions Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Assertions temporales y falla por atasco') ? true : undefined`) === true ? true : undefined);
   await assertLesson('Assertions temporales y falla por atasco', 'Copiar ejemplo Assertions temporales y falla por atasco');

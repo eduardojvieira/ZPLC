@@ -22,13 +22,7 @@ function readable(text: LessonTextExpanded): string[] {
   return [text.title, text.summary, text.scope, ...text.objectives, ...text.faultCases, ...text.hints.map((hint) => hint.text), ...text.stages.flatMap((stage) => [stage.title, stage.body, stage.checkpoint])];
 }
 
-/**
- * The two Spanish strings that src/components/learnLesson.test.ts pins word for word (the title and the summary of
- * scan-cycle-one-scan-memory). They keep "scan" until that test and these strings change together; nothing else is exempt.
- */
-const PINNED_ELSEWHERE: ReadonlySet<string> = new Set(['Ciclo de scan y memoria de un ciclo', 'Siga cómo una entrada produce una salida actual y una copia demorada un scan.']);
-
-const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text).filter((value) => !PINNED_ELSEWHERE.has(value)) }));
+const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text) }));
 
 /**
  * A whole word, in any case, that is not part of a longer word, a code token or a file path: `ScanSnapshot` is not
@@ -62,6 +56,13 @@ const WRONG_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
   [word('samples?'), 'muestra'],
   [word('chequeos?'), 'comprobación'],
   [word('tabla watch'), 'tabla de observación'],
+  [word('assertions?'), 'aserción'],
+  [word('timing'), 'tiempos, temporización'],
+  [word('target'), 'dispositivo de destino'],
+  [word('inputs?|outputs?'), 'entradas, salidas'],
+  [word('resetear|resetee'), 'poner a cero'],
+  [word('snapshots?'), 'instantánea'],
+  [/(?<![\p{L}\p{N}_/-])Tests(?![\p{L}\p{N}_/-])/gu, 'Pruebas'],
   [word('pedido peatonal|pedido de cinta|el pedido'), 'solicitud'],
   [/(?<![\p{L}])(?:Structured Text|Texto Estructurado)(?![\p{L}])/gu, 'texto estructurado'],
   [/(?<![\p{L}])(?:Instruction List|Lista de Instrucciones)(?![\p{L}])/gu, 'lista de instrucciones'],

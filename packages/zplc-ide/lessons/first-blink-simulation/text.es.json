@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-      "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} assertions; Studio enumera cada una de las que fallaron."
+      "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} aserciones; Studio enumera cada una de las que fallaron."
     },
     {
       "key": "observe",

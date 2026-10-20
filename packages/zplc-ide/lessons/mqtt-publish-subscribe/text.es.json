@@ -32,7 +32,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, con el broker de la simulación en marcha.",
-      "checkpoint": "El escenario se llama MqttLoop y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario se llama MqttLoop y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

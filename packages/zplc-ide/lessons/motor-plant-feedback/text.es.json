@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Comando, realimentación y velocidad",
+  "title": "Orden, realimentación y velocidad",
   "summary": "Separe la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
-  "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
+  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.",
   "objectives": [
     "Separe la orden al motor de la confirmación de que está en marcha.",
     "Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed."
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorPlant.",
-      "checkpoint": "El escenario requerido se llama MotorPlant y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama MotorPlant y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

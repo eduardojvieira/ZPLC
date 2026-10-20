@@ -31,7 +31,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego presione RUN.",
-      "checkpoint": "El escenario se llama VerifyBoard y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario se llama VerifyBoard y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
