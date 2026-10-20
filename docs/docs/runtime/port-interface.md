@@ -11,7 +11,7 @@ tags: [reference, generated]
 
 A port is a platform that hosts the portable core: the virtual machine, the loader, the scheduler core and the storage of the program. The core owns what a program means; a port owns the clock, the pins, the storage, the locks and the thread that calls the scheduler. A port is written against two headers and nothing else, and passes one conformance suite.
 
-Ports in the repository: the Zephyr firmware (`firmware/lib/zplc_core/src/hal/zephyr`), the POSIX host runtime that Studio simulates with (`.../posix`) and the WebAssembly runtime (`.../wasm`). Whether a second, non-Zephyr port ships in 2.0 is decision D-06 of the remediation spec; this page and the suite are what such a port is written against.
+Ports in the repository: the Zephyr firmware (`firmware/lib/zplc_core/src/hal/zephyr`), the POSIX host runtime that Studio simulates with (`.../posix`), the WebAssembly runtime (`.../wasm`) and the FreeRTOS port (`.../freertos`). The FreeRTOS port is the second embedded port that is not Zephyr: decision D-06 of the remediation spec chose to ship it in 2.0, and it is shown on the FreeRTOS POSIX simulator only, so no FreeRTOS board is qualified. This page and the suite are what a port is written against.
 
 ## The HAL
 
@@ -85,7 +85,7 @@ Sockets and name resolution. The portable core does not call them: the applicati
 
 ## The scheduler port
 
-What an adapter hands the scheduler core (`zplc_sched_port_t` of `firmware/lib/zplc_core/include/zplc_sched_core.h`). Every member but `now_us` is optional: an absent callback is a step the platform does not have. The core has no synchronization of its own; the adapter supplies the locks. The adapters that exist are the POSIX session of the host runtime, the Zephyr scheduler and the single-task configuration of the firmware.
+What an adapter hands the scheduler core (`zplc_sched_port_t` of `firmware/lib/zplc_core/include/zplc_sched_core.h`). Every member but `now_us` is optional: an absent callback is a step the platform does not have. The core has no synchronization of its own; the adapter supplies the locks. The adapters that exist are the POSIX session of the host runtime, the Zephyr scheduler, the single-task configuration of the firmware and the FreeRTOS adapter (one software timer for each task, one scheduler task).
 
 | Callback | What it does |
 | --- | --- |
@@ -122,6 +122,7 @@ Every opcode of the instruction set gives its result on the port, including the 
 | POSIX host | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.isa`, `zplc.core.vm_core`, `zplc.core.vm_arith_edges` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_isa`, `test_vm_core`, `test_vm_arith_edges`, `test_opcode_coverage` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ### Loader negative tests
 
@@ -132,6 +133,7 @@ A program that is malformed, out of bounds or built for another contract is refu
 | POSIX host | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.core.loader_verify`, `zplc.legacy_program_admission` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions`, `packages/zplc-ide/src/runtime/wasmParity.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_loader_verify`, `test_sandbox`, `test_sandbox_regions` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ### Scheduler phase and fault tests
 
@@ -142,6 +144,7 @@ Admission, order, the phases of a scan, deadline misses, the fault latch and the
 | POSIX host | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.scheduler_admission`, `zplc.scheduler_equivalence`, `zplc.scheduler_run_control`, `zplc.scheduler_watchdog`, `zplc.single_task`, `zplc.failsafe` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `packages/zplc-ide/src/runtime/wasmRuntime.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_sched_core`, `test_sched_equivalence`, `test_single_task`, `test_failsafe`, `test_native_runtime_session`, `test_freertos_scheduler` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ### Timing self-test
 
@@ -152,6 +155,7 @@ The clock of the port counts milliseconds, never goes backwards, advances throug
 | POSIX host | `test_port_timing` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.port_timing` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `test_port_timing` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_port_timing`, `test_hal_freertos` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ### I/O table
 
@@ -162,6 +166,7 @@ The channels of the board description reach the process image through the table,
 | POSIX host | `test_io_table`, `test_hal_posix_io_table` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.io_table.base`, `zplc.io_table.extended`, `zplc.io_analog.ok`, `zplc.io_analog.missing` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `test_io_table`, `test_hal_posix_io_table` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_io_table`, `test_hal_freertos_io_table` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ### Non-volatile storage
 
@@ -172,12 +177,15 @@ The program, the retentive memory, the configuration and the credentials are sto
 | POSIX host | `test_hal_posix_persist`, `test_program_store`, `test_retain` | `bun run test:core` (CMake and ctest, with the sanitizers in CI) |
 | Zephyr (`native_sim`, QEMU) | `zplc.hal_persist_keys`, `zplc.program_store`, `zplc.program_store_nvs`, `zplc.retain_persist` | `bun run test:firmware` (Twister on `native_sim` 64 and 32 bits, `qemu_cortex_m3` and `qemu_cortex_m0`) |
 | WebAssembly | `packages/zplc-ide/src/runtime/wasmPortSuites.test.ts`, `packages/zplc-ide/src/runtime/wasmRetain.test.ts` | `bun tools/wasm-core/suites.ts` (the C suites of the core, built with the WebAssembly HAL) and the `wasm*.test.ts` files of `bun run test:ide` (with clang and lld; CI installs them) |
+| FreeRTOS (POSIX simulator) | `test_program_store`, `test_retain`, `test_hal_freertos` | `bash tools/freertos/test.sh` (CMake and ctest of the FreeRTOS build, which fetches FreeRTOS-Kernel at a pinned commit; CI runs it in the `freertos-port` job) |
 
 ## What the suite shows about the ports today
 
 The timing self-test reports the smallest advance of the tick that a sleep of 1 ms makes. On the POSIX host it is 1 ms. On the Zephyr targets of the suite (`native_sim` and QEMU Cortex-M3) the kernel tick is 10 ms (100 ticks per second, the default of the kernel) and a sleep of 1 ms moves the tick by 20 ms, so neither the clock nor the kernel timers of these targets resolve an interval shorter than that. The figure belongs to the build configuration of the suite; it is not a measurement of a board (HIL-010 holds the bench).
 
 The WebAssembly port runs every category. Its C suites are the files that ctest runs on the POSIX host, built by `tools/wasm-core/suites.ts` with the HAL port of the runtime that Studio ships, and they give the same counts (164 checks of the scheduler core, 2796 of the sandbox). They run under Bun, not in a browser engine: the clock of the timing self-test is the host's `performance.now()`, with a resolution of 1 ms there, and in a browser that clock has the resolution, the jitter and the throttling of a background tab that the browser gives it (IDE-025 owns the browser-engine test of the adapter). A module cannot hand its one thread back to the host, so the sleep of the port spins on the host's clock; the runtime itself never sleeps, because the host polls it. Its storage is the record store of the host: Studio keeps the retentive memory with the open project and the stored program in the memory of the page. The port has no device link and no network, so it has no configuration and no credentials to store.
+
+The FreeRTOS port runs every category on the FreeRTOS POSIX/GCC simulator (FreeRTOS-Kernel V11.3.2, MIT, fetched at a pinned commit and not kept in the repository; the `freertos-port` job of CI builds and runs it on Ubuntu). Its C suites are the files that ctest runs on the POSIX host, built by `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` against the FreeRTOS HAL and called from a kernel task, plus suites of its own: the scheduler adapter (the golden traces of the other runtimes, releases on kernel timers, the fault latch and the safe pins), the simulated board behind the I/O table, and the clock, the locks and the storage codes of the HAL. The simulator is not a real-time system: each task is a thread of the host and the kernel tick is a loop that sleeps for 1 ms, so under load the tick runs slower than the wall clock (300 ticks took 390 to 470 ms on a host with a load average of 24). The checks therefore bound what the port can promise, not what a board does. The timing self-test reports a resolution of 1 ms, the tick, against its own limits (a floor of 50 ms of resolution and at most a second of oversleep). The release test counts scans in kernel time: never more than the ticks allow, and at least a third of the ideal count, with the wall time printed and not asserted. The microsecond clock of the scheduler adapter reads the monotonic clock of the host, where a board reads its cycle counter. Storage is one file for each key, written to a temporary name, flushed and renamed, so the suites of the program store and the retentive memory cut the power at every operation; a board port replaces that file with its flash driver. The core drives digital outputs only when it settles the safe state, so a simulated analog output keeps its last word. None of these figures is a measurement of a board (HIL-010 holds the bench).
 
 {/* <<< END GENERATED: runtime/port-interface <<< */}
 

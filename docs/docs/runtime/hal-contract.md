@@ -116,7 +116,7 @@ The public networking-facing HAL surface includes:
 
 - `zplc_hal_net_init()`
 - `zplc_hal_net_get_ip()`
-The Zephyr, POSIX, and WebAssembly ports each implement these functions. Name resolution and sockets are not part
+The Zephyr, POSIX, WebAssembly, and FreeRTOS ports each implement these functions. Name resolution and sockets are not part
 of the port interface: the application opens its own sockets with per-socket timeouts through the Zephyr resolver
 and SNTP. The HAL used to declare a DNS function and four socket functions that nothing called; they were removed
 so that every declared function has a caller (IO-007).
