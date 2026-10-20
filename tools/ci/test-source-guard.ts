@@ -3,7 +3,7 @@
 //   bun tools/ci/test-source-guard.ts
 //
 // The guard lists every tracked test file that reads a product source file. A test that reads
-// packages/*/src, packages/*/electron, packages/*/scripts, scripts, firmware (C, headers, CMake, board
+// packages/*/src, packages/*/electron, packages/*/shared, packages/*/scripts, scripts, firmware (C, headers, CMake, board
 // configuration) or .github/workflows is a source-text test: it freezes how the code is written, not what it
 // does. So is a test outside the assembler's own that asserts on generated assembly text (`expect(...assembly)`
 // followed by a text matcher: toContain, toMatch, toStartWith, toEndWith, or toBe and toEqual with a string),
@@ -53,7 +53,7 @@ const ASSEMBLY_ASSERTION = /\bexpect\(\s*(?:[\w$.!?[\]()]*?\.)?\w*(?:asm|Asm|ass
 
 export const REPLACEMENTS = ['behaviour', 'dom', 'artifact', 'contract', 'delete-with-layout'] as const;
 const EXEMPT = /^packages\/zplc-compiler\/src\/assembler\//;
-const PRODUCT_ROOT = /^(?:packages\/[^/]+\/(?:src|electron|scripts)\/|scripts\/|tools\/|firmware\/|\.github\/workflows\/)/;
+const PRODUCT_ROOT = /^(?:packages\/[^/]+\/(?:src|electron|shared|scripts)\/|scripts\/|tools\/|firmware\/|\.github\/workflows\/)/;
 const FIXTURE = /(?:^|\/)(?:fixtures?|testdata|tests?|__snapshots__)\//;
 const SOURCE_EXTENSION = /\.(?:ts|tsx|js|jsx|mjs|cjs|css|html|sh|py|c|h|cmake|conf|overlay|dts|yml|yaml)$|(?:^|\/)(?:CMakeLists\.txt|Kconfig[\w.]*)$/;
 const LIST = new URL('./pinned-source-offenders.json', import.meta.url);
