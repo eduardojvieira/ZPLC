@@ -3,7 +3,7 @@
  * @brief The POSIX port lists no channel and says so through the shared accessors (IO-007).
  *
  * The WebAssembly port has no pins either: tools/wasm-core/suites.ts runs this file against its HAL with
- * ZPLC_TEST_PORT_ID set to the name that port gives its table (IO-013).
+ * ZPLC_TEST_PORT_ID set to the name that port gives its table.
  */
 
 #define _POSIX_C_SOURCE 200809L

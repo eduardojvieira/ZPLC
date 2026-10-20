@@ -57,6 +57,8 @@ The status bar shows **Runtime: WASM fallback · degraded**, and under it the li
 | A batch reads one input image and a pulse lasts one batch | `wasmRuntime.test.ts`, the same scenario as `test_native_runtime_session.c` |
 | A retained value survives a new session, a different program starts from an initialised region, a damaged record and a record of another layout are refused, saves follow the interval and skip an unchanged region, a reset is a cold restart | `wasmRetain.test.ts`, with the programs and the status fields of the retain scenarios of `test_native_runtime_session.c` |
 | The records are kept with the project | `wasmRetain.test.ts` over a folder handle, and journey 8b in the real application |
+| The HAL port passes the port conformance suite: the per-opcode tests, the loader negative tests, the scheduler phase and fault tests, the timing self-test and the I/O table (IO-013) | `wasmPortSuites.test.ts` runs the C suites that ctest runs on the POSIX host, built by `tools/wasm-core/suites.ts` with `zplc_hal_wasm.c` in place of the POSIX HAL; they give the same counts. See [Port interface](./port-interface.md) |
+| The session stores the program it loads, restores it in a new session, and refuses a stored program that is damaged or cut short | `wasmPortSuites.test.ts`, over the records of the page |
 
 Evidence level: host. The module runs under Bun and, in journey 8b, in the Electron renderer on Linux. No other browser engine, no phone and no hardware was used, and no timing of the browser was measured.
 
@@ -64,5 +66,6 @@ Evidence level: host. The module runs under Bun and, in journey 8b, in the Elect
 
 - The interval between periodic retain saves is 30 seconds. A module has no environment, so `ZPLC_RETAIN_SAVE_INTERVAL_MS` does not exist here; a `STOP` and a shutdown still store.
 - The program store of the session is in memory: a program is loaded from the project every time, and only the `RETAIN` records are kept with it.
+- A sleep of the HAL port waits by reading the clock of the page in a loop, because a module cannot give its one thread back to the page. The runtime never sleeps (the page polls it when the next scan is due), so the loop serves only the timing self-test of the port.
 - The signal trace and the live view of the motor example are features of the native simulation, and they stay off on the browser runtime.
 - The persistence of the page is asynchronous. A failure to write is shown in the console of Studio as a warning; the session goes on.
