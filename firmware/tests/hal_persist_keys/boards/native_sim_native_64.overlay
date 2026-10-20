@@ -1,0 +1,13 @@
+/*
+ * IO-008: the two stores of the firmware on separate flash, as the network boards have them. The NVS records of the
+ * HAL take zplc_nvs_partition, 64 KB in the free upper half of the 2 MB simulated flash; the settings file system of
+ * zplc_config.c (LittleFS) mounts storage_partition, 16 KB at 0xfc000 in the board DTS.
+ */
+&flash0 {
+	partitions {
+		zplc_nvs_partition: partition@100000 {
+			label = "zplc-nvs";
+			reg = <0x00100000 DT_SIZE_K(64)>;
+		};
+	};
+};

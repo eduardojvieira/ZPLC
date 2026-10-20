@@ -426,15 +426,37 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  * own partition, so that the two stores never share flash (IO-008).
  */
 
-#ifdef CONFIG_NVS
+#if defined(CONFIG_NVS) || defined(CONFIG_ZMS)
 
 #include <zephyr/drivers/flash.h>
-/* Newer Zephyr moved NVS to kvss and renamed the FIXED_PARTITION_* macros; both
+/* Newer Zephyr moved NVS and ZMS to kvss and renamed the FIXED_PARTITION_* macros; both
  * spellings warn as deprecated there, and the twister builds make warnings errors. */
+#if defined(CONFIG_ZMS)
+/* IO-008: ZMS keeps the records on a flash whose erase sectors are above the 64 KB that NVS accepts (the Nucleo-H743ZI,
+ * 128 KB). Its calls are those of NVS with wider identifiers, and an allocation entry of 16 bytes. */
+#if __has_include(<zephyr/kvss/zms.h>)
+#include <zephyr/kvss/zms.h>
+#else
+#include <zephyr/fs/zms.h>
+#endif
+#define zplc_kv_fs zms_fs
+#define zplc_kv_mount zms_mount
+#define zplc_kv_read zms_read
+#define zplc_kv_write zms_write
+#define zplc_kv_delete zms_delete
+#define ZPLC_KV_ENTRY_BYTES 16U
+#else
 #if __has_include(<zephyr/kvss/nvs.h>)
 #include <zephyr/kvss/nvs.h>
 #else
 #include <zephyr/fs/nvs.h>
+#endif
+#define zplc_kv_fs nvs_fs
+#define zplc_kv_mount nvs_mount
+#define zplc_kv_read nvs_read
+#define zplc_kv_write nvs_write
+#define zplc_kv_delete nvs_delete
+#define ZPLC_KV_ENTRY_BYTES 8U
 #endif
 #include <zephyr/storage/flash_map.h>
 
@@ -521,8 +543,8 @@ BUILD_ASSERT(NVS_ID_CONFIG_BASE + 100U <= NVS_ID_AWS_CERT_PEM,
 #define NVS_ID_LINK_KEY 642
 #define NVS_ID_LINK_SIGNING_KEY 643
 
-/** @brief NVS filesystem handle */
-static struct nvs_fs nvs_handle;
+/** @brief NVS (or ZMS) filesystem handle */
+static struct zplc_kv_fs nvs_handle;
 
 /** @brief NVS initialized flag */
 static bool nvs_initialized = false;
@@ -689,7 +711,7 @@ static int ensure_nvs_init(void) {
       ZPLC_STORAGE_SIZE() / page_info.size;
 
   /* Mount NVS */
-  ret = nvs_mount(&nvs_handle);
+  ret = zplc_kv_mount(&nvs_handle);
   if (ret != 0) {
     zplc_hal_log("[HAL] NVS mount failed: %d\n", ret);
     return ret;
@@ -734,7 +756,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   }
 
   /* Write to NVS */
-  ret = nvs_write(&nvs_handle, id, data, len);
+  ret = zplc_kv_write(&nvs_handle, id, data, len);
   if (ret < 0) {
     zplc_hal_log("[HAL] NVS write '%s' (id=%u) failed: %zd\n", key, id, ret);
     return ZPLC_HAL_ERROR;
@@ -785,7 +807,8 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
                                    ? nvs_handle.flash_parameters->write_block_size
                                    : 1U;
     const size_t allocation_entry =
-        write_block <= 1U ? 8U : ((8U + write_block - 1U) / write_block) * write_block;
+        write_block <= 1U ? ZPLC_KV_ENTRY_BYTES
+                          : ((ZPLC_KV_ENTRY_BYTES + write_block - 1U) / write_block) * write_block;
     const size_t largest_entry = nvs_handle.sector_size - 2U * allocation_entry;
 
     if (len > largest_entry) {
@@ -794,7 +817,7 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   }
 
   /* Read from NVS */
-  ret = nvs_read(&nvs_handle, id, data, len);
+  ret = zplc_kv_read(&nvs_handle, id, data, len);
   if (ret < 0) {
     if (ret == -ENOENT)
       return ZPLC_HAL_NOT_IMPL;
@@ -837,7 +860,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   }
 
   /* Delete from NVS */
-  ret = nvs_delete(&nvs_handle, id);
+  ret = zplc_kv_delete(&nvs_handle, id);
   if (ret != 0) {
     if (ret == -ENOENT)
       return ZPLC_HAL_NOT_IMPL;
@@ -849,7 +872,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   return ZPLC_HAL_OK;
 }
 
-#else /* !CONFIG_NVS */
+#else /* !CONFIG_NVS && !CONFIG_ZMS */
 
 /**
  * @brief Save data to persistent storage (stub - NVS disabled).
@@ -886,7 +909,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   return ZPLC_HAL_NOT_IMPL;
 }
 
-#endif /* CONFIG_NVS */
+#endif /* CONFIG_NVS || CONFIG_ZMS */
 
 /* ============================================================================
  * Synchronization Functions

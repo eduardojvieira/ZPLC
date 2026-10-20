@@ -3,4 +3,11 @@ list(PREPEND ZEPHYR_EXTRA_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(zplc_hal_persist_keys)
 
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE
+  src/main.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/zplc_config.c
+)
+target_include_directories(app PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+)
