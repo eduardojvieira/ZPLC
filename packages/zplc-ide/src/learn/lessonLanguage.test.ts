@@ -5,6 +5,7 @@ import { interlockEs } from '../i18n/catalog/interlock';
 import { labEn, labEs } from '../i18n/catalog/lab';
 import { labSceneEs } from '../i18n/catalog/labScene';
 import { learnEs } from '../i18n/catalog/learn';
+import { learnHomeEs } from '../i18n/catalog/learnHome';
 import { translatorFor } from '../i18n';
 import { expandText, textShape, type LessonTextExpanded } from './lessonPackage';
 import { loadLessonPackages } from './lessonPackageFiles';
@@ -95,7 +96,7 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
   });
 
   it('LRN-029 the Spanish of the Learn panel, the Lab, the plants and the faceplate uses the same register and glossary', () => {
-    const catalogs = { learn: learnEs, lab: labEs, labScene: labSceneEs, faceplate: faceplateEs, interlock: interlockEs };
+    const catalogs = { learn: learnEs, learnHome: learnHomeEs, lab: labEs, labScene: labSceneEs, faceplate: faceplateEs, interlock: interlockEs };
     const found = Object.entries(catalogs).flatMap(([catalog, messages]) => Object.entries(messages).flatMap(([key, value]) => [
       ...[...value.matchAll(REGISTER)].map((match) => ({ catalog, key, found: match[0], use: 'usted or an impersonal form' })),
       ...WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.matchAll(pattern)].map((match) => ({ catalog, key, found: match[0], use }))),
