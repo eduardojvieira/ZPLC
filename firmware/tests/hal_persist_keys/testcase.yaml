@@ -12,3 +12,20 @@ tests:
       - native_sim/native/64
     harness: ztest
     timeout: 30
+  # IO-008: the same keys over ZMS, the store of a board whose flash sectors are above the 64 KB that NVS accepts
+  # (the Nucleo-H743ZI, 128 KB).
+  zplc.hal_persist_keys.zms:
+    extra_configs:
+      - CONFIG_NVS=n
+      - CONFIG_ZMS=y
+    tags:
+      - zplc
+      - hal
+      - persist
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 30
