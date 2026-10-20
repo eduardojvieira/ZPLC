@@ -24,8 +24,8 @@ Siga cómo una entrada produce una salida actual y una copia demorada un scan.
 
 ## Objetivos
 
-- Compruebe que una variable conserva su valor de un scan al siguiente.
-- Arme un retardo de un scan y un pulso de un scan con una única memoria.
+- Compruebe que una variable conserva su valor de un ciclo al siguiente.
+- Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria.
 
 ## Etapas
 

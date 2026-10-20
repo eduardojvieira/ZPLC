@@ -20,7 +20,7 @@ unlisted: true
 | --- | --- | --- | --- |
 | [Oscilador TON y realimentación de salida](../lessons/blinky-ladder-timer-feedback.md) | `blinky-ladder-timer-feedback` | LD | 20 |
 | [Ciclo de scan y memoria de un ciclo](../lessons/scan-cycle-one-scan-memory.md) | `scan-cycle-one-scan-memory` | ST | 10 |
-| [Escriba un parpadeador en Structured Text](../lessons/blink-structured-text.md) | `blink-structured-text` | ST | 15 |
+| [Escriba un parpadeador en texto estructurado](../lessons/blink-structured-text.md) | `blink-structured-text` | ST | 15 |
 
 {/* <<< END GENERATED: learn/modules/module-1 <<< */}
 

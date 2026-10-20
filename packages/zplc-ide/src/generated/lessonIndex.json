@@ -834,62 +834,62 @@
         },
         "es": {
           "title": "Oscilador TON y realimentación de salida",
-          "summary": "Complete un parpadeo Ladder de 500 ms hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con assertions FOR y AT.",
+          "summary": "Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con aserciones FOR y AT.",
           "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
           "objectives": [
-            "Lea un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.",
-            "Completalo con una bobina SET y una bobina RESET manejadas por las salidas Q de los temporizadores."
+            "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
+            "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de temporizador: OffTimer corre mientras LED_Output está OFF y OnTimer corre mientras está ON. Agregue los dos peldaños de bobina: un contacto sobre OffTimer.Q que haga SET de LED_Output y un contacto sobre OnTimer.Q que le haga RESET.",
+              "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de los temporizadores: OffTimer cuenta mientras LED_Output está en OFF y OnTimer cuenta mientras está en ON. Agregue los dos peldaños de bobina: un contacto de OffTimer.Q que active LED_Output con SET y un contacto de OnTimer.Q que lo desactive con RESET.",
               "checkpoint": "Las salidas de los temporizadores se realimentan para activar y desactivar el LED, y el LED arranca en OFF."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe LED_Output a 250, 750, 1250 y 1750 ms.",
+              "body": "Antes de ejecutar, prediga LED_Output a los 250, 750, 1250 y 1750 ms.",
               "checkpoint": "OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET accionada por OffTimer.Q y una bobina RESET accionada por OnTimer.Q, de modo que el LED esté en OFF unos 500 ms, luego en ON unos 500 ms, y se repita.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario BlinkyVisual.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario BlinkyVisual.",
               "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene 11 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Revise la traza y la tabla: OFF hasta unos 500 ms, ON hasta unos 1000 ms, OFF de nuevo y ON otra vez desde unos 1500 ms.",
-              "checkpoint": "Las tres ventanas FOR (20-400 ms OFF, 620-900 ms ON, 1120-1400 ms OFF) se sostienen, y se encuentran los dos flancos ascendentes y el descendente."
+              "body": "Revise la traza y la tabla: en OFF hasta unos 500 ms, en ON hasta unos 1000 ms, de nuevo en OFF y otra vez en ON desde unos 1500 ms.",
+              "checkpoint": "Las tres ventanas FOR (20-400 ms en OFF, 620-900 ms en ON, 1120-1400 ms en OFF) se cumplen, y se encuentran los dos flancos ascendentes y el descendente."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON solo el 20 % del tiempo falla las assertions FOR y AT.",
-              "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de 500 o 510 ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
+              "body": "Un programa que invierte la salida en cada ciclo, parpadea al doble de velocidad o queda en ON solo el 20 % del tiempo no supera las aserciones FOR y AT.",
+              "checkpoint": "El escenario del host evalúa la forma de onda lógica, no la técnica (un semiperíodo de 500 o de 510 ms pasa); no demuestra el período eléctrico, el brillo, los tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Mire los dos primeros peldaños: OffTimer solo corre mientras LED_Output está OFF y OnTimer solo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
+              "text": "Mire los dos primeros peldaños: OffTimer solo cuenta mientras LED_Output está en OFF y OnTimer solo mientras está en ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
             },
             {
               "level": 2,
-              "text": "Agregue un peldaño con un contacto normalmente abierto sobre OffTimer.Q y una bobina SET sobre LED_Output, y otro con un contacto sobre OnTimer.Q y una bobina RESET sobre LED_Output."
+              "text": "Agregue un peldaño con un contacto normalmente abierto de OffTimer.Q y una bobina SET de LED_Output, y otro con un contacto de OnTimer.Q y una bobina RESET de LED_Output."
             }
           ],
           "faultCases": [
-            "El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
+            "El programa inicial tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregue una bobina SET accionada por OffTimer.Q y una bobina RESET accionada por OnTimer.Q, de modo que el LED esté en OFF unos 500 ms, luego en ON unos 500 ms, y se repita."
           ]
         }
       }
@@ -1365,65 +1365,65 @@
           "summary": "Siga cómo una entrada produce una salida actual y una copia demorada un scan.",
           "scope": "La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.",
           "objectives": [
-            "Compruebe que una variable conserva su valor de un scan al siguiente.",
-            "Arme un retardo de un scan y un pulso de un scan con una única memoria."
+            "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
+            "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
               "body": "En src/ScanSnapshot.st, use Button, Current, Delayed y RisingPulse y agregue la memoria Previous.",
-              "checkpoint": "Previous se actualiza al final del scan."
+              "checkpoint": "Previous se actualiza al final del ciclo."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe los cuatro samples registrados como Current, Delayed, RisingPulse.",
+              "body": "Antes de ejecutar, prediga las cuatro muestras registradas como Current, Delayed, RisingPulse.",
               "checkpoint": "000@0, 101@10, 010@20, 000@30."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final.",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final.",
               "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario ScanSnapshot.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario ScanSnapshot.",
               "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene 9 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 10, 20 y 30 ms: RisingPulse dura un scan y Delayed conserva la copia demorada.",
-              "checkpoint": "El pulso aparece a 10 ms; Delayed aparece a 20 ms y vuelve OFF a 30 ms."
+              "body": "Compare los instantes 10, 20 y 30 ms: RisingPulse dura un ciclo y Delayed conserva la copia demorada.",
+              "checkpoint": "El pulso aparece a los 10 ms; Delayed aparece a los 20 ms y vuelve a OFF a los 30 ms."
             },
             {
               "key": "evidence",
               "title": "Evidencia",
-              "body": "AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza pertenecen al host.",
-              "checkpoint": "La evidencia registrada es del escenario host ejecutado."
+              "body": "AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza corresponden al host.",
+              "checkpoint": "La evidencia registrada corresponde al escenario ejecutado en el host."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Actualizar Previous antes rompería el detector de flanco.",
-              "checkpoint": "La memoria debe conservar el valor anterior hasta el final del scan."
+              "body": "Actualizar Previous al principio rompería el detector de flancos.",
+              "checkpoint": "La memoria debe conservar el valor anterior hasta el final del ciclo."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Delayed tiene que ser el Button del scan anterior, así que necesita una variable que todavía guarde el valor viejo al empezar el scan: Previous."
+              "text": "Delayed tiene que ser el Button del ciclo anterior, así que necesita una variable que todavía conserve el valor anterior al empezar el ciclo: Previous."
             },
             {
               "level": 2,
-              "text": "Escriba las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y recién después Previous := Button."
+              "text": "Escriba las sentencias en este orden: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; y solo después Previous := Button."
             }
           ],
           "faultCases": [
-            "El starter no tiene memoria de un scan; conserve Previous, calcule Delayed con él, derive RisingPulse de Current y Delayed y actualice Previous al final."
+            "El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final."
           ]
         }
       }
@@ -1894,41 +1894,41 @@
         "es": {
           "title": "Su primer parpadeo en simulación",
           "summary": "Haga que una lámpara simulada se encienda y se apague cada medio segundo cambiando un solo número, y vea el resultado en la traza.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX en su equipo; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX, solo en su equipo; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.",
           "objectives": [
-            "Ejecute un programa contra una salida simulada sin ningún hardware.",
-            "Cambie un valor en Structured Text y vea cambiar la salida en la traza."
+            "Ejecute un programa sobre una salida simulada, sin ningún hardware.",
+            "Cambie un valor en texto estructurado y vea cómo cambia la salida en la traza."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado lento: cambia la lámpara cada vez que pasa HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
-              "checkpoint": "Usted sabe qué línea fija el medio período y cuánto vale ahora."
+              "body": "Abra src/FirstBlink.st. El programa ya hace parpadear Lamp, pero demasiado despacio: cambia el estado de la lámpara cada vez que transcurre HalfPeriod, y HalfPeriod vale dos segundos. Su tarea es cambiar ese único valor.",
+              "checkpoint": "Usted sabe qué línea fija el semiperíodo y cuánto vale ahora."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de cambiar nada, prediga Lamp en 250, 750, 1250 y 1550 ms si debe estar apagada medio segundo y luego encendida medio segundo.",
-              "checkpoint": "OFF en 250 ms, ON en 750 ms, OFF en 1250 ms, ON en 1550 ms."
+              "body": "Antes de cambiar nada, prediga el estado de Lamp a los 250, 750, 1250 y 1550 ms, si debe estar apagada medio segundo y luego encendida medio segundo.",
+              "checkpoint": "OFF a los 250 ms, ON a los 750 ms, OFF a los 1250 ms, ON a los 1550 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms. Cambie HalfPeriod de T#2000ms a 500 ms, escrito como T#500ms, y guarde el archivo.",
-              "checkpoint": "HalfPeriod dice T#500ms y el archivo está guardado."
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los 750 ms. Cambie HalfPeriod de T#2000ms a 500 ms, escrito como T#500ms, y guarde el archivo.",
+              "checkpoint": "HalfPeriod vale T#500ms y el archivo está guardado."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
-              "checkpoint": "El escenario se llama FirstBlink y contiene 10 assertions; Studio lista cada una que falló."
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "checkpoint": "El escenario se llama FirstBlink y contiene 10 assertions; Studio enumera cada una de las que fallaron."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Abra la traza de la ejecución y siga Lamp: permanece OFF hasta cerca de 500 ms, está ON hasta cerca de 1000 ms y luego vuelve a OFF hasta cerca de 1500 ms.",
-              "checkpoint": "La lámpara cambia de estado cada 500 ms aproximadamente, como usted lo predijo."
+              "body": "Abra la traza de la ejecución y siga Lamp: permanece en OFF hasta cerca de los 500 ms, está en ON hasta cerca de los 1000 ms y luego vuelve a OFF hasta cerca de los 1500 ms.",
+              "checkpoint": "La lámpara cambia de estado cada 500 ms aproximadamente, como usted predijo."
             },
             {
               "key": "reflect",
@@ -1948,7 +1948,7 @@
             }
           ],
           "faultCases": [
-            "El programa inicial usa un medio período de dos segundos, así que Lamp sigue en OFF cuando el escenario mira a los 750 ms."
+            "El programa inicial usa un semiperíodo de dos segundos, así que Lamp sigue en OFF cuando el escenario la comprueba a los 750 ms."
           ]
         }
       }
@@ -2356,7 +2356,7 @@
             {
               "key": "objective",
               "title": "Objective",
-              "body": "In src/EnabledBlink.st, declare the logic that makes Lamp change state every 300 ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
+              "body": "In src/EnabledBlink.st, write the logic that makes Lamp change state every 300 ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
               "checkpoint": "You can describe the pattern: run a timer, toggle the memory when it expires, restart the timer."
             },
             {
@@ -2405,55 +2405,55 @@
           ]
         },
         "es": {
-          "title": "Escriba un parpadeador en Structured Text",
+          "title": "Escriba un parpadeador en texto estructurado",
           "summary": "Construya un parpadeador con un temporizador TON y una variable de memoria, y haga que funcione solo mientras una entrada de habilitación está en ON.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no es evidencia de una lámpara física, de tiempos de hardware, de HIL ni de certificación.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no son evidencia de una lámpara física, de los tiempos del hardware, de HIL ni de certificación.",
           "objectives": [
             "Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos.",
-            "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada baja."
+            "Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar Lamp cada 300 ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
-              "checkpoint": "Usted puede describir el patrón: correr un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
+              "body": "En src/EnabledBlink.st, escriba la lógica que hace cambiar de estado a Lamp cada 300 ms mientras Enable está en ON. El temporizador Clock y la memoria LampOn ya están declarados. Con Enable en OFF, Lamp debe estar en OFF.",
+              "checkpoint": "Usted puede describir el patrón: poner en marcha un temporizador, invertir la memoria cuando vence y reiniciar el temporizador."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Enable pasa a ON a los 100 ms y a OFF a los 1150 ms. Prediga Lamp en 350, 550, 850 y 1250 ms.",
-              "checkpoint": "OFF en 350 ms, ON en 550 ms, OFF en 850 ms, OFF en 1250 ms."
+              "body": "Enable pasa a ON a los 100 ms y a OFF a los 1150 ms. Prediga Lamp a los 350, 550, 850 y 1250 ms.",
+              "checkpoint": "OFF a los 350 ms, ON a los 550 ms, OFF a los 850 ms, OFF a los 1250 ms."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms. Ejecute Clock con Enable y un preajuste de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Tome Lamp de LampOn y Enable, y guarde el archivo.",
+              "body": "Corrija esta falla del programa inicial, guárdelo y pulse Comprobar: El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los 550 ms. Llame a Clock con Enable como entrada y un valor preestablecido de T#300ms. Cuando Clock.Q sea TRUE, invierta LampOn y reinicie Clock. Calcule Lamp a partir de LampOn y Enable, y guarde el archivo.",
               "checkpoint": "Lamp sigue a LampOn solo mientras Enable está en ON."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama EnabledBlink y contiene 11 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los 400 ms, es decir 300 ms después de que Enable pasó a ON, está en ON hasta cerca de los 700 ms, otra vez en ON desde cerca de los 1000 ms y baja a OFF de inmediato a los 1150 ms cuando Enable baja.",
+              "body": "Siga Lamp en la traza: permanece en OFF hasta cerca de los 400 ms, es decir, 300 ms después de que Enable pasó a ON; está en ON hasta cerca de los 700 ms, otra vez en ON desde cerca de los 1000 ms y pasa a OFF de inmediato a los 1150 ms, cuando Enable cae.",
               "checkpoint": "El primer ON empieza unos 300 ms después de que Enable pasó a ON, no 300 ms después de arrancar el programa."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "Un parpadeador que ignora Enable ya estaría en ON a los 350 ms. ¿Qué línea suya marca la diferencia?",
-              "checkpoint": "Arrancar el temporizador desde Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
+              "body": "Un parpadeador que ignora Enable ya estaría en ON a los 350 ms. ¿Cuál de sus líneas marca la diferencia?",
+              "checkpoint": "Poner en marcha el temporizador con Enable desplaza el primer cambio, y el AND con Enable detiene la lámpara de inmediato."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "El temporizador solo debe correr mientras Enable está en ON, así que Enable es el IN de Clock."
+              "text": "El temporizador solo debe contar mientras Enable está en ON, así que Enable es la entrada IN de Clock."
             },
             {
               "level": 2,

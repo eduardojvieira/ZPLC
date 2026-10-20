@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/EnabledBlink.st, declare the logic that makes Lamp change state every {{t:300}} ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
+      "body": "In src/EnabledBlink.st, write the logic that makes Lamp change state every {{t:300}} ms while Enable is ON. The timer Clock and the memory LampOn are already declared. When Enable is OFF, Lamp must be OFF.",
       "checkpoint": "You can describe the pattern: run a timer, toggle the memory when it expires, restart the timer."
     },
     {
