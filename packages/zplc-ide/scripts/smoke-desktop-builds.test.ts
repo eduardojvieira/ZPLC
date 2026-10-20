@@ -104,7 +104,7 @@ function withFixture(build: (root: string) => void): ReturnType<typeof Bun.spawn
     mkdirSync(join(root, 'dist-electron', 'zplc-ide-linux-x64-unpacked', 'resources'), { recursive: true });
     mkdirSync(join(root, 'dist-native'), { recursive: true });
     for (const extension of ['.AppImage', '.deb', '.rpm']) {
-      writeFileSync(join(root, 'dist-electron', `ZPLC IDE-1.5.0-linux-x64${extension}`), 'artifact');
+      writeFileSync(join(root, 'dist-electron', `zplc-1.5.0-linux-x64${extension}`), 'artifact');
     }
     writeFileSync(join(root, 'dist-native', 'zplc_runtime'), '#!/bin/sh\n');
     chmodSync(join(root, 'dist-native', 'zplc_runtime'), 0o755);

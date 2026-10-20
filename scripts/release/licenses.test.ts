@@ -104,10 +104,10 @@ describe('renderNotices (REL-019)', () => {
   test('writes every package with its licence and text, the fonts, and no date, so the file is reproducible', () => {
     const { notices } = collectNotices({ repoRoot: root, lock: parseLockfile(LOCK), workspacePath: 'packages/app', bundled: [] });
     const text = renderNotices({
-      product: 'ZPLC Studio', version: '2.0.0-rc.4', notices,
+      product: 'ZPLC', version: '2.0.0-rc.4', notices,
       fonts: [{ file: 'assets/codicon-ngg6Pgfi.ttf', name: 'Codicons', licence: 'CC-BY-4.0', source: 'https://github.com/microsoft/vscode-codicons', copyright: 'Copyright (c) Microsoft Corporation' }],
     });
-    expect(text).toContain('ZPLC Studio 2.0.0-rc.4');
+    expect(text).toContain('ZPLC 2.0.0-rc.4');
     expect(text).toContain('left@1.0.0');
     expect(text).toContain('License: MIT');
     expect(text).toContain('Copyright (c) Left Authors');
@@ -115,6 +115,6 @@ describe('renderNotices (REL-019)', () => {
     expect(text).toContain('CC-BY-4.0');
     expect(text).toContain('LICENSES.chromium.html');
     expect(text).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
-    expect(renderNotices({ product: 'ZPLC Studio', version: '2.0.0-rc.4', notices, fonts: [] })).toBe(renderNotices({ product: 'ZPLC Studio', version: '2.0.0-rc.4', notices, fonts: [] }));
+    expect(renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] })).toBe(renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] }));
   });
 });

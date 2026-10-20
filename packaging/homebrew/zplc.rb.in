@@ -1,20 +1,20 @@
-# The cask of ZPLC Studio for the personal tap eduardojvieira/homebrew-zplc (REL-004). The pipeline fills the
+# The cask of ZPLC for the personal tap eduardojvieira/homebrew-zplc (REL-004). The pipeline fills the
 # placeholders from the SHA256SUMS of a published release (tools/ci/release/render-channels.ts); nobody edits the
 # version or a checksum by hand.
-cask "zplc-ide" do
+cask "zplc" do
   arch arm: "arm64", intel: "x64"
 
   version "@VERSION@"
   sha256 arm:   "@SHA256_ARM64@",
          intel: "@SHA256_X64@"
 
-  url "https://github.com/eduardojvieira/ZPLC/releases/download/v#{version}/zplc-ide-#{version}-mac-#{arch}.zip",
+  url "https://github.com/eduardojvieira/ZPLC/releases/download/v#{version}/zplc-#{version}-mac-#{arch}.zip",
       verified: "github.com/eduardojvieira/ZPLC/"
-  name "ZPLC Studio"
-  desc "IEC 61131-3 programming, simulation and learning environment for PLCs"
+  name "ZPLC"
+  desc "Open-source IEC 61131-3 PLC runtime and development environment"
   homepage "https://github.com/eduardojvieira/ZPLC"
 
-  app "ZPLC IDE.app"
+  app "ZPLC.app"
 
   # Decision D-01, option A, stated openly: the application is signed ad hoc and is not notarized, so macOS would
   # quarantine the download and ask for "Open Anyway". This cask removes that flag from the installed application, which
@@ -22,12 +22,17 @@ cask "zplc-ide" do
   # installs, and the build attestation of the release. Option B drops this block and leaves the DMG's steps to the user.
   postflight do
     system_command "/usr/bin/xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/ZPLC IDE.app"]
+                   args: ["-dr", "com.apple.quarantine", "#{appdir}/ZPLC.app"]
   end
 
+  # The files of the release candidates before decision D-03 ("ZPLC IDE", com.zplc.ide) are listed too: ZPLC copies the
+  # old folder on its first start and leaves it in place.
   zap trash: [
+    "~/Library/Application Support/ZPLC",
     "~/Library/Application Support/ZPLC IDE",
+    "~/Library/Preferences/com.zenithindustrialcloud.zplc.plist",
     "~/Library/Preferences/com.zplc.ide.plist",
+    "~/Library/Saved Application State/com.zenithindustrialcloud.zplc.savedState",
     "~/Library/Saved Application State/com.zplc.ide.savedState",
   ]
 end

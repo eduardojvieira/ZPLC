@@ -37,10 +37,10 @@ export function discoverPackagedExecutable(distDir: string, platform: NodeJS.Pla
   }
   assert(candidates.length === 1, `Packaged desktop smoke requires exactly one ${platform} unpacked app, found ${candidates.length}.`);
   const executable = platform === 'darwin'
-    ? join(candidates[0], 'Contents', 'MacOS', 'zplc-ide')
-    : join(candidates[0], platform === 'win32' ? 'zplc-ide.exe' : 'zplc-ide');
+    ? join(candidates[0], 'Contents', 'MacOS', 'zplc')
+    : join(candidates[0], platform === 'win32' ? 'zplc.exe' : 'zplc');
   const stat = existsSync(executable) ? lstatSync(executable) : null;
-  assert(stat?.isFile() && !stat.isSymbolicLink(), `Packaged desktop smoke requires a real zplc-ide executable: ${executable}`);
+  assert(stat?.isFile() && !stat.isSymbolicLink(), `Packaged desktop smoke requires a real zplc executable: ${executable}`);
   if (platform !== 'win32') {
     try { accessSync(executable, constants.X_OK); } catch { throw new Error(`Packaged desktop smoke executable is not executable: ${executable}`); }
   }

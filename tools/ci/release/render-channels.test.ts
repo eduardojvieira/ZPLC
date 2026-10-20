@@ -7,7 +7,7 @@ import { installerName } from './verify-installers';
 
 const VERSION = '2.0.0-rc.4';
 const root = join(import.meta.dir, '..', '..', '..');
-const cask = readFileSync(join(root, 'packaging/homebrew/zplc-ide.rb.in'), 'utf8');
+const cask = readFileSync(join(root, 'packaging/homebrew/zplc.rb.in'), 'utf8');
 const pkgbuild = readFileSync(join(root, 'packaging/aur/PKGBUILD.in'), 'utf8');
 const hex = (digit: string) => digit.repeat(64);
 const SUMS = [
@@ -39,11 +39,12 @@ describe('the Homebrew cask', () => {
   it('says openly that it removes the quarantine flag (decision D-01) and installs the application the ZIP holds', () => {
     expect(text).toContain('com.apple.quarantine');
     expect(text).toContain('Decision D-01');
-    expect(text).toContain('app "ZPLC IDE.app"');
+    expect(text).toContain('app "ZPLC.app"');
+    expect(text).toContain('cask "zplc" do');
   });
 
   it('is installed by one fully qualified command', () => {
-    expect(INSTALL_COMMAND).toBe('brew install --cask eduardojvieira/zplc/zplc-ide');
+    expect(INSTALL_COMMAND).toBe('brew install --cask eduardojvieira/zplc/zplc');
   });
 
   it('is not rendered for a release that lacks the ZIP of an architecture', () => {
@@ -60,6 +61,12 @@ describe('the AUR package', () => {
     expect(text).toContain(`sha256sums_aarch64=('${hex('d')}')`);
     expect(text).toContain(`${installerName(VERSION, 'deb', 'x64').replace(VERSION, '${_tag}')}::https://github.com/eduardojvieira/ZPLC/releases/download/v${VERSION}/`);
     expect(text).not.toMatch(/@[A-Z0-9_]+@/);
+  });
+
+  it('is the package zplc-bin, which links the executable of the .deb as zplc', () => {
+    expect(text).toMatch(/^pkgname=zplc-bin$/m);
+    expect(text).toContain("chmod 4755 \"${pkgdir}/opt/ZPLC/chrome-sandbox\"");
+    expect(text).toContain("ln -s '/opt/ZPLC/zplc' \"${pkgdir}/usr/bin/zplc\"");
   });
 
   it('writes a version that pacman accepts, with no hyphen', () => {

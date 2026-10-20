@@ -124,8 +124,8 @@ function main() {
     );
 
     const stagedAppCandidates = [
-      path.join(stagedDistElectron, `mac-${arch}`, 'zplc-ide.app'),
-      path.join(stagedDistElectron, 'mac', 'zplc-ide.app'),
+      path.join(stagedDistElectron, `mac-${arch}`, 'ZPLC.app'),
+      path.join(stagedDistElectron, 'mac', 'ZPLC.app'),
     ];
     const stagedAppPath = stagedAppCandidates.find((candidate) => existsSync(candidate));
     if (!stagedAppPath) {
