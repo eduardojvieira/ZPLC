@@ -17,7 +17,7 @@ El runtime de ZPLC ofrece un entorno virtual completo para ejecutar las tareas d
 - Cargar los programas compilados `.zplc` y sus metadatos.
 - Crear máquinas virtuales (VM) con contextos de ejecución aislados.
 - Hacer cumplir los límites de memoria (imágenes de proceso, memoria de trabajo interna y datos retenidos).
-- Planificar y coordinar las tareas de PLC cíclicas y basadas en eventos.
+- Planificar y coordinar las tareas de PLC cíclicas.
 - Delegar las operaciones físicas de E/S, de red y de almacenamiento en la capa de abstracción de hardware (HAL).
 
 ## Arquitectura de los subsistemas

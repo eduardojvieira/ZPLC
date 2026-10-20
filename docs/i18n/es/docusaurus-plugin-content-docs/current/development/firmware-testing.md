@@ -49,7 +49,7 @@ El script se puede repetir sin riesgo. Crea o verifica, en `~/zplc-zephyr-ws`
 
 - un entorno virtual de Python con `west` 1.5.0 y los paquetes de Python que
   Zephyr necesita;
-- un enlace simbólico `zplc` a su checkout, de modo que west trate el checkout
+- un enlace simbólico `zplc` a su copia de trabajo, de modo que west trate esa copia
   como su repositorio de manifiesto y las pruebas siempre ejecuten su árbol de
   trabajo;
 - el árbol de Zephyr y sus módulos en la revisión fijada en `west.yml`,
@@ -58,15 +58,15 @@ El script se puede repetir sin riesgo. Crea o verifica, en `~/zplc-zephyr-ws`
 
 Hay dos decisiones deliberadas. El espacio de trabajo se escribe a mano en
 lugar de usar `west init -l`, porque `west init -l` resuelve el enlace
-simbólico y crearía `.west` junto a su checkout real. Y se omite
+simbólico y crearía `.west` junto a su copia de trabajo real. Y se omite
 `west zephyr-export`, porque registra el espacio de trabajo en
 `~/.cmake/packages`, donde cualquier otro proyecto CMake de su usuario lo
 encontraría; `ZEPHYR_BASE` basta para estas compilaciones. Defina
 `ZPLC_FW_ZEPHYR_EXPORT=1` si quiere la exportación.
 
-Varios checkouts o worktrees pueden compartir un espacio de trabajo.
-`run.sh` apunta el enlace `zplc` al checkout desde el que se ejecuta, así que
-ejecute un checkout a la vez. Use otro `ZPLC_FW_WS` para ejecuciones
+Varias copias de trabajo o worktrees pueden compartir un espacio de trabajo.
+`run.sh` apunta el enlace `zplc` a la copia de trabajo desde la que se ejecuta, así que
+ejecute una copia a la vez. Use otro `ZPLC_FW_WS` para ejecuciones
 simultáneas.
 
 ## Comandos diarios
@@ -134,7 +134,7 @@ Los bloques de comunicación tienen suites propias (COM-006). `mqtt_broker_doubl
 la pila de red: éxito, ausencia de `CONNACK`, conexión rechazada, sesión perdida y reset estando ocupado. `comm_cloud_fb` y
 `comm_modbus_fb` ejecutan los manejadores con un servicio sustituto, y `modbus_client_tcp` el cliente Modbus TCP contra un
 servidor escrito para la prueba. Los bloques de aprovisionamiento `AZURE_DPS_PROV` y `AWS_FLEET_PROV` se verifican solo en el
-manejador. Un doble prueba el comportamiento del protocolo, no que un servicio real lo acepte. En el host, `test_host_loopback`
+manejador. Un doble de prueba verifica el comportamiento del protocolo, no que un servicio real lo acepte. En el host, `test_host_loopback`
 muestra los extremos que una sesión de la aplicación ZPLC inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un
 canal que la placa no puede atender se cuenta y se informa (IO-007).
 
@@ -159,8 +159,8 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   la región de código, y corta la energía en cada operación de una carga;
 - `modbus_force` escribe por el servidor Modbus sobre el núcleo real y muestra que una variable forzada conserva su
   valor forzado;
-- `scheduler_admission` retiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura de
-  fuera espera a la captura de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los
+- `scheduler_admission` retiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura
+  externa espera a la captura de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los
   pines;
 - `scheduler_equivalence` conduce el planificador de Zephyr por los escenarios del núcleo común del planificador y compara sus
   decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
@@ -177,7 +177,7 @@ El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias s
   función en `test_port_timing`, y la página de la [interfaz de puerto](../runtime/port-interface.md) lista la suite
   completa (IO-013).
 
-Las suites de host del núcleo suman `test_exchange` (un scanner, lectores y escritores en hilos), `test_program_store`
+Las suites de host del núcleo suman `test_exchange` (un escáner, lectores y escritores en hilos), `test_program_store`
 (un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
 decisiones del núcleo del planificador y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
 ciclo se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
@@ -205,14 +205,14 @@ el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que e
 RETAIN de ambas ranuras y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
 identificador responde con un error.
 
-El build también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambie un `dt.pin` o un
+La compilación también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambie un `dt.pin` o un
 `alias` en `io_base.json` y compile la prueba:
 
 ```bash
 west build -p -b native_sim/native/64 zplc/firmware/tests/io_table
 ```
 
-El build se detiene con un mensaje como `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0
+La compilación se detiene con un mensaje como `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0
 is not on pin 7`. `python3 tools/hil/test_io_table_generator.py` fija el texto que emite el generador, y
 `python3 tools/ci/check_hal_contract.py` comprueba que cada función de la HAL está implementada en cada port.
 
@@ -226,8 +226,8 @@ línea que debe quedar como está lleva un comentario `NOLINT` con su motivo. `r
 - La pasada de host siempre se ejecuta. CMake escribe una base de datos de compilación de
   `firmware/lib/zplc_core` en un directorio temporal (no se compila nada) y clang-tidy analiza el núcleo en
   `src/core`, el HAL POSIX en `src/hal/posix`, la aplicación de host en `firmware/apps/posix_host/src` y las
-  cabeceras que incluyen. No debe informar nada.
-- La pasada de Zephyr analiza lo que solo compila una build de Zephyr: el HAL y el planificador de Zephyr y
+  encabezados que incluyen. No debe informar nada.
+- La pasada de Zephyr analiza lo que solo entra en una compilación de Zephyr: el HAL y el planificador de Zephyr y
   `firmware/app`. Necesita la base de datos de compilación de un `west build`, así que se ejecuta cuando existe
   `$ZPLC_FW_WS/out/size/arduino-opta-wifi-m7` (`run.sh size arduino-opta-wifi-m7` la crea) o cuando se pasa
   `--zephyr-build <directorio>` al script. En otro caso se omite y la ejecución lo dice. El núcleo y el HAL de
@@ -388,6 +388,6 @@ requiere el banco de HIL-010.
 
 ## Páginas relacionadas
 
-- [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
-- [Placas Soportadas](../reference/boards.md)
+- [Configuración del espacio de trabajo de Zephyr](../reference/zephyr-workspace-setup.md)
+- [Placas soportadas](../reference/boards.md)
 - [Compatibilidad de hardware](../reference/capabilities-evidence.md)
