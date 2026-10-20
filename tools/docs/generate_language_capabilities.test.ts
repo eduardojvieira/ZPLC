@@ -36,6 +36,16 @@ describe('LNG-001 language capability table: one row per language and capability
     expect(capabilityBlock('es', gapped)).toContain('Aún sin prueba de extremo a extremo');
   });
 
+  it('LNG-027 names, for each of the five languages, a journey that pauses, steps one cycle and resumes in the native simulation, and a different one that stops at a breakpoint', () => {
+    for (const language of LANGUAGES) {
+      const pause = table.languages[language]!.pause;
+      const debug = table.languages[language]!.debug;
+      expect(pause, `${language} pause`).toMatchObject({ kind: 'journey', ref: expect.stringMatching(/^53[a-e] Pause, step one cycle and resume/) });
+      expect(debug, `${language} debug`).toMatchObject({ kind: 'journey' });
+      expect(debug).not.toEqual(pause);
+    }
+  });
+
   it('keeps the committed pages in step with the table (drift check)', () => {
     for (const { file, content } of outputs()) expect([file, readFileSync(`${ROOT}${file}`, 'utf8')]).toEqual([file, content]);
   });

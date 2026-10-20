@@ -23,7 +23,7 @@ El texto estructurado (ST) es el frontend de lenguaje central de ZPLC. El reposi
 
 ## Qué puede hacer hoy cada lenguaje
 
-Cada fila nombra la prueba que muestra la capacidad: un recorrido de la aplicación ZPLC, una prueba en el runtime nativo o un caso de conformidad, todos ejecutados por la integración continua y ninguno en una placa. Una fila que dice que aún no tiene prueba de extremo a extremo no cuenta con esa prueba todavía; no es una promesa de que la capacidad funcione. Todo lo que solo una placa puede mostrar lo dice así. La pausa, la reanudación, el paso de ciclo y los puntos de parada están en las filas de depuración; el perfil de capacidades que informa el runtime decide cuáles habilita la aplicación ZPLC.
+Cada fila nombra la prueba que muestra la capacidad: un recorrido de la aplicación ZPLC, una prueba en el runtime nativo o un caso de conformidad, todos ejecutados por la integración continua y ninguno en una placa. Una fila que dice que aún no tiene prueba de extremo a extremo no cuenta con esa prueba todavía; no es una promesa de que la capacidad funcione. Todo lo que solo una placa puede mostrar lo dice así. Los puntos de parada están en las filas de depuración, y la pausa, el paso de ciclo y la reanudación, en las filas de pausa; el perfil de capacidades que informa el runtime decide cuáles habilita la aplicación ZPLC.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 
@@ -32,35 +32,40 @@ Cada fila nombra la prueba que muestra la capacidad: un recorrido de la aplicaci
 | Texto estructurado | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `3 Edit Structured Text, save, reopen` |
 | Texto estructurado | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `5 Build successfully` |
 | Texto estructurado | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `6 Simulate: connect, run, watch a value change` |
-| Texto estructurado | Depurar (punto de parada, pausa, paso) | Recorrido de la aplicación ZPLC en la simulación nativa | `16 Debug details: stop, trace, resume mid-scan` |
+| Texto estructurado | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `7 Breakpoint stops execution` |
+| Texto estructurado | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53e Pause, step one cycle and resume a Structured Text program` |
 | Texto estructurado | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28e Inline values in Structured Text come from the debug map` |
 | Texto estructurado | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `8 Force an input and release it` |
 | Texto estructurado | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Lista de instrucciones | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `54 Instruction List is edited, saved and reopened` |
 | Lista de instrucciones | Compilar | Caso de conformidad en el runtime del host | `lng-018-il-jump-runs-every-scan` |
 | Lista de instrucciones | Simular | Caso de conformidad en el runtime del host | `lng-018-il-jump-runs-every-scan` |
-| Lista de instrucciones | Depurar (punto de parada, pausa, paso) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
+| Lista de instrucciones | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
+| Lista de instrucciones | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53d Pause, step one cycle and resume an Instruction List program` |
 | Lista de instrucciones | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
 | Lista de instrucciones | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
 | Lista de instrucciones | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de escalera | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28f A rung is built from the keyboard` |
 | Diagrama de escalera | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de escalera | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama de escalera | Depurar (punto de parada, pausa, paso) | Recorrido de la aplicación ZPLC en la simulación nativa | `28 A breakpoint on a rung stops execution` |
+| Diagrama de escalera | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28 A breakpoint on a rung stops execution` |
+| Diagrama de escalera | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53a Pause, step one cycle and resume a Ladder program` |
 | Diagrama de escalera | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28b Online values of a rung come from the debug map` |
 | Diagrama de escalera | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51d A forced variable is shown as forced in the Ladder` |
 | Diagrama de escalera | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama de bloques de función | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28g A function block diagram is edited from the keyboard` |
 | Diagrama de bloques de función | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama de bloques de función | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama de bloques de función | Depurar (punto de parada, pausa, paso) | Recorrido de la aplicación ZPLC en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
+| Diagrama de bloques de función | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
+| Diagrama de bloques de función | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53b Pause, step one cycle and resume a function block diagram` |
 | Diagrama de bloques de función | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28c Online values of an FBD come from the debug map` |
 | Diagrama de bloques de función | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51 A forced variable is shown as forced in the function block diagram` |
 | Diagrama de bloques de función | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |
 | Diagrama funcional secuencial | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28h A sequential function chart is edited from the keyboard` |
 | Diagrama funcional secuencial | Compilar | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
 | Diagrama funcional secuencial | Simular | Prueba en el runtime nativo | `Blinky visual languages on native POSIX` |
-| Diagrama funcional secuencial | Depurar (punto de parada, pausa, paso) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
+| Diagrama funcional secuencial | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
+| Diagrama funcional secuencial | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53c Pause, step one cycle and resume a sequential function chart` |
 | Diagrama funcional secuencial | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28d Online state of an SFC comes from the debug map` |
 | Diagrama funcional secuencial | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51b A forced variable is shown as forced in the sequential function chart` |
 | Diagrama funcional secuencial | Cargar en una placa | Solo en una placa | Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros |

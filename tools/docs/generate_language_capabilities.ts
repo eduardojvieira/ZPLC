@@ -27,7 +27,7 @@ export type Cell =
 export interface CapabilityTable { capabilities: string[]; languages: Record<string, Record<string, Cell>> }
 
 export const LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
-export const CAPABILITIES = ['edit', 'build', 'simulate', 'debug', 'watch', 'force', 'deploy'] as const;
+export const CAPABILITIES = ['edit', 'build', 'simulate', 'debug', 'pause', 'watch', 'force', 'deploy'] as const;
 
 const LANGUAGE_NAME: Record<(typeof LANGUAGES)[number], L10n> = {
   st: { en: 'Structured Text', es: 'Texto estructurado' },
@@ -40,7 +40,8 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   edit: { en: 'Edit', es: 'Editar' },
   build: { en: 'Build', es: 'Compilar' },
   simulate: { en: 'Simulate', es: 'Simular' },
-  debug: { en: 'Debug (breakpoint, pause, step)', es: 'Depurar (punto de parada, pausa, paso)' },
+  debug: { en: 'Debug (breakpoint)', es: 'Depurar (punto de interrupción)' },
+  pause: { en: 'Pause, step one cycle, resume', es: 'Pausar, avanzar un ciclo, reanudar' },
   watch: { en: 'Watch online values', es: 'Observar valores en línea' },
   force: { en: 'Force', es: 'Forzar' },
   deploy: { en: 'Deploy to a board', es: 'Cargar en una placa' },
