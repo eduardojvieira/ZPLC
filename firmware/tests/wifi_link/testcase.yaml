@@ -1,0 +1,13 @@
+tests:
+  zplc.wifi_link:
+    tags:
+      - zplc
+      - network
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 20
