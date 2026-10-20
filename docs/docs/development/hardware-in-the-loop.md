@@ -181,8 +181,13 @@ board through the hardware runtime port of the scenario engine:
   and has completed a scan since the inputs were forced;
 - inputs are forced, not written, because the board rewrites its input image on
   every scan; the forced byte replaces all eight bits of it for the run;
-- a sample taken later than the declared tolerance, `--tolerance-ms` (50 ms by
-  default), voids the run, and the tolerance is written in the record;
+- the tolerance, `--tolerance-ms` (50 ms by default), is a lateness bound and
+  not a window around the tick: a sample is never taken before its tick, the
+  assertion windows of the scenario are not widened by it, and a sample taken
+  later than the tolerance voids the run;
+- a run voided by the tolerance, or stopped by an error, still writes its
+  record: the void result, the tolerance, the lateness of every tick sampled
+  (`measurements.ticks`) and the release of the forces;
 - every force the tool set is cleared at the end and on abort, and the board is
   left stopped. If the link is lost the device releases the forces itself.
 
@@ -192,7 +197,7 @@ Every hardware run writes a JSON record, described by
 `tools/hil/run-record.schema.json`, to `build/hil-records/` or the directory of
 `--out`. It holds the board and what the device reported, the firmware commit,
 version and ABI as the image reports them, the hash of every program and of the
-image you say you flashed, each step with its result and the time you confirmed
+image (the one you name with `--firmware-image`, else the one the device reports), each step with its result and the time you confirmed
 it, the tests, the tool versions, the operator and the raw shell log.
 
 Fields that the firmware image cannot report yet are `null`: the record says it

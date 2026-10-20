@@ -198,9 +198,13 @@ escenarios:
 - las entradas se fuerzan, no se escriben, porque la placa reescribe su imagen
   de entradas en cada ciclo; el byte forzado reemplaza sus ocho bits durante la
   ejecución;
-- una muestra tomada más tarde que la tolerancia declarada, `--tolerance-ms`
-  (50 ms por omisión), anula la ejecución, y la tolerancia queda en el
-  registro;
+- la tolerancia, `--tolerance-ms` (50 ms por omisión), es un límite de retraso
+  y no una ventana alrededor del tick: una muestra nunca se toma antes de su
+  tick, las ventanas de aserción del escenario no se ensanchan con ella, y una
+  muestra tomada más tarde que la tolerancia anula la ejecución;
+- una ejecución anulada por la tolerancia, o detenida por un error, también
+  escribe su registro: el resultado anulado, la tolerancia, el retraso de cada
+  tick muestreado (`measurements.ticks`) y la liberación de las fuerzas;
 - cada fuerza que fijó la herramienta se borra al final y al abortar, y la
   placa queda detenida. Si se pierde el enlace, el propio dispositivo libera
   las fuerzas.
@@ -211,7 +215,7 @@ Cada ejecución de hardware escribe un registro JSON, descrito por
 `tools/hil/run-record.schema.json`, en `build/hil-records/` o en el directorio
 de `--out`. Contiene la placa y lo que informó el dispositivo, el commit, la
 versión y el ABI del firmware según los informa la imagen, el hash de cada
-programa y de la imagen que usted dice haber grabado, cada paso con su
+programa y de la imagen (la que usted indica con `--firmware-image`, o si no la que informa el dispositivo), cada paso con su
 resultado y el momento en que usted lo confirmó, las pruebas, las versiones de
 las herramientas, la persona operadora y el registro crudo del shell.
 
