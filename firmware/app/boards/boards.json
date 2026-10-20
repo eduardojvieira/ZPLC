@@ -111,7 +111,7 @@
             "pin": 25
           },
           "safe": 0,
-          "electrical": "On-board green LED through its series resistor; not a field output. Raspberry Pi Pico and Pico 2 only: on the Pico W and Pico 2 W the LED is on the wireless chip.",
+          "electrical": "On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image.",
           "pin_status": "devicetree",
           "source": "firmware/app/boards/rpi_pico_rp2040.overlay",
           "location": "on-board LED"
