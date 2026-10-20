@@ -505,6 +505,8 @@ export class NativeAdapter implements IDebugAdapter {
   async pause(): Promise<void> {
     await this.request('execution.pause');
     this.setState('paused');
+    // the reply is empty and a paused runtime sends no event: ask for the cycle count and PC the program stopped at
+    await this.getRuntimeSnapshot().catch(() => undefined);
   }
 
   async resume(): Promise<void> {

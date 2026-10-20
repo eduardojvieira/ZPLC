@@ -739,6 +739,25 @@ describe('NativeAdapter', () => {
       expect(states).toEqual(['idle', 'running', 'paused']);
     });
 
+    // The pause reply is empty and a paused runtime sends no event, so the cycle count Studio shows would stay at
+    // the last one it was told while a scan in flight still finished: the adapter asks for the status after the pause.
+    it('reports the cycle count the program stopped at', async () => {
+      const infos: number[] = [];
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> => (message.method === 'status.get'
+          ? nativeSnapshot({ stats: { cycles: 31, active_tasks: 1, overruns: 0, program_size: 5 } })
+          : {}) as TResult,
+      });
+      adapter.setEventHandlers({ onInfoUpdate: (info) => infos.push(info.cycles) });
+      await adapter.connect();
+      infos.length = 0;
+      await adapter.pause();
+
+      expect(infos.at(-1)).toBe(31);
+    });
+
     it('runs again on a running event once the person resumes', async () => {
       const eventApi = createEventApi();
       const adapter = new NativeAdapter({
