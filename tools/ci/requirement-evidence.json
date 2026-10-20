@@ -1764,11 +1764,14 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"one session at a time, replaced by its own link, and taken over from the serial link (COM-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_proto_link.c","test":"libFuzzer target for the device engine of the device link protocol (COM-020, COM-021, VF-014)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020, HIL-003: a force from the console belongs to a session, and ends with it"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020: configuration and credentials follow the session rule"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020: nothing that changes the device works without a session, and none of it reaches the port"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020: one session at a time; it ends by close, idle time, lost link and takeover, and its forces go with it"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"program transfer (COM-020, COM-021, COM-023, COM-024, COM-025, COM-028)."},
-    {"kind":"manual","ref":"firmware/tests/app_device_link/test_app_device_link.py","partial":true,"note":"the sessions are proven on the application shell; the text shell commands that change state (sched start/stop, sched data, config set) do not take part in the session rule, which is COM-022, so a shell line still bypasses a session on the same port"}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"COM-020: a released force gives each byte the value the program (or an external write) last gave it, so the outputs"},
+    {"kind":"manual","ref":"firmware/tests/app_device_link/test_app_device_link.py","partial":true,"note":"the sessions are proven on the application shell; the text shell commands that change state (sched start/stop, sched data, config set) do not take part in the session rule, which is COM-022, so a shell line still bypasses a session on the same port"},
+    {"kind":"py-test","ref":"firmware/tests/app_device_link/test_app_device_link.py","test":"COM-020, HIL-003: a force typed at the shell belongs to a session too -----------------------"}
   ],
   "COM-021": [
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"a session needs the key, and a wrong key is not answered (COM-021)"},
@@ -2980,6 +2983,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"no module that the MCP server loads, at import or while it serves its tools, is the HIL package or a serial library (HIL-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the hardware scenario command started without an interactive terminal exits with an error, before it reads or opens anything (HIL-003, COM-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/hilReach.test.ts","test":"the tools MCP serves are the fixed list, and none of them names a device, a board or a physical action (HIL-003)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020, HIL-003: a force from the console belongs to a session, and ends with it"},
+    {"kind":"py-test","ref":"firmware/tests/app_device_link/test_app_device_link.py","test":"COM-020, HIL-003: a force typed at the shell belongs to a session too -----------------------"},
     {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-003: the hardware chain exits with an error without an interactive terminal and needs the board identity typed for each physical step"}
   ],
   "HIL-004": [
@@ -3013,6 +3018,7 @@
     {"kind":"py-test","ref":"tools/hil/test_hil_record.py","test":"HIL-009: a run record is machine-readable, carries its evidence level, and is committed after the image it tested"}
   ],
   "HIL-010": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sched_core.c","test":"HIL-010: the period of a task, from the start of one of its scans to the start of the next: its shortest and longest"},
     {"kind":"c-test","ref":"firmware/tests/failsafe/src/main.c","test":"their safe level while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/failsafe_reboot/src/main.c","test":"while it resets (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
     {"kind":"c-test","ref":"firmware/tests/scheduler_watchdog/src/main.c","test":"and that a stopped counter cannot be restarted (HIL-010).","partial":true,"note":"a comment that names the hardware record this behaviour needs: the suite proves the behaviour on an emulator, a model or QEMU and does not stand in for the record of the reset timing and of the pins on a board"},
