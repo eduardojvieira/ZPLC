@@ -1,7 +1,7 @@
 {
   "esp32-s3-devkitc": {
-    "checks": ["a", "c"],
-    "reason": "the LittleFS file system and the NVS store share storage_partition, and CONFIG_FLASH_LOAD_SIZE=0 lets the image slot run to the end of the flash that holds it; the learner board profile owns the split (IO-009, IO-008)"
+    "checks": ["c"],
+    "reason": "CONFIG_FLASH_LOAD_SIZE=0 lets the image slot run to the end of the 8 MB flash that also holds zplc_nvs_partition and storage_partition, so the linker would let an image grow into the stores; the learner board profile owns the bound (IO-009, IO-008)"
   },
   "rpi-pico-rp2040": {
     "checks": ["c"],
