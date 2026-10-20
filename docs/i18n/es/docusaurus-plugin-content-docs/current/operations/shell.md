@@ -30,8 +30,8 @@ Inicie cada comando con `zplc`.
 - `zplc start` - Inicia el planificador.
 - `zplc stop` - Detiene el planificador.
 - `zplc status` - Muestra el estado del runtime. Mientras MQTT esté habilitado sobre TLS con la verificación del certificado apagada, muestra además `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` en `--json`).
-- `zplc reset` - Recarga el programa cargado desde el program store y deja el scheduler detenido. El store es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el scheduler y limpia sus tareas.
-- `zplc version` - Muestra qué compilación es: la versión, el commit desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones del mismo commit son la misma imagen. El mismo texto es `zplc sys build`.
+- `zplc reset` - Recarga el programa cargado desde el almacén de programas y deja el planificador detenido. El almacén es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el planificador y limpia sus tareas.
+- `zplc version` - Muestra qué compilación es: la versión, la confirmación desde el que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones de la misma confirmación son la misma imagen. El mismo texto es `zplc sys build`.
 
 ---
 
@@ -52,9 +52,9 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg force clear_all` - Quita todos los forzados, de modo que el programa vuelve a controlar todas las direcciones.
 
 ### Control de la ejecución
-- `zplc dbg pause` - Pausa el scheduler entre scans. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
-- `zplc dbg resume` - Reanuda. Un scan detenido en un breakpoint continúa desde donde se detuvo, y el primer commit de scan vuelve a energizar las salidas desde la imagen conservada.
-- `zplc dbg step` - Termina el scan detenido en un breakpoint, o ejecuta un scan completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el scan ejecutado; las salidas quedan seguras.
+- `zplc dbg pause` - Pausa el planificador entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
+- `zplc dbg resume` - Reanuda. Un ciclo detenido en un breakpoint continúa desde donde se detuvo, y la primera confirmación de ciclo vuelve a energizar las salidas desde la imagen conservada.
+- `zplc dbg step` - Termina el ciclo detenido en un breakpoint, o ejecuta un ciclo completo, y se detiene en el siguiente límite de ciclo o en el siguiente breakpoint. La imagen muestra el ciclo ejecutado; las salidas quedan seguras.
 
 `zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Ver [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
 
@@ -62,15 +62,15 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg info` - Muestra el estado de la máquina virtual y el PC actual.
 - `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
-- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
+- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del desplazamiento opcional.
 - `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de la aplicación ZPLC consulta la misma memoria.
 
-Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de release no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
+Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, work y retain) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de versión no tiene: ver [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
 
-Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el scan publicó en su último commit, de modo que un
-valor es entero y de un solo scan, y una lectura nunca espera a un scan. Un `poke` se encola y se aplica en el latch
-de entradas del siguiente scan por la interfaz que respeta los forces: una dirección forzada conserva su valor
-forzado. Mientras el runtime está detenido no hay scan y la escritura se aplica de inmediato.
+Las lecturas (`mpeek`, `mem`, `info`) salen de la instantánea que el ciclo publicó en su última confirmación, de modo que un
+valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en la captura
+de entradas del siguiente ciclo por la interfaz que respeta los forces: una dirección forzada conserva su valor
+forzado. Mientras el runtime está detenido no hay ciclo y la escritura se aplica de inmediato.
 
 ### Ticks, tareas y temporizadores
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
@@ -101,17 +101,17 @@ Estos comandos administran los ajustes que ZPLC guarda en el almacenamiento no v
 
 Los ajustes de un dispositivo que nunca se configuró son los valores por defecto: MQTT apagado, sin broker, y MQTT con TLS y el certificado del broker verificado (ver [Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)).
 
-`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de release lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
+`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de versión lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
 
 ### Memoria cruda (solo firmware de diagnóstico)
 
-El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de release no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
+El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de versión no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
 
 ```bash
 west build -b <board> firmware/app -- -DEXTRA_CONF_FILE=diagnostic.conf
 ```
 
-`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de release por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
+`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de versión por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
 
 ---
 
@@ -149,7 +149,7 @@ Para las placas con hardware de red, como la ESP32-S3 o las placas STM32F7.
 
 ## Certificados y seguridad (`zplc cert`)
 
-Un broker MQTT seguro, como AWS IoT Core, requiere certificados TLS guardados en la placa.
+Un broker MQTT seguro, como AWS IoT Núcleo, requiere certificados TLS guardados en la placa.
 
 - `zplc cert status` - Muestra si están instalados el certificado de la CA, el certificado del cliente y la clave privada, y sus tamaños.
 - `zplc cert begin <ca|client|key> <size>` - Inicia una carga del tamaño indicado.

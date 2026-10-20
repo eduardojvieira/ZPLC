@@ -31,13 +31,13 @@ en lugar de repetirlo.
   para evaluación: vea las [notas de la versión](./release-notes/index.md) y la
   [hoja de ruta](./contributing/roadmap.md).
 - **No declara ninguna placa.** Cada placa de la tabla de
-  [Soporte de hardware](./reference/capabilities-evidence.md) está en el nivel que
+  [Compatibilidad de hardware](./reference/capabilities-evidence.md) está en el nivel que
   indican sus registros, y hoy ese nivel es compilación cruzada para todas.
 
 ## Dónde se ha verificado cada parte
 
 Una verificación de un nivel nunca prueba uno superior. Los nombres de los niveles
-son los de [Soporte de hardware](./reference/capabilities-evidence.md#los-niveles).
+son los de [Compatibilidad de hardware](./reference/capabilities-evidence.md#los-niveles).
 
 | Parte | Verificado en | No verificado |
 | --- | --- | --- |
@@ -70,17 +70,17 @@ estiman; cada fila indica de dónde sale el número.
 Las funciones del lenguaje que todavía no funcionan se enumeran, con los casos
 que fallan, en la [página de Structured Text](./languages/st.md) y en la
 [página de la biblioteca estándar](./runtime/stdlib.md); ambas se generan a partir
-de la lista de fallos esperados, de modo que un límite sale de la lista cuando su
+de la lista de fallas esperadas, de modo que un límite sale de la lista cuando su
 caso se corrige.
 
-## Salidas y fallos
+## Salidas y fallas
 
 - Cada salida tiene un valor seguro documentado, normalmente apagado, y ese valor
-  es el predeterminado. Un reinicio, un tiempo de espera agotado, un fallo o un
+  es el predeterminado. Un reinicio, un tiempo de espera agotado, una falla o un
   programa inválido nunca deben llevar a una reanudación automática del control
   ([Principios de ingeniería](./contributing/principles.md)).
 - En una placa, una pausa, un paso y una detención también llevan las salidas
-  físicas a su valor seguro. Un fallo borra la imagen de proceso y los forzados,
+  físicas a su valor seguro. Una falla borra la imagen de proceso y los forzados,
   igual que una detención. El [Planificador](./runtime/scheduler.md#pausa-reanudación-paso-y-parada)
   tiene la tabla de lo que cada acción conserva y borra, con las pruebas que la
   respaldan.
@@ -103,8 +103,8 @@ caso se corrige.
 - Ninguna de las placas soportadas tiene un almacén protegido: las credenciales se
   guardan con el resto de los ajustes y quien pueda leer la flash de la placa
   puede leerlas. Use una cuenta con solo los derechos que el controlador necesita.
-- Los instaladores no están firmados con una identidad de pago. Compruebe el
-  checksum de cada descarga: [Instalar ZPLC](./getting-started/install.md).
+- Los instaladores no están firmados con una identidad de pago. Compruebe la
+  suma de verificación de cada descarga: [Instalar ZPLC](./getting-started/install.md).
 - En la Nucleo-H743ZI y en la Arduino Opta, TLS está desactivado hasta que su
   generador de números aleatorios se haya verificado en la placa, y MQTT funciona
   sobre TCP sin cifrar.

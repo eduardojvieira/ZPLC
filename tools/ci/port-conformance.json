@@ -147,11 +147,11 @@
       "id": "scheduler",
       "title": {
         "en": "Scheduler phase and fault tests",
-        "es": "Pruebas de fases y fallos del planificador"
+        "es": "Pruebas de fases y fallas del planificador"
       },
       "what": {
         "en": "Admission, order, the phases of a scan, deadline misses, the fault latch and the safe state decide the same on every port.",
-        "es": "La admisión, el orden, las fases de un scan, los incumplimientos de plazo, el enganche de fallo y el estado seguro deciden lo mismo en cada puerto."
+        "es": "La admisión, el orden, las fases de un ciclo, los incumplimientos de plazo, la retención de la falla y el estado seguro deciden lo mismo en cada puerto."
       },
       "legs": {
         "posix": {

@@ -40,7 +40,7 @@ Elapsed := TIME_TO_UDINT(Delay.ET);
 END_PROGRAM
 ```
 
-Resultado tras 15 scans de 10 ms: `Done` = `TRUE`, `Elapsed` = `100`.
+Resultado tras 15 ciclos de 10 ms: `Done` = `TRUE`, `Elapsed` = `100`.
 
 ### TOF
 
@@ -67,7 +67,7 @@ Hold := Delay.Q;
 END_PROGRAM
 ```
 
-Resultado tras 8 scans de 10 ms: `Hold` = `TRUE`.
+Resultado tras 8 ciclos de 10 ms: `Hold` = `TRUE`.
 
 ### TP
 
@@ -92,7 +92,7 @@ Out := Shot.Q;
 END_PROGRAM
 ```
 
-Resultado tras 20 scans de 10 ms: `Out` = `FALSE`.
+Resultado tras 20 ciclos de 10 ms: `Out` = `FALSE`.
 
 ## Contadores
 
@@ -126,7 +126,7 @@ Reached := Counter.Q;
 END_PROGRAM
 ```
 
-Resultado tras 6 scans de 10 ms: `Count` = `3`, `Reached` = `TRUE`.
+Resultado tras 6 ciclos de 10 ms: `Count` = `3`, `Reached` = `TRUE`.
 
 ### CTD
 
@@ -158,7 +158,7 @@ Empty := Counter.Q;
 END_PROGRAM
 ```
 
-Resultado tras 7 scans de 10 ms: `Count` = `0`, `Empty` = `TRUE`.
+Resultado tras 7 ciclos de 10 ms: `Count` = `0`, `Empty` = `TRUE`.
 
 ### CTUD
 
@@ -193,7 +193,7 @@ High := Counter.QU;
 END_PROGRAM
 ```
 
-Resultado tras 6 scans de 10 ms: `Count` = `3`, `High` = `TRUE`.
+Resultado tras 6 ciclos de 10 ms: `Count` = `3`, `High` = `TRUE`.
 
 ## Biestables y detectores de flanco
 
@@ -222,7 +222,7 @@ END_IF;
 END_PROGRAM
 ```
 
-Resultado tras 8 scans de 10 ms: `Seen` = `1`.
+Resultado tras 8 ciclos de 10 ms: `Seen` = `1`.
 
 ### F_TRIG
 
@@ -249,7 +249,7 @@ END_IF;
 END_PROGRAM
 ```
 
-Resultado tras 8 scans de 10 ms: `Seen` = `1`.
+Resultado tras 8 ciclos de 10 ms: `Seen` = `1`.
 
 ### RS
 
@@ -273,7 +273,7 @@ Out := Latch.Q1;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Out` = `FALSE`.
+Resultado tras un ciclo: `Out` = `FALSE`.
 
 ### SR
 
@@ -297,7 +297,7 @@ Out := Latch.Q1;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Out` = `TRUE`.
+Resultado tras un ciclo: `Out` = `TRUE`.
 
 ## Generadores de pulsos
 
@@ -324,7 +324,7 @@ Out := Flasher.Q;
 END_PROGRAM
 ```
 
-Resultado tras 13 scans de 10 ms: `Out` = `FALSE`.
+Resultado tras 13 ciclos de 10 ms: `Out` = `FALSE`.
 
 ### PWM
 
@@ -349,7 +349,7 @@ Out := Modulator.Q;
 END_PROGRAM
 ```
 
-Resultado tras 70 scans de 10 ms: `Out` = `FALSE`.
+Resultado tras 70 ciclos de 10 ms: `Out` = `FALSE`.
 
 ### PULSE
 
@@ -373,7 +373,7 @@ Out := Shot.Q;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Out` = `TRUE`.
+Resultado tras 3 ciclos de 10 ms: `Out` = `TRUE`.
 
 ## Control de proceso
 
@@ -400,7 +400,7 @@ Out := Switch.Q;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Out` = `TRUE`.
+Resultado tras un ciclo: `Out` = `TRUE`.
 
 ### DEADBAND
 
@@ -424,7 +424,7 @@ Result := Filter.OUT;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `10`.
+Resultado tras un ciclo: `Result` = `10`.
 
 ### LAG_FILTER
 
@@ -448,7 +448,7 @@ Result := Filter.OUT;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `50`.
+Resultado tras un ciclo: `Result` = `50`.
 
 ### RAMP_REAL
 
@@ -472,7 +472,7 @@ Result := Ramp.OUT;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `2`.
+Resultado tras un ciclo: `Result` = `2`.
 
 ### INTEGRAL
 
@@ -497,7 +497,7 @@ Result := Integrator.OUT;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `1`.
+Resultado tras un ciclo: `Result` = `1`.
 
 ### DERIVATIVE
 
@@ -525,7 +525,7 @@ Result := Slope.OUT;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Result` = `2`.
+Resultado tras 3 ciclos de 10 ms: `Result` = `2`.
 
 ### PID_Compact
 
@@ -555,7 +555,7 @@ Result := Loop.OUT;
 END_PROGRAM
 ```
 
-Resultado tras un scan: `Result` = `20`.
+Resultado tras un ciclo: `Result` = `20`.
 
 ## Memorias intermedias
 
@@ -591,7 +591,7 @@ Items := Queue.COUNT;
 END_PROGRAM
 ```
 
-Resultado tras 6 scans de 10 ms: `First` = `10`, `Items` = `1`.
+Resultado tras 6 ciclos de 10 ms: `First` = `10`, `Items` = `1`.
 
 ### LIFO
 
@@ -625,7 +625,7 @@ Items := Stack.COUNT;
 END_PROGRAM
 ```
 
-Resultado tras 6 scans de 10 ms: `Top` = `30`, `Items` = `1`.
+Resultado tras 6 ciclos de 10 ms: `Top` = `30`, `Items` = `1`.
 
 ## Modbus
 
@@ -664,7 +664,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### MB_WRITE_HREG
 
@@ -699,7 +699,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### MB_READ_COIL
 
@@ -734,7 +734,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### MB_WRITE_COIL
 
@@ -769,7 +769,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## MQTT
 
@@ -803,7 +803,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### MQTT_PUBLISH
 
@@ -835,7 +835,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### MQTT_SUBSCRIBE
 
@@ -867,7 +867,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ## Nube y Sparkplug B
 
@@ -901,7 +901,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### AZURE_DPS_PROV
 
@@ -931,7 +931,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### AZURE_EG_PUB
 
@@ -962,7 +962,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### AWS_FLEET_PROV
 
@@ -992,7 +992,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 ### SPB_REBIRTH
 
@@ -1020,7 +1020,7 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-Resultado tras 3 scans de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
+Resultado tras 3 ciclos de 10 ms: `Failed` = `TRUE`, `Code` = `3`.
 
 {/* <<< END GENERATED: reference/function-blocks <<< */}
 

@@ -23,16 +23,16 @@ pueden forzar un valor ([IA, privacidad y revisión humana](../ide/ai-privacy.md
 
 ## En el simulador
 
-1. Compile el proyecto, elija **Simular**, presione **Conectar** y luego **Ejecutar**.
-2. Abra la pestaña **Observación** y agregue la variable: presione **+** e ingrese su
+1. Compile el proyecto, elija **Simular**, pulse **Conectar** y luego **Ejecutar**.
+2. Abra la pestaña **Observación** y agregue la variable: pulse **+** y escriba su
    nombre.
 3. Marque **Forzar** en la fila de la variable. El estado del panel dice
    `1 active force`.
-4. Haga doble clic en la celda **Value** de la fila, escriba el valor y presione
+4. Haga doble clic en la celda **Valor** de la fila, escriba el valor y pulse
    Enter. El programa lee el valor forzado a partir del siguiente ciclo.
 5. Desmarque **Forzar** para liberar la variable.
 
-En el panel **E/S en vivo**, al comienzo de la pestaña Watch, cada entrada que
+En el panel **E/S en vivo**, al comienzo de la pestaña Observación, cada entrada que
 declara el programa en ejecución tiene un interruptor (**Poner TRUE** y **Poner FALSE**)
 o un cuadro numérico con **Aplicar**. **Forzar** allí mantiene la entrada en su valor
 actual, y **Aplicar** cambia entonces el valor forzado. En el simulador, una entrada que
@@ -47,7 +47,7 @@ usted la fija de nuevo.
 | Un mensaje Modbus, MQTT o de nube escribe la variable | El valor forzado permanece |
 | Pausa, paso y reanudación | Se conservan |
 | Detención | Se borran, y la imagen de salida se pone en cero |
-| Un fallo del runtime | Se borran, como con la detención |
+| Una falla del runtime | Se borran, como con la detención |
 | Carga de un programa nuevo | Se borran: una carga es un arranque en frío |
 
 Un forzado admite los tipos de hasta 32 bits. Liberarlo devuelve la variable al
@@ -57,7 +57,7 @@ salida forzada en la primera confirmación después de una reanudación.
 
 ## En un controlador
 
-Los forzados en una placa conectada los hace una persona desde la tabla Watch, y la
+Los forzados en una placa conectada los hace una persona desde la tabla de observación, y la
 consola del dispositivo tiene las mismas operaciones para una persona ante la
 consola:
 
@@ -74,24 +74,24 @@ tabla de forzados. No deje un forzado en un controlador que nadie vigila.
 
 ## Qué está verificado y qué no
 
-Una fuerza siempre pertenece a una sesión (COM-020). Una fuerza escrita en la
-consola abre la sesión del enlace de la consola, o se une a la que la aplicación ZPLC tiene en
-él, y termina con ella: cuando la sesión se cierra o se toma, después del tiempo
-de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por omisión; otro comando
-de fuerza cuenta como actividad), y al instante cuando se pierde el enlace. En una
-consola USB CDC ACM (la Raspberry Pi Pico) el dispositivo ve que el enlace se va
-cuando cae DTR, lo que ocurre cuando la computadora cierra el puerto o se
-desconecta el cable. Una consola que no informa la línea (el puerto USB-Serial/JTAG
-del ESP32-S3, una UART simple) se libera por el tiempo de inactividad. Cuando otro
-enlace tiene la sesión, la fuerza se rechaza. Una fuerza liberada devuelve a cada
-byte el valor que el programa le dio por última vez, o el que tenía antes de la
-fuerza si el programa nunca lo escribió, de modo que las salidas siguen al
-programa.
+Un forzado siempre pertenece a una sesión (COM-020). Un forzado escrito en la
+consola abre la sesión del enlace de la consola, o se une a la que la aplicación
+ZPLC tiene en él, y termina con ella: cuando la sesión se cierra o se toma,
+después del tiempo de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por
+defecto; otro comando de forzado cuenta como actividad) y al instante cuando se
+pierde el enlace. En una consola USB CDC ACM (la Raspberry Pi Pico) el
+dispositivo detecta que el enlace se pierde cuando cae DTR, lo que ocurre cuando
+la computadora cierra el puerto o se desconecta el cable. Una consola que no
+informa la línea (el puerto USB-Serial/JTAG del ESP32-S3, una UART simple)
+libera el forzado por tiempo de inactividad. Cuando otro enlace tiene la sesión,
+el forzado se rechaza. Un forzado liberado devuelve a cada byte el valor que el
+programa le dio por última vez, o el que tenía antes del forzado si el programa
+nunca lo escribió, de modo que las salidas siguen al programa.
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | Un forzado mantiene un valor frente al programa y frente a una escritura externa | Pruebas en C y Zephyr, y un recorrido en la aplicación real | Host y `native_sim` |
-| Los forzados se conservan con pausa y paso, y se borran con detención y con un fallo | Pruebas del planificador | Host y `native_sim`, QEMU |
+| Los forzados se conservan con pausa y paso, y se borran con detención y con una falla | Pruebas del planificador | Host y `native_sim`, QEMU |
 | Una fuerza de la consola termina con su sesión: cierre, toma, tiempo de inactividad, caída de la línea; la salida sigue al programa | Pruebas del motor y del núcleo; la prueba del enlace del dispositivo con la imagen real (allí no se puede bajar DTR) | Host y `native_sim` |
 | DTR en el puerto USB de la Pico termina la sesión | No se ejecutó en una placa | Ninguno |
 | Una entrada de un programa puede fijarse o forzarse por su propio nombre | Recorrido 37 en la aplicación real | Host |

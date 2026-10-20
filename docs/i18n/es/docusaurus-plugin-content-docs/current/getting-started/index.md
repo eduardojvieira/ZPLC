@@ -18,7 +18,7 @@ más pausada de esta página, con el programa explicado y una prueba de escenari
 ZPLC 2.0.0-rc.3 es una versión preliminar sin firmar, pensada para evaluación.
 No la use para controlar maquinaria: lea [Seguridad y limitaciones](../safety-and-limitations.md).
 Qué placas se han probado con un dispositivo físico está en
-[Soporte de hardware](../reference/capabilities-evidence.md).
+[Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
 ## Camino rápido
@@ -43,7 +43,7 @@ activa y desactiva la salida `LED_Output` en `%Q0.0` aproximadamente cada
 
 1. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS). Los mensajes aparecen en las pestañas **Problemas** y **Salida** del panel inferior.
 2. En la barra de herramientas, seleccione **Simular** y pulse **Conectar**. ZPLC inicia el simulador incluido con la aplicación.
-3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** e ingrese `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
+3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
 4. Pulse **Detener** (Shift+F5) al terminar.
 
 El simulador es el runtime en C de ZPLC compilado para su equipo. Ejecuta el
@@ -61,7 +61,7 @@ un tiempo definido y verifica las salidas.
 ## Hardware
 
 Las placas que tienen un perfil de compilación, y hasta dónde se ha demostrado
-que funciona cada una, están en [Soporte de hardware](../reference/capabilities-evidence.md);
+que funciona cada una, están en [Compatibilidad de hardware](../reference/capabilities-evidence.md);
 los pines y canales de cada una están en [Placas soportadas](../reference/boards.md).
 Una placa cuyo nivel es `cross-build` tiene un firmware que compila en integración
 continua, y nada más: nadie ha demostrado que se grabe, arranque o ejecute un
@@ -69,8 +69,7 @@ programa.
 
 La versión rc.3 no incluye firmware precompilado. El canal de versiones compila
 una imagen por placa en cada versión que hace, y ZPLC muestra la imagen de la
-placa elegida, con su suma de verificación y los pasos para grabarla, en **Project
-settings**, **Target**; no la graba. Para compilar el firmware usted mismo,
+placa elegida, con su suma de verificación y los pasos para grabarla, en **Configuración del proyecto**, **Destino**; no la graba. Para compilar el firmware usted mismo,
 siga la [configuración del espacio de trabajo Zephyr](../reference/zephyr-workspace-setup.md).
 Compilar el firmware, grabarlo, cargar un programa y ejecutarlo son acciones
 separadas que una persona inicia en ZPLC. Las herramientas de IA y MCP no

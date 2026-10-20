@@ -1,6 +1,6 @@
 # Contrato HAL
 
-`firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el core de ZPLC y cualquier plataforma concreta.
+`firmware/lib/zplc_core/include/zplc_hal.h` es el contrato público entre el núcleo de ZPLC y cualquier plataforma concreta.
 
 Eso incluye los destinos Zephyr, los runtimes host/POSIX, un puerto para navegador con WebAssembly (el runtime de la simulación en el navegador, compilado con el IDE) y los futuros puertos de placa.
 
@@ -8,11 +8,11 @@ Las funciones de abajo, el puerto del planificador y la suite de conformidad que
 
 ## Regla central
 
-El core portable no debe llamar directamente a las APIs de la plataforma.
+El núcleo portable no debe llamar directamente a las APIs de la plataforma.
 
-Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el core debe usarlo mediante `zplc_hal_*`.
+Si algo pertenece a GPIO, timing, persistencia, networking, sockets o sincronización, el núcleo debe usarlo mediante `zplc_hal_*`.
 
-El core portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
+El núcleo portable define la semántica de ejecución. La HAL se encarga de la integración con la plataforma.
 
 ## Superficie HAL por responsabilidad
 
@@ -29,7 +29,7 @@ flowchart TD
 
 ## Timing
 
-- `zplc_hal_tick()` provee el reloj del scheduler en milisegundos
+- `zplc_hal_tick()` provee el reloj del planificador en milisegundos
 - `zplc_hal_sleep()` ofrece espera bloqueante fuera de la lógica PLC
 
 ## E/S digital y analógica
@@ -41,7 +41,7 @@ La superficie pública de E/S es por canal:
 - `zplc_hal_adc_read()`
 - `zplc_hal_dac_write()`
 
-El core direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
+El núcleo direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
 uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S de la placa en
 `firmware/app/boards/boards.json` (ver [Placas Soportadas](../reference/boards.md)).
 
@@ -50,7 +50,7 @@ uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S
 El build de Zephyr convierte la entrada de la placa en una tabla constante, `zplc_io_table()`, con
 `firmware/zephyr/scripts/gen_io_table.py`. Cada fila lleva el id del canal, el nombre del pin, el byte y el bit de la
 imagen de proceso, el tipo, la dirección, el número de canal de la HAL, el valor seguro y si el canal es obligatorio.
-El scheduler sincroniza la imagen a través de la tabla (`zplc_io_channel_at()`, `zplc_io_read_channel()`,
+El planificador sincroniza la imagen a través de la tabla (`zplc_io_channel_at()`, `zplc_io_read_channel()`,
 `zplc_io_write_channel()`), de modo que agregar un canal a una placa es editar el JSON y el overlay de devicetree y no
 cambia ningún fuente C.
 
@@ -58,7 +58,7 @@ cambia ningún fuente C.
   el alias, que el alias está en el pin descrito y que el pin pertenece al controlador descrito; un desacuerdo detiene
   el build con un mensaje que nombra el canal.
 - Los periféricos se configuran en `zplc_hal_init()`, antes de que el runtime pueda entrar en RUN: cada GPIO y cada
-  entrada analógica de la descripción, no en el primer scan. Un canal obligatorio que no se puede configurar hace
+  entrada analógica de la descripción, no en el primer ciclo. Un canal obligatorio que no se puede configurar hace
   fallar la inicialización.
 - Las salidas digitales se numeran primero y luego las entradas digitales; las entradas analógicas tienen su propia
   numeración, en el orden de la imagen.
@@ -79,8 +79,8 @@ que él tiene, o en una placa que no tiene canal para lo que el programa toca.
 ### No soportado
 
 Una operación que una placa no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`; ese es el resultado definido de "no
-soportado". El scheduler lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
-función que un puerto no implementa es un fallo de build o de test, no un stub silencioso.
+soportado". El planificador lo omite si viene de un canal opcional, es un error si viene de un canal obligatorio, y una
+función que un puerto no implementa es una falla de build o de test, no un stub silencioso.
 
 ## Persistencia
 
@@ -90,7 +90,7 @@ La HAL es dueña de:
 - `zplc_hal_persist_load()`
 - `zplc_hal_persist_delete()`
 
-Estas primitivas permiten que el core portable use un program store
+Estas primitivas permiten que el núcleo portable use un almacén de programas
 independiente del backend. No proporcionan asignación, restore ni retención
 end-to-end calificada de `RETAIN` a nivel de fuente; esas declaraciones no están
 soportadas hoy.

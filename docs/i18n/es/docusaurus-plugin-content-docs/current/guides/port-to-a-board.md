@@ -18,7 +18,7 @@ enumera esos pasos en orden y dice qué demuestra cada uno.
 Seguir esta página produce una placa que **compila** y cuyos pines y tamaños de memoria
 están descritos. Nada de lo que sigue ejecuta un programa en ella. El manifiesto deja
 `evidence_refs` vacío hasta que existe un registro de hardware, y la página de
-[soporte de hardware](../reference/capabilities-evidence.md) lista la placa en el nivel
+[compatibilidad de hardware](../reference/capabilities-evidence.md) lista la placa en el nivel
 más bajo, `cross-build`.
 :::
 
@@ -54,7 +54,7 @@ Parta del par de la placa más cercana a la suya.
 ## 2. Describir la placa en el manifiesto
 
 Agregue una entrada a `firmware/app/boards/boards.json`. La aplicación ZPLC, la línea de comandos, la
-compilación y la página de soporte de hardware leen este archivo, así que es el único
+compilación y la página de compatibilidad de hardware leen este archivo, así que es el único
 lugar que dice qué es la placa. Esta es la forma de una entrada, para una placa que no
 existe:
 
@@ -110,7 +110,7 @@ Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 | `memory` | Los tres tamaños del paso 1 | La compilación se detiene cuando difieren del `.conf` |
 | `network_class`, `network_interface` | `serial-focused`, `network-capable` u `other`; `none`, `wifi` o `ethernet` | Solo se aceptan estas palabras |
 | `evidence_refs` | Una lista vacía | Una ruta debe ser un registro de hardware que exista; el nivel se deriva de los registros y nunca se escribe a mano |
-| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el tiempo de espera con el que se registró su tiempo de reset, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en un fault latcheado (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un tiempo de espera dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
+| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el tiempo de espera con el que se registró su tiempo de reset, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenido (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un tiempo de espera dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
 | `io.channels` | Una entrada por pin al que un programa puede llegar, como máximo 64 | Cada canal tiene una dirección de la dirección y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, su controlador y su pin |
 | `io.unmapped` | Los terminales que existen y que ZPLC no usa, cada uno con un motivo | Una entrada tiene un terminal y un motivo |
 
@@ -165,7 +165,7 @@ anfitrión, no de hardware.
 
 ## 5. Regenerar la referencia
 
-La página de soporte de hardware lista cada placa del manifiesto y su nivel, y la página
+La página de compatibilidad de hardware lista cada placa del manifiesto y su nivel, y la página
 de referencia de placas contiene la tabla de pines. Ambas se generan:
 
 ```bash
@@ -188,6 +188,6 @@ hasta que la lista y el manifiesto coinciden.
 
 ## Vea también
 
-- [Soporte de hardware](../reference/capabilities-evidence.md) y [Placas](../reference/boards.md).
+- [Compatibilidad de hardware](../reference/capabilities-evidence.md) y [Placas](../reference/boards.md).
 - [Pruebas de firmware](../development/firmware-testing.md): qué demuestran las comprobaciones de tamaño y de compilación cruzada.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

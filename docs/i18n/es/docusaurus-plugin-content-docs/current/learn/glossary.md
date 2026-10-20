@@ -71,6 +71,14 @@ quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 | pin map | mapa de pines | |
 | bill of materials | lista de materiales | |
 | breadboard | protoboard | |
+| scheduler | planificador | Los términos del runtime que usan las páginas técnicas. |
+| timer (de hardware) | temporizador | |
+| lock | cerrojo | |
+| batch (de tareas) | lote | |
+| snapshot (de la imagen de proceso) | instantánea | |
+| program store | almacén de programas | |
+| slot | ranura | |
+| issue (del repositorio) | incidencia | |
 
 Los controles de ZPLC que nombra una lección se escriben como los muestra
 ZPLC en español: **Check** es **Comprobar**, y el panel Tests es **Pruebas**.

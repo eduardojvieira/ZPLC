@@ -70,7 +70,7 @@ El adaptador POSIX nativo es una simulación en el equipo anfitrión. Una conexi
 serial y un perfil con cross-build no la convierten en HIL. Los perfiles del
 catálogo no tienen hoy ninguna referencia de HIL; use su procedimiento exacto de
 Zephyr y registre una ejecución HIL antes de afirmar cómo se comporta la placa.
-Vea [Soporte de hardware](../reference/capabilities-evidence.md) y
+Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) y
 [Seguridad y limitaciones](../safety-and-limitations.md).
 
 Todavía no hay registrada ninguna compilación de firmware desde la aplicación ZPLC en macOS ni en Windows.

@@ -52,7 +52,7 @@ END_VAR
 END_PROGRAM
 ```
 
-Después de 250 ms de scans la salida en `%Q0.0` es `TRUE`: CI ejecuta este ejemplo durante 30 scans
+Después de 250 ms de ciclos la salida en `%Q0.0` es `TRUE`: CI ejecuta este ejemplo durante 30 ciclos
 de 10 ms y comprueba `%QX0.0`.
 
 ## Páginas relacionadas

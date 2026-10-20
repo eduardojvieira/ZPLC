@@ -1,13 +1,13 @@
 ---
 slug: /reference/boards
 id: boards
-title: Placas Soportadas
-sidebar_label: Placas Soportadas
+title: Placas soportadas
+sidebar_label: Placas soportadas
 description: Referencia generada de placas para el candidato ZPLC 2.0.
 tags: [reference, boards, generated]
 ---
 
-# Placas Soportadas
+# Placas soportadas
 
 :::note
 Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualice el JSON o vuelva a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
@@ -17,7 +17,7 @@ Esta página se genera desde `firmware/app/boards/boards.json`, el único manifi
 
 ```mermaid
 flowchart TD
-  serial["Enfoque serial"]
+  serial["Orientada al puerto serie"]
   network["Capacidad de red"]
   b1["Raspberry Pi Pico (RP2040)"]
   serial --> b1
@@ -37,31 +37,31 @@ flowchart TD
 
 ## La descripción de E/S
 
-Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que el build verifica.
+Cada entrada de placa del manifiesto tiene un objeto `io` que lista los canales de la placa. Un canal tiene un `id`, una `direction` (`input` u `output`), un `kind` (`digital` o `analog`), la `address` IEC de su lugar en la imagen de proceso (`%QX0.0`, `%IW4`), el `pin` o borne impreso en la placa, sus notas `electrical`, el valor `safe` de una salida y un objeto `dt` con el alias de devicetree, el controlador GPIO y el pin (o el conversor y el canal) que la compilación verifica.
 
-`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y el build comprueba; `profile` es un pin de header que este perfil eligió y que necesita el banco de lazo de HIL-010 para confirmarse.
+`pin_status` dice de dónde sale el pin: `devicetree` es un pin que el devicetree de la placa o el overlay del perfil define y la compilación comprueba; `profile` es un pin del conector que este perfil eligió y que necesita el banco con lazo de retorno (loopback) de HIL-010 para confirmarse.
 
 Los textos que lee una persona (`pin`, `location`, `electrical`, `scaling`, y el `terminal` y la `reason` de un borne sin mapear) están en inglés, el texto que usan el firmware y sus registros. Una placa del estudiante del curso (`"learner": true`) da además cada uno en español, con la misma clave terminada en `_es`, y las páginas en español muestran ese texto; el validador rechaza una placa del estudiante sin él.
 
-Para agregar un canal a una placa, agregue el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que ningún fuente C cambia, y el build falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.
+Para agregar un canal a una placa, agregue el alias a su overlay y la entrada a su descripción. La tabla de E/S del firmware se genera desde la descripción al compilar, así que no cambia ningún código fuente en C, y la compilación falla cuando la descripción y el devicetree no coinciden. Una palabra de la imagen de proceso que ningún pin maneja no es un canal: un proyecto la lista en `io.virtual`.
 
-La aplicación ZPLC lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; un build falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y un despliegue a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.
+La aplicación ZPLC lee el mismo archivo. El editor de mapeo de E/S de la configuración del proyecto lista los canales de la placa seleccionada con sus nombres de pin y marca una fila en una dirección que la placa no tiene; una compilación falla con un error que nombra la placa y la variable cuando una variable está ubicada donde la placa no tiene canal; y una carga a hardware se rechaza, con un mensaje que nombra la placa, cuando el firmware informa otra descripción o el programa toca una dirección sin canal.
 
 ## Matriz de placas
 
-| Nombre visible | Board ID | IDE ID | Target Zephyr | Red | Nivel de soporte | Registros de evidencia |
+| Nombre visible | Board ID | IDE ID | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |
 | --- | --- | --- | --- | --- | --- | --- |
-| Raspberry Pi Pico (RP2040) | `rpi-pico-rp2040` | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build | 0 |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino-giga-r1-m7` | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build | 0 |
+| Raspberry Pi Pico (RP2040) | `rpi-pico-rp2040` | `rpi_pico` | `rpi_pico/rp2040` | Orientada al puerto serie | cross-build | 0 |
+| Arduino GIGA R1 (STM32H747 M7) | `arduino-giga-r1-m7` | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Orientada al puerto serie | cross-build | 0 |
 | ESP32-S3-DevKitC-1 (N8R8) | `esp32-s3-devkitc` | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | cross-build | 0 |
 | STM32F746G Discovery | `stm32f746g-disco` | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | cross-build | 0 |
 | STM32 Nucleo-H743ZI | `nucleo-h743zi` | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | cross-build | 0 |
 | Arduino Opta WiFi (STM32H747 M7) | `arduino-opta-wifi-m7` | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | cross-build | 0 |
-| Waveshare RP2040-Zero | `waveshare-rp2040-zero` | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Enfoque serial | cross-build | 0 |
+| Waveshare RP2040-Zero | `waveshare-rp2040-zero` | `waveshare_rp2040_zero` | `rp2040_zero/rp2040` | Orientada al puerto serie | cross-build | 0 |
 
 ## Huella de memoria
 
-Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en el reporte de tamaño de CI (`tools/firmware-test/size-budget.json`). Son mediciones de compilación en host, no evidencia de hardware. Las últimas tres columnas son las regiones de memoria que el runtime configura para la placa (trabajo, retentiva, código).
+Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en el informe de tamaño de CI (`tools/firmware-test/size-budget.json`). Son mediciones de una compilación en el host, no evidencia de hardware. Las últimas tres columnas son las regiones de memoria que el runtime configura para la placa (trabajo, retentiva, código).
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -81,14 +81,14 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **IDE ID:** `rpi_pico`
 - **Zephyr target:** `rpi_pico/rp2040`
 - **Variant:** `rp2040`
-- **Network:** Enfoque serial
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Network:** Orientada al puerto serie
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
+- **Comando de compilación:** `west build -b rpi_pico/rp2040 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 18 B, 1 B
 - **Hash de la descripción de E/S:** `d27196be`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/rpi_pico_rp2040.conf`
   - `firmware/app/boards/rpi_pico_rp2040.overlay`
 
@@ -123,14 +123,14 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **IDE ID:** `arduino_giga_r1`
 - **Zephyr target:** `arduino_giga_r1/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
-- **Network:** Enfoque serial
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Network:** Orientada al puerto serie
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
+- **Comando de compilación:** `west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `77271dae`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.conf`
   - `firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.overlay`
 
@@ -149,14 +149,14 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Zephyr target:** `esp32s3_devkitc/esp32s3/procpu`
 - **Variant:** `esp32s3/procpu`
 - **Network:** Capacidad de red (Wi-Fi)
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Módulo:** ESP32-S3-WROOM-1-N8R8, 8 MB flash, 8 MB PSRAM (variante por confirmar en el módulo)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
+- **Comando de compilación:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 10 B, 1 B
 - **Hash de la descripción de E/S:** `93e038ba`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf`
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay`
 
@@ -186,13 +186,13 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Zephyr target:** `stm32f746g_disco/stm32f746xx`
 - **Variant:** `stm32f746xx`
 - **Network:** Capacidad de red (Ethernet)
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
+- **Comando de compilación:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `80927f2e`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/stm32f746g_disco.conf`
   - `firmware/app/boards/stm32f746g_disco.overlay`
 
@@ -210,13 +210,13 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Zephyr target:** `nucleo_h743zi/stm32h743xx`
 - **Variant:** `stm32h743xx`
 - **Network:** Capacidad de red (Ethernet)
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
+- **Comando de compilación:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `4193575e`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/nucleo_h743zi.conf`
   - `firmware/app/boards/nucleo_h743zi.overlay`
 
@@ -235,13 +235,13 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Zephyr target:** `arduino_opta/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Capacidad de red (Wi-Fi)
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
+- **Comando de compilación:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `6ce9cc7a`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf`
   - `firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay`
 
@@ -269,14 +269,14 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **IDE ID:** `waveshare_rp2040_zero`
 - **Zephyr target:** `rp2040_zero/rp2040`
 - **Variant:** `rp2040`
-- **Network:** Enfoque serial
-- **Nivel de soporte:** cross-build (sin registro de hardware)
+- **Network:** Orientada al puerto serie
+- **Nivel de compatibilidad:** cross-build (sin registro de hardware)
 - **Watchdog de hardware:** apagado: sin registro de hardware (HIL-010), el perfil lo mantiene apagado hasta que el tiempo de reinicio y las salidas seguras se registren en esta placa con él encendido
-- **Comando de build:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
+- **Comando de compilación:** `west build -b rp2040_zero/rp2040 firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 1 B, 1 B
 - **Hash de la descripción de E/S:** `0d5edb3c`
-- **Assets de soporte:**
+- **Archivos de soporte:**
   - `firmware/app/boards/rp2040_zero_rp2040.conf`
   - `firmware/app/boards/rp2040_zero_rp2040.overlay`
 

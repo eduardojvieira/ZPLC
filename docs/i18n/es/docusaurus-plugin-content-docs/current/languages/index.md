@@ -9,7 +9,7 @@ tags: [languages, iec61131-3]
 
 # Lenguajes y modelo de programación
 
-Structured Text (ST) es el frontend central de lenguaje de ZPLC. El repositorio también tiene flujos para LD, FBD, SFC e IL. Su edición, conversión, depuración y cobertura en target varían, por lo que conviene elegir el flujo según su evidencia actual y no suponer cobertura IEC completa ni paridad total.
+Structured Text (ST) es el frontend central de lenguaje de ZPLC. El repositorio también tiene flujos para LD, FBD, SFC e IL. Su edición, conversión, depuración y cobertura en destino varían, por lo que conviene elegir el flujo según su evidencia actual y no suponer cobertura IEC completa ni paridad total.
 
 ## Flujos disponibles
 
@@ -75,7 +75,7 @@ Valide como un único flujo el lenguaje fuente, la representación generada, los
 
 ## Depuración y evidencia de runtime
 
-El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en target. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
+El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de timing de hardware ni de comportamiento en destino. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
 
 En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un punto de parada sobre una línea de Structured Text, una línea de Instruction List, un peldaño de Ladder, un bloque de un diagrama de bloques de función y un paso de un gráfico de funciones secuenciales, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un punto de parada en una placa: eso requiere una ejecución con hardware en el lazo en esa placa.
 

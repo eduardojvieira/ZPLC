@@ -8,7 +8,7 @@ description: Contrato público de instrucciones, memoria y formato .zplc del run
 
 La fuente canónica para esta página es `firmware/lib/zplc_core/include/zplc_isa.h`.
 
-En ZPLC 2.0, ese header público define el contrato binario/ISA para:
+En ZPLC 2.0, ese encabezado público define el contrato binario/ISA para:
 
 - el layout de memoria de la VM
 - los registros reservados del sistema
@@ -16,7 +16,7 @@ En ZPLC 2.0, ese header público define el contrato binario/ISA para:
 - los IDs de tipos compartidos y sus límites
 - el formato binario `.zplc`
 
-## Qué fija el header hoy
+## Qué fija el encabezado hoy
 
 `zplc_isa.h` expone actualmente estas constantes de versión del contrato ISA:
 
@@ -51,7 +51,7 @@ flowchart LR
 
 ## Registros de sistema reservados
 
-Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del scheduler/runtime:
+Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del planificador/runtime:
 
 | Registro | Dirección | Propósito |
 |---|---:|---|
@@ -77,7 +77,7 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Familia | Ejemplos | Rol |
 |---|---|---|
 | Sistema | `OP_NOP`, `OP_HALT`, `OP_BREAK`, `OP_GET_TICKS` | control básico y depuración |
-| Pila | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT` | manipulación del stack |
+| Pila | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT` | manipulación de la pila |
 | Acceso indirecto | `OP_LOADI8`, `OP_LOADI16`, `OP_LOADI32`, `OP_STOREI8`, `OP_STOREI16`, `OP_STOREI32` | direccionamiento calculado |
 | Strings | `OP_STRLEN`, `OP_STRCPY`, `OP_STRCAT`, `OP_STRCMP`, `OP_STRCLR` | operaciones seguras sobre `STRING` |
 | Aritmética | `OP_ADD`, `OP_SUB`, `OP_MUL`, `OP_DIV`, `OP_MOD` | entero y punto flotante |
@@ -91,7 +91,7 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Comunicación | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET` | ejecución de FBs de comunicación |
 
 Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos
-contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el scan con
+contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el ciclo con
 `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El compilador se apoya en esa falla:
 una variable `REF_TO` empieza en `0xFFFF`, así que desreferenciar una referencia nula falla, y
 un índice de arreglo fuera de los límites en ejecución lee desde la dirección base de CODE
@@ -110,14 +110,14 @@ rango de 16 bits.
 
 ## Valores de dos palabras: enteros de 64 bits y `LREAL`
 
-El stack de evaluación tiene palabras de 32 bits. Un valor `LINT`, `ULINT`, `LWORD` o `LREAL`
-ocupa dos palabras: la **palabra baja queda más abajo** en el stack y la alta arriba, tal como
+La pila de evaluación tiene palabras de 32 bits. Un valor `LINT`, `ULINT`, `LWORD` o `LREAL`
+ocupa dos palabras: la **palabra baja queda más abajo** en la pila y la alta arriba, tal como
 la deja `OP_LOAD64` y la toma `OP_STORE64`. Un `LREAL` es el patrón de bits IEEE 754 binary64
 en esas dos palabras.
 
 Los opcodes de las familias de 64 bits y de doble precisión están en la tabla de la
-[Runtime API](../reference/runtime-api.md), con sus efectos sobre el stack. El loader demuestra
-la profundidad del stack de cada camino a partir de esa tabla, así que un programa que usa
+[Runtime API](../reference/runtime-api.md), con sus efectos sobre la pila. El cargador demuestra
+la profundidad de la pila de cada camino a partir de esa tabla, así que un programa que usa
 uno de ellos con muy pocas palabras se rechaza (`ZPLC_LOADER_ERR_STACK`). Son parte del
 núcleo en C: todos los runtimes los tienen a la vez.
 
@@ -170,7 +170,7 @@ conversiones de `REAL`.
 ## Contador de borrador
 
 Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada artefacto
-`.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el loader rechaza un artefacto
+`.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el cargador rechaza un artefacto
 con otro valor, mostrando ambos números. Cada cambio de un opcode, de un layout o de un tamaño
 lo incrementa. El contador es **6** desde los valores seguros declarados (el segmento
 `ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 5
@@ -182,22 +182,22 @@ contador actual.
 
 ## Tipos y límites públicos
 
-El header también publica límites que la toolchain y el runtime comparten:
+El encabezado también publica límites que la toolchain y el runtime comparten:
 
-- `ZPLC_STACK_MAX_DEPTH` para el stack de evaluación
-- `ZPLC_CALL_STACK_MAX` para el stack de llamadas
+- `ZPLC_STACK_MAX_DEPTH` para la pila de evaluación
+- `ZPLC_CALL_STACK_MAX` para la pila de llamadas
 - `ZPLC_MAX_BREAKPOINTS` para la capacidad de depuración
 - IDs de tipos IEC como `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME` y `ZPLC_TYPE_STRING`
 
 Para `STRING`, la ISA fija un layout seguro con:
 
-- longitud actual en offset `0`
-- capacidad máxima en offset `2`
-- datos en offset `4`
+- longitud actual en desplazamiento `0`
+- capacidad máxima en desplazamiento `2`
+- datos en desplazamiento `4`
 
 ## Contrato del archivo `.zplc`
 
-El binario `.zplc` usa estructuras públicas empaquetadas en el mismo header:
+El binario `.zplc` usa estructuras públicas empaquetadas en el mismo encabezado:
 
 - `zplc_file_header_t`
 - `zplc_segment_entry_t`
@@ -223,16 +223,16 @@ Segmentos públicos definidos hoy:
 
 ## Profundidad de las tareas e identidad de compilación
 
-El compilador mide lo que el loader va a demostrar y lo registra en el artefacto
+El compilador mide lo que el cargador va a demostrar y lo registra en el artefacto
 (CMP-050, CMP-056):
 
 - `stack_size` de la definición de una tarea es la mayor cantidad de valores que la tarea
-  tiene a la vez en el stack de evaluación, y `call_depth` la mayor cantidad de marcos de
+  tiene a la vez en la pila de evaluación, y `call_depth` la mayor cantidad de marcos de
   llamada activos a la vez, con su propio cuerpo incluido (1 para una tarea que no llama a
-  nada; 0 significa que el artefacto no lo declara). El loader rechaza una tarea que necesita
-  más de lo que declara, y una tarea cuya profundidad de llamadas supera el stack de llamadas
-  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita un
-  stack más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
+  nada; 0 significa que el artefacto no lo declara). El cargador rechaza una tarea que necesita
+  más de lo que declara, y una tarea cuya profundidad de llamadas supera la pila de llamadas
+  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita una
+  pila más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
   llamadas anidadas más profundas que `ZPLC_CALL_STACK_MAX`.
 - El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el
   CRC-32 del segmento CODE seguido del segmento TASK tal como se escribe, nunca 0. El mapa de
@@ -251,18 +251,18 @@ puede dejar el programa de una compilación con los valores seguros de otra.
 
 - Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en
   bytes de la salida en la imagen de salidas, el `bit` (0 a 7) y el `value` (0 o 1).
-- El loader rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no son
+- El cargador rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no son
   entradas completas, una entrada nombra un bit fuera de la imagen de salidas o un valor que
   no es 0 ni 1, una salida está declarada dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE`
   (64) entradas; un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un
   artefacto sin el segmento no declara nada.
 - El runtime rechaza, en la carga y en la restauración de arranque, una declaración para una
   salida que la placa no tiene (una entrada tiene que nombrar un canal de salida digital de
-  la descripción de la placa por su offset de imagen y su bit). El programa de otra placa no
+  la descripción de la placa por su desplazamiento de imagen y su bit). El programa de otra placa no
   se ejecuta con un estado seguro que no existe.
 - Un valor declarado para una salida reemplaza el nivel que la descripción de la placa le da
   en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes
-  del primer scan.
+  del primer ciclo.
 
 ## Páginas relacionadas
 

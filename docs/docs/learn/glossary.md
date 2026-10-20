@@ -70,6 +70,14 @@ languages, because they are what the program contains.
 | pin map | mapa de pines | |
 | bill of materials | lista de materiales | |
 | breadboard | protoboard | |
+| scheduler | planificador | The runtime terms the technical pages use. |
+| timer (de hardware) | temporizador | |
+| lock | cerrojo | |
+| batch (de tareas) | lote | |
+| snapshot (de la imagen de proceso) | instantánea | |
+| program store | almacén de programas | |
+| slot | ranura | |
+| issue (del repositorio) | incidencia | |
 
 The ZPLC controls that a lesson names are written as ZPLC shows them: **Check**
 is **Comprobar**, and the Tests panel is **Pruebas**.

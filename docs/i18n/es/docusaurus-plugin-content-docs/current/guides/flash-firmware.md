@@ -20,8 +20,8 @@ El firmware de cada placa compila en integración continua y cabe en su presupue
 Nadie ha registrado una grabación en una placa, así que los pasos de abajo están
 escritos a partir de las herramientas de cada placa y no son un resultado: el nivel de
 todas las placas es `cross-build`
-([Soporte de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe
-lo que vio con el formulario de reporte de placa de los issues del repositorio.
+([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe
+lo que vio con el plantilla de informe de placa de las incidencias del repositorio.
 :::
 
 ## 1. Obtener la imagen y comprobarla
@@ -134,6 +134,6 @@ que escribió. Luego [conecte ZPLC](../tutorials/first-board.md#3-conecte-zplc).
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
 | El firmware de cada placa compila y cabe en su presupuesto | Compilación en integración continua | Compilación |
-| Los nombres, direcciones y sumas de comprobación de las imágenes de la versión | Los comprueba el canal de versiones | Anfitrión |
+| Los nombres, direcciones y sumas de verificación de las imágenes de la versión | Los comprueba el canal de versiones | Host |
 | Los pasos del modo de arranque y los comandos del programador | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno |
 | Una grabación en una placa real | Nadie la ha registrado | Ninguno |

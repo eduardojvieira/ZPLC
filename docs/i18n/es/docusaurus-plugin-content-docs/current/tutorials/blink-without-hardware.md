@@ -51,7 +51,7 @@ de escenario.
 
 ## 3. Lea el programa
 
-Abra `src/main.st` desde el árbol del proyecto, en la pestaña **Explorer** del panel
+Abra `src/main.st` desde el árbol del proyecto, en la pestaña **Explorador** del panel
 inferior. Se abre en el editor:
 
 ![El programa Blinky abierto en el editor de ZPLC](/img/tutorials/blink-2-program.png)
@@ -100,8 +100,8 @@ Si la compilación falla, **Problemas** enumera cada error con su línea y su co
 ## 5. Ejecútelo en el simulador
 
 1. En la barra de herramientas, compruebe que **Simular** esté seleccionado y
-   presione **Conectar**. ZPLC inicia el simulador que viene con la aplicación.
-2. Presione **Ejecutar** (F5).
+   pulse **Conectar**. ZPLC inicia el simulador que viene con la aplicación.
+2. Pulse **Ejecutar** (F5).
 
 La línea de estado muestra **En marcha** y el contador de ciclos sube. El simulador es
 el runtime de ZPLC construido para su equipo. Ejecuta su programa con un
@@ -109,19 +109,19 @@ temporizador. No modela el lado eléctrico de una placa ni sus tiempos reales.
 
 ## 6. Observe cómo cambia la salida
 
-1. Abra la pestaña **Observación**. Si la tabla no tiene ninguna fila, presione **+** e
-   ingrese `LED_Output`.
-2. Mire la columna **Value**. Cambia entre `TRUE` y `FALSE` aproximadamente cada
+1. Abra la pestaña **Observación**. Si la tabla no tiene ninguna fila, pulse **+** e
+   escriba `LED_Output`.
+2. Mire la columna **Valor**. Cambia entre `TRUE` y `FALSE` aproximadamente cada
    medio segundo.
 
 ![La pestaña Watch con LED_Output en TRUE mientras el programa se ejecuta](/img/tutorials/blink-4-output-true.png)
 
 ![La misma tabla medio segundo después, con LED_Output en FALSE](/img/tutorials/blink-5-output-false.png)
 
-Si la tabla Watch queda cortada, arrastre hacia arriba el divisor que está sobre el
+Si la tabla de observación queda cortada, arrastre hacia arriba el divisor que está sobre el
 panel inferior.
 
-Presione **Detener** (Shift+F5) cuando la haya visto cambiar.
+Pulse **Detener** (Shift+F5) cuando la haya visto cambiar.
 
 ## 7. Ejecute la prueba de escenario
 
@@ -133,7 +133,7 @@ apagada otra vez, y así durante 2,1 segundos de tiempo simulado. El
 campo, y su ejemplo es el escenario de este proyecto.
 
 1. Abra la pestaña **Pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
-2. Presione **Ejecutar escenarios en el host**.
+2. Pulse **Ejecutar escenarios en el host**.
 
 La pestaña dice **Host POSIX scenarios passed.** y `1 scenario passed.` Esto ejecutó
 su programa guardado en el simulador, sin interfaz y con un reloj virtual, así que
@@ -190,7 +190,7 @@ a pasar.
 | El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página | Host |
 | Los siete pasos funcionan en la aplicación real | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host |
 | El escenario pasa y falla como se describe | ZPLC ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador | Host |
-| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Soporte de hardware](../reference/capabilities-evidence.md) |
+| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) |
 
 Un resultado aprobado aquí es un resultado de host con el reloj virtual del simulador.
 

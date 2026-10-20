@@ -62,8 +62,8 @@ nunca `hardware`.
 
 Cada registro indica además su nivel de evidencia: `hardware` para el banco de
 una persona, `emulated` para el banco emulado (con el emulador, su versión y el
-hash de su parche), `community-reported` para el reporte de un usuario, y
-ninguno para un sustituto. Solo `hardware` eleva el nivel de soporte de una
+hash de su parche), `community-reported` para el informe de un usuario, y
+ninguno para un sustituto. Solo `hardware` eleva el nivel de compatibilidad de una
 placa; un registro emulado nunca lo hace.
 
 ## Estado de salida
@@ -105,7 +105,7 @@ falla:
    dispositivo. Pulsar Enter solo no confirma.
 7. **Las salidas son seguras de accionar.** Usted escribe la identidad otra vez,
    diciendo que nada conectado a las salidas puede lastimar a nadie.
-8. **Cargar, ejecutar.** Se carga un programa y el contador de scans debe
+8. **Cargar, ejecutar.** Se carga un programa y el contador de ciclos debe
    avanzar.
 9. **Fixtures.** Se ejecuta el parpadeo en cada uno de los cinco lenguajes
    (cada fixture marcado para hardware con `--all-fixtures`), con sus entradas
@@ -116,7 +116,7 @@ falla:
     cero.
 
 12. **Los pasos de medición de HIL-010.** Lazo digital, lectura analógica,
-    exactitud del temporizador, diez minutos de jitter de scan, salidas
+    exactitud del temporizador, diez minutos de jitter de ciclo, salidas
     apagadas tras un desborde y tras una falla fatal, salidas seguras tras STOP
     y tras la pérdida del enlace con fuerzas activas, tiempo de reinicio del
     watchdog, un ciclo de energía con RETAIN, veinte cortes de energía durante
@@ -136,7 +136,7 @@ Una ejecución en hardware real que termina en pass o fail, de una imagen de
 firmware indicada con `--firmware-image` cuyo dispositivo informa un commit de
 40 dígitos de un árbol sin cambios sin confirmar, escribe además
 `<ejecución>.evidence.json` junto al registro de ejecución. Es el registro plano
-del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de soporte de
+del que `firmware/zephyr/scripts/zplc_boards.py` deriva el nivel de compatibilidad de
 una placa: esquema `zplc.hil-record/1`, `board_id`, versión de firmware, commit,
 el SHA-256 de la imagen y el resultado, con la lista de lo que la ejecución no
 cubrió. Cuando falta alguno de esos datos, el registro de ejecución dice por qué
@@ -145,15 +145,15 @@ a `evidence_refs` de la placa en `boards.json` es una edición suya, después de
 leer el registro de ejecución; una ejecución sobre un sustituto nunca escribe
 uno.
 
-### Un reporte de un usuario
+### Un informe de un usuario
 
 El resultado de otra persona en su placa entra en la misma lista, en un nivel
 inferior. El formulario «Board report» pide la placa, la versión de firmware, el
 commit, el SHA-256 de la imagen y el resultado. Quien mantiene el proyecto, tras
-leer el issue, ejecuta `python3 tools/hil/community_report.py` con esos valores y
-la dirección del issue, lo que escribe un registro `zplc.community-report/1`, y
+leer la incidencia, ejecuta `python3 tools/hil/community_report.py` con esos valores y
+la dirección de la incidencia, lo que escribe un registro `zplc.community-report/1`, y
 agrega el archivo a `evidence_refs` de la placa. La tabla de placas generada lo
-lista como `community-reported`. Es una pista: nunca sube el nivel de soporte y
+lista como `community-reported`. Es una pista: nunca sube el nivel de compatibilidad y
 nunca enciende el watchdog de hardware del perfil.
 
 Cuando una herramienta se inicia sin un terminal interactivo termina con estado
@@ -164,7 +164,7 @@ Cuando una herramienta se inicia sin un terminal interactivo termina con estado
 `tools/hil/il_tests`, `ld_tests`, `fbd_tests`, `sfc_tests`, `st_tests` y
 `blinky_ld_gen.st` contienen los fixtures de lenguaje, y
 `tools/hil/fixtures.json` contiene el valor esperado de cada fase de cada uno.
-Una fase fija entradas, deja correr el programa un número de scans y comprueba
+Una fase fija entradas, deja correr el programa un número de ciclos y comprueba
 salidas. Los archivos compilados se hacen cuando una ejecución los necesita, en
 un directorio temporal que se elimina, y no se guardan en el repositorio.
 
@@ -194,9 +194,9 @@ en una placa a través del puerto de runtime de hardware del motor de
 escenarios:
 
 - el tiempo es el reloj del dispositivo: un tick se muestrea cuando el
-  dispositivo lo alcanzó y completó un scan desde que se forzaron las entradas;
+  dispositivo lo alcanzó y completó un ciclo desde que se forzaron las entradas;
 - las entradas se fuerzan, no se escriben, porque la placa reescribe su imagen
-  de entradas en cada scan; el byte forzado reemplaza sus ocho bits durante la
+  de entradas en cada ciclo; el byte forzado reemplaza sus ocho bits durante la
   ejecución;
 - una muestra tomada más tarde que la tolerancia declarada, `--tolerance-ms`
   (50 ms por omisión), anula la ejecución, y la tolerancia queda en el
@@ -295,7 +295,7 @@ python3 tools/hil/run_chain.py esp32s3_devkitc --firmware-image <zephyr.bin> [--
 ```
 
 Antes de empezar, la cadena indica cuánto dura en este banco: unos
-31 minutos, de los cuales diez son el paso de jitter de scan y unos ocho los
+31 minutos, de los cuales diez son el paso de jitter de ciclo y unos ocho los
 veinte cortes de energía. El paso de jitter corre solo, porque cada uno de los
 demás pasos detiene, despliega o corta la energía. Por omisión ejecuta el
 parpadeo en los cinco lenguajes; `--all-fixtures` agrega cada fixture marcado
@@ -321,10 +321,10 @@ imagen no puede conservar RETAIN. La Pico y la RP2040-Zero tienen una partición
 de almacenamiento de 128 KB, que guarda las dos ranuras de programa, los dos
 registros de RETAIN y un sector de reserva (RT-029).
 
-La grabación la hace usted. La Pico: mantenga presionado BOOTSEL mientras
+La grabación la hace usted. La Pico: mantenga pulsado BOOTSEL mientras
 conecta el cable USB y copie `zephyr.uf2` a la unidad RPI-RP2. La ESP32-S3:
 `esptool --chip esp32s3 --port <puerto> write-flash 0x0 zephyr.bin` en el
-puerto marcado USB, y presione RST si la placa queda en modo de descarga.
+puerto marcado USB, y pulse RST si la placa queda en modo de descarga.
 
 | # | Paso | Qué hace la cadena | Pasa cuando | Hardware | Emulado |
 |---|------|--------------------|-------------|----------|---------|
@@ -335,21 +335,21 @@ puerto marcado USB, y presione RST si la placa queda en modo de descarga.
 | 5 | Opción de traza | Lee las opciones de la imagen | La traza HIL es la que pidió la ejecución | Todavía no se ejecutó | Se completa con los registros emulados |
 | 6 | Confirmar la placa | Usted escribe la identidad que informa el dispositivo | Coincide | Todavía no se ejecutó | Un emulador no tiene persona |
 | 7 | Las salidas se pueden accionar | Usted escribe la identidad otra vez | Coincide | Todavía no se ejecutó | Un emulador no tiene persona |
-| 8 | Cargar, ejecutar | Carga un programa y lo inicia | El contador de scans avanza | Todavía no se ejecutó | Se completa con los registros emulados |
+| 8 | Cargar, ejecutar | Carga un programa y lo inicia | El contador de ciclos avanza | Todavía no se ejecutó | Se completa con los registros emulados |
 | 9 | Parpadeo en cinco lenguajes | Ejecuta los parpadeos en ST, IL, LD, FBD y SFC | Cada salida conmuta como espera su fixture | Todavía no se ejecutó | Se completa con los registros emulados |
 | 10 | Fijar y liberar una fuerza | Fija, lista y borra una fuerza | No queda ninguna fuerza | Todavía no se ejecutó | Se completa con los registros emulados |
 | 11 | Detener | Detiene la placa | No está en ejecución, imagen de salidas en cero | Todavía no se ejecutó | Se completa con los registros emulados |
 | 12 | Lazo digital | Fuerza cada salida, sola, a encendida y apagada y lee las entradas | Cada entrada sigue a su propia salida y ninguna otra cambia | Todavía no se ejecutó | Se completa con los registros emulados |
 | 13 | Lectura analógica | Le pide girar el potenciómetro a 0 %, 50 % y 100 % y lee AI0 | Dentro del 5 % de la escala completa en los extremos y del 10 % en el centro | Todavía no se ejecutó | Se completa con los registros emulados |
-| 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un scan y 3000 ms más un scan, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
-| 15 | Jitter de scan, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee la medida propia del runtime de cada scan: el período más corto y el más largo de cada tarea (`zplc status --json`, `tasks[]`) | Ningún desborde, ningún plazo incumplido, cada período de scan dentro del 20 % del intervalo | Todavía no se ejecutó | Se completa con los registros emulados |
-| 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un scan que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
+| 14 | Exactitud del temporizador | Ejecuta un TON de 3 s y mide su salida desde RUN con el reloj del banco | Entre 3000 ms menos un ciclo y 3000 ms más un ciclo, 100 ms y dos viajes de ida y vuelta de lectura | Todavía no se ejecutó | Se completa con los registros emulados |
+| 15 | Jitter de ciclo, diez minutos | Ejecuta una tarea de 10 ms durante diez minutos y lee la medida propia del runtime de cada ciclo: el período más corto y el más largo de cada tarea (`zplc status --json`, `tasks[]`) | Ningún desborde, ningún plazo incumplido, cada período de ciclo dentro del 20 % del intervalo | Todavía no se ejecutó | Se completa con los registros emulados |
+| 16 | Desborde | Ejecuta una tarea de 1 ms que acciona DO0 y repite un bucle durante la mitad del presupuesto de instrucciones de la VM de la imagen (un ciclo que pasa el presupuesto enclava en cambio la falla de watchdog de la VM) | Se enclava la falla `deadline_miss` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 17 | STOP y pérdida del enlace con fuerzas | Fuerza las salidas a encendidas y detiene; luego las fuerza desde la consola, en la sesión de su enlace, cierra el puerto y lo vuelve a abrir, con un programa que mantiene las salidas en bajo | Salidas apagadas tras STOP, y fuerzas liberadas al perder el enlace: por DTR en la Pico, por el tiempo de inactividad (30 s por omisión) en el ESP32-S3 | Todavía no se ejecutó | Se completa con los registros emulados |
-| 18 | Tiempo de reinicio del watchdog | Ejecuta un scan que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
-| 19 | Falla fatal | Divide por cero tras 20 scans de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
+| 18 | Tiempo de reinicio del watchdog | Ejecuta un ciclo que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
+| 19 | Falla fatal | Divide por cero tras 20 ciclos de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |
 | 21 | 20 cortes de energía durante el despliegue | Carga el programa A, envía una parte del programa B (desde una vigésima parte hasta todo) y le pide desconectar de inmediato | Tras cada corte la placa está en STOP y ejecuta A o B completo | Todavía no se ejecutó | Se completa con los registros emulados |
-| 22 | Escritura atómica | Escribe 100 veces un valor de cuatro bytes por el enlace del dispositivo mientras el programa cuenta valores partidos | Ningún scan vio un valor escrito a medias | Todavía no se ejecutó | Se completa con los registros emulados |
+| 22 | Escritura atómica | Escribe 100 veces un valor de cuatro bytes por el enlace del dispositivo mientras el programa cuenta valores partidos | Ningún ciclo vio un valor escrito a medias | Todavía no se ejecutó | Se completa con los registros emulados |
 | 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en esta computadora, en una línea abierta a 19200 baudios. ESP32-S3: escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
 
 Una persona no puede cortar la energía en el instante exacto en que el

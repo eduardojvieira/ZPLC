@@ -101,7 +101,7 @@ def network_summary(entry: dict[str, object], spanish: bool) -> str:
     network_class = str(entry["network_class"])
     interface = str(entry["network_interface"])
     if network_class == "serial-focused":
-        return "Enfoque serial" if spanish else "Serial-focused"
+        return "Orientada al puerto serie" if spanish else "Serial-focused"
     if interface == "wifi":
         return "Capacidad de red (Wi-Fi)" if spanish else "Network-capable (Wi-Fi)"
     if interface == "ethernet":

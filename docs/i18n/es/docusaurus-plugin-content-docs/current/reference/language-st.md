@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-st. Do not edit. >>> */}
 
-El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallos conocidos. CI ejecuta toda la batería en cada cambio. Esta página cubre 87 elementos: 75 funcionan, 11 se rechazan a propósito y 1 aún no están probados.
+El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. Esta página cubre 87 elementos: 75 funcionan, 11 se rechazan a propósito y 1 aún no están probados.
 
 ## Editor
 

@@ -39,7 +39,7 @@ function resultSentence(example: Example, lang: Lang): string {
   const scans = example.scans ?? 1;
   const when: L10n = {
     en: scans === 1 ? ' after one scan' : ` after ${scans} scans of ${example.scanMs ?? 10} ms`,
-    es: scans === 1 ? ' tras un scan' : ` tras ${scans} scans de ${example.scanMs ?? 10} ms`,
+    es: scans === 1 ? ' tras un ciclo' : ` tras ${scans} ciclos de ${example.scanMs ?? 10} ms`,
   };
   return lang === 'en' ? `Result${when.en}: ${values.join(', ')}.` : `Resultado${when.es}: ${values.join(', ')}.`;
 }
@@ -148,7 +148,7 @@ function conversionSection(lang: Lang): string {
     const value = from === 'BOOL' ? '1' : '5';
     const result: L10n = {
       en: `Result after one scan: each ${code('To_*')} variable holds ${code(value)} (${code('To_BOOL')} holds ${code('TRUE')}) and each ${code('Is_*')} variable holds ${code('TRUE')}.`,
-      es: `Resultado tras un scan: cada variable ${code('To_*')} vale ${code(value)} (${code('To_BOOL')} vale ${code('TRUE')}) y cada variable ${code('Is_*')} vale ${code('TRUE')}.`,
+      es: `Resultado tras un ciclo: cada variable ${code('To_*')} vale ${code(value)} (${code('To_BOOL')} vale ${code('TRUE')}) y cada variable ${code('Is_*')} vale ${code('TRUE')}.`,
     };
     return [heading, lead, exampleFence(example), result[lang]].join('\n\n');
   });

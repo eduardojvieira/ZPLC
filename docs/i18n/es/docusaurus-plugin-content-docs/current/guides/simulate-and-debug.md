@@ -23,9 +23,9 @@ bien en el simulador no se ha demostrado que se comporte bien en una placa.
 
 1. Compile el proyecto (**Compilación**, **Compilar**).
 2. En la barra de herramientas, compruebe que **Simular** esté seleccionado y
-   presione **Conectar** y luego **Ejecutar** (F5). La línea de estado muestra **En marcha** y
+   pulse **Conectar** y luego **Ejecutar** (F5). La línea de estado muestra **En marcha** y
    el contador de ciclos sube.
-3. Abra la pestaña **Observación**, presione **+** e ingrese una variable. Su valor sigue al
+3. Abra la pestaña **Observación**, pulse **+** y escriba una variable. Su valor sigue al
    programa. Haga doble clic en un valor para escribirlo.
 
 [Blink sin hardware](../tutorials/blink-without-hardware.md) hace esto en un primer
@@ -50,14 +50,14 @@ END_PROGRAM
 ```
 
 1. Haga clic en el margen del editor, junto a `Count := Count + 1;`. Un punto marca la línea.
-2. Presione **Ejecutar**. El programa se detiene cuando un ciclo llega a la sentencia: la
+2. Pulse **Ejecutar**. El programa se detiene cuando un ciclo llega a la sentencia: la
    barra de herramientas ofrece **Reanudar** (F5), el editor marca la línea, **Salida**
-   dice `Breakpoint hit at PC=..., line N` y una fila de la pestaña **Trace** dice
+   dice `Breakpoint hit at PC=..., line N` y una fila de la pestaña **Traza** dice
    `paused`.
 3. Mire los valores en **Observación**. Son los valores del ciclo que se detuvo. Fije una
    entrada, o fuerce un valor ([Forzar un valor](./force-values.md)), y vuelva a
    mirar.
-4. Presione **Reanudar** (F5) para que el ciclo termine y siga hasta la siguiente
+4. Pulse **Reanudar** (F5) para que el ciclo termine y siga hasta la siguiente
    detención, o **Avanzar un ciclo** (F10) para ejecutar un ciclo y detenerse en el
    siguiente límite de ciclo o en el siguiente punto de parada.
 
@@ -69,11 +69,11 @@ depuración relaciona las instrucciones con el elemento que usted editó.
 
 | Control | Imagen de salida | Forzados | El ciclo |
 | --- | --- | --- | --- |
-| Pause (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
-| Step one cycle (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de parada |
-| Resume (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí |
-| Stop (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
-| Reset (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
+| Pausar (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
+| Avanzar un ciclo (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de parada |
+| Reanudar (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí |
+| Detener (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
+| Reiniciar (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
 
 La tabla completa, con las pruebas que la respaldan, está en
 [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
@@ -84,16 +84,16 @@ estado seguro.
 
 Una ejecución manual muestra un camino. Una [prueba de escenario](./scenario-tests.md)
 dice qué debe hacer el programa y descubre cuándo un cambio lo rompe. Use el depurador
-para entender un escenario que falla: el fallo da el instante, y usted puede ejecutar
+para entender un escenario que falla: la falla da el instante, y usted puede ejecutar
 hasta ese ciclo.
 
 ## Qué está verificado y qué no
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Un punto de parada se enlaza y detiene el ciclo, y Resume termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
+| Un punto de parada se enlaza y detiene el ciclo, y Reanudar termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
 | Un forzado fijado en un punto de parada lo ve el resto del ciclo | El recorrido 18 en la aplicación real | Host |
-| Pause, step y stop conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
+| La pausa, el paso y la detención conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
 | Las mismas detenciones en una placa | No probado | Ninguno |
 
 ## Vea también

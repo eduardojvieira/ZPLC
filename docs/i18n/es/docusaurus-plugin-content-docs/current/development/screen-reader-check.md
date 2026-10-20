@@ -43,7 +43,7 @@ presentes antes del primer mensaje (`packages/zplc-ide/src/ui/LiveRegions.tsx`):
 - una región de estado **cortés** (polite), para resultados: una compilación
   terminada, una conexión, ejecutar y detener, una variable forzada o liberada, una
   lección restaurada;
-- una región de alerta **asertiva** (assertive), para fallos: una compilación o una
+- una región de alerta **asertiva** (assertive), para fallas: una compilación o una
   carga que falló, y un forzado que ya no está confirmado.
 
 Los mensajes provienen de `announce()` en `packages/zplc-ide/src/utils/announce.ts` y

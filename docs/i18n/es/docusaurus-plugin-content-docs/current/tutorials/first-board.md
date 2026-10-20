@@ -17,7 +17,7 @@ y del flujo de despliegue de ZPLC, y **nadie la ha ejecutado en una placa**.
 El firmware de ambas placas compila en integración continua y cabe en su
 presupuesto de flash y RAM. Nadie lo ha grabado, arrancado, cargado un programa
 en él ni visto cambiar una salida: el nivel de ambas placas es `cross-build`
-([Soporte de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
+([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Nada de lo que sigue
 dice que un paso funcione. Si lo sigue, usted es el primero, y su resultado es una
 pista hasta que se registre con la versión del firmware, el commit y el hash de la
 imagen: use la plantilla de informe de placa de las incidencias del repositorio y no
@@ -104,9 +104,9 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simular**.
-2. Presione **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
+2. Pulse **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
-   conéctela y presione **Actualizar**. Elija su puerto y presione **Usar este puerto**:
+   conéctela y pulse **Actualizar**. Elija su puerto y pulse **Usar este puerto**:
    ZPLC usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC](../getting-started/install.md#linux-acceso-al-puerto-serie).
 3. La aplicación ZPLC lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
@@ -114,16 +114,16 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 ## 4. Despliegue y ejecute (lo hace una persona)
 
-1. Presione **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
+1. Pulse **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
    cantidad de tareas y la placa del dispositivo, y le pide confirmar. Un despliegue
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
-3. Presione **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
+3. Pulse **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
    el programa es el del ejemplo.
 
 ## 5. Observe
 
-Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED. Presione
+Abra la pestaña **Observación** y agregue `LED_Output`: su valor sigue al LED. Pulse
 **Detener** (Shift+F5): en una placa una detención también lleva las salidas físicas a
 su estado seguro, apagado
 ([Planificador](../runtime/scheduler.md#pausa-reanudación-paso-y-parada)).
@@ -147,7 +147,7 @@ imagen es lo que lleva a una placa de `cross-build` a `human-hil`.
 
 ## Vea también
 
-- [Soporte de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
+- [Compatibilidad de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
 - [Placas soportadas](../reference/boards.md): los canales, pines y valores seguros.
 - [Despliegue y sesiones de runtime](../ide/deployment.md): las cuatro operaciones separadas.
 - [Seguridad y limitaciones](../safety-and-limitations.md).
