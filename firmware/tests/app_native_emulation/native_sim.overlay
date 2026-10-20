@@ -1,0 +1,68 @@
+/*
+ * EMULATION ONLY - native_sim/native/64 with the Raspberry Pi Pico learner-board channel map.
+ *
+ * Used by `tools/firmware-test/run.sh app-native`, never by a shipped board. The
+ * channels are the Pico's I/O description of firmware/app/boards/boards.json
+ * (rpi-pico-rp2040), passed to the build as ZPLC_IO_DESCRIPTION: the same aliases
+ * on the same pin numbers, here on gpio_emul, and the five converter inputs on an
+ * adc_emul node labelled `adc` as on the RP2040. Inputs are switches to GND with
+ * pull-ups (active low), as on the bench.
+ */
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+    };
+
+    zephyr,user {
+        /* ADC input 4 is the temperature sensor on the RP2040 */
+        io-channels = <&adc 4>;
+        io-channel-names = "temp";
+    };
+
+    adc: adc_pico {
+        compatible = "zephyr,adc-emul";
+        nchannels = <5>;
+        ref-internal-mv = <3300>;
+        #io-channel-cells = <1>;
+        status = "okay";
+    };
+
+    gpio_keys {
+        compatible = "gpio-keys";
+        button0: button_0 { gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "ZPLC Input 0 (GP15)"; zephyr,code = <0>; };
+        button1: button_1 { gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "ZPLC Input 1 (GP14)"; zephyr,code = <1>; };
+        button2: button_2 { gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "ZPLC Input 2 (GP13)"; zephyr,code = <2>; };
+        button3: button_3 { gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; label = "ZPLC Input 3 (GP12)"; zephyr,code = <3>; };
+    };
+
+    leds {
+        led1: led_1 { gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>; label = "ZPLC Output 1 (GP1)"; };
+        led2: led_2 { gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>; label = "ZPLC Output 2 (GP2)"; };
+        led3: led_3 { gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>; label = "ZPLC Output 3 (GP3)"; };
+        led4: led_4 { gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>; label = "ZPLC Output 4 (GP25)"; };
+    };
+
+    aliases {
+        sw0 = &button0;
+        sw1 = &button1;
+        sw2 = &button2;
+        sw3 = &button3;
+        led0 = &led0;
+        led1 = &led1;
+        led2 = &led2;
+        led3 = &led3;
+        led4 = &led4;
+    };
+};
+
+/* led0 of native_sim.dts is already gpio0 pin 0: DO0 */
+
+&gpio0 {
+    ngpios = <32>;
+};
+
+/* The Pico keeps 64 KB of storage at 0x1f0000 (rpi_pico_rp2040.overlay); native_sim's 16 KB is too small. */
+&storage_partition {
+    reg = <0x001f0000 0x00010000>;
+};

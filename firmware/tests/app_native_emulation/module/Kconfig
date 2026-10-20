@@ -1,0 +1,9 @@
+# EMULATION ONLY (native_sim). See emu_shell.c.
+
+config ZPLC_EMU_SHELL
+	bool "Shell command to drive the emulated I/O of the learner-board map (native_sim only)"
+	help
+	  The `emu` shell command drives the inputs and reads the outputs of the
+	  learner-board channel map on gpio_emul and adc_emul. It exists for the
+	  emulated bench only: the build stops when it is enabled for any board
+	  other than native_sim.
