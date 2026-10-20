@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "title": "Ciclo de scan y memoria de un ciclo",
-  "summary": "Siga cómo una entrada produce una salida actual y una copia demorada un scan.",
-  "scope": "La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.",
+  "title": "Ciclo de escaneo y memoria de un ciclo",
+  "summary": "Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una única tarea de 10 ms; no demuestran los tiempos en el dispositivo de destino, las instantáneas bajo interrupciones físicas, el rebote eléctrico, HIL ni certificación.",
   "objectives": [
     "Compruebe que una variable conserva su valor de un ciclo al siguiente.",
     "Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria."
@@ -24,13 +24,13 @@
       "key": "edit",
       "title": "Edite",
       "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene memoria de un ciclo; conserve Previous, calcule Delayed a partir de Previous, derive RisingPulse de Current y Delayed y actualice Previous al final.",
-      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario ScanSnapshot.",
-      "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama ScanSnapshot y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

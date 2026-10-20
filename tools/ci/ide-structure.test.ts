@@ -194,7 +194,8 @@ describe('module size stopgap (IDE-014): listed modules may stay above the limit
 });
 
 describe('the repository', () => {
+  // The whole-repository scan reads every module; under a loaded machine it outgrows the 5 s default, which is not what it measures.
   it('has no layering violation, no import cycle and no module above the limit that is not listed', () => {
     expect(checkRepository()).toEqual([]);
-  });
+  }, 60_000);
 });

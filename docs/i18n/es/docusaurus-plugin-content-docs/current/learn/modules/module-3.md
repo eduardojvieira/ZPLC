@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-3. Do not edit. >>> */}
 
-El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o sostienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques.
+El tiempo y los eventos vienen después de la lógica: los temporizadores retrasan o mantienen una señal, los flancos convierten un nivel en un evento y los contadores recuerdan eventos. El diagrama de bloques de función (FBD) llega aquí, porque los temporizadores y los contadores son bloques.
 
 - Nivel: Fundamentos
 - Rutas: Simulación, Hardware

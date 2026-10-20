@@ -1,12 +1,12 @@
 ---
-title: "Comando, realimentación y velocidad"
+title: "Orden, realimentación y velocidad"
 sidebar_label: "motor-plant-feedback"
 description: "La lección motor-plant-feedback: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Comando, realimentación y velocidad
+# Orden, realimentación y velocidad
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/motor-plant-feedback. Do not edit. >>> */}
 
@@ -38,7 +38,7 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.
+Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX y de la planta discreta; no son evidencia de un motor físico, hardware, HIL ni certificación.
 
 ## En una placa
 

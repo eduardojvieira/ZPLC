@@ -2,38 +2,56 @@
  * ZPLC Board Overlay - Espressif ESP32-S3-DevKitC-1 (module N8R8)
  * SPDX-License-Identifier: MIT
  *
- * Module: ESP32-S3-WROOM-1-N8R8, 8 MB flash and 8 MB octal PSRAM. The base board
- * DTS targets the N8 module (8 MB flash, no PSRAM): the flash needs no override
- * and psram0 is overridden below. If the marking on your module is another
- * variant, change the sizes here and in the "hardware" object of boards.json.
+ * Module: ESP32-S3-WROOM-1-N8R8, 8 MB flash and 8 MB octal PSRAM. The base
+ * board DTS targets the N8 module (8 MB flash, no PSRAM): the flash needs no
+ * override and psram0 is sized below. The profile needs the octal PSRAM
+ * (esp32s3_devkitc_esp32s3_procpu.conf says why), so the N8 and N8R2 boards
+ * do not run this image.
  *
- * The on-board LED (GPIO48) is an addressable RGB part that needs the LED-strip
- * driver, so the profile does not use it. It exposes simple GPIO instead:
+ * The learner I/O sits on header J1 (pin numbers of the DevKitC-1 v1.1 user
+ * guide), plus the on-board BOOT button:
  *
- *   Outputs   GPIO38, GPIO15, GPIO16, GPIO17  -> LED -> resistor -> GND
- *   Inputs    GPIO0 (BOOT button), GPIO18, GPIO8, GPIO9  -> switch -> GND
- *   Analog    GPIO4 (ADC1 channel 3), 0 V to about 3.1 V
+ *   DO0 to DO3   GPIO15, GPIO16, GPIO17, GPIO18   J1-8 to J1-11
+ *                -> 330 ohm -> LED -> GND
+ *   DI0 to DI3   GPIO5, GPIO6, GPIO7, GPIO8       J1-5 to J1-7, J1-12
+ *                -> button -> GND, internal pull-up, active low
+ *   DI4          GPIO0, the BOOT button: an extra input that needs no wiring,
+ *                not one of the four (a strapping pin: never hold it
+ *                pressed while the board resets)
+ *   AI0          GPIO4, ADC1 channel 3            J1-4
+ *                -> wiper of a 10 kohm potentiometer between 3V3 (J1-1) and
+ *                GND (J1-22), read at 12 dB attenuation (about 0 V to 3.1 V)
  *
- * GPIO35 to GPIO37 are used by the octal PSRAM of this module: avoid them. The
- * pins other than the BOOT button, GPIO38 and GPIO15 are a choice of this
- * profile (pin_status "profile" in the I/O description) and need the loopback
- * bench of HIL-010 to be confirmed.
+ * Pins left alone: the strapping pins GPIO3, 45 and 46; USB GPIO19/20; JTAG
+ * GPIO39 to 42; UART0 GPIO43/44; GPIO33 to 37 (octal flash or PSRAM); the
+ * SPI2 and SPI3 pins of the base DTS; GPIO38 (v1.1) and GPIO48 (v1.0), the
+ * addressable RGB LED, which needs the LED-strip driver.
  *
  * The channels are listed in the I/O description of
  * firmware/app/boards/boards.json (esp32-s3-devkitc); the build fails when the
- * description and this file disagree.
+ * description and this file disagree, and so does the manifest validator.
  *
- * Console:
- *   Zephyr console and shell use the native USB-Serial/JTAG controller, the
- *   same USB port that is used for flashing.
+ * Console: the Zephyr console and shell use the native USB-Serial/JTAG
+ * controller, the port marked "USB", the one used for flashing.
  *
- * NVS storage:
- *   ESP32 uses its own NVS partition from the base devicetree: no additional
- *   overlay is needed for program persistence.
- *
- * Settings of the LilyGo T-Display S3 (16 MB flash) are in
- * profiles/lilygo_tdisplay_s3.overlay, which is layered on top of this file.
+ * Storage: the NVS records of the HAL take zplc_nvs_partition (below) and the
+ * settings file system takes storage_partition of the base DTS (IO-008).
  */
+
+/*
+ * IO-008: the NVS records of the HAL (program, RETAIN, settings keys) get their
+ * own 192 KB partition in the upper 4 MB of the 8 MB flash, which the 4 MB
+ * partition table of the base DTS leaves free; the settings file system
+ * (LittleFS, zplc_config.c) keeps storage_partition (0x3b0000, 192 KB).
+ */
+&flash0 {
+    partitions {
+        zplc_nvs_partition: partition@400000 {
+            label = "zplc-nvs";
+            reg = <0x400000 DT_SIZE_K(192)>;
+        };
+    };
+};
 
 /* ESP32-S3R8 class module: 8 MB octal PSRAM, needed for CONFIG_ESP_SPIRAM */
 &psram0 {
@@ -50,45 +68,58 @@
         compatible = "gpio-leds";
 
         led0: led_0 {
-            gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;  /* GPIO38 = gpio1 pin 6 */
-            label = "ZPLC Output 0 (GPIO38)";
+            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 0 (GPIO15, J1-8)";
         };
 
         led1: led_1 {
-            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;  /* GPIO15 = gpio0 pin 15 */
-            label = "ZPLC Output 1 (GPIO15)";
+            gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 1 (GPIO16, J1-9)";
         };
 
         led2: led_2 {
-            gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
-            label = "ZPLC Output 2 (GPIO16)";
+            gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 2 (GPIO17, J1-10)";
         };
 
         led3: led_3 {
-            gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
-            label = "ZPLC Output 3 (GPIO17)";
+            gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 3 (GPIO18, J1-11)";
         };
     };
 
     zplc_inputs {
         compatible = "gpio-keys";
 
-        button1: button_1 {
-            gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            label = "ZPLC Input 1 (GPIO18)";
+        input0: input_0 {
+            gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 0 (GPIO5, J1-5)";
+            zephyr,code = <0>;
+        };
+
+        input1: input_1 {
+            gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 1 (GPIO6, J1-6)";
             zephyr,code = <1>;
         };
 
-        button2: button_2 {
-            gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            label = "ZPLC Input 2 (GPIO8)";
+        input2: input_2 {
+            gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 2 (GPIO7, J1-7)";
             zephyr,code = <2>;
         };
 
-        button3: button_3 {
-            gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            label = "ZPLC Input 3 (GPIO9)";
+        input3: input_3 {
+            gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 3 (GPIO8, J1-12)";
             zephyr,code = <3>;
+        };
+
+        /* The same pin as button0 of the base DTS, named here so that this file binds every channel */
+        input4: input_4 {
+            gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 4 (GPIO0, BOOT button)";
+            zephyr,code = <4>;
         };
     };
 
@@ -97,10 +128,12 @@
         led1 = &led1;
         led2 = &led2;
         led3 = &led3;
-        sw1 = &button1;
-        sw2 = &button2;
-        sw3 = &button3;
-        /* sw0 is the BOOT button, defined by the base board DTS */
+        /* sw0 of the base DTS is the BOOT button; here it is DI0 on GPIO5 */
+        sw0 = &input0;
+        sw1 = &input1;
+        sw2 = &input2;
+        sw3 = &input3;
+        sw4 = &input4;
     };
 };
 

@@ -45,6 +45,7 @@ modes (what each one proves: docs/docs/development/firmware-testing.md):
             output of a board build
   size      build firmware/app for every supported board, print flash and RAM
             next to size-budget.json, fail when a size is over its budget
+            or a storage user has no flash partition of its own (IO-008)
             (board ids after "size" restrict it: run.sh size rpi-pico-rp2040)
   tidy      clang-tidy (warnings are errors, .clang-tidy) over the core, the POSIX HAL and the
             host application; also the Zephyr HAL and firmware/app when the Opta build of
@@ -215,6 +216,12 @@ for board in json.load(open(sys.argv[1])):
   done <<< "${listed}"
   if [ ${#built[@]} -gt 0 ]; then
     text="$(python3 -B -I "${ZPLC_FW_TOOLS}/check_inbound_authority.py" "${built[@]}")" || rc=1
+    while IFS= read -r line; do
+      [ -n "${line}" ] && record "${line}"
+    done <<< "${text}"
+    # IO-008: every storage user of every image that was built has a flash partition of its own, read from the
+    # zephyr.dts and .config each build keeps under ${logs}/<board id>/zephyr.
+    text="$(python3 -B -I "${ZPLC_FW_REPO}/tools/hil/check_storage_partitions.py" "${built[@]}")" || rc=1
     while IFS= read -r line; do
       [ -n "${line}" ] && record "${line}"
     done <<< "${text}"

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { compilerCompile, testsRun } from '../cli/toolApi';
+import { compileMultiTaskProject } from '../compiler';
 import { readWorkspace } from '../cli/workspace';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 
@@ -109,6 +111,51 @@ const withNativeRuntime = async <T>(run: () => Promise<T>): Promise<T> => {
   }
 };
 
+/**
+ * The source files of a project that the build leaves out. A real build decides it: the files it compiles are the ones
+ * its debug map names. The programs the tasks run are compiled, and so is every Structured Text file that no task runs,
+ * as one unit with them (CMP-042): its function blocks and functions are built, while a PROGRAM in it is never run and
+ * the compiler leaves it out, so that file stays an orphan.
+ */
+async function orphanSources(root: string): Promise<string[]> {
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) throw new Error(JSON.stringify(loaded.diagnostics));
+  const { project, sources } = loaded.workspace;
+  // the unit as the Tool API gives it to the compiler: the task programs, then every Structured Text file no task runs
+  const programs = project.tasks.flatMap((task) => task.programs).flatMap((program) => {
+    const source = resolveProgramSource(program, sources);
+    return source ? [{ ...source, name: program }] : [];
+  });
+  const run = new Set(programs.map((program) => program.sourceRef));
+  const declarations = sources.filter((source) => source.language === 'ST' && !run.has(source.path))
+    .map((source) => ({ name: source.path, content: source.content, language: 'ST' as const, sourceRef: source.path }));
+  const { debugMap } = compileMultiTaskProject(project, [...programs, ...declarations]);
+  const built = new Set(Object.values(debugMap.pou).flatMap((pou) => pou.sourceRef ?? []));
+  return sources.map((source) => source.path).filter((path) => !built.has(path));
+}
+
+describe('the orphan check used by this file (CMP-042)', () => {
+  const fixture = (): string => {
+    const root = mkdtempSync(join(tmpdir(), 'zplc-orphans-'));
+    mkdirSync(join(root, 'src'));
+    writeFileSync(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'orphans', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+    writeFileSync(join(root, 'src', 'Main.st'), 'PROGRAM Main\nVAR Run : BOOL; Hold : Latch; END_VAR\nHold(S := Run);\nRun := Twice(1) > 1;\nEND_PROGRAM\n');
+    writeFileSync(join(root, 'src', 'Latch.st'), 'FUNCTION_BLOCK Latch\nVAR_INPUT S : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Q OR S;\nEND_FUNCTION_BLOCK\n');
+    writeFileSync(join(root, 'src', 'Twice.st'), 'FUNCTION Twice : INT\nVAR_INPUT V : INT; END_VAR\nTwice := V * 2;\nEND_FUNCTION\n');
+    writeFileSync(join(root, 'src', 'Stray.st'), 'PROGRAM Stray\nVAR Y : BOOL; END_VAR\nY := NOT Y;\nEND_PROGRAM\n');
+    return root;
+  };
+
+  it('CMP-042 counts a Structured Text file that only declares a function block or a function as built, and still finds a PROGRAM that no task runs', async () => {
+    const root = fixture();
+    try {
+      expect(await orphanSources(root)).toEqual(['src/Stray.st']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('bundled example projects', () => {
   it('finds the bundled projects', () => {
     expect(projectNames.length).toBeGreaterThanOrEqual(15);
@@ -133,11 +180,7 @@ describe('bundled example projects', () => {
       });
 
       it('builds every source file under src/ (no orphan sources)', async () => {
-        const loaded = await readWorkspace(rootOf(name));
-        if (!loaded.ok) throw new Error(JSON.stringify(loaded.diagnostics));
-        const { project, sources } = loaded.workspace;
-        const built = new Set(project.tasks.flatMap((task) => task.programs).flatMap((program) => resolveProgramSource(program, sources)?.sourceRef ?? []));
-        expect(sources.map((source) => source.path).filter((path) => !built.has(path))).toEqual(KNOWN_ORPHANS[name] ?? []);
+        expect(await orphanSources(rootOf(name))).toEqual(KNOWN_ORPHANS[name] ?? []);
       });
 
       const hasScenarios = existsSync(join(rootOf(name), 'tests')) && readdirSync(join(rootOf(name), 'tests')).some((file) => file.endsWith('.scenario.json'));

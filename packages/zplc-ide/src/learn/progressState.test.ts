@@ -105,8 +105,8 @@ describe('the progress state', () => {
     const before = state.getState().document;
     expect(await state.getState().importText('not json')).toBe(false);
     expect(state.getState().transfer).toEqual({ error: 'not-json', version: null });
-    expect(await state.getState().importText('{"kind":"zplc-learn-progress","schemaVersion":4,"last":null,"lessons":{}}')).toBe(false);
-    expect(state.getState().transfer).toEqual({ error: 'unknown-version', version: 4 });
+    expect(await state.getState().importText('{"kind":"zplc-learn-progress","schemaVersion":5,"last":null,"lessons":{}}')).toBe(false);
+    expect(state.getState().transfer).toEqual({ error: 'unknown-version', version: 5 });
     expect(state.getState().document).toEqual(before);
     const restarted = stateOver(directory);
     await restarted.getState().load();

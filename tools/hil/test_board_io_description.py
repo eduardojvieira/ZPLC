@@ -11,12 +11,14 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = ROOT / "firmware/zephyr/scripts/zplc_boards.py"
 MANIFEST = ROOT / "firmware/app/boards/boards.json"
+TDISPLAY_PROFILE = ROOT / "firmware/app/boards/profiles/lilygo_tdisplay_s3.json"
 
 spec = importlib.util.spec_from_file_location("zplc_boards", LIBRARY)
 assert spec and spec.loader
@@ -149,6 +151,163 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(any("at most 64 channels" in text for text in errors), errors)
 
 
+OVERLAY = """
+/ {
+    leds {
+        compatible = "gpio-leds";
+        led0: led_0 { gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>; };  /* GP0 */
+        led1: led_1 { gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>; };
+    };
+    keys {
+        compatible = "gpio-keys";
+        button0: button_0 { gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; };
+    };
+    aliases {
+        led0 = &led0;
+        // led9 = &led1;
+        sw0 = &button0;
+    };
+};
+&adc { status = "okay"; };
+"""
+
+
+class DevicetreeCrossCheckTests(unittest.TestCase):
+    """IO-001: a channel names the GPIO its pin name says, and the overlay it cites binds that alias to that GPIO."""
+
+    def mismatches(self, channels: list[dict[str, object]], text: str = OVERLAY) -> list[str]:
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(text)
+            for item in channels:
+                item["source"] = "board.overlay"
+            return boards_lib.devicetree_mismatches(board(channels), Path(directory))
+
+    def test_a_pin_name_that_is_not_the_described_gpio_is_reported(self) -> None:
+        errors = errors_of([channel(pin="GP1")])
+        self.assertTrue(any("DO0" in text and "GP1" in text for text in errors), errors)
+
+    def test_an_esp32_gpio_from_32_up_is_on_the_second_controller(self) -> None:
+        errors = errors_of([channel(pin="GPIO38", dt={"alias": "led0", "controller": "gpio0", "pin": 38})])
+        self.assertTrue(any("DO0" in text and "GPIO38" in text for text in errors), errors)
+        self.assertEqual([], errors_of([channel(pin="GPIO38", dt={"alias": "led0", "controller": "gpio1", "pin": 6})]))
+
+    def test_an_stm32_port_pin_is_on_its_port_controller(self) -> None:
+        self.assertEqual([], errors_of([channel(pin="PI12 (red LED)", dt={"alias": "led0", "controller": "gpioi", "pin": 12})]))
+        errors = errors_of([channel(pin="PJ12", dt={"alias": "led0", "controller": "gpioi", "pin": 12})])
+        self.assertTrue(any("PJ12" in text for text in errors), errors)
+
+    def test_channels_that_match_their_overlay_have_no_mismatch(self) -> None:
+        self.assertEqual([], self.mismatches([channel(), channel(id="DI0", direction="input", address="%IX0.0", pin="GP15",
+                                                                    dt={"alias": "sw0", "controller": "gpio0", "pin": 15}),
+                                              analog_input()]))
+
+    def test_an_alias_the_overlay_does_not_define_is_reported(self) -> None:
+        errors = self.mismatches([channel(dt={"alias": "led9", "controller": "gpio0", "pin": 0})])
+        self.assertTrue(any("DO0" in text and "led9" in text and "board.overlay" in text for text in errors), errors)
+
+    def test_an_alias_on_another_gpio_is_reported(self) -> None:
+        errors = self.mismatches([channel(id="DO1", address="%QX0.1", pin="GP1", dt={"alias": "led0", "controller": "gpio0", "pin": 1})])
+        self.assertTrue(any("DO1" in text and "gpio0 0" in text for text in errors), errors)
+
+    def test_an_analog_input_on_a_converter_the_overlay_does_not_enable_is_reported(self) -> None:
+        errors = self.mismatches([analog_input(dt={"controller": "adc0", "channel": 3})])
+        self.assertTrue(any("AI0" in text and "adc0" in text for text in errors), errors)
+
+    def test_the_binding_carries_the_flags_of_the_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(OVERLAY)
+            button = channel(id="DI0", direction="input", address="%IX0.0", pin="GP15",
+                             dt={"alias": "sw0", "controller": "gpio0", "pin": 15}, source="board.overlay")
+            binding = boards_lib.overlay_binding(button, Path(directory))
+        self.assertEqual(("gpio0", 15), (binding["controller"], binding["pin"]))
+        self.assertIn("GPIO_PULL_UP", binding["flags"])
+        self.assertIn("GPIO_ACTIVE_LOW", binding["flags"])
+
+
+RTU_OVERLAY = """
+&pinctrl {
+    uart1_default: uart1_default {
+        group1 { pinmux = <UART1_TX_P4>; };
+        group2 { pinmux = <UART1_RX_P5>; input-enable; };
+    };
+};
+&uart0 { status = "disabled"; };
+&uart1 {
+    status = "okay";
+    pinctrl-0 = <&uart1_default>;
+    pinctrl-names = "default";
+    modbus0: modbus0 { compatible = "zephyr,modbus-serial"; status = "okay"; };
+};
+"""
+
+
+class FieldbusPortTests(unittest.TestCase):
+    """IO-009, COM-012: a fieldbus port names its UART and pins, and no pin of a serial port is an I/O channel's pin."""
+
+    def port(self, **overrides: object) -> dict[str, object]:
+        base: dict[str, object] = {
+            "id": "RTU0", "protocol": "modbus-rtu", "uart": "uart1", "tx": "GP4", "rx": "GP5",
+            "location": "header pins 6 and 7", "electrical": "3.3 V logic UART", "source": "board.overlay",
+        }
+        base.update(overrides)
+        return base
+
+    def errors(self, ports: list[dict[str, object]], overlay: str = RTU_OVERLAY) -> list[str]:
+        entry = board([channel(), channel(id="DO1", address="%QX0.1", pin="GP1", dt={"alias": "led1", "controller": "gpio0", "pin": 1})])
+        entry["fieldbus"] = ports
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / "board.overlay").write_text(overlay)
+            for item in entry["io"]["channels"]:  # type: ignore[index]
+                item["source"] = "board.overlay"
+            return boards_lib.validate_fieldbus(entry, Path(directory))
+
+    def test_io_009_a_modbus_rtu_port_on_free_pins_bound_by_its_overlay_is_valid(self) -> None:
+        self.assertEqual([], self.errors([self.port()]))
+
+    def test_io_009_a_port_pin_that_is_an_io_channel_pin_is_reported(self) -> None:
+        errors = self.errors([self.port(tx="GP1")])
+        self.assertTrue(any("RTU0" in text and "GP1" in text and "DO1" in text for text in errors), errors)
+
+    def test_io_009_an_overlay_uart_pinctrl_on_an_io_channel_pin_is_reported(self) -> None:
+        overlay = RTU_OVERLAY.replace("UART1_TX_P4", "UART1_TX_P0")
+        errors = self.errors([self.port()], overlay)
+        self.assertTrue(any("uart1_default" in text and "DO0" in text for text in errors), errors)
+
+    def test_io_009_a_port_whose_overlay_has_no_modbus_serial_node_on_its_uart_is_reported(self) -> None:
+        overlay = RTU_OVERLAY.replace('compatible = "zephyr,modbus-serial";', "")
+        errors = self.errors([self.port()], overlay)
+        self.assertTrue(any("RTU0" in text and "zephyr,modbus-serial" in text for text in errors), errors)
+
+    def test_io_009_a_port_whose_uart_pins_are_not_the_described_ones_is_reported(self) -> None:
+        errors = self.errors([self.port(tx="GP8", rx="GP9")])
+        self.assertTrue(any("RTU0" in text and "GP8" in text for text in errors), errors)
+
+
+class StorageUsersTests(unittest.TestCase):
+    """IO-008: the persistent stores of a board's firmware, and the flash partition each one takes."""
+
+    def users(self, conf: str, overlay: str) -> dict[str, str]:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "firmware/app").mkdir(parents=True)
+            (root / "firmware/app/prj.conf").write_text("CONFIG_NVS=y\n")
+            (root / "board.conf").write_text(conf)
+            (root / "board.overlay").write_text(overlay)
+            return boards_lib.storage_users({"support_assets": ["board.conf", "board.overlay"]}, root)
+
+    def test_io_008_nvs_alone_takes_the_storage_partition(self) -> None:
+        self.assertEqual({"nvs": "storage_partition"}, self.users("", "/ { };\n"))
+
+    def test_io_008_littlefs_and_nvs_share_the_storage_partition_unless_the_overlay_gives_nvs_its_own(self) -> None:
+        conf = "CONFIG_FILE_SYSTEM_LITTLEFS=y\n"
+        self.assertEqual({"nvs": "storage_partition", "littlefs": "storage_partition"}, self.users(conf, "/ { };\n"))
+        overlay = "&flash0 { partitions { zplc_nvs_partition: partition@400000 { reg = <0x400000 0x30000>; }; }; };\n"
+        self.assertEqual({"nvs": "zplc_nvs_partition", "littlefs": "storage_partition"}, self.users(conf, overlay))
+
+    def test_io_008_a_store_switched_off_takes_no_partition(self) -> None:
+        self.assertEqual({}, self.users("# CONFIG_NVS is not set\n", "/ { };\n"))
+
+
 class DerivedValuesTests(unittest.TestCase):
     def test_image_extent_is_what_the_channels_need(self) -> None:
         description = board([
@@ -214,9 +373,10 @@ class ManifestTests(unittest.TestCase):
             {entry["board_id"] for entry in self.boards},
         )
 
-    def test_the_learner_boards_expose_four_outputs_four_inputs_and_one_analog_input(self) -> None:
+    def test_io_009_the_learner_boards_expose_four_outputs_four_inputs_and_one_analog_input_on_header_pins(self) -> None:
+        # An on-board LED or button (the Pico's GP25, the ESP32-S3's BOOT) is an extra, not one of the four.
         for board_id in ("rpi-pico-rp2040", "esp32-s3-devkitc"):
-            channels = self.by_id(board_id)["io"]["channels"]
+            channels = [c for c in self.by_id(board_id)["io"]["channels"] if c.get("location", "").startswith("header")]
             digital_out = [c for c in channels if c["kind"] == "digital" and c["direction"] == "output"]
             digital_in = [c for c in channels if c["kind"] == "digital" and c["direction"] == "input"]
             analog_in = [c for c in channels if c["kind"] == "analog" and c["direction"] == "input"]
@@ -224,9 +384,9 @@ class ManifestTests(unittest.TestCase):
             self.assertGreaterEqual(len(digital_in), 4, board_id)
             self.assertGreaterEqual(len(analog_in), 1, board_id)
 
-    def test_the_pico_maps_its_on_board_led(self) -> None:
-        pins = {c["pin"] for c in self.by_id("rpi-pico-rp2040")["io"]["channels"]}
-        self.assertIn("GP25", pins)
+    def test_io_009_the_pico_maps_its_on_board_led_as_an_output(self) -> None:
+        led = next(c for c in self.by_id("rpi-pico-rp2040")["io"]["channels"] if c["pin"] == "GP25")
+        self.assertEqual(("output", "on-board LED"), (led["direction"], led["location"]))
 
     def test_the_opta_maps_its_relays(self) -> None:
         aliases = {c["dt"].get("alias") for c in self.by_id("arduino-opta-wifi-m7")["io"]["channels"]}
@@ -238,15 +398,93 @@ class ManifestTests(unittest.TestCase):
             outputs = [a for a in channels if a.startswith("%QX0.")]
             self.assertIn("%QX0.0", outputs, entry["board_id"])
 
-    def test_the_esp32_profile_names_the_devkitc_1_variant(self) -> None:
+    def test_io_009_the_esp32_profile_has_the_flash_and_psram_of_the_n8r8_devkitc_1(self) -> None:
         entry = self.by_id("esp32-s3-devkitc")
         self.assertIn("DevKitC-1", entry["display_name"])
         self.assertEqual("N8R8", entry["hardware"]["variant"])
         self.assertEqual((8, 8), (entry["hardware"]["flash_mb"], entry["hardware"]["psram_mb"]))
 
+    # The learner pin assignment of the course (LRN-014): the pin each channel id is printed as on the board.
+    LEARNER_PINS = {
+        "rpi-pico-rp2040": {
+            "DO0": "GP0", "DO1": "GP1", "DO2": "GP2", "DO3": "GP3", "DO4": "GP25",
+            "DI0": "GP15", "DI1": "GP14", "DI2": "GP13", "DI3": "GP12", "AI0": "GP26",
+        },
+        "esp32-s3-devkitc": {
+            "DO0": "GPIO15", "DO1": "GPIO16", "DO2": "GPIO17", "DO3": "GPIO18",
+            "DI0": "GPIO5", "DI1": "GPIO6", "DI2": "GPIO7", "DI3": "GPIO8", "DI4": "GPIO0", "AI0": "GPIO4",
+        },
+    }
+
+    def test_io_009_the_learner_channels_sit_on_the_pins_of_the_course(self) -> None:
+        for board_id, pins in self.LEARNER_PINS.items():
+            channels = {c["id"]: c for c in self.by_id(board_id)["io"]["channels"]}
+            printed = {key: re.match(r"GP(?:IO)?\d+", channels[key]["pin"]).group() for key in pins if key in channels}
+            self.assertEqual(pins, printed, board_id)
+
+    def test_every_learner_channel_is_bound_by_the_profile_overlay(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            entry = self.by_id(board_id)
+            overlay = next(asset for asset in entry["support_assets"] if asset.endswith(".overlay"))
+            for item in entry["io"]["channels"]:
+                self.assertEqual(overlay, item["source"], f"{board_id} {item['id']}")
+                if item["kind"] == "digital":
+                    self.assertIsNotNone(boards_lib.overlay_binding(item, ROOT), f"{board_id} {item['id']}")
+
+    def test_every_learner_pin_on_a_header_states_its_voltage_and_output_current_limit(self) -> None:
+        # LRN-016: the pin map generated from the description carries the limits a learner wires to.
+        for board_id in self.LEARNER_PINS:
+            for item in self.by_id(board_id)["io"]["channels"]:
+                if not item.get("location", "").startswith("header"):
+                    continue
+                self.assertIn("3.3 V", item["electrical"], f"{board_id} {item['id']}")
+                if item["direction"] == "output":
+                    self.assertIn("under 10 mA", item["electrical"], f"{board_id} {item['id']}")
+
+    def test_the_learner_buttons_pull_up_and_are_active_low(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            for item in self.by_id(board_id)["io"]["channels"]:
+                if item["kind"] == "digital" and item["direction"] == "input":
+                    flags = boards_lib.overlay_binding(item, ROOT)["flags"]
+                    self.assertIn("GPIO_PULL_UP", flags, f"{board_id} {item['id']}")
+                    self.assertIn("GPIO_ACTIVE_LOW", flags, f"{board_id} {item['id']}")
+
+    def test_the_esp32_analog_input_is_adc1_at_12_db_in_the_counts_of_the_zephyr_driver(self) -> None:
+        ai0 = next(c for c in self.by_id("esp32-s3-devkitc")["io"]["channels"] if c["id"] == "AI0")
+        # ADC1 (node adc0) channel n is GPIO n + 1; ADC_GAIN_1_4 is 12 dB attenuation in drivers/adc/adc_esp32.c.
+        self.assertEqual(("adc0", 3, "ADC_GAIN_1_4"), (ai0["dt"]["controller"], ai0["dt"]["channel"], ai0["dt"]["gain"]))
+        # With the eFuse calibration the driver returns millivolts / 4 as counts of 4095 over its 1100 mV reference.
+        scale = ai0["range"]
+        self.assertEqual((0, 0.0, 3.1), (scale["raw_min"], scale["eng_min"], scale["eng_max"]))
+        self.assertEqual(int(scale["eng_max"] * 1000 / 4 * 4095 / 1100), scale["raw_max"])
+
     def test_the_support_level_is_not_set_by_hand(self) -> None:
         for entry in self.boards:
             self.assertNotIn("validation_level", entry, entry["board_id"])
+
+
+    def test_io_008_no_two_storage_users_share_a_partition_on_a_learner_board(self) -> None:
+        for board_id in self.LEARNER_PINS:
+            users = boards_lib.storage_users(self.by_id(board_id), ROOT)
+            self.assertIn("nvs", users, board_id)
+            self.assertEqual(len(users), len(set(users.values())), f"{board_id}: {users}")
+
+    def test_io_009_the_pico_has_a_modbus_rtu_port_on_pins_no_io_channel_uses(self) -> None:
+        entry = self.by_id("rpi-pico-rp2040")
+        ports = [port for port in entry.get("fieldbus", []) if port["protocol"] == "modbus-rtu"]
+        self.assertEqual(1, len(ports), "the Pico needs one Modbus RTU port (COM-012, HIL-010)")
+        self.assertEqual(("uart1", "GP4", "GP5"), (ports[0]["uart"], ports[0]["tx"], ports[0]["rx"]))
+        self.assertEqual([], boards_lib.validate_fieldbus(entry, ROOT))
+
+    def test_io_009_the_t_display_s3_settings_are_a_separate_profile_that_matches_its_overlay(self) -> None:
+        profile = json.loads(TDISPLAY_PROFILE.read_text())
+        self.assertEqual([], boards_lib.validate_io_description(profile, ROOT))
+        self.assertEqual([], boards_lib.devicetree_mismatches(profile, ROOT))
+        self.assertEqual({"firmware/app/boards/profiles/lilygo_tdisplay_s3.overlay"}, {c["source"] for c in profile["io"]["channels"]})
+        pins = {c["id"]: c["pin"].split()[0] for c in profile["io"]["channels"]}
+        self.assertEqual(("GPIO38", "GPIO15"), (pins["DO0"], pins["DO1"]))
+        devkitc = {c["pin"].split()[0] for c in self.by_id("esp32-s3-devkitc")["io"]["channels"]}
+        self.assertNotIn("GPIO38", devkitc)
 
 
 class WatchdogProfileTests(unittest.TestCase):

@@ -111,7 +111,7 @@ describe('hardware demos read their pins from the board overlay', () => {
     // IO-009: the Pico maps its on-board LED (GP25) as the fifth output and has four inputs; the DevKitC-1 has four outputs
     expect([...overlayPins('rpi_pico_rp2040.overlay').outputs]).toEqual([[0, 0], [1, 1], [2, 2], [3, 3], [4, 25]]);
     expect([...overlayPins('rpi_pico_rp2040.overlay').inputs]).toEqual([[0, 15], [1, 14], [2, 13], [3, 12]]);
-    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([[0, 38], [1, 15], [2, 16], [3, 17]]);
+    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([[0, 15], [1, 16], [2, 17], [3, 18]]);
   });
 
   for (const name of hardwareDemos) {
@@ -142,11 +142,11 @@ describe('hardware demos read their pins from the board overlay', () => {
     });
   }
 
-  it('esp32s3_blinky words its pin as the current overlay and says the DevKitC-1 mapping is pending', () => {
+  it('esp32s3_blinky names its pin as DO0, GPIO15 on header J1 pin 8 of the DevKitC-1, with no pending mapping (IO-009)', () => {
     const manifest = manifestOf('esp32s3_blinky');
     const text = [manifest.description, ...(manifest.io?.outputs ?? []).map((point) => point.description)].join(' ');
-    expect(text).toMatch(/current[^.]*overlay/i);
-    expect(text).toMatch(/DevKitC-1[^.]*pending/i);
+    expect(text).toMatch(/GPIO15[^.]*header J1 pin 8/);
+    expect(text).not.toMatch(/pending/i);
   });
 
   // The HAL stores ADC channel n at input-image byte 8 + 2n, which is word %IW(4 + n); the manifest and the source must agree.

@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/modules/module-8. Do not edit. >>> */}
 
-Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenarios de prueba, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
+Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas de escenario, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
 
 - Nivel: Avanzado
 - Rutas: Simulación
@@ -21,7 +21,7 @@ Las pruebas llegan cuando ya hay programas que vale la pena probar. Los escenari
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Cinta de clasificación y atasco seguro](../lessons/conveyor-classification-jam.md) | `conveyor-classification-jam` | ST | 25 |
-| [Assertions temporales y falla por atasco](../lessons/temporal-assertions-jam-fault.md) | `temporal-assertions-jam-fault` | ST | 25 |
+| [Aserciones temporales y falla por atasco](../lessons/temporal-assertions-jam-fault.md) | `temporal-assertions-jam-fault` | ST | 25 |
 | [Diagnóstico reproducible: dos piezas, una decisión](../lessons/conveyor-two-parts-diagnosis.md) | `conveyor-two-parts-diagnosis` | ST | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-8 <<< */}

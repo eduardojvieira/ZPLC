@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
-      "checkpoint": "El escenario se llama BatchCount y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario se llama BatchCount y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

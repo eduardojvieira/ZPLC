@@ -39,7 +39,7 @@ Use el calendario versionado para distinguir una pieza metálica de una no metá
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.
+Las pruebas aportan evidencia del host con el runtime nativo POSIX y entradas programadas por el escenario; no son evidencia de sensores ni de piezas físicas, de los tiempos en el dispositivo de destino, de hardware, de HIL ni de certificación.
 
 ## En una placa
 

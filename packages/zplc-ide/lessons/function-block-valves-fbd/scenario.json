@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "Valves",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Valves.FillPB": false,
+        "Valves.DrainPB": false,
+        "Valves.StopPB": false,
+        "Valves.AirOk": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "Valves.FillPB": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "Valves.FillPB": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "Valves.DrainPB": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "Valves.DrainPB": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "Valves.StopPB": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "Valves.StopPB": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "Valves.DrainPB": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "Valves.DrainPB": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "Valves.AirOk": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "Valves.AirOk": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "Valves.FillPB": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "Valves.FillValve": false,
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "Valves.FillValve": true,
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "Valves.FillValve": true,
+        "Valves.DrainValve": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Valves.FillValve": false,
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "Valves.FillValve": false,
+        "Valves.DrainValve": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "Valves.FillValve": false,
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "Valves.FillValve": true,
+        "Valves.DrainValve": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "Valves.DrainValve": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 90,
+      "withinMs": 0,
+      "condition": {
+        "Valves.DrainValve": false
+      }
+    }
+  ]
+}

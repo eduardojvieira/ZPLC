@@ -1,0 +1,635 @@
+{
+  "name": "CoilEcho",
+  "description": "Starter: Rd is placed and wired to the same coil, but nothing enables it, so the coil is never read back.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Send",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Request: write the coil and read it back"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Written",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "The write is done"
+      },
+      {
+        "name": "Echo",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "The coil read back is ON"
+      },
+      {
+        "name": "Failed",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "A block reported ERROR"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_send",
+      "type": "variable",
+      "variableName": "Send",
+      "direction": "read",
+      "comment": "Request from the operator",
+      "position": {
+        "x": 40,
+        "y": 60
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "const_proto",
+      "type": "constant",
+      "dataType": "USINT",
+      "value": 1,
+      "comment": "1 = Modbus TCP",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "USINT"
+        }
+      ]
+    },
+    {
+      "id": "const_slave",
+      "type": "constant",
+      "dataType": "UINT",
+      "value": 1,
+      "comment": "Unit id of the server",
+      "position": {
+        "x": 40,
+        "y": 260
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "UINT"
+        }
+      ]
+    },
+    {
+      "id": "const_addr",
+      "type": "constant",
+      "dataType": "UINT",
+      "value": 4,
+      "comment": "Coil 4",
+      "position": {
+        "x": 40,
+        "y": 340
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "UINT"
+        }
+      ]
+    },
+    {
+      "id": "const_count",
+      "type": "constant",
+      "dataType": "UINT",
+      "value": 1,
+      "comment": "One coil",
+      "position": {
+        "x": 40,
+        "y": 420
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "UINT"
+        }
+      ]
+    },
+    {
+      "id": "const_value",
+      "type": "constant",
+      "dataType": "BOOL",
+      "value": true,
+      "comment": "The state to write",
+      "position": {
+        "x": 40,
+        "y": 500
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "const_host",
+      "type": "constant",
+      "dataType": "STRING",
+      "value": "127.0.0.1",
+      "comment": "The Modbus server of the simulation, on this computer",
+      "position": {
+        "x": 40,
+        "y": 580
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "STRING"
+        }
+      ]
+    },
+    {
+      "id": "const_port",
+      "type": "constant",
+      "dataType": "UINT",
+      "value": 502,
+      "comment": "Modbus TCP port",
+      "position": {
+        "x": 40,
+        "y": 660
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "UINT"
+        }
+      ]
+    },
+    {
+      "id": "wr",
+      "type": "MB_WRITE_COIL",
+      "instanceName": "Wr",
+      "comment": "Writes coil 4 while EN is TRUE",
+      "position": {
+        "x": 340,
+        "y": 60
+      },
+      "inputs": [
+        {
+          "name": "EN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PROTO",
+          "type": "USINT"
+        },
+        {
+          "name": "SLAVE_ID",
+          "type": "UINT"
+        },
+        {
+          "name": "ADDR",
+          "type": "UINT"
+        },
+        {
+          "name": "COUNT",
+          "type": "UINT"
+        },
+        {
+          "name": "VALUE",
+          "type": "BOOL"
+        },
+        {
+          "name": "HOST",
+          "type": "STRING"
+        },
+        {
+          "name": "PORT",
+          "type": "UINT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BUSY",
+          "type": "BOOL"
+        },
+        {
+          "name": "DONE",
+          "type": "BOOL"
+        },
+        {
+          "name": "ERROR",
+          "type": "BOOL"
+        },
+        {
+          "name": "STATUS",
+          "type": "DINT"
+        }
+      ]
+    },
+    {
+      "id": "rd",
+      "type": "MB_READ_COIL",
+      "instanceName": "Rd",
+      "comment": "Reads coil 4 back while EN is TRUE",
+      "position": {
+        "x": 340,
+        "y": 420
+      },
+      "inputs": [
+        {
+          "name": "EN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PROTO",
+          "type": "USINT"
+        },
+        {
+          "name": "SLAVE_ID",
+          "type": "UINT"
+        },
+        {
+          "name": "ADDR",
+          "type": "UINT"
+        },
+        {
+          "name": "COUNT",
+          "type": "UINT"
+        },
+        {
+          "name": "HOST",
+          "type": "STRING"
+        },
+        {
+          "name": "PORT",
+          "type": "UINT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "BUSY",
+          "type": "BOOL"
+        },
+        {
+          "name": "DONE",
+          "type": "BOOL"
+        },
+        {
+          "name": "ERROR",
+          "type": "BOOL"
+        },
+        {
+          "name": "STATUS",
+          "type": "DINT"
+        },
+        {
+          "name": "VALUE",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "and_echo",
+      "type": "AND",
+      "comment": "The read is done and the coil is ON",
+      "position": {
+        "x": 640,
+        "y": 420
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "or_failed",
+      "type": "OR",
+      "comment": "Either block reported ERROR",
+      "position": {
+        "x": 640,
+        "y": 260
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_written",
+      "type": "output",
+      "variableName": "Written",
+      "comment": "The write is done",
+      "position": {
+        "x": 860,
+        "y": 60
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_echo",
+      "type": "output",
+      "variableName": "Echo",
+      "comment": "The coil read back is ON",
+      "position": {
+        "x": 860,
+        "y": 420
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out_failed",
+      "type": "output",
+      "variableName": "Failed",
+      "comment": "A block reported ERROR",
+      "position": {
+        "x": 860,
+        "y": 260
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_send_out_wr_en",
+      "from": {
+        "block": "var_send",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "EN"
+      }
+    },
+    {
+      "id": "conn_const_proto_out_wr_proto",
+      "from": {
+        "block": "const_proto",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "PROTO"
+      }
+    },
+    {
+      "id": "conn_const_proto_out_rd_proto",
+      "from": {
+        "block": "const_proto",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "PROTO"
+      }
+    },
+    {
+      "id": "conn_const_slave_out_wr_slave_id",
+      "from": {
+        "block": "const_slave",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "SLAVE_ID"
+      }
+    },
+    {
+      "id": "conn_const_slave_out_rd_slave_id",
+      "from": {
+        "block": "const_slave",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "SLAVE_ID"
+      }
+    },
+    {
+      "id": "conn_const_addr_out_wr_addr",
+      "from": {
+        "block": "const_addr",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "ADDR"
+      }
+    },
+    {
+      "id": "conn_const_addr_out_rd_addr",
+      "from": {
+        "block": "const_addr",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "ADDR"
+      }
+    },
+    {
+      "id": "conn_const_count_out_wr_count",
+      "from": {
+        "block": "const_count",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "COUNT"
+      }
+    },
+    {
+      "id": "conn_const_count_out_rd_count",
+      "from": {
+        "block": "const_count",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "COUNT"
+      }
+    },
+    {
+      "id": "conn_const_host_out_wr_host",
+      "from": {
+        "block": "const_host",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "HOST"
+      }
+    },
+    {
+      "id": "conn_const_host_out_rd_host",
+      "from": {
+        "block": "const_host",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "HOST"
+      }
+    },
+    {
+      "id": "conn_const_port_out_wr_port",
+      "from": {
+        "block": "const_port",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "PORT"
+      }
+    },
+    {
+      "id": "conn_const_port_out_rd_port",
+      "from": {
+        "block": "const_port",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "rd",
+        "port": "PORT"
+      }
+    },
+    {
+      "id": "conn_const_value_out_wr_value",
+      "from": {
+        "block": "const_value",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "wr",
+        "port": "VALUE"
+      }
+    },
+    {
+      "id": "conn_wr_done_out_written_in",
+      "from": {
+        "block": "wr",
+        "port": "DONE"
+      },
+      "to": {
+        "block": "out_written",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_rd_done_and_echo_in1",
+      "from": {
+        "block": "rd",
+        "port": "DONE"
+      },
+      "to": {
+        "block": "and_echo",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_rd_value_and_echo_in2",
+      "from": {
+        "block": "rd",
+        "port": "VALUE"
+      },
+      "to": {
+        "block": "and_echo",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_and_echo_out_out_echo_in",
+      "from": {
+        "block": "and_echo",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_echo",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_wr_error_or_failed_in1",
+      "from": {
+        "block": "wr",
+        "port": "ERROR"
+      },
+      "to": {
+        "block": "or_failed",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_rd_error_or_failed_in2",
+      "from": {
+        "block": "rd",
+        "port": "ERROR"
+      },
+      "to": {
+        "block": "or_failed",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_or_failed_out_out_failed_in",
+      "from": {
+        "block": "or_failed",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_failed",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-20",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

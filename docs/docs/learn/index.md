@@ -15,7 +15,7 @@ physical operation.
 
 ## Start with the lessons in Studio
 
-Studio has 29 lessons in a course, in English and in Spanish. The [course outline](course-outline.md) lists every module, the lessons that exist and the ones that are planned. On the Welcome
+Studio has 33 lessons in a course, in English and in Spanish. The [course outline](course-outline.md) lists every module, the lessons that exist and the ones that are planned. On the Welcome
 screen, choose **Learn**: the Learn home opens, with no project and no network,
 and lists the modules in order with their level, what each requires and how long
 it takes. Choose **Start the course**: Studio makes the workspace of the first lesson in its own folder and opens it; there is no folder to choose and no copy step. The lesson stays visible beside the editor, also when you switch to the Project view.
@@ -87,7 +87,6 @@ what works today.
 
 ## What is not here yet
 
-Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. A track for a learner board, and the lessons of five modules that are still empty,
-are future work. The [course outline](course-outline.md) says which. The lessons and the
+Each lesson lists the tracks it supports and, for a track it does not support, says why and what to do instead. The [hardware track](hardware-track.md) says how to choose your board and how a run on it is checked, and each hardware lesson has a wiring page per board; the check of a run from the lesson panel is future work. The [course outline](course-outline.md) gives the tracks of every lesson. The lessons and the
 examples are host and simulation exercises: they do not show how a program
 behaves on a physical board.

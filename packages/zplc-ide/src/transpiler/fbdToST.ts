@@ -442,7 +442,7 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
     const declared = new Set(validatedModel.variables.local.map((v) => v.name.toUpperCase()));
     for (const block of validatedModel.blocks) {
       const kind = kinds.get(block.id);
-      if (block.instanceName && (kind === 'standard' || ((kind === 'registry' || kind === 'userblock') && !declared.has(block.instanceName.toUpperCase())))) {
+      if (block.instanceName && (kind === 'standard' || ((kind === 'registry' || kind === 'userblock' || kind === 'comm') && !declared.has(block.instanceName.toUpperCase())))) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
         lines.push(`    ${block.instanceName} : ${block.type};${comment}`, blockElement(block.id));
       }
@@ -539,6 +539,12 @@ export function fbdPlacesBlock(type: string, blocks?: readonly ProjectBlock[]): 
   if (kind === undefined) return false;
   // a block that is an instance is declared as a variable of its type: a name the compiler does not have as a type is no block
   return kind === 'standard' || kind === 'comm' || kind === 'registry' ? getFB(type) !== undefined : true;
+}
+
+/** Whether a block of this type is an instance of a function block, which the diagram names and declares (LNG-007). */
+export function fbdNeedsInstance(type: string, blocks?: readonly ProjectBlock[]): boolean {
+  const kind = classify({ id: 'palette', type, position: { x: 0, y: 0 } }, blocks);
+  return kind === 'standard' || kind === 'comm' || kind === 'registry' || kind === 'userblock';
 }
 
 function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | undefined {

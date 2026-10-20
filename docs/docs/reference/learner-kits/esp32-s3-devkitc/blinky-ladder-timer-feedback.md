@@ -26,7 +26,7 @@ The wiring of the lesson [TON oscillator and output feedback](../../../learn/les
 
 ## Wiring card
 
-1. LED output: red LED with a 330 Ω resistor in series, from GPIO38 (header J3, DO0) to GND (GND · J1-22).
+1. LED output: red LED with a 330 Ω resistor in series, from GPIO15 (header J1 pin 8, DO0) to GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/blinky-ladder-timer-feedback <<< */}
 

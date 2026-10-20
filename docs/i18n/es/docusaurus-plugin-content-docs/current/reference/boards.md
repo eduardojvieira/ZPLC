@@ -63,7 +63,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 162.5 | 170.2 | 166.1 | 174.5 | 8.0 | 4.0 | 24.0 |
+| `rpi-pico-rp2040` | 173.7 | 182.5 | 169.4 | 178.0 | 8.0 | 4.0 | 24.0 |
 | `arduino-giga-r1-m7` | 212.8 | 223.5 | 229.9 | 241.5 | 8.0 | 4.0 | 44.0 |
 | `esp32-s3-devkitc` | 987.0 | 1031.0 | 2381.1 | 2493.0 | 2.0 | 1.0 | 8.0 |
 | `stm32f746g-disco` | 297.7 | 312.8 | 209.7 | 220.2 | 8.0 | 4.0 | 16.0 |
@@ -94,20 +94,26 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 | Canal | Dirección | Tipo | Dirección IEC | Pin | Ubicación | Estado del pin | Seguro | Eléctrico |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DO0 | salida | digital | `%QX0.0` | GP0 | header pin 1 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| DO1 | salida | digital | `%QX0.1` | GP1 | header pin 2 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| DO2 | salida | digital | `%QX0.2` | GP2 | header pin 4 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| DO3 | salida | digital | `%QX0.3` | GP3 | header pin 5 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. RP2040 drive strength is configurable up to 12 mA per pin (datasheet, not qualified here). |
-| DO4 | salida | digital | `%QX0.4` | GP25 | on-board LED | devicetree | 0 | On-board green LED through its series resistor; not a field output. |
+| DO0 | salida | digital | `%QX0.0` | GP0 | header pin 1 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| DO1 | salida | digital | `%QX0.1` | GP1 | header pin 2 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| DO2 | salida | digital | `%QX0.2` | GP2 | header pin 4 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| DO3 | salida | digital | `%QX0.3` | GP3 | header pin 5 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. The RP2040 drives 4 mA by default (up to 12 mA, not qualified here): keep each output under 10 mA, as an LED with 330 Ω in series does (about 4 mA), and all pins together under 50 mA. |
+| DO4 | salida | digital | `%QX0.4` | GP25 | on-board LED | devicetree | 0 | On-board green LED through its series resistor; not a field output. This image is for the Raspberry Pi Pico (RP2040): the Pico W carries the LED on its wireless chip, and the Pico 2 (RP2350) needs another image. |
 | DI0 | entrada | digital | `%IX0.0` | GP15 | header pin 20 | devicetree |  | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | DI1 | entrada | digital | `%IX0.1` | GP14 | header pin 19 | profile |  | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | DI2 | entrada | digital | `%IX0.2` | GP13 | header pin 17 | profile |  | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
 | DI3 | entrada | digital | `%IX0.3` | GP12 | header pin 16 | profile |  | 3.3 V logic input with the RP2040 internal pull-up enabled by the profile; connect a switch to GND. Not 5 V tolerant. |
-| AI0 | entrada | analógico | `%IW4` | GP26 (ADC0) | header pin 31 | devicetree |  | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. 0..4095 -> 0.0 a 3.3 V. |
+| AI0 | entrada | analógico | `%IW4` | GP26 (ADC0) | header pin 31 | devicetree |  | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. Wire a 10 kΩ potentiometer between 3V3(OUT) (header pin 36) and AGND (header pin 33), its wiper to this pin. 0..4095 -> 0.0 a 3.3 V. |
 | AI1 | entrada | analógico | `%IW5` | GP27 (ADC1) | header pin 32 | devicetree |  | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. 0..4095 -> 0.0 a 3.3 V. |
 | AI2 | entrada | analógico | `%IW6` | GP28 (ADC2) | header pin 34 | devicetree |  | 0 V to 3.3 V on the ADC input; do not exceed 3.3 V. 0..4095 -> 0.0 a 3.3 V. |
 | AI3 | entrada | analógico | `%IW7` | VSYS/3 (ADC3) | internal | devicetree |  | Internal: the supply voltage divided by 3, no external connection. 0..4095 -> 0.0 a 3.3 V. VSYS = 3 x the input voltage. |
 | AI4 | entrada | analógico | `%IW8` | Temperature sensor (ADC4) | internal | devicetree |  | Internal die temperature sensor, no external connection. 0..4095 -> 0.0 a 3.3 V. RP2040 datasheet: T [degC] = 27 - (V - 0.706) / 0.001721 with V = raw * 3.3 / 4095. |
+
+#### Puertos de bus de campo
+
+| Puerto | Protocolo | UART | TX | RX | Ubicación | Eléctrico |
+| --- | --- | --- | --- | --- | --- | --- |
+| RTU0 | modbus-rtu | `uart1` | GP4 | GP5 | header pins 6 (TX) and 7 (RX), GND on header pin 8 | 3.3 V logic UART, not RS-485 and not RS-232: connect an RS-485 transceiver for 3.3 V (a MAX3485 class module) for a bus, or a 3.3 V USB-serial adapter for a computer. Never connect 5 V or RS-232 levels to these pins. |
 
 ### Arduino GIGA R1 (STM32H747 M7)
 
@@ -147,7 +153,7 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 - **Comando de build:** `west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/capabilities-evidence.md`
 - **Imagen de proceso usada (entrada, salida):** 10 B, 1 B
-- **Hash de la descripción de E/S:** `2e9abb09`
+- **Hash de la descripción de E/S:** `93e038ba`
 - **Assets de soporte:**
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf`
   - `firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay`
@@ -156,19 +162,20 @@ Flash y RAM de `firmware/app` por placa, de la tabla de memoria del enlazador en
 
 | Canal | Dirección | Tipo | Dirección IEC | Pin | Ubicación | Estado del pin | Seguro | Eléctrico |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DO0 | salida | digital | `%QX0.0` | GPIO38 | header J3 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. External LED with a series resistor. |
-| DO1 | salida | digital | `%QX0.1` | GPIO15 | header J1 | devicetree | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DO2 | salida | digital | `%QX0.2` | GPIO16 | header J1 | profile | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DO3 | salida | digital | `%QX0.3` | GPIO17 | header J1 | profile | 0 | 3.3 V logic. Not 5 V tolerant. |
-| DI0 | entrada | digital | `%IX0.0` | GPIO0 (BOOT) | header J3 and BOOT button | devicetree |  | BOOT button, active low with an internal pull-up. A strapping pin: keep it high at reset. |
-| DI1 | entrada | digital | `%IX0.1` | GPIO18 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| DI2 | entrada | digital | `%IX0.2` | GPIO8 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| DI3 | entrada | digital | `%IX0.3` | GPIO9 | header J1 | profile |  | 3.3 V logic. Not 5 V tolerant. Internal pull-up; connect a switch to GND. |
-| AI0 | entrada | analógico | `%IW4` | GPIO4 (ADC1 channel 3) | header J1 | profile |  | 0 V to about 3.1 V at 11 dB attenuation; do not exceed 3.3 V. 0..4095 -> 0.0 a 3.1 V. Nominal and uncalibrated: the ESP32-S3 converter is nonlinear near both ends. |
+| DO0 | salida | digital | `%QX0.0` | GPIO15 | header J1 pin 8 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO1 | salida | digital | `%QX0.1` | GPIO16 | header J1 pin 9 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO2 | salida | digital | `%QX0.2` | GPIO17 | header J1 pin 10 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DO3 | salida | digital | `%QX0.3` | GPIO18 | header J1 pin 11 | profile | 0 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
+| DI0 | entrada | digital | `%IX0.0` | GPIO5 | header J1 pin 5 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI1 | entrada | digital | `%IX0.1` | GPIO6 | header J1 pin 6 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI2 | entrada | digital | `%IX0.2` | GPIO7 | header J1 pin 7 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI3 | entrada | digital | `%IX0.3` | GPIO8 | header J1 pin 12 | profile |  | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
+| DI4 | entrada | digital | `%IX0.4` | GPIO0 (BOOT button) | on-board BOOT button | devicetree |  | On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
+| AI0 | entrada | analógico | `%IW4` | GPIO4 (ADC1_CH3) | header J1 pin 4 | profile |  | 0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin. 0..2885 -> 0.0 a 3.1 V. The Zephyr ESP32 driver applies the eFuse calibration and returns the input in millivolts divided by 4 (gain 1/4) as counts of 4095 over its 1100 mV reference: V = raw x 4.4 / 4095, so 3.1 V reads about 2885. Not calibrated by ZPLC; the converter is nonlinear near both ends.. |
 
 #### Sin mapear
 
-- `GPIO48 (RGB LED)`: the on-board LED is an addressable RGB part that needs the LED-strip driver
+- `GPIO38 (RGB LED on v1.1) or GPIO48 (RGB LED on v1.0)`: the on-board LED is an addressable RGB part that needs the LED-strip driver
 
 ### STM32F746G Discovery
 

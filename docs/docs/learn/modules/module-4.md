@@ -22,6 +22,7 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 | --- | --- | --- | --- |
 | [Types, arithmetic and comparison: a total and three bands](../lessons/types-arithmetic-comparison.md) | `types-arithmetic-comparison` | ST | 20 |
 | [Analog scaling: from raw counts to a percentage](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
+| [Analog scaling in Function Block Diagram: a high level alarm](../lessons/analog-scaling-fbd.md) | `analog-scaling-fbd` | FBD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

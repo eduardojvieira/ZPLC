@@ -395,6 +395,24 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             lines.extend(["", f"#### {unmapped_title}", ""])
             for item in unmapped:
                 lines.append(f"- `{item['terminal']}`: {item['reason']}")
+        ports = board.get("fieldbus", [])
+        if ports:
+            lines.extend(
+                [
+                    "",
+                    "#### Fieldbus ports" if not spanish else "#### Puertos de bus de campo",
+                    "",
+                    "| Port | Protocol | UART | TX | RX | Location | Electrical |"
+                    if not spanish
+                    else "| Puerto | Protocolo | UART | TX | RX | Ubicación | Eléctrico |",
+                    "| --- | --- | --- | --- | --- | --- | --- |",
+                ]
+            )
+            for port in ports:  # type: ignore[union-attr]
+                lines.append(
+                    f"| {port['id']} | {port['protocol']} | `{port['uart']}` | {port['tx']} | {port['rx']} | "
+                    f"{cell(port['location'])} | {cell(port['electrical'])} |"
+                )
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 
 

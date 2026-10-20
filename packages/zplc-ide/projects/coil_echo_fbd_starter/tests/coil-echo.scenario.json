@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "CoilEcho",
+  "tickMs": 10,
+  "durationMs": 20000,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "CoilEcho.Send": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "CoilEcho.Send": true
+      }
+    },
+    {
+      "atMs": 10000,
+      "set": {
+        "CoilEcho.Send": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "CoilEcho.Written": false,
+        "CoilEcho.Echo": false,
+        "CoilEcho.Failed": false
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 10,
+      "withinMs": 9000,
+      "condition": {
+        "CoilEcho.Written": true
+      }
+    },
+    {
+      "kind": "WITHIN",
+      "fromMs": 10,
+      "withinMs": 9000,
+      "condition": {
+        "CoilEcho.Echo": true
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "CoilEcho.Failed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 9990,
+      "condition": {
+        "CoilEcho.Written": true,
+        "CoilEcho.Echo": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10100,
+      "condition": {
+        "CoilEcho.Written": false,
+        "CoilEcho.Echo": false
+      }
+    }
+  ]
+}

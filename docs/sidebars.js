@@ -181,6 +181,7 @@ const sidebars = {
         'learn/index',
         'learn/educators',
         'learn/course-outline',
+        'learn/glossary',
         'languages/examples/v1-5-language-suite',
       ],
     },

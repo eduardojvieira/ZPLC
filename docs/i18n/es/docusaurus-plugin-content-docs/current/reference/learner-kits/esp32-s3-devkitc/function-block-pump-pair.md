@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Bloques de función: un biestable, dos bombas en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "function-block-pump-pair"
-description: "Cómo cablear la lección function-block-pump-pair en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección function-block-pump-pair en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair. Do not edit. >>> */}
 
-El cableado de la lección [Bloques de función: un biestable, dos bombas](../../../learn/lessons/function-block-pump-pair.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Bloques de función: un biestable, dos bombas](../../../learn/lessons/function-block-pump-pair.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,12 +26,12 @@ El cableado de la lección [Bloques de función: un biestable, dos bombas](../..
 
 ## Tarjeta de cableado
 
-1. Arranque de la bomba A: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-2. Parada de la bomba A: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-3. Arranque de la bomba B: pulsador entre GPIO8 (header J1, DI2) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-4. Parada de la bomba B: cable puente desde GPIO9 (header J1, DI3) hasta GND (GND · J1-22); conectado significa activado.
-5. Bomba A en marcha: LED verde con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
-6. Bomba B en marcha: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1, DO1) hasta GND (GND · J1-22).
+1. Arranque de la bomba A: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Parada de la bomba A: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Arranque de la bomba B: pulsador entre GPIO7 (header J1 pin 7, DI2) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+4. Parada de la bomba B: cable puente desde GPIO8 (header J1 pin 12, DI3) hasta GND (GND · J1-22); conectado significa activado.
+5. Bomba A en marcha: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+6. Bomba B en marcha: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/function-block-pump-pair <<< */}
 

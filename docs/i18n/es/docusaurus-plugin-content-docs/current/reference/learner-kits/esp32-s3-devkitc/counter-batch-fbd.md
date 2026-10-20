@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Contadores en diagrama de bloques de función: contar piezas hasta completar un lote en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "counter-batch-fbd"
-description: "Cómo cablear la lección counter-batch-fbd en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección counter-batch-fbd en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd. Do not edit. >>> */}
 
-El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../../../learn/lessons/counter-batch-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Contadores en diagrama de bloques de función: contar piezas hasta completar un lote](../../../learn/lessons/counter-batch-fbd.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,9 +26,9 @@ El cableado de la lección [Contadores en diagrama de bloques de función: conta
 
 ## Tarjeta de cableado
 
-1. Sensor de pieza: pulsador entre GPIO0 (BOOT) (header J3 and BOOT button, DI0) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-2. Reset: pulsador entre GPIO18 (header J1, DI1) y GND (GND · J1-22); lo lee la resistencia de pull-up interna de la placa.
-3. Lote completo: LED verde con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
+1. Sensor de pieza: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Reset: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Lote completo: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd <<< */}
 

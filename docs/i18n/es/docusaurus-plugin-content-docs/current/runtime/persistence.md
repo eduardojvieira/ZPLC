@@ -21,7 +21,7 @@ El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) a
 
 | Plataforma | Backend de Almacenamiento |
 |---|---|
-| **Perfil Zephyr** | Backend program-store cuando está habilitado y operativo; NVS es una implementación, no una garantía universal de placa. Los registros `RETAIN` usan las mismas llamadas HAL. |
+| **Perfil Zephyr** | Backend program-store cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL. |
 | **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el program store y los registros `RETAIN`. |
 | **Simulador WASM** | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
 
@@ -212,8 +212,7 @@ escenarios que lo comparan con el del host.
 `CONFIG_ZPLC_RETAIN_PERSIST` está desactivado por defecto. La ruta de escritura está cubierta por la
 suite `retain_persist` en `native_sim` (ambos anchos de palabra) y por la aserción de desgaste en tiempo
 de compilación; ninguna placa fue medida: una escritura en flash puede detener la captura de instrucciones
-en partes que ejecutan desde la misma flash, y en varias placas la partición de almacenamiento también la
-usa otro sistema de archivos. Se establece `CONFIG_ZPLC_RETAIN_PERSIST=y` en el archivo de la placa, con
+en partes que ejecutan desde la misma flash. Se establece `CONFIG_ZPLC_RETAIN_PERSIST=y` en el archivo de la placa, con
 los números de resistencia de la sección siguiente, cuando esa placa haya superado su registro de hardware
 (HIL-010). Hasta entonces la región `RETAIN` se inicializa en cada arranque en el firmware y el estado no
 incluye el campo `retain`.
@@ -245,11 +244,11 @@ Ninguna placa se midió.
 | Placa | Partición de almacenamiento | RETAIN | Ciclos nominales | Bytes de desgaste | Intervalo | Vida estimada en el peor caso |
 |---|---|---|---|---|---|---|
 | Raspberry Pi Pico (RP2040) | 64 KB de la NOR QSPI de la placa, 16 sectores de 4 KB | 4 KB | 100.000 | 53.000 | 300 s | 11,3 años |
-| Arduino GIGA R1 (STM32H747 M7) | 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
-| Arduino Opta WiFi (STM32H747 M7) | 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
-| STM32F746G Discovery | 15 MB de la NOR QSPI externa, subsectores de 4 KB supuestos | 4 KB | 100.000 | 15.700.000 | 60 s | más de 100 años |
-| ESP32-S3 DevKitC | 192 KB de la NOR SPI del módulo, 48 sectores de 4 KB | 1 KB | 100.000 | 184.000 | 60 s | 29,5 años |
-| STM32 Nucleo-H743ZI | 128 KB, un sector de la flash interna: NVS no puede montar | 4 KB | ninguno | ninguno | ninguno | no se persiste |
+| Arduino GIGA R1 (STM32H747 M7) | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
+| Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
+| STM32F746G Discovery | `zplc_nvs_partition`: 15 MB de la NOR QSPI externa, subsectores de 4 KB supuestos | 4 KB | 100.000 | 15.700.000 | 60 s | más de 100 años |
+| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`: 192 KB de la NOR SPI del módulo a partir de 4 MB, 48 sectores de 4 KB | 1 KB | 100.000 | 184.000 | 60 s | 29,5 años |
+| STM32 Nucleo-H743ZI | `zplc_nvs_partition`: 384 KB de la flash interna, 3 sectores de 128 KB, en ZMS | 4 KB | 10.000 | 253.000 | 600 s | 10,8 años |
 | Una placa sin números | cualquiera | cualquiera | 10.000 | 40.000 | 3600 s | 10,3 años para 4 KB |
 
 La fila de la Pico es la que hay que leer dos veces: a 30 segundos, el valor por
@@ -262,6 +261,51 @@ Un `STOP` de una región modificada es un guardado más y no forma parte del
 presupuesto: es una orden de una persona. Un script que detiene y arranca el
 controlador cada pocos segundos, con valores retenidos que cambian en cada
 ejecución, gasta el presupuesto de un año en días.
+
+### Qué almacén ocupa qué partición
+
+Una placa con firmware tiene hasta dos almacenes en la flash: los registros de la HAL (los slots del programa,
+`RETAIN`, las claves de configuración `cfg_00` a `cfg_99` y las credenciales) y, en las placas con red, el sistema de
+archivos de configuración (LittleFS: el archivo de configuración, los archivos de certificados y, donde las
+credenciales de Wi-Fi pasan por la configuración, esas credenciales). Dos almacenes en una misma partición se
+sobrescriben entre sí, de modo que cada uno tiene la suya (IO-008). La HAL ocupa `zplc_nvs_partition` cuando el
+devicetree de la placa la define, y `storage_partition` en otro caso; el sistema de archivos de configuración monta
+`storage_partition`. La compilación se detiene cuando una placa que incluye el sistema de archivos no tiene
+`zplc_nvs_partition`, o cuando las dos particiones se superponen.
+
+| Placa | Registros de la HAL | Sistema de archivos de configuración | Slot de la imagen |
+|---|---|---|---|
+| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | de 0x100 al final de la flash de 2 MB |
+| Waveshare RP2040-Zero | NVS, `storage_partition`, 64 KB en 0x1f0000 de la NOR QSPI de la placa | no incluido | de 0x100 al final de la flash de 2 MB |
+| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB en 0x400000 de la NOR SPI del módulo | `storage_partition`, 192 KB en 0x3b0000 | de 0 al final de la flash de 8 MB |
+| Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
+| Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
+| STM32F746G Discovery | NVS, `zplc_nvs_partition`, 15 MB en 0xa0000 de la NOR QSPI externa | `storage_partition`, 640 KB en 0 de la NOR QSPI | de 0 a 1 MB, la flash interna |
+| STM32 Nucleo-H743ZI | ZMS, `zplc_nvs_partition`, 384 KB en 0x1a0000 de la flash interna (3 sectores de 128 KB) | `storage_partition`, 1152 KB en 0x80000 de la flash interna | `slot0_partition`, de 0 a 512 KB |
+
+Las direcciones son las del devicetree de cada compilación. `tools/hil/check_storage_partitions.py` las lee del
+`zephyr.dts` y del `.config` que `run.sh size` conserva para cada placa, y falla cuando dos almacenes comparten o
+superponen una partición, cuando un almacén tiene menos de dos bloques de borrado o bloques que su backend no puede
+montar (NVS rechaza un sector de más de 64 KB), o cuando un almacén queda dentro del slot de la imagen, el rango de
+flash que el enlazador puede llenar con la imagen. El slot de la imagen de las dos placas RP2040 y de la ESP32-S3
+todavía llega al final de la flash que contiene los registros, de modo que el enlazador no detendría una imagen que
+creciera lo suficiente; esas placas figuran con ese motivo en `tools/hil/storage-partitions-open.json`. Para las placas
+del curso, una prueba de la descripción de la placa también falla cuando dos almacenes comparten una partición (lee
+los archivos Kconfig y overlay de la placa). Todo esto es evidencia a nivel de compilación: cómo se comporta la flash
+de cada placa corresponde al banco de HIL-010, y no se midió ninguna placa.
+
+Hasta esta versión el sistema de archivos de configuración no se montaba en ninguna placa: el montaje nombraba el
+dispositivo de flash donde Zephyr espera un área de flash, fallaba con `-ENODEV` y el firmware seguía con los valores
+por defecto. Por lo tanto, el archivo de configuración, los archivos de certificados y las credenciales de Wi-Fi
+guardadas a través de la configuración nunca se almacenaron; las claves de configuración de la HAL sí. En el primer
+arranque después de la actualización el sistema de archivos formatea `storage_partition`. En la GIGA R1, la Opta y la
+STM32F746G los registros de la HAL conservan el área que tenían, de modo que una placa conserva su programa guardado,
+sus valores `RETAIN` y sus claves de configuración; el sistema de archivos ocupa el área de aprovisionamiento de la
+biblioteca Arduino IoT Cloud (`kvs`) en las dos placas Arduino y el segundo slot de imagen de MCUboot en la
+STM32F746G, que este firmware no usa. Una ESP32-S3 que ejecutó una imagen anterior guardaba sus registros en
+`storage_partition`: después de la actualización no se conservan el programa guardado, los valores `RETAIN` ni las
+claves de configuración de esa imagen. Una Nucleo-H743ZI nunca guardó ninguno. En esas dos placas, despliegue el
+programa de nuevo e ingrese de nuevo la configuración.
 
 ### Límites
 
@@ -276,11 +320,16 @@ ejecución, gasta el presupuesto de un año en días.
   la captura de instrucciones durante un borrado; el guardado periódico corre en
   su propia cola de trabajo, pero que un scan se retrase depende del driver de
   flash y no se ha medido en ninguna placa.
-- La Nucleo-H743ZI no puede montar su backend de almacenamiento (un sector de
-  128 KB, por encima del límite de 64 KB de NVS), de modo que su región `RETAIN`
-  se inicializa en cada arranque y su estado dice `io_error`. El sistema de
-  archivos de configuración de las placas STM32F746G, GIGA y Opta usa la misma
-  partición que los registros NVS: que ambos convivan no está establecido.
+- No demostrado en una placa: que los dos almacenes de una placa conserven los
+  datos del otro en su flash. Sus particiones están separadas en cada
+  compilación (una verificación del devicetree de la compilación, ver la tabla
+  de arriba), y en `native_sim` el sistema de archivos de configuración y los
+  registros se escriben uno junto al otro y ambos se leen de vuelta
+  (`hal_persist_keys`); la flash de cada placa corresponde al banco de HIL-010.
+- La Nucleo-H743ZI guarda sus registros en ZMS, que `hal_persist_keys` ejecuta
+  en `native_sim` (su escenario ZMS); ninguna placa lo ha ejecutado. Su perfil
+  guarda la región `RETAIN` como máximo cada 600 s, porque su flash está
+  especificada para 10.000 ciclos de borrado.
 - Una recompilación del programa, incluso una que solo mueve código, cambia su
   identidad y descarta los valores retenidos.
 - El modo de firmware de una sola tarea (scheduler desactivado) no persiste

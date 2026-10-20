@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "title": "Verificar mi placa",
-  "summary": "Verifique que su placa es la que eligió, que hace parpadear un LED y que lee un pulsador.",
+  "summary": "Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea un pulsador.",
   "scope": "La verificación en simulación de esta lección prueba el programa. La verificación de hardware califica una traza registrada desde su placa y se identifica como una ejecución en hardware; no prueba límites eléctricos.",
   "objectives": [
-    "Verificar que la placa con la que se comunica Studio es la que usted eligió.",
-    "Ver parpadear un LED en la placa.",
-    "Leer un pulsador en la placa."
+    "Verifique que la placa con la que se comunica Studio sea la que usted eligió.",
+    "Vea parpadear un LED en la placa.",
+    "Lea el estado de un pulsador en la placa."
   ],
   "stages": [
     {
@@ -30,8 +30,8 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego presione RUN.",
-      "checkpoint": "El escenario se llama VerifyBoard y contiene {{assertions}} assertions."
+      "body": "Cada paso físico lo realiza usted; Studio no inicia ninguno. Cablear: con el cable USB desconectado, cablee las piezas de la tarjeta de cableado de esta lección para su placa (un LED con su resistencia de 330 Ω en DO0 y un pulsador en DI0) y revise el cableado dos veces. Grabar: grabe el firmware precompilado de ZPLC con los pasos de la tarjeta de firmware de Studio, después de verificar el SHA-256 del archivo. Conectar: conecte Studio a la placa por su puerto serie; la placa informa para qué placa se compiló su firmware y la identidad de su descripción de E/S, y Studio rechaza el despliegue cuando no coinciden con la placa que usted eligió. Esa comparación es la verificación de identidad de esta lección. Despliegue el programa y luego pulse RUN.",
+      "checkpoint": "El escenario se llama VerifyBoard y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",
@@ -49,7 +49,7 @@
   "hints": [
     {
       "level": 1,
-      "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa \"o\"?"
+      "text": "El LED debe estar encendido en dos casos: mientras Blink es TRUE o mientras Button es TRUE. ¿Qué operador booleano expresa “o”?"
     },
     {
       "level": 2,

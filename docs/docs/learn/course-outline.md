@@ -33,7 +33,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 Each module below says why it sits where it does. The Learn home of Studio shows the same words, taken from the same course file.
 
 
-Available today: **28**. Planned: **1**. In all: **29**.
+Available today: **33**. Planned: **0**. In all: **33**.
 
 
 ## Languages
@@ -133,11 +133,13 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 |---|---|---|---|---|---|---|
 | `types-arithmetic-comparison` Types, arithmetic and comparison: a total and three bands | Available | ST | Simulation, Hardware | - | 20 | `edge-counter-pulses` |
 | `analog-scaling-integer` Analog scaling: from raw counts to a percentage | Available | ST | Simulation, Hardware | - | 20 | `types-arithmetic-comparison` |
+| `analog-scaling-fbd` Analog scaling in Function Block Diagram: a high level alarm | Available | FBD | Simulation, Hardware | - | 20 | `analog-scaling-integer`, `counter-batch-fbd` |
 
 Objectives of the available lessons:
 
 - **Types, arithmetic and comparison: a total and three bands**: Use an INT variable for a number and a BOOL variable for a yes or no, and see that a comparison turns a number into a BOOL. Add to a number only on the rising edge of an input, so that a button held for several scans counts once.
 - **Analog scaling: from raw counts to a percentage**: Scale a raw count to engineering units with a multiplication followed by a division, in that order. See that integer division drops the remainder, and choose an integer type wide enough for the intermediate product.
+- **Analog scaling in Function Block Diagram: a high level alarm**: Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts. Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold.
 
 
 ## Module 5: State machines and sequences
@@ -168,12 +170,14 @@ A command is not a fact: the plant must confirm it. Once a program can run a seq
 | `motor-plant-feedback` Command, feedback, and speed | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
 | `tank-level-fault-reset` Tank level, faults, and reset | Available | ST | Simulation | tank-v1 | 25 | `motor-plant-feedback` |
 | `interlock-guard-permissive` Interlocks and permissives: a guard that stops the motor | Available | ST | Simulation | motor-v1 | 20 | `pedestrian-crossing-states` |
+| `interlock-reversing-ladder` Interlocks in Ladder: a reversing motor | Available | LD | Simulation | - | 20 | `interlock-guard-permissive`, `seal-in-ladder` |
 
 Objectives of the available lessons:
 
 - **Command, feedback, and speed**: Separate the command to the motor from the confirmation that it runs. Keep the request until Stop and let Running follow the request only once AtSpeed arrives.
 - **Tank level, faults, and reset**: Keep the pump on from LevelLow until LevelHigh with a latch. Latch the alarm on PumpFault or EStop and release it only with a fresh Reset after the fault has cleared.
 - **Interlocks and permissives: a guard that stops the motor**: Tell a permissive, a condition that must be true for the output to be on, from a command. Put a permissive in the same condition that holds the motor, so that it drops the motor and also stops Start from restarting it.
+- **Interlocks in Ladder: a reversing motor**: Tell an interlock, a contact that keeps one output off while another is on, from a permissive, a contact that must be closed for an output to run at all. Lock two coils out of each other with a normally closed contact of each one in the rung of the other, in series with Stop and the permissive.
 
 
 ## Module 7: Structuring programs: functions, function blocks, structures, arrays, tasks
@@ -182,17 +186,19 @@ Intermediate. Requires module: 4. Tracks: Simulation, Hardware.
 
 Programs grow. Once you work with data, functions, function blocks, structures, arrays and tasks keep a program readable and reusable.
 
-The two lessons below cover function blocks, structures and arrays; no graded lesson covers tasks yet, because a scenario runs one task.
+The lessons below cover function blocks, also called from Function Block Diagram, structures and arrays; no graded lesson covers tasks yet, because a scenario runs one task.
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `function-block-pump-pair` Function blocks: one latch, two pumps | Available | ST | Simulation, Hardware | - | 25 | `types-arithmetic-comparison` |
 | `structures-arrays-call-panel` Structures and arrays: a panel of three calls | Available | ST | Simulation, Hardware | - | 25 | `function-block-pump-pair` |
+| `function-block-valves-fbd` Your own function block in Function Block Diagram: two valves, one block | Available | FBD | Simulation | - | 20 | `function-block-pump-pair`, `counter-batch-fbd` |
 
 Objectives of the available lessons:
 
 - **Function blocks: one latch, two pumps**: Write a function block with inputs, an output and a memory that lives between calls. See that two instances of the same function block keep separate memories.
 - **Structures and arrays: a panel of three calls**: Declare a structure with named members and an array of that structure, and reach an element with an index and a member name. Replace three copies of the same code with one FOR loop over the array.
+- **Your own function block in Function Block Diagram: two valves, one block**: Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration. Wire a second instance of the same function block, and see that each instance keeps a memory of its own.
 
 
 ## Module 8: Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints
@@ -241,13 +247,15 @@ Communications come last because they need everything before them. In simulation
 |---|---|---|---|---|---|---|
 | `modbus-register-round-trip` Modbus TCP: write a register and read it back | Available | ST | Simulation | - | 25 | `structures-arrays-call-panel` |
 | `mqtt-publish-subscribe` MQTT: publish a message and receive it | Available | ST | Simulation | - | 25 | `modbus-register-round-trip` |
+| `modbus-coil-fbd` Modbus in Function Block Diagram: write a coil and read it back | Available | FBD | Simulation | - | 25 | `modbus-register-round-trip`, `counter-batch-fbd` |
 
-Both lessons are graded against a Modbus TCP server and an MQTT broker that Studio starts inside the simulation session, on this computer, so no network, installed broker or board is needed. These are protocol doubles: they show how the blocks and their handshake behave, and they do not show that a real device, broker or cloud service accepts the same exchange. No hardware track exists for them because no trace of a real device has been recorded.
+The lessons of this module are graded against a Modbus TCP server and an MQTT broker that Studio starts inside the simulation session, on this computer, so no network, installed broker or board is needed. These are protocol doubles: they show how the blocks and their handshake behave, and they do not show that a real device, broker or cloud service accepts the same exchange. No hardware track exists for them because no trace of a real device has been recorded.
 
 Objectives of the available lessons:
 
 - **Modbus TCP: write a register and read it back**: Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, using the DONE output of the first block as the trigger of the second. Compare the value read with the value written, report an ERROR from either block, and say what a loopback double shows and what it does not.
 - **MQTT: publish a message and receive it**: Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE) from a request block (MQTT_PUBLISH), publish only after the subscription holds, and keep a message that VALID reports for one scan only.
+- **Modbus in Function Block Diagram: write a coil and read it back**: Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil. Chain two requests with a wire from the DONE output of the first block to the EN input of the second.
 
 
 ## Module 11: Capstone: a small machine from description to tested program

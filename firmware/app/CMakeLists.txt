@@ -46,7 +46,8 @@ if(ZPLC_BOARD_COUNT GREATER 0)
   foreach(ZPLC_BOARD_INDEX RANGE ${ZPLC_BOARD_LAST})
     string(JSON ZPLC_BOARD_ENTRY GET "${ZPLC_BOARD_MANIFEST}" ${ZPLC_BOARD_INDEX})
     string(JSON ZPLC_BOARD_TARGET GET "${ZPLC_BOARD_ENTRY}" zephyr_board)
-    if(ZPLC_BOARD_TARGET STREQUAL "${BOARD}${BOARD_QUALIFIERS}")
+    # The board target is "${BOARD}/${BOARD_QUALIFIERS}": Zephyr 4.4 sets BOARD_QUALIFIERS without the leading slash.
+    if(ZPLC_BOARD_TARGET STREQUAL "${BOARD}/${BOARD_QUALIFIERS}")
       string(JSON ZPLC_BOARD_ID GET "${ZPLC_BOARD_ENTRY}" board_id)
       string(JSON ZPLC_BOARD_MEMORY GET "${ZPLC_BOARD_ENTRY}" memory)
       string(JSON ZPLC_BOARD_CODE GET "${ZPLC_BOARD_MEMORY}" code_size_max)
@@ -121,6 +122,8 @@ if(ZPLC_BOARD_COUNT GREATER 0)
           "HIL-010) but the build enables CONFIG_ZPLC_HARDWARE_WATCHDOG. A watchdog enabled before its reset "
           "timing and safe outputs are recorded could reset a board in the field.")
       endif()
+      message(STATUS "ZPLC: ${ZPLC_BOARD_ID} checked against boards/boards.json (RT-028 sizes: code ${ZPLC_BOARD_CODE}, "
+                     "work ${ZPLC_BOARD_WORK}, retain ${ZPLC_BOARD_RETAIN}; RT-020 hardware watchdog: ${ZPLC_WDT_ENABLED})")
     endif()
   endforeach()
 endif()

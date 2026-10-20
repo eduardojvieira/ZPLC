@@ -68,6 +68,7 @@ HOST_CHECKS = {
     "validate_hil_trace_profile",  # test_hil_trace_profile.py; docs-and-truth runs it on the repository
     "community_report",  # writes a community-reported record (HIL-011); test_hil_community.py checks it
     "compare_sim",  # native simulation against a bench (HIL-015); test_hil_compare.py runs it on stand-ins
+    "check_storage_partitions",  # IO-008, test_hil_storage_partitions.py; `run.sh size` runs it on every board build
 }
 
 

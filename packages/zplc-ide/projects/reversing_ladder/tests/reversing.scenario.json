@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "id": "Reversing",
+  "tickMs": 10,
+  "durationMs": 150,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Reversing.FwdPB": false,
+        "Reversing.RevPB": false,
+        "Reversing.StopPB": false,
+        "Reversing.LubeOk": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "Reversing.FwdPB": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "Reversing.FwdPB": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "Reversing.RevPB": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "Reversing.RevPB": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "Reversing.StopPB": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "Reversing.StopPB": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "Reversing.RevPB": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "Reversing.RevPB": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "Reversing.FwdPB": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "Reversing.FwdPB": false
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "Reversing.LubeOk": false
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "Reversing.LubeOk": true
+      }
+    },
+    {
+      "atMs": 130,
+      "set": {
+        "Reversing.FwdPB": true
+      }
+    },
+    {
+      "atMs": 140,
+      "set": {
+        "Reversing.FwdPB": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "Reversing.Forward": true,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "Reversing.Forward": true,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "Reversing.Forward": false,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "Reversing.Forward": true,
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 110,
+      "withinMs": 0,
+      "condition": {
+        "Reversing.Reverse": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "Reversing.Forward": true,
+        "Reversing.Reverse": true
+      }
+    }
+  ]
+}

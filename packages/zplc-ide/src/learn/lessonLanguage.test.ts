@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'bun:test';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+import kit from '../../lessons/kit.json';
+import phrases from '../boards/wiring/phrases.json';
 
 import { faceplateEs } from '../i18n/catalog/faceplate';
 import { interlockEs } from '../i18n/catalog/interlock';
 import { labEn, labEs } from '../i18n/catalog/lab';
 import { labSceneEs } from '../i18n/catalog/labScene';
 import { learnEs } from '../i18n/catalog/learn';
+import { learnHomeEs } from '../i18n/catalog/learnHome';
 import { translatorFor } from '../i18n';
+import { es } from '../i18n/es';
 import { expandText, textShape, type LessonTextExpanded } from './lessonPackage';
 import { loadLessonPackages } from './lessonPackageFiles';
 
@@ -22,13 +29,7 @@ function readable(text: LessonTextExpanded): string[] {
   return [text.title, text.summary, text.scope, ...text.objectives, ...text.faultCases, ...text.hints.map((hint) => hint.text), ...text.stages.flatMap((stage) => [stage.title, stage.body, stage.checkpoint])];
 }
 
-/**
- * The two Spanish strings that src/components/learnLesson.test.ts pins word for word (the title and the summary of
- * scan-cycle-one-scan-memory). They keep "scan" until that test and these strings change together; nothing else is exempt.
- */
-const PINNED_ELSEWHERE: ReadonlySet<string> = new Set(['Ciclo de scan y memoria de un ciclo', 'Siga cómo una entrada produce una salida actual y una copia demorada un scan.']);
-
-const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text).filter((value) => !PINNED_ELSEWHERE.has(value)) }));
+const spanish = packages.map((lesson) => ({ id: lesson.id, strings: readable(expandText(lesson.texts.es, lesson.scenario).text) }));
 
 /**
  * A whole word, in any case, that is not part of a longer word, a code token or a file path: `ScanSnapshot` is not
@@ -62,6 +63,13 @@ const WRONG_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
   [word('samples?'), 'muestra'],
   [word('chequeos?'), 'comprobación'],
   [word('tabla watch'), 'tabla de observación'],
+  [word('assertions?'), 'aserción'],
+  [word('timing'), 'tiempos, temporización'],
+  [word('target'), 'dispositivo de destino'],
+  [word('inputs?|outputs?'), 'entradas, salidas'],
+  [word('resetear|resetee'), 'poner a cero'],
+  [word('snapshots?'), 'instantánea'],
+  [/(?<![\p{L}\p{N}_/-])Tests(?![\p{L}\p{N}_/-])/gu, 'Pruebas'],
   [word('pedido peatonal|pedido de cinta|el pedido'), 'solicitud'],
   [/(?<![\p{L}])(?:Structured Text|Texto Estructurado)(?![\p{L}])/gu, 'texto estructurado'],
   [/(?<![\p{L}])(?:Instruction List|Lista de Instrucciones)(?![\p{L}])/gu, 'lista de instrucciones'],
@@ -70,6 +78,17 @@ const WRONG_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
   [word('diagrama funcional de secuencias|gráfico funcional de secuencias'), 'diagrama funcional secuencial'],
   [/(?<![\p{L}])Ladder(?![\p{L}])/gu, 'diagrama de escalera'],
 ];
+
+/**
+ * Every form the patterns find in labelled texts. The texts are scanned joined first, so the usual case, nothing found,
+ * costs one pass per pattern instead of one per text: the whole Spanish catalog has over two thousand texts, and the
+ * per-text scan took seconds on a loaded machine.
+ */
+function findAll(texts: ReadonlyArray<readonly [string, string]>, patterns: ReadonlyArray<readonly [RegExp, string]>): Array<{ at: string; found: string; use: string }> {
+  const joined = texts.map(([, text]) => text).join('\n');
+  return patterns.flatMap(([pattern, use]) => !new RegExp(pattern.source, pattern.flags.replace('g', '')).test(joined) ? [] : texts.flatMap(([at, text]) => [...text.matchAll(pattern)].map((match) => ({ at, found: match[0], use }))));
+}
+const lessonTexts = (): Array<readonly [string, string]> => spanish.flatMap(({ id, strings }) => strings.map((value) => [id, value] as const));
 
 describe('LRN-029 every lesson and hint exists in English and Spanish with the same structure', () => {
   it('LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts', () => {
@@ -84,22 +103,22 @@ describe('LRN-029 every lesson and hint exists in English and Spanish with the s
 
 describe('LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary', () => {
   it('LRN-029 no Spanish lesson or hint addresses the learner with "tú" or voseo', () => {
-    const found = spanish.flatMap(({ id, strings }) => strings.flatMap((value) => [...value.matchAll(REGISTER)].map((match) => ({ id, form: match[0] }))));
-    expect(found).toEqual([]);
+    expect(findAll(lessonTexts(), [[REGISTER, 'usted or an impersonal form']])).toEqual([]);
   });
 
   it('LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term', () => {
-    const found = spanish.flatMap(({ id, strings }) => WRONG_VARIANTS.flatMap(([pattern, use]) => strings.flatMap((value) => [...value.matchAll(pattern)].map((match) => ({ id, found: match[0], use })))));
-    expect(found).toEqual([]);
+    expect(findAll(lessonTexts(), WRONG_VARIANTS)).toEqual([]);
   });
 
   it('LRN-029 the Spanish of the Learn panel, the Lab, the plants and the faceplate uses the same register and glossary', () => {
-    const catalogs = { learn: learnEs, lab: labEs, labScene: labSceneEs, faceplate: faceplateEs, interlock: interlockEs };
-    const found = Object.entries(catalogs).flatMap(([catalog, messages]) => Object.entries(messages).flatMap(([key, value]) => [
-      ...[...value.matchAll(REGISTER)].map((match) => ({ catalog, key, found: match[0], use: 'usted or an impersonal form' })),
-      ...WRONG_VARIANTS.flatMap(([pattern, use]) => [...value.matchAll(pattern)].map((match) => ({ catalog, key, found: match[0], use }))),
-    ]));
-    expect(found).toEqual([]);
+    const catalogs = { learn: learnEs, learnHome: learnHomeEs, lab: labEs, labScene: labSceneEs, faceplate: faceplateEs, interlock: interlockEs };
+    const texts = Object.entries(catalogs).flatMap(([catalog, messages]) => Object.entries(messages).map(([key, value]) => [`${catalog} ${key}`, value] as const));
+    expect(findAll(texts, [[REGISTER, 'usted or an impersonal form'], ...WRONG_VARIANTS])).toEqual([]);
+  });
+
+  it('UX-030 the Spanish of the whole application uses the glossary terms of the course', () => {
+    // A {placeholder} is a name in code, not Spanish: `{rung}` is not the word "rung".
+    expect(findAll(Object.entries(es).map(([key, value]) => [key, value.replace(/\{\w+\}/g, '0')] as const), WRONG_VARIANTS)).toEqual([]);
   });
 
   it('LRN-029 the deny-lists catch the forms they name and leave the usted forms and the code tokens alone', () => {
@@ -109,6 +128,70 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
     expect(variants('El ciclo de scan del starter, un rung en Ladder y un fallo.')).toEqual(['ciclo de scan', 'rung', 'fallo', 'starter', 'Ladder']);
     expect(variants('Un ciclo de escaneo, un peldaño en diagrama de escalera (LD) y una falla del programa inicial; src/ScanSnapshot.st y tests/scan-snapshot.scenario.json.')).toEqual([]);
     expect(variants('La copia queda demorada un scan.')).toEqual(['scan']);
+  });
+});
+
+/** The forms the register and the glossary refuse in one Spanish string, with its {placeholders} taken out. */
+const refused = (value: string): string[] => {
+  const bare = value.replace(/\{\w+\}/g, '0');
+  return [...[...bare.matchAll(REGISTER)], ...WRONG_VARIANTS.flatMap(([pattern]) => [...bare.matchAll(pattern)])].map((match) => match[0]);
+};
+const placeholdersOf = (text: string): string[] => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!).sort();
+
+/** The structure of a Markdown page: its heading levels in order and how many list items, table rows and images it has. */
+function pageShape(markdown: string): { headings: string; listItems: number; tableRows: number; images: number } {
+  const body = markdown.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/```[\s\S]*?```/g, '');
+  return {
+    headings: (body.match(/^#{1,6} /gm) ?? []).map((heading) => heading.trim()).join(' '),
+    listItems: (body.match(/^\s*(?:[-*]|\d+\.) /gm) ?? []).length,
+    tableRows: (body.match(/^\|.*\|\s*$/gm) ?? []).length,
+    images: (body.match(/!\[/g) ?? []).length,
+  };
+}
+const markdownFiles = (directory: string): string[] => readdirSync(directory).flatMap((name) => {
+  const path = join(directory, name);
+  return statSync(path).isDirectory() ? markdownFiles(path) : name.endsWith('.md') ? [path] : [];
+});
+const DOCS = join(import.meta.dir, '../../../../docs');
+const KIT_PAGES = { en: join(DOCS, 'docs/reference/learner-kits'), es: join(DOCS, 'i18n/es/docusaurus-plugin-content-docs/current/reference/learner-kits') };
+
+describe('LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure', () => {
+  it('LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary', () => {
+    expect(Object.keys(phrases.es).sort()).toEqual(Object.keys(phrases.en).sort());
+    for (const key of Object.keys(phrases.en) as Array<keyof typeof phrases.en>) {
+      const spanish = phrases.es[key];
+      expect({ key, empty: spanish.trim() === '', placeholders: placeholdersOf(spanish), refused: refused(spanish) }).toEqual({ key, empty: false, placeholders: placeholdersOf(phrases.en[key]), refused: [] });
+    }
+  });
+
+  it('LRN-029 every part of the kit and every sentence of the voltage limit exists in both languages, in the register and the terms of the glossary', () => {
+    expect(kit.voltageLimit.es.length).toBe(kit.voltageLimit.en.length);
+    for (const sentence of kit.voltageLimit.es) expect({ sentence, refused: refused(sentence) }).toEqual({ sentence, refused: [] });
+    for (const item of kit.bom as Array<{ id: string; name: { en: string; es: string }; note?: { en: string; es: string } }>) {
+      expect({ id: item.id, name: item.name.es.trim() !== '', note: item.note === undefined || (item.note.en.trim() !== '' && item.note.es.trim() !== '') }).toEqual({ id: item.id, name: true, note: true });
+      for (const text of [item.name.es, item.note?.es ?? '']) expect({ id: item.id, refused: refused(text) }).toEqual({ id: item.id, refused: [] });
+    }
+  });
+
+  it('LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams', () => {
+    const english = markdownFiles(KIT_PAGES.en).map((file) => relative(KIT_PAGES.en, file)).sort();
+    expect(english.length).toBeGreaterThan(10);
+    expect(markdownFiles(KIT_PAGES.es).map((file) => relative(KIT_PAGES.es, file)).sort()).toEqual(english);
+    for (const page of english) {
+      expect({ page, shape: pageShape(readFileSync(join(KIT_PAGES.es, page), 'utf8')) }).toEqual({ page, shape: pageShape(readFileSync(join(KIT_PAGES.en, page), 'utf8')) });
+    }
+  });
+});
+
+describe('LRN-012 the first lesson leads to a blink with the controls Studio shows', () => {
+  it('LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish', () => {
+    const first = packages.find((lesson) => lesson.id === 'first-blink-simulation')!;
+    for (const locale of ['en', 'es'] as const) {
+      const { t } = translatorFor(locale);
+      const run = expandText(first.texts[locale], first.scenario).text.stages.find((stage) => stage.key === 'run')!;
+      const labels = [t('toolbar.build.text'), t('toolbar.compile.text'), t('toolbar.connect'), `${t('toolbar.run.label')} (F5)`, t('panel.watch'), t('learn.check')];
+      expect({ locale, missing: labels.filter((label) => !run.body.includes(label)) }).toEqual({ locale, missing: [] });
+    }
   });
 });
 

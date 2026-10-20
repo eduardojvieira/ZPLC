@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Escriba un parpadeador en texto estructurado en ESP32-S3-DevKitC-1 (N8R8)"
 sidebar_label: "blink-structured-text"
-description: "Cómo cablear la lección blink-structured-text en la ESP32-S3-DevKitC-1 (N8R8), generado de su archivo de cableado."
+description: "Cómo cablear la lección blink-structured-text en la ESP32-S3-DevKitC-1 (N8R8), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/esp32-s3-devkitc/blink-structured-text. Do not edit. >>> */}
 
-El cableado de la lección [Escriba un parpadeador en texto estructurado](../../../learn/lessons/blink-structured-text.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Escriba un parpadeador en texto estructurado](../../../learn/lessons/blink-structured-text.md) en la [ESP32-S3-DevKitC-1 (N8R8)](../esp32-s3-devkitc.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,8 +26,8 @@ El cableado de la lección [Escriba un parpadeador en texto estructurado](../../
 
 ## Tarjeta de cableado
 
-1. Habilitación: cable puente desde GPIO0 (BOOT) (header J3 and BOOT button, DI0) hasta GND (GND · J1-22); conectado significa activado.
-2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GPIO38 (header J3, DO0) hasta GND (GND · J1-22).
+1. Habilitación: cable puente desde GPIO5 (header J1 pin 5, DI0) hasta GND (GND · J1-22); conectado significa activado.
+2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/blink-structured-text <<< */}
 

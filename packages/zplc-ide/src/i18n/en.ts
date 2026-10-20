@@ -16,6 +16,7 @@ import { faceplateEn } from './catalog/faceplate';
 import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
+import { learnHardwareEn } from './catalog/learnHardware';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
 import { noticesEn } from './catalog/notices';
@@ -24,6 +25,7 @@ import { settingsSurfaceEn } from './catalog/settingsSurface';
 import { labSceneEn } from './catalog/labScene';
 import { workbenchEn } from './catalog/workbench';
 import { moduleTextEn } from './catalog/moduleText';
+import { boardsEn } from './catalog/boards';
 
 /**
  * The English catalog of Studio (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -620,6 +622,7 @@ export const en = {
   ...interlockEn,
   ...learnEn,
   ...learnHomeEn,
+  ...learnHardwareEn,
   ...toolbarMsgEn,
   ...examplesEn,
   ...noticesEn,
@@ -628,6 +631,7 @@ export const en = {
   ...labSceneEn,
   ...workbenchEn,
   ...moduleTextEn,
+  ...boardsEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

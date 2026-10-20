@@ -1,12 +1,12 @@
 ---
-title: "Assertions temporales y falla por atasco"
+title: "Aserciones temporales y falla por atasco"
 sidebar_label: "temporal-assertions-jam-fault"
 description: "La lección temporal-assertions-jam-fault: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Assertions temporales y falla por atasco
+# Aserciones temporales y falla por atasco
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/temporal-assertions-jam-fault. Do not edit. >>> */}
 
@@ -38,7 +38,7 @@ Retenga la falla por atasco y compruebe su temporización con aserciones AT, WIT
 
 ## Qué cubre la evidencia
 
-La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.
+Las pruebas aportan solo evidencia del host con el runtime nativo POSIX y entradas discretas; el atasco programado no es evidencia de una falla física, del despeje físico, de los tiempos en el dispositivo de destino, de HIL ni de certificación.
 
 ## En una placa
 

@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Una lógica en cinco lenguajes: un portón que se mantiene abierto en Raspberry Pi Pico (RP2040)"
 sidebar_label: "one-logic-five-languages"
-description: "Cómo cablear la lección one-logic-five-languages en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección one-logic-five-languages en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/one-logic-five-languages. Do not edit. >>> */}
 
-El cableado de la lección [Una lógica en cinco lenguajes: un portón que se mantiene abierto](../../../learn/lessons/one-logic-five-languages.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Una lógica en cinco lenguajes: un portón que se mantiene abierto](../../../learn/lessons/one-logic-five-languages.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,8 +26,8 @@ El cableado de la lección [Una lógica en cinco lenguajes: un portón que se ma
 
 ## Tarjeta de cableado
 
-1. Solicitud de apertura: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
-2. Cierre: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
+1. Solicitud de apertura: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+2. Cierre: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 3. Portón abierto: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/one-logic-five-languages <<< */}

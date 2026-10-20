@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorStartStop.",
-      "checkpoint": "El escenario requerido se llama MotorStartStop y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama MotorStartStop y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

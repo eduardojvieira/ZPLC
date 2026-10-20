@@ -3,23 +3,29 @@
  * SPDX-License-Identifier: MIT
  *
  * The STM32F746G-DISCO board DTS defines:
- *   - flash0: internal STM32 flash (1MB, non-uniform sector layout)
- *   - n25q128a1: external QSPI NOR flash (16MB)
- *     - storage_partition @ 0xa0000 on QSPI (15MB usable)
+ *   - flash0: internal STM32 flash (1MB, non-uniform sector layout), which
+ *     holds the image
+ *   - n25q128a1: external QSPI NOR flash (16MB), with slot1_partition (640 KB
+ *     at 0) and storage_partition (15 MB at 0xa0000)
  *
- * Settings storage backend:
- *   CONFIG_SETTINGS_NVS is NOT used here because NVS requires flash sector
- *   size <= UINT16_MAX (64KB). The STM32F746 internal flash has sectors of
- *   32KB (small) and 256KB (large). Placing NVS on a 256KB sector returns
- *   -EDOM (-33) in settings_backend_init() (nvs_sector_size > UINT16_MAX).
- *
- *   Instead we use CONFIG_SETTINGS_FILE backed by LittleFS mounted on the
- *   external QSPI NOR flash (storage_partition). The QSPI NOR driver supports
- *   all LittleFS flash operations (read/prog/erase/sync).
- *
- *   No DTS changes needed: storage_partition is already defined in the board
- *   DTS and PARTITION_DEVICE(storage_partition) resolves to the QSPI NOR.
- *   LittleFS is mounted by zplc_config_init() before settings_subsys_init().
+ * Storage (IO-008). The internal flash cannot hold NVS: its sectors are 32 KB
+ * and 256 KB, and NVS refuses a sector above 64 KB. Both stores of the firmware
+ * are on the QSPI NOR, which the driver erases in 4 KB sectors (read from the
+ * part), each on a partition of its own. The HAL keeps its NVS records on
+ * zplc_nvs_partition and the settings file system of zplc_config.c (LittleFS)
+ * mounts storage_partition.
+ *   - zplc_nvs_partition, 15 MB at 0xa0000: the NVS records (the two program
+ *     slots, the RETAIN records, the settings keys and the credentials). It is
+ *     the area the records had as storage_partition before, so a board updated
+ *     to this layout keeps its stored program and settings, and the RETAIN
+ *     wear figure of the .conf is unchanged.
+ *   - storage_partition, 640 KB at 0: LittleFS, the settings file
+ *     (CONFIG_SETTINGS_FILE) and the certificate files, which take a few KB.
+ *     It takes the place of slot1_partition, the second image slot of MCUboot,
+ *     which this firmware does not build; the first mount formats it.
+ *     zplc_config_init() mounts it before settings_subsys_init().
+ * tools/hil/check_storage_partitions.py checks this layout on every build
+ * (run.sh size); the flash of a board is HIL-010.
  *
  * Modbus RTU wiring (production-style):
  *   - USART6 TX = PC6 = Arduino D1
@@ -30,6 +36,23 @@
 
 &quadspi_memory {
 	status = "disabled";
+};
+
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&n25q128a1 {
+	partitions {
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 DT_SIZE_K(640)>;
+		};
+
+		zplc_nvs_partition: partition@a0000 {
+			label = "zplc-nvs";
+			reg = <0x000a0000 DT_SIZE_M(15)>;
+		};
+	};
 };
 
 &usart6 {

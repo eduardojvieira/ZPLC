@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Oscilador TON y realimentación de salida",
   "summary": "Complete un parpadeador de {{t:500}} ms en diagrama de escalera, hecho con dos temporizadores TON y bobinas SET y RESET, y verifique sus tiempos de encendido y apagado con aserciones FOR y AT.",
-  "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
+  "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un LED físico, de los tiempos del hardware, de HIL ni de certificación.",
   "objectives": [
     "Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente.",
     "Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores."
@@ -18,7 +18,7 @@
       "key": "predict",
       "title": "Prediga",
       "body": "Antes de ejecutar, prediga LED_Output a los {{t:250}}, {{t:750}}, {{t:1250}} y {{t:1750}} ms.",
-      "checkpoint": "OFF a {{t:250}} ms, ON a {{t:750}}, OFF a {{t:1250}}, ON a {{t:1750}}; el primer flanco ascendente cae entre {{t:400}} y {{t:600}} ms."
+      "checkpoint": "En OFF a los {{t:250}} ms, en ON a los {{t:750}}, en OFF a los {{t:1250}}, en ON a los {{t:1750}}; el primer flanco ascendente llega entre los {{t:400}} y los {{t:600}} ms."
     },
     {
       "key": "edit",
@@ -30,7 +30,7 @@
       "key": "run",
       "title": "Ejecute",
       "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario BlinkyVisual.",
-      "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene {{assertions}} assertions."
+      "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene {{assertions}} aserciones."
     },
     {
       "key": "observe",

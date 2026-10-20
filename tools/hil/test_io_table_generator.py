@@ -121,6 +121,15 @@ class SelectionTests(unittest.TestCase):
         selected = generator.select_board(manifest, zephyr_board="rpi_pico/rp2040")
         self.assertEqual("rpi-pico-rp2040", selected["board_id"])
 
+    def test_the_board_is_chosen_from_the_target_the_firmware_build_passes(self) -> None:
+        # firmware/CMakeLists.txt passes "${BOARD}${BOARD_QUALIFIERS}", and Zephyr 4.4 sets BOARD_QUALIFIERS without
+        # the leading slash ("rp2040", "esp32s3/procpu"): every board fell back to the default alias profile.
+        manifest = json.loads(MANIFEST.read_text())
+        default = json.loads(DEFAULT_PROFILE.read_text())
+        for target, board_id in (("rpi_picorp2040", "rpi-pico-rp2040"), ("esp32s3_devkitcesp32s3/procpu", "esp32-s3-devkitc")):
+            selected = generator.select_board(manifest, zephyr_board=target, default=default)
+            self.assertEqual(board_id, selected["board_id"], target)
+
     def test_an_unlisted_target_uses_the_default_profile(self) -> None:
         manifest = json.loads(MANIFEST.read_text())
         default = json.loads(DEFAULT_PROFILE.read_text())

@@ -1,7 +1,7 @@
 ---
 title: "Cableado: Tipos, aritmética y comparación: un total y tres bandas en Raspberry Pi Pico (RP2040)"
 sidebar_label: "types-arithmetic-comparison"
-description: "Cómo cablear la lección types-arithmetic-comparison en la Raspberry Pi Pico (RP2040), generado de su archivo de cableado."
+description: "Cómo cablear la lección types-arithmetic-comparison en la Raspberry Pi Pico (RP2040), generado a partir de su archivo de cableado."
 tags: [learn, hardware, generated]
 unlisted: true
 ---
@@ -10,7 +10,7 @@ unlisted: true
 
 {/* >>> GENERATED (tools/docs/generate_hardware_pages.ts): reference/learner-kits/rpi-pico-rp2040/types-arithmetic-comparison. Do not edit. >>> */}
 
-El cableado de la lección [Tipos, aritmética y comparación: un total y tres bandas](../../../learn/lessons/types-arithmetic-comparison.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Cabléela con el cable USB desconectado.
+El cableado de la lección [Tipos, aritmética y comparación: un total y tres bandas](../../../learn/lessons/types-arithmetic-comparison.md) en la [Raspberry Pi Pico (RP2040)](../rpi-pico-rp2040.md). Haga el cableado con el cable USB desconectado.
 
 ## Límite de tensión
 
@@ -26,8 +26,8 @@ El cableado de la lección [Tipos, aritmética y comparación: un total y tres b
 
 ## Tarjeta de cableado
 
-1. Paso: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
-2. Reset: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); lo lee la resistencia de pull-up interna de la placa.
+1. Paso: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+2. Reset: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
 3. Bajo: LED amarillo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
 4. Exacto: LED verde con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).
 5. Alto: LED rojo con una resistencia de 330 Ω en serie, desde GP2 (header pin 4, DO2) hasta GND (GND · pin 38).
