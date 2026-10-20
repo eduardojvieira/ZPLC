@@ -19,7 +19,7 @@ unlisted: true
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Cruce peatonal y estados seguros](../lessons/pedestrian-crossing-states.md) | `pedestrian-crossing-states` | ST | 25 |
-| [Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
+| [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-5 <<< */}
 

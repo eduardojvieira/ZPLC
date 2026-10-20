@@ -296,8 +296,8 @@
         },
         "es": {
           "title": "Cruce peatonal y estados seguros",
-          "summary": "Recorra estados de cruce peatonal con salidas de vehículo y peatón mutuamente consistentes.",
-          "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cruce físico, hardware, HIL ni certificación.",
+          "summary": "Recorra los estados de un cruce peatonal con salidas para vehículos y peatones coherentes entre sí.",
+          "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de cruce físico, hardware, HIL ni certificación.",
           "objectives": [
             "Modele el cruce como estados numerados, cada uno con una combinación de salidas explícita.",
             "Muestre WALK solo mientras los vehículos están en rojo."
@@ -306,52 +306,52 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/PedestrianCrossing.st, agregue los estados que coordinan vehículos y peatones; la planta levanta PedRequest desde 10 ms.",
+              "body": "En src/PedestrianCrossing.st, agregue los estados que coordinan vehículos y peatones; la planta activa PedRequest a partir de los 10 ms.",
               "checkpoint": "Cada estado debe dejar una combinación de salidas explícita."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe la secuencia de luces y señal peatonal.",
+              "body": "Antes de ejecutar, prediga la secuencia de las luces y de la señal peatonal.",
               "checkpoint": "verde+STOP 0 ms; amarillo+STOP 20; rojo+STOP 40; rojo+WALK 60; rojo+STOP 90; verde+STOP 110."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario PedestrianCrossing.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario PedestrianCrossing.",
               "checkpoint": "El escenario requerido se llama PedestrianCrossing y contiene 15 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
               "body": "Revise la matriz registrada en Tests y compare cada muestra con la predicción.",
-              "checkpoint": "La traza muestra el cambio a WALK solo durante el estado rojo."
+              "checkpoint": "La traza muestra WALK solo durante el estado en rojo."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre salidas incompatibles lógicas solo en este escenario.",
-              "checkpoint": "No demuestra un cruce físico, temporización de hardware, HIL ni certificación."
+              "body": "La aserción NEVER cubre las salidas lógicamente incompatibles solo en este escenario.",
+              "checkpoint": "No demuestra un cruce físico, los tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Mantenga una variable State y un contador de scans; al comienzo de cada scan ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda solo lo que necesita."
+              "text": "Use una variable State y un contador de ciclos; al comienzo de cada ciclo, ponga todas las salidas en el valor seguro (vehículos detenidos, peatones en espera) y deje que cada estado encienda solo lo que necesita."
             },
             {
               "level": 2,
-              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde solo con PedRequest y pase al estado siguiente cuando el contador de scans alcance la duración de esa fase."
+              "text": "La secuencia es verde, amarillo, despeje en rojo, WALK, rojo de recuperación y de nuevo verde; salga de verde solo con PedRequest y pase al estado siguiente cuando el contador de ciclos alcance la duración de esa fase."
             }
           ],
           "faultCases": [
-            "El starter ignora el pedido peatonal; tras PedRequest ejecute amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo."
+            "El programa inicial ignora la solicitud peatonal; tras PedRequest, recorra amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y muestre WALK solo con los vehículos en rojo."
           ]
         }
       }
@@ -478,62 +478,62 @@
         },
         "es": {
           "title": "Nivel de tanque, fallas y reset",
-          "summary": "Recorra el control de nivel y los enclavamientos de falla y reset del ejemplo Tank Level.",
+          "summary": "Recorra el control de nivel y las memorias de falla y de reset del ejemplo Tank Level.",
           "scope": "La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de proceso físico, hardware, HIL ni certificación.",
           "objectives": [
-            "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con un enclavamiento.",
-            "Enclave la alarma con PumpFault o EStop y libérela solo con un Reset nuevo tras despejarse la falla."
+            "Mantenga la bomba encendida desde LevelLow hasta LevelHigh con una retención.",
+            "Retenga la alarma con PumpFault o EStop y libérela solo con un nuevo Reset, después de que la falla haya desaparecido."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/TankLevel.st, agregue las memorias PumpLatched, FaultLatched y ResetArmed (o equivalentes); la planta es dueña de LevelLow y LevelHigh.",
+              "body": "En src/TankLevel.st, agregue las memorias PumpLatched, FaultLatched y ResetArmed (o equivalentes); la planta controla LevelLow y LevelHigh.",
               "checkpoint": "Las memorias de bomba, falla y reset deben tener estados explícitos."
             },
             {
               "key": "predict",
               "title": "Prediga",
-              "body": "Antes de ejecutar, anticipe la bomba y alarma durante los cambios de nivel y falla.",
+              "body": "Antes de ejecutar, prediga la bomba y la alarma durante los cambios de nivel y de falla.",
               "checkpoint": "Pump ON/Alarm NORMAL 10–60 ms; Pump OFF/Alarm NORMAL 70 ms; OFF/ALARM 80–90; OFF/NORMAL 100–110; OFF/ALARM 120–130; OFF/NORMAL 140–150."
             },
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario TankLevel.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario TankLevel.",
               "checkpoint": "El escenario requerido se llama TankLevel y contiene 13 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Relacione 80/100/120/140 ms con fault, reset, EStop y la recuperación; nunca deben coexistir Pump+Alarm.",
-              "checkpoint": "La matriz registrada en Tests muestra cada transición de bomba y alarma."
+              "body": "Relacione 80/100/120/140 ms con la falla, el reset, EStop y la recuperación; Pump+Alarm nunca deben coexistir.",
+              "checkpoint": "La matriz registrada en Pruebas muestra cada transición de la bomba y de la alarma."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "La assertion NEVER cubre Pump+Alarm solo en este escenario registrado.",
-              "checkpoint": "No demuestra un proceso físico, temporización de hardware, HIL ni certificación."
+              "body": "La aserción NEVER cubre Pump+Alarm solo en este escenario registrado.",
+              "checkpoint": "No demuestra un proceso físico, los tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "LevelLow cae a FALSE apenas sube el nivel, así que la bomba necesita su propia memoria (PumpLatched) que LevelLow active y LevelHigh borre."
+              "text": "LevelLow cae a FALSE en cuanto sube el nivel, así que la bomba necesita su propia memoria (PumpLatched), que LevelLow activa y LevelHigh borra."
             },
             {
               "level": 2,
-              "text": "Agregue FaultLatched, activada por PumpFault o EStop y conservada cuando la entrada desaparece, y ResetArmed, activada solo cuando Reset se ve suelto con la falla enclavada; borre FaultLatched con un Reset pulsado estando armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
+              "text": "Agregue FaultLatched, que PumpFault o EStop activan y que se conserva cuando la entrada desaparece, y ResetArmed, que se activa solo cuando Reset se ve suelto con la falla retenida; borre FaultLatched con un Reset pulsado mientras está armado y sin entradas de falla, y condicione Pump con NOT FaultLatched."
             }
           ],
           "faultCases": [
-            "El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantenga la bomba desde LevelLow hasta LevelHigh, enclave la alarma con PumpFault o EStop y libérela solo con un Reset pulsado tras despejarse la falla."
+            "El programa inicial no tiene histéresis en la bomba y sigue bombeando ante una falla de la bomba; mantenga la bomba encendida desde LevelLow hasta LevelHigh, retenga la alarma con PumpFault o EStop y libérela solo con un Reset pulsado después de que la falla haya desaparecido."
           ]
         }
       }
@@ -1018,14 +1018,14 @@
           "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
           "objectives": [
             "Separe la orden al motor de la confirmación de que está en marcha.",
-            "Retenga el pedido hasta Stop y deje que Running siga al pedido solo cuando llegue AtSpeed."
+            "Retenga la solicitud hasta Stop y deje que Running siga a la solicitud solo cuando llegue AtSpeed."
           ],
           "stages": [
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/MotorPlant.st, mantenga una memoria Requested que Start activa y Stop borra, y cablee Requested, Command y Running.",
-              "checkpoint": "Command expresa la orden; Running depende además de AtSpeed."
+              "body": "En src/MotorPlant.st, mantenga una memoria Requested que Start activa y Stop borra, y conecte Requested, Command y Running.",
+              "checkpoint": "Command refleja la solicitud; Running depende además de AtSpeed."
             },
             {
               "key": "predict",
@@ -1036,40 +1036,40 @@
             {
               "key": "edit",
               "title": "Edite",
-              "body": "Corrija esta omisión del starter y guarde antes de ejecutar: El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed.",
-              "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+              "body": "Corrija esta omisión del programa inicial, guárdelo y luego ejecute el escenario: El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
             },
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "En Tests, elija el zplc.json guardado y ejecute únicamente el escenario MotorPlant.",
+              "body": "En el panel Pruebas, elija el zplc.json guardado y ejecute solo el escenario MotorPlant.",
               "checkpoint": "El escenario requerido se llama MotorPlant y contiene 7 assertions."
             },
             {
               "key": "observe",
               "title": "Observe",
-              "body": "Compare 10 con 30 ms: la planta registra orden antes de AtSpeed; Stop a 40 apaga ambos.",
+              "body": "Compare 10 con 30 ms: la planta registra la orden antes de AtSpeed; Stop a los 40 ms apaga ambos.",
               "checkpoint": "La matriz y la traza registradas muestran el avance discreto de speed/AtSpeed."
             },
             {
               "key": "reflect",
               "title": "Reflexione",
               "body": "RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.",
-              "checkpoint": "No demuestra inercia, motor físico, timing de hardware, HIL ni certificación."
+              "checkpoint": "No demuestra inercia, un motor físico, los tiempos del hardware, HIL ni certificación."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Start solo necesita un pulso, así que el pedido tiene que recordarse: active Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
+              "text": "Start solo necesita un pulso, así que la solicitud tiene que recordarse: active Requested con Start y bórrela con Stop (Stop tiene prioridad si ambos están en TRUE)."
             },
             {
               "level": 2,
-              "text": "Maneje Command desde Requested y Running desde Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa velocidad, y ambos caen juntos con Stop."
+              "text": "Calcule Command a partir de Requested, y Running a partir de Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa la velocidad, y ambos caen juntos con Stop."
             }
           ],
           "faultCases": [
-            "El starter pierde Command cuando cae Start y no respeta Stop; retenga el pedido hasta Stop y condicione Running con AtSpeed."
+            "El programa inicial pierde Command cuando Start cae y no respeta Stop; retenga la solicitud hasta Stop y condicione Running con AtSpeed."
           ]
         }
       }
@@ -3098,9 +3098,9 @@
           ]
         },
         "es": {
-          "title": "Interbloqueos y permisivos: una protección que detiene el motor",
-          "summary": "Agregue un permisivo al arranque y parada de un motor para que funcione solo con la protección cerrada, y compruébelo contra la planta del motor y su realimentación de velocidad.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX para un modelo de planta de motor integrado con una tarea de 10 ms; no establece una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
+          "title": "Enclavamientos y permisivos: una protección que detiene el motor",
+          "summary": "Agregue un permisivo al arranque y a la parada de un motor para que funcione solo con la protección cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo integrado de planta de motor, con una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección, el tiempo de parada, HIL ni certificación.",
           "objectives": [
             "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté encendida, de una orden.",
             "Ponga un permisivo en la misma condición que mantiene el motor, para que lo apague y además impida que Start lo vuelva a arrancar."
@@ -3127,7 +3127,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección, con la planta del motor respondiendo a sus salidas.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección, y la planta del motor responde a sus salidas.",
               "checkpoint": "El escenario se llama MotorInterlock y contiene 12 assertions."
             },
             {
@@ -3139,14 +3139,14 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Por qué un permisivo en toda la condición es más seguro que uno solo en Start? Ponga GuardClosed junto a Start y vea qué assertion falla.",
-              "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un interbloqueo de protección certificado."
+              "body": "¿Por qué un permisivo en toda la condición es más seguro que uno solo en Start? Ponga GuardClosed junto a Start y vea qué aserción falla.",
+              "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección certificado."
             }
           ],
           "hints": [
             {
               "level": 1,
-              "text": "Command puede ser TRUE solo si la protección está cerrada, Stop no está pulsado y, o Start está pulsado, o Command ya era TRUE."
+              "text": "Command puede ser TRUE solo si la protección está cerrada, Stop no está pulsado y, además, Start está pulsado o Command ya era TRUE."
             },
             {
               "level": 2,
@@ -3953,11 +3953,11 @@
           ]
         },
         "es": {
-          "title": "Una secuencia en diagrama funcional de secuencias: llenar y luego mezclar",
-          "summary": "Complete un diagrama funcional de secuencias de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
-          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece volúmenes de proceso, calidad de mezcla ni tiempos de válvula en equipos reales, HIL ni certificación.",
+          "title": "Una secuencia en diagrama funcional secuencial: llenar y luego mezclar",
+          "summary": "Complete un diagrama funcional secuencial de tres pasos agregando la transición temporizada que falta, y compruebe que la válvula y el mezclador nunca funcionan a la vez.",
+          "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran volúmenes de proceso, calidad de mezcla ni tiempos de válvulas en equipos reales, HIL ni certificación.",
           "objectives": [
-            "Lea un diagrama funcional de secuencias como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que mueven la actividad.",
+            "Lea un diagrama funcional secuencial como pasos que se activan de uno en uno, acciones que se ejecutan mientras su paso está activo y transiciones que trasladan la actividad.",
             "Agregue una transición temporizada que use el tiempo transcurrido de un paso."
           ],
           "stages": [
@@ -3982,7 +3982,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama FillMix y contiene 12 assertions."
             },
             {
@@ -3994,7 +3994,7 @@
             {
               "key": "reflect",
               "title": "Reflexione",
-              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Cambie la acción de MIX para que también abra la válvula y vea qué assertion falla.",
+              "body": "¿Qué paso está activo mientras la válvula está abierta, y por qué solo uno puede estarlo a la vez? Cambie la acción de MIX para que también abra la válvula y vea qué aserción falla.",
               "checkpoint": "Cada acción escribe las dos salidas, así que un paso define todo el estado de salida y la secuencia no puede dejar una salida encendida por descuido. El escenario muestra solo la lógica de la secuencia; no muestra realimentación del proceso, como un interruptor de nivel."
             }
           ],

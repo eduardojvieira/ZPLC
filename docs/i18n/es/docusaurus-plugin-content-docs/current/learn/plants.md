@@ -15,7 +15,7 @@ Una planta es una máquina simulada que una lección conecta a su programa: la l
 | Planta | La usan |
 | --- | --- |
 | `conveyor-v1` | [Cinta de clasificación y atasco seguro](./lessons/conveyor-classification-jam.md) |
-| `motor-v1` | [Comando, realimentación y velocidad](./lessons/motor-plant-feedback.md), [Interbloqueos y permisivos: una protección que detiene el motor](./lessons/interlock-guard-permissive.md) |
+| `motor-v1` | [Comando, realimentación y velocidad](./lessons/motor-plant-feedback.md), [Enclavamientos y permisivos: una protección que detiene el motor](./lessons/interlock-guard-permissive.md) |
 | `pedestrian-v1` | [Cruce peatonal y estados seguros](./lessons/pedestrian-crossing-states.md) |
 | `tank-v1` | [Nivel de tanque, fallas y reset](./lessons/tank-level-fault-reset.md) |
 
