@@ -329,7 +329,7 @@ class StepTests(Quiet):
         args = run_chain.parse([board, "--dry-run", "--operator", "CI", *extra])
         chain = run_chain.Chain(args, hil_guard.PipedIo(), BOARDS[board], lambda name: device, bench)
         chain.tester = LanguageTester(transport=device, board=board)
-        chain.record["firmware"]["build_options"] = options or {"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000"}
+        chain.record["firmware"]["build_options"] = options or {"HIL_IMAGE": "y", "HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000"}
         _, title, method, requirement = next(s for s in chain.STEPS if s[0] == step_id)
         chain.step(step_id, title, "automatic", getattr(chain, method), requirement)
         entry = chain.record["steps"][-1]
@@ -391,7 +391,10 @@ class StepTests(Quiet):
         self.assertEqual(good["measurements"]["reset_cause"], "watchdog")
         plain, _ = self.step("watchdog-reset-time", options={"SCHEDULER": "y"})
         self.assertEqual(plain["result"], "fail")
-        self.assertIn("CONFIG_ZPLC_HARDWARE_WATCHDOG=y", plain["detail"])
+        self.assertIn("CONFIG_ZPLC_HIL_IMAGE=y", plain["detail"])
+        shipped, _ = self.step("watchdog-reset-time", options={"HARDWARE_WATCHDOG": "y", "HARDWARE_WATCHDOG_TIMEOUT_MS": "1000"})
+        self.assertEqual(shipped["result"], "fail", "a record of RT-020 is made on the HIL image, never on another build")
+        self.assertIn("not the HIL image", shipped["detail"])
 
     def test_power_cycle_keeps_stop_program_and_retain(self):
         good, _ = self.passes_and_fails("power-cycle-retain", "retain-lost")

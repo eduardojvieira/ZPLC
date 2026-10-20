@@ -282,6 +282,22 @@ config ZPLC_HARDWARE_WATCHDOG
       safe outputs. The VM instruction budget remains a logical fault limit;
       it is not this physical watchdog.
 
+config ZPLC_HIL_IMAGE
+    bool "HIL image: the hardware watchdog on for a hardware record run (never shipped)"
+    default n
+    select WATCHDOG
+    select ZPLC_HARDWARE_WATCHDOG
+    help
+      The image a hardware record of HIL-010 is made on (RT-020). It turns the
+      hardware watchdog on in a profile whose entry in boards.json keeps it
+      off until that record exists, with the timeouts and the STOP, pause and
+      fault policies of that entry (firmware/app/CMakeLists.txt checks them).
+      It says what it is: `zplc version` prints a line for it and its build
+      options list HIL_IMAGE=y (`zplc sys build`). It is for the record run
+      only and is never a release image. Build it with
+
+        west build -b <board> firmware/app -- -DCONFIG_ZPLC_HIL_IMAGE=y
+
 config ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS
     int "Hardware watchdog timeout (ms)"
     range 100 60000

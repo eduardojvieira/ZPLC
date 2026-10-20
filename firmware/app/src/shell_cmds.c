@@ -528,6 +528,10 @@ static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
 
   (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
+#ifdef CONFIG_ZPLC_HIL_IMAGE
+  /* RT-020: the image a hardware record is made on says so, so it is never taken for a shipped one */
+  shell_print(sh, "Image:   HIL image, hardware watchdog on for a record run (RT-020); never shipped");
+#endif
   return 0;
 }
 

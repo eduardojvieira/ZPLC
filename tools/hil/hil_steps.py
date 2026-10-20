@@ -509,8 +509,9 @@ class BenchSteps:
     def watchdog_reset_time(self):
         """A program that never ends its scan: the hardware watchdog resets the board into STOP, outputs off (RT-020)."""
         options = self.record["firmware"].get("build_options") or {}
-        if options.get("HARDWARE_WATCHDOG") != "y":
-            raise AssertionError("the image under test was built with the hardware watchdog off: the watchdog step needs the HIL build (CONFIG_ZPLC_HARDWARE_WATCHDOG=y)")
+        if options.get("HIL_IMAGE") != "y":
+            watchdog = "with the hardware watchdog on" if options.get("HARDWARE_WATCHDOG") == "y" else "with the hardware watchdog off"
+            raise AssertionError(f"the image under test is not the HIL image ({watchdog}): the record of RT-020 is made on the HIL image variant (CONFIG_ZPLC_HIL_IMAGE=y)")
         timeout = int(options.get("HARDWARE_WATCHDOG_TIMEOUT_MS") or self.board["watchdog"]["timeout_ms"])
         self.deploy_program("hang")
         started = self.now()
