@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "function-block-valves-fbd",
+  "version": 1,
+  "order": 32,
+  "module": 7,
+  "level": "intermediate",
+  "prerequisites": [
+    "function-block-pump-pair",
+    "counter-batch-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson is graded on pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet.",
+        "es": "La lección se califica con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "valves_fbd_starter",
+    "program": "src/Valves.fbd.json"
+  },
+  "solution": {
+    "project": "valves_fbd",
+    "program": "src/Valves.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Valves",
+    "path": "tests/valves.scenario.json",
+    "sha256": "e819d3fe88a4e3d77165d8c6da27fd24f19cfaa3dde3d0459e6ed1d794158c1e"
+  },
+  "regressionScenarios": []
+}

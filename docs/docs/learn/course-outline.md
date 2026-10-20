@@ -31,7 +31,7 @@ you looked at the solution.
 The course starts with something that moves (module 0), then explains how a PLC thinks (module 1), then logic, time and data, then structure, and ends with proof, languages, communications and a capstone. Each module states why it sits where it does.
 
 
-Available today: **30**. Planned: **1**. In all: **31**.
+Available today: **31**. Planned: **1**. In all: **32**.
 
 
 ## Module 0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board
@@ -170,17 +170,19 @@ Objectives of the available lessons:
 
 Intermediate. Requires module: 4. Tracks: Simulation, Hardware.
 
-Programs grow. Functions, function blocks, structures, arrays and tasks keep them readable and reusable. The two lessons below cover function blocks, structures and arrays; no graded lesson covers tasks yet, because a scenario runs one task.
+Programs grow. Functions, function blocks, structures, arrays and tasks keep them readable and reusable. The lessons below cover function blocks, also called from Function Block Diagram, structures and arrays; no graded lesson covers tasks yet, because a scenario runs one task.
 
 | Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
 |---|---|---|---|---|---|---|
 | `function-block-pump-pair` Function blocks: one latch, two pumps | Available | ST | Simulation | - | 25 | `types-arithmetic-comparison` |
 | `structures-arrays-call-panel` Structures and arrays: a panel of three calls | Available | ST | Simulation | - | 25 | `function-block-pump-pair` |
+| `function-block-valves-fbd` Your own function block in Function Block Diagram: two valves, one block | Available | FBD | Simulation | - | 20 | `function-block-pump-pair`, `counter-batch-fbd` |
 
 Objectives of the available lessons:
 
 - **Function blocks: one latch, two pumps**: Write a function block with inputs, an output and a memory that lives between calls. See that two instances of the same function block keep separate memories.
 - **Structures and arrays: a panel of three calls**: Declare a structure with named members and an array of that structure, and reach an element with an index and a member name. Replace three copies of the same code with one FOR loop over the array.
+- **Your own function block in Function Block Diagram: two valves, one block**: Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration. Wire a second instance of the same function block, and see that each instance keeps a memory of its own.
 
 
 ## Module 8: Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints

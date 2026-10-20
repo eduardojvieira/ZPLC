@@ -20,6 +20,7 @@ unlisted: true
 | --- | --- | --- | --- |
 | [Function blocks: one latch, two pumps](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
 | [Structures and arrays: a panel of three calls](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
+| [Your own function block in Function Block Diagram: two valves, one block](../lessons/function-block-valves-fbd.md) | `function-block-valves-fbd` | FBD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-7 <<< */}
 

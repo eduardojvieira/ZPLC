@@ -31,7 +31,7 @@ puede pedir ver. Studio registra que vio la solución.
 El curso empieza con algo que se mueve (módulo 0), luego explica cómo piensa un PLC (módulo 1), después lógica, tiempo y datos, luego estructura, y termina con pruebas, lenguajes, comunicaciones y un proyecto final. Cada módulo indica por qué está donde está.
 
 
-Disponibles hoy: **30**. Planeadas: **1**. En total: **31**.
+Disponibles hoy: **31**. Planeadas: **1**. En total: **32**.
 
 
 ## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
@@ -170,17 +170,19 @@ Objetivos de las lecciones disponibles:
 
 Intermedio. Requiere el módulo: 4. Pistas: Simulación, Hardware.
 
-Los programas crecen. Las funciones, los bloques funcionales, las estructuras, los arreglos y las tareas los mantienen legibles y reutilizables. Las dos lecciones siguientes cubren bloques funcionales, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
+Los programas crecen. Las funciones, los bloques funcionales, las estructuras, los arreglos y las tareas los mantienen legibles y reutilizables. Las lecciones siguientes cubren bloques funcionales, también llamados desde un diagrama de bloques de función, estructuras y arreglos; todavía ninguna lección calificada cubre las tareas, porque un escenario ejecuta una sola tarea.
 
 | Lección | Estado | Lenguajes | Pistas | Planta | Minutos | Requiere |
 |---|---|---|---|---|---|---|
 | `function-block-pump-pair` Bloques de función: un enclavamiento, dos bombas | Disponible | ST | Simulación | - | 25 | `types-arithmetic-comparison` |
 | `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas | Disponible | ST | Simulación | - | 25 | `function-block-pump-pair` |
+| `function-block-valves-fbd` Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque | Disponible | FBD | Simulación | - | 20 | `function-block-pump-pair`, `counter-batch-fbd` |
 
 Objetivos de las lecciones disponibles:
 
 - **Bloques de función: un enclavamiento, dos bombas**: Escriba un bloque de función con entradas, una salida y una memoria que vive entre llamadas. Vea que dos instancias del mismo bloque de función guardan memorias separadas.
 - **Estructuras y arreglos: un panel de tres llamadas**: Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro. Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo.
+- **Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque**: Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración. Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia.
 
 
 ## Módulo 8: Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción

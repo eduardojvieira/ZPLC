@@ -5222,6 +5222,178 @@
           ]
         }
       }
+    },
+    {
+      "id": "function-block-valves-fbd",
+      "version": 1,
+      "order": 32,
+      "module": 7,
+      "level": "intermediate",
+      "prerequisites": [
+        "function-block-pump-pair",
+        "counter-batch-fbd"
+      ],
+      "languages": [
+        "FBD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is graded on pushbuttons pressed at exact 10 ms steps, and no check against a trace recorded from a board has been written for it yet.",
+            "es": "La lección se califica con pulsadores accionados en pasos exactos de 10 ms, y todavía no se ha escrito para ella una verificación contra una traza registrada desde una placa."
+          },
+          "instead": {
+            "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+            "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita una placa."
+          }
+        }
+      },
+      "plant": null,
+      "plantMap": null,
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "valves_fbd_starter",
+        "program": "src/Valves.fbd.json"
+      },
+      "solution": {
+        "project": "valves_fbd",
+        "program": "src/Valves.fbd.json"
+      },
+      "scenario": {
+        "id": "Valves",
+        "path": "tests/valves.scenario.json",
+        "sha256": "e819d3fe88a4e3d77165d8c6da27fd24f19cfaa3dde3d0459e6ed1d794158c1e",
+        "tickMs": 10,
+        "durationMs": 120,
+        "assertions": 10,
+        "canonical": "{\"durationMs\":120,\"events\":[{\"atMs\":0,\"set\":{\"Valves.AirOk\":true,\"Valves.DrainPB\":false,\"Valves.FillPB\":false,\"Valves.StopPB\":false}},{\"atMs\":10,\"set\":{\"Valves.FillPB\":true}},{\"atMs\":20,\"set\":{\"Valves.FillPB\":false}},{\"atMs\":30,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":40,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":50,\"set\":{\"Valves.StopPB\":true}},{\"atMs\":60,\"set\":{\"Valves.StopPB\":false}},{\"atMs\":70,\"set\":{\"Valves.DrainPB\":true}},{\"atMs\":80,\"set\":{\"Valves.DrainPB\":false}},{\"atMs\":90,\"set\":{\"Valves.AirOk\":false}},{\"atMs\":100,\"set\":{\"Valves.AirOk\":true}},{\"atMs\":110,\"set\":{\"Valves.FillPB\":true}}],\"expectations\":[{\"atMs\":0,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":10,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":30,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"atMs\":50,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":70,\"condition\":{\"Valves.DrainValve\":true,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":90,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":false},\"kind\":\"AT\"},{\"atMs\":100,\"condition\":{\"Valves.DrainValve\":false},\"kind\":\"AT\"},{\"atMs\":110,\"condition\":{\"Valves.DrainValve\":false,\"Valves.FillValve\":true},\"kind\":\"AT\"},{\"condition\":{\"Valves.DrainValve\":true},\"fromMs\":30,\"kind\":\"RISING\",\"withinMs\":0},{\"condition\":{\"Valves.DrainValve\":false},\"fromMs\":90,\"kind\":\"FALLING\",\"withinMs\":0}],\"id\":\"Valves\",\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "text": {
+        "en": {
+          "title": "Your own function block in Function Block Diagram: two valves, one block",
+          "summary": "Edit a Function Block Diagram so that a second instance of the project's function block ValveCtl commands the drain valve, with its inputs and its output wired.",
+          "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.",
+          "objectives": [
+            "Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration.",
+            "Wire a second instance of the same function block, and see that each instance keeps a memory of its own."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "src/ValveCtl.st declares the function block ValveCtl: Open opens the valve and it stays open, Close closes it, and Permit must be TRUE for it to be open at all. In src/Valves.fbd.json the instance Fill is wired to FillPB, StopPB, AirOk and FillValve. The instance Drain is placed but not wired: wire DrainPB to Open, StopPB to Close and AirOk to Permit, and add an output block DrainValve fed from Drain.Cmd.",
+              "checkpoint": "Each valve opens on its own pushbutton, both close on StopPB, and losing AirOk closes either one."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "FillPB is pressed at 10 ms and DrainPB at 30 ms. Predict FillValve and DrainValve at 30 ms, at 70 ms, after StopPB and a new DrainPB press, and at 90 ms, when AirOk drops.",
+              "checkpoint": "Both ON at 30 ms, because each instance holds its own valve; only DrainValve at 70 ms; both OFF at 90 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save it, then press Check: The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at 30 ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block. ValveCtl is in the Project category of the palette, but the instance Drain is already placed, so only the wires and the output block are missing.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "checkpoint": "The scenario is named Valves and contains 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 and 70 ms: both valves are open at 30 ms, StopPB closes both at 50 ms, and at 70 ms DrainPB opens the drain valve alone, because Fill remembers that it was closed.",
+              "checkpoint": "DrainValve rises at 30 ms and falls at 90 ms when AirOk drops; it does not reopen at 100 ms when AirOk returns, and FillPB opens only the fill valve at 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "Why does the program need two instances of ValveCtl and not one block wired to both valves? Wire DrainValve to Fill.Cmd and see which assertion fails.",
+              "checkpoint": "Cmd is the memory of one instance, so one instance can hold only one valve. Fixing ValveCtl once fixes every valve that uses it. The scenario shows the logic only; it does not show how a real valve moves."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Read the declaration in src/ValveCtl.st: which input opens the valve, which closes it, and which permits it? The instance Drain has the same ports as Fill."
+            },
+            {
+              "level": 2,
+              "text": "Draw DrainPB.OUT to Drain.Open, StopPB.OUT to Drain.Close and AirOk.OUT to Drain.Permit, then add an output block DrainValve and draw Drain.Cmd to its IN. Leave the instance Fill as it is."
+            }
+          ],
+          "faultCases": [
+            "The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at 30 ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block."
+          ]
+        },
+        "es": {
+          "title": "Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque",
+          "summary": "Edite un diagrama de bloques de función para que una segunda instancia del bloque de función ValveCtl del proyecto comande la válvula de vaciado, con sus entradas y su salida conectadas.",
+          "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
+          "objectives": [
+            "Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración.",
+            "Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "src/ValveCtl.st declara el bloque de función ValveCtl: Open abre la válvula y la mantiene abierta, Close la cierra, y Permit debe ser TRUE para que pueda estar abierta. En src/Valves.fbd.json la instancia Fill está conectada a FillPB, StopPB, AirOk y FillValve. La instancia Drain está colocada pero sin conectar: conecte DrainPB a Open, StopPB a Close y AirOk a Permit, y agregue un bloque de salida DrainValve alimentado desde Drain.Cmd.",
+              "checkpoint": "Cada válvula se abre con su propio pulsador, las dos se cierran con StopPB, y la pérdida de AirOk cierra cualquiera de las dos."
+            },
+            {
+              "key": "predict",
+              "title": "Prediga",
+              "body": "FillPB se pulsa a los 10 ms y DrainPB a los 30 ms. Prediga FillValve y DrainValve a los 30 ms, a los 70 ms, después de StopPB y de una nueva pulsación de DrainPB, y a los 90 ms, cuando cae AirOk.",
+              "checkpoint": "Ambas en ON a los 30 ms, porque cada instancia mantiene su propia válvula; solo DrainValve a los 70 ms; ambas en OFF a los 90 ms."
+            },
+            {
+              "key": "edit",
+              "title": "Edite",
+              "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los 30 ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida. ValveCtl está en la categoría Proyecto de la paleta, pero la instancia Drain ya está colocada, así que solo faltan los cables y el bloque de salida.",
+              "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+            },
+            {
+              "key": "run",
+              "title": "Ejecute",
+              "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+              "checkpoint": "El escenario se llama Valves y contiene 10 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Compare 30, 50 y 70 ms: las dos válvulas están abiertas a los 30 ms, StopPB cierra ambas a los 50 ms, y a los 70 ms DrainPB abre solo la válvula de vaciado, porque Fill recuerda que se cerró.",
+              "checkpoint": "DrainValve sube a los 30 ms y cae a los 90 ms cuando cae AirOk; no se vuelve a abrir a los 100 ms cuando AirOk regresa, y FillPB abre solo la válvula de llenado a los 110 ms."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexione",
+              "body": "¿Por qué el programa necesita dos instancias de ValveCtl y no un solo bloque conectado a las dos válvulas? Conecte DrainValve a Fill.Cmd y vea qué assertion falla.",
+              "checkpoint": "Cmd es la memoria de una instancia, así que una instancia puede mantener una sola válvula. Corregir ValveCtl una vez corrige todas las válvulas que lo usan. El escenario muestra solo la lógica; no muestra cómo se mueve una válvula real."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Lea la declaración en src/ValveCtl.st: ¿qué entrada abre la válvula, cuál la cierra y cuál la permite? La instancia Drain tiene los mismos puertos que Fill."
+            },
+            {
+              "level": 2,
+              "text": "Trace un cable de DrainPB.OUT a Drain.Open, de StopPB.OUT a Drain.Close y de AirOk.OUT a Drain.Permit; luego agregue un bloque de salida DrainValve y trace un cable de Drain.Cmd a su IN. Deje la instancia Fill como está."
+            }
+          ],
+          "faultCases": [
+            "El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los 30 ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida."
+          ]
+        }
+      }
     }
   ],
   "course": {

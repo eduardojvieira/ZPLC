@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque",
+  "summary": "Edite un diagrama de bloques de función para que una segunda instancia del bloque de función ValveCtl del proyecto comande la válvula de vaciado, con sus entradas y su salida conectadas.",
+  "scope": "La evidencia de Tests es del runtime nativo POSIX con una tarea de 10 ms; no establece el cableado de las válvulas, su tiempo de recorrido, la supervisión del suministro de aire, HIL ni certificación.",
+  "objectives": [
+    "Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración.",
+    "Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "src/ValveCtl.st declara el bloque de función ValveCtl: Open abre la válvula y la mantiene abierta, Close la cierra, y Permit debe ser TRUE para que pueda estar abierta. En src/Valves.fbd.json la instancia Fill está conectada a FillPB, StopPB, AirOk y FillValve. La instancia Drain está colocada pero sin conectar: conecte DrainPB a Open, StopPB a Close y AirOk a Permit, y agregue un bloque de salida DrainValve alimentado desde Drain.Cmd.",
+      "checkpoint": "Cada válvula se abre con su propio pulsador, las dos se cierran con StopPB, y la pérdida de AirOk cierra cualquiera de las dos."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "FillPB se pulsa a los {{t:10}} ms y DrainPB a los {{t:30}} ms. Prediga FillValve y DrainValve a los {{t:30}} ms, a los {{t:70}} ms, después de StopPB y de una nueva pulsación de DrainPB, y a los {{t:90}} ms, cuando cae AirOk.",
+      "checkpoint": "{{v:Valves.FillValve=true,Valves.DrainValve=true@30|Ambas en ON}} a los {{t:30}} ms, porque cada instancia mantiene su propia válvula; {{v:Valves.FillValve=false,Valves.DrainValve=true@70|solo DrainValve}} a los {{t:70}} ms; {{v:Valves.FillValve=false,Valves.DrainValve=false@90|ambas en OFF}} a los {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los {{t:30}} ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida. ValveCtl está en la categoría Proyecto de la paleta, pero la instancia Drain ya está colocada, así que solo faltan los cables y el bloque de salida.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. Studio ejecuta el programa guardado contra el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Valves y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:70}} ms: las dos válvulas están abiertas a los {{t:30}} ms, StopPB cierra ambas a los {{t:50}} ms, y a los {{t:70}} ms DrainPB abre solo la válvula de vaciado, porque Fill recuerda que se cerró.",
+      "checkpoint": "DrainValve sube a los {{t:30}} ms y cae a los {{t:90}} ms cuando cae AirOk; no se vuelve a abrir a los {{t:100}} ms cuando AirOk regresa, y FillPB abre solo la válvula de llenado a los {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué el programa necesita dos instancias de ValveCtl y no un solo bloque conectado a las dos válvulas? Conecte DrainValve a Fill.Cmd y vea qué assertion falla.",
+      "checkpoint": "Cmd es la memoria de una instancia, así que una instancia puede mantener una sola válvula. Corregir ValveCtl una vez corrige todas las válvulas que lo usan. El escenario muestra solo la lógica; no muestra cómo se mueve una válvula real."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Lea la declaración en src/ValveCtl.st: ¿qué entrada abre la válvula, cuál la cierra y cuál la permite? La instancia Drain tiene los mismos puertos que Fill."
+    },
+    {
+      "level": 2,
+      "text": "Trace un cable de DrainPB.OUT a Drain.Open, de StopPB.OUT a Drain.Close y de AirOk.OUT a Drain.Permit; luego agregue un bloque de salida DrainValve y trace un cable de Drain.Cmd a su IN. Deje la instancia Fill como está."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial conecta solo la instancia Fill, así que la válvula de vaciado nunca se abre y DrainValve queda en OFF a los {{t:30}} ms; conecte DrainPB a Drain.Open, StopPB a Drain.Close y AirOk a Drain.Permit, y escriba Drain.Cmd en DrainValve con un bloque de salida."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Your own function block in Function Block Diagram: two valves, one block",
+  "summary": "Edit a Function Block Diagram so that a second instance of the project's function block ValveCtl commands the drain valve, with its inputs and its output wired.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve wiring, valve travel time, air supply monitoring, HIL, or certification.",
+  "objectives": [
+    "Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration.",
+    "Wire a second instance of the same function block, and see that each instance keeps a memory of its own."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "src/ValveCtl.st declares the function block ValveCtl: Open opens the valve and it stays open, Close closes it, and Permit must be TRUE for it to be open at all. In src/Valves.fbd.json the instance Fill is wired to FillPB, StopPB, AirOk and FillValve. The instance Drain is placed but not wired: wire DrainPB to Open, StopPB to Close and AirOk to Permit, and add an output block DrainValve fed from Drain.Cmd.",
+      "checkpoint": "Each valve opens on its own pushbutton, both close on StopPB, and losing AirOk closes either one."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "FillPB is pressed at {{t:10}} ms and DrainPB at {{t:30}} ms. Predict FillValve and DrainValve at {{t:30}} ms, at {{t:70}} ms, after StopPB and a new DrainPB press, and at {{t:90}} ms, when AirOk drops.",
+      "checkpoint": "{{v:Valves.FillValve=true,Valves.DrainValve=true@30|Both ON}} at {{t:30}} ms, because each instance holds its own valve; {{v:Valves.FillValve=false,Valves.DrainValve=true@70|only DrainValve}} at {{t:70}} ms; {{v:Valves.FillValve=false,Valves.DrainValve=false@90|both OFF}} at {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at {{t:30}} ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block. ValveCtl is in the Project category of the palette, but the instance Drain is already placed, so only the wires and the output block are missing.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named Valves and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:70}} ms: both valves are open at {{t:30}} ms, StopPB closes both at {{t:50}} ms, and at {{t:70}} ms DrainPB opens the drain valve alone, because Fill remembers that it was closed.",
+      "checkpoint": "DrainValve rises at {{t:30}} ms and falls at {{t:90}} ms when AirOk drops; it does not reopen at {{t:100}} ms when AirOk returns, and FillPB opens only the fill valve at {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why does the program need two instances of ValveCtl and not one block wired to both valves? Wire DrainValve to Fill.Cmd and see which assertion fails.",
+      "checkpoint": "Cmd is the memory of one instance, so one instance can hold only one valve. Fixing ValveCtl once fixes every valve that uses it. The scenario shows the logic only; it does not show how a real valve moves."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Read the declaration in src/ValveCtl.st: which input opens the valve, which closes it, and which permits it? The instance Drain has the same ports as Fill."
+    },
+    {
+      "level": 2,
+      "text": "Draw DrainPB.OUT to Drain.Open, StopPB.OUT to Drain.Close and AirOk.OUT to Drain.Permit, then add an output block DrainValve and draw Drain.Cmd to its IN. Leave the instance Fill as it is."
+    }
+  ],
+  "faultCases": [
+    "The starter wires only the instance Fill, so the drain valve never opens and DrainValve stays OFF at {{t:30}} ms; wire DrainPB to Drain.Open, StopPB to Drain.Close and AirOk to Drain.Permit, and write Drain.Cmd to DrainValve with an output block."
+  ]
+}

@@ -36,6 +36,7 @@ export const LESSON_IDS = [
   "mqtt-publish-subscribe",
   "analog-scaling-fbd",
   "interlock-reversing-ladder",
+  "function-block-valves-fbd",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];
