@@ -24,9 +24,10 @@ import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { checkForUpdate } from './updateCheck.js';
 import { loadFirmwareImages } from './firmwareImages.js';
-import { buildMenuTemplate, describeApplicationMenu, isReloadShortcut, type MenuCategory, type MenuCommand } from './appMenu.js';
+import { buildMenuTemplate, describeApplicationMenu, type MenuCategory, type MenuCommand } from './appMenu.js';
 import { createShellPreferencesStore, windowSurface, type ShellPreferences } from './shellPreferences.js';
 import { createCloseGuard } from './closeGuard.js';
+import { completeGuardedAction, createReloadRequest, guardReloadChord, guardWindowClose } from './windowGuards.js';
 import { createProjectFiles } from './projectFiles.js';
 import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipcHandlers.js';
 import { spawnVector } from '../shared/spawnAllowList.js';
@@ -207,11 +208,11 @@ function askRendererBeforeLosingWork(action: 'close' | 'reload'): void {
   webContents.send(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, action);
 }
 
-function requestReload(): void {
-  if (!mainWindow) return;
-  if (closeGuard.request('reload') === 'proceed') mainWindow.webContents.reload();
-  else askRendererBeforeLosingWork('reload');
-}
+const requestReload = createReloadRequest({
+  guard: closeGuard,
+  reload: () => { mainWindow?.webContents.reload(); },
+  ask: askRendererBeforeLosingWork,
+});
 
 /**
  * The native folder dialog of the main window: the only way a project root is chosen (IDE-001).
@@ -315,11 +316,7 @@ function createWindow(): void {
 
   // Reload chords never reach the page or the menu: a packaged build cannot reload by keyboard, and a development host
   // reloads only through the unsaved-work guard (IDE-005).
-  webContents.on('before-input-event', (event, input) => {
-    if (!isReloadShortcut(input)) return;
-    event.preventDefault();
-    if (!app.isPackaged) requestReload();
-  });
+  guardReloadChord(webContents, { isPackaged: app.isPackaged, requestReload });
 
   webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('render-process-gone', () => closeGuard.release());
@@ -355,12 +352,7 @@ function createWindow(): void {
   }
 
   // Closing with modified files asks first: save, discard or cancel (cancel keeps the window).
-  mainWindow.on('close', (event) => {
-    if (closeGuard.request('close') === 'ask') {
-      event.preventDefault();
-      askRendererBeforeLosingWork('close');
-    }
-  });
+  guardWindowClose(mainWindow, closeGuard, askRendererBeforeLosingWork);
 
   // Handle window close
   mainWindow.on('closed', () => {
@@ -451,11 +443,8 @@ function setupIPC(): void {
     appInfo: () => ({ version: appVersion, platform: process.platform, arch: process.arch, isPackaged: app.isPackaged }),
     isCurrent: rendererOwnerIsCurrent,
     closeGuard,
-    completeGuardedAction: (action) => {
-      if (action === 'reload') mainWindow?.webContents.reload();
-      // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
-      else mainWindow?.destroy();
-    },
+    // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
+    completeGuardedAction: (action) => completeGuardedAction(action, { reload: () => mainWindow?.webContents.reload(), destroy: () => mainWindow?.destroy() }),
     projectFiles,
     recoveryStore: () => recoveryStore,
     sessionStore: () => sessionStore,

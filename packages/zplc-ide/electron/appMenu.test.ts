@@ -130,7 +130,7 @@ describe('application menu description', () => {
   });
 });
 
-describe('reload shortcuts (IDE-005, stopgap: the chord only)', () => {
+describe('reload shortcuts (IDE-005): which keys are reload chords', () => {
   const input = (overrides: Partial<InputLike>): InputLike => ({ type: 'keyDown', key: 'r', control: false, meta: false, alt: false, ...overrides });
 
   it('recognises Ctrl+R, Ctrl+Shift+R and Cmd+R, whatever the case of the key', () => {

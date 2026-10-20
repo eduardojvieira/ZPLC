@@ -1911,7 +1911,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"24 Changes made outside Studio","partial":true}
   ],
   "IDE-005": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005): which keys are reload chords"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"reload shortcuts (IDE-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"window close and application quit (IDE-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/windowGuards.test.ts","test":"the answer of the user (IDE-005)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"53 Ctrl+R in the development host asks before it discards unsaved work, through a real key press","partial":true}
