@@ -26,10 +26,10 @@ El cableado de la lección [Retener una alarma: set y reset, y cuál tiene prior
 
 ## Tarjeta de cableado
 
-1. Falla: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Reconocimiento: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Alarma con prioridad de set: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
-4. Alarma con prioridad de reset: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (header J1 pin 9, DO1) hasta GND (GND · J1-22).
+1. Falla: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Reconocimiento: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Alarma con prioridad de set: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).
+4. Alarma con prioridad de reset: LED amarillo con una resistencia de 330 Ω en serie, desde GPIO16 (pin 9 del conector J1, DO1) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/set-reset-alarm-latch <<< */}
 

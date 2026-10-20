@@ -26,12 +26,12 @@ El cableado de la lección [Arranque y parada seguros](../../../learn/lessons/mo
 
 ## Tarjeta de cableado
 
-1. Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-2. Parada: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-3. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GP13 (header pin 17, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-4. Sobrecarga: cable puente desde GP12 (header pin 16, DI3) hasta GND (GND · pin 38); conectado significa activado.
-5. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
-6. Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).
+1. Arranque: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+2. Parada: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+3. Parada de emergencia (pulsador de práctica, no es un dispositivo de seguridad): pulsador entre GP13 (pin 17 del conector, DI2) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+4. Sobrecarga: cable puente desde GP12 (pin 16 del conector, DI3) hasta GND (GND · pin 38); conectado significa activado.
+5. Avance: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
+6. Retroceso: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/motor-start-stop-safe <<< */}
 

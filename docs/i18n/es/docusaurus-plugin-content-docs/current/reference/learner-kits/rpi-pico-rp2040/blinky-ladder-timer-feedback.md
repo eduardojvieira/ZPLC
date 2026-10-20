@@ -26,7 +26,7 @@ El cableado de la lección [Oscilador TON y realimentación de salida](../../../
 
 ## Tarjeta de cableado
 
-1. Salida del LED: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
+1. Salida del LED: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/blinky-ladder-timer-feedback <<< */}
 

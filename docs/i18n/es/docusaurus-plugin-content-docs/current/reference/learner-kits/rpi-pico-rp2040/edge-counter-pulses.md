@@ -26,9 +26,9 @@ El cableado de la lección [Flancos y contador de pulsos](../../../learn/lessons
 
 ## Tarjeta de cableado
 
-1. Entrada de pulsos: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-2. Reset: pulsador entre GP14 (header pin 19, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-3. Cuenta alcanzada: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
+1. Entrada de pulsos: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+2. Reset: pulsador entre GP14 (pin 19 del conector, DI1) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+3. Cuenta alcanzada: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/edge-counter-pulses <<< */}
 
