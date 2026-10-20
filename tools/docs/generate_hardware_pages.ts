@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex.ts';
+import { channelIn } from '../../packages/zplc-ide/src/boards/boardIo.ts';
 import { renderWiringSvg, wiringCard } from '../../packages/zplc-ide/src/boards/wiring/render.ts';
 import type { WiringBoard } from '../../packages/zplc-ide/src/boards/wiring/wiring.ts';
 import { loadLearnerBoards } from '../../packages/zplc-ide/src/learn/lessonPackageFiles.ts';
@@ -68,7 +69,7 @@ function kitBody(board: WiringBoard, lang: Lang): string {
     en: `The kit of the course for the ${board.displayName}: its pin map, the parts, the firmware and the voltage limit. The pins come from \`firmware/app/boards/boards.json\` and the parts from \`packages/zplc-ide/lessons/kit.json\`. The [learner kits](./index.md) page explains how a lesson declares its wiring.`,
     es: `El kit del curso para la ${board.displayName}: su mapa de pines, las piezas, el firmware y el límite de tensión. Los pines provienen de \`firmware/app/boards/boards.json\` y las piezas de \`packages/zplc-ide/lessons/kit.json\`. La página [kits del estudiante](./index.md) explica cómo una lección declara su cableado.`,
   };
-  const channels = board.io.channels.map((channel) => [
+  const channels = board.io.channels.map((channel) => channelIn(channel, lang)).map((channel) => [
     code(channel.id), `${T[channel.direction][lang]}, ${T[channel.kind][lang]}`, code(channel.address), prose(channel.pin), prose(channel.location ?? ''), prose(channel.electrical),
   ]);
   const power: L10n = {

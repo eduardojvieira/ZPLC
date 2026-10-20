@@ -26,9 +26,9 @@ El cableado de la lección [Una secuencia en diagrama funcional secuencial: llen
 
 ## Tarjeta de cableado
 
-1. Arranque: pulsador entre GP15 (header pin 20, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
-2. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
-3. Mezclador: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (header pin 2, DO1) hasta GND (GND · pin 38).
+1. Arranque: pulsador entre GP15 (pin 20 del conector, DI0) y GND (GND · pin 38); la placa lo lee con su resistencia de pull-up interna.
+2. Válvula de llenado: LED verde con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
+3. Mezclador: LED amarillo con una resistencia de 330 Ω en serie, desde GP1 (pin 2 del conector, DO1) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/sfc-fill-mix-sequence <<< */}
 

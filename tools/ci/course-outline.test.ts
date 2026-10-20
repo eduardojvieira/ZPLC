@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import kit from '../../packages/zplc-ide/lessons/kit.json';
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { getLanguageFromFilename } from '../../packages/zplc-ide/src/types';
@@ -11,12 +12,13 @@ import { getLanguageFromFilename } from '../../packages/zplc-ide/src/types';
  * it to the generated index: every module has its heading, every lesson of the index has a row whose languages, plant
  * and minutes agree with the manifest, and no row names a lesson that does not exist. It also keeps the outline in step
  * with the Learn home of Studio (LRN-006): the rows are in course order, "Why this order" is the rationale of
- * `lessons/course.json`, and the paragraph under each module's facts is that module's `why`.
+ * `lessons/course.json`, and the paragraph under each module's facts is that module's `why`. Its hardware section links
+ * the kit page of each learner board of `lessons/kit.json`, where the wiring page of every hardware lesson is (LRN-014).
  */
 const ROOT = resolve(import.meta.dir, '../..');
 const PAGES = {
-  en: { file: 'docs/docs/learn/course-outline.md', module: 'Module', why: 'Why this order', languages: 'Languages' },
-  es: { file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/course-outline.md', module: 'Módulo', why: 'Por qué este orden', languages: 'Lenguajes' },
+  en: { file: 'docs/docs/learn/course-outline.md', module: 'Module', why: 'Why this order', languages: 'Languages', hardware: 'Hardware wiring pages' },
+  es: { file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/course-outline.md', module: 'Módulo', why: 'Por qué este orden', languages: 'Lenguajes', hardware: 'Páginas de cableado por placa' },
 } as const;
 type Locale = keyof typeof PAGES;
 
@@ -30,7 +32,7 @@ function paragraphsUnder(markdown: string, heading: RegExp): string[] {
 }
 
 export function outlineProblems(markdown: string, locale: Locale): string[] {
-  const { module: moduleWord, why, languages } = PAGES[locale];
+  const { module: moduleWord, why, languages, hardware } = PAGES[locale];
   const problems: string[] = [];
   if (paragraphsUnder(markdown, new RegExp(`^## ${why}$`, 'm'))[0] !== LESSON_INDEX.course.rationale[locale]) problems.push(`"${why}" is not the rationale of the course file`);
   // LRN-008: the lesson that introduces each language is the first one, in course order, whose edited program is in it.
@@ -39,6 +41,8 @@ export function outlineProblems(markdown: string, locale: Locale): string[] {
     const introducing = courseOrder(LESSON_INDEX).find((lesson) => getLanguageFromFilename(lesson.starter.program) === language);
     if (!introducing || !table.includes(`| ${language} | \`${introducing.id}\` |`)) problems.push(`"${languages}" does not name ${introducing?.id ?? 'a lesson'} as the lesson that introduces ${language}`);
   }
+  const wiring = paragraphsUnder(markdown, new RegExp(`^## ${hardware}$`, 'm')).join('\n');
+  for (const { boardId } of kit.boards) if (!wiring.includes(`(../reference/learner-kits/${boardId}.md)`)) problems.push(`"${hardware}" does not link the kit page of ${boardId}`);
   for (const module of LESSON_INDEX.course.modules) {
     const heading = new RegExp(`^## ${moduleWord} ${module.id}: `, 'm');
     if (!heading.test(markdown)) { problems.push(`module ${module.id} has no heading`); continue; }
@@ -89,6 +93,10 @@ describe('course outline pages (LRN-007)', () => {
       const retimed = markdown.replace(new RegExp(`(\\| \`${first.id}\`[^\\n]*\\| )${first.estimatedMinutes}( \\|)`), '$1999$2');
       expect(outlineProblems(retimed, locale as Locale).some((problem) => problem.startsWith(`${first.id}: minutes`))).toBe(true);
       expect(outlineProblems(`${markdown}\n| \`invented-lesson\` x | Available | ST | Simulation | - | 1 | - |\n`, locale as Locale)).toContain('invented-lesson is not a lesson');
+    });
+    it(`LRN-014 ${locale}: the hardware section links the kit page of each learner board, and the check fails without it`, () => {
+      const unlinked = markdown.replaceAll('(../reference/learner-kits/esp32-s3-devkitc.md)', '(../reference/boards.md)');
+      expect(outlineProblems(unlinked, locale as Locale)).toContain(`"${page.hardware}" does not link the kit page of esp32-s3-devkitc`);
     });
   }
 });

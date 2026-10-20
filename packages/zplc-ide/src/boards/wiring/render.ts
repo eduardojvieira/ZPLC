@@ -6,7 +6,7 @@
  * pin and rail carries words, so colour is never the only cue; the SVG has a title and a description for a screen
  * reader, and `wiringCard` gives the same wiring as sentences to show beside it. Same inputs, same bytes.
  */
-import type { BoardChannel } from '../boardIo';
+import { channelIn, type BoardChannel } from '../boardIo';
 import phrases from './phrases.json';
 import { channelOf, isOnBoard, partsFor, type WiringBoard, type WiringFile, type WiringLocale, type WiringPart } from './wiring';
 
@@ -21,14 +21,15 @@ const where = (channel: BoardChannel): string => `${channel.pin} (${channel.loca
 /** One sentence per part wired on the board, in the order of the wiring file. */
 export function wiringCard(board: WiringBoard, wiring: WiringFile, lang: WiringLocale): string[] {
   return partsFor(wiring, board).flatMap((part) => {
-    const channel = channelOf(board, part.channel);
-    if (!channel) return [];
+    const found = channelOf(board, part.channel);
+    if (!found) return [];
+    const channel = channelIn(found, lang);
     const values = {
       label: part.label[lang], pin: where(channel), ground: board.ground, supply: board.supply, analogGround: board.analogGround,
       color: colorOf(lang, part.color), ohms: ohmsText(part.resistorOhms ?? part.ohms ?? 0),
       pinName: channel.pin, location: channel.location ?? channel.address, id: channel.id,
     };
-    if (isOnBoard(channel)) return [say(lang, 'onBoard', values)];
+    if (isOnBoard(found)) return [say(lang, 'onBoard', values)];
     const kind = (['led', 'button', 'jumper', 'potentiometer', 'capacitor', 'resistor'] as const).find((entry) => entry === part.kind);
     return kind ? [say(lang, kind, values)] : [];
   });
@@ -104,7 +105,7 @@ function symbol(part: WiringPart, board: WiringBoard, y: number, lang: WiringLoc
 export function renderWiringSvg(board: WiringBoard, wiring: WiringFile, lang: WiringLocale): string {
   const rows = partsFor(wiring, board).flatMap((part) => {
     const channel = channelOf(board, part.channel);
-    return channel ? [{ part, channel, onBoard: isOnBoard(channel) }] : [];
+    return channel ? [{ part, channel: channelIn(channel, lang), onBoard: isOnBoard(channel) }] : [];
   });
   const height = TOP + rows.length * ROW + 56;
   const id = `wiring-${board.boardId}`;

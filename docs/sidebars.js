@@ -196,6 +196,7 @@ const sidebars = {
         'contributing/roadmap',
         'development/firmware-testing',
         'development/hardware-in-the-loop',
+        'development/hil-emulation',
         'development/screen-reader-check',
         'integration/publishing',
         'release-notes/index',

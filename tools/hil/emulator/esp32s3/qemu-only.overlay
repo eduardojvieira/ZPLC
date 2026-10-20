@@ -1,0 +1,28 @@
+/*
+ * EMULATION ONLY - NOT A SHIPPABLE BOARD PROFILE.
+ *
+ * Applied on top of firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay
+ * by tools/hil/emulator/build.sh, to run the ESP32-S3 image in Espressif QEMU
+ * (machine esp32s3). An image built with this file must never be flashed to a
+ * board or published: its console is on UART0 and it has no analog input.
+ *
+ * Espressif QEMU has no USB-Serial/JTAG model, so the console and the shell
+ * move to UART0 (QEMU's -serial). It has no SAR ADC model either: the ADC
+ * driver polls adc_oneshot_ll_get_event() forever at boot, so adc0 is off.
+ * The octal PSRAM of the N8R8 module is a QEMU option
+ * (-global ssi_psram.is_octal=true), passed by tools/hil/emulator/esp32s3/qemu.py.
+ */
+/ {
+    chosen {
+        zephyr,console = &uart0;
+        zephyr,shell-uart = &uart0;
+    };
+};
+
+&uart0 {
+    status = "okay";
+};
+
+&adc0 {
+    status = "disabled";
+};

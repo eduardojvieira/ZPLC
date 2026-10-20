@@ -26,9 +26,9 @@ El cableado de la lección [Contadores en diagrama de bloques de función: conta
 
 ## Tarjeta de cableado
 
-1. Sensor de pieza: pulsador entre GPIO5 (header J1 pin 5, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-2. Reset: pulsador entre GPIO6 (header J1 pin 6, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
-3. Lote completo: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+1. Sensor de pieza: pulsador entre GPIO5 (pin 5 del conector J1, DI0) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+2. Reset: pulsador entre GPIO6 (pin 6 del conector J1, DI1) y GND (GND · J1-22); la placa lo lee con su resistencia de pull-up interna.
+3. Lote completo: LED verde con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/counter-batch-fbd <<< */}
 

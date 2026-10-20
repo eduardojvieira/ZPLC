@@ -1,0 +1,87 @@
+diff --git i/src/peripherals/adc.ts w/src/peripherals/adc.ts
+index a6aa487..e2bd686 100644
+--- i/src/peripherals/adc.ts
++++ w/src/peripherals/adc.ts
+@@ -254,6 +254,7 @@ export class RPADC extends BasePeripheral implements Peripheral {
+         } else {
+           const value = this.fifo.pull();
+           this.updateDMA();
++          this.checkInterrupts(); // zplc-emu patch: the FIFO IRQ is a level; draining it must drop the line
+           return value;
+         }
+       case DIV:
+@@ -278,6 +279,9 @@ export class RPADC extends BasePeripheral implements Peripheral {
+         if (value & CS_EN && !this.busy && (value & CS_START_ONE || value & CS_START_MANY)) {
+           this.startADCRead();
+         }
++        // zplc-emu patch: START_ONCE is self-clearing; kept set, the next write to CS (the driver clears ERR_STICKY
++        // through the SET alias before it selects the next input) started a conversion of the previous input.
++        this.cs &= ~CS_START_ONE;
+         break;
+       case FCS:
+         this.fcs &= ~(value & (FCS_OVER | FCS_UNDER)); // Write-clear bits
+diff --git i/src/peripherals/ppb.ts w/src/peripherals/ppb.ts
+index 917252e..80dc165 100644
+--- i/src/peripherals/ppb.ts
++++ w/src/peripherals/ppb.ts
+@@ -57,6 +57,11 @@ export class RPPPB extends BasePeripheral implements Peripheral {
+     this.systickCountFlag = true;
+     if (this.systickIntEnable) {
+       this.rp2040.core.pendingSystick = true;
++      // zplc-emu patch: a pending SysTick must end WFI, as an NVIC interrupt does in setInterrupt()
++      const core = this.rp2040.core;
++      if (core.waiting && core.checkForInterrupts()) {
++        core.waiting = false;
++      }
+       this.rp2040.core.interruptsUpdated = true;
+     }
+     this.systickTimer.set(this.systickReload);
+@@ -240,7 +245,9 @@ export class RPPPB extends BasePeripheral implements Peripheral {
+         this.systickTimer.enable = value & (1 << 0) ? true : false;
+         return;
+       case SYST_CVR:
+-        this.systickTimer.set(0);
++        // zplc-emu patch: on Cortex-M a write clears the counter and the next tick reloads from RVR
++        // without setting COUNTFLAG or pending the interrupt; set(0) here fired a spurious SysTick.
++        this.systickTimer.set(this.systickReload);
+         return;
+       case SYST_RVR:
+         this.systickReload = value;
+diff --git i/src/peripherals/usb.ts w/src/peripherals/usb.ts
+index f9efbd7..4b01fde 100644
+--- i/src/peripherals/usb.ts
++++ w/src/peripherals/usb.ts
+@@ -420,15 +420,23 @@ export class RPUSBController extends BasePeripheral {
+         this.usbPwr = value;
+         // VBUS detect override - set VBUS detected in SIE_STATUS
+         if (value & PWR_VBUS_DETECT_OVERRIDE_EN) {
++          const before = this.sieStatus & SIE_VBUS_DETECTED;
+           if (value & PWR_VBUS_DETECT) {
+             this.sieStatus |= SIE_VBUS_DETECTED;
+           } else {
+             this.sieStatus &= ~SIE_VBUS_DETECTED;
+           }
++          if (before !== (this.sieStatus & SIE_VBUS_DETECTED)) {
++            this.intRaw |= INTR_VBUS_DETECT;
++            this.checkInterrupts();
++          }
+         }
+         break;
+       case SIE_STATUS:
+         this.sieStatus &= ~(this.rawWriteValue & SIE_WRITECLEAR_MASK);
++        if (this.rawWriteValue & SIE_VBUS_DETECTED) {
++          this.intRaw &= ~INTR_VBUS_DETECT; // zplc-emu patch, see sieStatusUpdated
++        }
+         if (this.rawWriteValue & SIE_BUS_RESET) {
+           if (!this.hostMode) {
+             this.onResetReceived?.();
+@@ -601,7 +609,8 @@ export class RPUSBController extends BasePeripheral {
+         [SIE_SUSPENDED, INTR_DEV_SUSPEND],
+         [SIE_CONNECTED, INTR_DEV_CONN_DIS],
+         [SIE_BUS_RESET, INTR_BUS_RESET],
+-        [SIE_VBUS_DETECTED, INTR_VBUS_DETECT],
++        // zplc-emu patch: VBUS_DETECT is latched on change and cleared by writing SIE_STATUS.VBUS_DETECTED (what
++        // Zephyr's usb_dc_rpi_pico driver does); as a level copy it never cleared and the ISR stormed.
+         [SIE_STALL_REC, INTR_STALL],
+         [SIE_CRC_ERROR, INTR_ERROR_CRC],
+         [SIE_BIT_STUFF_ERROR, INTR_ERROR_BIT_STUFF],

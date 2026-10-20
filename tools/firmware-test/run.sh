@@ -43,6 +43,11 @@ modes (what each one proves: docs/docs/development/firmware-testing.md):
   qemu-m0   the Cortex-M0 subset on qemu_cortex_m0 (16 KB of RAM)
   app       host test of firmware/app (Sparkplug encoder) against the nanopb
             output of a board build
+  app-native  EMULATION ONLY: firmware/app on native_sim/native/64 with the
+            Raspberry Pi Pico channel map on gpio_emul and adc_emul
+            (firmware/tests/app_native_emulation), booted and driven through its
+            `emu` shell command; also checks that the command cannot be built
+            for a shipped board. Not part of `all`
   size      build firmware/app for every supported board, print flash and RAM
             next to size-budget.json, fail when a size is over its budget
             or a storage user has no flash partition of its own (IO-008)
@@ -62,7 +67,7 @@ last_mode=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h | --help | help) usage; exit 0 ;;
-    host | host32 | native | native32 | qemu-m3 | qemu-m0 | app | size | tidy | all)
+    host | host32 | native | native32 | qemu-m3 | qemu-m0 | app | app-native | size | tidy | all)
       MODES+=("$1")
       last_mode="$1"
       ;;
@@ -258,6 +263,44 @@ run_app() {
   return "${rc}"
 }
 
+# ---------------------------------------------------------------- app-native
+# HIL-015 and the emulated bench: firmware/app on native_sim with the Pico's I/O description and an `emu` shell command
+# that stands in for the bench wiring. The command lives in an out-of-tree module that only this mode adds, and its
+# build stops for any other board: the second build below proves it on rpi_pico/rp2040.
+run_app_native() {
+  local emu="${ZPLC_FW_REPO}/firmware/tests/app_native_emulation" dir="${OUT}/app-native" rc=0
+  local description="${OUT}/app-native.io.json" guard_conf="${OUT}/app-native-guard.conf"
+  python3 -B -I -c '
+import json, sys
+board = next(b for b in json.load(open(sys.argv[1])) if b["board_id"] == "rpi-pico-rp2040")
+json.dump(board, open(sys.argv[2], "w"), indent=2)
+' "${BOARDS_JSON}" "${description}"
+  echo "==> app-native: firmware/app on native_sim/native/64 with the Pico channel map (emulation only)"
+  fresh_cmake_dir "${dir}" "${ZPLC_FW_REPO}/firmware/app"
+  if ! (cd "${ZPLC_FW_WS}" && west build -p always -b native_sim/native/64 zplc/firmware/app -d "${dir}" --     -DEXTRA_DTC_OVERLAY_FILE="${emu}/native_sim.overlay" -DEXTRA_CONF_FILE="${emu}/emulation.conf"     -DEXTRA_ZEPHYR_MODULES="${emu}/module" -DZPLC_IO_DESCRIPTION="${description}") > "${OUT}/app-native.log" 2>&1; then
+    record "FAIL app-native west build failed (see ${OUT}/app-native.log)"
+    return 1
+  fi
+  if python3 -B "${ZPLC_FW_REPO}/tools/hil/emulator/native_sim.py" --check "${dir}/zephyr/zephyr.exe" >> "${OUT}/app-native.log" 2>&1; then
+    record "PASS app-native native_sim boots with the Pico channel map; emu drives GP15 and ADC0 and reads the outputs"
+  else
+    record "FAIL app-native the native_sim image did not pass its boot check (see ${OUT}/app-native.log)"
+    rc=1
+  fi
+  printf 'CONFIG_ZPLC_EMU_SHELL=y
+' > "${guard_conf}"
+  if (cd "${ZPLC_FW_WS}" && west build -p always -b rpi_pico/rp2040 zplc/firmware/app -d "${OUT}/app-native-guard"     --cmake-only -- -DEXTRA_ZEPHYR_MODULES="${emu}/module" -DEXTRA_CONF_FILE="${guard_conf}") > "${OUT}/app-native-guard.log" 2>&1; then
+    record "FAIL app-native the emu command configured for rpi_pico/rp2040: its guard did not stop the build"
+    rc=1
+  elif [[ "$(< "${OUT}/app-native-guard.log")" == *"CONFIG_ZPLC_EMU_SHELL is for native_sim only"* ]]; then
+    record "PASS app-native guard: enabling the emu command for rpi_pico/rp2040 stops the build"
+  else
+    record "FAIL app-native the guard build failed for another reason (see ${OUT}/app-native-guard.log)"
+    rc=1
+  fi
+  return "${rc}"
+}
+
 # ---------------------------------------------------------------------- tidy
 # VF-018: the host pass always runs. The Zephyr pass needs the compile database of a west build, so it runs only when
 # the Opta build of `size` or `app` (the board that has MQTT, Modbus and the shell) is already in the output directory.
@@ -305,6 +348,7 @@ while IFS= read -r mode; do
     qemu-m3) run_twister qemu-m3 qemu_cortex_m3 || rc=$? ;;
     qemu-m0) run_twister qemu-m0 qemu_cortex_m0 || rc=$? ;;
     app) run_app || rc=$? ;;
+    app-native) run_app_native || rc=$? ;;
     size) run_size || rc=$? ;;
     tidy) run_tidy || rc=$? ;;
   esac

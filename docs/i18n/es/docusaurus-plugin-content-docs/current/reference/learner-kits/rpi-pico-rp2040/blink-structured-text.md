@@ -26,8 +26,8 @@ El cableado de la lección [Escriba un parpadeador en texto estructurado](../../
 
 ## Tarjeta de cableado
 
-1. Habilitación: cable puente desde GP15 (header pin 20, DI0) hasta GND (GND · pin 38); conectado significa activado.
-2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (header pin 1, DO0) hasta GND (GND · pin 38).
+1. Habilitación: cable puente desde GP15 (pin 20 del conector, DI0) hasta GND (GND · pin 38); conectado significa activado.
+2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GP0 (pin 1 del conector, DO0) hasta GND (GND · pin 38).
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040/blink-structured-text <<< */}
 

@@ -26,8 +26,8 @@ El cableado de la lección [Escriba un parpadeador en texto estructurado](../../
 
 ## Tarjeta de cableado
 
-1. Habilitación: cable puente desde GPIO5 (header J1 pin 5, DI0) hasta GND (GND · J1-22); conectado significa activado.
-2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (header J1 pin 8, DO0) hasta GND (GND · J1-22).
+1. Habilitación: cable puente desde GPIO5 (pin 5 del conector J1, DI0) hasta GND (GND · J1-22); conectado significa activado.
+2. Lámpara: LED rojo con una resistencia de 330 Ω en serie, desde GPIO15 (pin 8 del conector J1, DO0) hasta GND (GND · J1-22).
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc/blink-structured-text <<< */}
 

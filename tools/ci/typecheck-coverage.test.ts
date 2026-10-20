@@ -41,7 +41,7 @@ describe('type-check coverage (VF-010)', () => {
   });
 
   test('each listed file still exists and is still unchecked, so the list cannot go stale', () => {
-    const files = new Set(tracked(['*.ts', '*.tsx']));
+    const files = new Set(tracked(['*.ts', '*.tsx', '*.mts', '*.cts'])); // the patterns of the test above
     for (const file of Object.keys(UNCHECKED)) {
       expect(files.has(file)).toBe(true);
       expect(checked.has(absolute(file))).toBe(false);

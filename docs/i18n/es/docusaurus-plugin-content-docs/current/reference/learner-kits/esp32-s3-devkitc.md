@@ -23,16 +23,16 @@ El kit del curso para la ESP32-S3-DevKitC-1 (N8R8): su mapa de pines, las piezas
 
 | Canal | Dirección | Dirección IEC | Pin | Ubicación | Notas |
 | --- | --- | --- | --- | --- | --- |
-| `DO0` | salida, digital | `%QX0.0` | GPIO15 | header J1 pin 8 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
-| `DO1` | salida, digital | `%QX0.1` | GPIO16 | header J1 pin 9 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
-| `DO2` | salida, digital | `%QX0.2` | GPIO17 | header J1 pin 10 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
-| `DO3` | salida, digital | `%QX0.3` | GPIO18 | header J1 pin 11 | 3.3 V logic. Not 5 V tolerant. Keep the load under 10 mA: an LED with 330 Ω in series draws about 4 mA. |
-| `DI0` | entrada, digital | `%IX0.0` | GPIO5 | header J1 pin 5 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
-| `DI1` | entrada, digital | `%IX0.1` | GPIO6 | header J1 pin 6 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
-| `DI2` | entrada, digital | `%IX0.2` | GPIO7 | header J1 pin 7 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
-| `DI3` | entrada, digital | `%IX0.3` | GPIO8 | header J1 pin 12 | 3.3 V logic input with the internal pull-up enabled by the profile, active low: connect a button to GND. Not 5 V tolerant. |
-| `DI4` | entrada, digital | `%IX0.4` | GPIO0 (BOOT button) | on-board BOOT button | On-board BOOT button, active low with the internal pull-up: an extra input that needs no wiring, not one of the four learner inputs. A strapping pin: do not hold it pressed while the board resets, or the board starts in download mode. |
-| `AI0` | entrada, analógica | `%IW4` | GPIO4 (ADC1_CH3) | header J1 pin 4 | 0 V to about 3.1 V at 12 dB attenuation (some chips stop near 2.9 V); never apply more than 3.3 V. Wire a 10 kΩ potentiometer between 3V3 (header J1 pin 1) and GND (header J1 pin 22), its wiper to this pin. |
+| `DO0` | salida, digital | `%QX0.0` | GPIO15 | pin 8 del conector J1 | Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA. |
+| `DO1` | salida, digital | `%QX0.1` | GPIO16 | pin 9 del conector J1 | Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA. |
+| `DO2` | salida, digital | `%QX0.2` | GPIO17 | pin 10 del conector J1 | Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA. |
+| `DO3` | salida, digital | `%QX0.3` | GPIO18 | pin 11 del conector J1 | Lógica de 3.3 V. No tolera 5 V. Mantenga la carga por debajo de 10 mA: un LED con 330 Ω en serie consume unos 4 mA. |
+| `DI0` | entrada, digital | `%IX0.0` | GPIO5 | pin 5 del conector J1 | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
+| `DI1` | entrada, digital | `%IX0.1` | GPIO6 | pin 6 del conector J1 | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
+| `DI2` | entrada, digital | `%IX0.2` | GPIO7 | pin 7 del conector J1 | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
+| `DI3` | entrada, digital | `%IX0.3` | GPIO8 | pin 12 del conector J1 | Entrada de lógica de 3.3 V con la resistencia de pull-up interna activada por el perfil, activa en bajo: conecte un pulsador a GND. No tolera 5 V. |
+| `DI4` | entrada, digital | `%IX0.4` | GPIO0 (botón BOOT) | botón BOOT de la placa | Botón BOOT de la placa, activo en bajo con la resistencia de pull-up interna: una entrada adicional que no necesita cableado y no es una de las cuatro entradas del estudiante. Es un pin de configuración de arranque (strapping): no lo mantenga presionado mientras la placa se reinicia, o la placa arranca en modo de descarga. |
+| `AI0` | entrada, analógica | `%IW4` | GPIO4 (ADC1_CH3) | pin 4 del conector J1 | De 0 V a unos 3.1 V con atenuación de 12 dB (algunos chips llegan solo a unos 2.9 V); nunca aplique más de 3.3 V. Conecte un potenciómetro de 10 kΩ entre 3V3 (pin 1 del conector J1) y GND (pin 22 del conector J1), con su cursor en este pin. |
 
 Alimentación: 3V3 en 3V3 · J1-1, GND en GND · J1-22, la tierra de un potenciómetro en GND · J1-22.
 

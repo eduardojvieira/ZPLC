@@ -2,6 +2,9 @@
  * The I/O description of a board (IO-001, IO-003): the channels of the board with their direction, kind, IEC address,
  * pin name and electrical notes, as firmware/app/boards/boards.json lists them. Studio, the docs generator and the
  * firmware table generator read the same JSON; the rules here mirror firmware/zephyr/scripts/zplc_boards.py.
+ *
+ * The human text (pin name, location, electrical notes, scaling) is English, the text the firmware and its logs use;
+ * a learner board also gives it in Spanish under the same key with `_es` (LRN-029), read here into `es`.
  */
 
 export type ChannelKind = 'digital' | 'analog';
@@ -32,7 +35,13 @@ export interface BoardChannel {
   readonly resolutionBits?: number;
   readonly range?: AnalogRange;
   readonly scaling?: string;
+  /** The Spanish twins of the human text, where the description gives them; `channelIn` shows them. */
+  readonly es?: Readonly<Partial<Record<TranslatedKey, string>>>;
 }
+
+/** The keys of a channel whose text may also be given in Spanish, as `<key>_es` in the manifest. */
+const TRANSLATED = ['pin', 'location', 'electrical', 'scaling'] as const;
+type TranslatedKey = (typeof TRANSLATED)[number];
 
 export interface BoardIoDescription {
   readonly channels: readonly BoardChannel[];
@@ -55,6 +64,8 @@ export const SCHEMA_VERSION = 1;
 export const SYSTEM_REGISTER_OFFSET = 0x0ff0;
 const IMAGE_SIZE = 0x1000;
 const MAX_CHANNELS = 64;
+/** The longest note or scaling text: a Spanish note runs longer than its English one. */
+const NOTE_MAX = 512;
 
 const ADDRESS = /^%([IQ])([XW])(\d{1,4})(?:\.(\d))?$/;
 
@@ -100,10 +111,13 @@ function readChannel(value: unknown): BoardChannel | undefined {
   if ((kind === 'digital') !== (parsed.bit !== undefined)) return undefined;
   if (parsed.byte + parsed.width > (parsed.region === 'I' ? SYSTEM_REGISTER_OFFSET : IMAGE_SIZE)) return undefined;
   if (value.pin_status !== 'devicetree' && value.pin_status !== 'profile') return undefined;
+  const es = readTwins(value);
+  if (!es) return undefined;
   const base: Omit<BoardChannel, 'safe' | 'resolutionBits' | 'range'> = {
     id, direction, kind, address: address as string, pin, electrical, source, pinStatus: value.pin_status as 'devicetree' | 'profile',
     ...(isText(value.location) ? { location: value.location } : {}),
-    ...(isText(value.scaling) ? { scaling: value.scaling } : {}),
+    ...(isText(value.scaling, NOTE_MAX) ? { scaling: value.scaling } : {}),
+    ...(Object.keys(es).length > 0 ? { es } : {}),
   };
   if (direction === 'output') {
     if (kind === 'analog' || (value.safe !== 0 && value.safe !== 1)) return undefined;
@@ -116,6 +130,21 @@ function readChannel(value: unknown): BoardChannel | undefined {
     return { ...base, resolutionBits: bits, range };
   }
   return base;
+}
+
+/** A channel with its human text in a language: the Spanish twins where the description has them, else English. */
+export const channelIn = (channel: BoardChannel, lang: 'en' | 'es'): BoardChannel => (lang === 'es' && channel.es ? { ...channel, ...channel.es } : channel);
+
+/** The Spanish twins of a channel; undefined when one is empty or translates a text the channel does not have. */
+function readTwins(value: Record<string, unknown>): BoardChannel['es'] | undefined {
+  const twins: Partial<Record<TranslatedKey, string>> = {};
+  for (const key of TRANSLATED) {
+    const twin = value[`${key}_es`];
+    if (twin === undefined) continue;
+    if (!isText(twin, NOTE_MAX) || !isText(value[key], NOTE_MAX)) return undefined;
+    twins[key] = twin;
+  }
+  return twins;
 }
 
 /** Reads the `io` object of a manifest entry; undefined when any rule of the description is broken. */

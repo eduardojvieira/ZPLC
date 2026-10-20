@@ -2860,6 +2860,8 @@
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
   ],
   "LRN-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"LRN-029 the Spanish twins of the human text of a channel"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/boards/wiring/kit.test.ts","test":"LRN-029 refuses a kit board that boards.json does not mark as a learner board, whose Spanish text nothing checks"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 Learn follows the language of the application"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 draws the lessons and the Learn home in the language of the setting, and switches when the setting changes"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnLanguage.test.tsx","test":"LRN-029 names the tracks of a lesson \"Rutas\" in Spanish, because \"Pistas\" are its hints"},
@@ -2867,6 +2869,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 has the same structure in English and Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"LRN-029 names actual voseo forms and leaves correct Spanish alone: future forms, \"sí\", \"así\""},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"the voseo guard of the lesson text (LRN-029)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every Spanish board text of a learner board is in the register and the terms of the glossary"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every learner-kit and wiring page has a Spanish page with the same headings, list items, table rows and diagrams"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson and hint exists in English and Spanish with the same structure"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every lesson package has a valid English and a valid Spanish text, with the same stages, hint levels, counts and quoted facts"},
@@ -2875,6 +2878,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase has a Spanish text with the same placeholders, in the register and the terms of the glossary"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 every wiring phrase, kit text and wiring page exists in English and Spanish with the same structure"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish learner-kit page, wiring page, wiring diagram or board reference section shows the English note of a learner board"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint addresses the learner with \"tú\" or voseo"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 no Spanish lesson or hint uses a known wrong variant of a glossary term"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"LRN-029 the Spanish lessons are in the register of decision D-10 and use the Learn glossary"},
@@ -2959,7 +2963,8 @@
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/memory.test.ts","test":"HIL cases: memory opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/opcodes/stack.test.ts","test":"HIL cases: stack opcodes (HIL-001)"},
     {"kind":"unit","ref":"packages/zplc-hil/tests/runner.test.ts","test":"the runner compiles, deploys, starts and observes (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
-    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"}
+    {"kind":"unit","ref":"packages/zplc-hil/tests/shellLink.test.ts","test":"the shell link speaks the firmware grammar (HIL-001)","partial":true,"note":"the deploy goes through the shell grammar of the firmware, which is the control path of the boards today; the framed protocol of COM-019 is one more DeviceLink when it is on the device, and a board run is made by a person"},
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"}
   ],
   "HIL-002": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/hardwarePort.test.ts","test":"the hardware runtime port of the scenario engine (HIL-002)"},
@@ -3023,6 +3028,7 @@
   ],
   "HIL-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"the hardware scenario and bench commands (HIL-003, HIL-012) exit with an error without an interactive terminal"},
+    {"kind":"unit","ref":"tools/ci/hil-emulator.test.ts","test":"emulated HIL bench (HIL-001, HIL-012)"},
     {"kind":"unit","ref":"tools/hil/test_hil_chain.py","test":"DryRunTests","partial":true,"note":"the chain runs on fake devices with a scripted person and refuses without an interactive terminal; it has not run on a board, and D-08 is open; run by the typescript job of ci.yml, step 'Test the HIL tools and the HIL package', on fake devices and the native runtime; no serial port is opened"},
     {"kind":"py-test","ref":"tools/hil/test_hil_bench.py","test":"HIL-012: the chain says how long it takes, about 30 minutes on a person's bench"},
     {"kind":"py-test","ref":"tools/hil/test_hil_chain.py","test":"HIL-012: one command per board runs the whole chain, prompting for each physical step, and writes a record"}
@@ -3034,6 +3040,7 @@
     {"kind":"py-test","ref":"tools/hil/test_hil_trace_profile.py","test":"HIL-013: no shipped board profile turns the HIL trace on; it comes from the HIL overlay"}
   ],
   "HIL-015": [
+    {"kind":"c-test","ref":"firmware/tests/app_native_emulation/module/emu_shell.c","test":"same program can be compared with the emulated Pico (HIL-015). It is never compiled"},
     {"kind":"py-test","ref":"tools/hil/test_hil_compare.py","test":"HIL-015 stopgap: the comparison of native simulation and a bench records a difference; no board ran it","partial":true}
   ],
   "HIL-016": [

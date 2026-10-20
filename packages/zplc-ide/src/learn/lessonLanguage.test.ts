@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
+import boardManifest from '../../../../firmware/app/boards/boards.json';
 import kit from '../../lessons/kit.json';
 import phrases from '../boards/wiring/phrases.json';
 
@@ -181,7 +182,40 @@ describe('LRN-029 every wiring phrase, kit text and wiring page exists in Englis
       expect({ page, shape: pageShape(readFileSync(join(KIT_PAGES.es, page), 'utf8')) }).toEqual({ page, shape: pageShape(readFileSync(join(KIT_PAGES.en, page), 'utf8')) });
     }
   });
+
+  it('LRN-029 every Spanish board text of a learner board is in the register and the terms of the glossary', () => {
+    const twins = BOARD_TEXTS.filter((text) => text.spanish !== undefined);
+    expect(twins.length).toBeGreaterThan(40);
+    for (const { at, spanish } of twins) expect({ at, refused: refused(spanish!) }).toEqual({ at, refused: [] });
+  });
+
+  it('LRN-029 no Spanish learner-kit page, wiring page, wiring diagram or board reference section shows the English note of a learner board', () => {
+    const svgs = (directory: string): string[] => readdirSync(directory).flatMap((name) => {
+      const path = join(directory, name);
+      return statSync(path).isDirectory() ? svgs(path) : name.endsWith('.es.svg') ? [path] : [];
+    });
+    const unescape = (text: string) => text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    const reference = readFileSync(join(DOCS, 'i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md'), 'utf8').split(/^### /m);
+    const pages = [
+      ...markdownFiles(KIT_PAGES.es).map((file) => [relative(DOCS, file), readFileSync(file, 'utf8')] as const),
+      ...svgs(join(DOCS, 'static/img/wiring')).map((file) => [relative(DOCS, file), unescape(readFileSync(file, 'utf8'))] as const),
+      ...LEARNER_BOARDS.map((board) => [`reference/boards.md ${board.display_name}`, reference.find((block) => block.startsWith(`${board.display_name}\n`)) ?? ''] as const),
+    ];
+    expect(pages.length).toBeGreaterThan(40);
+    const english = BOARD_TEXTS.filter((text) => text.english !== text.spanish);
+    const shown = pages.flatMap(([page, body]) => english.filter((text) => body.includes(text.english)).map((text) => ({ page, at: text.at, english: text.english })));
+    expect(shown).toEqual([]);
+  });
 });
+
+/** The learner boards of boards.json: the boards whose human text has a Spanish twin under the same key with `_es`. */
+type BoardItem = Record<string, unknown>;
+const LEARNER_BOARDS = (boardManifest as unknown as Array<{ board_id: string; display_name: string; learner?: boolean; io: { channels: BoardItem[]; unmapped: BoardItem[] }; fieldbus?: BoardItem[] }>).filter((board) => board.learner === true);
+/** Each English text of a learner board a Spanish page shows in Spanish, with its twin; a required text always counts. */
+const BOARD_TEXTS = LEARNER_BOARDS.flatMap((board) => [...board.io.channels, ...board.io.unmapped, ...(board.fieldbus ?? [])].flatMap((item) =>
+  (['pin', 'location', 'electrical', 'scaling', 'terminal', 'reason'] as const)
+    .filter((key) => typeof item[key] === 'string' && (typeof item[`${key}_es`] === 'string' || ['location', 'electrical', 'scaling', 'reason'].includes(key)))
+    .map((key) => ({ at: `${board.board_id} ${String(item.id ?? item.terminal)} ${key}`, english: item[key] as string, spanish: item[`${key}_es`] as string | undefined }))));
 
 describe('LRN-012 the first lesson leads to a blink with the controls Studio shows', () => {
   it('LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish', () => {
