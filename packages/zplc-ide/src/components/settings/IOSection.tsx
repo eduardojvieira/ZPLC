@@ -8,7 +8,7 @@ import type {
   IOPinConfig,
 } from '../../types';
 import { BOARD_OPTIONS, getBoardIo } from '../../config/boardProfiles';
-import type { BoardChannel, BoardIoDescription } from '../../boards/boardIo';
+import { channelIn, type BoardChannel, type BoardIoDescription } from '../../boards/boardIo';
 import { channelAt, channelsFor, mappingProblem, nextFreeChannel, type IoSection } from '../../boards/boardIoMapping';
 import type { SectionProps } from './settingsSectionProps';
 import { useT } from '../../i18n';
@@ -263,7 +263,7 @@ export function IOSection({ config, updateConfig }: SectionProps) {
 
 /** The channels the selected board has, with their pins: what a row of the tables below can be mapped to. */
 function BoardChannels({ io, boardLabel }: { io: BoardIoDescription; boardLabel: string }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   return (
     <div className="rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] px-3 py-2 text-xs">
       <div className="text-[var(--color-surface-200)] font-medium">
@@ -273,7 +273,7 @@ function BoardChannels({ io, boardLabel }: { io: BoardIoDescription; boardLabel:
         {t('io.aRowCanOnly')}
       </p>
       <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2" aria-label={t('io.channelsOf', { boardLabel })}>
-        {io.channels.map((channel) => (
+        {io.channels.map((entry) => channelIn(entry, locale)).map((channel) => (
           <Tooltip content={channel.electrical}>
             <li key={channel.id} className="font-mono text-[var(--color-surface-300)]">
               <span className="text-[var(--color-accent-blue)]">{channel.address}</span> {channel.id} - {channel.pin}
