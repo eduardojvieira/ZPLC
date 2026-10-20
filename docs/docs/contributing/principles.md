@@ -73,7 +73,7 @@ See [Hardware support](../reference/capabilities-evidence.md).
 
 Public documentation exists in both languages and changes in both at once. A new
 dependency needs a concrete need and a recorded architectural justification.
-So far only the Spanish pages of Learn and of the ZPLC workbench have been reviewed; no fluent reviewer has read the other Spanish pages yet.
+The Spanish pages were reviewed against the English text in the 2.0 remediation, in the register of decision D-10 (2026-10-20). Generated pages quote English source text by design.
 
 ### 9. AI and MCP help inside the workspace and never act on hardware
 

@@ -3380,7 +3380,7 @@
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: the navigation and the footer are localised through the translation files (DOC-015)"},
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep one standard term for each concept (DOC-015)"},
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"the Spanish pages keep the neutral usted register (DOC-015, D-10)"},
-    {"kind":"gate","ref":"docs/docs/contributing/principles.md","test":"no fluent reviewer has read the other Spanish pages yet","note":"Needs a fluent reviewer to read the Spanish pages beyond Learn and the Studio workbench, the only ones reviewed in the 2.0 remediation. The docs test checks the usted register, not a reading by a fluent person."}
+    {"kind":"manual","ref":"docs/docs/contributing/principles.md","test":"The Spanish pages were reviewed against the English text","note":"Owner decision 2026-10-20: the owner delegated the fluent review of the Spanish pages to the 2.0 remediation run, which read every Spanish page against its English twin in the register of decision D-10. Generated pages (the references built from source and test data, such as the runtime API, the function references and the language references) quote English source text by design and are not translated by hand; the docs test checks the usted register and the term deny-list, not a reading by a person."}
   ],
   "DOC-016": [
     {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs structure: a page is published only when both languages are complete (DOC-016)"}
