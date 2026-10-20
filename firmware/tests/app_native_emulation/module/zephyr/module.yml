@@ -1,0 +1,6 @@
+# EMULATION ONLY: added to the build by `tools/firmware-test/run.sh app-native` (EXTRA_ZEPHYR_MODULES), never by a
+# shipped board.
+name: zplc_emulation_shell
+build:
+  cmake: .
+  kconfig: Kconfig
