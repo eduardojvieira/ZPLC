@@ -48,12 +48,23 @@ export interface CourseView {
 
 const entryOf = (index: LessonIndex, id: string): LessonIndexEntry | undefined => index.lessons.find((lesson) => lesson.id === id);
 
+/**
+ * Whether a lesson is passed in the course: by its simulation grade, or, for a lesson that has only the hardware track
+ * (verify my board), by a passing hardware check (LRN-024). A hardware run never passes a lesson that can be graded in simulation.
+ */
+function passedIn(index: LessonIndex, id: string, document: LearnProgress): boolean {
+  const recorded = document.lessons[id];
+  if (recorded?.state === 'passed') return true;
+  const entry = entryOf(index, id);
+  return entry !== undefined && !entry.tracks.includes('simulation') && recorded?.hardware != null;
+}
+
 export function lessonStateOf(index: LessonIndex, id: string, progress: LearnProgress | null, unlockAll: boolean): { state: LessonState; missing: readonly string[] } {
   const document = progress ?? emptyProgress();
   const recorded = document.lessons[id];
-  if (recorded?.state === 'passed') return { state: 'passed', missing: [] };
+  if (passedIn(index, id, document)) return { state: 'passed', missing: [] };
   if (recorded?.state === 'in-progress') return { state: 'in-progress', missing: [] };
-  const missing = unlockAll ? [] : (entryOf(index, id)?.prerequisites ?? []).filter((prerequisite) => document.lessons[prerequisite]?.state !== 'passed');
+  const missing = unlockAll ? [] : (entryOf(index, id)?.prerequisites ?? []).filter((prerequisite) => !passedIn(index, prerequisite, document));
   return missing.length > 0 ? { state: 'locked', missing } : { state: 'available', missing: [] };
 }
 

@@ -2,7 +2,7 @@
 // the progress document, with each lesson locked, available, in progress or passed, and where to continue.
 import { describe, expect, it } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../electron/learnProgressModel';
+import { emptyProgress, withGrade, withNote, withPassedIds, type GradeRecord, type LearnProgress } from '../../electron/learnProgressModel';
 import { buildCourseView, continueTarget, lessonStateOf, trackSupport } from './course';
 
 const FIRST = 'first-blink-simulation';
@@ -138,5 +138,30 @@ describe('the tracks a lesson supports (LRN-011)', () => {
     const es = trackSupport(LESSON_INDEX, FIRST, 'hardware', 'es');
     if (es.supported) throw new Error('hardware is not supported by this lesson');
     expect(es.instead).toContain('Simulación');
+  });
+});
+
+describe('a lesson with only the hardware track is passed by its hardware check (LRN-013, LRN-024)', () => {
+  const hardwareGrade = (lessonId: string): GradeRecord => ({
+    schemaVersion: 1, lessonId, lessonVersion: 1, track: 'hardware', scenarioId: 'S', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
+    runtimeVersion: '2.0.0', time: '2026-10-20T10:00:00.000Z', result: 'passed', assertions: { total: 1, passed: 1 }, failedAssertions: [],
+  });
+  const BOARD = 'verify-my-board';
+  const SIMULATED = 'scan-cycle-one-scan-memory';
+
+  it('LRN-024 passes verify-my-board in the course when its hardware check passes', () => {
+    const progress = withGrade(withPassedIds(emptyProgress(), ['first-blink-simulation']), hardwareGrade(BOARD));
+    expect(lessonStateOf(LESSON_INDEX, BOARD, progress, false).state).toBe('passed');
+    expect(buildCourseView(LESSON_INDEX, progress, { locale: 'en', unlockAll: false }).passed).toBe(2);
+  });
+
+  it('LRN-024 keeps a lesson that has the simulation track unpassed by a hardware run alone', () => {
+    const progress = withGrade(withPassedIds(emptyProgress(), ['first-blink-simulation']), hardwareGrade(SIMULATED));
+    expect(lessonStateOf(LESSON_INDEX, SIMULATED, progress, false).state).toBe('in-progress');
+  });
+
+  it('LRN-011 never offers verify-my-board through Continue, passed or not', () => {
+    const progress = withPassedIds(emptyProgress(), ['first-blink-simulation']);
+    expect(continueTarget(buildCourseView(LESSON_INDEX, progress, { locale: 'en', unlockAll: false }), progress)).not.toBe(BOARD);
   });
 });
