@@ -78,6 +78,21 @@ static void test_reset_cause_decision(void) {
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_POWER_ON, &none) == ZPLC_RESET_POWER_ON,
         "power-on is read first");
 
+  /* HIL-010.24: the RP2040 keeps the power-on flag of the boot before until a power-on clears it, and its watchdog reason
+   * register is cleared by that same power-on: when both are set the watchdog reset is the later one. */
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
+        "a stale power-on flag does not hide a watchdog reset");
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_PIN | ZPLC_RESET_BIT_WATCHDOG, &none) ==
+            ZPLC_RESET_WATCHDOG,
+        "nor do the stale power-on and pin flags together");
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
+        "nor a stale brown-out flag");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(0U) == 0U, "RP2040: no watchdog reason, no bit");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(1U) == ZPLC_RESET_BIT_WATCHDOG, "RP2040: the watchdog timer ran out");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(2U) == ZPLC_RESET_BIT_WATCHDOG,
+        "RP2040: the watchdog was forced (a reboot through the watchdog)");
+  CHECK(zplc_reset_bits_from_rp2040_watchdog_reason(0xFFFFFFFCU) == 0U, "RP2040: bits above the two reasons are not one");
+
   zplc_fault_record_make(&record, ZPLC_FAULT_PROCESSOR, 3U, 0U, 0x100U, 1U);
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_SOFTWARE | ZPLC_RESET_BIT_PIN, &record) == ZPLC_RESET_FAULT,
         "a processor fault the firmware rebooted for is a fault reset, though the part says software");

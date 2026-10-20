@@ -55,6 +55,12 @@ const char *zplc_reset_cause_name(zplc_reset_cause_t cause);
 #define ZPLC_RESET_BIT_WATCHDOG (1UL << 4)
 #define ZPLC_RESET_BIT_LOCKUP (1UL << 5) /**< the core locked up: a fault no handler could take */
 
+/**
+ * @brief The neutral bits of the RP2040 WATCHDOG REASON register (0x40058008): TIMER (bit 0) or FORCE (bit 1) is
+ *        ZPLC_RESET_BIT_WATCHDOG. Zephyr's hwinfo reports a watchdog reset on the RP2350 only (HIL-010.24).
+ */
+uint32_t zplc_reset_bits_from_rp2040_watchdog_reason(uint32_t reason);
+
 /* ============================================================================
  * The record of a fault (RT-019)
  * ============================================================================
@@ -99,9 +105,10 @@ void zplc_fault_record_reason_text(const zplc_fault_record_t *record, char *out,
  * @brief The cause of a reset, from what the processor reported and the record the previous run left.
  *
  * A valid processor-fault record is a fault reset: the firmware rebooted the part itself. Otherwise the neutral
- * bits are read in this order: power-on, brown-out, watchdog, lockup (a fault), software, pin. Power-on comes
- * first because it sets most of the others as well; the pin comes last because a software or watchdog reset
- * drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by
+ * bits are read in this order: watchdog, power-on, brown-out, lockup (a fault), software, pin. The watchdog
+ * comes first because a part whose power-on flag outlives a later reset (the RP2040) would hide it, and its
+ * watchdog flag is cleared by any power-on; power-on comes before the rest because it sets most of the others as
+ * well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by
  * its watchdog, and the record is reported next to it.
  */
 zplc_reset_cause_t zplc_reset_cause_decide(uint32_t bits, const zplc_fault_record_t *record);
