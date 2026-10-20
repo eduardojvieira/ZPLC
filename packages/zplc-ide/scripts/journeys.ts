@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { LESSON_INDEX } from '../src/generated/lessonIndex';
-import { courseOrder } from '../src/learn/course';
+import { buildCourseView, courseOrder } from '../src/learn/course';
 import { contrastRatio, parseColor } from '../src/theme/color';
 import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
@@ -3142,6 +3142,62 @@ export const JOURNEYS: Journey[] = [
     },
   },
 
+  {
+    // LRN-013, LRN-024, LRN-015: the hardware track of the Learn home. The learner chooses a board with the keyboard; the choice
+    // is said in words, announced and kept after a restart. A lesson passed on a board is listed under "Passed on hardware" and
+    // labelled so on the lesson panel, while the course does not count it as passed. The hardware grade is put in the progress
+    // file: no board is attached here, and the button that records a run on the board comes with the wiring card. Throughout,
+    // no control of Learn asks for a serial port or connects.
+    name: '62 Learn hardware track: the board choice and the hardware labels', example: 'none', proves: [], partly: ['LRN-013', 'LRN-015', 'LRN-024'],
+    run: async (app, { root }) => {
+      const [FIRST] = courseOrder(LESSON_INDEX).map(({ id }) => id) as [string];
+      const title = buildCourseView(LESSON_INDEX, null, { locale: 'en', unlockAll: false }).titles[FIRST]!;
+      const at = '2026-10-20T10:00:00.000Z';
+      const hardware = { schemaVersion: 1, lessonId: FIRST, lessonVersion: 1, track: 'hardware', scenarioId: 'S', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64), runtimeVersion: '2.0.0', time: at, result: 'passed', assertions: { total: 1, passed: 1 }, failedAssertions: [] };
+      writeFileSync(join(root, 'profile', 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 4, last: null, lessons: { [FIRST]: { state: 'in-progress', grade: null, passedAt: null, startedAt: at, hintsShown: [], solutionShown: false, hardware } } }));
+      // Web Serial is the way to a board from the window: every use of it is counted (LRN-015).
+      const countSerial = () => app.eval(`(() => { window.__serialUses = 0; const serial = navigator.serial; if (!serial) return; for (const name of ['requestPort', 'getPorts']) { const original = serial[name]?.bind(serial); serial[name] = (...args) => { window.__serialUses += 1; return original ? original(...args) : Promise.resolve([]); }; } })()`);
+      const serialUses = () => app.eval<number>('window.__serialUses ?? 0');
+      const strip = css('[data-learn-hardware]');
+      const pressed = () => app.eval<string[]>(`[...document.querySelectorAll('[data-learn-hardware] [aria-pressed="true"]')].map((element) => element.textContent)`);
+      const stripText = () => app.eval<string>(`document.querySelector('[data-learn-hardware]')?.innerText ?? ''`);
+      await countSerial();
+
+      // 1. The strip sits below the Learn home with both boards, and none is chosen.
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the hardware track strip', async () => await app.visible(strip) || undefined);
+      assert((await pressed()).length === 0 && (await stripText()).includes('No board chosen yet.'), `A board is chosen before the learner chose one: ${await stripText()}`);
+
+      // 2. LRN-013 by the keyboard: the first board takes the focus, the arrow moves to the second, Enter chooses it.
+      await app.eval(`document.querySelector('[data-learn-hardware] [role="group"] button').focus()`);
+      await app.press('ArrowRight');
+      await app.press('Enter');
+      await app.until('the ESP32-S3 to be chosen', async () => (await pressed()).join() === 'ESP32-S3-DevKitC-1' || undefined);
+      assert((await stripText()).includes('Board for the hardware track: ESP32-S3-DevKitC-1'), 'The chosen board is not said in words.');
+      await app.until('the announcement', async () => (await app.eval<string>('document.body.innerText')).includes('Board for the hardware track: ESP32-S3-DevKitC-1') || undefined);
+
+      // 3. LRN-024: the lesson passed on hardware is listed under its own label, and the course does not count it as passed.
+      assert((await stripText()).includes(`Passed on hardware: ${title}`), `The hardware pass is not listed: ${await stripText()}`);
+      assert((await app.eval<string | null>(`document.querySelector('[data-learn-lesson="${FIRST}"]')?.getAttribute('data-state') ?? null`)) !== 'passed', 'A hardware run passed the lesson in the course.');
+      assert((await serialUses()) === 0, `Learn used Web Serial ${await serialUses()} times.`);
+
+      // 4. The choice is kept after a restart.
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen', async () => await app.visible(button('Learn', 'prefix')) || undefined);
+      await countSerial();
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the board kept after the restart', async () => (await pressed()).join() === 'ESP32-S3-DevKitC-1' || undefined);
+
+      // 5. The lesson panel labels the run on the board apart from the course state of the lesson.
+      await app.click(css('[data-learn-continue]'), 'the Start the course button');
+      await app.until('the hardware label on the lesson panel', async () => (await app.eval<string>(`document.querySelector('[data-learn-hardware-state]')?.textContent ?? ''`)) === 'Passed on hardware' || undefined);
+      assert((await app.eval<string>(`document.querySelector('[aria-label="Lesson progress"]')?.textContent ?? ''`)).startsWith('Not completed'), 'The lesson panel counts the hardware run as the course pass.');
+
+      // 6. LRN-015: none of this asked for a serial port or connected.
+      assert((await serialUses()) === 0, `Learn used Web Serial ${await serialUses()} times.`);
+      assert((await app.eval<string | null>(`document.querySelector('[data-connection]')?.getAttribute('data-connection') ?? null`)) !== 'connected', 'The window is connected to a device.');
+    },
+  },
   {
     // DOC-003: the tutorial "Blink without hardware" (docs/docs/tutorials/blink-without-hardware.md), step for step: the
     // example is copied from the Welcome screen into an empty folder, read, built, run in the simulator with its output
