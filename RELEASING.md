@@ -22,7 +22,7 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
 
 1. Pick the next version. Prereleases continue the `rc` sequence after `2.0.0-rc.3`: `2.0.0-rc.4`, `2.0.0-rc.5`, ...
    An `alpha`, `beta` or `preview` name sorts below `rc.3` under semantic versioning and the pipeline refuses it.
-2. `bun scripts/release-version.ts 2.0.0-rc.4` writes the version to the root, compiler, HIL and Studio manifests
+2. `bun scripts/release-version.ts 2.0.0-rc.4` writes the version to the root, compiler, HIL and ZPLC application manifests
    and to the compiler version of the debug map. `bun run check:versions` must pass.
 3. `CHANGELOG.md`: rename `## Unreleased` to `## 2.0.0-rc.4 - YYYY-MM-DD` and add an empty `## Unreleased` above it.
    The changelog holds only tagged versions: headings go from newest to oldest, and every heading older than the
@@ -44,7 +44,7 @@ The root `package.json` is the only source of the product version (`VERSIONING.m
    workflow actions, the repository hygiene and release-evidence validators, and the contract check.
 2. Electron (IDE-028): open <https://releases.electronjs.org/schedule> and the `electron` dist-tags on npm, update
    `tools/ci/electron-support.json` (the supported majors, their end of support and the latest patch of each), and
-   run `bun tools/ci/electron-support.ts --release`. It fails while the dependency of Studio is outside the supported
+   run `bun tools/ci/electron-support.ts --release`. It fails while the dependency of the ZPLC application is outside the supported
    majors or is not the latest patch of its line; change `packages/zplc-ide/package.json` and the lockfile, rebuild,
    and run the checks again. The check of the major line alone runs in every pull request.
 3. Push the branch. CI (`.github/workflows/ci.yml`) must be green on the exact commit that will be tagged. The
@@ -84,7 +84,7 @@ platform simply has no files in the draft and the notes say so.
 
 ### 5. Read the draft
 
-The draft release has: the installers per platform, the standalone `zplc-cli` and `zplc-mcp` executables, the
+The draft release has: the installers per platform, all named `zplc-<version>-<os>-<arch>.<ext>` (the Windows ones add `-setup-unsigned` or `-portable-unsigned`), the standalone `zplc-cli` and `zplc-mcp` executables, the
 firmware images of every board (`zplc-runtime-<version>-<board>.<ext>`) with their manifest
 `zplc-runtime-<version>.manifest.json`, the bill of materials, `SHA256SUMS` (all assets), the per-platform checksum
 and evidence files, the notes and a title that says how complete the prerelease is. Check that every asset the

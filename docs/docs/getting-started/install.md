@@ -275,6 +275,13 @@ old one (Windows setup, macOS: replace the app in Applications; Linux: install
 the new package or replace the AppImage). Your projects are folders that you
 chose, so an update does not touch them.
 
+Upgrading from a release candidate that was called `ZPLC IDE`: the application now
+uses a folder named `ZPLC` and, on its first start, copies the old `ZPLC IDE`
+folder into it once and leaves the old folder in place. Settings, recent projects,
+lesson progress and recovery copies carry over. The operating system's secure
+storage (the macOS keychain, and possibly the Linux keyring) may not carry the
+entries over, so a stored AI assistant key may need to be entered again.
+
 ## Uninstall
 
 | System | How |

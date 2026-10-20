@@ -60,13 +60,13 @@ and version when the release is cut (see `RELEASING.md`).
   is not claimed.
 ### What changed for you
 
-- **Studio saves your work and tells you what happened.** It keeps a copy of every
+- **ZPLC saves your work and tells you what happened.** It keeps a copy of every
   modified file and offers it back after a crash, shows each build, save, deploy
   and test result as a notification that opens its details, can cancel a long
   operation, and keeps the preferences you set. A project exports to one archive
   and imports back byte for byte.
 - **The project tree does more.** New folder, rename, move and duplicate keep the
-  open tabs and breakpoints, a change made outside Studio is picked up, and a
+  open tabs and breakpoints, a change made outside ZPLC is picked up, and a
   folder of library blocks is offered to every editor.
 - **The language is more correct.** `LREAL` and the 64-bit integers work, structures,
   enumerations and arrays keep their declared width, strings no longer modify
@@ -75,18 +75,18 @@ and version when the release is cut (see `RELEASING.md`).
   keeps its Structured Text files as one compilation unit.
 - **Simulation is closer to the target.** Tasks of different intervals run, each
   released on its own interval, a deadline miss is counted, any input of the
-  running program can be set or forced from Studio, and `VAR RETAIN` values are
+  running program can be set or forced from ZPLC, and `VAR RETAIN` values are
   kept from one run to the next.
-- **Studio simulates in the browser when the native runtime cannot start.** The runtime is
+- **ZPLC simulates in the browser when the native runtime cannot start.** The runtime is
   the native session built to WebAssembly, with the loader's verifier, the scheduler core and
   the retain rules of the firmware; the status bar says **WASM fallback · degraded** and lists
   what it does not have (communication blocks, serial, pins, real-time timing), and the console
   says why the native simulation did not start. Retained values are kept with the project.
-- **Scenario tests give the same answer everywhere.** Studio, the command line and
+- **Scenario tests give the same answer everywhere.** The ZPLC application, the command line and
   the MCP server run them the same way, and the **Interlocks** tab lists which
   pairs of outputs are asserted never to be on together.
 - **Boards are described once.** `firmware/app/boards/boards.json` holds the
-  channels, addresses and safe values of each board, Studio's I/O mapping editor
+  channels, addresses and safe values of each board, the ZPLC application's I/O mapping editor
   reads it, a variable on an address the board does not have is a build error, and
   the firmware's I/O table is generated from it.
 - **A controller is safe on a plant network by default.** MQTT is off and names no
@@ -110,20 +110,20 @@ and version when the release is cut (see `RELEASING.md`).
   publishes nothing, the notes say which check each file passed, a bill of materials
   is written from the lockfile, the command line and the MCP server are standalone
   executables, and every file has a checksum and a build attestation.
-- **A release carries the firmware of every board, and Studio shows the one you need.**
+- **A release carries the firmware of every board, and ZPLC shows the one you need.**
   The release pipeline builds one image per board of the manifest in the format the
   board flashes (UF2 for the two RP2040 boards, one binary for the ESP32-S3, binary
   and ELF for the others), with its checksum, the version and commit it was built
   from and the evidence level of its board. In **Project settings**, **Target**,
-  Studio shows the image of the board of your project, its SHA-256, where the file is
+  ZPLC shows the image of the board of your project, its SHA-256, where the file is
   and the steps to flash it; the images of the Raspberry Pi Pico and the ESP32-S3
-  travel inside the installers. Studio does not flash: you do.
+  travel inside the installers. ZPLC does not flash: you do.
 - **The Linux packages let you open a board's serial port.** The `.deb` and the `.rpm`
   install a udev rule that gives the user who is logged in access to the USB serial
   device of the boards whose identifier the project has recorded (the two RP2040
   boards today); the install page says how to apply it without a reboot, and the
   group that the other boards need.
-- **Studio tells you about a newer release.** With the optional check turned on, or when
+- **ZPLC tells you about a newer release.** With the optional check turned on, or when
   you press **Check now**, a dismissible notice names the release, its address and the
   update step of your system. Nothing is downloaded or installed.
 - **The README and the install page open with a Download section** with one line per
@@ -133,7 +133,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 - **Rebuild every program and reflash every board.** The binary contract has a draft
   counter (now 4), and a program or a firmware image of another draft is refused
-  by the loader, the runtime, the firmware shell and Studio, with both numbers.
+  by the loader, the runtime, the firmware shell and the ZPLC application, with both numbers.
 - **A `VAR_IN_OUT` of a function block is passed by reference.** A block called
   without binding it faults; rebuild programs that declare one.
 - **Event and interrupt tasks fail the build.** A task with `trigger` `event` or
@@ -160,6 +160,13 @@ and version when the release is cut (see `RELEASING.md`).
 4. Change a task that used `event` or `interrupt` to a cyclic task.
 5. Read the board file from `firmware/app/boards/boards.json` in any tool of yours
    that read the versioned file.
+6. The product is now called ZPLC, and the application stores its data in a folder
+   named `ZPLC`. On the first start it copies the folder of the release candidates
+   (`ZPLC IDE`) once, so your settings, recent projects, Learn progress and recovery
+   copies carry over, and it leaves the old folder in place. The operating system's
+   secure storage (the macOS keychain, and possibly the Linux keyring) may not carry
+   the entries of the old name over: if you stored an AI assistant key, enter it again.
+   Installer files are now named `zplc-<version>-<os>-<arch>`.
 
 ### Known limits
 
@@ -180,7 +187,7 @@ and version when the release is cut (see `RELEASING.md`).
   ([Browser runtime](docs/docs/runtime/browser-runtime.md)).
 - The installers are not signed with a paid identity: Windows asks you to confirm the
   first launch and macOS needs **Open Anyway**
-  ([Install ZPLC Studio](docs/docs/getting-started/install.md)).
+  ([Install ZPLC](docs/docs/getting-started/install.md)).
 - Timing is not measured on any board, and ZPLC is not a safety PLC
   ([Safety and limitations](docs/docs/safety-and-limitations.md)).
 
@@ -194,7 +201,7 @@ and version when the release is cut (see `RELEASING.md`).
   `scripts/build_wasm.sh` are gone. The Vite build of the IDE embeds it
   (`scripts/wasmRuntimePlugin.ts`, the virtual module `virtual:zplc-wasm-runtime`) and writes
   `dist/wasm-runtime.json` with its size, SHA-256, commit and compiler; a machine without the
-  tools builds a Studio that says it has no browser runtime, and CI fails. The page may compile
+  tools builds a ZPLC that says it has no browser runtime, and CI fails. The page may compile
   WebAssembly (`'wasm-unsafe-eval'` in `script-src`, nothing else is evaluated). The native
   runtime failing to start, or `ZPLC_RUNTIME=wasm` in an unpackaged app, makes the simulation run
   on it, with the reason in the console. Every communication block answers `STATUS` 10.
@@ -336,7 +343,7 @@ and version when the release is cut (see `RELEASING.md`).
   the bytecode ABI and draft counter and the `CONFIG_ZPLC_*` options with their
   hash. `zplc version` prints it and no longer prints the compile date, so one
   commit is one image; `zplc sys build [--json]` reports it as a command of its
-  own, because Studio's handshake accepts exactly the keys of
+  own, because the ZPLC application's handshake accepts exactly the keys of
   `zplc sys info --json`; the native runtime reports it as `build` in
   `session.hello`. On the Pico the image grows by 1,472 bytes of flash and none
   of RAM. A test drives the real shell of `firmware/app` on `native_sim`.
@@ -359,7 +366,7 @@ and version when the release is cut (see `RELEASING.md`).
   two AWS fleet credential keys had no NVS identifier on Zephyr, so the
   credentials were never persisted, and now have one. What the boards do with
   these needs the bench of HIL-010 and is not claimed here.
-- Studio reads the board I/O description (IO-003, IO-004, IO-017). The I/O
+- ZPLC reads the board I/O description (IO-003, IO-004, IO-017). The I/O
   mapping editor of the project settings lists the channels of the selected
   board with their pin names, offers only those channels for a row and flags
   a row on an address the board does not have; a build fails with an error
@@ -367,7 +374,7 @@ and version when the release is cut (see `RELEASING.md`).
   located where the board has no channel. An image word that no pin drives is
   listed under `io.virtual` in `zplc.json` (the `analog_test` temperature in
   `%QW4` is one). Hardware deploy admission compares the `io` identity that
-  the firmware reports in `sys info --json` with the description Studio holds
+  the firmware reports in `sys info --json` with the description ZPLC holds
   and the process-image bytes the program's code touches with the channels of
   the board, and refuses a mismatch with a message that names the board; a
   program that touches no I/O is not held back. The bundled examples are
@@ -402,7 +409,7 @@ and version when the release is cut (see `RELEASING.md`).
 - The board manifest is one unversioned file with an I/O description per board
   (IO-001, IO-009 to IO-012, IO-014, IO-015). `firmware/app/boards/boards.json`
   replaces `supported-boards.v1.5.0.json` and is the only source of the board
-  table for Studio, the docs, CI and the MCP `boards_list` tool. Each of the
+  table for the ZPLC application, the docs, CI and the MCP `boards_list` tool. Each of the
   seven profiles lists its channels with direction, kind, IEC address, pin or
   terminal name, devicetree binding, electrical notes and safe value; the
   Raspberry Pi Pico maps its on-board LED (GP25) and four inputs, the ESP32-S3
@@ -427,11 +434,11 @@ and version when the release is cut (see `RELEASING.md`).
   runs the same check on the saved project, lists each declared pair as
   Covered or Missing exact NEVER coverage, and keeps its scope text: it checks
   saved scenarios and establishes no physical safety, timing or certification.
-- Scenario tests with temporal assertions give the same result from Studio, the
+- Scenario tests with temporal assertions give the same result from the ZPLC application, the
   CLI and the MCP tools, and a test says so (IDE-031):
   `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by
   itself, and a project with a failing assertion through the Tool API, the CLI,
-  the MCP dispatcher and the Studio presenter, and compares the verdict, the
+  the MCP dispatcher and the presenter of the ZPLC application, and compares the verdict, the
   program and trace hashes, and the assertions and sampled outputs. No
   divergence was found: the three entry points share the Tool API.
 - The project tree lists the project's function blocks, functions and data
@@ -447,7 +454,7 @@ and version when the release is cut (see `RELEASING.md`).
   build does not read (neither in `src` nor directly in a library folder) is
   marked `not compiled` in the tree and its folder is offered with a **List as
   library** button; the walk that finds such files is one module
-  (`project/unlistedSources.ts`) that the Tool API and Studio both use.
+  (`project/unlistedSources.ts`) that the Tool API and the ZPLC application both use.
 - A project exports to one archive and imports back into an equivalent project
   (IDE-022). **Export Project Archive** (Build options) writes a zip of the
   project files that is the same bytes on every machine (entries sorted by
@@ -464,11 +471,11 @@ and version when the release is cut (see `RELEASING.md`).
   panel) loads when a project opens, and each editor and the settings load the
   first time a file of their kind or the settings are opened. The entry chunk
   of the page went from 5.2 MB (1.34 MB gzipped) to 0.9 MB (0.23 MB gzipped).
-  Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
+  Only the Monaco core ZPLC uses is bundled, so the CSS, HTML, JSON and
   TypeScript language workers (about 9 MB) and the 80 basic languages are no
   longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
   proves it on the build output, and journey 38 on the development host.
-- CI checks the structure of Studio's source (IDE-014, IDE-033):
+- CI checks the structure of the ZPLC application's source (IDE-014, IDE-033):
   `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
   `bun test ./tools/ci`, fails when a store module imports a component, when a
   command-line or MCP module imports from `electron/`, when static imports form
@@ -620,7 +627,7 @@ and version when the release is cut (see `RELEASING.md`).
   (an IL file reported only its first line, and every other file one joined message),
   the Tool API, the CLI and MCP carry it in an `element` field, and a finding of the
   compiler in the generated Structured Text is put on the element it was generated
-  for (on the IL line, for IL). Activating the problem in Studio selects the element
+  for (on the IL line, for IL). Activating the problem in ZPLC selects the element
   in the editor. The transpilers return the map of the generated lines to elements
   (`sourceMap`) that debugging uses (LNG-004).
 - The FBD canvas refuses a wire between pins whose types do not match and says why
@@ -632,7 +639,7 @@ and version when the release is cut (see `RELEASING.md`).
   as it was (LNG-014): a commit of an editor that says what the file already said no longer
   rewrites it (the order of the keys does not matter, and the fields of a block, a step or a
   transition that the canvas does not edit are written back as they were), and the one form
-  that Studio writes (`serializeLDModel`, `serializeFBDModel`,
+  that ZPLC writes (`serializeLDModel`, `serializeFBDModel`,
   `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
   when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
   actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
@@ -664,12 +671,12 @@ and version when the release is cut (see `RELEASING.md`).
   result back, with the accuracy of a `REAL`. Division and `MOD` by zero fault
   as the 32-bit ones do. The conformance cases give the same results on a 64-bit
   and a 32-bit runtime.
-- Studio watches `LINT`, `ULINT`, `LWORD` and `LREAL` at their own width: a
+- ZPLC watches `LINT`, `ULINT`, `LWORD` and `LREAL` at their own width: a
   64-bit integer shows every digit, an `LWORD` as 16 hexadecimal digits and an
   `LREAL` as a double; they used to show the low 4 bytes as a `DINT`, a `DWORD`
   or a `REAL`.
 - **ABI:** the draft counter is now 3. Artifacts built before this draft are
-  refused by the loader, the native runtime, the firmware shell and Studio, with
+  refused by the loader, the native runtime, the firmware shell and the ZPLC application, with
   both numbers: rebuild programs and reflash boards together.
   `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
   artifacts committed to the repository (examples, fixtures, fuzz findings), and
@@ -680,7 +687,7 @@ and version when the release is cut (see `RELEASING.md`).
   otherwise, the window passes it to the Problems panel, and activating the problem
   selects that element, also when the open file has changed since the build; without
   one, the element is derived from the open file as before.
-- Any input that the running program declares can be set from Studio in native
+- Any input that the running program declares can be set from ZPLC in native
   simulation, not only three motor signals (IDE-024). The **Simulation inputs**
   section of the Watch tab lists the variables mapped to the input image (whatever
   their name) and the inputs of the programs, with their address and live value,
@@ -688,7 +695,7 @@ and version when the release is cut (see `RELEASING.md`).
   a number box for the other numeric types, with **Force** for the types a force
   carries. The build marks the program inputs that have no direct address in the
   debug map (`zplc:input` tag).
-- The security properties of Studio are proven by what the running application
+- The security properties of ZPLC are proven by what the running application
   does (IDE-016): an inline script and an inline event handler that a page injects
   are blocked by the production policy, a permission other than serial is
   refused, `window.open`, a `_blank` link and navigation to another origin are
@@ -698,7 +705,7 @@ and version when the release is cut (see `RELEASING.md`).
   a navigation the window refused still revoked its authority (its project folder
   and its IPC) until a reload; only a navigation that can replace the document
   revokes it now.
-- Studio shows the result of a build, a save, a deploy, a connection change and
+- ZPLC shows the result of a build, a save, a deploy, a connection change and
   a test run as a notification that opens the panel with its details, and shows a
   long operation with progress and a **Cancel** action (IDE-021). A success goes by
   itself after a few seconds; a failure, a warning and a cancellation stay until
@@ -710,7 +717,7 @@ and version when the release is cut (see `RELEASING.md`).
   native runtime it started, a run that does not answer a cancel is killed, and a
   deadline kills a worker that never finishes. A cancelled run is recorded as
   cancelled in the execution log.
-- Studio defines every IPC channel once and answers all of them through one
+- ZPLC defines every IPC channel once and answers all of them through one
   checked table (IDE-017). `electron/ipcContract.ts` names the channels for the
   main process, the preload and the renderer (the preload is now bundled into one
   script that requires only `electron`, so it keeps no copy; the project archive
@@ -718,7 +725,7 @@ and version when the release is cut (see `RELEASING.md`).
   `projectArchiveProtocol.ts` re-exports them); the main process
   refuses to start when a channel has no handler or a handler has no channel, and
   every call is checked for its sender, its message and the freshness of the
-  document before any handler runs. The processes that Studio starts for compile,
+  document before any handler runs. The processes that ZPLC starts for compile,
   test and firmware build (the native runtime, `west build`, the toolchain
   probes) come from a closed list of fixed argument vectors and never take a
   command or an argument from the renderer.
@@ -774,7 +781,7 @@ and version when the release is cut (see `RELEASING.md`).
   routine that the entry of each program calls.
 - CI fails when a test reads the text of a product source file or asserts on the
   assembly the compiler emitted (VF-006): a guard (`tools/ci/test-source-guard.ts`)
-  lists every test that reads Studio, Electron, script, firmware or workflow
+  lists every test that reads the ZPLC application, Electron, script, firmware or workflow
   source, or matches generated assembly text outside the assembler's own tests,
   and `tools/ci/pinned-source-offenders.json`
   records the known ones with the requirement and the kind of replacement for
@@ -817,7 +824,7 @@ and version when the release is cut (see `RELEASING.md`).
   and breakpoints follow a renamed or moved entry, a task that runs a renamed
   program follows it in `zplc.json`, and a name that the build reads as the same
   as another program is refused. An empty folder is listed.
-- A change made outside Studio is picked up while a project is open (IDE-004): the
+- A change made outside ZPLC is picked up while a project is open (IDE-004): the
   main process watches the folder behind a typed `project-files:watch` request and
   pushes batches of relative paths on `project-files:changed`. An unmodified file
   reloads, a deleted one closes, and a modified one asks to keep the user's
@@ -827,7 +834,7 @@ and version when the release is cut (see `RELEASING.md`).
   main process also catches Ctrl+R, Ctrl+Shift+R and Cmd+R before the page and
   the menu: a packaged build swallows them and a development host reloads only
   through the unsaved-work question.
-- Studio has application preferences that persist per user (IDE-007, IDE-010):
+- ZPLC has application preferences that persist per user (IDE-007, IDE-010):
   editor font size (10 to 32 px) and tab size (2, 3, 4, 8), density (compact
   scales the Tailwind spacing of the whole window), language (the Learn lessons
   follow it), autosave (off by default; after 5, 15, 30 or 60 seconds without
@@ -841,7 +848,7 @@ and version when the release is cut (see `RELEASING.md`).
   so a failure in the toolbar or in a tab strip replaced the whole window. A
   development-only probe (`DevFaultProbe`, absent from production builds) lets
   journey 20 make each region fail in the real application.
-- Studio keeps a copy of every modified file in its user-data directory within a
+- ZPLC keeps a copy of every modified file in its user-data directory within a
   second of the last keystroke (IDE-006), and offers each one back, with its name
   and the time it was kept, when the project is opened after a crash. A normal exit
   (save, discard, close with discard) leaves nothing. The store is owned by the main
@@ -875,14 +882,14 @@ and version when the release is cut (see `RELEASING.md`).
   programs are unaffected (they use a few percent of the budget); an artifact
   that needs more work than its bound is refused with `ZPLC_LOADER_ERR_STACK`.
 - `bun run typecheck` type-checks every TypeScript program of the repository with
-  strict flags, and CI runs it (VF-010): the Studio CLI and MCP server, the
+  strict flags, and CI runs it (VF-010): the ZPLC CLI and MCP server, the
   Electron host, the scripts, the tests of every package and the CI, contract
   and fuzz tooling were not checked before. A test fails when a TypeScript file
   or a tsconfig is left out of that list. `noUncheckedIndexedAccess` stays off:
-  it would add about 1,000 errors (470 in Studio, 542 in the compiler) that each
+  it would add about 1,000 errors (470 in the ZPLC application, 542 in the compiler) that each
   need a real narrowing.
 - ESLint runs the type-aware rules `no-floating-promises` and
-  `no-misused-promises` over the Studio, the Electron host, the CLI and the MCP
+  `no-misused-promises` over the ZPLC application, the Electron host, the CLI and the MCP
   server (VF-011), so an unhandled promise fails `bun run lint`. The 42
   findings are fixed: the Electron host now logs and exits when its start-up
   fails, and logs a renderer load that is refused, instead of idling or
@@ -895,7 +902,7 @@ and version when the release is cut (see `RELEASING.md`).
   last source of a project with several.
 - The binary contract now carries a draft counter (CMP-052). Every artifact the
   compiler or assembler writes records it in header word 28, and the loader, the
-  native runtime, the firmware shell and Studio refuse a program or a board on
+  native runtime, the firmware shell and the ZPLC application refuse a program or a board on
   another draft and show both numbers. Programs must be rebuilt and boards
   reflashed after upgrading from 2.0.0-rc.3.
 - The binary contract tables (opcodes, container constants, block layouts) are
@@ -1004,12 +1011,12 @@ and version when the release is cut (see `RELEASING.md`).
   the ones the blocks have.
 - An integer of a wider type stored in a narrower one (`DINT` to `INT`, `LINT`
   to `DINT`) keeps its low bits as before and the build now reports the
-  warning `IMPLICIT_NARROWING` at the value, naming both types; Studio, the CLI
+  warning `IMPLICIT_NARROWING` at the value, naming both types; the ZPLC application, the CLI
   (`Warning:`) and the Tool API show it. A mask or a remainder that fits the
   destination does not warn. The bundled `analog_test` project narrowed a
   `DINT` into an `INT`; it now stores `TempDegC MOD 32768`, the same value
   inside the plausible window.
-- Studio resolves a program counter to the statement that owns it, not only
+- ZPLC resolves a program counter to the statement that owns it, not only
   the first instruction of the statement, and `release-version.ts` rewrites
   and checks the compiler version that every debug map records.
 - `TP` starts a pulse only on a rising edge of `IN` and is not retriggered by a
@@ -1147,7 +1154,7 @@ and version when the release is cut (see `RELEASING.md`).
   message names the task, the depth and the limit. The conformance suite checks on
   every artifact that lowering a declared depth by one makes the loader refuse
   it. The identity is the CRC-32 of CODE and TASK, so two builds of a project
-  have the same one; the debug map records it as `buildId`, and Studio refuses to
+  have the same one; the debug map records it as `buildId`, and ZPLC refuses to
   attach a map to a program that has another. Programs built before are refused:
   rebuild programs and reflash boards together. `restamp_artifacts.py` moved the
   committed artifacts, and `fuzz:seed` rebuilt the seed corpus.
@@ -1190,7 +1197,7 @@ and version when the release is cut (see `RELEASING.md`).
   trigger, one operation: COM-004); `AZURE_C2D_RECV`, `AZURE_DPS_PROV`,
   `AZURE_EG_PUB`, `AWS_FLEET_PROV` and `SPB_REBIRTH` grow by that byte. Artifacts built before
   this draft are refused and must be rebuilt; a device with the older
-  firmware is refused by Studio and must be reflashed.
+  firmware is refused by ZPLC and must be reflashed.
   `tools/contract/string_cross.py` compiles a program that gives every STRING
   input of the twelve blocks its own text and reads each member back with the
   accessors of the handlers.
@@ -1278,7 +1285,7 @@ and version when the release is cut (see `RELEASING.md`).
   sent on the next one, reconnection and
   the silent loss) and passes under the address, undefined-behaviour and thread
   sanitizers; `packages/zplc-ide/src/conformance/communication.test.ts` runs a
-  program on the runtime through the session protocol. **Not done: Studio does
+  program on the runtime through the session protocol. **Not done: ZPLC does
   not start the endpoints for a session yet**, and nothing here was run
   against a real device, broker or cloud service.
 - Release engineering that a Linux machine can prove (REL-005, REL-006, REL-012,

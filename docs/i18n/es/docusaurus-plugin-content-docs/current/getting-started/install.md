@@ -281,6 +281,14 @@ aplicación en Aplicaciones; en Linux, instale el paquete nuevo o reemplace el
 AppImage). Sus proyectos son carpetas que usted eligió, por lo que una
 actualización no las toca.
 
+Si actualiza desde una versión candidata que se llamaba `ZPLC IDE`: la aplicación
+ahora usa una carpeta llamada `ZPLC` y, en el primer inicio, copia una sola vez la
+carpeta `ZPLC IDE` anterior y la deja en su lugar. La configuración, los proyectos
+recientes, el progreso de las lecciones y las copias de recuperación se conservan.
+El almacenamiento seguro del sistema operativo (el llavero de macOS y, quizá, el de
+Linux) puede no trasladar las entradas, por lo que quizá deba volver a introducir la
+clave guardada del asistente de IA.
+
 ## Desinstalar
 
 | Sistema | Cómo |
