@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+      "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: Studio ejecuta el programa guardado con el escenario de esta lección.",
       "checkpoint": "El escenario se llama FirstBlink y contiene {{assertions}} aserciones; Studio enumera cada una de las que fallaron."
     },
     {

@@ -121,6 +121,18 @@ describe('LRN-029 the Spanish lessons are in the register of decision D-10 and u
   });
 });
 
+describe('LRN-012 the first lesson leads to a blink with the controls Studio shows', () => {
+  it('LRN-012 the Run stage of the first lesson names Build, Compile, Connect, Run, Watch and Check by their labels, in English and in Spanish', () => {
+    const first = packages.find((lesson) => lesson.id === 'first-blink-simulation')!;
+    for (const locale of ['en', 'es'] as const) {
+      const { t } = translatorFor(locale);
+      const run = expandText(first.texts[locale], first.scenario).text.stages.find((stage) => stage.key === 'run')!;
+      const labels = [t('toolbar.build.text'), t('toolbar.compile.text'), t('toolbar.connect'), `${t('toolbar.run.label')} (F5)`, t('panel.watch'), t('learn.check')];
+      expect({ locale, missing: labels.filter((label) => !run.body.includes(label)) }).toEqual({ locale, missing: [] });
+    }
+  });
+});
+
 describe('LRN-029 every plant label exists in English and Spanish', () => {
   it('LRN-029 every plant.* label has a Spanish text with the same placeholders, and the Spanish catalog serves it', () => {
     const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();

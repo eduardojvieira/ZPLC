@@ -2012,7 +2012,7 @@
             {
               "key": "run",
               "title": "Run",
-              "body": "Press Check. Studio runs your saved program against the scenario of this lesson.",
+              "body": "Build the program: on the toolbar, open Build and choose Compile. Press Connect to start the simulation, then Run (F5); Run stays disabled until a build exists. Open the Watch tab and see Lamp turn on and off. Then press Check: Studio runs your saved program against the scenario of this lesson.",
               "checkpoint": "The scenario is named FirstBlink and contains 10 assertions; Studio lists every one that failed."
             },
             {
@@ -2072,7 +2072,7 @@
             {
               "key": "run",
               "title": "Ejecute",
-              "body": "Pulse Comprobar. Studio ejecuta el programa guardado con el escenario de esta lección.",
+              "body": "Compile el programa: en la barra de herramientas, abra Compilación y elija Compilar. Pulse Conectar para iniciar la simulación y después Ejecutar (F5); Ejecutar queda desactivado hasta que exista una compilación. Abra la pestaña Observación y vea cómo Lamp se enciende y se apaga. Después pulse Comprobar: Studio ejecuta el programa guardado con el escenario de esta lección.",
               "checkpoint": "El escenario se llama FirstBlink y contiene 10 aserciones; Studio enumera cada una de las que fallaron."
             },
             {
