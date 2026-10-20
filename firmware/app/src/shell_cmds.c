@@ -726,6 +726,25 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_UINT(sh, "overruns", stats.total_overruns, true);
     JSON_UINT(sh, "active_tasks", stats.active_tasks, false);
     JSON_OBJ_END(sh);
+    /* HIL-010: each task's scan period since RUN, from the start of one scan to the start of the next; the gap
+     * between the shortest and the longest is its scan jitter */
+    shell_fprintf(sh, SHELL_NORMAL, ",\"tasks\":[");
+    for (int i = 0, listed = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+      zplc_task_t task;
+
+      if (zplc_sched_get_task(i, &task) != 0) {
+        continue;
+      }
+      shell_fprintf(sh, SHELL_NORMAL,
+                    "%s{\"id\":%u,\"interval_us\":%u,\"cycles\":%u,\"period_min_us\":%u,\"period_max_us\":%u,"
+                    "\"jitter_us\":%u,\"exec_max_us\":%u}",
+                    listed++ != 0 ? "," : "", (unsigned int)task.config.id, (unsigned int)task.config.interval_us,
+                    (unsigned int)task.stats.cycle_count, (unsigned int)task.stats.min_period_us,
+                    (unsigned int)task.stats.max_period_us,
+                    (unsigned int)(task.stats.max_period_us - task.stats.min_period_us),
+                    (unsigned int)task.stats.max_exec_time_us);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "]");
 
 #ifdef CONFIG_ZPLC_SCHEDULER
     if (have_vm) {
