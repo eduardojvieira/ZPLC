@@ -21,11 +21,17 @@ describe('verifying an exported progress file against the lesson hashes (LRN-033
   });
 
   it('LRN-033 reports a grade taken against another scenario, another track or another number of assertions as a mismatch', () => {
-    for (const forged of [grade({ scenarioSha256: 'c'.repeat(64) }), grade({ track: 'hardware' }), grade({ assertions: { total: LESSON.scenario.assertions + 1, passed: LESSON.scenario.assertions + 1 } }), grade({ scenarioId: 'Other' })]) {
+    for (const forged of [grade({ scenarioSha256: 'c'.repeat(64) }), grade({ assertions: { total: LESSON.scenario.assertions + 1, passed: LESSON.scenario.assertions + 1 } }), grade({ scenarioId: 'Other' })]) {
       const result = verifyProgress(file(withGrade(emptyProgress(), forged)), LESSON_INDEX);
       expect(result.ok).toBe(false);
       expect(result.lessons[0]).toMatchObject({ id: LESSON.id, status: 'mismatch' });
     }
+    // Another track: since progress version 4 a run on hardware is kept apart and passes nothing (LRN-024), and a file that
+    // holds one as the pass is refused outright, which is stricter than a mismatch.
+    expect(verifyProgress(file(withGrade(emptyProgress(), grade({ track: 'hardware' }))), LESSON_INDEX).lessons).toEqual([{ id: LESSON.id, status: 'in-progress', detail: '' }]);
+    const document = JSON.parse(file()) as { lessons: Record<string, { grade: GradeRecord }> };
+    document.lessons[LESSON.id]!.grade = grade({ track: 'hardware' });
+    expect(verifyProgress(JSON.stringify(document), LESSON_INDEX)).toMatchObject({ ok: false, problem: 'not a progress file (invalid)', lessons: [] });
   });
 
   it('LRN-033 lists a lesson passed without a grade record as unverified, a lesson in progress as such, and passes only in strict mode when none is unverified', () => {

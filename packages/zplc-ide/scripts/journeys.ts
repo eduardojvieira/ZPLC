@@ -1004,7 +1004,7 @@ export const JOURNEYS: Journey[] = [
       const exported = await app.until('the exported file', async () => await app.eval<string | null>('window.__learnExport') || undefined);
       const document_ = JSON.parse(exported) as { kind: string; lessons: Record<string, unknown> };
       assert(document_.kind === 'zplc-learn-progress' && FIRST in document_.lessons && (await app.eval<string>('window.__learnExportName')) === 'zplc-learn-progress.v2.json', 'The exported file is not the progress document.');
-      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false };
+      document_.lessons[SECOND] = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null };
       const incoming = join(root, 'incoming-progress.json');
       writeFileSync(incoming, JSON.stringify(document_));
       const choose = async (path: string) => {
@@ -1017,9 +1017,9 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file).includes(SECOND), 'The merged progress was not saved.');
       // A file of a version this Studio does not know is refused with its reason, and the progress stays as it was.
       const future = join(root, 'future-progress.json');
-      writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 4, last: null, lessons: {} }));
+      writeFileSync(future, JSON.stringify({ kind: 'zplc-learn-progress', schemaVersion: 5, last: null, lessons: {} }));
       await choose(future);
-      await app.until('the refusal', async () => (await homeText()).includes('The file is version 4, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
+      await app.until('the refusal', async () => (await homeText()).includes('The file is version 5, which this version of Studio cannot read. Your progress is unchanged.') || undefined);
       assert((await homeText()).includes(`2 of ${LESSON_INDEX.lessons.length} lessons passed`), 'A refused file changed the progress.');
 
       // 9. LRN-037, LRN-033: the whole home is reachable and operable from the keyboard. Tab walks the controls in reading order (Continue, the
