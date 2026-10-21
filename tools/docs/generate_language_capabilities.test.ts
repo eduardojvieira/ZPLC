@@ -7,16 +7,28 @@ import { LANGS, ROOT } from './reference-lib';
 describe('LNG-001 language capability table: one row per language and capability, from named tests', () => {
   const table = loadTable();
 
-  it('names a test, a journey or a conformance case that exists for every cell that is not a gap or a board-only one', () => {
+  it('names, for every cell, a journey of the ZPLC application that exists', () => {
     expect(unresolved(table)).toEqual([]);
   });
 
-  it('refuses a cell whose journey, test file or conformance case does not exist', () => {
+  it('refuses a cell whose journey does not exist', () => {
     const broken: CapabilityTable = structuredClone(table);
     broken.languages.st!.edit = { kind: 'journey', ref: '999 A journey nobody wrote' };
-    broken.languages.il!.build = { kind: 'conformance', ref: 'lng/no-such-case' };
-    broken.languages.ld!.build = { kind: 'test', ref: 'packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts', contains: 'a describe that is not there' };
-    expect(unresolved(broken)).toHaveLength(3);
+    expect(unresolved(broken)).toEqual(['st/edit: no journey named \'999 A journey nobody wrote\'']);
+  });
+
+  it('refuses a cell that is empty, board only, a unit test or a conformance case: none of them is end to end', () => {
+    const weak: CapabilityTable = structuredClone(table);
+    weak.languages.ld!.force = null;
+    weak.languages.il!.deploy = { kind: 'board' };
+    weak.languages.fbd!.build = { kind: 'test', ref: 'packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts' };
+    weak.languages.sfc!.simulate = { kind: 'conformance', ref: 'lng/lng-018-il-jump-runs-every-scan' };
+    const problems = unresolved(weak);
+    expect(problems).toHaveLength(4);
+    expect(problems.join('\n')).toMatch(/ld\/force: no check/);
+    expect(problems.join('\n')).toMatch(/il\/deploy: a 'board' check is not end to end/);
+    expect(problems.join('\n')).toMatch(/fbd\/build: a 'test' check is not end to end/);
+    expect(problems.join('\n')).toMatch(/sfc\/simulate: a 'conformance' check is not end to end/);
   });
 
   it('has a row for each of the five languages and each capability, in both languages of the site', () => {
@@ -26,14 +38,16 @@ describe('LNG-001 language capability table: one row per language and capability
     }
   });
 
-  it('labels what only a board can show as board only, and an untested cell as not yet tested, never as working', () => {
-    expect(capabilityBlock('en')).toContain('Board only');
-    // the committed table may have no gap left: a gap is a null cell, and it is never drawn as evidence
-    const gapped: CapabilityTable = structuredClone(table);
-    gapped.languages.ld!.force = null;
-    const row = capabilityBlock('en', gapped).split('\n').find((line) => line.startsWith('| Ladder') && line.includes('Force'))!;
-    expect(row).toContain('Not tested end to end yet');
-    expect(capabilityBlock('es', gapped)).toContain('Aún sin prueba de extremo a extremo');
+  it('shows build, simulate and deploy of each language from one chain journey that also creates, edits, saves and reopens it, and says that the board is emulated', () => {
+    for (const language of LANGUAGES) {
+      const cells = [table.languages[language]!.build, table.languages[language]!.simulate, table.languages[language]!.deploy];
+      expect(new Set(cells.map((cell) => JSON.stringify(cell))).size, `${language} chain`).toBe(1);
+      expect(cells[0]).toMatchObject({ kind: 'journey', ref: expect.stringMatching(/^64[a-e] .* from a new project to a deployed program that is watched$/) });
+    }
+    const row = capabilityBlock('en').split('\n').find((line) => line.startsWith('| Ladder') && line.includes('Deploy'))!;
+    expect(row).toContain('emulated board');
+    expect(capabilityBlock('en')).not.toContain('Board only');
+    expect(capabilityBlock('es')).toContain('placa emulada');
   });
 
   it('LNG-027 names, for each of the five languages, a journey that pauses, steps one cycle and resumes in the native simulation, and a different one that stops at a breakpoint', () => {

@@ -17,11 +17,11 @@
    },
    "build": {
     "kind": "journey",
-    "ref": "5 Build successfully"
+    "ref": "64a Structured Text from a new project to a deployed program that is watched"
    },
    "simulate": {
     "kind": "journey",
-    "ref": "6 Simulate: connect, run, watch a value change"
+    "ref": "64a Structured Text from a new project to a deployed program that is watched"
    },
    "debug": {
     "kind": "journey",
@@ -40,7 +40,8 @@
     "ref": "8 Force an input and release it"
    },
    "deploy": {
-    "kind": "board"
+    "kind": "journey",
+    "ref": "64a Structured Text from a new project to a deployed program that is watched"
    }
   },
   "il": {
@@ -49,12 +50,12 @@
     "ref": "54 Instruction List is edited, saved and reopened"
    },
    "build": {
-    "kind": "conformance",
-    "ref": "lng/lng-018-il-jump-runs-every-scan"
+    "kind": "journey",
+    "ref": "64b Instruction List from a new project to a deployed program that is watched"
    },
    "simulate": {
-    "kind": "conformance",
-    "ref": "lng/lng-018-il-jump-runs-every-scan"
+    "kind": "journey",
+    "ref": "64b Instruction List from a new project to a deployed program that is watched"
    },
    "debug": {
     "kind": "journey",
@@ -73,7 +74,8 @@
     "ref": "54b Instruction List values are watched and a variable is forced and released"
    },
    "deploy": {
-    "kind": "board"
+    "kind": "journey",
+    "ref": "64b Instruction List from a new project to a deployed program that is watched"
    }
   },
   "ld": {
@@ -82,14 +84,12 @@
     "ref": "28f A rung is built from the keyboard"
    },
    "build": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
    },
    "simulate": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
    },
    "debug": {
     "kind": "journey",
@@ -108,7 +108,8 @@
     "ref": "51d A forced variable is shown as forced in the Ladder"
    },
    "deploy": {
-    "kind": "board"
+    "kind": "journey",
+    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
    }
   },
   "fbd": {
@@ -117,14 +118,12 @@
     "ref": "28g A function block diagram is edited from the keyboard"
    },
    "build": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
    },
    "simulate": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
    },
    "debug": {
     "kind": "journey",
@@ -143,7 +142,8 @@
     "ref": "51 A forced variable is shown as forced in the function block diagram"
    },
    "deploy": {
-    "kind": "board"
+    "kind": "journey",
+    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
    }
   },
   "sfc": {
@@ -152,14 +152,12 @@
     "ref": "28h A sequential function chart is edited from the keyboard"
    },
    "build": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
    },
    "simulate": {
-    "kind": "test",
-    "ref": "packages/zplc-ide/src/cli/blinkyVisualPosix.test.ts",
-    "contains": "Blinky visual languages on native POSIX"
+    "kind": "journey",
+    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
    },
    "debug": {
     "kind": "journey",
@@ -178,7 +176,8 @@
     "ref": "51b A forced variable is shown as forced in the sequential function chart"
    },
    "deploy": {
-    "kind": "board"
+    "kind": "journey",
+    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
    }
   }
  }

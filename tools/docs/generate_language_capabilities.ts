@@ -1,29 +1,26 @@
-// The capability table of the five languages, produced from named tests and not written by hand (LNG-001, LNG-027).
+// The capability table of the five languages, produced from named journeys and not written by hand (LNG-001, LNG-027).
 //
 //   bun tools/docs/generate_language_capabilities.ts           write the table into the Languages page, in both languages
-//   bun tools/docs/generate_language_capabilities.ts --check   exit 1 when the pages are stale or a cell names a test that does not exist
+//   bun tools/docs/generate_language_capabilities.ts --check   exit 1 when the pages are stale or a cell names a journey that does not exist
 //
-// The source is tools/docs/language-capabilities.json: for each language and capability the one journey, test or
-// conformance case that shows it, or null when no end-to-end test shows it yet, or "board" when only a person with a board
-// can show it. A cell never says "works" by itself: it names the check, and the check must exist (this script) and pass
-// (the CI job that runs it: the IDE journeys, the IDE unit suite, the conformance runner). A language whose cell is empty
-// stays visibly empty until a test fills it.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+// The source is tools/docs/language-capabilities.json: for each language and capability the one journey of the ZPLC
+// application that shows it, end to end, in a real window. A cell is refused when it is empty, or names a unit test, a
+// conformance case or "board only": those prove a leg, not what a person does. A cell never says "works" by itself: it names
+// the check, the check must exist (this script) and pass (the CI job that runs the journeys). Deploy is shown by a journey
+// that clicks Deploy against the native runtime behind the shell of an emulated board (packages/zplc-ide/scripts/emulatedDevice.ts);
+// no physical board is involved, and the hardware evidence page lists what a person ran on one.
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LANG_DIR, LANGS, ROOT, markerBegin, markerEnd, prose, table as markdownTable, type L10n, type Lang } from './reference-lib';
+import { LANG_DIR, LANGS, ROOT, markerBegin, markerEnd, table as markdownTable, type L10n, type Lang } from './reference-lib';
 
 export const GENERATOR = 'tools/docs/generate_language_capabilities.ts';
 const BLOCK = 'language-capabilities';
 const SOURCE = 'tools/docs/language-capabilities.json';
 const JOURNEYS = 'packages/zplc-ide/scripts/journeys.ts';
 
-export type Cell =
-  | { kind: 'journey'; ref: string }
-  | { kind: 'test'; ref: string; contains: string }
-  | { kind: 'conformance'; ref: string }
-  | { kind: 'board' }
-  | null;
+/** The only kind of check a cell may name; the others are read from the file so that they can be refused by name. */
+export type Cell = { kind: 'journey'; ref: string } | { kind: string; ref?: string } | null;
 export interface CapabilityTable { capabilities: string[]; languages: Record<string, Record<string, Cell>> }
 
 export const LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
@@ -44,25 +41,16 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   pause: { en: 'Pause, step one cycle, resume', es: 'Pausar, avanzar un ciclo, reanudar' },
   watch: { en: 'Watch online values', es: 'Observar valores en línea' },
   force: { en: 'Force', es: 'Forzar' },
-  deploy: { en: 'Deploy to a board', es: 'Cargar en una placa' },
+  deploy: { en: 'Deploy (click Deploy and confirm)', es: 'Cargar (pulsar Cargar y confirmar)' },
 };
-const KIND: Record<'journey' | 'test' | 'conformance', L10n> = {
-  journey: { en: 'ZPLC application journey in the native simulation', es: 'Recorrido de la aplicación ZPLC en la simulación nativa' },
-  test: { en: 'Test on the native runtime', es: 'Prueba en el runtime nativo' },
-  conformance: { en: 'Conformance case on the host runtime', es: 'Caso de conformidad en el runtime del host' },
-};
-const NONE: L10n = { en: 'Not tested end to end yet', es: 'Aún sin prueba de extremo a extremo' };
-const BOARD: L10n = { en: 'Board only', es: 'Solo en una placa' };
-const BOARD_SOURCE: L10n = {
-  en: 'A person deploys and runs it on a board; the hardware evidence page lists the records',
-  es: 'Una persona lo carga y lo ejecuta en una placa; la página de evidencia de hardware lista los registros',
-};
+const JOURNEY: L10n = { en: 'ZPLC application journey in the native simulation', es: 'Recorrido de la aplicación ZPLC en la simulación nativa' };
+const DEPLOY_JOURNEY: L10n = { en: 'ZPLC application journey: Deploy clicked against an emulated board', es: 'Recorrido de la aplicación ZPLC: Cargar pulsado contra una placa emulada' };
 
 export function loadTable(root = ROOT): CapabilityTable {
   return JSON.parse(readFileSync(join(root, SOURCE), 'utf8')) as CapabilityTable;
 }
 
-/** The cells that name a check which does not exist, as messages. */
+/** The cells that name no journey, or one that does not exist, as messages. */
 export function unresolved(source: CapabilityTable, root = ROOT): string[] {
   const journeys = readFileSync(join(root, JOURNEYS), 'utf8');
   const problems: string[] = [];
@@ -70,11 +58,10 @@ export function unresolved(source: CapabilityTable, root = ROOT): string[] {
     for (const capability of CAPABILITIES) {
       const cell = source.languages[language]?.[capability];
       const where = `${language}/${capability}`;
-      if (cell === undefined) problems.push(`${where}: no entry (use null for a gap)`);
-      else if (cell === null || cell.kind === 'board') continue;
-      else if (cell.kind === 'journey' && !journeys.includes(`name: '${cell.ref}'`)) problems.push(`${where}: no journey named '${cell.ref}'`);
-      else if (cell.kind === 'conformance' && !existsSync(join(root, 'conformance', `${cell.ref}.expect.json`))) problems.push(`${where}: no conformance case ${cell.ref}`);
-      else if (cell.kind === 'test' && !(existsSync(join(root, cell.ref)) && readFileSync(join(root, cell.ref), 'utf8').includes(cell.contains))) problems.push(`${where}: ${cell.ref} has no '${cell.contains}'`);
+      if (cell === undefined) problems.push(`${where}: no entry`);
+      else if (cell === null) problems.push(`${where}: no check; a cell must name an end-to-end journey`);
+      else if (cell.kind !== 'journey' || typeof cell.ref !== 'string') problems.push(`${where}: a '${cell.kind}' check is not end to end; a cell must name a journey of the ZPLC application`);
+      else if (!journeys.includes(`name: '${cell.ref}'`)) problems.push(`${where}: no journey named '${cell.ref}'`);
     }
   }
   return problems;
@@ -88,10 +75,9 @@ const HEAD: Record<Lang, string[]> = {
 export function capabilityBlock(lang: Lang, source = loadTable()): string {
   const rows = LANGUAGES.flatMap((language) =>
     CAPABILITIES.map((capability) => {
-      const cell = source.languages[language]![capability] ?? null;
-      const evidence = cell === null ? NONE[lang] : cell.kind === 'board' ? BOARD[lang] : KIND[cell.kind][lang];
-      const check = cell === null ? '' : cell.kind === 'board' ? BOARD_SOURCE[lang] : cell.kind === 'journey' ? `\`${cell.ref}\`` : cell.kind === 'test' ? `\`${cell.contains}\`` : `\`${cell.ref.split('/').pop()}\``;
-      return [LANGUAGE_NAME[language][lang], CAPABILITY_NAME[capability][lang], evidence, cell !== null && cell.kind !== 'board' ? check.replace(/\|/g, '\\|') : prose(check)];
+      const cell = source.languages[language]![capability] as { ref: string };
+      const evidence = capability === 'deploy' ? DEPLOY_JOURNEY[lang] : JOURNEY[lang];
+      return [LANGUAGE_NAME[language][lang], CAPABILITY_NAME[capability][lang], evidence, `\`${cell.ref}\``.replace(/\|/g, '\\|')];
     }),
   );
   return markdownTable(HEAD[lang], rows);
