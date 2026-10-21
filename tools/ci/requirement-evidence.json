@@ -30,7 +30,10 @@
   "VF-007": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Instruction List editor in a browser (VF-007, LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Structured Text editor in a browser (VF-007, LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Changes tab contents in a DOM (VF-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Trace tab contents in a DOM (VF-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnPanel.dom.test.tsx","test":"Learn lesson panel in a DOM (VF-007, LRN-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx","test":"Project export items in a DOM (VF-007, IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/TerminalTab.dom.test.tsx","test":"Terminal tab in a DOM (VF-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts","test":"Function block diagram editor in a browser (VF-007, LNG-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts","test":"Ladder editor in a browser (VF-007, LNG-012)"},
@@ -2109,6 +2112,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"readZip of an archive another tool wrote (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"readZip refusals (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"writeZip (IDE-022)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx","test":"Project export items in a DOM (VF-007, IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/projectArchiveBridge.test.ts","test":"the renderer side of the project archives (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/archiveReview.test.ts","test":"reviewArchive (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/migrationDiff.test.ts","test":"describeMigration of a version 1 project (IDE-022)"},
