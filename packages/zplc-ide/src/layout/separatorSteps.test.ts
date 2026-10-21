@@ -31,7 +31,7 @@ describe('panel separator keyboard steps (UX-017)', () => {
   it('UX-017 gives the difference to the panel after the separator, so that the group still adds up to 100', () => {
     const layout = withLeadingSize({ side: 20, middle: 60, right: 20 }, 'side', 'middle', 35);
     expect(layout).toEqual({ side: 35, middle: 45, right: 20 });
-    expect(Object.values(layout).reduce((sum, size) => sum + size, 0)).toBe(100);
+    expect(Object.values(layout ?? {}).reduce((sum, size) => sum + size, 0)).toBe(100);
     expect(withLeadingSize({ side: 20, middle: 80 }, 'side', 'missing', 35)).toBeNull();
   });
 });

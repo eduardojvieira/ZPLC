@@ -34,7 +34,7 @@ describe('the learner kit of the course (LRN-014, LRN-016)', () => {
   it('names every missing or wrong field', () => {
     expect(validateKit({ ...kitFile, boards: [] })).toContain('kit.boards: must list the learner boards');
     expect(validateKit({ ...kitFile, voltageLimit: { en: ['x'] } })).toContain('kit.voltageLimit: must list the same number of non-empty sentences in en and es');
-    expect(joinLearnerBoards({ ...(kitFile as never), boards: [{ boardId: 'uno', supply: 'a', ground: 'b', analogGround: 'c' }] }, boardManifest).problems).toEqual(['kit.json: board "uno" has no valid I/O description in boards.json']);
+    expect(joinLearnerBoards({ ...kitFile, boards: [{ boardId: 'uno', supply: 'a', ground: 'b', analogGround: 'c' }] } as never, boardManifest).problems).toEqual(['kit.json: board "uno" has no valid I/O description in boards.json']);
   });
 });
 

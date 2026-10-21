@@ -7,7 +7,7 @@ import { PROGRAM_LOAD_STATE, type LastCompileResult } from './debugSessionState'
 import { performHardwareDeploy, type DeployDeps } from './deployFlow';
 import { t } from '../i18n';
 
-function artifact(): Uint8Array {
+function artifact(): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(ZPLC_CONSTANTS.HEADER_SIZE);
   const view = new DataView(bytes.buffer);
   view.setUint32(0, ZPLC_CONSTANTS.MAGIC, true);

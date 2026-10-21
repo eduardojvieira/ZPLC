@@ -42,7 +42,7 @@ describe('application menu (UX-014)', () => {
     it(`UX-025 keeps page zoom (zoom in, zoom out, actual size) in the View menu of a packaged ${platform} build`, () => {
       const view = build(platform).find((menu) => menu.label === t('menu.view'))!;
       const zoom = (view.submenu as MenuItemConstructorOptions[]).filter((item) => ZOOM_ROLES.includes(String(item.role)));
-      expect(zoom.map((item) => item.role)).toEqual(ZOOM_ROLES);
+      expect<string[]>(zoom.map((item) => String(item.role))).toEqual(ZOOM_ROLES);
       expect(zoom.map((item) => item.label)).toEqual([t('menu.zoomIn'), t('menu.zoomOut'), t('menu.resetZoom')]);
     });
   }

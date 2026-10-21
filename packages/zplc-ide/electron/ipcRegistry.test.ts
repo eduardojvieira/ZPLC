@@ -79,6 +79,7 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
   const deps: IpcDeps = {
     appInfo: () => ({ version: '9.9.9', platform: 'linux', arch: 'x64', isPackaged: true }),
     isCurrent: () => current,
+    reportShellPreferences: (preferences) => note(`shell.preferences:${JSON.stringify(preferences)}`),
     closeGuard: { setDirty: (dirty) => note(`closeGuard.setDirty:${dirty}`), confirm: () => { note('closeGuard.confirm'); return 'close'; } },
     completeGuardedAction: (action) => note(`window.${action}`),
     projectFiles,
