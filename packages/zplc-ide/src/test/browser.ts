@@ -9,8 +9,8 @@
  * `google-chrome` is not on the PATH.
  */
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createServer, type ViteDevServer } from 'vite';
 import { Cdp, freePort, HOST, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
@@ -145,25 +145,38 @@ export class BrowserApp {
   fileContent(): Promise<string> { return this.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return s.loadedFiles.get(s.activeFileId)?.content ?? ''; })`); }
 }
 
-interface Running { app: BrowserApp; vite: OwnedProcess; browser: OwnedProcess; scratch: string }
+interface Running { app: BrowserApp; server: ViteDevServer; browser: OwnedProcess; scratch: string }
 let running: Promise<Running> | undefined;
 
-/** The shared app of this test process. The first call starts Vite and Chromium; they stop when the process exits. */
+/**
+ * The app of this test file. The first call starts Vite (in this process) and headless Chromium; `closeBrowserApp` in the
+ * `afterAll` of the file stops them, so no server or browser outlives the run.
+ */
 export function browserApp(): Promise<BrowserApp> {
   running ??= (async () => {
     const root = process.env.TMPDIR ?? join(process.env.HOME ?? '.', '.cache', 'zplc-browser-tests');
     mkdirSync(root, { recursive: true });
-    const scratch = mkdtempSync(join(root === tmpdir() ? tmpdir() : root, 'browser-test-'));
+    const scratch = mkdtempSync(join(root, 'browser-test-'));
     const port = await freePort();
-    const vite = Bun.spawn([process.execPath, 'run', 'vite', '--host', HOST, '--port', String(port), '--strictPort'], { cwd: PACKAGE, stdout: 'ignore', stderr: 'ignore' });
+    const server = await createServer({ root: PACKAGE, logLevel: 'silent', server: { host: HOST, port, strictPort: true } });
+    await server.listen();
     const url = `http://${HOST}:${port}/`;
-    await waitFor('Vite', async () => (await fetch(url).catch(() => null))?.ok ? true : undefined);
     const { browser, cdp } = await openPage(url, join(scratch, 'profile'));
-    const cleanup = () => { try { browser.kill('SIGKILL'); vite.kill('SIGKILL'); rmSync(scratch, { recursive: true, force: true }); } catch { /* already gone */ } };
-    process.once('exit', cleanup);
-    return { app: new BrowserApp(cdp, url), vite, browser, scratch };
+    process.once('exit', () => { try { browser.kill('SIGKILL'); } catch { /* already gone */ } });
+    return { app: new BrowserApp(cdp, url), server, browser, scratch };
   })();
   return running.then((value) => value.app);
 }
 
-export { stop };
+/** Stops the browser and the server that `browserApp` started, and deletes the browser profile. */
+export async function closeBrowserApp(): Promise<void> {
+  const current = running;
+  running = undefined;
+  if (!current) return;
+  const { app, server, browser, scratch } = await current;
+  await app.cdp.command('Browser.close').catch(() => undefined);
+  app.cdp.close();
+  await stop(browser);
+  await server.close();
+  rmSync(scratch, { recursive: true, force: true });
+}

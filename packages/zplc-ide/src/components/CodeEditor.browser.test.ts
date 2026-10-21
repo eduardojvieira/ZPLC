@@ -1,10 +1,11 @@
-import { describe, expect, setDefaultTimeout, test } from 'bun:test';
+import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { translatorFor } from '../i18n';
-import { browserApp, type BrowserApp } from '../test/browser';
+import { browserApp, closeBrowserApp, type BrowserApp } from '../test/browser';
 
 // VF-007: the Structured Text and Instruction List editors are Monaco, which needs a browser engine. These tests run in
 // headless Chromium (src/test/browser.ts), press real keys, and read roles and names from the accessibility tree.
 setDefaultTimeout(180_000);
+afterAll(closeBrowserApp);
 const en = translatorFor('en').t;
 const es = translatorFor('es').t;
 
