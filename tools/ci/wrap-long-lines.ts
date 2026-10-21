@@ -157,18 +157,18 @@ function cutPoint(text: string, from: number, last: number, owner: ts.Node, end:
 }
 
 /** Where a comment line wraps: the words of its text, behind the prefix that opens it. */
-function wrapCommentLine(line: string): string[] | undefined {
+function wrapCommentLine(line: string, limit: number): string[] | undefined {
   const line_ = /^(\s*)(\/\/+\s?)(.*)$/.exec(line);
   if (line_) {
     const [, indent, marker, body] = line_ as unknown as [string, string, string, string];
     if (DIRECTIVE.test(line.trim()) || /\S {3,}\S/.test(body) || /^\s/.test(body)) return undefined;
-    return wrapWords(body.split(/\s+/).filter(Boolean), indent + marker, indent + marker);
+    return wrapWords(body.split(/\s+/).filter(Boolean), indent + marker, indent + marker, limit);
   }
   const inner = /^(\s*\*\s?)(.*)$/.exec(line);
   if (inner && !line.includes('*/')) {
     const [, prefix, body] = inner as unknown as [string, string, string];
     if (DIRECTIVE.test(line.trim()) || /\S {3,}\S/.test(body) || /^\s/.test(body)) return undefined;
-    return wrapWords(body.split(/\s+/).filter(Boolean), prefix, prefix);
+    return wrapWords(body.split(/\s+/).filter(Boolean), prefix, prefix, limit);
   }
   return undefined;
 }
@@ -202,12 +202,12 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
       const startsLine = comment.pos <= lineStart + indent.length && comment.pos >= lineStart;
       if (comment.kind === ts.SyntaxKind.SingleLineCommentTrivia) {
         if (startsLine) {
-          const wrapped = wrapCommentLine(line);
+          const wrapped = wrapCommentLine(line, limit);
           if (wrapped) edits.push({ start: lineStart, end: lineEnd, text: wrapped.join('\n') });
           return;
         }
         const body = text.slice(comment.pos, comment.end);
-        const wrapped = DIRECTIVE.test(body) || insideTemplate(lineStart) ? undefined : wrapCommentLine(indent + body);
+        const wrapped = DIRECTIVE.test(body) || insideTemplate(lineStart) ? undefined : wrapCommentLine(indent + body, limit);
         if (wrapped) {
           const code = text.slice(lineStart, comment.pos).trimEnd();
           edits.push({ start: lineStart, end: lineEnd, text: `${wrapped.join('\n')}\n${code}` });
@@ -219,7 +219,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
         const body = text.slice(comment.pos + 2, comment.end - 2).replace(/^\*/, '').trim();
         if (DIRECTIVE.test(body) || /\S {3,}\S/.test(body)) return;
         const lead = `${indent} * `;
-        const wrapped = wrapWords(body.split(/\s+/).filter(Boolean), lead, lead);
+        const wrapped = wrapWords(body.split(/\s+/).filter(Boolean), lead, lead, limit);
         // the code after a one-line comment (`/** note */ field: string`) goes on the next line, not away
         const rest = text.slice(comment.end, lineEnd).trim();
         const block = [`${indent}/**`, ...wrapped, `${indent} */`, ...(rest === '' ? [] : [`${indent}${rest}`])];
@@ -227,7 +227,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
         return;
       }
       if (comment.pos < lineStart) {
-        const wrapped = wrapCommentLine(line);
+        const wrapped = wrapCommentLine(line, limit);
         if (wrapped) edits.push({ start: lineStart, end: lineEnd, text: wrapped.join('\n') });
         return;
       }
@@ -237,7 +237,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
         if (open && !DIRECTIVE.test(line)) {
           const prefix = open[1]!;
           const words = open[2]!.split(/\s+/).filter(Boolean);
-          const wrapped = wrapWords(words, prefix, `${indent} * `);
+          const wrapped = wrapWords(words, prefix, `${indent} * `, limit);
           edits.push({ start: lineStart, end: lineEnd, text: wrapped.join('\n') });
         }
       }
