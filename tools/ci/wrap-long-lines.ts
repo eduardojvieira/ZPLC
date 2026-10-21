@@ -247,12 +247,11 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
     const indent = /^\s*/.exec(line)![0];
     const room = lineStart + limit - 4; // the space kept in the head, the closing quote and ` +`
     const candidates = segments
-      // only a segment whose closing quote is past the limit is what makes the line long; a short string stays whole
+      // a key or a name is short and may be typed (t('a.b.c'), a union member): only a piece of prose is cut
       .filter(
-        (segment) =>
-          segment.to + 3 > lineStart + limit && segment.from < lineEnd && segment.to > lineStart && takesConcatenation(segment.owner),
+        (segment) => segment.to - segment.from >= 40 && segment.to > lineStart && segment.from < lineEnd && takesConcatenation(segment.owner),
       )
-      .sort((a, b) => b.from - a.from);
+      .sort((a, b) => b.to - b.from - (a.to - a.from));
     for (const segment of candidates) {
       const from = Math.max(segment.from, lineStart);
       const cut = cutPoint(text, from, Math.min(room, segment.to - 2), segment.owner, segment.to);
@@ -264,7 +263,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
     for (const segment of segments) {
       const owner = segment.owner;
       if (!ts.isStringLiteral(owner) || !ts.isJsxAttribute(owner.parent) || segment.to <= lineStart || segment.from >= lineEnd) continue;
-      if (segment.to + 3 <= lineStart + limit) continue;
+      if (segment.to - segment.from < 40) continue;
       const content = text.slice(segment.from, segment.to);
       // a JSX string has no escapes and may span lines; neither can be written as a JavaScript string
       if (/[\\&'"`{}\n]/.test(content)) continue;
