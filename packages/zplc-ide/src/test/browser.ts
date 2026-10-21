@@ -182,3 +182,18 @@ export async function closeBrowserApp(): Promise<void> {
   await server.close();
   rmSync(scratch, { recursive: true, force: true });
 }
+
+/** The parsed JSON of the open file: the document that a visual editor keeps in the store. */
+export function openDocument<T = Record<string, unknown>>(app: BrowserApp): Promise<T> {
+  return app.eval<T>(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content); })`);
+}
+
+/** The centre of a React Flow node, in page coordinates. */
+export function nodeCentre(app: BrowserApp, id: string): Promise<{ x: number; y: number }> {
+  return app.eval(`(() => { const r = document.querySelector('.react-flow__node[data-id="${id}"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+}
+
+/** The centre of a port handle of a React Flow node (`data-handleid`), in page coordinates. */
+export function handleCentre(app: BrowserApp, node: string, handle: string): Promise<{ x: number; y: number }> {
+  return app.eval(`(() => { const r = document.querySelector('.react-flow__node[data-id="${node}"] .react-flow__handle[data-handleid="${handle}"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+}

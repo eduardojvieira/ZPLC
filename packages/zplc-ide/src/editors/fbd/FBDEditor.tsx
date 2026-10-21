@@ -432,6 +432,7 @@ function FBDEditorInner({
       onDrop={onDrop}
       onDragOver={onDragOver}
       onKeyDown={keyboard.onKeyDown}
+      onKeyDownCapture={keyboard.onKeyDownCapture}
     >
       <ReactFlow
         nodes={markedNodes}

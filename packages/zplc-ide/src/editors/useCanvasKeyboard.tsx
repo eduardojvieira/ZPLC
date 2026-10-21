@@ -80,6 +80,8 @@ export interface CanvasKeyboardOptions<Argument> {
 
 export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argument>): {
   onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => void;
+  /** Runs a key of the table that React Flow would also read (the arrows move the focused node) before the node sees it. */
+  onKeyDownCapture: (event: ReactKeyboardEvent<HTMLElement>) => void;
   run: (command: string, argument?: Argument) => void;
   overlay: ReactElement | null;
   status: ReactElement;
@@ -166,6 +168,13 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
     run(command);
   }, [commands, nodesRef, readOnly, run, wrapperRef]);
 
+  // React Flow moves the focused node with the arrow keys, whatever the modifiers: a key of the table that is an arrow runs here, first, and stops there
+  const onKeyDownCapture = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
+    if (!event.key.startsWith('Arrow') || keysBelongToControl(event.target) || !actionFor(commands.editor, event)) return;
+    onKeyDown(event);
+    event.stopPropagation();
+  }, [commands.editor, onKeyDown]);
+
   const overlay = useMemo(() => {
     if (!ask || (readOnly && ask.kind !== 'commands')) return null;
     const choose = (item: PickerItem) => {
@@ -195,5 +204,5 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
   }, [ask, commands, readOnly, run]);
 
   const statusRegion = <div role="status" aria-live="polite" data-visual-status className="sr-only">{status}</div>;
-  return { onKeyDown, run, overlay, status: statusRegion };
+  return { onKeyDown, onKeyDownCapture, run, overlay, status: statusRegion };
 }

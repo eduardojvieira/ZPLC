@@ -489,6 +489,7 @@ function SFCEditorInner({
       aria-label={t('editors.sfc.canvas')}
       aria-keyshortcuts="F1"
       onKeyDown={keyboard.onKeyDown}
+      onKeyDownCapture={keyboard.onKeyDownCapture}
     >
       <ReactFlow
         nodes={markedNodes}
