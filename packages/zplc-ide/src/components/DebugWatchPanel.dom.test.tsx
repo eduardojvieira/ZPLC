@@ -16,14 +16,14 @@ describe('Watch and force (CMP-054, IDE-019, UX-009) in a DOM', () => {
     const { user } = dom.render(<DebugWatchPanel />);
     expect(dom.screen.getByText(dom.t('panel.watch.empty.title'))).toBeTruthy();
     await user.click(dom.screen.getByRole('button', { name: dom.t('panel.watch.empty.action') }));
-    expect(dom.screen.getByRole('combobox', { name: (name, element) => element.tagName === 'INPUT' })).toBeTruthy();
+    expect(dom.screen.getByRole('combobox', { name: (_name, element) => element.tagName === 'INPUT' })).toBeTruthy();
   });
 
   it('adds a variable by typing its path and pressing Enter, lists it in a table, and removes it by its named button', async () => {
     prepare();
     const { user } = dom.render(<DebugWatchPanel />);
     await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.watch.addVariable') }));
-    const path = dom.screen.getByRole('combobox', { name: (name, element) => element.tagName === 'INPUT' });
+    const path = dom.screen.getByRole('combobox', { name: (_name, element) => element.tagName === 'INPUT' });
     expect(document.activeElement === path).toBe(true);
     await user.keyboard('Main.counter{Enter}');
     expect(useIDEStore.getState().debug.watchVariables).toEqual(['Main.counter']);
@@ -38,7 +38,7 @@ describe('Watch and force (CMP-054, IDE-019, UX-009) in a DOM', () => {
     await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.watch.addVariable') }));
     await user.keyboard('abc');
     await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.watch.closeForm') }));
-    expect(dom.screen.queryByRole('combobox', { name: (name, element) => element.tagName === 'INPUT' })).toBeNull();
+    expect(dom.screen.queryByRole('combobox', { name: (_name, element) => element.tagName === 'INPUT' })).toBeNull();
   });
 
   it('names its columns, sorts by a column header button and says so in aria-sort', async () => {
