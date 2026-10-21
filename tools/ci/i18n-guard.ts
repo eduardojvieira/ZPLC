@@ -323,5 +323,6 @@ if (import.meta.main) {
     console.error(problems.map((problem) => `i18n-guard: ${problem}`).join('\n'));
     process.exit(1);
   }
-  console.log(`i18n-guard: ok (${Object.keys(en).length} keys in both catalogs, ${readOffenders().length} file and rule entries are listed, ${relative(root, LIST_PATH.pathname)})`);
+  const keys = Object.keys(en).length;
+  console.log(`i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(root, LIST_PATH.pathname)})`);
 }

@@ -5233,7 +5233,12 @@ function checkReferenceValue(state: CodeGenState, target: PointerType, value: Ex
     }
 
     if (!isPointerType(given)) {
-        fail('INVALID_REFERENCE', value, `'${name}' is a ${typeText(target)}: assign a REF(...) of a ${typeText(target.baseType)} variable or NULL, not ${stringifyExpression(value)}`);
+        const base = typeText(target.baseType);
+        fail(
+            'INVALID_REFERENCE',
+            value,
+            `'${name}' is a ${typeText(target)}: assign a REF(...) of a ${base} variable or NULL, not ${stringifyExpression(value)}`,
+        );
     }
     if (typeText(storedType(state, given.baseType)) !== typeText(storedType(state, target.baseType))) {
         fail('TYPE_MISMATCH', value, `Cannot assign a ${typeText(given)} to '${name}' of type ${typeText(target)}`);
