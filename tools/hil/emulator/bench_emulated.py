@@ -60,6 +60,15 @@ ESP_FLASH_SIZE = 8 * 1024 * 1024  # ESP32-S3-WROOM-1-N8R8
 FLASH_HOOKS = ("flash_range_erase", "flash_range_program", "flash_write_partial")
 
 
+def die_with_parent() -> None:
+    """preexec_fn of an emulator process: the kernel kills it when the chain that started it dies, so a chain stopped by
+    SIGKILL or a timeout, which cannot run its cleanup, leaves no emulator behind (Linux; elsewhere it does nothing)."""
+    if sys.platform.startswith("linux"):
+        import ctypes  # noqa: PLC0415
+
+        ctypes.CDLL(None).prctl(1, 9)  # PR_SET_PDEATHSIG, SIGKILL
+
+
 def emu_dir() -> Path:
     return Path(os.environ.get("ZPLC_EMU_DIR") or Path.home() / "zplc-emu")
 
@@ -192,7 +201,7 @@ class PicoBench:
         self.process = subprocess.Popen(
             ["node", "--import", tsx.as_uri(), str(HERE / "pico/pico-bench.mts"), json.dumps(config)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log_file.open("a"), text=True, bufsize=1,
-            pass_fds=(self.cdc[0], self.rtu[0]), env={**os.environ, "TSX_TSCONFIG_PATH": str(emu_dir() / "rp2040js/tsconfig.json")},
+            pass_fds=(self.cdc[0], self.rtu[0]), preexec_fn=die_with_parent, env={**os.environ, "TSX_TSCONFIG_PATH": str(emu_dir() / "rp2040js/tsconfig.json")},
         )
         threading.Thread(target=self._read, args=(self.process,), daemon=True).start()
         if not self.ready.wait(120):
@@ -344,7 +353,7 @@ class Esp32s3Bench:
             [str(qemu), "-nographic", "-machine", "esp32s3", "-m", "8M", "-global", "ssi_psram.is_octal=true",
              "-drive", f"file={self.flash_file},if=mtd,format=raw", "-serial", f"unix:{self.socket_path},server=on,wait=on",
              "-monitor", "none", "-no-reboot"],
-            stdin=subprocess.DEVNULL, stdout=self.log_file.open("a"), stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, stdout=self.log_file.open("a"), stderr=subprocess.STDOUT, preexec_fn=die_with_parent,
         )
         link = socket.socket(socket.AF_UNIX)
         deadline = time.monotonic() + 30

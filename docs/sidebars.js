@@ -198,6 +198,7 @@ const sidebars = {
         'development/firmware-testing',
         'development/hardware-in-the-loop',
         'development/hil-emulation',
+        'development/hardware-software-review',
         'development/screen-reader-check',
         'integration/publishing',
         'release-notes/index',

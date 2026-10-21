@@ -4,6 +4,8 @@ The tests that boot an emulator are in test_emulated_boot.py and skip when the e
 """
 import hashlib
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -27,6 +29,18 @@ class BoardMapTests(unittest.TestCase):
     def test_the_esp32s3_loopback_skips_the_boot_button(self):
         pairs = emu.loopback_pairs(emu.find_board("esp32s3_devkitc"))
         self.assertEqual(pairs, [(15, 5), (16, 6), (17, 7), (18, 8)])
+
+
+class OrphanTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform.startswith("linux"), "PR_SET_PDEATHSIG is Linux only")
+    def test_an_emulator_dies_with_the_chain_that_started_it(self):
+        """A chain stopped by SIGKILL or a timeout cannot run its cleanup: the emulator must not outlive it (HIL-012)."""
+        probe = (
+            "import ctypes, signal, sys; sys.path.insert(0, %r); import bench_emulated as emu; emu.die_with_parent(); "
+            "value = ctypes.c_int(-1); ctypes.CDLL(None).prctl(2, ctypes.byref(value)); print(value.value == signal.SIGKILL)"
+        ) % str(Path(emu.__file__).parent)
+        out = subprocess.run([sys.executable, "-I", "-c", probe], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(out.strip(), "True")
 
 
 class EvidenceTests(unittest.TestCase):
