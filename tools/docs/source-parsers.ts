@@ -193,7 +193,7 @@ export function parseCli(source: string): Cli {
       if (option) options.push({ flags: option[1]!, description: option[2]! });
     }
   }
-  const accepted = /\[((?:'[a-z-]+',?\s*)+)\]\.includes\(command\)/.exec(text);
+  const accepted = /\[\s*((?:'[a-z-]+',?\s*)+)\]\.includes\(command\)/.exec(text);
   const names = accepted ? [...accepted[1]!.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]!) : [];
   const listed = [...new Set(commands.map((command) => command.name))];
   if (names.length === 0 || names.slice().sort().join() !== listed.slice().sort().join()) {
