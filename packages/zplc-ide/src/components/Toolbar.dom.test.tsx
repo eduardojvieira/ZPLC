@@ -21,6 +21,8 @@ describe('Command bar (IDE-001, UX-011, UX-015) in a DOM', () => {
   });
 
   it('Save is disabled without an active file', () => {
+    // the store is one object for the whole run: another file may have left a file open
+    dom.patchStore(useIDEStore, { activeFileId: null });
     dom.render(<Toolbar debugController={debugController} />);
     expect((dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.save.label')) }) as HTMLButtonElement).disabled).toBe(true);
   });

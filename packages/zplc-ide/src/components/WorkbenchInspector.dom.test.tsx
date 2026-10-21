@@ -18,7 +18,7 @@ describe('Inspector (UX-011) in a DOM', () => {
   });
 
   it('without an active file offers the next step, which shows the explorer', async () => {
-    dom.patchStore(useIDEStore, { activeConsoleTab: 'output' });
+    dom.patchStore(useIDEStore, { activeConsoleTab: 'output', activeFileId: null });
     const { user } = dom.render(<WorkbenchInspector />);
     expect(dom.screen.getByRole('heading', { level: 3, name: dom.t('panel.inspector.empty.title') })).toBeTruthy();
     await user.click(dom.screen.getByRole('button', { name: dom.t('panel.inspector.empty.action') }));
