@@ -212,7 +212,7 @@ describe('docs site: admonitions in the generator\'s own syntax and no version s
 // DOC-015 / decision D-10: the Spanish pages speak in one register, neutral with "usted". The voseo and tuteo forms that were
 // found in the pages are the ones listed; a new one in a page fails here.
 describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', () => {
-  const voseo = /(?<![\w`/.-])(?:[A-Za-zñ]{3,}(?:á|é|í)(?:lo|la|los|las)?|tu|tus|tienes|puedes|quieres|debes|necesitas|ingreses|asumas|confíes)(?![\wáéíóú])/g;
+  const voseo = new RegExp(String.raw`(?<![\w\`/.-])(?:[A-Za-zñ]{3,}(?:á|é|í)(?:lo|la|los|las)?|tu|tus|tienes|puedes|quieres|debes|necesitas|ingreses|` + String.raw`asumas|confíes)(?![\wáéíóú])`, 'g');
   const allowed = new Set(['allá', 'está', 'será', 'esté', 'aquí', 'así', 'allí', 'relé', 'también', 'además', 'según', 'quizá', 'ahí', 'sí', 'mí']);
   it('has no voseo imperative or tuteo form in a page', () => {
     const found: string[] = [];
@@ -276,7 +276,7 @@ describe('the Spanish pages keep one standard term for each concept (DOC-015)', 
     [/\bAWS IoT N[úu]cleo\b/, 'AWS IoT Core (a product name is not translated)'],
     [/\bdeje caer\b|\bdeja caer\b/i, 'deje que EN baje'],
     [/\b(?:Placas Soportadas|Modelo de Memoria|Biblioteca Est[áa]ndar)\b/, 'sentence case in a link or heading'],
-    [/\b(?:Texto Estructurado|Lista de Instrucciones|Diagrama de Escalera|Diagrama de Bloques de Funci[óo]n|Diagrama Funcional Secuencial)\b/, 'the glossary names, in sentence case (texto estructurado, lista de instrucciones...)'],
+    [new RegExp(String.raw`\b(?:Texto Estructurado|Lista de Instrucciones|Diagrama de Escalera|Diagrama de Bloques de Funci[óo]n|` + String.raw`Diagrama Funcional Secuencial)\b`), 'the glossary names, in sentence case (texto estructurado, lista de instrucciones...)'],
     [/\b(?:el|la|un|una) (?:build|checkout)s?\b/i, 'compilación, copia de trabajo'],
     [/\blayouts?\b/i, 'disposición'],
     [/\bflags\b/i, 'indicadores'],

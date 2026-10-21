@@ -131,7 +131,7 @@ describe('UX-029 migrated components render in the language of the setting', () 
   it('UX-029 offers the three language choices, and the English default leaves the preferences in English', () => {
     const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
     expect(preferences).toContain('>Preferences<');
-    expect(preferences).toMatch(/data-setting="language"[\s\S]*?<option value="auto"[^>]*>Automatic \(system language\)<\/option><option value="en"[^>]*>English<\/option><option value="es"[^>]*>Español<\/option>/);
+    expect(preferences).toMatch(new RegExp(String.raw`data-setting="language"[\s\S]*?<option value="auto"[^>]*>Automatic \(system language\)<\/o` + String.raw`ption><option value="en"[^>]*>English<\/option><option value="es"[^>]*>Español<\/option>`));
   });
 
   it('UX-029 draws the unsaved changes dialog with its default buttons in each language, and keeps the labels a caller passes', () => {

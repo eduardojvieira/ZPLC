@@ -1,6 +1,7 @@
 // The prebuilt runtime firmware of a release, one image set per board of the manifest (REL-022):
 //
-//   bun scripts/release/firmware-images.ts collect  --board <ide_id> --build-dir <west build dir> --version <v> --out <dir> [--commit <sha>]
+//   bun scripts/release/firmware-images.ts collect  --board <ide_id> --build-dir <west build dir> --version <v> --out <dir>
+//                                                   [--commit <sha>]
 //   (`<board>` in a file name is the `board_id` of the manifest, as in `rpi-pico-rp2040`; `--board` takes the `ide_id`)
 //   bun scripts/release/firmware-images.ts assemble --in <dir>... --out <dir> --version <v>
 //   bun scripts/release/firmware-images.ts stage    --bundle <dir> --out <dir>

@@ -155,7 +155,7 @@ describe('install page: built from the channels and installers that exist today 
 });
 
 describe('no curl | sh installer is recommended or offered (REL-006)', () => {
-  const PIPE = /\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*iex\b/i;
+  const PIPE = new RegExp(String.raw`\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:iwr|irm|` + String.raw`Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*iex\b`, 'i');
 
   it('is not in the README, the checklist or any page of the documentation, in either language', () => {
     const files = ['README.md', 'RELEASING.md', 'CHANGELOG.md', ...markdownFiles(ROOT, EN), ...markdownFiles(ROOT, ES)];

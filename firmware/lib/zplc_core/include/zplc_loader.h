@@ -16,6 +16,7 @@
 
 #include "zplc_isa.h"
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): loader-errors. Do not edit. >>> */
 /* Error Codes */
 /** @brief Verified */
@@ -57,15 +58,18 @@
 /** @brief A declared safe value is invalid: the segment is not whole entries, an entry names no bit of the output image or a value other than 0 or 1, an output is declared twice, or there are too many */
 #define ZPLC_LOADER_ERR_SAFE -19
 /* <<< END GENERATED: loader-errors <<< */
+/* clang-format on */
 
 /* Artifact-wide v1 admission limit. This intentionally does not depend on
  * scheduler headers: individual runtimes can impose a lower operational
  * limit after verification. */
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): loader-max-tasks. Do not edit. >>> */
 #define ZPLC_LOADER_MAX_TASKS 16U
 /** @brief Most outputs one artifact may declare a safe value for, in the SAFE segment (loader). */
 #define ZPLC_LOADER_MAX_SAFE 64U
 /* <<< END GENERATED: loader-max-tasks <<< */
+/* clang-format on */
 
 /* Transient storage of the verifier, provided by the caller. It holds, for
  * the largest CODE the runtime accepts (ZPLC_MEM_CODE_SIZE):
@@ -86,10 +90,12 @@
  * ZPLC_VERIFY_MAX_DEPTH values (a deeper stack is refused with
  * ZPLC_LOADER_ERR_STACK even where the runtime would allow it).
  * Task uniqueness is bounded by ZPLC_LOADER_MAX_TASKS and needs no bitmap. */
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): loader-verified-depth. Do not edit. >>> */
 /* Deepest evaluation stack the loader proves for a task. A program that needs more is refused, whatever the target stack allows; the compiler fails the build above it (CMP-050). */
 #define ZPLC_VERIFY_MAX_DEPTH 127
 /* <<< END GENERATED: loader-verified-depth <<< */
+/* clang-format on */
 #define ZPLC_VERIFY_MAX_LEADERS ((ZPLC_MEM_CODE_SIZE) / 16U + 64U)
 #define ZPLC_VERIFY_MAX_FRAMES ((ZPLC_MEM_CODE_SIZE) / 128U + 32U)
 #define ZPLC_VERIFY_FRAME_BYTES 7U

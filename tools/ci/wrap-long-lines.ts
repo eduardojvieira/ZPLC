@@ -137,6 +137,20 @@ function takesConcatenation(node: ts.Node): boolean {
   );
 }
 
+/** The offset of the space (or, with none, a safe character) after which a segment can be cut, or -1. */
+function cutPoint(text: string, from: number, last: number, owner: ts.Node): number {
+  for (let at = last; at > from + 8; at -= 1) {
+    if (text[at] === ' ' && text[at - 1] !== '\\' && text[at - 1] !== ' ') return at;
+  }
+  // a string with no space (base64, a JSON text): cut where no escape sequence is near
+  if (!ts.isStringLiteral(owner) && !ts.isNoSubstitutionTemplateLiteral(owner)) return -1;
+  if (/\s/.test(text.slice(from, last))) return -1;
+  for (let at = last; at > from + 8; at -= 1) {
+    if (!text.slice(at - 12, at + 1).includes('\\')) return at;
+  }
+  return -1;
+}
+
 /** Where a comment line wraps: the words of its text, behind the prefix that opens it. */
 function wrapCommentLine(line: string): string[] | undefined {
   const line_ = /^(\s*)(\/\/+\s?)(.*)$/.exec(line);
@@ -162,6 +176,12 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
   const lines = text.split('\n');
   const comments = commentRanges(source);
   const segments = stringSegments(source);
+  const templateSpans: ts.TemplateSpan[] = [];
+  const collect = (node: ts.Node) => {
+    if (ts.isTemplateSpan(node)) templateSpans.push(node);
+    ts.forEachChild(node, collect);
+  };
+  collect(source);
   const insideTemplate = (offset: number) =>
     segments.some((segment) => segment.quote === '`' && offset > segment.from - 1 && offset < segment.to + 1);
   const edits: Edit[] = [];
@@ -217,25 +237,38 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
     }
     // 2. a string or a template: cut at the last space that leaves the head on the line
     const indent = /^\s*/.exec(line)![0];
+    const room = lineStart + limit - 4; // the space kept in the head, the closing quote and ` +`
     const candidates = segments
       .filter((segment) => segment.to > lineStart && segment.from < lineEnd && takesConcatenation(segment.owner))
       .sort((a, b) => b.from - a.from);
     for (const segment of candidates) {
       const from = Math.max(segment.from, lineStart);
-      const room = lineStart + limit - 4; // the space kept in the head, the closing quote and ` +`
-      let cut = -1;
-      for (let at = Math.min(room, segment.to - 2); at > from; at -= 1) {
-        if (text[at] === ' ' && text[at - 1] !== '\\' && text[at - 1] !== ' ' && at > from + 8) {
-          cut = at;
-          break;
-        }
-      }
+      const cut = cutPoint(text, from, Math.min(room, segment.to - 2), segment.owner);
       if (cut < 0) continue;
-      edits.push({
-        start: cut + 1,
-        end: cut + 1,
-        text: `${segment.quote} +\n${indent}  ${segment.quote}`,
-      });
+      edits.push({ start: cut + 1, end: cut + 1, text: `${segment.quote} +\n${indent}  ${segment.quote}` });
+      return;
+    }
+    // 3. a class list or another long attribute string of JSX: `a="x y"` becomes `a={'x ' + 'y'}`
+    for (const segment of segments) {
+      const owner = segment.owner;
+      if (!ts.isStringLiteral(owner) || !ts.isJsxAttribute(owner.parent) || segment.to <= lineStart || segment.from >= lineEnd) continue;
+      const content = text.slice(segment.from, segment.to);
+      if (/[\\&'"`{}]/.test(content)) continue;
+      const cut = cutPoint(text, Math.max(segment.from, lineStart), Math.min(room, segment.to - 2), owner);
+      if (cut < 0) continue;
+      edits.push({ start: segment.from - 1, end: segment.from - 1, text: '{' });
+      edits.push({ start: cut + 1, end: cut + 1, text: `" +\n${indent}  "` });
+      edits.push({ start: segment.to + 1, end: segment.to + 1, text: '}' });
+      return;
+    }
+    // 4. an interpolation of a template: a line break after `${` makes Prettier lay the expression out
+    const spans = templateSpans
+      .filter((span) => span.expression.getStart(source) < lineEnd && span.expression.getEnd() > lineStart)
+      .sort((a, b) => b.expression.getEnd() - b.expression.getStart(source) - (a.expression.getEnd() - a.expression.getStart(source)));
+    for (const span of spans) {
+      const at = span.expression.getStart(source);
+      if (text.slice(span.pos, at).includes('\n') || at < lineStart || at >= lineStart + limit) continue;
+      edits.push({ start: at, end: at, text: '\n' });
       return;
     }
   });

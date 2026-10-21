@@ -57,7 +57,7 @@ export const isGuarded = (path: string): boolean =>
 
 const RAW: Record<string, Rule> = { button: 'raw-button', input: 'raw-input', select: 'raw-select', textarea: 'raw-textarea' };
 const KIT_FIELDS = new Set(['TextField', 'NumberField', 'Textarea', 'Select']);
-const FOCUS_UTILITY = /(?:^|[\s'"`:])(?:focus|focus-visible|focus-within):(?:outline-(?:none|hidden|\d|\[|offset|white|black|[a-z]+-\d)|ring(?:-\d|-\[|-offset|-[a-z]+-\d|\s|$|['"`]))/;
+const FOCUS_UTILITY = new RegExp(String.raw`(?:^|[\s'"\`:])(?:focus|focus-visible|focus-within):(?:outline-(?:none|hidden|\d|\[|offset|white|black|[a-z]+-\d)|` + String.raw`ring(?:-\d|-\[|-offset|-[a-z]+-\d|\s|$|['"\`]))`);
 const SMALL_TEXT = /\btext-\[(\d+(?:\.\d+)?)px\]/g;
 const STOCK_HUES = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
 const UTILITY = 'bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|divide|decoration|accent|caret|placeholder';

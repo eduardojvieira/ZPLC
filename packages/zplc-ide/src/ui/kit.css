@@ -1,7 +1,7 @@
 /* =============================================================================
    The component kit (UX-001). Every colour, radius, shadow, type size and control height is a design token
-   (src/theme/tokens.ts): there is no colour, radius, shadow or font literal in this file. The focus indicator is the one global :focus-visible rule of index.css; nothing here
-   removes or replaces it (UX-005). The rules are in the `components` layer, so a Tailwind utility on a kit component
+   (src/theme/tokens.ts): there is no colour, radius, shadow or font literal in this file. The focus indicator is the one
+   global :focus-visible rule of index.css; nothing here removes or replaces it (UX-005). The rules are in the `components` layer, so a Tailwind utility on a kit component
    (a width, an alignment) wins over them.
    ============================================================================= */
 

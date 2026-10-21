@@ -5,7 +5,8 @@
  * SPDX-License-Identifier: MIT
  *
  * One implementation (zplc_pstore_commit, zplc_pstore_restore), used by the firmware
- * (firmware/app/src/program_store.c) and by the host runtime (firmware/apps/posix_host/src/native_program_store.c). It sits on the HAL persistence calls, so it runs on NVS
+ * (firmware/app/src/program_store.c) and by the host runtime (firmware/apps/posix_host/src/native_program_store.c). It sits on
+ * the HAL persistence calls, so it runs on NVS
  * on a board and on files on the host, and it holds no state of its own: the caller supplies the buffers and
  * serialises the calls.
  *

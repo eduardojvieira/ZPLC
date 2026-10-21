@@ -2,7 +2,7 @@
 //
 //   bun tools/ci/requirement-coverage.ts                 counts per workstream and overall
 //   bun tools/ci/requirement-coverage.ts --list          also the requirements without a passing check, with their titles
-//   bun tools/ci/requirement-coverage.ts --groups        the owning packages with the most requirements still to cover (--top N, default 20)
+//   bun tools/ci/requirement-coverage.ts --groups        the owning packages with the most requirements still to cover (--top N; 20)
 //   bun tools/ci/requirement-coverage.ts --json          everything as JSON
 //   bun tools/ci/requirement-coverage.ts --write         rewrite tools/ci/requirement-evidence.json from the tracked tree
 //   bun tools/ci/requirement-coverage.ts --check         CI: fail when that file is not what --write would produce

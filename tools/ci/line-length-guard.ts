@@ -20,13 +20,23 @@ export interface Offender {
   length: number;
 }
 
-/** Lines of `text` longer than `limit` characters (code points, as the formatters count). */
-export function longLines(text: string, limit: number = LIMIT): Array<{ line: number; length: number }> {
+/**
+ * Lines of `text` longer than `limit` characters (code points, as the formatters count). With `generated`, the lines
+ * between a `>>> GENERATED` and a `<<< END GENERATED` marker (a block a generator writes into a C file) are skipped.
+ */
+export function longLines(
+  text: string,
+  limit: number = LIMIT,
+  generated = false,
+): Array<{ line: number; length: number }> {
   const found: Array<{ line: number; length: number }> = [];
+  let inside = false;
   text.split(/\r?\n/).forEach((content, index) => {
+    if (generated && content.startsWith('/* >>> GENERATED')) inside = true;
     // A line of ASCII is the common case: skip the code point split for it
     const length = content.length <= limit ? content.length : [...content].length;
-    if (length > limit) found.push({ line: index + 1, length });
+    if (length > limit && !inside) found.push({ line: index + 1, length });
+    if (generated && content.startsWith('/* <<< END GENERATED')) inside = false;
   });
   return found;
 }
@@ -34,7 +44,7 @@ export function longLines(text: string, limit: number = LIMIT): Array<{ line: nu
 /** The offenders of every guarded file, or of the files named. */
 export function offenders(files: string[] = formattableFiles().filter((file) => GUARDED_FILE.test(file))): Offender[] {
   return files.flatMap((file) =>
-    longLines(readFileSync(resolve(ROOT, file), 'utf8')).map(({ line, length }) => ({ file, line, length })),
+    longLines(readFileSync(resolve(ROOT, file), 'utf8'), LIMIT, /\.(?:c|h)$/.test(file)).map(({ line, length }) => ({ file, line, length })),
   );
 }
 

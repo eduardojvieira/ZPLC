@@ -108,7 +108,7 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // The modules of the IDE that talk to a device: the Web Serial and node serial back ends, the link
     // manager, the upload and deploy protocol, the handshake, and the Electron main process that owns the
     // port selection. None of them is in the graph.
-    const deviceLink = /(?:^|\/)(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|provisioningCommands)|uploader\/|electron\/(?:main|preload|serialPort))/;
+    const deviceLink = new RegExp(String.raw`(?:^|\/)(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|` + String.raw`provisioningCommands)|uploader\/|electron\/(?:main|preload|serialPort))`);
     expect(modules.filter((path) => deviceLink.test(path))).toEqual([]);
 
     // Nor a node module that opens a socket or a port.

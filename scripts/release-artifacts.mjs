@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 // they are recognised by the whole scheme `<tool>-<version>-<os>-<arch>[.exe]` of scripts/release/binaries.ts.
 const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json', '.cdx.json', '.manifest.json', '.uf2', '.bin', '.elf'];
 const EXECUTABLE_NAME = /^zplc-(?:cli|mcp)-(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?-(?:linux|mac|win)-(?:x64|arm64)(?:\.exe)?$/;
-const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
+const SEMVER = new RegExp(String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` + String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`);
 const COMMIT_SHA = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
