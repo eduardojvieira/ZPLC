@@ -28,7 +28,10 @@
     {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
   ],
   "VF-007": [
-    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"12 surfaces remain without a render test in a DOM","note":"12 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes, Agent and Trace tabs, the Terminal, the hardware deploy confirmation and the project export items. Every kit component and 19 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
+    {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the kit, the isolation and the evidence note (VF-007)"},
+    {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the spec table (VF-007)"},
+    {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: this repository (VF-007)"},
+    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"10 surfaces remain without a render test in a DOM","note":"10 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes and Trace tabs (only their tab and panel are driven), the Terminal and the project export items. Every kit component and 21 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
   ],
   "VF-008": [
     {"kind":"unit","ref":"tools/ci/end-to-end-journeys.test.ts","test":"the end-to-end suite and the journeys of the requirement (VF-008)"},
@@ -1521,6 +1524,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIoMapping.test.ts","test":"the rows of the I/O mapping editor against the channels of the board (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/ioAdmission.test.ts","test":"a located variable the board has no channel for is a build error (IO-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/languageWorkflow.test.ts","test":"refuses a located variable where the board has no channel, with the code NO_BOARD_CHANNEL (IO-003, CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/IOSection.dom.test.tsx","test":"I/O mapping (UX-013, IO-003) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/config/boardProfiles.test.ts","test":"board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"40 The I/O mapping editor lists the channels of the board and flags a row it does not have","partial":true}
   ],
@@ -1709,6 +1713,7 @@
   ],
   "COM-011": [
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"where a Modbus tag is served (COM-011)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx","test":"Communication settings (UX-013, COM-011, COM-014) in a DOM"},
     {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011 and COM-013: the four areas of the Modbus server are four address spaces, writes to the input areas"},
     {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011: a write to a discrete input or an input register is refused with nothing written."},
     {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-011: number 20 is four variables; each area serves its own."},
@@ -1728,6 +1733,7 @@
     {"kind":"c-test","ref":"firmware/tests/modbus_areas/src/main.c","test":"COM-013: the memory the server serves is served to its last byte, in WORK and in RETAIN."}
   ],
   "COM-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx","test":"Communication settings (UX-013, COM-011, COM-014) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/provisioningCommands.test.ts","test":"MQTT security (COM-014)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"keeps the standing warnings of the status and rejects nothing for them (COM-014)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/types/index.test.ts","test":"names no broker and starts with MQTT off, over TLS with the certificate verified (COM-014)"},
@@ -2164,6 +2170,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Console.dom.test.tsx","test":"Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM"}
   ],
   "IDE-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx","test":"Declared-interlock coverage check (IDE-032) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.test.tsx","test":"InterlockCoverage (IDE-032)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"33 Declared interlock coverage has a tab of its own","partial":true}
   ],
@@ -2348,6 +2355,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard","partial":true}
   ],
   "UX-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx","test":"Communication settings (UX-013, COM-011, COM-014) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/IOSection.dom.test.tsx","test":"I/O mapping (UX-013, IO-003) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx","test":"Network settings (UX-013, COM-027) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx","test":"Target selection (UX-013, IO-012) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/TasksSection.dom.test.tsx","test":"Task configuration (UX-013) in a DOM"},
@@ -2839,6 +2848,7 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"}
   ],
   "LRN-018": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantLoop.test.ts","test":"closed-loop plant session (LRN-018)"},
@@ -2851,6 +2861,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-020": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/labPlayback.test.ts","test":"keeps the Lab view recorded, manually controllable, and explicitly non-HIL","note":"LRN-020: the recorded run stays available as a replay of recorded samples and is labelled as a replay that is not live runtime, hardware or HIL evidence; the live closed loop is journey 52"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],

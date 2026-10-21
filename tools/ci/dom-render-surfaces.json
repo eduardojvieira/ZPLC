@@ -134,21 +134,23 @@
       "where": "components/Console.tsx",
       "state": "remaining",
       "tests": [],
-      "reason": "The Changes tab needs a saved workspace link and a candidate review state; the tab is selectable (Console.dom.test.tsx) but its review flow has no render test yet."
+      "reason": "Only the tab, its panel and the status messages are driven (Console.dom.test.tsx). The review flow needs a saved workspace link and a candidate review state, which no render test sets up yet."
     },
     {
       "surface": "Agent (optional AI provider)",
       "where": "components/Console.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The Agent tab needs the optional provider bridge (aiProvider IPC) stubbed; not written in this unit."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Trace",
       "where": "components/Console.tsx",
       "state": "remaining",
       "tests": [],
-      "reason": "The Trace tab needs native trace samples in the store; the tab is selectable (Console.dom.test.tsx) but its table has no render test yet."
+      "reason": "Only the tab and its panel are driven (Console.dom.test.tsx). The trace table needs native trace samples in the store, which no render test sets up yet."
     },
     {
       "surface": "Watch and force",
@@ -240,10 +242,12 @@
     },
     {
       "surface": "Hardware deploy admission and confirmation",
-      "where": "components/DeployDialog.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "Not written in this unit: DeployDialog has a markup test (DeployDialog.test.tsx) but no DOM test that drives the confirmation by keyboard."
+      "where": "components/DeployDialog.tsx, components/ActionConfirmHost.tsx, components/deployConfirm.ts",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/DeployDialog.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Serial port selection",

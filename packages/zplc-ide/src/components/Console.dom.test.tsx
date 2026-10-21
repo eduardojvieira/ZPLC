@@ -74,4 +74,29 @@ describe('Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM', () => {
     expect(dom.screen.getByRole('tabpanel')).toBeTruthy();
     expect(dom.screen.getAllByRole('status').length).toBeGreaterThan(0);
   });
+
+  it('Changes, Agent and Trace each open a tab panel that is labelled by its tab', () => {
+    for (const id of ['changes', 'agent', 'trace']) {
+      open(id);
+      const { unmount } = dom.render(<Console />);
+      expect(document.getElementById(`console-tab-${id}`)?.getAttribute('aria-selected')).toBe('true');
+      expect(dom.screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(`console-tab-${id}`);
+      unmount();
+    }
+  });
+
+  it('Agent offers its modes as a named radio group with exactly one checked', () => {
+    open('agent');
+    dom.render(<Console />);
+    const group = dom.screen.getByRole('radiogroup', { name: dom.t('console.agentMode') });
+    const radios = dom.within(group).getAllByRole('radio');
+    expect(radios).toHaveLength(4);
+    expect(radios.filter((radio) => radio.getAttribute('aria-checked') === 'true')).toHaveLength(1);
+  });
+
+  it('Changes says what it needs before a review can start, as a status', () => {
+    open('changes');
+    dom.render(<Console />);
+    expect(dom.within(dom.screen.getByRole('tabpanel')).getAllByRole('status').length).toBeGreaterThan(0);
+  });
 });
