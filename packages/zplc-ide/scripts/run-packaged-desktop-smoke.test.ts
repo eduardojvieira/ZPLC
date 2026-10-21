@@ -10,7 +10,7 @@ function unpacked(root: string, platform: NodeJS.Platform, name: string): string
     : join(root, name);
   mkdirSync(directory, { recursive: true });
   const executable = platform === 'darwin'
-    ? join(directory, 'Contents', 'MacOS', 'zplc')
+    ? join(directory, 'Contents', 'MacOS', 'ZPLC')
     : join(directory, platform === 'win32' ? 'zplc.exe' : 'zplc');
   mkdirSync(join(executable, '..'), { recursive: true });
   writeFileSync(executable, 'binary');
@@ -25,7 +25,7 @@ test('discovers exactly one real platform executable and rejects unsafe candidat
       expect(() => discoverPackagedExecutable(root, platform)).toThrow('exactly one');
       const app = unpacked(root, platform, name);
       const executable = platform === 'darwin'
-        ? join(app, 'Contents', 'MacOS', 'zplc')
+        ? join(app, 'Contents', 'MacOS', 'ZPLC')
         : join(app, platform === 'win32' ? 'zplc.exe' : 'zplc');
       expect(discoverPackagedExecutable(root, platform)).toBe(executable);
       if (platform !== 'win32') {
