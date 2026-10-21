@@ -172,7 +172,7 @@ export interface Cli { commands: CliCommand[]; options: CliOption[]; exitCodes: 
 
 export function parseCli(source: string): Cli {
   const text = flattenConcatenations(source);
-  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(\s*`([\s\S]*?)`\);/.exec(text);
+  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(\s*`([\s\S]*?)`,?\s*\);/.exec(text);
   if (!help) throw new Error('cli/index.ts: printHelp was not found');
   const lines = help[1]!.replace(/\\n/g, '\n').split('\n');
   const commands: CliCommand[] = [];
