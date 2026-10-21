@@ -11,11 +11,11 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { X, Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
+import { Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
 import { getDefaultPorts } from '../../models/fbd';
-import { Button, SignalValue } from '../../ui';
+import { Button, Dialog, SignalValue } from '../../ui';
 import { sampleTone } from '../../theme/signalTone';
 import { t } from '../../i18n';
 
@@ -135,24 +135,21 @@ export function InstanceMonitor({
   }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-surface-900)_55%,transparent)]">
-      <div className="bg-[var(--color-surface-800)] rounded-lg border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
-        {/* Header */}
-        <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-4 py-3 rounded-t-lg flex items-center justify-between">
-          <div>
-            <h2 className="text-[var(--text-primary)] font-bold text-lg">{blockType}</h2>
-            <p className="text-[var(--text-secondary)] text-sm font-mono">{instanceName}</p>
-          </div>
-          <Button variant="bare"
-            aria-label={t('a11y.fbd.closeMonitor')}
-            onClick={onClose}
-            className="focus-ring p-1 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-primary)] transition-colors"
-          >
-            <X size={20} />
-          </Button>
-        </div>
-        
-        {/* Status bar */}
+    <Dialog
+      open
+      onClose={onClose}
+      title={blockType}
+      description={<span className="font-mono">{instanceName}</span>}
+      size="sm"
+      closeButton={false}
+      footer={(
+        <>
+          <p className="mr-auto text-[length:var(--font-size-caption)] text-[var(--color-surface-500)]">{t('editors.fbd.autoAdded')}</p>
+          <Button onClick={onClose}>{t('a11y.fbd.closeMonitor')}</Button>
+        </>
+      )}
+    >
+      {/* Status bar */}
         <div className="px-4 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)] flex items-center gap-2">
           <SignalValue tone={debugMode !== 'none' ? 'true' : 'unknown'} className="text-xs">
             {debugMode !== 'none' ? t('editors.fbd.live') : t('editors.fbd.offline')}
@@ -218,14 +215,7 @@ export function InstanceMonitor({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 bg-[var(--color-surface-700)] rounded-b-lg border-t border-[var(--color-surface-600)]">
-          <p className="text-[length:var(--font-size-caption)] text-[var(--color-surface-500)] text-center">
-            {t('editors.fbd.autoAdded')}
-          </p>
-        </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }
 

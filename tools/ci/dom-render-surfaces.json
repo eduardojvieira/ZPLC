@@ -1,0 +1,304 @@
+{
+  "kitInternal": [
+    {
+      "file": "packages/zplc-ide/src/ui/Portal.tsx",
+      "reason": "A seven-line wrapper that moves an overlay into document.body; it has no behaviour of its own and is exercised through Dialog, Menu, Popover and Tooltip."
+    }
+  ],
+  "surfaces": [
+    {
+      "surface": "Welcome screen",
+      "where": "components/WelcomeScreen.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Command bar (build, deploy, run controls, mode)",
+      "where": "components/Toolbar.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Toolbar.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Operational status bar and force banner",
+      "where": "components/OperationalStatusBar.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Structured Text editor and language service",
+      "where": "components/CodeEditor.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The editor is Monaco, which needs a browser engine (layout, canvas, a web worker) that happy-dom does not provide, so a render test here would only drive a stub. Its accessible shell (toolbar, keyboard commands, live region) is not split from the editor yet. Cover it in the Electron journeys, or split the shell out and test that."
+    },
+    {
+      "surface": "Instruction List editor",
+      "where": "components/CodeEditor.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The editor is Monaco, which needs a browser engine (layout, canvas, a web worker) that happy-dom does not provide, so a render test here would only drive a stub. Its accessible shell (toolbar, keyboard commands, live region) is not split from the editor yet. Cover it in the Electron journeys, or split the shell out and test that."
+    },
+    {
+      "surface": "Ladder editor",
+      "where": "editors/ld/",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+    },
+    {
+      "surface": "FBD editor",
+      "where": "editors/fbd/",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+    },
+    {
+      "surface": "SFC editor",
+      "where": "editors/sfc/",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+    },
+    {
+      "surface": "Explorer (project tree)",
+      "where": "components/Sidebar.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Sidebar.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Inspector",
+      "where": "components/WorkbenchInspector.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/WorkbenchInspector.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Output",
+      "where": "components/Console.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Problems",
+      "where": "components/Console.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Tests (scenario runs)",
+      "where": "components/Console.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Lab (recorded plant replay)",
+      "where": "components/LabPanel.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/LabPanel.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Learn",
+      "where": "components/LearnPanel.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "Not written in this unit: the Learn panel is driven by the lesson index and the lesson workspace, which need a fixture of their own."
+    },
+    {
+      "surface": "Changes (candidate review)",
+      "where": "components/Console.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "Only the tab, its panel and the status messages are driven (Console.dom.test.tsx). The review flow needs a saved workspace link and a candidate review state, which no render test sets up yet."
+    },
+    {
+      "surface": "Agent (optional AI provider)",
+      "where": "components/Console.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Trace",
+      "where": "components/Console.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "Only the tab and its panel are driven (Console.dom.test.tsx). The trace table needs native trace samples in the store, which no render test sets up yet."
+    },
+    {
+      "surface": "Watch and force",
+      "where": "components/DebugWatchPanel.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Terminal",
+      "where": "components/TerminalTab.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "The terminal is an xterm view over a serial session; xterm needs canvas and measurement that happy-dom does not provide, and its serial source is out of AI reach (AGENTS.md rule 7). Not written in this unit."
+    },
+    {
+      "surface": "Task configuration",
+      "where": "components/settings/TasksSection.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/settings/TasksSection.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "I/O mapping",
+      "where": "components/settings/IOSection.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/settings/IOSection.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Network settings",
+      "where": "components/settings/NetworkSection.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Communication settings (Modbus, MQTT, cloud)",
+      "where": "components/settings/CommunicationSection.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Target selection",
+      "where": "components/settings/TargetSection.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Controller view",
+      "where": "components/ControllerView.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/ControllerView.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Function-block instance monitor",
+      "where": "editors/fbd/InstanceMonitor.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Generated code and assembly view",
+      "where": "components/GeneratedCodeDialog.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/GeneratedCodeDialog.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Hardware deploy admission and confirmation",
+      "where": "components/DeployDialog.tsx, components/ActionConfirmHost.tsx, components/deployConfirm.ts",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/DeployDialog.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Serial port selection",
+      "where": "electron/serialPortSelection.ts",
+      "state": "out-of-scope",
+      "tests": [],
+      "reason": "A main-process module that opens an OS message box: it has no React component, so a render test is not the check. Covered by its unit tests and the Electron smoke."
+    },
+    {
+      "surface": "Project export",
+      "where": "components/ProjectExportItems.tsx",
+      "state": "remaining",
+      "tests": [],
+      "reason": "Not written in this unit: the export items sit inside the Build menu and need the export bridge stubbed."
+    },
+    {
+      "surface": "Project migration from version 1",
+      "where": "project/projectModel.ts",
+      "state": "out-of-scope",
+      "tests": [],
+      "reason": "A data-migration module with no React component; its checks are unit tests of the migration, not render tests."
+    },
+    {
+      "surface": "Declared-interlock coverage check",
+      "where": "components/InterlockCoverage.tsx",
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx"
+      ],
+      "reason": ""
+    },
+    {
+      "surface": "Firmware build from Studio",
+      "where": "electron/firmwareBuildGateway.ts",
+      "state": "out-of-scope",
+      "tests": [],
+      "reason": "A main-process gateway with no React component; its checks are its unit tests and the firmware build tests."
+    },
+    {
+      "surface": "Themes: light, dark, high contrast, forced colours, reduced motion",
+      "where": "index.css",
+      "state": "out-of-scope",
+      "tests": [],
+      "reason": "A stylesheet: themes are checked by the token and contrast guards (UX-027) and the journeys, not by a render test."
+    },
+    {
+      "surface": "Example projects (25)",
+      "where": "projects/",
+      "state": "out-of-scope",
+      "tests": [],
+      "reason": "Project data (the bundled example projects), not a component; the Welcome screen that lists them is tested."
+    }
+  ]
+}
