@@ -28,17 +28,17 @@ describe('VF-017 line-length guard: the scanner', () => {
     expect(longLines('abcdef', 5)).toEqual([{ line: 1, length: 6 }]);
   });
 
-  it('reads the files named', () => {
+  it('reads the files named', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'vf017-'));
     const file = join(directory, 'long.ts');
     writeFileSync(file, `const s = '${'a'.repeat(LIMIT)}';\n`);
-    expect(offenders([file])).toEqual([{ file, line: 1, length: LIMIT + 13 }]);
+    expect(await offenders([file])).toEqual([{ file, line: 1, length: LIMIT + 13 }]);
   });
 });
 
 describe('VF-017 line-length guard: the repository', () => {
-  it('has no hand-written source line over the limit', () => {
-    expect(offenders().map(({ file, line, length }) => `${file}:${line}: ${length} columns`)).toEqual([]);
+  it('has no hand-written source line over the limit', async () => {
+    expect((await offenders()).map(({ file, line, length }) => `${file}:${line}: ${length} columns`)).toEqual([]);
   });
 
   it('keeps the guard limit equal to the Prettier and clang-format limits', () => {
@@ -48,8 +48,8 @@ describe('VF-017 line-length guard: the repository', () => {
   });
 });
 
-describe('VF-017 formatter file selection', () => {
-  const files = formattableFiles();
+describe('VF-017 formatter file selection', async () => {
+  const files = await formattableFiles();
 
   it('formats TypeScript, CSS, JSON, Markdown and C, and guards code only', () => {
     expect(files.filter((file) => PRETTIER_FILE.test(file)).length).toBeGreaterThan(1000);

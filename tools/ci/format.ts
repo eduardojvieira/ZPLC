@@ -91,7 +91,7 @@ if (import.meta.main) {
     );
     process.exit(2);
   }
-  const files = formattableFiles();
+  const files = await formattableFiles();
   let status = 0;
   const changed: string[] = [];
   for (const file of files.filter((candidate) => PRETTIER_FILE.test(candidate))) {
@@ -109,7 +109,7 @@ if (import.meta.main) {
   const clang = files.filter((file) => CLANG_FILE.test(file));
   status |= write ? runClang(binary, ['-i', '--style=file'], clang) : runClang(binary, ['--dry-run', '-Werror', '--style=file'], clang);
   if (!write) {
-    const found = offenders();
+    const found = await offenders();
     for (const { file, line, length } of found) console.error(`${file}:${line}: ${length} columns (limit ${LIMIT})`);
     if (found.length > 0) status |= 1;
   }

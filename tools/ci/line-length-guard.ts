@@ -42,14 +42,15 @@ export function longLines(
 }
 
 /** The offenders of every guarded file, or of the files named. */
-export function offenders(files: string[] = formattableFiles().filter((file) => GUARDED_FILE.test(file))): Offender[] {
-  return files.flatMap((file) =>
+export async function offenders(files?: string[]): Promise<Offender[]> {
+  const named = files ?? (await formattableFiles()).filter((file) => GUARDED_FILE.test(file));
+  return named.flatMap((file) =>
     longLines(readFileSync(resolve(ROOT, file), 'utf8'), LIMIT, /\.(?:c|h)$/.test(file)).map(({ line, length }) => ({ file, line, length })),
   );
 }
 
 if (import.meta.main) {
-  const found = offenders();
+  const found = await offenders();
   for (const { file, line, length } of found) console.error(`${file}:${line}: ${length} columns (limit ${LIMIT})`);
   if (found.length > 0) {
     console.error(`line-length-guard: ${found.length} lines over ${LIMIT} columns. Split the string or wrap the comment.`);

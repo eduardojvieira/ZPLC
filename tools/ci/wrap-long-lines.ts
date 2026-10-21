@@ -299,7 +299,7 @@ export function wrapFile(file: string, text: string, limit: number = LIMIT): str
 if (import.meta.main) {
   const write = process.argv.includes('--write');
   const named = process.argv.slice(2).filter((argument) => !argument.startsWith('--'));
-  const files = (named.length > 0 ? named : formattableFiles()).filter((file) => CODE_FILE.test(file));
+  const files = (named.length > 0 ? named : await formattableFiles()).filter((file) => CODE_FILE.test(file));
   let changed = 0;
   for (const file of files) {
     const path = resolve(ROOT, file);
