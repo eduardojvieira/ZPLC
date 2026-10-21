@@ -138,9 +138,13 @@ function takesConcatenation(node: ts.Node): boolean {
 }
 
 /** The offset of the space (or, with none, a safe character) after which a segment can be cut, or -1. */
-function cutPoint(text: string, from: number, last: number, owner: ts.Node): number {
+function cutPoint(text: string, from: number, last: number, owner: ts.Node, end: number): number {
   for (let at = last; at > from + 8; at -= 1) {
-    if (text[at] === ' ' && text[at - 1] !== '\\' && text[at - 1] !== ' ') return at;
+    if (text[at] !== ' ' || text[at - 1] === '\\' || text[at - 1] === ' ') continue;
+    // a tail that is a bare path (tools/ci/x.ts) would read as a file name to the source guards
+    const tail = text.slice(at + 1, end);
+    if (!/\s/.test(tail) && tail.includes('/')) continue;
+    return at;
   }
   // a string with no space (base64, a JSON text): cut where no escape sequence is near
   if (!ts.isStringLiteral(owner) && !ts.isNoSubstitutionTemplateLiteral(owner)) return -1;
@@ -243,7 +247,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
       .sort((a, b) => b.from - a.from);
     for (const segment of candidates) {
       const from = Math.max(segment.from, lineStart);
-      const cut = cutPoint(text, from, Math.min(room, segment.to - 2), segment.owner);
+      const cut = cutPoint(text, from, Math.min(room, segment.to - 2), segment.owner, segment.to);
       if (cut < 0) continue;
       edits.push({ start: cut + 1, end: cut + 1, text: `${segment.quote} +\n${indent}  ${segment.quote}` });
       return;
@@ -255,7 +259,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
       const content = text.slice(segment.from, segment.to);
       // a JSX string has no escapes and may span lines; neither can be written as a JavaScript string
       if (/[\\&'"`{}\n]/.test(content)) continue;
-      const cut = cutPoint(text, Math.max(segment.from, lineStart), Math.min(room, segment.to - 2), owner);
+      const cut = cutPoint(text, Math.max(segment.from, lineStart), Math.min(room, segment.to - 2), owner, segment.to);
       if (cut < 0) continue;
       edits.push({ start: segment.from - 1, end: segment.from - 1, text: '{' });
       edits.push({ start: cut + 1, end: cut + 1, text: `" +\n${indent}  "` });

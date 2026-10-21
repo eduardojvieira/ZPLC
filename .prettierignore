@@ -72,3 +72,8 @@ odd/
 /tools/ci/requirement-evidence.json
 /conformance/matrix.json
 /conformance/cmp/cmp-015-*.expect.json
+
+# Reports that a tool writes whole: the conformance map of defects (tools/ci/conformance-defects.ts) and the design
+# document of the tokens (tools/ci/ux-tokens.ts --write).
+/conformance/defect-map.md
+/packages/zplc-ide/DESIGN.md

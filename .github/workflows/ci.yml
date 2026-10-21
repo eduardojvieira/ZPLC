@@ -224,7 +224,9 @@ jobs:
             bun-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: |
+          test -f bun.lock
+          bun install --frozen-lockfile
 
       # VF-017: clang-format output changes between versions, so CI runs the version tools/ci/format.ts requires
       - name: Install the pinned clang-format

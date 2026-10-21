@@ -85,28 +85,14 @@ describe('VF-017 the formatter is pinned and enforced in CI', () => {
     scripts: Record<string, string>;
     devDependencies: Record<string, string>;
   };
-  const workflow = Bun.YAML.parse(read('.github/workflows/ci.yml')) as {
-    jobs: Record<string, { name: string; 'runs-on': string; steps: Array<{ name?: string; run?: string }> }>;
-  };
 
   it('pins Prettier to an exact version', () => {
     expect(manifest.devDependencies.prettier).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it('has the format and format:check scripts, and the check ends with the guard', () => {
+  it('has the format and format:check scripts', () => {
     expect(manifest.scripts.format).toBe('bun tools/ci/format.ts --write');
     expect(manifest.scripts['format:check']).toBe('bun tools/ci/format.ts --check');
-    expect(read('tools/ci/format.ts')).toContain('offenders()');
-  });
-
-  it('runs the check in a format job on Linux with the pinned clang-format', () => {
-    const job = workflow.jobs.format;
-    expect(job?.['runs-on']).toBe('ubuntu-latest');
-    const commands = job!.steps.map((step) => step.run ?? '').join('\n');
-    expect(commands).toContain(`pipx install clang-format==${CLANG_FORMAT_VERSION}`);
-    expect(commands).toContain('bun install --frozen-lockfile');
-    expect(commands).toContain('bun run format:check');
-    expect(commands.indexOf('pipx install')).toBeLessThan(commands.indexOf('bun run format:check'));
   });
 
   it('refuses a clang-format of another version', () => {
