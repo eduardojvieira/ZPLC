@@ -243,7 +243,11 @@ export function parseMcp(source: string): Mcp {
   const uriList = uris ? [...uris[1]!.matchAll(/'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!) : [];
   const templates = [...text.matchAll(/template\(\s*'[\w-]+',\s*'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
   const fixed = [...text.matchAll(/^\s*resource\(\s*'(zplc:\/\/[^']+)'/gm)].map((match) => match[1]!);
-  for (const topic of text.matchAll(/for \(const topic of \[([^\]]*)\] as const\)\s*resource\(\s*`(zplc:\/\/[a-z]+)\/\$\{topic\}`/g)) {
+  const topics = new RegExp(
+    /for \(const topic of \[([^\]]*)\] as const\)\s*/.source + /resource\(\s*`(zplc:\/\/[a-z]+)\/\$\{topic\}`/.source,
+    'g',
+  );
+  for (const topic of text.matchAll(topics)) {
     for (const name of topic[1]!.matchAll(/'(\w+)'/g)) fixed.push(`${topic[2]}/${name[1]}`);
   }
   if (uriList.slice().sort().join() !== fixed.slice().sort().join()) throw new Error(`mcp/server.ts: MCP_RESOURCE_URIS and the registered resources differ (${uriList.join(', ')} against ${fixed.join(', ')})`);
