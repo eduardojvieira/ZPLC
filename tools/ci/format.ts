@@ -56,7 +56,8 @@ async function layOut(file: string, text: string): Promise<string> {
  * output differently (a member chain follows the line breaks it finds), so the loop runs until a whole round changes nothing.
  */
 export async function normalize(file: string, text: string): Promise<string> {
-  let current = text;
+  // Prettier first: the wrapper judges the lines of Prettier's layout, not of the hand-written one
+  let current = await layOut(file, text);
   for (let round = 0; round < 8; round += 1) {
     const next = await layOut(file, CODE_FILE.test(file) ? wrapFile(file, current) : current);
     if (next === current) return current;
