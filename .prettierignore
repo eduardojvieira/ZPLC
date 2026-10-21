@@ -12,3 +12,63 @@ bun.lock
 specs/
 odd/
 .atl/
+
+# Pages that tools/docs/generate_course_pages.ts writes whole, from the lesson packages (a generator's bytes are checked by `bun run check:docs`).
+/docs/docs/learn/lessons/
+/docs/i18n/es/docusaurus-plugin-content-docs/current/learn/lessons/
+/docs/docs/learn/modules/
+/docs/i18n/es/docusaurus-plugin-content-docs/current/learn/modules/
+/docs/docs/learn/plants.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/learn/plants.md
+
+# Pages that tools/docs/generate_hardware_pages.ts writes whole, from the board manifest and its records.
+/docs/docs/reference/learner-kits/
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/learner-kits/
+/docs/docs/reference/boards.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md
+
+# Pages that the reference generators of tools/docs write whole (runtime API, functions, function blocks, the four visual
+# languages and ST, diagnostic codes, the keyboard reference, the port interface, the browser page).
+/docs/docs/reference/runtime-api.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md
+/docs/docs/reference/functions.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/functions.md
+/docs/docs/reference/function-blocks.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/function-blocks.md
+/docs/docs/reference/language-fbd.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-fbd.md
+/docs/docs/reference/language-il.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-il.md
+/docs/docs/reference/language-ld.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-ld.md
+/docs/docs/reference/language-sfc.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-sfc.md
+/docs/docs/reference/language-st.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-st.md
+/docs/docs/reference/diagnostic-codes.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/diagnostic-codes.md
+/docs/docs/reference/visual-editor-keyboard.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/visual-editor-keyboard.md
+/docs/docs/runtime/port-interface.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/port-interface.md
+/docs/docs/ide/browser.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/ide/browser.md
+
+# Files that tools/contract/generate.py and generate_protocol.py write whole, and the golden vectors they record.
+/packages/zplc-compiler/src/contract.generated.ts
+/packages/zplc-ide/src/runtime/link/protocol.generated.ts
+/firmware/lib/zplc_core/include/zplc_proto_defs.h
+/firmware/lib/zplc_core/tests/zplc_proto_vectors.h
+/tools/contract/golden/protocol-vectors.json
+
+# Other generated sources: error codes, the lesson index, the token stylesheets (tools/ci/generate-*.ts, tokens.ts).
+*.generated.ts
+*.generated.css
+/packages/zplc-ide/src/generated/
+
+# Records that the requirement, conformance and CMP-015 generators write (tools/ci/generate-requirement-index.ts,
+# requirement-coverage.ts --write, generate-conformance-matrix.ts, conformance-coverage.ts, gen_cmp015_cases.py).
+/tools/ci/requirements-index.json
+/tools/ci/requirement-evidence.json
+/conformance/matrix.json
+/conformance/cmp/cmp-015-*.expect.json
