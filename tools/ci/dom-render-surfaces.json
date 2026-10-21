@@ -36,37 +36,47 @@
     {
       "surface": "Structured Text editor and language service",
       "where": "components/CodeEditor.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The editor is Monaco, which needs a browser engine (layout, canvas, a web worker) that happy-dom does not provide, so a render test here would only drive a stub. Its accessible shell (toolbar, keyboard commands, live region) is not split from the editor yet. Cover it in the Electron journeys, or split the shell out and test that."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/CodeEditor.browser.test.ts"
+      ],
+      "reason": ""
     },
     {
       "surface": "Instruction List editor",
       "where": "components/CodeEditor.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The editor is Monaco, which needs a browser engine (layout, canvas, a web worker) that happy-dom does not provide, so a render test here would only drive a stub. Its accessible shell (toolbar, keyboard commands, live region) is not split from the editor yet. Cover it in the Electron journeys, or split the shell out and test that."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/CodeEditor.browser.test.ts"
+      ],
+      "reason": ""
     },
     {
       "surface": "Ladder editor",
       "where": "editors/ld/",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts"
+      ],
+      "reason": ""
     },
     {
       "surface": "FBD editor",
       "where": "editors/fbd/",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts"
+      ],
+      "reason": ""
     },
     {
       "surface": "SFC editor",
       "where": "editors/sfc/",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The canvas is built on React Flow, which needs layout measurement (ResizeObserver, element sizes) that happy-dom does not compute; the toolbox and keyboard commands are not split from the canvas yet, so no render test drives them in this unit."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/editors/sfc/SFCEditor.browser.test.ts"
+      ],
+      "reason": ""
     },
     {
       "surface": "Explorer (project tree)",
@@ -125,16 +135,21 @@
     {
       "surface": "Learn",
       "where": "components/LearnPanel.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "Not written in this unit: the Learn panel is driven by the lesson index and the lesson workspace, which need a fixture of their own."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/LearnPanel.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Changes (candidate review)",
       "where": "components/Console.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "Only the tab, its panel and the status messages are driven (Console.dom.test.tsx). The review flow needs a saved workspace link and a candidate review state, which no render test sets up yet."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx",
+        "packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Agent (optional AI provider)",
@@ -148,9 +163,12 @@
     {
       "surface": "Trace",
       "where": "components/Console.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "Only the tab and its panel are driven (Console.dom.test.tsx). The trace table needs native trace samples in the store, which no render test sets up yet."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/Console.dom.test.tsx",
+        "packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Watch and force",
@@ -164,9 +182,11 @@
     {
       "surface": "Terminal",
       "where": "components/TerminalTab.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "The terminal is an xterm view over a serial session; xterm needs canvas and measurement that happy-dom does not provide, and its serial source is out of AI reach (AGENTS.md rule 7). Not written in this unit."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/TerminalTab.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Task configuration",
@@ -259,9 +279,11 @@
     {
       "surface": "Project export",
       "where": "components/ProjectExportItems.tsx",
-      "state": "remaining",
-      "tests": [],
-      "reason": "Not written in this unit: the export items sit inside the Build menu and need the export bridge stubbed."
+      "state": "tested",
+      "tests": [
+        "packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx"
+      ],
+      "reason": ""
     },
     {
       "surface": "Project migration from version 1",
