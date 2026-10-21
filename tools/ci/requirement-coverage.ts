@@ -76,9 +76,12 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
 const TITLE = /^[ \t]*(?:describe|describeCases|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
-export function unitChecks(ref: string, text: string): Array<[string, Check]> {
+/** `'a ' +\n 'b'` read as `'a b'`: a formatter cuts a long title at a space, the title stays one. */
+export const flattenConcatenations = (text: string): string => text.replace(/(['"`])\s*\+\s*\1/g, '');
+
+export function unitChecks(ref: string, source: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
-  for (const [, , title = ''] of text.matchAll(TITLE)) {
+  for (const [, , title = ''] of flattenConcatenations(source).matchAll(TITLE)) {
     if (title.includes('${')) continue;
     for (const id of idsOf(title)) found.push([id, { kind: 'unit', ref, test: title, ...(/\bstopgap\b/i.test(title) && { partial: true }) }]);
   }
@@ -119,9 +122,12 @@ export function pythonFilesRunInCi(files: string[], workflows: string[]): Set<st
   return new Set(files.filter((file) => runs.has(file)));
 }
 
+/** One journey declaration, on one line or laid out over several by a formatter, with either quote. */
+export const JOURNEY_DECLARATION = /name: (['"])(.+?)\1,\s*example: (['"])[^'"]*\3,\s*proves: \[([^\]]*)\],\s*partly: \[([^\]]*)\]/g;
+
 export function journeyChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
-  for (const [, name = '', proves = '', partly = ''] of text.matchAll(/name: '([^']+)',\s*example: '[^']*',\s*proves: \[([^\]]*)\],\s*partly: \[([^\]]*)\]/g)) {
+  for (const [, , name = '', , proves = '', partly = ''] of text.matchAll(JOURNEY_DECLARATION)) {
     for (const id of idsOf(proves)) found.push([id, { kind: 'journey', ref, test: name }]);
     for (const id of idsOf(partly)) found.push([id, { kind: 'journey', ref, test: name, partial: true }]);
   }

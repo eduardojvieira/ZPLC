@@ -2,7 +2,7 @@
 // The fixtures are small in-memory projects; the last block runs the rules over the repository itself.
 import { describe, expect, it } from 'bun:test';
 
-import { checkIdeStructure, checkRepository, readExceptions, readOffenders, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
+import { adoptOffenders, checkIdeStructure, checkRepository, readExceptions, readOffenders, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
 
 const IDE = 'packages/zplc-ide/';
 const mod = (path: string, text = ''): SourceModule => ({ path: `${IDE}${path}`, text });
@@ -83,6 +83,18 @@ describe('ratchetOffenders', () => {
   it('lowers an entry that shrank, drops one that is within the limit or gone, and never raises one', () => {
     const entries = [offender('src/shrunk.ts', 150), offender('src/grown.ts', 150), offender('src/split.ts', 150), offender('src/gone.ts', 150), offender('src/same.ts', 150)];
     expect(ratchetOffenders(entries, sizes, 100).map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual(['src/shrunk.ts:120', 'src/grown.ts:150', 'src/same.ts:150']);
+  });
+});
+
+describe('adoptOffenders (IDE-014, VF-017)', () => {
+  const sizes = new Map([[`${IDE}src/shrunk.ts`, 120], [`${IDE}src/grown.ts`, 200], [`${IDE}src/split.ts`, 40], [`${IDE}src/new.ts`, 130]]);
+  const adopted = { requirement: 'IDE-014', added: '2026-10-21', reason: 'reformatted' };
+
+  it('raises an entry that grew, lists a module that crossed the limit, and drops one within it', () => {
+    const entries = [offender('src/shrunk.ts', 150), offender('src/grown.ts', 150), offender('src/split.ts', 150)];
+    const list = adoptOffenders(entries, sizes, 100, adopted);
+    expect(list.map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual(['src/grown.ts:200', 'src/new.ts:130', 'src/shrunk.ts:120']);
+    expect(list.find((entry) => entry.file.endsWith('src/new.ts'))).toMatchObject(adopted);
   });
 });
 

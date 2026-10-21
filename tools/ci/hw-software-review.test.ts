@@ -65,7 +65,7 @@ describe('the software review of the hardware requirements (HIL-001, HIL-002, HI
       const page = readFileSync(PAGES[language], 'utf8');
       const counts = (verdict: Verdict) => all.filter((scenario) => finalVerdict(verdicts[scenario.id]) === verdict).length;
       for (const verdict of VERDICTS) {
-        const row = page.match(new RegExp(`^\\| ${LABELS[language][verdict]} \\| (\\d+) \\|$`, 'm'));
+        const row = page.match(new RegExp(`^\\| ${LABELS[language][verdict]}\\s*\\| (\\d+)\\s*\\|$`, 'm'));
         expect({ language, verdict, count: row ? Number(row[1]) : null }).toEqual({ language, verdict, count: counts(verdict) });
       }
       for (const scenario of all) {

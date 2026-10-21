@@ -211,6 +211,24 @@ export function ratchetOffenders(offenders: readonly Offender[], sizes: Readonly
   });
 }
 
+/**
+ * The list after a change that grows modules without the authors' doing, a reformat (VF-017): every module above the
+ * limit is on it with its present lines, an entry is raised as well as lowered, and an entry is dropped when its module is
+ * within the limit. `bun tools/ci/ide-structure.ts --write --adopt` runs it; the reason names the change.
+ */
+export function adoptOffenders(
+  offenders: readonly Offender[],
+  sizes: ReadonlyMap<string, number>,
+  limit: number,
+  adopted: Pick<Offender, 'requirement' | 'added' | 'reason'>,
+): Offender[] {
+  const known = new Map(offenders.map((offender) => [offender.file, offender] as const));
+  return [...sizes]
+    .filter(([, lines]) => lines > limit)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([file, lines]) => ({ ...(known.get(file) ?? { file, ...adopted }), file, lines }));
+}
+
 /** Reads the product modules of the checked-out repository. */
 export function readIdeModules(root: string): SourceModule[] {
   const modules: SourceModule[] = [];
@@ -242,7 +260,14 @@ if (import.meta.main) {
   const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
   if (process.argv.includes('--write')) {
     const sizes = new Map(readIdeModules(root).map((module) => [module.path, lineCount(module.text)] as const));
-    writeFileSync(OFFENDERS_PATH, `${JSON.stringify(ratchetOffenders(readOffenders(), sizes, MODULE_LINE_LIMIT), null, 2)}\n`);
+    const list = process.argv.includes('--adopt')
+      ? adoptOffenders(readOffenders(), sizes, MODULE_LINE_LIMIT, {
+          requirement: 'IDE-014',
+          added: new Date().toISOString().slice(0, 10),
+          reason: 'The VF-017 formatter laid the module out over more lines than it had; it needs a split by responsibility (IDE-014).',
+        })
+      : ratchetOffenders(readOffenders(), sizes, MODULE_LINE_LIMIT);
+    writeFileSync(OFFENDERS_PATH, `${JSON.stringify(list, null, 2)}\n`);
   }
   const problems = checkRepository(root);
   if (problems.length > 0) {

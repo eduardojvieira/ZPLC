@@ -107,12 +107,33 @@ export function violationsOf(file: SourceFile): Violation[] {
 /** A sentence or a name the person reads, not an identifier ('first-steps'), a state word ('info') or an upper-case token ('TRUE'). */
 const reads = (text: string): boolean => hasLetters(text) && (/\s/.test(text.trim()) || /^\p{Lu}\p{Ll}/u.test(text.trim()));
 
+/** The outermost `a + b + c` that holds a node, or the node itself. */
+function plusRoot(node: ts.Node): ts.Node {
+  let root = node;
+  while (
+    (ts.isBinaryExpression(root.parent) && root.parent.operatorToken.kind === ts.SyntaxKind.PlusToken) ||
+    ts.isParenthesizedExpression(root.parent)
+  )
+    root = root.parent;
+  return root;
+}
+
 function messageViolations(source: ts.SourceFile, path: string): Violation[] {
   const found: Violation[] = [];
   /** One violation per string, and one per template literal whose pieces read as a sentence together. */
   const check = (expression: ts.Expression): void => {
     const templates = new Set<ts.Node>();
+    // 'a ' + 'b' is one message cut in two (a formatter cuts a long one at a space): it counts once, as its text joined
+    const chains = new Set<ts.Node>();
     for (const item of literalsIn(expression)) {
+      const root = plusRoot(item);
+      if (root !== item && ts.isStringLiteralLike(item)) {
+        if (chains.has(root)) continue;
+        chains.add(root);
+        const joined = literalsIn(root as ts.Expression).map(textOf).join('');
+        if (reads(joined)) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(root.getStart()).line + 1, snippet: root.getText().replace(/\s+/g, ' ').slice(0, 80) });
+        continue;
+      }
       const template = ts.isTemplateSpan(item.parent) ? item.parent.parent : ts.isTemplateExpression(item.parent) ? item.parent : undefined;
       if (template) { templates.add(template); continue; }
       if (reads(textOf(item))) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1, snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80) });

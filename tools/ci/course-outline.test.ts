@@ -36,7 +36,8 @@ export function outlineProblems(markdown: string, locale: Locale): string[] {
   const problems: string[] = [];
   if (paragraphsUnder(markdown, new RegExp(`^## ${why}$`, 'm'))[0] !== LESSON_INDEX.course.rationale[locale]) problems.push(`"${why}" is not the rationale of the course file`);
   // LRN-008: the lesson that introduces each language is the first one, in course order, whose edited program is in it.
-  const table = paragraphsUnder(markdown, new RegExp(`^## ${languages}$`, 'm')).join('\n');
+  // a formatter pads the cells of a table: compare the cells, not the spaces
+  const table = paragraphsUnder(markdown, new RegExp(`^## ${languages}$`, 'm')).join('\n').replace(/ {2,}/g, ' ');
   for (const language of ['ST', 'LD', 'FBD', 'SFC', 'IL']) {
     const introducing = courseOrder(LESSON_INDEX).find((lesson) => getLanguageFromFilename(lesson.starter.program) === language);
     if (!introducing || !table.includes(`| ${language} | \`${introducing.id}\` |`)) problems.push(`"${languages}" does not name ${introducing?.id ?? 'a lesson'} as the lesson that introduces ${language}`);
