@@ -11,6 +11,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
+import { releaseStaleDom } from './isolate';
 import { Cdp, freePort, HOST, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
@@ -294,6 +295,8 @@ let running: Promise<Running> | undefined;
  */
 export function browserApp(): Promise<BrowserApp> {
   running ??= (async () => {
+    // The DevTools driver uses `fetch` and `WebSocket`; a happy-dom left registered by another file replaces both.
+    await releaseStaleDom();
     const root = process.env.TMPDIR ?? join(process.env.HOME ?? '.', '.cache', 'zplc-browser-tests');
     mkdirSync(root, { recursive: true });
     const scratch = mkdtempSync(join(root, 'browser-test-'));
@@ -311,6 +314,8 @@ export function browserApp(): Promise<BrowserApp> {
     });
     return { app: new BrowserApp(cdp, url), server, browser, scratch };
   })();
+  // A failed start must not be remembered: the next test of the file would fail at once with the same stale error.
+  running.catch(() => (running = undefined));
   return running.then((value) => value.app);
 }
 

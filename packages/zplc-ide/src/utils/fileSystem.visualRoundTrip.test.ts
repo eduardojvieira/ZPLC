@@ -7,9 +7,12 @@ import { createProjectFiles } from '../../electron/projectFiles';
 import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { DEFAULT_ZPLC_CONFIG } from '../types';
 import { openDirectoryPicker, readDirectoryRecursive } from './fileSystem';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The store imports the bundled-example loader, which only exists under Vite (import.meta.glob); opening a file never touches it.
-await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('./projectLoader', () =>
+  projectLoaderStub({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }),
+);
 const { useIDEStore } = await import('../store/useIDEStore');
 
 /**

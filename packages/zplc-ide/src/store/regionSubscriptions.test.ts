@@ -5,12 +5,9 @@
 // (src/store/regionSubscriptions.ts and src/hooks/useDebugValue.ts), run against the real store and its real actions.
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { shallow } from 'zustand/shallow';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { useIDEStore } = await import('./useIDEStore');
 const { REGION_SELECTORS } = await import('./regionSubscriptions');
 const { selectLiveValues } = await import('../hooks/useDebugValue');

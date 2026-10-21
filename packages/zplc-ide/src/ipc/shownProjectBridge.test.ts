@@ -2,13 +2,10 @@ import { afterEach, describe, expect, it, mock } from 'bun:test';
 
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { chooseProjectFolder } from './projectFilesHandles';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The store reads the example projects with a Vite-only glob; the example list does not matter here.
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { useIDEStore } = await import('../store/useIDEStore');
 const { shownProjectBridge } = await import('./shownProjectBridge');
 

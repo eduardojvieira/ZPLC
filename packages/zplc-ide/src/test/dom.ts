@@ -17,6 +17,8 @@ import type { BoundFunctions, queries } from '@testing-library/dom';
 import { useAppSettings } from '../store/useAppSettings';
 import type { Locale } from '../i18n';
 import { translatorFor } from '../i18n';
+import { projectLoaderStub } from './projectLoaderStub';
+import { releaseStaleDom } from './isolate';
 
 export interface DomHarness {
   /** Renders `ui` into the current document with a `userEvent` bound to it. `locale` defaults to English. */
@@ -47,12 +49,7 @@ export interface DomHarness {
  * reaches the store calls this first and then imports the store and its components with `await import(...)`.
  */
 export const stubProjectLoader = async (): Promise<void> => {
-  await mock.module('../utils/projectLoader', () => ({
-    getAvailableProjects: () => [],
-    loadProject: () => null,
-    loadProjectAssets: () => null,
-    getFileContent: () => null,
-  }));
+  await mock.module('../utils/projectLoader', () => projectLoaderStub());
 };
 
 /**
@@ -70,7 +67,8 @@ export const stubMonaco = async (): Promise<void> => {
 export const isFocused = (element: Element): boolean => document.activeElement === element;
 
 export async function setupDom(): Promise<DomHarness> {
-  if (GlobalRegistrator.isRegistered) throw new Error('A DOM render test file left happy-dom registered');
+  // A file that failed before its afterAll ran (an import error) leaves happy-dom registered; its own error is the one to read.
+  await releaseStaleDom();
   GlobalRegistrator.register({ url: 'http://localhost/' });
   const rtl = await import('@testing-library/react');
   const { default: userEvent } = await import('@testing-library/user-event');

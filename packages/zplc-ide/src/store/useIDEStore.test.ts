@@ -24,6 +24,7 @@ import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import type { NativeTraceSample } from '../runtime/nativeTrace';
 import { DEFAULT_ZPLC_CONFIG, type FileTreeNode, type ProjectFileWithHandle, type ZPLCProjectV2 } from '../types';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 /**
  * A saved project is a v2 document; the store field is typed with the narrower config, so a typed value avoids the excess-property check.
@@ -47,11 +48,9 @@ const migrationPreview = {
 };
 let loadedExample: { zplcConfig: typeof DEFAULT_ZPLC_CONFIG; migrationPreview: null } | null = null;
 let loadedExampleAssets: Array<{ path: string; content: string }> | null = null;
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => loadedExample,
-  loadProjectAssets: () => loadedExampleAssets,
-}));
+await mock.module('../utils/projectLoader', () =>
+  projectLoaderStub({ loadProject: () => loadedExample, loadProjectAssets: () => loadedExampleAssets }),
+);
 
 const { useIDEStore } = await import('./useIDEStore');
 
