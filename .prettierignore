@@ -1,6 +1,14 @@
+# Dependencies and build output.
 node_modules/
 dist/
 build/
 coverage/
+
+# Lockfiles: the package manager writes them.
 package-lock.json
 bun.lock
+
+# The parent run owns the spec, the run records and the skill registry; they are never formatted by a writer.
+specs/
+odd/
+.atl/
