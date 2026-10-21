@@ -33,7 +33,8 @@ export interface OperationalStatusInput {
 
 const SAFE_LABEL = /^[A-Za-z0-9][A-Za-z0-9 _./:-]{0,63}$/;
 const SAFE_VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,47}$/;
-const SAFE_STATUS = /^[A-Za-z0-9][A-Za-z0-9 .,:;!?/()_\-·]{0,95}$/u;
+// Letters of any language are safe (the state is said in the language of the interface); markup and control characters are not.
+const SAFE_STATUS = /^[\p{L}\p{N}][\p{L}\p{N} .,:;!?/()_\-·]{0,95}$/u;
 const TONES = new Set<OperationalStatusTone>(['neutral', 'info', 'success', 'attention', 'danger']);
 
 function record(value: unknown): value is Record<string, unknown> {
