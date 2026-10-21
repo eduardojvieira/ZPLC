@@ -52,6 +52,10 @@ jobs:
       - name: Test documentation tooling
         run: bun test ./tools/docs
 
+      # The end-to-end rewrite case needs the pinned git-filter-repo and skips itself here; the list parsing runs.
+      - name: Test history rewrite tooling
+        run: bun test ./tools/history
+
       - name: Check the requirement index and its evidence record
         run: |
           bun tools/ci/generate-requirement-index.ts --check
