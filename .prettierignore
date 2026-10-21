@@ -54,6 +54,25 @@ odd/
 /docs/docs/ide/browser.md
 /docs/i18n/es/docusaurus-plugin-content-docs/current/ide/browser.md
 
+# Pages that tools/docs/generate_source_references.ts writes whole, from the Kconfig, the shell, the CLI, the MCP server,
+# the scenario and project files and the protocols.
+/docs/docs/reference/cli.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/cli.md
+/docs/docs/reference/kconfig.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/kconfig.md
+/docs/docs/reference/mcp.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/mcp.md
+/docs/docs/reference/project-file.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/project-file.md
+/docs/docs/reference/runtime-protocol.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-protocol.md
+/docs/docs/reference/scenario-file.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/scenario-file.md
+/docs/docs/reference/shell-commands.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/shell-commands.md
+/docs/docs/reference/device-protocol.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/reference/device-protocol.md
+
 # Files that tools/contract/generate.py and generate_protocol.py write whole, and the golden vectors they record.
 /packages/zplc-compiler/src/contract.generated.ts
 /packages/zplc-ide/src/runtime/link/protocol.generated.ts
