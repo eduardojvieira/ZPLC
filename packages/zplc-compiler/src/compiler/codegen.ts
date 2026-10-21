@@ -1559,7 +1559,10 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
         emit(state, `    STORE16 ${formatAddress(address + 2)}   ; ${name} capacity`);
         if (init && init.kind === 'StringLiteral' && !text.wide) {
             checkStringFits(init, t, name);
-            emit(state, `    PUSH16 ${formatAddress(findStringLiteralAddress(state, init.value) ?? fail('INTERNAL_COMPILER_ERROR', init, `String literal not found in pool: '${init.value}'`))}`);
+            const literalAddress =
+                findStringLiteralAddress(state, init.value) ??
+                fail('INTERNAL_COMPILER_ERROR', init, `String literal not found in pool: '${init.value}'`);
+            emit(state, `    PUSH16 ${formatAddress(literalAddress)}`);
             emit(state, `    PUSH16 ${formatAddress(address)}`);
             emit(state, `    STRCPY              ; ${name} := '${init.value.substring(0, 20)}'`);
         } else if (init && init.kind === 'WStringLiteral' && text.wide) {
@@ -5629,7 +5632,9 @@ function emitInterfaceCall(state: CodeGenState, expr: MethodCall, place: Place, 
     if (!signature) fail('UNKNOWN_METHOD', expr, `The interface '${iface}' has no method '${expr.methodName}'`);
 
     const candidates = interfaceCandidates(state, iface);
-    emit(state, `    ; --- interface call: ${place.name}.${expr.methodName}() through ${iface}, ${candidates.length} instance${candidates.length === 1 ? '' : 's'} ---`);
+    const plural = candidates.length === 1 ? '' : 's';
+    const target = `${place.name}.${expr.methodName}()`;
+    emit(state, `    ; --- interface call: ${target} through ${iface}, ${candidates.length} instance${plural} ---`);
     const end = newLabel(state, 'iface_end');
     emitLoadPlace(state, place);
     for (const candidate of candidates) {
