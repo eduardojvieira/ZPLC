@@ -27,6 +27,9 @@
     {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: the list of known offenders (VF-006)"},
     {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
   ],
+  "VF-007": [
+    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"12 surfaces remain without a render test in a DOM","note":"12 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes, Agent and Trace tabs, the Terminal, the hardware deploy confirmation and the project export items. Every kit component and 19 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
+  ],
   "VF-008": [
     {"kind":"unit","ref":"tools/ci/end-to-end-journeys.test.ts","test":"the end-to-end suite and the journeys of the requirement (VF-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
@@ -834,7 +837,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"}
   ],
   "CMP-055": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
@@ -940,7 +944,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"the options compiler.strictTypes, compiler.debug, compiler.optimization and build.generateDebugInfo (CMP-059)"}
   ],
   "CMP-060": [
-    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"every directive has its documented effect (CMP-060)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"every directive has its documented effect (CMP-060)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/GeneratedCodeDialog.dom.test.tsx","test":"Generated code and assembly view (CMP-060) in a DOM"}
   ],
   "CMP-061": [
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
@@ -1570,6 +1575,7 @@
   ],
   "IO-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/boardIo.test.ts","test":"the manifest read by Studio is the one the docs are generated from (IO-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx","test":"Target selection (UX-013, IO-012) in a DOM"},
     {"kind":"unit","ref":"tools/hil/test_board_io_description.py","test":"ManifestTests","note":"Python unit test run by the docs-and-truth job of ci.yml; it is not in the scanned file kinds. One unversioned manifest; validate_supported_boards.py and generate_board_reference.py read it."}
   ],
   "IO-013": [
@@ -1846,6 +1852,7 @@
     {"kind":"manual","ref":"firmware/tests/app_device_link/test_app_device_link.py","note":"a firmware built with CONFIG_ZPLC_PROTO_SIGNATURE=y refuses an unsigned program and a damaged signature and activates a signed one on native_sim; verification time on a small core and the protection of the key in flash are not measured"}
   ],
   "COM-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx","test":"Network settings (UX-013, COM-027) in a DOM"},
     {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."},
     {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-027","partial":true,"note":"every setting is stored and read back after a reboot of the configuration on native_sim (HAL NVS on the simulated flash); a board record that a setting survives a power cycle is not made, and the Nucleo-H743ZI cannot mount its store (IO-008)"}
   ],
@@ -1883,6 +1890,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017, IDE-030)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Toolbar.dom.test.tsx","test":"Command bar (IDE-001, UX-011, UX-015) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Toolbar.dom.test.tsx","test":"Run controls (IDE-001) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
@@ -1910,6 +1919,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"watching the folder for changes made outside Studio (IDE-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"project watcher (IDE-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"which changes are worth telling the window about (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Sidebar.dom.test.tsx","test":"Explorer (UX-012, IDE-004) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"a copy of a file (IDE-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"folders to choose from (IDE-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"names in the project tree (IDE-004)"},
@@ -1958,6 +1968,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStore.test.ts","test":"session store (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreIpc.test.ts","test":"session IPC boundary (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreProtocol.test.ts","test":"session state format (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx","test":"Welcome screen (UX-022, IDE-008) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"the rows of the Recent section (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"when a recent project was last opened (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/projectFilesHandles.test.ts","test":"recent projects over the bridge (IDE-008)"},
@@ -2043,6 +2054,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"42 Choosing a serial port is a dialog of the application","partial":true}
   ],
   "IDE-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"a value typed into the Watch table (IDE-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"completing a symbol for the Watch table (IDE-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/watchTable.test.ts","test":"sorting the Watch rows (IDE-019)"},
@@ -2053,6 +2065,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8c The Watch table completes, sorts, and writes a prepared value","partial":true}
   ],
   "IDE-020": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Console.dom.test.tsx","test":"Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ProblemsPanel.test.tsx","test":"the Problems tab (IDE-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"the order of the problems (IDE-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/consoleAttention.test.ts","test":"what was written while another view was visible (IDE-020)"},
@@ -2125,6 +2138,7 @@
     {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
   ],
   "IDE-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"Operational status bar and force banner (IDE-029, UX-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"accepts only the compile result built for the current compiler generation","note":"stale-build detection: a compile result of an older compiler generation is not current"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"marks a deploy loaded only when its revision and compiler generation are still current","note":"stale-build detection across a deploy: a program built before an edit is not marked loaded"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/hardwareDeployConfirmation.test.ts","test":"hardware deploy confirmation","note":"the deploy confirmation that a person approves before any program is sent"},
@@ -2146,7 +2160,8 @@
     {"kind":"manual","ref":"packages/zplc-ide/scripts/journeys.ts","test":"43 A change is reviewed as a difference and saved by a person, and Studio works without the assistant","partial":true,"note":"The assistant's own proposal is not driven end to end by a journey: the provider keeps its key in the secret store of the system, which a headless Linux host does not have. A proposal takes the road that this journey drives (the review of the Changes tab, then the person's own save); the boundary of the provider (an inert answer, no tools, no field that names a device) is held by electron/aiProvider.test.ts and electron/aiDeviceLink.test.ts, and the closed list of MCP tools by src/mcp/deviceLink.test.ts."}
   ],
   "IDE-031": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/scenarioParity.test.ts","test":"a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/scenarioParity.test.ts","test":"a project run through the Tool API, the CLI, the MCP tools and Studio gives one result (IDE-031)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Console.dom.test.tsx","test":"Output, Problems and Tests tabs (IDE-020, IDE-031) in a DOM"}
   ],
   "IDE-032": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/InterlockCoverage.test.tsx","test":"InterlockCoverage (IDE-032)"},
@@ -2158,6 +2173,23 @@
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"layering exceptions (IDE-033)"}
   ],
   "UX-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx","test":"Function-block instance monitor (UX-001, UX-025) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Button.dom.test.tsx","test":"Button (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/ComboBox.dom.test.tsx","test":"ComboBox (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/DataGrid.dom.test.tsx","test":"DataGrid (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Dialog.dom.test.tsx","test":"AlertDialog (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Dialog.dom.test.tsx","test":"Dialog (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Display.dom.test.tsx","test":"Display components (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Field.dom.test.tsx","test":"Field and its controls (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Menu.dom.test.tsx","test":"Context menu (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Menu.dom.test.tsx","test":"Menu button (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Popover.dom.test.tsx","test":"Popover (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Tabs.dom.test.tsx","test":"Tabs (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Toast.dom.test.tsx","test":"Toast (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/ToggleGroup.dom.test.tsx","test":"ToggleGroup (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Toolbar.dom.test.tsx","test":"Toolbar (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Tooltip.dom.test.tsx","test":"Tooltip (UX-001) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/Tree.dom.test.tsx","test":"Tree (UX-001) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/gallery/gallery.test.tsx","test":"lists only components the kit exports, and the kit has every component UX-001 asks for"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a combo box as a labelled input that controls a list box and shows the chosen option"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-001 renders a data grid with column headers, sortable columns and tabular numerals for numbers"},
@@ -2235,6 +2267,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen"}
   ],
   "UX-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 does not call a transition forced because a word of its condition is a keyword or a literal"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws a diagram nobody forces and the poll read completely with no forced or fault cue"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/monitorFlagsWiring.test.tsx","test":"UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was"},
@@ -2273,6 +2306,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor","partial":true}
   ],
   "UX-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ControllerView.dom.test.tsx","test":"Controller view (UX-011, UX-018) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Toolbar.dom.test.tsx","test":"Command bar (IDE-001, UX-011, UX-015) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/WorkbenchInspector.dom.test.tsx","test":"Inspector (UX-011) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/WorkbenchLayout.test.ts","test":"UX-011 lays the workbench out as a rail, a primary sidebar, the editor over the results panel, and a secondary sidebar"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-011 gives the sidebars and the panel a shortcut each, with no shortcut used twice"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/ActivityRail.test.tsx","test":"UX-011 marks the selected activity with aria-current and a data mark that the stylesheet draws as a bar, not by colour alone"},
@@ -2293,6 +2329,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard","partial":true}
   ],
   "UX-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Sidebar.dom.test.tsx","test":"Explorer (UX-012, IDE-004) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ObjectNavigator.test.tsx","test":"UX-012 hides the items of a collapsed group and says so for the others that are empty"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ObjectNavigator.test.tsx","test":"UX-012 shows the nine groups as expandable sections, with the program under Programs"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ObjectNavigator.test.tsx","test":"object navigator view (UX-012)"},
@@ -2311,6 +2348,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard","partial":true}
   ],
   "UX-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx","test":"Network settings (UX-013, COM-027) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx","test":"Target selection (UX-013, IO-012) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/settings/TasksSection.dom.test.tsx","test":"Task configuration (UX-013) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"UX-013 hosts the same section component the settings page held, for each of the five editors"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"UX-013 renders exactly what the old section rendered: nothing is added to the form and nothing is dropped from it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ConfigEditorHost.test.tsx","test":"UX-013 shows, in the editor of each kind, the value of every setting that kind holds"},
@@ -2369,6 +2409,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"command registry (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"running a command (UX-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/commands/commands.test.ts","test":"shortcuts (UX-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/Toolbar.dom.test.tsx","test":"Command bar (IDE-001, UX-011, UX-015) in a DOM"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3c The command palette runs commands from the keyboard","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"47 The main path is completed with the keyboard alone","partial":true}
   ],
@@ -2403,6 +2444,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard","partial":true}
   ],
   "UX-018": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ControllerView.dom.test.tsx","test":"Controller view (UX-011, UX-018) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"Operational status bar and force banner (IDE-029, UX-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 connection indicator presentation"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 connection indicator rendering"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 force banner stays in the status bar"},
@@ -2488,6 +2531,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/delay.test.ts","test":"the delay of a loading indicator (UX-021)"}
   ],
   "UX-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx","test":"Welcome screen (UX-022, IDE-008) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-022 names levels, languages, boards and groups in the language of the interface"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-022 shows a board id the catalogs do not know as written"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-022 splits a topic by level, the easiest first, and puts an example with no level last"},
@@ -2511,6 +2555,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast"}
   ],
   "UX-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx","test":"Function-block instance monitor (UX-001, UX-025) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"focus trap (UX-025 stopgap: no escape from a dialog, no trap outside one)","partial":true},
@@ -2522,6 +2567,7 @@
   ],
   "UX-026": [
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"what the notification store says to the shared announcer (UX-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ui/LiveRegions.dom.test.tsx","test":"Live regions (UX-026) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit buttons (UX-001, UX-026 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit form fields (UX-001, UX-026 stopgap)","partial":true},
