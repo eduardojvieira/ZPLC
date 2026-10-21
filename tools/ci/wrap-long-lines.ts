@@ -253,7 +253,8 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
       const owner = segment.owner;
       if (!ts.isStringLiteral(owner) || !ts.isJsxAttribute(owner.parent) || segment.to <= lineStart || segment.from >= lineEnd) continue;
       const content = text.slice(segment.from, segment.to);
-      if (/[\\&'"`{}]/.test(content)) continue;
+      // a JSX string has no escapes and may span lines; neither can be written as a JavaScript string
+      if (/[\\&'"`{}\n]/.test(content)) continue;
       const cut = cutPoint(text, Math.max(segment.from, lineStart), Math.min(room, segment.to - 2), owner);
       if (cut < 0) continue;
       edits.push({ start: segment.from - 1, end: segment.from - 1, text: '{' });
