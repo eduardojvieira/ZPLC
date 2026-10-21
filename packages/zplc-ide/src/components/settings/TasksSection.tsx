@@ -121,7 +121,7 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
 
         {/* Priority */}
         <div>
-          <NumberField label={t('settings.tasks.priority')} min={0} max={255} value={task.priority} onChange={(e) => onUpdate({ priority: parseInt(e.target.value) || 1 })} className="w-full" />
+          <NumberField label={t('settings.tasks.priority')} min={0} max={255} value={task.priority} onChange={(e) => { const priority = parseInt(e.target.value); onUpdate({ priority: Number.isNaN(priority) ? 1 : priority }); }} className="w-full" />
         </div>
 
       </div>
