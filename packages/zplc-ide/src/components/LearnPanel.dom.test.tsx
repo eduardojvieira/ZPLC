@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { setupDom, stubMonaco, stubProjectLoader } from '../test/dom';
 
 // VF-007: the Learn lesson surface, driven through user events. Elements are found by role and by the catalog text.
@@ -14,6 +14,18 @@ const { LearnPanel } = await import('./LearnPanel');
 
 const en = learnLessonCatalog.en;
 const es = learnLessonCatalog.es;
+
+// What lets a lesson workspace open is the folder access of the host: another test file of the same run can leave it on the window,
+// so the test that needs none removes it for its own duration.
+const restores: Array<() => void> = [];
+afterEach(() => { while (restores.length > 0) restores.pop()!(); });
+function withoutFolderAccess(): void {
+  const host = window as unknown as Record<string, unknown>;
+  const before = Object.fromEntries(['electronAPI', 'showDirectoryPicker'].filter((key) => key in host).map((key) => [key, host[key]]));
+  delete host.electronAPI;
+  delete host.showDirectoryPicker;
+  restores.push(() => { Object.assign(host, before); });
+}
 
 function show(over: { unlockAll?: boolean; hideSolutions?: boolean; selected?: string | null } = {}) {
   dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, unlockAllLessons: over.unlockAll ?? true, hideSolutions: over.hideSolutions ?? false } } as never);
@@ -105,6 +117,7 @@ describe('Learn lesson panel in a DOM (VF-007, LRN-004)', () => {
   });
 
   it('without folder access the workspace button is disabled and a status says why; Open the tests shows the Tests tab', async () => {
+    withoutFolderAccess();
     const { user } = show();
     const open = dom.screen.getByRole('button', { name: dom.t('learn.openWorkspace') }) as HTMLButtonElement;
     expect(open.disabled).toBe(true);
