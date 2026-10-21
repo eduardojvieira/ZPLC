@@ -225,12 +225,17 @@ export interface Mcp { tools: McpTool[]; resources: McpResource[] }
 export function parseMcp(source: string): Mcp {
   const text = flattenConcatenations(source);
   const inputs = new Map<string, string[]>();
-  for (const match of text.matchAll(/^const (\w+_INPUT) = z\.object\(\{([\s\S]*?)\}\)\.strict\(\);/gm)) {
-    inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\./g)].map((field) => field[1]!));
+  for (const match of text.matchAll(/^const (\w+_INPUT) = z\s*\.object\(\{([\s\S]*?)\}\)\s*\.strict\(\);/gm)) {
+    inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\s*\./g)].map((field) => field[1]!));
   }
   const annotations = new Map<string, boolean>();
   for (const match of text.matchAll(/^const (\w+) = \{\s*readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
-  const tools: McpTool[] = [...text.matchAll(/registerTool\(\s*'(\w+)',\s*\{\s*title: (['"])(.*?)\2,\s*description: (['"])(.*?)\4,\s*inputSchema: (\w+),\s*annotations: (\w+),?\s*\}/g)].map((match) => {
+  const registered = new RegExp(
+    String.raw`registerTool\(\s*'(\w+)',\s*\{\s*title: (['"])(.*?)\2,\s*` +
+      String.raw`description: (['"])(.*?)\4,\s*inputSchema: (\w+),\s*annotations: (\w+),?\s*\}`,
+    'g',
+  );
+  const tools: McpTool[] = [...text.matchAll(registered)].map((match) => {
     const fields = inputs.get(match[6]!);
     const readOnly = annotations.get(match[7]!);
     if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[6]} or ${match[7]}, which the reader does not know`);
