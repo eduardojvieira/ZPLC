@@ -200,6 +200,7 @@ const sidebars = {
         'development/hil-emulation',
         'development/hardware-software-review',
         'development/screen-reader-check',
+        'development/history-rewrite',
         'integration/publishing',
         'release-notes/index',
         'reference/source-of-truth',
