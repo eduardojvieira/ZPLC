@@ -154,7 +154,8 @@ describe('journeyChecks', () => {
 describe('journeys.ts', () => {
   it('declares what every journey proves in the form the scanner reads', () => {
     const text = readFileSync(new URL('../../packages/zplc-ide/scripts/journeys.ts', import.meta.url), 'utf8');
-    const journeys = text.match(/^\s+name: ['"]/gm)!.length;
+    // a journey starts with its name and its example; a project fixture also has a `name:`, and no `example:`
+    const journeys = text.match(/name: (['"]).+?\1,\s*example:/g)!.length;
     const declared = text.match(JOURNEY_DECLARATION)!.length;
     expect(journeys).toBeGreaterThan(0);
     expect(declared).toBe(journeys);

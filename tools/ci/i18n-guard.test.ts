@@ -120,6 +120,12 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   const module = (name: string): string => `packages/zplc-ide/src/editors/${name}.ts`;
   const found = (text: string, path = module('keyboard')): string[] => violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
 
+  it('UX-029 counts a message that a formatter cut in two as one message (VF-017)', () => {
+    expect(found("const a = { message: 'Program deployed ' + 'and stopped.' };")).toHaveLength(1);
+    expect(found('const a = { message: `Deleted ${n} ` + `elements of the diagram.` };')).toHaveLength(1);
+    expect(found("const a = { message: 'a' + 'b' };")).toHaveLength(0);
+  });
+
   it('UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()', () => {
     expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${n} elements.`']);
     expect(found("const a = { title: 'Variable the coil writes' };")).toEqual(["hard-coded-message:'Variable the coil writes'"]);

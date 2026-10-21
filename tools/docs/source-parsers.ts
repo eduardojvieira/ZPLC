@@ -172,7 +172,7 @@ export interface Cli { commands: CliCommand[]; options: CliOption[]; exitCodes: 
 
 export function parseCli(source: string): Cli {
   const text = flattenConcatenations(source);
-  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(`([\s\S]*?)`\);/.exec(text);
+  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(\s*`([\s\S]*?)`\);/.exec(text);
   if (!help) throw new Error('cli/index.ts: printHelp was not found');
   const lines = help[1]!.replace(/\\n/g, '\n').split('\n');
   const commands: CliCommand[] = [];
@@ -272,7 +272,7 @@ export function parseScenarioFormat(engine: string, workspace: string): Scenario
   if (!event) throw new Error('test-engine/index.ts: the keys of an event were not found');
   const kindsType = /export type ScenarioKind = ([^;]*);/.exec(engine);
   if (!kindsType) throw new Error('test-engine/index.ts: ScenarioKind was not found');
-  const keysOf = /const keys = (kind === 'AT'[\s\S]*?: \['kind', 'condition'\]);/.exec(engine);
+  const keysOf = /const keys =\s*(kind === 'AT'[\s\S]*?:\s*\['kind', 'condition'\]);/.exec(engine);
   if (!keysOf) throw new Error('test-engine/index.ts: the keys of each kind were not found');
   const kinds = list(kindsType[1]!).map((kind) => {
     // the branch of the conditional that names the kind

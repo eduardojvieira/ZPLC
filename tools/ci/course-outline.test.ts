@@ -91,7 +91,7 @@ describe('course outline pages (LRN-007)', () => {
       const first = LESSON_INDEX.lessons[0]!;
       const dropped = markdown.split('\n').filter((line) => !line.startsWith(`| \`${first.id}\``)).join('\n');
       expect(outlineProblems(dropped, locale as Locale)).toContain(`${first.id} has no row`);
-      const retimed = markdown.replace(new RegExp(`(\\| \`${first.id}\`[^\\n]*\\| )${first.estimatedMinutes}( \\|)`), '$1999$2');
+      const retimed = markdown.replace(new RegExp(`(\\| \`${first.id}\`[^\\n]*\\| )${first.estimatedMinutes}( *\\|)`), '$1999$2');
       expect(outlineProblems(retimed, locale as Locale).some((problem) => problem.startsWith(`${first.id}: minutes`))).toBe(true);
       expect(outlineProblems(`${markdown}\n| \`invented-lesson\` x | Available | ST | Simulation | - | 1 | - |\n`, locale as Locale)).toContain('invented-lesson is not a lesson');
     });
