@@ -60,7 +60,7 @@ export const actionElement = (id: string): SourceElementId => `action:${encode(i
 
 /** The longest element id a diagnostic may carry across the main process and the window. */
 export const SOURCE_ELEMENT_ID_MAX_CHARS = 256;
-const ELEMENT_ID_FORM = /^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$/;
+const ELEMENT_ID_FORM = new RegExp(String.raw`^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()` + String.raw`-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$`);
 
 /**
  * Whether a value is an element id as the ids above are written: the part before the first `:` names the kind, the ids are

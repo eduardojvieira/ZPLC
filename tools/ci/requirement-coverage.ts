@@ -2,7 +2,7 @@
 //
 //   bun tools/ci/requirement-coverage.ts                 counts per workstream and overall
 //   bun tools/ci/requirement-coverage.ts --list          also the requirements without a passing check, with their titles
-//   bun tools/ci/requirement-coverage.ts --groups        the owning packages with the most requirements still to cover (--top N, default 20)
+//   bun tools/ci/requirement-coverage.ts --groups        the owning packages with the most requirements still to cover (--top N; 20)
 //   bun tools/ci/requirement-coverage.ts --json          everything as JSON
 //   bun tools/ci/requirement-coverage.ts --write         rewrite tools/ci/requirement-evidence.json from the tracked tree
 //   bun tools/ci/requirement-coverage.ts --check         CI: fail when that file is not what --write would produce
@@ -33,6 +33,7 @@ import { parseArgs } from 'node:util';
 
 import { ID_PATTERN, validateIndex, type Requirement } from './generate-requirement-index';
 import { TEST_FILE, type Inventory } from './test-inventory';
+import { flattenConcatenations } from './source-text';
 
 export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware' | 'py-test' | 'decided' | 'gate';
 export interface Check {
@@ -76,9 +77,10 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
 const TITLE = /^[ \t]*(?:describe|describeCases|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
-export function unitChecks(ref: string, text: string): Array<[string, Check]> {
+
+export function unitChecks(ref: string, source: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
-  for (const [, , title = ''] of text.matchAll(TITLE)) {
+  for (const [, , title = ''] of flattenConcatenations(source).matchAll(TITLE)) {
     if (title.includes('${')) continue;
     for (const id of idsOf(title)) found.push([id, { kind: 'unit', ref, test: title, ...(/\bstopgap\b/i.test(title) && { partial: true }) }]);
   }
@@ -119,9 +121,12 @@ export function pythonFilesRunInCi(files: string[], workflows: string[]): Set<st
   return new Set(files.filter((file) => runs.has(file)));
 }
 
+/** One journey declaration, on one line or laid out over several by a formatter, with either quote. */
+export const JOURNEY_DECLARATION = /name: (['"])(.+?)\1,\s*example: (['"])[^'"]*\3,\s*proves: \[([^\]]*)\],\s*partly: \[([^\]]*)\]/g;
+
 export function journeyChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
-  for (const [, name = '', proves = '', partly = ''] of text.matchAll(/name: '([^']+)',\s*example: '[^']*',\s*proves: \[([^\]]*)\],\s*partly: \[([^\]]*)\]/g)) {
+  for (const [, , name = '', , proves = '', partly = ''] of text.matchAll(JOURNEY_DECLARATION)) {
     for (const id of idsOf(proves)) found.push([id, { kind: 'journey', ref, test: name }]);
     for (const id of idsOf(partly)) found.push([id, { kind: 'journey', ref, test: name, partial: true }]);
   }

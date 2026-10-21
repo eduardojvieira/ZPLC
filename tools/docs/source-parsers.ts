@@ -11,6 +11,8 @@
 //   parseScenarioFormat packages/zplc-ide/src/test-engine/index.ts   the fields, kinds and limits of a scenario file
 //   parseProtocol       firmware/apps/posix_host/src/native_runtime_session.c   the request methods and their parameters
 
+import { flattenConcatenations } from '../ci/source-text';
+
 // ---------------------------------------------------------------------------
 // Kconfig
 // ---------------------------------------------------------------------------
@@ -168,8 +170,9 @@ export interface CliCommand { name: string; usage: string }
 export interface CliOption { flags: string; description: string }
 export interface Cli { commands: CliCommand[]; options: CliOption[]; exitCodes: Array<{ code: number; meaning: string }>; footnote: string }
 
-export function parseCli(text: string): Cli {
-  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(`([\s\S]*?)`\);/.exec(text);
+export function parseCli(source: string): Cli {
+  const text = flattenConcatenations(source);
+  const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(\s*`([\s\S]*?)`,?\s*\);/.exec(text);
   if (!help) throw new Error('cli/index.ts: printHelp was not found');
   const lines = help[1]!.replace(/\\n/g, '\n').split('\n');
   const commands: CliCommand[] = [];
@@ -190,7 +193,7 @@ export function parseCli(text: string): Cli {
       if (option) options.push({ flags: option[1]!, description: option[2]! });
     }
   }
-  const accepted = /\[((?:'[a-z-]+',?\s*)+)\]\.includes\(command\)/.exec(text);
+  const accepted = /\[\s*((?:'[a-z-]+',?\s*)+)\]\.includes\(command\)/.exec(text);
   const names = accepted ? [...accepted[1]!.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]!) : [];
   const listed = [...new Set(commands.map((command) => command.name))];
   if (names.length === 0 || names.slice().sort().join() !== listed.slice().sort().join()) {
@@ -219,27 +222,37 @@ export interface McpTool { name: string; title: string; description: string; inp
 export interface McpResource { uri: string; template: boolean }
 export interface Mcp { tools: McpTool[]; resources: McpResource[] }
 
-export function parseMcp(text: string): Mcp {
+export function parseMcp(source: string): Mcp {
+  const text = flattenConcatenations(source);
   const inputs = new Map<string, string[]>();
-  for (const match of text.matchAll(/^const (\w+_INPUT) = z\.object\(\{([\s\S]*?)\}\)\.strict\(\);/gm)) {
-    inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\./g)].map((field) => field[1]!));
+  for (const match of text.matchAll(/^const (\w+_INPUT) = z\s*\.object\(\{([\s\S]*?)\}\)\s*\.strict\(\);/gm)) {
+    inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\s*\./g)].map((field) => field[1]!));
   }
   const annotations = new Map<string, boolean>();
-  for (const match of text.matchAll(/^const (\w+) = \{ readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
-  const tools: McpTool[] = [...text.matchAll(/registerTool\('(\w+)', \{ title: '([^']*)', description: '([^']*)', inputSchema: (\w+), annotations: (\w+) \}/g)].map((match) => {
-    const fields = inputs.get(match[4]!);
-    const readOnly = annotations.get(match[5]!);
-    if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[4]} or ${match[5]}, which the reader does not know`);
-    return { name: match[1]!, title: match[2]!, description: match[3]!, inputs: fields, readOnly };
+  for (const match of text.matchAll(/^const (\w+) = \{\s*readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
+  const registered = new RegExp(
+    String.raw`registerTool\(\s*'(\w+)',\s*\{\s*title: (['"])(.*?)\2,\s*` +
+      String.raw`description: (['"])(.*?)\4,\s*inputSchema: (\w+),\s*annotations: (\w+),?\s*\}`,
+    'g',
+  );
+  const tools: McpTool[] = [...text.matchAll(registered)].map((match) => {
+    const fields = inputs.get(match[6]!);
+    const readOnly = annotations.get(match[7]!);
+    if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[6]} or ${match[7]}, which the reader does not know`);
+    return { name: match[1]!, title: match[3]!, description: match[5]!, inputs: fields, readOnly };
   });
   const declared = /export const MCP_TOOL_NAMES = \[([^\]]*)\]/.exec(text);
   const declaredNames = declared ? [...declared[1]!.matchAll(/'(\w+)'/g)].map((match) => match[1]!) : [];
   if (declaredNames.join() !== tools.map((tool) => tool.name).join()) throw new Error(`mcp/server.ts: MCP_TOOL_NAMES (${declaredNames.join(', ')}) and the registered tools (${tools.map((tool) => tool.name).join(', ')}) differ`);
   const uris = /export const MCP_RESOURCE_URIS = \[([^\]]*)\]/.exec(text);
   const uriList = uris ? [...uris[1]!.matchAll(/'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!) : [];
-  const templates = [...text.matchAll(/template\('[\w-]+', '(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
-  const fixed = [...text.matchAll(/^\s*resource\('(zplc:\/\/[^']+)'/gm)].map((match) => match[1]!);
-  for (const topic of text.matchAll(/for \(const topic of \[([^\]]*)\] as const\) resource\(`(zplc:\/\/[a-z]+)\/\$\{topic\}`/g)) {
+  const templates = [...text.matchAll(/template\(\s*'[\w-]+',\s*'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
+  const fixed = [...text.matchAll(/^\s*resource\(\s*'(zplc:\/\/[^']+)'/gm)].map((match) => match[1]!);
+  const topics = new RegExp(
+    /for \(const topic of \[([^\]]*)\] as const\)\s*/.source + /resource\(\s*`(zplc:\/\/[a-z]+)\/\$\{topic\}`/.source,
+    'g',
+  );
+  for (const topic of text.matchAll(topics)) {
     for (const name of topic[1]!.matchAll(/'(\w+)'/g)) fixed.push(`${topic[2]}/${name[1]}`);
   }
   if (uriList.slice().sort().join() !== fixed.slice().sort().join()) throw new Error(`mcp/server.ts: MCP_RESOURCE_URIS and the registered resources differ (${uriList.join(', ')} against ${fixed.join(', ')})`);
@@ -260,16 +273,16 @@ export interface ScenarioFormat {
 }
 
 export function parseScenarioFormat(engine: string, workspace: string): ScenarioFormat {
-  const top = /exact\(source, hasPlant \? \[([^\]]*)\] : \[([^\]]*)\], 'scenario'\)/.exec(engine);
+  const top = /exact\(\s*source,\s*hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\],\s*'scenario',?\s*\)/.exec(engine);
   if (!top) throw new Error('test-engine/index.ts: the top-level keys of a scenario were not found');
   const list = (text: string) => [...text.matchAll(/'(\w+)'/g)].map((match) => match[1]!);
   const withPlant = list(top[1]!);
   const without = list(top[2]!);
-  const event = /exact\(event, \[([^\]]*)\]/.exec(engine);
+  const event = /exact\(\s*event,\s*\[([^\]]*)\]/.exec(engine);
   if (!event) throw new Error('test-engine/index.ts: the keys of an event were not found');
   const kindsType = /export type ScenarioKind = ([^;]*);/.exec(engine);
   if (!kindsType) throw new Error('test-engine/index.ts: ScenarioKind was not found');
-  const keysOf = /const keys = (kind === 'AT'[\s\S]*?: \['kind', 'condition'\]);/.exec(engine);
+  const keysOf = /const keys =\s*(kind === 'AT'[\s\S]*?:\s*\['kind', 'condition'\]);/.exec(engine);
   if (!keysOf) throw new Error('test-engine/index.ts: the keys of each kind were not found');
   const kinds = list(kindsType[1]!).map((kind) => {
     // the branch of the conditional that names the kind

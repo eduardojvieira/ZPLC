@@ -134,7 +134,8 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
                 <ErrorBoundary region="Editor">
                   <EditorArea />
                 </ErrorBoundary>
-                {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were when it closes. */}
+                {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were
+                    when it closes. */}
                 {learnHomeOpen && <div className="absolute inset-0 z-20"><ErrorBoundary region="Editor"><LearnHome /></ErrorBoundary></div>}
               </main>
             </Panel>

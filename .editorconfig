@@ -1,0 +1,25 @@
+# VF-017: what an editor needs to match the formatters (Prettier and clang-format read their own files).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+max_line_length = 140
+
+[packages/zplc-compiler/**.ts]
+indent_size = 4
+
+[*.md]
+# Markdown keeps a trailing double space as a line break
+trim_trailing_whitespace = false
+max_line_length = off
+
+[*.json]
+max_line_length = off
+
+[{Makefile,*.mk}]
+indent_style = tab

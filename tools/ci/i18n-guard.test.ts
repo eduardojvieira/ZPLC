@@ -95,7 +95,7 @@ describe('UX-029 i18n guard: the catalogs as data', () => {
 
   it('UX-031 fails on an exclamation mark and on an internal term, in either language', () => {
     expect(checkCatalogs({ 'a.hey': 'Saved!', 'a.cand': 'This candidate was built', 'a.link': 'Use Link zplc.json', 'a.stop': 'A stopgap' }, { 'a.hey': 'Guardado', 'a.cand': 'Listo', 'a.link': 'Listo', 'a.stop': 'Listo' }).join('\n'))
-      .toMatch(/English "a.hey" has an exclamation mark[\s\S]*English "a.cand" uses the internal term "candidate"[\s\S]*English "a.link" uses the internal term "link zplc.json"[\s\S]*English "a.stop" uses the internal term "stopgap"/);
+      .toMatch(new RegExp(String.raw`English "a.hey" has an exclamation mark[\s\S]*English "a.cand" uses the internal term "can` + String.raw`didate"[\s\S]*English "a.link" uses the internal term "link zplc.json"[\s\S]*English "a.st` + String.raw`op" uses the internal term "stopgap"`));
     expect(checkCatalogs({ 'a.hey': 'Saved' }, { 'a.hey': '¡Guardado!' }).join('\n')).toContain('Spanish "a.hey" has an exclamation mark');
   });
 
@@ -119,6 +119,12 @@ describe('UX-029 i18n guard: the catalogs as data', () => {
 describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   const module = (name: string): string => `packages/zplc-ide/src/editors/${name}.ts`;
   const found = (text: string, path = module('keyboard')): string[] => violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
+
+  it('UX-029 counts a message that a formatter cut in two as one message (VF-017)', () => {
+    expect(found("const a = { message: 'Program deployed ' + 'and stopped.' };")).toHaveLength(1);
+    expect(found('const a = { message: `Deleted ${n} ` + `elements of the diagram.` };')).toHaveLength(1);
+    expect(found("const a = { message: 'a' + 'b' };")).toHaveLength(0);
+  });
 
   it('UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()', () => {
     expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${n} elements.`']);

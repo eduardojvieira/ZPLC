@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { flattenConcatenations } from '../ci/source-text';
 import { code, fence, outputsOf, prose, ROOT, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
 import { parseCli, parseKconfig, parseMcp, parseProtocol, parseScenarioFormat, parseShellCommands } from './source-parsers';
 
@@ -31,7 +32,8 @@ export const SOURCES = {
   scenarioExample: 'packages/zplc-ide/projects/blinky_st/tests/blinky-st.scenario.json',
 } as const;
 
-const read = (path: string): string => readFileSync(join(ROOT, path), 'utf8');
+// a formatter cuts a long string in two ('a ' + 'b'): the sources are read as if it had not
+const read = (path: string): string => flattenConcatenations(readFileSync(join(ROOT, path), 'utf8'));
 const loc = (text: L10n, lang: Lang) => text[lang];
 const cell = (text: string) => prose(text).replace(/\s+/g, ' ');
 

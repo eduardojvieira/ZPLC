@@ -40,7 +40,9 @@ describe('the signing state of every asset comes from the checks of the run (REL
 
   test('lists each asset with the job that built it and its signing state', () => {
     expect(notes).toContain('| zplc-2.0.0-rc.4-mac-arm64.dmg |');
-    expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; signature verified in this run\. Not notarized/);
+    expect(notes).toMatch(new RegExp(String.raw`\| zplc-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/` +
+        String.raw`example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; ` +
+        String.raw`signature verified in this run\. Not notarized`));
     expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-win-x64-setup-unsigned\.exe \|[^\n]*\| Unsigned\./);
     expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-linux-x64\.deb \|[^\n]*\| Unsigned\.[^\n]*installed and launched in clean containers: passed/);
   });

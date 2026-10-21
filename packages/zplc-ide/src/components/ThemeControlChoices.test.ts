@@ -4,6 +4,7 @@ import { describe, expect, it } from 'bun:test';
 
 import { THEME_CHOICES, chooseTheme } from './ThemeControlChoices';
 import { translate } from '../i18n/translate';
+import { compactSource } from '../i18n/inlineMessages';
 
 describe('theme control choices', () => {
   it('offers Light, Dark and High contrast, once each and in that order', () => {
@@ -28,7 +29,7 @@ describe('theme control choices', () => {
 });
 
 describe('theme control component', () => {
-  const source = readFileSync(join(import.meta.dir, 'ThemeControl.tsx'), 'utf8');
+  const source = compactSource(readFileSync(join(import.meta.dir, 'ThemeControl.tsx'), 'utf8'));
 
   it('is one labelled native select that uses the shared theme hook', () => {
     expect(source).toContain('useTheme');

@@ -108,7 +108,8 @@ void zplc_fault_record_reason_text(const zplc_fault_record_t *record, char *out,
  * bits are read in this order: watchdog, power-on, brown-out, lockup (a fault), software, pin. The watchdog
  * comes first because a part whose power-on flag outlives a later reset (the RP2040) would hide it, and its
  * watchdog flag is cleared by any power-on; power-on comes before the rest because it sets most of the others as
- * well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does not change the cause: the part was reset by
+ * well; the pin comes last because a software or watchdog reset drives the reset line and sets it. A scheduler-fault record does
+ * not change the cause: the part was reset by
  * its watchdog, and the record is reported next to it.
  */
 zplc_reset_cause_t zplc_reset_cause_decide(uint32_t bits, const zplc_fault_record_t *record);

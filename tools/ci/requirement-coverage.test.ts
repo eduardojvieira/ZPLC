@@ -2,8 +2,9 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
+import { JOURNEY_DECLARATION, cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
 import type { Inventory } from './test-inventory';
+import { flattenConcatenations } from './source-text';
 
 const REF = 'packages/zplc-ide/src/a.test.ts';
 
@@ -56,6 +57,15 @@ describe('unitChecks', () => {
   it('marks a stopgap as covering only a leg of the requirement', () => {
     const stopgap = unitChecks(REF, source).find(([id]) => id === 'CMP-036')![1];
     expect(stopgap).toEqual({ kind: 'unit', ref: REF, test: 'RETURN (CMP-036 stopgap)', partial: true });
+  });
+});
+
+describe('a title that a formatter cut in two (VF-017)', () => {
+  it('is one title: the check of a test whose name spans lines names the whole of it', () => {
+    const cut = "it(\n  'CMP-001 a title that is too long for ' +\n    'one line, and the rest of it', () => {});\n";
+    expect(unitChecks('x.test.ts', cut).map(([id, check]) => `${id} ${check.test}`)).toEqual([
+      'CMP-001 CMP-001 a title that is too long for one line, and the rest of it',
+    ]);
   });
 });
 
@@ -144,8 +154,9 @@ describe('journeyChecks', () => {
 describe('journeys.ts', () => {
   it('declares what every journey proves in the form the scanner reads', () => {
     const text = readFileSync(new URL('../../packages/zplc-ide/scripts/journeys.ts', import.meta.url), 'utf8');
-    const journeys = text.match(/^\s+name: '/gm)!.length;
-    const declared = text.match(/name: '[^']+', example: '[^']*', proves: \[[^\]]*\], partly: \[[^\]]*\]/g)!.length;
+    // a journey starts with its name and its example; a project fixture also has a `name:`, and no `example:`
+    const journeys = text.match(/name: (['"]).+?\1,\s*example:/g)!.length;
+    const declared = text.match(JOURNEY_DECLARATION)!.length;
     expect(journeys).toBeGreaterThan(0);
     expect(declared).toBe(journeys);
   });
@@ -292,7 +303,8 @@ describe('the committed evidence (VF-027)', () => {
   it('finds the named test in its file, so that a rename breaks the record loudly', () => {
     const named = (check: Check) => {
       const text = readFileSync(new URL(check.ref, root), 'utf8');
-      if (check.kind !== 'conformance') return text.includes(check.test!);
+      // a formatter cuts a long title into 'a ' + 'b' and pads the cells of a table: compare what a person reads
+      if (check.kind !== 'conformance') return flattenConcatenations(text).replace(/ {2,}/g, ' ').includes(check.test!);
       const { requirement, title } = JSON.parse(text) as { requirement: string; title: string };
       return `${requirement} ${title}` === check.test;
     };

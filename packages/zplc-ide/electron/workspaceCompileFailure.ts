@@ -18,7 +18,7 @@ function safeRelativePath(value: unknown): string | undefined {
  * Repeats `isSourceElementId` of `src/models/sourceElements.ts`: electron/ is compiled apart from src/ and cannot import
  * it. workspaceCompileFailure.test.ts keeps the two equal.
  */
-const ELEMENT_ID_FORM = /^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$/;
+const ELEMENT_ID_FORM = new RegExp(String.raw`^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()` + String.raw`-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$`);
 function safeElement(value: unknown): string | undefined {
   return typeof value === 'string' && value.length <= 256 && ELEMENT_ID_FORM.test(value) ? value : undefined;
 }

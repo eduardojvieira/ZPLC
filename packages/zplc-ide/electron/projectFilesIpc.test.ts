@@ -2,13 +2,14 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compactSource } from '../src/i18n/inlineMessages';
 
 // The channels, the exposed methods and the sender and message checks of the project files are proven by behaviour in
 // ipcRegistry.test.ts and preload.test.ts. What stays here is the wiring that has no stand-in: the revocation of the
 // window folder, the dialog hook and the permission handlers, pinned as text of main.ts until the main process has a
 // renderer-less seam (the VF-008 journeys and the IDE-016 behaviour probes cover them in the real application).
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
-const read = (name: string) => readFileSync(path.join(electronDir, name), 'utf8');
+const read = (name: string) => compactSource(readFileSync(path.join(electronDir, name), 'utf8'));
 const mainSource = read('main.ts');
 
 describe('project files IPC boundary', () => {
@@ -44,7 +45,7 @@ describe('project files IPC boundary', () => {
 
   it('keeps the permission handlers deny-by-default: serial only, and no file system permission anywhere', () => {
     expect(mainSource).toContain("permission === 'serial' && webContents !== null && serialRendererIsCurrent(webContents)");
-    expect(mainSource).toContain('setPermissionRequestHandler((_webContents, _permission, callback) => {\n    callback(false);\n  });');
+    expect(mainSource).toContain('setPermissionRequestHandler((_webContents, _permission, callback) => { callback(false); });');
     for (const name of ['main.ts', 'preload.ts', 'projectFiles.ts', 'projectFilesProtocol.ts']) {
       expect(read(name)).not.toMatch(/fileSystem|file-system|showDirectoryPicker/);
     }

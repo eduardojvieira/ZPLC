@@ -91,7 +91,9 @@ const SLUGS: Record<string, string> = {
   'R_TRIG, F_TRIG, SR, RS': 'edge-detectors-and-bistables',
   'BLINK, PWM, PULSE, HYSTERESIS, DEADBAND, LAG_FILTER, RAMP_REAL, INTEGRAL, DERIVATIVE, PID_Compact, FIFO, LIFO (not in the standard)': 'library-blocks-not-in-the-standard',
   'Communication and cloud blocks (12)': 'communication-and-cloud-blocks',
-  'The 34 implemented operators on a DINT or BOOL accumulator, including function-block calls CAL, CALC and CALCN with named parameters and the returns RET, RETC and RETCN (IDE/src/compiler/il/ilToST.ts:442-484, IDE/src/compiler/il/parser.ts:334, :399-416)': 'implemented-operators',
+  ['The 34 implemented operators on a DINT or BOOL accumulator, including function-block calls CAL, CALC and CALCN ' +
+    'with named parameters and the returns RET, RETC and RETCN (IDE/src/compiler/il/ilToST.ts:442-484, ' +
+    'IDE/src/compiler/il/parser.ts:334, :399-416)']: 'implemented-operators',
   'Typed accumulator; calls of functions (function-block calls exist, above); shifts': 'typed-accumulator-function-calls-and-shifts',
   'LD: normally open and closed contacts; normal, negated, set and reset coils': 'ld-contacts-and-coils',
   'FBD: gates, comparison, arithmetic, selection, timers, counters, triggers, bistables': 'fbd-blocks',

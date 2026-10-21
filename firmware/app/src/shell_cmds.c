@@ -4687,6 +4687,8 @@ static void console_force_end(uint8_t change, uint16_t address, bool changed) {
  * ============================================================================
  */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg_bp,
     SHELL_CMD_ARG(add, NULL, "Add breakpoint: dbg bp add <pc>", cmd_dbg_bp_add, 2, 0),
@@ -4694,8 +4696,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(clear, NULL, "Clear all breakpoints", cmd_dbg_bp_clear),
     SHELL_CMD(list, NULL, "List active breakpoints", cmd_dbg_bp_list),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
 #ifdef CONFIG_ZPLC_SCHEDULER
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg_force,
     SHELL_CMD_ARG(set, NULL, "Set force bytes: dbg force set <addr> <hexbytes>", cmd_dbg_force_set, 3, 0),
@@ -4703,6 +4708,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(clear_all, NULL, "Clear all force entries", cmd_dbg_force_clear_all),
     SHELL_CMD_ARG(list, NULL, "List force entries", cmd_dbg_force_list, 1, 1),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 #endif
 
 #ifdef CONFIG_ZPLC_IO_TRACE
@@ -4828,6 +4834,8 @@ static int cmd_dbg_trace_clear(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg_trace,
     SHELL_CMD_ARG(arm, NULL, "Arm the I/O trace: dbg trace arm <capacity> <in_bytes> <out_bytes>", cmd_dbg_trace_arm, 4, 1),
@@ -4835,8 +4843,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(dump, NULL, "Samples of the I/O trace (JSON): dbg trace dump <from> <count>", cmd_dbg_trace_dump, 3, 1),
     SHELL_CMD_ARG(clear, NULL, "Disarm and empty the I/O trace", cmd_dbg_trace_clear, 1, 1),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 #endif
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg, 
     SHELL_CMD(pause, NULL, "Pause VM execution", cmd_dbg_pause),
@@ -4859,8 +4870,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(trace, &sub_dbg_trace, "Per-scan trace of the I/O images (Learn hardware check)", NULL),
 #endif
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
 #ifdef CONFIG_ZPLC_SCHEDULER
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sched,
     SHELL_CMD_ARG(status, NULL, "Scheduler status", cmd_sched_status, 1, 1),
@@ -4868,7 +4882,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(load, NULL, "Prepare program load: sched load <size>", cmd_sched_load, 2, 0),
     SHELL_CMD_ARG(data, NULL, "Receive program data (hex): sched data <hex>", cmd_sched_data, 2, 0),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sys,
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
@@ -4877,17 +4894,23 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(reset, NULL, "Why the processor was last reset, and the fault it left [--json]", cmd_sys_reset, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 #endif
 
 #ifdef CONFIG_ADC
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_adc,
     SHELL_CMD(temp, NULL, "Read temperature", cmd_adc_temp),
     SHELL_CMD_ARG(read, NULL, "Read ADC", cmd_adc_read, 2, 0),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 #endif
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_hil,
     SHELL_CMD_ARG(mode, NULL, "Set debug mode", cmd_hil_mode, 2, 0),
@@ -4895,8 +4918,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(watch, NULL, "Manage watches", cmd_hil_watch, 2, 2),
     SHELL_CMD(reset, NULL, "Reset VM", cmd_hil_reset),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 #endif
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_config,
     SHELL_CMD(get, NULL, "Show current configuration", cmd_config_get),
@@ -4904,7 +4930,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(save, NULL, "Persist configuration to flash", cmd_config_save),
     SHELL_CMD(reset, NULL, "Reset configuration to defaults", cmd_config_reset),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_cert,
     SHELL_CMD_ARG(begin, NULL, "Begin cert upload: cert begin <ca|client|key> <size>", cmd_cert_begin, 3, 0),
@@ -4913,17 +4942,26 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(erase, NULL, "Erase certificate: cert erase <ca|client|key>", cmd_cert_erase, 2, 0),
     SHELL_CMD(status, NULL, "Show cert presence/size", cmd_cert_status),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_net,
     SHELL_CMD(status, NULL, "Show network status (IP/WiFi)", cmd_net_status),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_wifi,
     SHELL_CMD(connect, NULL, "Connect using stored credentials", cmd_wifi_connect),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_ntp,
     SHELL_CMD_ARG(status, NULL, "Show NTP sync status", cmd_ntp_status, 1, 1),
@@ -4932,6 +4970,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD_ARG(server, NULL, "Set NTP server: ntp server <hostname>", cmd_ntp_server, 2, 0),
     SHELL_CMD(sync, NULL, "Force NTP re-sync now", cmd_ntp_sync),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
 static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **argv)
 {
@@ -5006,19 +5045,27 @@ static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_mqtt,
     SHELL_CMD_ARG(status, NULL, "Show MQTT runtime status", cmd_mqtt_status, 1, 1),
     SHELL_CMD(reset_backoff, NULL, "Reset MQTT reconnect backoff to initial value", cmd_mqtt_reset_backoff),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_comm,
     SHELL_CMD_ARG(map, NULL, "Show communication bindings and Modbus server mappings", cmd_comm_map, 1, 1),
     SHELL_CMD_ARG(set, NULL, "Override a Modbus server mapping", cmd_comm_set, 4, 0),
     SHELL_CMD_ARG(clear, NULL, "Clear a Modbus server mapping override", cmd_comm_clear, 3, 0),
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
+/* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_zplc,
     SHELL_CMD_ARG(load, NULL, "Prepare load", cmd_zplc_load, 2, 0),
@@ -5050,5 +5097,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(hil, &sub_hil, "HIL commands", NULL),
 #endif
     SHELL_SUBCMD_SET_END);
+/* clang-format on */
 
 SHELL_CMD_REGISTER(zplc, &sub_zplc, "ZPLC runtime commands", NULL);

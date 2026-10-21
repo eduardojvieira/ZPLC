@@ -17,7 +17,7 @@ export const PACKAGE_JSON_PATHS = [
 export const COMPILER_VERSION_SOURCE = 'packages/zplc-compiler/src/compiler/debug-map.ts';
 const COMPILER_VERSION_DECLARATION = /(export const COMPILER_VERSION = ')([^']*)(';)/;
 
-const SEMVER_WITH_PRERELEASE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
+const SEMVER_WITH_PRERELEASE = new RegExp(String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` + String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`);
 
 export function isValidReleaseVersion(version: string): boolean {
   return SEMVER_WITH_PRERELEASE.test(version);

@@ -17,7 +17,7 @@ import { edgeSignal } from './fbd/edges/edgeSignal';
  */
 const FIVE = ['true', 'false', 'unknown', 'forced', 'fault'] as const satisfies readonly SignalTone[];
 
-const STOCK_STATE_COLOURS = /--color-accent-green|#22c55e|#ef4444|rgba\(34, 197, 94|(?:text|bg|border|ring|shadow|from|to)-(?:green|red|emerald|rose|lime)-\d|drop-shadow/i;
+const STOCK_STATE_COLOURS = new RegExp(String.raw`--color-accent-green|#22c55e|#ef4444|rgba\(34, 197, 94|(?:text|bg|border|ring|shadow|from|to)-(?:green|red|emerald|` + String.raw`rose|lime)-\d|drop-shadow`, 'i');
 
 const sample = (over: Partial<DebugValueResult> & { forced?: boolean }): DebugValueResult & { forced?: boolean } => ({
   value: false, type: 'BOOL', address: 0, region: null, size: 1, loading: false, exists: true, error: null, ...over,

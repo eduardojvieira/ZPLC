@@ -208,6 +208,40 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           xvfb-run --auto-servernum bun run --cwd packages/zplc-ide smoke:journeys
 
+  format:
+    name: Formatting and line length
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Restore the bun install cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Install dependencies
+        run: |
+          test -f bun.lock
+          bun install --frozen-lockfile
+
+      # VF-017: clang-format output changes between versions, so CI runs the version tools/ci/format.ts requires
+      - name: Install the pinned clang-format
+        run: pipx install clang-format==23.1.3
+
+      - name: Check formatting and line length
+        run: bun run format:check
+
   host-core:
     name: C99 host core
     runs-on: ubuntu-latest

@@ -48,6 +48,7 @@ static void *hil_sink_context = NULL;
 const char *hil_opcode_name(uint8_t op)
 {
     switch (op) {
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): opcode-names. Do not edit. >>> */
     case OP_NOP:          return "NOP";
     case OP_HALT:         return "HALT";
@@ -162,6 +163,7 @@ const char *hil_opcode_name(uint8_t op)
     case OP_COMM_STATUS:  return "COMM_STATUS";
     case OP_COMM_RESET:   return "COMM_RESET";
 /* <<< END GENERATED: opcode-names <<< */
+/* clang-format on */
 
 
     default:           return "???";
@@ -175,6 +177,7 @@ const char *hil_opcode_name(uint8_t op)
 const char *hil_error_name(uint8_t code)
 {
     switch (code) {
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): error-names. Do not edit. >>> */
     case 0x00: return "OK";
     case 0x01: return "STACK_OVERFLOW";
@@ -188,6 +191,7 @@ const char *hil_error_name(uint8_t code)
     case 0x09: return "HALTED";
     case 0x0A: return "PAUSED";
 /* <<< END GENERATED: error-names <<< */
+/* clang-format on */
     default:   return "UNKNOWN";
     }
 }

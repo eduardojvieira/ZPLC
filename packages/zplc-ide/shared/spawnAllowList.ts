@@ -33,7 +33,10 @@ export type SpawnEntry =
   | { kind: 'toolchain-probe'; probe: ToolchainProbe }
   /** The revision of the Zephyr checkout that the user picked. */
   | { kind: 'zephyr-revision'; zephyrBase: string }
-  /** The tool worker (a script of the application, started with no argument by Electron's utility process): compile, safety check, tests. */
+  /**
+   * The tool worker (a script of the application, started with no argument by Electron's utility process): compile,
+   * safety check, tests.
+   */
   | { kind: 'tool-worker'; script: string };
 
 export interface SpawnVector { command: string; args: string[] }

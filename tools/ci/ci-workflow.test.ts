@@ -3,10 +3,12 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
+import { CLANG_FORMAT_VERSION } from './format';
+
 type Step = { name?: string; uses?: string; run?: string; if?: string; with?: Record<string, string> };
 type Workflow = {
   on: Record<string, { branches?: string[] } | null>;
-  jobs: Record<string, { steps: Step[]; strategy?: { matrix: { include: Array<{ id: string; board: string }> } } }>;
+  jobs: Record<string, { 'runs-on'?: string; steps: Step[]; strategy?: { matrix: { include: Array<{ id: string; board: string }> } } }>;
 };
 
 const workflow = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')) as Workflow;
@@ -99,5 +101,22 @@ describe('the package manager cache is restored before the install', () => {
     expect(job.steps[cache]!.uses).toMatch(/^actions\/cache@[0-9a-f]{40}$/);
     expect(String((job.steps[cache]!.with as Record<string, string>).key)).toContain("hashFiles('bun.lock')");
     expect(job.steps[install]!.run).toContain('--frozen-lockfile');
+  });
+});
+
+describe('ci.yml formatting job (VF-017)', () => {
+  const job = workflow.jobs.format;
+
+  it('runs the format check on Linux with the clang-format that tools/ci/format.ts requires', () => {
+    expect(job?.['runs-on']).toBe('ubuntu-latest');
+    const commands = job!.steps.map((step) => step.run ?? '').join('\n');
+    expect(commands).toContain(`pipx install clang-format==${CLANG_FORMAT_VERSION}`);
+    expect(commands).toContain('bun install --frozen-lockfile');
+    expect(commands).toContain('bun run format:check');
+    expect(commands.indexOf('pipx install')).toBeLessThan(commands.indexOf('bun run format:check'));
+  });
+
+  it('runs on every push and pull request, because the workflow does', () => {
+    expect(Object.keys(workflow.on)).toEqual(expect.arrayContaining(['push', 'pull_request']));
   });
 });

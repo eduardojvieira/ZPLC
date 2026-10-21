@@ -107,13 +107,45 @@ export function violationsOf(file: SourceFile): Violation[] {
 /** A sentence or a name the person reads, not an identifier ('first-steps'), a state word ('info') or an upper-case token ('TRUE'). */
 const reads = (text: string): boolean => hasLetters(text) && (/\s/.test(text.trim()) || /^\p{Lu}\p{Ll}/u.test(text.trim()));
 
+/** The outermost `a + b + c` that holds a node, or the node itself. */
+function plusRoot(node: ts.Node): ts.Node {
+  let root = node;
+  while (
+    (ts.isBinaryExpression(root.parent) && root.parent.operatorToken.kind === ts.SyntaxKind.PlusToken) ||
+    ts.isParenthesizedExpression(root.parent)
+  )
+    root = root.parent;
+  return root;
+}
+
 function messageViolations(source: ts.SourceFile, path: string): Violation[] {
   const found: Violation[] = [];
   /** One violation per string, and one per template literal whose pieces read as a sentence together. */
   const check = (expression: ts.Expression): void => {
     const templates = new Set<ts.Node>();
+    // 'a ' + 'b' and `a ${x}` + `b` are one message cut in two (a formatter cuts a long one at a space): it counts once
+    const chains = new Set<ts.Node>();
     for (const item of literalsIn(expression)) {
-      const template = ts.isTemplateSpan(item.parent) ? item.parent.parent : ts.isTemplateExpression(item.parent) ? item.parent : undefined;
+      const owner = ts.isTemplateSpan(item.parent) ? item.parent.parent : ts.isTemplateExpression(item.parent) ? item.parent : item;
+      const root = plusRoot(owner);
+      if (root !== owner) {
+        if (chains.has(root)) continue;
+        chains.add(root);
+        const shown = literalsIn(root as ts.Expression);
+        const parts = new Set<ts.Node>();
+        const joined = shown
+          .map((piece) => {
+            const template = ts.isTemplateSpan(piece.parent) ? piece.parent.parent : ts.isTemplateExpression(piece.parent) ? piece.parent : undefined;
+            if (!template) return textOf(piece);
+            if (parts.has(template)) return '';
+            parts.add(template);
+            return ts.isTemplateExpression(template) ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ') : '';
+          })
+          .join('');
+        if (reads(joined)) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(root.getStart()).line + 1, snippet: root.getText().replace(/\s+/g, ' ').slice(0, 80) });
+        continue;
+      }
+      const template = owner === item ? undefined : owner;
       if (template) { templates.add(template); continue; }
       if (reads(textOf(item))) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1, snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80) });
     }
@@ -291,5 +323,6 @@ if (import.meta.main) {
     console.error(problems.map((problem) => `i18n-guard: ${problem}`).join('\n'));
     process.exit(1);
   }
-  console.log(`i18n-guard: ok (${Object.keys(en).length} keys in both catalogs, ${readOffenders().length} file and rule entries are listed, ${relative(root, LIST_PATH.pathname)})`);
+  const keys = Object.keys(en).length;
+  console.log(`i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(root, LIST_PATH.pathname)})`);
 }

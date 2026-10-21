@@ -67,7 +67,8 @@ static void zplc_modbus_override_load_reset(void)
  * function declared in lfs.h.
  */
 #if !DT_NODE_EXISTS(DT_NODELABEL(zplc_nvs_partition))
-#error "LittleFS formats storage_partition, where the HAL keeps its NVS records on a board without zplc_nvs_partition: give the records a zplc_nvs_partition in the board overlay (IO-008)"
+#error "LittleFS formats storage_partition, where the HAL keeps its NVS records on a board without " \
+    "zplc_nvs_partition: give the records a zplc_nvs_partition in the board overlay (IO-008)"
 #endif
 #define ZPLC_LFS_NODE DT_NODELABEL(storage_partition)
 #define ZPLC_NVS_NODE DT_NODELABEL(zplc_nvs_partition)

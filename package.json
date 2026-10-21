@@ -21,6 +21,9 @@
     "build:ide": "bun run --cwd=packages/zplc-ide build",
     "test:ide": "bun run --cwd=packages/zplc-ide test",
     "lint:ide": "bun run --cwd=packages/zplc-ide lint",
+    "format": "bun tools/ci/format.ts --write",
+    "format:check": "bun tools/ci/format.ts --check",
+    "check:line-length": "bun tools/ci/line-length-guard.ts",
     "typecheck": "bun tools/ci/typecheck.ts",
     "typecheck:hil": "bun run --cwd=packages/zplc-hil typecheck",
     "build:runtime": "cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -DCMAKE_BUILD_TYPE=Release && cmake --build firmware/lib/zplc_core/build --target zplc_runtime --parallel",
@@ -59,6 +62,7 @@
     "fuzz:seed": "bun tools/fuzz/seed-corpus.ts"
   },
   "devDependencies": {
+    "prettier": "3.9.10",
     "typescript": "~5.9.3"
   }
 }

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): comm-kinds. Do not edit. >>> */
 /**
  * @brief Communication function block kind identifiers.
@@ -32,7 +33,9 @@ typedef enum {
   ZPLC_COMM_FB_KIND_MAX = 0x00FF,
 } zplc_comm_fb_kind_t;
 /* <<< END GENERATED: comm-kinds <<< */
+/* clang-format on */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): comm-status. Do not edit. >>> */
 /** @brief Communication status codes written to FB.STATUS. */
 typedef enum {
@@ -50,6 +53,7 @@ typedef enum {
   ZPLC_COMM_UNKNOWN = 0xFF
 } zplc_comm_status_t;
 /* <<< END GENERATED: comm-status <<< */
+/* clang-format on */
 
 /**
  * @brief Size in bytes of the handshake every communication block starts with
@@ -105,6 +109,7 @@ typedef enum {
 typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
                                    uint16_t fb_len, zplc_comm_call_t call);
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): comm-blocks. Do not edit. >>> */
 /**
  * @brief Function-block kinds that have a layout, as an X-macro.
@@ -408,6 +413,7 @@ enum {
   ZPLC_COMM_SPB_REBIRTH_STATUS_OFFSET = 4
 };
 /* <<< END GENERATED: comm-blocks <<< */
+/* clang-format on */
 
 #ifdef __cplusplus
 extern "C" {

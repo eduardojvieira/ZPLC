@@ -36,7 +36,8 @@ export function outlineProblems(markdown: string, locale: Locale): string[] {
   const problems: string[] = [];
   if (paragraphsUnder(markdown, new RegExp(`^## ${why}$`, 'm'))[0] !== LESSON_INDEX.course.rationale[locale]) problems.push(`"${why}" is not the rationale of the course file`);
   // LRN-008: the lesson that introduces each language is the first one, in course order, whose edited program is in it.
-  const table = paragraphsUnder(markdown, new RegExp(`^## ${languages}$`, 'm')).join('\n');
+  // a formatter pads the cells of a table: compare the cells, not the spaces
+  const table = paragraphsUnder(markdown, new RegExp(`^## ${languages}$`, 'm')).join('\n').replace(/ {2,}/g, ' ');
   for (const language of ['ST', 'LD', 'FBD', 'SFC', 'IL']) {
     const introducing = courseOrder(LESSON_INDEX).find((lesson) => getLanguageFromFilename(lesson.starter.program) === language);
     if (!introducing || !table.includes(`| ${language} | \`${introducing.id}\` |`)) problems.push(`"${languages}" does not name ${introducing?.id ?? 'a lesson'} as the lesson that introduces ${language}`);
@@ -90,7 +91,7 @@ describe('course outline pages (LRN-007)', () => {
       const first = LESSON_INDEX.lessons[0]!;
       const dropped = markdown.split('\n').filter((line) => !line.startsWith(`| \`${first.id}\``)).join('\n');
       expect(outlineProblems(dropped, locale as Locale)).toContain(`${first.id} has no row`);
-      const retimed = markdown.replace(new RegExp(`(\\| \`${first.id}\`[^\\n]*\\| )${first.estimatedMinutes}( \\|)`), '$1999$2');
+      const retimed = markdown.replace(new RegExp(`(\\| \`${first.id}\`[^\\n]*\\| )${first.estimatedMinutes}( *\\|)`), '$1999$2');
       expect(outlineProblems(retimed, locale as Locale).some((problem) => problem.startsWith(`${first.id}: minutes`))).toBe(true);
       expect(outlineProblems(`${markdown}\n| \`invented-lesson\` x | Available | ST | Simulation | - | 1 | - |\n`, locale as Locale)).toContain('invented-lesson is not a lesson');
     });

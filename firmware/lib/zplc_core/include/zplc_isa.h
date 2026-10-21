@@ -28,6 +28,7 @@ extern "C" {
  * ============================================================================
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): version. Do not edit. >>> */
 /**
  * @brief Magic number for .zplc files.
@@ -53,6 +54,7 @@ extern "C" {
  */
 #define ZPLC_DRAFT_COUNTER 6U
 /* <<< END GENERATED: version <<< */
+/* clang-format on */
 
 /* ============================================================================
  * Memory Layout Constants
@@ -63,6 +65,7 @@ extern "C" {
  * fixed by the ISA specification.
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): memory. Do not edit. >>> */
 /** @brief Base address of Input Process Image */
 #define ZPLC_MEM_IPI_BASE 0x0000U
@@ -132,6 +135,7 @@ extern "C" {
 #define ZPLC_MAX_BREAKPOINTS 16
 #endif
 /* <<< END GENERATED: memory <<< */
+/* clang-format on */
 
 /* ============================================================================
  * System Information Registers (Reserved IPI Addresses)
@@ -143,6 +147,7 @@ extern "C" {
  * 61131-3).
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): system-registers. Do not edit. >>> */
 /** @brief Offset within IPI for system registers (last 16 bytes) */
 #define ZPLC_SYS_REG_OFFSET 0x0FF0U
@@ -168,6 +173,7 @@ extern "C" {
 /** @brief System flags: Scheduler is running */
 #define ZPLC_SYS_FLAG_RUNNING 0x04
 /* <<< END GENERATED: system-registers <<< */
+/* clang-format on */
 
 /* Bytes 0x0FFA-0x0FFF reserved for future use */
 
@@ -176,6 +182,7 @@ extern "C" {
  * ============================================================================
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): data-types. Do not edit. >>> */
 /**
  * @brief IEC 61131-3 data type identifiers.
@@ -221,6 +228,7 @@ typedef enum {
 #define ZPLC_STRING_DEFAULT_SIZE 80
 #define ZPLC_STRING_MAX_SIZE 255
 /* <<< END GENERATED: data-types <<< */
+/* clang-format on */
 
 /* ============================================================================
  * Opcodes
@@ -232,6 +240,7 @@ typedef enum {
  *   0xC0-0xFF: 32-bit operand (5 bytes total)
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): opcodes. Do not edit. >>> */
 /**
  * @brief VM instruction opcodes.
@@ -513,6 +522,7 @@ typedef enum {
 /** @brief Number of defined opcodes. */
 #define ZPLC_OPCODE_COUNT 112
 /* <<< END GENERATED: opcodes <<< */
+/* clang-format on */
 
 /* ============================================================================
  * Binary File Structures
@@ -536,6 +546,7 @@ typedef enum {
 #warning "Unknown compiler - struct packing may not work correctly"
 #endif
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): container. Do not edit. >>> */
 /**
  * @brief .zplc file header (32 bytes).
@@ -734,6 +745,7 @@ typedef enum {
   ZPLC_TAG_SUBSCRIBE = 3 /**< {subscribe} */
 } zplc_tag_id_t;
 /* <<< END GENERATED: container <<< */
+/* clang-format on */
 
 /* Restore packing for MSVC */
 #if defined(_MSC_VER)
@@ -745,6 +757,7 @@ typedef enum {
  * ============================================================================
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): vm-status. Do not edit. >>> */
 /** @brief VM error codes. */
 typedef enum {
@@ -769,6 +782,7 @@ typedef enum {
   ZPLC_VM_FLAG_NEGATIVE = (1U << 3) /**< Last result was negative */
 } zplc_vm_flags_t;
 /* <<< END GENERATED: vm-status <<< */
+/* clang-format on */
 
 /**
  * @brief VM execution state.
@@ -801,6 +815,7 @@ typedef struct {
  * ============================================================================
  */
 
+/* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): opcode-helpers. Do not edit. >>> */
 /**
  * @brief Get the operand size for an opcode.
@@ -978,6 +993,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   }
 }
 /* <<< END GENERATED: opcode-helpers <<< */
+/* clang-format on */
 
 #ifdef __cplusplus
 }

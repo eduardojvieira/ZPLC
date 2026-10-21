@@ -170,15 +170,16 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         <div className="flex gap-2 pt-2">
           <Button variant="bare"
             onClick={handleSave}
-            className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5 rounded
-                       transition-colors"
+            className="flex-1 bg-[var(--color-accent-blue)] hover:opacity-90 text-[var(--color-on-accent)] text-sm py-1.5
+                       rounded transition-colors"
           >
             {t('toolbar.save.title')}
           </Button>
           <Button variant="bare"
             onClick={onClose}
-            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5 rounded
-                       transition-colors"
+            className="flex-1 bg-[var(--color-surface-700)]
+                       hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] text-sm py-1.5
+                       rounded transition-colors"
           >
             {t('common.cancel')}
           </Button>
@@ -576,8 +577,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             <Button variant="bare"
               onClick={handleAddRung}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text-primary)]
-                         bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded border border-[var(--border-color)]
-                         transition-colors"
+                         bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded border
+                         border-[var(--border-color)] transition-colors"
             >
               <Plus size={14} />
               {t('ld.addRung')}

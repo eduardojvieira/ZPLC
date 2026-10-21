@@ -8,19 +8,20 @@ import { describe, expect, it } from 'bun:test';
 import { learnLessonContentEnV1 } from './learnContent.en.v1';
 import { learnLessonContentEsV1 } from './learnContent.es.v1';
 import * as learnLesson from './learnLesson';
+import { compactSource } from '../i18n/inlineMessages';
 
 describe('Learn panel failures', () => {
   it('shows why the exercise could not be copied, in the panel where the action started, and nothing for a cancelled dialog', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
+    const source = withEnglishMessages(compactSource(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8')));
     expect(source).toContain("const projectOpenError = useIDEStore((state) => state.projectOpenError);");
-    expect(source).toContain("startFailed && projectOpenError && <p role=\"alert\" data-learn-copy-error");
+    expect(source).toMatch(/startFailed && projectOpenError && \(?<p role="alert" data-learn-copy-error/); // a formatter adds the parenthesis
     expect(source).toContain('{projectOpenError}</p>');
   });
 });
 
 describe('Learn panel contract', () => {
   it('selects either canonical example, copies it only through the folder action, and opens Tests without running anything', () => {
-    const source = withEnglishMessages(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8'));
+    const source = withEnglishMessages(compactSource(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8')));
     // The workspace is made or reopened by the Learn state (lessonWorkspace.ts), never by a copy the learner has to run.
     expect(source).toContain('useLearnUi.getState().startLesson(lesson.id)');
     expect(source).not.toContain('copyExampleProjectToFolder');

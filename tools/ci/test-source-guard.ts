@@ -49,7 +49,7 @@ export interface SourceFile { path: string; text: string }
 export interface Pinned { file: string; requirement: string; added: string; reads: string[]; replacement: string; reason: string }
 
 export const ASSEMBLY_TEXT = 'generated assembly text';
-const ASSEMBLY_ASSERTION = /\bexpect\(\s*(?:[\w$.!?[\]()]*?\.)?\w*(?:asm|Asm|assembly|Assembly)\w*\b[^)]*\)\s*\.(?:not\.)?(?:(?:toContain|toMatch|toStartWith|toEndWith)\b|(?:toBe|toEqual)\(\s*[`'"])/;
+const ASSEMBLY_ASSERTION = new RegExp(String.raw`\bexpect\(\s*(?:[\w$.!?[\]()]*?\.)?\w*(?:asm|Asm|assembly|Assembly)\w*\b[^)]*\)\s*\.(?:not\.)?(?:(?:toContain|` + String.raw`toMatch|toStartWith|toEndWith)\b|(?:toBe|toEqual)\(\s*[\`'"])`);
 
 export const REPLACEMENTS = ['behaviour', 'dom', 'artifact', 'contract', 'delete-with-layout'] as const;
 const EXEMPT = /^packages\/zplc-compiler\/src\/assembler\//;

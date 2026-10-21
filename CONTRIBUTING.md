@@ -20,6 +20,7 @@ takes, and how to send the result.
 |---|---|---|
 | [Bun](https://bun.sh) | 1.3.14 (the version CI uses) | Everything TypeScript, and the task runner |
 | CMake and a C99 compiler (gcc or clang) | CMake 3.20 or newer | The C core and the native runtime |
+| clang-format | 23.1.3 exactly (`pipx install clang-format==23.1.3`) | `bun run format` and `format:check`, for the C files only |
 | Python | 3.10 or newer | The generators, validators and the firmware method |
 | Node.js | 20 | The documentation site build and `bun run release:rehearsal` |
 | Zephyr SDK | 1.0.1 | The firmware layer only; `tools/firmware-test/setup.sh` creates the workspace and `west` and tells you when the SDK is missing |
@@ -57,6 +58,8 @@ them.
 | `test:journeys` | Studio end-to-end journeys on the real application |
 | `setup:firmware`, `test:firmware` | Firmware suites on Linux (Zephyr) |
 | `contract:check` | The generated binary contract is in step with its source |
+| `format`, `format:check` | Prettier (TypeScript, JavaScript, CSS, JSON, Markdown) and clang-format (C): write the layout, or check it and the line limit (needs `clang-format` 23.1.3) |
+| `check:line-length` | No hand-written source line is over 140 columns (the last step of `format:check`) |
 | `lint:c` | `clang-tidy` over the core, the POSIX HAL and the host application, every finding an error (needs `clang-tidy`) |
 | `check:test-sources` | No test reads the text of product source or matches generated assembly, except the files listed for replacement |
 | `simulate <project>` | Run a project's scenario tests on the native runtime |
@@ -168,6 +171,41 @@ manifest validators, the repository hygiene audit and the contract check.
 Installers are built by the release workflow; to package Studio on your own
 machine use `bun run --cwd packages/zplc-ide electron:build:linux` (or `:mac`,
 `:win`).
+
+## Formatting and line length
+
+One formatter per language, run by `bun run format` and enforced in CI by the
+`format` job (`bun run format:check`): Prettier for TypeScript, JavaScript, CSS,
+JSON and Markdown, clang-format for C. Their output changes between versions, so
+both are pinned: Prettier as an exact devDependency, clang-format as
+`pipx install clang-format==23.1.3`. The settings are in `.prettierrc.json`,
+`.clang-format` and `.editorconfig`; the style is the one the code already had
+(single quotes, semicolons, two spaces, four in the compiler package, the LLVM
+base for C).
+
+The limit is 140 columns for hand-written source code (TypeScript, JavaScript,
+CSS, C and headers). It was chosen from the line lengths of the tree: 3 per cent
+of the lines were over 140 and 5.7 per cent over 120, and at 120 the formatters
+left 4163 lines that need a hand edit against 1476 at 140. Prettier and
+clang-format wrap code but never a string or a comment, so `format` also runs
+`tools/ci/wrap-long-lines.ts`, which cuts a long string at a space (`'a ' + 'b'`,
+the same value) and re-wraps a long comment; what it cannot cut is reported by
+`bun run check:line-length` and is wrapped by hand.
+
+What the limit does not cover, and why:
+
+- Markdown is formatted (`proseWrap: preserve`, so no paragraph is re-wrapped) but
+  not held to the limit: prose is not source code, and a line break inside a
+  paragraph changes how it reads in a diff, not on the page. The pages of
+  `docs/` are read as MDX, as Docusaurus reads them.
+- JSON is formatted, and is data: a string in it cannot be wrapped.
+- The messages of the interface catalogs (`packages/zplc-ide/src/i18n/`): each is one
+  literal whose type `t()` reads for its `{name}` placeholders.
+- The files a tool writes whole are in `.prettierignore`, each with the generator
+  that owns its bytes. The generated blocks inside a hand-written page or header
+  are left alone as well.
+
+When a change fails `format:check`, run `bun run format` and commit the result.
 
 ## Make a change
 

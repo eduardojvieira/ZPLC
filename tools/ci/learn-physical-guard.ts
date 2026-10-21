@@ -19,8 +19,8 @@ export interface Violation { file: string; line: number; rule: 'device-module' |
 export const isGuarded = (path: string): boolean =>
   /^packages\/zplc-ide\/src\/(?:learn\/.+|components\/[Ll]earn[^/]*)\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path);
 
-const DEVICE_MODULE = /(?:from|import\()\s*['"][^'"]*(?:runtime\/(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|wasmAdapter)|hooks\/useDebugController\w*|components\/(?:deployFlow|deployConfirm|hardwareDeployConfirmation)|uploader\/[^'"]*)['"]/;
-const PHYSICAL_CALL = /\.(?:connect|disconnect|loadProgram|start|stop|pause|resume|step|reset|forceValue|clearForcedValue|clearAllForcedValues|setValue|poke|pokeN|setIPI|setVirtualInput|sendRaw|requestPort|getPorts|enablePassthrough|triggerNetworkBringUp|flash\w*)\s*\(|\bconnectionManager\b|\bnavigator\.serial\b|\bperformHardwareDeploy\b|\buseDebugController\b/;
+const DEVICE_MODULE = new RegExp(String.raw`(?:from|import\()\s*['"][^'"]*(?:runtime\/(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|` + String.raw`wasmAdapter)|hooks\/useDebugController\w*|components\/(?:deployFlow|deployConfirm|hardwareDeployConfirmation)|` + String.raw`uploader\/[^'"]*)['"]`);
+const PHYSICAL_CALL = new RegExp(String.raw`\.(?:connect|disconnect|loadProgram|start|stop|pause|resume|step|reset|forceValue|clearForcedValue|` + String.raw`clearAllForcedValues|setValue|poke|pokeN|setIPI|setVirtualInput|sendRaw|requestPort|getPorts|enablePassthrough|` + String.raw`triggerNetworkBringUp|flash\w*)\s*\(|\bconnectionManager\b|\bnavigator\.serial\b|\bperformHardwareDeploy\b|` + String.raw`\buseDebugController\b`);
 
 export function violationsOf(file: SourceFile): Violation[] {
   return file.text.split('\n').flatMap((text, index): Violation[] => {

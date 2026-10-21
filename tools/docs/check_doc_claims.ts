@@ -118,7 +118,7 @@ export function repoPath(word: string): string | undefined {
   if (/[<>*{}|$=]|\.\.\./.test(word)) return undefined;
   const cleaned = word.replace(/^\.\//, '').replace(/:\d+(?:-\d+)?$/, '').replace(/#.*$/, '').replace(/\/+$/, '');
   const first = cleaned.split('/')[0]!;
-  if (!cleaned.includes('/') && !/^(west\.yml|CMakeLists\.txt|package\.json|bun\.lock|justfile|README\.md|CONTRIBUTING\.md|AGENTS\.md|ARCHITECTURE\.md|VERSIONING\.md|SECURITY\.md|CHANGELOG\.md|LICENSE)$/.test(cleaned)) return undefined;
+  if (!cleaned.includes('/') && !new RegExp(String.raw`^(west\.yml|CMakeLists\.txt|package\.json|bun\.lock|justfile|README\.md|CONTRIBUTING\.md|AGENTS\.md|` + String.raw`ARCHITECTURE\.md|VERSIONING\.md|SECURITY\.md|CHANGELOG\.md|LICENSE)$`).test(cleaned)) return undefined;
   if (cleaned.includes('/') && !TOP_LEVEL.has(first)) return undefined;
   return cleaned;
 }

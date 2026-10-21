@@ -146,7 +146,7 @@
   {
     "file": "packages/zplc-ide/src/runtime/link/firmwareProtocol.ts",
     "rule": "hard-coded-message",
-    "count": 5,
+    "count": 4,
     "requirement": "UX-029",
     "added": "2026-10-19",
     "reason": "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it."

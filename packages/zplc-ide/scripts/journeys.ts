@@ -144,7 +144,7 @@ const modelText = (app: App, name: string) => monacoEval<string | null>(app, `re
 /** `text` with `addition` appended to its first line, as typing it at the end of that line does. */
 const appendToFirstLine = (text: string, addition: string) => text.replace(/^[^\n]*/, (line) => `${line}${addition}`);
 
-const BUILD_RESULT = /Built saved workspace locally: [^\n]*|Canonical workspace build failed|Save changes before building[^\n]*|Build requires a saved folder[^\n]*|Saved workspace (?:compiler is unavailable|could not be opened)[^\n]*/g;
+const BUILD_RESULT = new RegExp(String.raw`Built saved workspace locally: [^\n]*|Canonical workspace build failed|Save changes before building[^\n]*|` + String.raw`Build requires a saved folder[^\n]*|Saved workspace (?:compiler is unavailable|could not be opened)[^\n]*`, 'g');
 type BuildKind = 'built' | 'failed' | 'save-required' | 'unavailable';
 const buildKind = (message: string): BuildKind => message.startsWith('Built') ? 'built' : message.startsWith('Canonical') ? 'failed' : message.startsWith('Save changes') ? 'save-required' : 'unavailable';
 
@@ -4318,7 +4318,11 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(css('[role="toolbar"]')) || undefined);
 
       /** A catalog key shown as it is written (`console.tab.lab`), or one of the English phrases the migrated screens used to hard-code. */
-      const RAW_KEY = String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|terminal|deploy|library|declarationKind|keyboard|sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
+      const RAW_KEY =
+        String.raw`\b(?:console|mqtt|modbus|network|io|controller|lab|toolchain|commtags|project|ld|importArchive|interlock|learn|` +
+        String.raw`toolbarMsg|examples|panel|toolbar|welcome|common|labScene|notices|terminal|deploy|library|declarationKind|keyboard|` +
+        String.raw`sfc|fbd|testDiag|archive|tree|picker|types|signal|store|debugger|link|labPlayback|workbench\.[a-z]+|editors\.[a-z]+|` +
+        String.raw`settings\.(?:communication|firmware|metadata|target|tasks))\.[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*\b`;
       const text = (id: string) => app.eval<string>(`document.getElementById(${JSON.stringify(id)})?.innerText ?? ''`);
       const walk = async (tab: string, expected: string[], english: string[]) => {
         await app.click(css(`#console-tab-${tab}`), `the ${tab} tab`);

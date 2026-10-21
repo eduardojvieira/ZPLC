@@ -48,7 +48,7 @@ describe('bundled typefaces (UX-006)', () => {
   });
 
   it('UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class', () => {
-    expect(readFileSync(join(SRC, 'ui/kit.css'), 'utf8')).toMatch(/\.ui-tabular,\s*\.tnum\s*\{[^}]*tabular-nums[^}]*'tnum' 1/);
+    expect(readFileSync(join(SRC, 'ui/kit.css'), 'utf8')).toMatch(/\.ui-tabular,\s*\.tnum\s*\{[^}]*tabular-nums[^}]*["']tnum["'] 1/);
   });
 });
 
@@ -86,7 +86,7 @@ describe('density applies to the whole application (UX-008)', () => {
 
   it('UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own', () => {
     const kit = readFileSync(join(SRC, 'ui/kit.css'), 'utf8');
-    for (const selector of ['\\.ui-button', '\\.ui-input', '\\.ui-menu-item', '\\.ui-treeitem', '\\.ui-grid th, \\.ui-grid td']) {
+    for (const selector of ['\\.ui-button', '\\.ui-input', '\\.ui-menu-item', '\\.ui-treeitem', '\\.ui-grid th,\\s*\\.ui-grid td']) {
       const rule = kit.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
       expect({ selector, tokenHeight: /(?:min-)?height:\s*var\(--(?:control-height|row-height)/.test(rule) }).toEqual({ selector, tokenHeight: true });
     }

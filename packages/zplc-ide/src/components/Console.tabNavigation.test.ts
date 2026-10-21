@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
-import { withEnglishMessages } from '../i18n/inlineMessages';
+import { compactSource, withEnglishMessages } from '../i18n/inlineMessages';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 
 // Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
 const CONSOLE_MODULES = ['Console.tsx', 'ConsoleReviewPanels.tsx', 'LiveNativeMotorControls.tsx', 'WorkspaceTestResult.tsx'];
-const consoleSources = (): string => CONSOLE_MODULES.map((file) => readFileSync(join(import.meta.dir, file), 'utf8')).join('\n');
+const consoleSources = (): string => CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
 
 describe('Console tab boundary', () => {
   it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
@@ -126,7 +126,7 @@ describe('Console tab boundary', () => {
   it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
     const source = withEnglishMessages(consoleSources());
     expect(source).toContain("id: 'interlocks'");
-    expect(source).toContain("activeConsoleTab === 'interlocks' && <InterlockCoverage");
+    expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlockCoverage/); // a formatter adds the parenthesis
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
     expect(source).toContain('presentWorkspaceSafetyCheck(result)');
     expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
