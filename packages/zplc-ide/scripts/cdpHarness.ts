@@ -69,6 +69,10 @@ export class Cdp {
   #pending = new Map<number, { resolve(value: unknown): void; reject(error: Error): void }>();
   /** Page exceptions, console errors and browser log errors (a blocked script or a content security policy violation among them). */
   readonly errors: string[] = [];
+  readonly #handlers = new Map<string, Array<(params: unknown) => void>>();
+
+  /** Calls `handler` with the parameters of every DevTools event called `method` (a binding the page calls, for one). */
+  on(method: string, handler: (params: unknown) => void): void { this.#handlers.set(method, [...(this.#handlers.get(method) ?? []), handler]); }
 
   private constructor(socket: WebSocket) {
     this.#socket = socket;
@@ -82,6 +86,7 @@ export class Cdp {
         else pending.resolve(message.result);
         return;
       }
+      if (message.method) for (const handler of this.#handlers.get(message.method) ?? []) handler(message.params);
       if (message.method === 'Runtime.exceptionThrown') this.errors.push(message.params?.exceptionDetails?.exception?.description ?? message.params?.exceptionDetails?.text ?? 'Runtime exception');
       if (message.method === 'Log.entryAdded' && message.params?.entry?.level === 'error') this.errors.push(message.params.entry.text ?? 'Browser log error');
       if (message.method === 'Runtime.consoleAPICalled' && message.params?.type === 'error') this.errors.push(message.params.args?.map((arg) => String(arg.value ?? arg.description ?? '')).join(' ') || 'console.error');
