@@ -66,50 +66,6 @@ static inline uint16_t zplc_get_u16_le(const uint8_t *p);
 | --- | --- | --- |
 | `p` | `const uint8_t *` | — |
 
-#### `zplc_get_u32_le`
-
-```c
-static inline uint32_t zplc_get_u32_le(const uint8_t *p);
-```
-
-**Source summary:** No summary found in the header comment.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `p` | `const uint8_t *` | — |
-
-#### `zplc_put_u16_le`
-
-```c
-static inline void zplc_put_u16_le(uint8_t *p, uint16_t value);
-```
-
-**Source summary:** No summary found in the header comment.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `p` | `uint8_t *` | — |
-| `value` | `uint16_t` | — |
-
-#### `zplc_put_u32_le`
-
-```c
-static inline void zplc_put_u32_le(uint8_t *p, uint32_t value);
-```
-
-**Source summary:** No summary found in the header comment.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `p` | `uint8_t *` | — |
-| `value` | `uint32_t` | — |
-
 ### Types
 
 None.
@@ -314,147 +270,6 @@ A handler result for a failure of the platform, as a -errno or a zplc_comm_statu
 | --- | --- | --- |
 | `error` | `int` | — |
 
-#### `zplc_comm_req_claim`
-
-```c
-static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms);
-```
-
-**Source summary:** Take a free slot for a request of the block `owner` (scan side).
-
-A slot that this block still holds is let go first: a request in flight is abandoned, a finished one is freed. A request therefore never sees the result of an earlier one. Returns NULL when every slot is taken: the block reports ZPLC_COMM_QUEUE_FULL (COM-008).
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `owner` | `const void *` | — |
-| `now_ms` | `uint32_t` | — |
-
-#### `zplc_comm_req_submit`
-
-```c
-static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
-```
-
-**Source summary:** The slot is filled in: hand it to the worker (scan side).
-
-The slot is filled in: hand it to the worker (scan side).
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `slot` | `zplc_comm_req_t *` | — |
-
-#### `zplc_comm_req_cancel`
-
-```c
-static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
-```
-
-**Source summary:** The request could not be queued after all: give the slot back (scan side).
-
-The request could not be queued after all: give the slot back (scan side).
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `slot` | `zplc_comm_req_t *` | — |
-
-#### `zplc_comm_req_begin`
-
-```c
-static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
-```
-
-**Source summary:** The worker takes the request (worker side).
-
-Returns 1 when the request is to be run. Returns 0 when its block let go of it while it waited: the slot is free again and nothing is sent.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `slot` | `zplc_comm_req_t *` | — |
-
-#### `zplc_comm_req_finish`
-
-```c
-static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot, int result);
-```
-
-**Source summary:** The worker is through (worker side).
-
-The result is kept for the block, or dropped, and the slot freed, when the block let go of the request while it ran.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `slot` | `zplc_comm_req_t *` | — |
-| `result` | `int` | — |
-
-#### `zplc_comm_req_peek`
-
-```c
-static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms, uint32_t timeout_ms, zplc_comm_req_t **slot);
-```
-
-**Source summary:** Where the request of a block stands (scan side).
-
-Returns ZPLC_COMM_HANDLER_PENDING while the request is queued or running and younger than `timeout_ms`; ZPLC_COMM_HANDLER_DONE with *slot set when it finished (the caller reads the outputs from the slot and then calls zplc_comm_req_release); ZPLC_COMM_HANDLER_FAIL(...) when it failed (the slot is freed here). A request older than the timeout is abandoned and reported as ZPLC_COMM_TIMEOUT: its late result is dropped, not replayed (COM-018). A block that has no request, which is the case of a block that was BUSY across a program reload, is reported as ZPLC_COMM_UNKNOWN.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `owner` | `const void *` | — |
-| `now_ms` | `uint32_t` | — |
-| `timeout_ms` | `uint32_t` | — |
-| `slot` | `zplc_comm_req_t **` | — |
-
-#### `zplc_comm_req_release`
-
-```c
-static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot);
-```
-
-**Source summary:** The block has read the result: free the slot (scan side).
-
-The block has read the result: free the slot (scan side).
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `slot` | `zplc_comm_req_t *` | — |
-
-#### `zplc_comm_req_abort`
-
-```c
-static inline void zplc_comm_req_abort(const zplc_comm_req_pool_t *pool, const void *owner);
-```
-
-**Source summary:** The block is reset, or its program is going away (scan side).
-
-A request in flight is abandoned, a finished one freed. Nothing the worker is using is released before the worker is through with it (COM-008).
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `pool` | `const zplc_comm_req_pool_t *` | — |
-| `owner` | `const void *` | — |
-
 ### Types
 
 | Name | Kind | Source summary |
@@ -500,7 +315,7 @@ Zeros IPI, OPI, Work, and Retain memory. Call once at system startup, before cre
 #### `zplc_mem_get_region`
 
 ```c
-uint8_t* zplc_mem_get_region(uint16_t base);
+uint8_t *zplc_mem_get_region(uint16_t base);
 ```
 
 **Source summary:** Get pointer to shared memory region.
@@ -516,7 +331,7 @@ uint8_t* zplc_mem_get_region(uint16_t base);
 #### `zplc_mem_get_code`
 
 ```c
-const uint8_t* zplc_mem_get_code(uint16_t offset, size_t size);
+const uint8_t *zplc_mem_get_code(uint16_t offset, size_t size);
 ```
 
 **Source summary:** Get pointer to code segment.
@@ -1188,7 +1003,7 @@ uint16_t zplc_core_get_tag_count(void);
 #### `zplc_core_get_tag`
 
 ```c
-const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index);
+const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index);
 ```
 
 **Source summary:** Get a variable tag by index.
@@ -1204,7 +1019,7 @@ const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index);
 #### `zplc_core_version`
 
 ```c
-const char* zplc_core_version(void);
+const char *zplc_core_version(void);
 ```
 
 **Source summary:** Get the ZPLC core version string.
@@ -1389,7 +1204,7 @@ int zplc_core_run_cycle(void);
 #### `zplc_core_get_state`
 
 ```c
-const zplc_vm_state_t* zplc_core_get_state(void);
+const zplc_vm_state_t *zplc_core_get_state(void);
 ```
 
 **Source summary:** Get a read-only pointer to the default VM state.
@@ -1535,7 +1350,7 @@ uint32_t zplc_core_get_opi(uint16_t offset);
 #### `zplc_core_get_default_vm`
 
 ```c
-zplc_vm_t* zplc_core_get_default_vm(void);
+zplc_vm_t *zplc_core_get_default_vm(void);
 ```
 
 **Source summary:** Get pointer to default VM instance.
@@ -1588,38 +1403,6 @@ static inline uint16_t zplc_task_get_entry(const zplc_task_def_t *task);
 | `task` | `const zplc_task_def_t *` | Pointer to task definition |
 
 **Source return value:** Entry point offset in code segment
-
-#### `zplc_task_get_interval_us`
-
-```c
-static inline uint32_t zplc_task_get_interval_us(const zplc_task_def_t *task);
-```
-
-**Source summary:** Get interval in microseconds for a task.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `task` | `const zplc_task_def_t *` | Pointer to task definition |
-
-**Source return value:** Interval in microseconds
-
-#### `zplc_task_get_priority`
-
-```c
-static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task);
-```
-
-**Source summary:** Get priority for a task.
-
-**Parameters**
-
-| Name | Type | Source description |
-| --- | --- | --- |
-| `task` | `const zplc_task_def_t *` | Pointer to task definition |
-
-**Source return value:** Priority (0 = highest)
 
 ### Types
 
@@ -3350,7 +3133,7 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_VERIFY_MAX_DEPTH` | `127` | — |
 | `ZPLC_VERIFY_FRAME_BYTES` | `7U` | — |
 | `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
-| `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + \\ 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + \\ 2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + \\ ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
+| `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + 2U * ZPLC_VERIFY_MAX_LEADERS + \\ (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
 
 ## `zplc_program_store.h`
 
@@ -3423,7 +3206,7 @@ int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pst
 #### `zplc_pstore_restore`
 
 ```c
-zplc_program_store_restore_t zplc_pstore_restore( const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
+zplc_program_store_restore_t zplc_pstore_restore(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
 ```
 
 **Source summary:** Find the program to run after a reset.
@@ -3473,9 +3256,9 @@ The program of the first firmware was read and admitted into @p workspace by the
 | --- | --- | --- |
 | `ZPLC_CORE_PROGRAM_STORE_H` | `—` | — |
 | `ZPLC_PROGRAM_STORE_FOOTER_SIZE` | `8U` | Bytes after the artifact in a payload: "ZPE1" and the artifact length. |
-| `ZPLC_PROGRAM_STORE_MAX_CHUNKS` | `\\ ((ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE + \\ ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) / \\ ZPLC_PROGRAM_STORE_CHUNK_SIZE)` | Keys a payload of the largest artifact is stored under, per slot. |
+| `ZPLC_PROGRAM_STORE_MAX_CHUNKS` | `\\ ((ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) / \\ ZPLC_PROGRAM_STORE_CHUNK_SIZE)` | Keys a payload of the largest artifact is stored under, per slot. |
 | `ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD` | `64U` | Backend bytes one stored entry takes beyond its data: the entry header and the padding to the write block. An engineering estimate used by the build-time capacity rule of the Zephyr HAL. |
-| `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * \\ (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
+| `ZPLC_PROGRAM_STORE_WORST_CASE_BYTES` | `\\ (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) + \\ 3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))` | Storage, in bytes, the two slots of the largest artifact and their records take, worst case. |
 | `ZPLC_PROGRAM_STORE_KEY_MAX` | `40U` | The longest key the store uses, with its terminator. |
 | `ZPLC_PSTORE_ROLLBACK_NONE` | `0U` | What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". |
 | `ZPLC_PSTORE_ROLLBACK_SLOT` | `1U` | — |
@@ -3675,7 +3458,6 @@ Discards noise, assembles candidates and calls @p on_frame for each frame whose 
 | `ZPLC_PROTO_H` | `—` | — |
 | `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `CONFIG_ZPLC_PROTO_PAYLOAD_MAX` | — |
 | `ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED` | `ZPLC_PROTO_PAYLOAD_MAX_DEFAULT` | — |
-| `ZPLC_PROTO_FRAME_MAX` | `\\ (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)` | Bytes of the largest frame: header, payload, code and checksum. |
 
 ## `zplc_proto_dev.h`
 

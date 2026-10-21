@@ -78,6 +78,19 @@
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"},
     {"kind":"unit","ref":"tools/ci/workflow-triggers.test.ts","test":"every scheduled workflow can be re-run by hand and tells somebody when a scheduled run fails","partial":true,"note":"nightly-quality.yml has a manual trigger and a job that opens or updates an issue when a scheduled run fails; a recorded successful scheduled run, and a green default branch, need hosted runs (D-12: schedules run only from the default branch)"}
   ],
+  "VF-017": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml formatting job (VF-017)"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 counts a message that a formatter cut in two as one message (VF-017)"},
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"adoptOffenders (IDE-014, VF-017)"},
+    {"kind":"unit","ref":"tools/ci/line-length-guard.test.ts","test":"VF-017 formatter file selection"},
+    {"kind":"unit","ref":"tools/ci/line-length-guard.test.ts","test":"VF-017 line-length guard: the repository"},
+    {"kind":"unit","ref":"tools/ci/line-length-guard.test.ts","test":"VF-017 line-length guard: the scanner"},
+    {"kind":"unit","ref":"tools/ci/line-length-guard.test.ts","test":"VF-017 the formatter is pinned and enforced in CI"},
+    {"kind":"unit","ref":"tools/ci/requirement-coverage.test.ts","test":"a title that a formatter cut in two (VF-017)"},
+    {"kind":"unit","ref":"tools/ci/wrap-long-lines.test.ts","test":"VF-017 wrap-long-lines: comments"},
+    {"kind":"unit","ref":"tools/ci/wrap-long-lines.test.ts","test":"VF-017 wrap-long-lines: strings"},
+    {"kind":"unit","ref":"tools/ci/wrap-long-lines.test.ts","test":"VF-017 wrap-long-lines: words"}
+  ],
   "VF-018": [
     {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build; the Zephyr pass was run locally on the Arduino Opta build (core and HAL clean, firmware/app 24 findings within its baseline, none a defect), not in a hosted run"}
   ],
@@ -2054,6 +2067,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28l A running Ladder keeps the window responsive","partial":true}
   ],
   "IDE-014": [
+    {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"adoptOffenders (IDE-014, VF-017)"},
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size (IDE-014): a hand-written module has at most the limit of lines"}
   ],
   "IDE-015": [
@@ -2297,8 +2311,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 declares the compact value of every density token in one block that the root element selects"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"density applies to the whole application (UX-008)"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"55 The density setting makes controls and rows smaller on every screen, and the setting is one the person reaches from the Welcome screen"}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"41 The component kit behaves from the keyboard in a real window","partial":true}
   ],
   "UX-009": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx","test":"Watch and force (CMP-054, IDE-019, UX-009) in a DOM"},
@@ -2660,6 +2673,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/exampleCatalog.test.ts","test":"UX-029 the examples read their title and summary from the catalogs"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 --write lowers counts and drops entries, and never raises a count"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 counts a message of a plain module against the list of offenders"},
+    {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 counts a message that a formatter cut in two as one message (VF-017)"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders"},
     {"kind":"unit","ref":"tools/ci/i18n-guard.test.ts","test":"UX-029 finds JSX text with letters, a literal shown as a child and a template shown as a child"},
@@ -2879,7 +2893,7 @@
   ],
   "LRN-017": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/Faceplate.test.tsx","test":"the live I/O faceplate (LRN-017)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person\\'s control, not the agent\\'s (LRN-017, AGENTS rule 7)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"has no tool that sets a simulation input or writes memory: the faceplate is the person's control, not the agent's (LRN-017, "},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"a push button on the faceplate (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"an input change that waits for the next scan (LRN-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/faceplateState.test.ts","test":"sending the changes of one control (LRN-017)"},
@@ -2965,7 +2979,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 finds each scenario input event at the first sample, after the previous one, that holds what the event sets"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 holds a reaction exactly at the tolerance and refuses one a sample beyond it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 is deterministic: the same trace and tolerances give the same result"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes a program whose outputs follow the learner\\'s presses within the lesson tolerance, however late the presses were"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes a program whose outputs follow the learner's presses within the lesson tolerance, however late the presses "},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes blinky-ladder-timer-feedback from the start of the run, and not from the middle of it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes verify-my-board on a trace whose time 0 is the first scan after Run, at the device-trace tolerance"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareCheck.test.ts","test":"LRN-024 passes verify-my-board when a person presses and releases the button at times of their own, with scan jitter"},
@@ -3557,7 +3571,7 @@
   ],
   "DOC-018": [
     {"kind":"unit","ref":"tools/docs/docs_search.test.ts","test":"docs site: full-text search, offline, in English and Spanish (DOC-018)","note":"the site config lists the local search theme for en and es and no hosted search; the check after the site build (bun tools/docs/check-docs-search.ts, run by bun run check:docs) fails when the build holds no search index for a locale"},
-    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator\\'s own syntax and no version selector for one version (DOC-018)"},
+    {"kind":"unit","ref":"tools/docs/docs_structure.test.ts","test":"docs site: admonitions in the generator's own syntax and no version selector for one version (DOC-018)"},
     {"kind":"unit","ref":"tools/docs/repository_hygiene.test.ts","test":"docs site: an image file is the format its name says (DOC-018)"}
   ],
   "DOC-020": [

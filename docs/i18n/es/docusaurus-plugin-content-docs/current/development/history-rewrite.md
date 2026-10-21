@@ -91,10 +91,10 @@ archivos sin seguimiento; bórrelos si no los necesita.
 
 ## Para el mantenedor
 
-Ejecute la herramienta desde la raíz del repositorio, en el checkout principal,
+Ejecute la herramienta desde la raíz del repositorio, en la copia de trabajo principal,
 cuando todas las demás ramas estén integradas y todos los worktrees estén
-limpios (el único cambio tolerado es `.atl/skill-registry.md` en el checkout
-principal):
+limpios (el único cambio tolerado es `.atl/skill-registry.md` en la copia de
+trabajo principal):
 
 ```bash
 tools/history/rewrite-history.sh --rehearse ~/.cache/zplc-history/rehearsal   # una copia; no cambia nada real
