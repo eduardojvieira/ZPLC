@@ -2,13 +2,10 @@ import { describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { getToolboxItems } from '../../models/ld';
+import { projectLoaderStub } from '../../test/projectLoaderStub';
 
 // The project blocks come from the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../../utils/projectLoader', () => projectLoaderStub());
 const { default: LDToolbox } = await import('./LDToolbox');
 
 describe('the Ladder toolbox (LNG-012) on the component kit', () => {

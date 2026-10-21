@@ -3,13 +3,10 @@ import { join } from 'node:path';
 import { describe, expect, it, mock } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The hook module imports the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { describeBreakpointHit } = await import('./useDebugController');
 
 const DEBUG_MAP: DebugMap = {

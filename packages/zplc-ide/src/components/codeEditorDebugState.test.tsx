@@ -3,13 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { translatorFor } from '../i18n';
 import { presentConnection } from './connectionPresentation';
 import { presentOperationalStatus } from './operationalStatusPresentation';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The status bar reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { OperationalStatusView } = await import('./OperationalStatusBar');
 
 const { t } = translatorFor('en');

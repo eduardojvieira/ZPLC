@@ -4,13 +4,10 @@ import { join } from 'node:path';
 
 import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../compiler';
 import type { ProjectFileWithHandle } from '../types';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The store imports the bundled-example loader, which only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { useIDEStore } = await import('../store/useIDEStore');
 const { elementBreakpointsOf, reconcileElementBreakpoints, toggleElementBreakpoint } = await import('./elementBreakpoints');
 

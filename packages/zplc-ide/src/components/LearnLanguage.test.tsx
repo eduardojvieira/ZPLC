@@ -3,15 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { useAppSettings } from '../store/useAppSettings';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The Learn home reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
 // The mock offers the same three exports as the other tests that mock the loader: in one test process the first mock of a
 // module fixes its exports, so a mock with more names would not load after theirs (the Learn panel needs a fourth one).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { LearnHome } = await import('./LearnHome');
 
 const setLanguage = (language: 'auto' | 'en' | 'es') => useAppSettings.getState().update({ language });

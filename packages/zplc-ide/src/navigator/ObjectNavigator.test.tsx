@@ -4,13 +4,10 @@ import { auditMarkup } from '../ui/audit';
 import { buildNavigatorGroups } from './navigatorGroups';
 import { navigatorWords } from './navigatorWords';
 import { translatorFor } from '../i18n';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The navigator reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { ObjectNavigatorView } = await import('./ObjectNavigator');
 
 const words = navigatorWords(translatorFor('en'));

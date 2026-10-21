@@ -13,13 +13,10 @@ import { es } from './es';
 import { currentLocale, t, tn, translatorFor, useT } from './index';
 import { resolveLanguage } from './locale';
 import { format, translate } from './translate';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The theme control reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { AppPreferences } = await import('../components/settings/AppPreferences');
 
 const setLanguage = (language: 'auto' | 'en' | 'es') => useAppSettings.getState().update({ language });

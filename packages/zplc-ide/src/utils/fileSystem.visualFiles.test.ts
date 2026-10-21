@@ -16,9 +16,12 @@ import {
 } from '../types';
 import { FileNameTakenError, listTaskPrograms, loadFileFromTree, openDirectoryPicker, readDirectoryRecursive } from './fileSystem';
 import { resolveProgramSource } from './programSourceResolution';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The store imports the bundled-example loader, which only exists under Vite (import.meta.glob); New File never touches it.
-await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('./projectLoader', () =>
+  projectLoaderStub({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }),
+);
 const { useIDEStore } = await import('../store/useIDEStore');
 
 /**

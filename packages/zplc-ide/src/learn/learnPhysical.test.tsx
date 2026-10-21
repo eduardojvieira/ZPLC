@@ -13,14 +13,10 @@ import type { DeviceTrace } from '../runtime/deviceTrace';
 import { evaluateHardwareTrace } from './hardwareCheck';
 import { recordHardwareTrace } from './hardwareRecorder';
 import { useLearnBoard } from './learnBoard';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The store imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-  getFileContent: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { connectionManager } = await import('../runtime/connectionManager');
 const { useAppSettings } = await import('../store/useAppSettings');
 const { useIDEStore } = await import('../store/useIDEStore');

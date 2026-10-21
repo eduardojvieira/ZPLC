@@ -9,14 +9,10 @@ import { LEARNER_KIT, learnerBoardOf } from '../learn/learnerBoards';
 import type { BoardCheckStep } from '../learn/boardCheck';
 import { auditMarkup } from '../ui/audit';
 import type { LearnBoardCheckViewProps } from './LearnBoardCheck';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The check reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-  getFileContent: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { LearnBoardCheckView } = await import('./LearnBoardCheck');
 const { LearnBoardLessonView } = await import('./LearnBoardLesson');
 

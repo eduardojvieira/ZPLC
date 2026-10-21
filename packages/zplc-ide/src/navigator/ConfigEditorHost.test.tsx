@@ -2,13 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ZPLCProjectConfig } from '../types';
 import { CONFIG_EDITOR_KINDS, type ConfigEditorKind } from './configEditors';
+import { projectLoaderStub } from '../test/projectLoaderStub';
 
 // The editors reach the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({
-  getAvailableProjects: () => [],
-  loadProject: () => null,
-  loadProjectAssets: () => null,
-}));
+await mock.module('../utils/projectLoader', () => projectLoaderStub());
 const { ConfigEditorBody } = await import('./ConfigEditorHost');
 const { CONFIG_EDITOR_SECTIONS } = await import('./configEditorSections');
 const { CommunicationSection } = await import('../components/settings/CommunicationSection');
