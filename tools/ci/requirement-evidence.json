@@ -963,12 +963,17 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
   ],
   "LNG-001": [
-    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","partial":true,"note":"the table on the Languages page (EN and ES) is generated from tools/docs/language-capabilities.json: each of the 40 cells names a journey, a native-runtime test or a conformance case that must exist, or says only a board can show it (deploy); no cell is left as not tested end to end, and the committed pages are drift-checked by this test. The pass state of each named check comes from the CI job that runs it, not from this test."},
+    {"kind":"unit","ref":"tools/docs/generate_language_capabilities.test.ts","test":"LNG-001 language capability table: one row per language and capability, from named tests","note":"the table on the Languages page (EN and ES) is generated from tools/docs/language-capabilities.json: each of the 40 cells names a journey of the ZPLC application that must exist, and the generator refuses an empty cell, a board-only cell, a unit test and a conformance case. Build, simulate and deploy of each language name the chain journey 64a to 64e, which creates a program, edits, saves, reopens, builds, simulates, steps, watches, then clicks Deploy against the native runtime behind the shell of an emulated board and watches the value change there; no physical board is involved. The pass state of each named journey comes from the CI job that runs them, not from this test."},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54 Instruction List is edited, saved and reopened","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64a Structured Text from a new project to a deployed program that is watched"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64b Instruction List from a new project to a deployed program that is watched"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64c Ladder Diagram from a new project to a deployed program that is watched"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64d Function Block Diagram from a new project to a deployed program that is watched"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64e Sequential Function Chart from a new project to a deployed program that is watched"}
   ],
   "LNG-002": [
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-en-input-is-rejected.expect.json","test":"LNG-002 an FBD connection to an EN input is rejected naming the block"},

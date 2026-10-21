@@ -18,11 +18,14 @@ import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
+import { attachEmulatedDevice } from './emulatedDevice';
 
 export interface JourneyContext {
   root: string;
   /** A fresh folder holding a copy of the journey's example. */
   project: string;
+  /** The native runtime binary of the run, for a journey that starts a device of its own. */
+  runtime: string;
   /** Closes the app and starts it again on the same user-data directory, as a user restarting it would. */
   relaunch(): Promise<App>;
   /** Kills the app process with SIGKILL, as a crash or a power loss would (no close prompt, no shutdown), and starts it again on the same user-data directory. */
@@ -183,6 +186,12 @@ async function answerSearchList(app: App, text: string, choice?: string): Promis
   if (choice) await app.until(`${choice} among the choices`, async () => await app.visible(css(`[data-picker-item="${choice}"]`)) || undefined);
   await app.press('Enter');
   await app.until('the search list to close', async () => !(await app.visible(searchList)) || undefined);
+}
+
+/** What the Problems panel lists after a failed build. */
+async function problemsText(app: App): Promise<string> {
+  await app.click(tab('Problems'));
+  return await app.eval<string>(`(document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? '').replace(/\\s+/g, ' ').slice(0, 700)`);
 }
 
 /** Open the Problems panel and activate its first entry with a real click. */
@@ -560,6 +569,179 @@ export async function runPackagedSecurityProbes(executable: string, scratch: str
 const EDIT = ' (* journey edit: ñ 温度 *)';
 /** Line 1 of an Instruction List example opens a block comment, so the typed text stays inside it (no comment delimiters of its own). */
 const IL_EDIT = ' journey edit: ñ 温度';
+
+// ---------------------------------------------------------------------------------------------------------------------
+// LNG-001: one chain per language, from a new project to a deployed program that is watched
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** What differs between the five chains: the file, the edit a person makes to it, and the sign that the saved edit came back. */
+interface ChainSpec {
+  /** The label of the language in the New project dialog. */
+  language: string;
+  /** The first program the New project dialog makes in that language. */
+  created: string;
+  /** The program of the example that is edited, built, simulated and deployed. */
+  file: string;
+  /** Opens `file`, makes the edit with the keyboard and saves it; returns what `persisted` compares after the project is opened again. */
+  edit(app: App, project: string): Promise<() => Promise<boolean>>;
+}
+const CHAIN_BOARD = 'rpi_pico';
+const CHAIN_WATCHED = 'LED_Output';
+
+/** The text editors: a typed sentence at the end of line 1, which opens a block comment in both examples (so it carries no delimiters). */
+const textEdit = (file: string, typed: string): ChainSpec['edit'] => async (app, project) => {
+  const path = join(project, file); const original = disk(path);
+  await openFile(app, file);
+  await cursorAtEndOfLine(app, 1);
+  await app.type(typed);
+  const edited = original.replace(/^[^\n]*/, (first) => `${first}${typed}`);
+  await app.until('the editor to hold the typed text', async () => await editorText(app) === edited.replace(/\r\n/g, '\n') || undefined);
+  assert(disk(path) === original, 'Typing alone must not write the file.');
+  await app.click(saveButton, 'the Save button');
+  await app.until('the edited file on disk', () => disk(path) === edited || undefined);
+  return async () => await editorText(app) === edited.replace(/\r\n/g, '\n');
+};
+
+/** Ladder: a rung of three elements typed with the keyboard (journey 28f), on a variable the example is given to write. */
+const ladderEdit: ChainSpec['edit'] = async (app, project) => {
+  const path = join(project, 'src', 'main.ld.json');
+  const document = JSON.parse(disk(path)) as { variables: { local: Array<{ name: string; type: string }> } };
+  document.variables.local.push({ name: 'Hold', type: 'BOOL' });
+  writeFileSync(path, JSON.stringify(document, null, 2));
+  await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+  const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
+  const before = await rungs();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await app.click(`[...document.querySelectorAll('[data-ld-rung-id="rung_1"] span')].find((node) => node.textContent === 'Rung 1')`, 'the label of rung 1');
+    await app.press('Ctrl+End');
+    await app.press('Ctrl+Enter');
+    if (await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined, 4_000).then(() => true, () => false)) break;
+  }
+  await app.until('a rung after the last one', async () => await rungs() === before + 1 || undefined);
+  const last = await app.eval<string>(`[...document.querySelectorAll('[data-ld-rung-id]')].at(-1).getAttribute('data-ld-rung-id')`);
+  await app.until('the cursor in the first cell of the new rung', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="${last}"] [data-ld-cursor="0,0"]') !== null`) || undefined);
+  await app.press('C'); await answerSearchList(app, 'OnTimer.Q', 'OnTimer.Q'); await app.press('ArrowRight');
+  await app.press('N'); await answerSearchList(app, 'OffTimer.Q', 'OffTimer.Q'); await app.press('ArrowRight');
+  await app.press('O'); await answerSearchList(app, 'Hold', 'Hold');
+  await app.until('the three elements on the new rung', async () => await app.eval<number>(`document.querySelectorAll('[data-ld-rung-id="${last}"] [data-ld-element-id]').length`) === 3 || undefined);
+  await app.click(saveButton, 'the Save button');
+  await app.until('the rung to be written to the file', () => (JSON.parse(disk(path)) as { rungs: unknown[] }).rungs.length === before + 1 || undefined);
+  return async () => await rungs() === before + 1;
+};
+
+/** Function block diagram: a NOT block inserted after the AND and wired to it (journey 28g). */
+const diagramEdit: ChainSpec['edit'] = async (app, project) => {
+  await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+  const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+  const before = await nodes();
+  await app.click(css('.react-flow__node[data-id="and_run"]'), 'the AND block');
+  await app.press('I'); await answerSearchList(app, 'NOT', 'NOT');
+  await app.until('a block beside the AND, selected', async () => await nodes() === before + 1 && await app.eval<boolean>(`document.querySelectorAll('.react-flow__node.selected').length === 1 && document.querySelector('.react-flow__node.selected').getAttribute('data-id') !== 'and_run'`) || undefined);
+  const inserted = await app.eval<string>(`document.querySelector('.react-flow__node.selected').getAttribute('data-id')`);
+  await app.until('the focus on the new block', async () => await app.eval<boolean>(`document.activeElement?.getAttribute('data-id') === ${JSON.stringify(inserted)}`) || undefined);
+  await app.press('C'); await answerSearchList(app, 'AND.OUT');
+  await app.click(saveButton, 'the Save button');
+  const saved = () => JSON.parse(disk(join(project, 'src', 'main.fbd.json'))) as { blocks: unknown[]; connections: Array<{ from: { block: string; port: string }; to: { block: string } }> };
+  await app.until('the block and its wire to be written', () => saved().blocks.length === before + 1 && saved().connections.some((wire) => wire.from.block === 'and_run' && wire.from.port === 'OUT' && wire.to.block === inserted) || undefined);
+  return async () => await nodes() === before + 1;
+};
+
+/** Sequential function chart: a transition and a step below LED_OFF (journey 28h). */
+const chartEdit: ChainSpec['edit'] = async (app, project) => {
+  await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+  const nodes = () => app.eval<number>(`document.querySelectorAll('.react-flow__node').length`);
+  const before = await nodes();
+  await app.click(css('.react-flow__node[data-id="step_led_off"]'), 'the step LED_OFF');
+  await app.press('T');
+  await app.until('a transition below the step', async () => await nodes() === before + 1 || undefined);
+  await app.press('F2'); await answerSearchList(app, 'LED_Output', 'LED_Output');
+  await app.press('S');
+  await app.until('a step after the transition', async () => await nodes() === before + 2 || undefined);
+  await app.press('F2'); await answerSearchList(app, 'Hold');
+  await app.click(saveButton, 'the Save button');
+  await app.until('the chart to be written', () => (JSON.parse(disk(join(project, 'src', 'main.sfc.json'))) as { steps: Array<{ name: string }> }).steps.some((step) => step.name === 'Hold') || undefined);
+  return async () => await nodes() === before + 2;
+};
+
+/**
+ * LNG-001 for one language: a person creates a program in a new project, edits an example, saves it, reopens it, builds it,
+ * simulates it, pauses and steps it, watches a value change, then deploys the build by clicking Deploy and confirming, to a
+ * device that is the native runtime behind the text shell of a board (emulatedDevice.ts), runs it and watches it there. No
+ * serial port, adapter or board is involved.
+ */
+async function languageChain(app: App, { root, project, runtime }: JourneyContext, spec: ChainSpec): Promise<void> {
+  // 1. create: the New project dialog makes a program in the chosen language, and it builds
+  const created = join(root, 'created'); mkdirSync(created);
+  app.answer(created);
+  await app.click(button('New project', 'contains'), 'the New project button');
+  await app.until('the New project dialog', async () => await app.visible(css('[data-new-project="name"]')) || undefined);
+  await app.click(button('Choose folder', 'contains'), 'the Choose folder button');
+  await app.until('the chosen folder in the dialog', async () => await app.eval<boolean>(`document.querySelector('[data-testid="new-project-folder"]')?.textContent === 'created'`) || undefined);
+  await selectOption(app, '[data-new-project="language"]', spec.language);
+  await app.click(button('Create project'), 'the Create project button');
+  await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+  assert(existsSync(join(created, 'src', spec.created)), `The New project dialog made no ${spec.created} for ${spec.language}.`);
+  const first = await compile(app);
+  assert(first.kind === 'built', `The program just created in ${spec.language} does not build: ${first.message}`);
+  await showExplorer(app);
+  await app.click(button('Close project'));
+  await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+
+  // 2. edit, save, reopen, build: the example is aimed at a board the emulated device can be, so that the deploy preflight can match
+  const config = JSON.parse(disk(join(project, 'zplc.json'))) as { target: { board: string } };
+  config.target.board = CHAIN_BOARD;
+  writeFileSync(join(project, 'zplc.json'), JSON.stringify(config, null, 2));
+  await openFolder(app, project);
+  const persisted = await spec.edit(app, project);
+  await app.click(button('Close project'));
+  await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+  await openFolder(app, project);
+  if (spec.file.endsWith('.json')) await openDiagram(app, spec.file, spec.file.includes('.ld.') ? '[data-ld-rung-id]' : '.react-flow__node'); else await openFile(app, spec.file);
+  await app.until('the saved edit to come back', async () => await persisted() || undefined);
+  const built = await compile(app);
+  assert(built.kind === 'built', `The edited ${spec.language} program does not build: ${built.message}: ${await problemsText(app)}`);
+
+  // 3. simulate, pause, step one cycle, resume, and watch a value change
+  await pauseStepResume(app);
+  await watch(app, CHAIN_WATCHED);
+  const seen = new Set<string | null>();
+  await app.until(`${CHAIN_WATCHED} to change between TRUE and FALSE in the simulation`, async () => { seen.add(await watchValue(app, CHAIN_WATCHED)); return seen.has('TRUE') && seen.has('FALSE') || undefined; }, 60_000);
+  await app.click(button('Disconnect'));
+  await app.until('the simulation to disconnect', async () => await app.visible(button('Connect')) || undefined);
+
+  // 4. deploy by a human action to the emulated device, run it there, and watch the same value change
+  const device = await attachEmulatedDevice(app, runtime, CHAIN_BOARD);
+  try {
+    await app.click(button('Hardware'), 'the Hardware mode');
+    await app.click(button('Connect'), 'Connect');
+    await app.until('the device to connect', async () => await app.visible(button('Disconnect')) || undefined)
+      .catch(async (error: Error) => { throw new Error(`${error.message}: the shell saw ${JSON.stringify(device.transcript.slice(-6))}; the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-500))}`); });
+    await app.click(button('Deploy current', 'prefix'), 'the Deploy button');
+    await app.until('the deploy dialog', async () => await app.visible(css('[role="alertdialog"]')) || undefined)
+      .catch(async (error: Error) => { throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-500))}`); });
+    const facts = await app.eval<string>(`document.querySelector('[role="alertdialog"]').innerText`);
+    assert(facts.includes('Deploy to the device?'), `The deploy dialog does not ask to deploy: ${facts.replace(/\s+/g, ' ')}`);
+    const actions = await app.eval<string[]>(`[...document.querySelectorAll('[role="alertdialog"] button')].map((item) => item.textContent.trim())`);
+    assert(actions.length === 2 && actions[0] === 'Cancel' && /^(Deploy|Stop PLC and deploy)$/.test(actions[1]!), `The deploy dialog offers ${JSON.stringify(actions)}, not Cancel and the action.`);
+    await app.click(`[...document.querySelectorAll('[role="alertdialog"] button')].find((item) => item.textContent.trim() === ${JSON.stringify(actions[1])})`, 'the action button of the dialog');
+    await app.until('the deploy to be reported', async () => (await outputText(app)).includes('Program deployed and stopped.') || undefined, 60_000)
+      .catch(async (error: Error) => { throw new Error(`${error.message}: Output says ${JSON.stringify((await outputText(app)).slice(-600))}`); });
+    await app.click(button('Run (F5)', 'prefix'), 'Run');
+    await app.until('the program to run on the device', async () => await app.visible(button('Pause (F6)', 'prefix')) || undefined)
+      .catch(async (error: Error) => { throw new Error(`${error.message}: Output ends ${JSON.stringify((await outputText(app)).replace(/\s+/g, ' ').slice(-500))}; the shell saw ${JSON.stringify(device.transcript.slice(-40).map((line) => line.slice(0, 40)))}`); });
+    if (await watchValue(app, CHAIN_WATCHED) === null) await watch(app, CHAIN_WATCHED);
+    const onDevice = new Set<string | null>();
+    await app.until(`${CHAIN_WATCHED} to change between TRUE and FALSE on the device`, async () => { onDevice.add(await watchValue(app, CHAIN_WATCHED)); return onDevice.has('TRUE') && onDevice.has('FALSE') || undefined; }, 60_000);
+    assert(device.transcript.some((line) => line.startsWith('zplc link ')), 'The deploy never reached the device.');
+  } finally { device.stop(); }
+}
+const CHAINS: Record<'ST' | 'IL' | 'LD' | 'FBD' | 'SFC', ChainSpec> = {
+  ST: { language: 'Structured Text', created: 'main.st', file: 'src/main.st', edit: textEdit('src/main.st', IL_EDIT) },
+  IL: { language: 'Instruction List', created: 'main.il', file: 'src/main.il', edit: textEdit('src/main.il', IL_EDIT) },
+  LD: { language: 'Ladder Diagram', created: 'main.ld.json', file: 'src/main.ld.json', edit: ladderEdit },
+  FBD: { language: 'Function Block Diagram', created: 'main.fbd.json', file: 'src/main.fbd.json', edit: diagramEdit },
+  SFC: { language: 'Sequential Function Chart', created: 'main.sfc.json', file: 'src/main.sfc.json', edit: chartEdit },
+};
 
 export const JOURNEYS: Journey[] = [
   {
@@ -1652,7 +1834,9 @@ export const JOURNEYS: Journey[] = [
       assert(!existsSync(motor) && disk(join(project, 'src', 'Drive.st')) === original, 'The file was not renamed on disk, or its content changed.');
       assert((await editorText(app)).includes(EDIT), 'The unsaved text did not follow the renamed file.');
       assert(await app.visible(editorTab('file:src/Drive.st')), 'The tab did not follow the renamed file.');
-      assert(JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')), 'A task still runs Motor.st after the rename.');
+      // the task list is rewritten after the tree and the tab have moved: on a loaded machine that is later than the tab
+      await app.until('no task to run Motor.st after the rename', () => JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')) || undefined)
+        .catch(() => { throw new Error('A task still runs Motor.st after the rename.'); });
       await app.click(saveButton);
       await app.until('the buffer saved under the new name', () => disk(join(project, 'src', 'Drive.st')).includes(EDIT) || undefined);
       assert(!existsSync(motor), 'Saving brought the old name back.');
@@ -2485,6 +2669,26 @@ export const JOURNEYS: Journey[] = [
       assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
       await releaseForce(app, 'LED_Output');
     },
+  },
+  {
+    name: '64a Structured Text from a new project to a deployed program that is watched', example: 'blinky_st', proves: ['LNG-001'], partly: [],
+    run: (app, context) => languageChain(app, context, CHAINS.ST),
+  },
+  {
+    name: '64b Instruction List from a new project to a deployed program that is watched', example: 'blinky_il', proves: ['LNG-001'], partly: [],
+    run: (app, context) => languageChain(app, context, CHAINS.IL),
+  },
+  {
+    name: '64c Ladder Diagram from a new project to a deployed program that is watched', example: 'blinky', proves: ['LNG-001'], partly: [],
+    run: (app, context) => languageChain(app, context, CHAINS.LD),
+  },
+  {
+    name: '64d Function Block Diagram from a new project to a deployed program that is watched', example: 'blinky_fbd', proves: ['LNG-001'], partly: [],
+    run: (app, context) => languageChain(app, context, CHAINS.FBD),
+  },
+  {
+    name: '64e Sequential Function Chart from a new project to a deployed program that is watched', example: 'blinky_sfc', proves: ['LNG-001'], partly: [],
+    run: (app, context) => languageChain(app, context, CHAINS.SFC),
   },
   {
     name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
