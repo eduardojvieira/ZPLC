@@ -2507,6 +2507,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast"}
   ],
   "UX-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/claimLostFocus.test.ts","test":"the focus that a closed screen leaves behind (UX-025, UX-028)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit dialogs (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"kit tabs and toggle group (UX-001, UX-025 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/logic/keyboard.test.ts","test":"focus trap (UX-025 stopgap: no escape from a dialog, no trap outside one)","partial":true},
@@ -2538,6 +2539,12 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/motion.test.ts","test":"reduced motion (UX-027)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"46 The themes, forced colours and reduced motion reach the three visual editors and the code editor"}
+  ],
+  "UX-028": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/screenReaderRecorder.test.ts","test":"the recorder of the screen reader check (UX-028)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/claimLostFocus.test.ts","test":"the focus that a closed screen leaves behind (UX-025, UX-028)"},
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"the pictures of the recorded screen-reader check are captured ones too (UX-028, DOC-013)"},
+    {"kind":"manual","ref":"docs/docs/development/screen-reader-check.md","note":"Owner decision 2026-10-20 (\"UX-028, LRN-037 lo podes hacer con capturas de pantalla en esta pc\"): a recorded check on Linux replaces a screen reader on Windows and macOS. Method: packages/zplc-ide/scripts/screen-reader-capture.ts drives the real Electron app with the keyboard alone, in English and Spanish, and records for each step a screenshot, the accessibility record (role, name, description, state, value) of the focused element read from Chromium's accessibility tree over the DevTools protocol, and the text of the live regions; 18 of 18 steps pass, results in docs/static/img/screen-reader-check/2026-10-20/results.json. It is not a run of NVDA, JAWS, Narrator or VoiceOver, and no Windows or macOS system was used."}
   ],
   "UX-029": [
     {"kind":"unit","ref":"packages/zplc-ide/src/boards/firmwareImage.test.ts","test":"UX-029 gives the steps, the notice and the evidence in the language of the interface"},
@@ -3012,7 +3019,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantFacts.test.ts","test":"text equivalent of a plant state (LRN-037)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true},
-    {"kind":"gate","ref":"docs/docs/development/screen-reader-check.md","test":"nobody has run it yet","note":"Needs a person to run the screen-reader check of the main path on both systems and keep its results table with the release checklist (UX-028). The tests prove the text equivalents and labels in the page, not what a screen reader says."}
+    {"kind":"manual","ref":"docs/docs/development/screen-reader-check.md","note":"Owner decision 2026-10-20 (\"UX-028, LRN-037 lo podes hacer con capturas de pantalla en esta pc\"): a recorded check on Linux replaces a screen reader on Windows and macOS. Method: packages/zplc-ide/scripts/screen-reader-capture.ts drives the real Electron app with the keyboard alone, in English and Spanish, and records for each step a screenshot, the accessibility record (role, name, description, state, value) of the focused element read from Chromium's accessibility tree over the DevTools protocol, and the text of the live regions; 18 of 18 steps pass, results in docs/static/img/screen-reader-check/2026-10-20/results.json. It is not a run of NVDA, JAWS, Narrator or VoiceOver, and no Windows or macOS system was used. LRN-037 legs: the Learn home, a lesson, its check and the restore, and the motor plant with the text of each animation state, all by keyboard."}
   ],
   "LRN-038": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
@@ -3369,6 +3376,7 @@
   ],
   "DOC-013": [
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"documentation screenshots: a page shows only captured pictures (DOC-013)"},
+    {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"the pictures of the recorded screen-reader check are captured ones too (UX-028, DOC-013)"},
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"DOC-013 the wiring diagrams are generated drawings, not pictures of the product"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
   ],
