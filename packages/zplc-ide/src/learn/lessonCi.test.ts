@@ -59,6 +59,9 @@ function apply(root: string, check: LessonProgramCheck): void {
   for (const [file, content] of Object.entries(check.files)) writeFileSync(join(root, file), content);
 }
 
+/** A compile plus a native run of one lesson, 9 s at a load average of 50: a hang guard that the grade does not measure (the lesson clock is injected). */
+const LOADED_NATIVE_MS = 240_000;
+
 beforeAll(() => {
   workRoot = mkdtempSync(join(tmpdir(), 'zplc-lesson-ci-'));
   previousBinary = process.env.ZPLC_NATIVE_SIM_BIN;
@@ -152,21 +155,21 @@ for (const lesson of packages) {
         expect(Object.keys(failure.expected).length).toBeGreaterThan(0);
         expect(failure.trace).not.toBeNull();
       }
-    }, 60_000);
+    }, LOADED_NATIVE_MS);
 
     itNative(`reference solution (${manifest.solution.project}/${manifest.solution.program}) PASSES the reference scenario`, async () => {
       const root = scratchStarter(lesson);
       writeFileSync(join(root, manifest.starter.program), readFileSync(join(PROJECTS_DIRECTORY, manifest.solution.project, manifest.solution.program), 'utf8'));
       const check = await lessonCheck(root, lesson.id, { clock });
       expect(check.ok && { result: check.record.result, assertions: check.record.assertions, scenario: check.record.scenarioSha256 }).toEqual({ result: 'passed', assertions: { total: scenario.expectations.length, passed: scenario.expectations.length }, scenario: manifest.scenario.sha256 });
-    }, 60_000);
+    }, LOADED_NATIVE_MS);
 
     for (const { intent, ...check } of checks?.alsoGreen ?? []) {
       itNative(`another correct solution (${intent}) also PASSES`, async () => {
         const root = scratchStarter(lesson);
         apply(root, { intent, ...check });
         expect({ intent, ...await grade(root, lesson) }).toMatchObject({ intent, built: true, result: 'passed' });
-      }, 60_000);
+      }, LOADED_NATIVE_MS);
     }
 
     for (const { intent, ...check } of checks?.wrong ?? []) {
@@ -174,7 +177,7 @@ for (const lesson of packages) {
         const root = scratchStarter(lesson);
         apply(root, { intent, ...check });
         expect({ intent, ...await grade(root, lesson) }).toMatchObject({ intent, built: true, result: 'failed' });
-      }, 60_000);
+      }, LOADED_NATIVE_MS);
     }
   });
 }
