@@ -127,7 +127,7 @@ describe('Console tab boundary', () => {
   it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
     const source = withEnglishMessages(consoleSources());
     expect(source).toContain("id: 'interlocks'");
-    expect(source).toContain("activeConsoleTab === 'interlocks' && (<InterlockCoverage");
+    expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlockCoverage/); // a formatter adds the parenthesis
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
     expect(source).toContain('presentWorkspaceSafetyCheck(result)');
     expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
