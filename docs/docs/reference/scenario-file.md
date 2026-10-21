@@ -90,18 +90,18 @@ An event has `atMs` and `set`.
   "durationMs": 2100,
   "events": [],
   "expectations": [
-    {"kind": "AT", "atMs": 250, "condition": {"Blinky.LED_Output": false}},
-    {"kind": "AT", "atMs": 750, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "AT", "atMs": 1250, "condition": {"Blinky.LED_Output": false}},
-    {"kind": "AT", "atMs": 1750, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "FOR", "fromMs": 0, "forMs": 490, "condition": {"Blinky.LED_Output": false}},
-    {"kind": "RISING", "fromMs": 490, "withinMs": 30, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "FOR", "fromMs": 510, "forMs": 490, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "FALLING", "fromMs": 1000, "withinMs": 30, "condition": {"Blinky.LED_Output": false}},
-    {"kind": "FOR", "fromMs": 1020, "forMs": 480, "condition": {"Blinky.LED_Output": false}},
-    {"kind": "RISING", "fromMs": 1500, "withinMs": 40, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "FOR", "fromMs": 1530, "forMs": 490, "condition": {"Blinky.LED_Output": true}},
-    {"kind": "FALLING", "fromMs": 2020, "withinMs": 30, "condition": {"Blinky.LED_Output": false}}
+    { "kind": "AT", "atMs": 250, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "AT", "atMs": 750, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "AT", "atMs": 1250, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "AT", "atMs": 1750, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "FOR", "fromMs": 0, "forMs": 490, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "RISING", "fromMs": 490, "withinMs": 30, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "FOR", "fromMs": 510, "forMs": 490, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "FALLING", "fromMs": 1000, "withinMs": 30, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "FOR", "fromMs": 1020, "forMs": 480, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "RISING", "fromMs": 1500, "withinMs": 40, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "FOR", "fromMs": 1530, "forMs": 490, "condition": { "Blinky.LED_Output": true } },
+    { "kind": "FALLING", "fromMs": 2020, "withinMs": 30, "condition": { "Blinky.LED_Output": false } }
   ]
 }
 ```
