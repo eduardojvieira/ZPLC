@@ -116,15 +116,15 @@ Evidence level: host. The unit tests of requirement IDE-008 (`packages/zplc-ide/
 
 Preferences belong to you, not to a project: they apply to every project and are kept for your user account, so they survive a restart. Open them from the **Preferences** disclosure of the Welcome screen, or at the top of the Project Settings tab inside a project.
 
-| Preference | Choices | Default |
-|---|---|---|
-| Theme | Light, Dark, High contrast | System |
-| Editor font size | 10 to 32 px | 14 px |
-| Tab size | 2, 3, 4 or 8 spaces | 4; a file's own indentation does not override it |
-| Density | Comfortable, Compact | Comfortable; compact scales the spacing of the whole window |
-| Language | Automatic, English, Español | Automatic: it follows the language of the operating system, and sets the whole interface and the Learn lessons (see [Interface language](#interface-language)) |
-| Autosave | Off, or after 5, 15, 30 or 60 seconds without typing | Off |
-| Check for a newer release when ZPLC starts | On or off, and a **Check now** button | Off |
+| Preference                                 | Choices                                              | Default                                                                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Theme                                      | Light, Dark, High contrast                           | System                                                                                                                                                         |
+| Editor font size                           | 10 to 32 px                                          | 14 px                                                                                                                                                          |
+| Tab size                                   | 2, 3, 4 or 8 spaces                                  | 4; a file's own indentation does not override it                                                                                                               |
+| Density                                    | Comfortable, Compact                                 | Comfortable; compact scales the spacing of the whole window                                                                                                    |
+| Language                                   | Automatic, English, Español                          | Automatic: it follows the language of the operating system, and sets the whole interface and the Learn lessons (see [Interface language](#interface-language)) |
+| Autosave                                   | Off, or after 5, 15, 30 or 60 seconds without typing | Off                                                                                                                                                            |
+| Check for a newer release when ZPLC starts | On or off, and a **Check now** button                | Off                                                                                                                                                            |
 
 Autosave writes the modified files with the same save as **Save all**, without a line in Output for each save; a file that cannot be written stays modified and is reported. Together with the recovery copies, a crash costs at most the typing of the last second.
 
@@ -154,17 +154,17 @@ ZPLC keeps one list of commands, and every way to start a command reads it: the 
 - **Command palette.** Press Ctrl+Shift+P (Cmd+Shift+P on macOS), type a few letters of a command, choose with the arrow keys and press Enter. The palette lists every command, so each one is reachable from the keyboard even when it has no shortcut. A command that does not apply now (for example Deploy without a connection) is listed as not available and does not run.
 - **Shortcut reference.** Open **Help** > **Keyboard shortcuts**, or press Ctrl+K and then Ctrl+S, to see every command with its shortcut. The tooltips of the toolbar show the same shortcut after the name of the button.
 
-| Shortcut | Command |
-|---|---|
-| Ctrl+S | Save |
-| Ctrl+B | Compile the project |
-| F5 | Run, or resume when paused |
-| Shift+F5 | Stop |
-| F6 | Pause |
-| F10 | Step one cycle |
-| F8 | Reset the runtime |
-| Ctrl+Shift+P | Command palette |
-| Ctrl+K, then Ctrl+S | Keyboard shortcuts |
+| Shortcut            | Command                    |
+| ------------------- | -------------------------- |
+| Ctrl+S              | Save                       |
+| Ctrl+B              | Compile the project        |
+| F5                  | Run, or resume when paused |
+| Shift+F5            | Stop                       |
+| F6                  | Pause                      |
+| F10                 | Step one cycle             |
+| F8                  | Reset the runtime          |
+| Ctrl+Shift+P        | Command palette            |
+| Ctrl+K, then Ctrl+S | Keyboard shortcuts         |
 
 Cmd replaces Ctrl on macOS. The shortcuts that act on a program (F5, F6, F10, F8, Shift+F5) leave a text field its own keys.
 
@@ -188,13 +188,13 @@ Evidence level: host. `packages/zplc-ide/electron/shellPreferences.test.ts`, `sr
 
 In the Files mode of the navigator, the header has **New File** and **New Folder**. A right click on a file or a folder (or F2 for a rename) opens its actions:
 
-| Action | What it does |
-|---|---|
-| **Rename** | Renames the file or folder on disk. Its open tab, its unsaved text and its breakpoints follow it, and a task that runs a renamed program is updated in `zplc.json` (when the project settings have no unsaved edits). |
-| **Duplicate** | Copies a file next to the original as `Name_copy.ext` (or `_copy2`, and so on), from the text the editor shows. |
-| **Move to...** | Moves a file or a folder into another folder of the project. A program moved out of `src` is reported: the build reads only the files directly in `src`. |
-| **Delete** / **Delete folder** | Removes it from disk after a confirmation that names any file in it with unsaved changes. |
-| **New folder...** | On a folder: makes a folder inside it. |
+| Action                         | What it does                                                                                                                                                                                                          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rename**                     | Renames the file or folder on disk. Its open tab, its unsaved text and its breakpoints follow it, and a task that runs a renamed program is updated in `zplc.json` (when the project settings have no unsaved edits). |
+| **Duplicate**                  | Copies a file next to the original as `Name_copy.ext` (or `_copy2`, and so on), from the text the editor shows.                                                                                                       |
+| **Move to...**                 | Moves a file or a folder into another folder of the project. A program moved out of `src` is reported: the build reads only the files directly in `src`.                                                              |
+| **Delete** / **Delete folder** | Removes it from disk after a confirmation that names any file in it with unsaved changes.                                                                                                                             |
+| **New folder...**              | On a folder: makes a folder inside it.                                                                                                                                                                                |
 
 ZPLC refuses a name that is taken, or that the build reads as the same as another program (case differences, `main.ld` and `main.ld.json`, the same name in another folder), and says so in the dialog without changing anything. An empty folder is shown in the tree.
 
@@ -453,12 +453,12 @@ procedure. AI and MCP tools cannot force values or change RUN/STOP; see
 
 Pause, resume and step keep the logical state of the program where it is, and Stop discards it. The table holds for the native simulation and for the Zephyr scheduler of a connected board.
 
-| Action | Output image | Forces | The scan |
-|---|---|---|---|
-| Pause | Kept | Kept | Pauses between scans. |
-| Step | Kept, and shows the stepped scan | Kept | Runs one whole scan, or finishes the scan stopped at a breakpoint. |
-| Resume | Kept | Kept | A scan stopped at a breakpoint continues from there. |
-| Stop | Zeroed | Cleared | Every task is back at its entry point, and a scan that a breakpoint interrupted is discarded. |
+| Action | Output image                     | Forces  | The scan                                                                                      |
+| ------ | -------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
+| Pause  | Kept                             | Kept    | Pauses between scans.                                                                         |
+| Step   | Kept, and shows the stepped scan | Kept    | Runs one whole scan, or finishes the scan stopped at a breakpoint.                            |
+| Resume | Kept                             | Kept    | A scan stopped at a breakpoint continues from there.                                          |
+| Stop   | Zeroed                           | Cleared | Every task is back at its entry point, and a scan that a breakpoint interrupted is discarded. |
 
 A fault clears the image and the forces as Stop does. On a board, Pause, Step and Stop also drive the physical outputs to their safe state, off. [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop) has the full table and the Zephyr tests behind it, run on `native_sim` and QEMU with no board measured. For the native simulation the checks are in `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, where Stop also zeroes the input image.
 

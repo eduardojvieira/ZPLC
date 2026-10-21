@@ -61,30 +61,30 @@ export const NORM_X_FN: FunctionDef = {
         ctx.emit(`    ; NORM_X(MIN, X, MAX) -> (X - MIN) / (MAX - MIN)`);
 
         // Calculate (MAX - MIN) first to check for division by zero
-        emitRealOperand(ctx, max);    // stack: [MAX]
-        emitRealOperand(ctx, min);    // stack: [MAX, MIN]
-        ctx.emit(`    SUBF`);         // stack: [MAX - MIN]
-        ctx.emit(`    DUP`);          // stack: [range, range]
+        emitRealOperand(ctx, max); // stack: [MAX]
+        emitRealOperand(ctx, min); // stack: [MAX, MIN]
+        ctx.emit(`    SUBF`); // stack: [MAX - MIN]
+        ctx.emit(`    DUP`); // stack: [range, range]
 
         // Check if range is zero (0.0 and -0.0), to avoid a division by zero
-        emitMagnitude(ctx);           // stack: [range, |range| pattern]
+        emitMagnitude(ctx); // stack: [range, |range| pattern]
         ctx.emit(`    JZ ${skipLabel}`);
 
         // Range is valid, calculate (X - MIN) / range
-        emitRealOperand(ctx, x);      // stack: [range, X]
-        emitRealOperand(ctx, min);    // stack: [range, X, MIN]
-        ctx.emit(`    SUBF`);         // stack: [range, X - MIN]
-        ctx.emit(`    SWAP`);         // stack: [X - MIN, range]
-        ctx.emit(`    DIVF`);         // stack: [normalized]
+        emitRealOperand(ctx, x); // stack: [range, X]
+        emitRealOperand(ctx, min); // stack: [range, X, MIN]
+        ctx.emit(`    SUBF`); // stack: [range, X - MIN]
+        ctx.emit(`    SWAP`); // stack: [X - MIN, range]
+        ctx.emit(`    DIVF`); // stack: [normalized]
         ctx.emit(`    JMP ${endLabel}`);
 
         // Division by zero case - return 0.0
         ctx.emit(`${skipLabel}:`);
-        ctx.emit(`    DROP`);         // Remove range from stack
-        ctx.emit(`    PUSH32 0`);     // Push 0.0
+        ctx.emit(`    DROP`); // Remove range from stack
+        ctx.emit(`    PUSH32 0`); // Push 0.0
 
         ctx.emit(`${endLabel}:`);
-    }
+    },
 };
 
 /**
@@ -106,18 +106,18 @@ export const SCALE_X_FN: FunctionDef = {
         ctx.emit(`    ; SCALE_X(MIN, X, MAX) -> MIN + X * (MAX - MIN)`);
 
         // Calculate range (MAX - MIN)
-        emitRealOperand(ctx, max);    // stack: [MAX]
-        emitRealOperand(ctx, min);    // stack: [MAX, MIN]
-        ctx.emit(`    SUBF`);         // stack: [range]
+        emitRealOperand(ctx, max); // stack: [MAX]
+        emitRealOperand(ctx, min); // stack: [MAX, MIN]
+        ctx.emit(`    SUBF`); // stack: [range]
 
         // Multiply by X
-        emitRealOperand(ctx, x);      // stack: [range, X]
-        ctx.emit(`    MULF`);         // stack: [X * range]
+        emitRealOperand(ctx, x); // stack: [range, X]
+        ctx.emit(`    MULF`); // stack: [X * range]
 
         // Add MIN
-        emitRealOperand(ctx, min);    // stack: [X * range, MIN]
-        ctx.emit(`    ADDF`);         // stack: [MIN + X * range]
-    }
+        emitRealOperand(ctx, min); // stack: [X * range, MIN]
+        ctx.emit(`    ADDF`); // stack: [MIN + X * range]
+    },
 };
 
 // ============================================================================
@@ -142,12 +142,7 @@ export const SCALE_X_FN: FunctionDef = {
 export const HYSTERESIS_FB: FunctionBlockDef = {
     name: 'HYSTERESIS',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('HIGH', 4, 4),
-        inputMember('LOW', 4, 8),
-        outputMember('Q', 1, 12),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('HIGH', 4, 4), inputMember('LOW', 4, 8), outputMember('Q', 1, 12)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -159,7 +154,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -190,7 +185,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
 
         ctx.emit(`${endLabel}:`);
         ctx.emit(`    ; --- End HYSTERESIS ---`);
-    }
+    },
 };
 
 /**
@@ -209,12 +204,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
 export const DEADBAND_FB: FunctionBlockDef = {
     name: 'DEADBAND',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('WIDTH', 4, 4),
-        outputMember('OUT', 4, 8),
-        internalMember('_last', 4, 12),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('WIDTH', 4, 4), outputMember('OUT', 4, 8), internalMember('_last', 4, 12)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -225,7 +215,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -236,7 +226,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 12)}  ; _last`);
         ctx.emit(`    SUBF`);
-        ctx.emit(`    ABSF`);  // |IN - _last|
+        ctx.emit(`    ABSF`); // |IN - _last|
 
         // Compare with WIDTH
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; WIDTH`);
@@ -252,7 +242,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
 
         ctx.emit(`${endLabel}:`);
         ctx.emit(`    ; --- End DEADBAND ---`);
-    }
+    },
 };
 
 // ============================================================================
@@ -275,11 +265,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
 export const LAG_FILTER_FB: FunctionBlockDef = {
     name: 'LAG_FILTER',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('GAIN', 4, 4),
-        outputMember('OUT', 4, 8),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('GAIN', 4, 4), outputMember('OUT', 4, 8)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -288,7 +274,7 @@ export const LAG_FILTER_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -298,15 +284,15 @@ export const LAG_FILTER_FB: FunctionBlockDef = {
         // OUT = OUT + GAIN * (IN - OUT)
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 8)}   ; OUT`);
-        ctx.emit(`    SUBF`);                          // IN - OUT
+        ctx.emit(`    SUBF`); // IN - OUT
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; GAIN`);
-        ctx.emit(`    MULF`);                          // GAIN * (IN - OUT)
+        ctx.emit(`    MULF`); // GAIN * (IN - OUT)
         ctx.emit(`    LOAD32 ${formatAddr(base + 8)}   ; OUT`);
-        ctx.emit(`    ADDF`);                          // OUT + GAIN * (IN - OUT)
+        ctx.emit(`    ADDF`); // OUT + GAIN * (IN - OUT)
         ctx.emit(`    STORE32 ${formatAddr(base + 8)}  ; OUT`);
 
         ctx.emit(`    ; --- End LAG_FILTER ---`);
-    }
+    },
 };
 
 /**
@@ -325,11 +311,7 @@ export const LAG_FILTER_FB: FunctionBlockDef = {
 export const RAMP_REAL_FB: FunctionBlockDef = {
     name: 'RAMP_REAL',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('RATE', 4, 4),
-        outputMember('OUT', 4, 8),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('RATE', 4, 4), outputMember('OUT', 4, 8)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -341,7 +323,7 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -351,7 +333,7 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
         // Calculate delta = IN - OUT
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 8)}   ; OUT`);
-        ctx.emit(`    SUBF`);                          // delta = IN - OUT
+        ctx.emit(`    SUBF`); // delta = IN - OUT
         ctx.emit(`    DUP`);
 
         // Check if delta > RATE
@@ -391,7 +373,7 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
 
         ctx.emit(`${endLabel}:`);
         ctx.emit(`    ; --- End RAMP_REAL ---`);
-    }
+    },
 };
 
 /**
@@ -411,12 +393,7 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
 export const INTEGRAL_FB: FunctionBlockDef = {
     name: 'INTEGRAL',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('DT', 4, 4),
-        inputMember('RESET', 1, 8),
-        outputMember('OUT', 4, 12),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('DT', 4, 4), inputMember('RESET', 1, 8), outputMember('OUT', 4, 12)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -427,7 +404,7 @@ export const INTEGRAL_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 if (member.size === 1) {
                     ctx.emitExpression(p.value);
@@ -446,9 +423,9 @@ export const INTEGRAL_FB: FunctionBlockDef = {
         // Integrate: OUT = OUT + IN * DT
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; DT`);
-        ctx.emit(`    MULF`);                          // IN * DT
+        ctx.emit(`    MULF`); // IN * DT
         ctx.emit(`    LOAD32 ${formatAddr(base + 12)}  ; OUT`);
-        ctx.emit(`    ADDF`);                          // OUT + IN * DT
+        ctx.emit(`    ADDF`); // OUT + IN * DT
         ctx.emit(`    STORE32 ${formatAddr(base + 12)} ; OUT`);
         ctx.emit(`    JMP ${endLabel}`);
 
@@ -459,7 +436,7 @@ export const INTEGRAL_FB: FunctionBlockDef = {
 
         ctx.emit(`${endLabel}:`);
         ctx.emit(`    ; --- End INTEGRAL ---`);
-    }
+    },
 };
 
 /**
@@ -477,12 +454,7 @@ export const INTEGRAL_FB: FunctionBlockDef = {
 export const DERIVATIVE_FB: FunctionBlockDef = {
     name: 'DERIVATIVE',
     size: 16,
-    members: [
-        inputMember('IN', 4, 0),
-        inputMember('DT', 4, 4),
-        outputMember('OUT', 4, 8),
-        internalMember('_prev', 4, 12),
-    ],
+    members: [inputMember('IN', 4, 0), inputMember('DT', 4, 4), outputMember('OUT', 4, 8), internalMember('_prev', 4, 12)],
 
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
@@ -493,7 +465,7 @@ export const DERIVATIVE_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -508,9 +480,9 @@ export const DERIVATIVE_FB: FunctionBlockDef = {
         // OUT = (IN - _prev) / DT
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 12)}  ; _prev`);
-        ctx.emit(`    SUBF`);                          // IN - _prev
+        ctx.emit(`    SUBF`); // IN - _prev
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; DT`);
-        ctx.emit(`    DIVF`);                          // (IN - _prev) / DT
+        ctx.emit(`    DIVF`); // (IN - _prev) / DT
         ctx.emit(`    STORE32 ${formatAddr(base + 8)}  ; OUT`);
         ctx.emit(`    JMP ${endLabel}`);
 
@@ -524,7 +496,7 @@ export const DERIVATIVE_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    STORE32 ${formatAddr(base + 12)} ; _prev`);
         ctx.emit(`    ; --- End DERIVATIVE ---`);
-    }
+    },
 };
 
 // ============================================================================
@@ -587,7 +559,7 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
 
         // Store input parameters
         for (const p of params) {
-            const member = this.members.find(m => m.name === p.name);
+            const member = this.members.find((m) => m.name === p.name);
             if (member && member.isInput) {
                 emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
@@ -616,51 +588,51 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         // Calculate error = SP - PV
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; SP`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; PV`);
-        ctx.emit(`    SUBF`);                          // error on stack
+        ctx.emit(`    SUBF`); // error on stack
 
         // P term: KP * error
-        ctx.emit(`    DUP`);                           // [error, error]
+        ctx.emit(`    DUP`); // [error, error]
         ctx.emit(`    LOAD32 ${formatAddr(base + 8)}   ; KP`);
-        ctx.emit(`    MULF`);                          // [error, P_term]
+        ctx.emit(`    MULF`); // [error, P_term]
 
         // I term: integral += error * DT, then KI * integral
-        ctx.emit(`    OVER`);                          // [error, P_term, error]
+        ctx.emit(`    OVER`); // [error, P_term, error]
         ctx.emit(`    LOAD32 ${formatAddr(base + 20)}  ; DT`);
-        ctx.emit(`    MULF`);                          // [error, P_term, error*DT]
+        ctx.emit(`    MULF`); // [error, P_term, error*DT]
         ctx.emit(`    LOAD32 ${formatAddr(base + 36)}  ; _integral`);
-        ctx.emit(`    ADDF`);                          // [error, P_term, new_integral]
+        ctx.emit(`    ADDF`); // [error, P_term, new_integral]
         ctx.emit(`    DUP`);
         ctx.emit(`    STORE32 ${formatAddr(base + 36)} ; save _integral`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 12)}  ; KI`);
-        ctx.emit(`    MULF`);                          // [error, P_term, I_term]
+        ctx.emit(`    MULF`); // [error, P_term, I_term]
 
         // D term: KD * (error - _prev_err) / DT
-        ctx.emit(`    ROT`);                           // [P_term, I_term, error]
-        ctx.emit(`    DUP`);                           // [P_term, I_term, error, error]
+        ctx.emit(`    ROT`); // [P_term, I_term, error]
+        ctx.emit(`    DUP`); // [P_term, I_term, error, error]
         ctx.emit(`    LOAD32 ${formatAddr(base + 40)}  ; _prev_err`);
-        ctx.emit(`    SUBF`);                          // [P_term, I_term, error, d_error]
+        ctx.emit(`    SUBF`); // [P_term, I_term, error, d_error]
         // a DT of 0 (not given) has no derivative: the term is 0 instead of a division by zero
         ctx.emit(`    LOAD32 ${formatAddr(base + 20)}  ; DT`);
         ctx.emit(`    DUP`);
         emitMagnitude(ctx);
         ctx.emit(`    JZ ${noSampleLabel}`);
-        ctx.emit(`    DIVF`);                          // [P_term, I_term, error, d_error/DT]
+        ctx.emit(`    DIVF`); // [P_term, I_term, error, d_error/DT]
         ctx.emit(`    JMP ${sampledLabel}`);
-        ctx.emit(`${noSampleLabel}:`);                 // [P_term, I_term, error, d_error, DT]
+        ctx.emit(`${noSampleLabel}:`); // [P_term, I_term, error, d_error, DT]
         ctx.emit(`    DROP`);
         ctx.emit(`    DROP`);
-        ctx.emit(`    PUSH32 0`);                      // [P_term, I_term, error, 0.0]
+        ctx.emit(`    PUSH32 0`); // [P_term, I_term, error, 0.0]
         ctx.emit(`${sampledLabel}:`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 16)}  ; KD`);
-        ctx.emit(`    MULF`);                          // [P_term, I_term, error, D_term]
+        ctx.emit(`    MULF`); // [P_term, I_term, error, D_term]
 
         // Store error as _prev_err
-        ctx.emit(`    SWAP`);                          // [P_term, I_term, D_term, error]
+        ctx.emit(`    SWAP`); // [P_term, I_term, D_term, error]
         ctx.emit(`    STORE32 ${formatAddr(base + 40)} ; _prev_err`);
 
         // Sum: OUT = P_term + I_term + D_term
-        ctx.emit(`    ADDF`);                          // [P_term, I_term + D_term]
-        ctx.emit(`    ADDF`);                          // [P + I + D]
+        ctx.emit(`    ADDF`); // [P_term, I_term + D_term]
+        ctx.emit(`    ADDF`); // [P + I + D]
 
         // Clamp output to [OUT_MIN, OUT_MAX]
         ctx.emit(`    DUP`);
@@ -692,5 +664,5 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
 
         ctx.emit(`${endLabel}:`);
         ctx.emit(`    ; --- End PID_Compact ---`);
-    }
+    },
 };

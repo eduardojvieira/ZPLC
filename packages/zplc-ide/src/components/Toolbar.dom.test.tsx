@@ -57,14 +57,33 @@ describe('Command bar (IDE-001, UX-011, UX-015) in a DOM', () => {
 
 const controls = (over: Record<string, unknown> = {}) => {
   const handlers = {
-    onExecutionModeChange: mock<(mode: string) => Promise<unknown>>(async () => undefined), onConnect: mock(async () => undefined), onUpload: mock(async () => undefined),
-    onStart: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined), onPause: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined), onResume: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined),
-    onStep: mock(async () => undefined), onStop: mock(async () => undefined), onReset: mock(async () => undefined), toggleMpeek: mock(() => undefined),
+    onExecutionModeChange: mock<(mode: string) => Promise<unknown>>(async () => undefined),
+    onConnect: mock(async () => undefined),
+    onUpload: mock(async () => undefined),
+    onStart: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined),
+    onPause: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined),
+    onResume: mock<(keyboard: boolean) => Promise<unknown>>(async () => undefined),
+    onStep: mock(async () => undefined),
+    onStop: mock(async () => undefined),
+    onReset: mock(async () => undefined),
+    toggleMpeek: mock(() => undefined),
   };
   const props = {
-    executionMode: 'simulate', isConnected: true, isConnecting: false, isUploading: false, controlsBusy: false, hasCurrentCompileResult: true,
-    programLoadState: 'loaded', isRunning: false, isPaused: false, isIdle: true, mpeekEnabled: false,
-    connectionButtonRef: createRef<HTMLButtonElement>(), executionButtonRef: createRef<HTMLButtonElement>(), ...handlers, ...over,
+    executionMode: 'simulate',
+    isConnected: true,
+    isConnecting: false,
+    isUploading: false,
+    controlsBusy: false,
+    hasCurrentCompileResult: true,
+    programLoadState: 'loaded',
+    isRunning: false,
+    isPaused: false,
+    isIdle: true,
+    mpeekEnabled: false,
+    connectionButtonRef: createRef<HTMLButtonElement>(),
+    executionButtonRef: createRef<HTMLButtonElement>(),
+    ...handlers,
+    ...over,
   };
   return { props: props as unknown as RunProps, handlers };
 };
@@ -101,7 +120,10 @@ describe('Run controls (IDE-001) in a DOM', () => {
     const { props, handlers } = controls();
     const { user } = dom.render(<RunControls {...props} />);
     const group = dom.screen.getByRole('group', { name: dom.t('toolbar.mode.label') });
-    const pressed = dom.within(group).getAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'));
+    const pressed = dom
+      .within(group)
+      .getAllByRole('button')
+      .filter((b) => b.hasAttribute('aria-pressed'));
     expect(pressed.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
     await user.click(dom.screen.getByRole('button', { name: dom.t('toolbar.hardware.label') }));
     expect(handlers.onExecutionModeChange).toHaveBeenCalledWith('hardware');

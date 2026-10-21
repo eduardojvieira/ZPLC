@@ -5,11 +5,11 @@ families are open-licensed under the SIL Open Font License 1.1; the full text of
 copied into the application as `licenses/*.txt` (`packages/zplc-ide/public/licenses/`), and is named in THIRD-PARTY-NOTICES.txt
 (`scripts/release/font-licences.json`).
 
-| File | Family | Use | Licence | Copyright |
-|---|---|---|---|---|
-| `Inter-Variable-latin.woff2` | Inter (variable, weight 100 to 900) | Interface | `Inter-OFL.txt` | The Inter Project Authors, https://github.com/rsms/inter |
-| `JetBrainsMono-Regular-latin.woff2` | JetBrains Mono, regular (400) | Code, identifiers, values, addresses | `JetBrainsMono-OFL.txt` | The JetBrains Mono Project Authors, https://github.com/JetBrains/JetBrainsMono |
-| `JetBrainsMono-Bold-latin.woff2` | JetBrains Mono, bold (700) | Emphasis in code and values | `JetBrainsMono-OFL.txt` | The JetBrains Mono Project Authors |
+| File                                | Family                              | Use                                  | Licence                 | Copyright                                                                      |
+| ----------------------------------- | ----------------------------------- | ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------ |
+| `Inter-Variable-latin.woff2`        | Inter (variable, weight 100 to 900) | Interface                            | `Inter-OFL.txt`         | The Inter Project Authors, https://github.com/rsms/inter                       |
+| `JetBrainsMono-Regular-latin.woff2` | JetBrains Mono, regular (400)       | Code, identifiers, values, addresses | `JetBrainsMono-OFL.txt` | The JetBrains Mono Project Authors, https://github.com/JetBrains/JetBrainsMono |
+| `JetBrainsMono-Bold-latin.woff2`    | JetBrains Mono, bold (700)          | Emphasis in code and values          | `JetBrainsMono-OFL.txt` | The JetBrains Mono Project Authors                                             |
 
 ## What the files are
 

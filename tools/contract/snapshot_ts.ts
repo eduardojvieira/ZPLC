@@ -8,7 +8,13 @@
  *
  * Run from the repository root: bun tools/contract/snapshot_ts.ts
  */
-import { Opcode, OPCODE_BY_NAME, getOperandSize, isRelativeJump, isAddressOperand } from '../../packages/zplc-compiler/src/assembler/opcodes.ts';
+import {
+  Opcode,
+  OPCODE_BY_NAME,
+  getOperandSize,
+  isRelativeJump,
+  isAddressOperand,
+} from '../../packages/zplc-compiler/src/assembler/opcodes.ts';
 import { ZPLC_CONSTANTS, TASK_TYPE } from '../../packages/zplc-compiler/src/assembler/types.ts';
 import { COMM_FB_KIND, CommBlocks } from '../../packages/zplc-compiler/src/compiler/stdlib/communication.ts';
 import { MemoryLayout } from '../../packages/zplc-compiler/src/compiler/symbol-table.ts';
@@ -17,7 +23,25 @@ import { DEFAULT_COMPILER_MEMORY_PROFILE, TAG_MAP, getDataTypeId } from '../../p
 import { VM_ERRORS } from '../../packages/zplc-ide/src/runtime/nativeTrace.ts';
 import { MEMORY_MAP, getMemoryRegion } from '../../packages/zplc-ide/src/runtime/debugAdapter.ts';
 
-const TYPE_NAMES = ['BOOL', 'SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT', 'REAL', 'LREAL', 'TIME', 'BYTE', 'WORD', 'DWORD', 'LWORD', 'STRING'];
+const TYPE_NAMES = [
+  'BOOL',
+  'SINT',
+  'USINT',
+  'INT',
+  'UINT',
+  'DINT',
+  'UDINT',
+  'LINT',
+  'ULINT',
+  'REAL',
+  'LREAL',
+  'TIME',
+  'BYTE',
+  'WORD',
+  'DWORD',
+  'LWORD',
+  'STRING',
+];
 
 const operandSizes: Record<string, number> = {};
 const relativeJumps: number[] = [];
@@ -64,7 +88,12 @@ const view = {
   ide: {
     vmErrors: Object.fromEntries(VM_ERRORS.map((entry) => [entry.name, entry.code])),
     memoryMap: Object.fromEntries(Object.entries(MEMORY_MAP).map(([name, info]) => [name, { base: info.baseAddress, size: info.size }])),
-    regionOf: Object.fromEntries([0x0000, 0x0FFF, 0x1000, 0x1FFF, 0x2000, 0x3FFF, 0x4000, 0x4FFF, 0x5000, 0xFFFF].map((address) => [String(address), getMemoryRegion(address)])),
+    regionOf: Object.fromEntries(
+      [0x0000, 0x0fff, 0x1000, 0x1fff, 0x2000, 0x3fff, 0x4000, 0x4fff, 0x5000, 0xffff].map((address) => [
+        String(address),
+        getMemoryRegion(address),
+      ]),
+    ),
   },
 };
 

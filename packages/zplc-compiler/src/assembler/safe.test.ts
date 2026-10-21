@@ -5,14 +5,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import {
-    TASK_TYPE,
-    ZPLC_CONSTANTS,
-    assemble,
-    createMultiTaskZplcFile,
-    crc32,
-    readArtifact,
-} from './index';
+import { TASK_TYPE, ZPLC_CONSTANTS, assemble, createMultiTaskZplcFile, crc32, readArtifact } from './index';
 import type { SafeEntry, TaskDef } from './index';
 
 const code = assemble('PUSH8 1\nDROP\nHALT').bytecode;
@@ -34,7 +27,10 @@ describe('the SAFE segment of an artifact (RT-023)', () => {
     });
 
     test('is written once, in four bytes an entry: offset, bit, value', () => {
-        const safe: SafeEntry[] = [{ offset: 0, bit: 0, value: 1 }, { offset: 3, bit: 5, value: 0 }];
+        const safe: SafeEntry[] = [
+            { offset: 0, bit: 0, value: 1 },
+            { offset: 3, bit: 5, value: 0 },
+        ];
         const file = createMultiTaskZplcFile(code, [task], [], safe);
         const artifact = readArtifact(file);
         const segment = artifact.segments.filter((each) => each.type === ZPLC_CONSTANTS.SEGMENT_TYPE_SAFE);
@@ -77,7 +73,9 @@ describe('the SAFE segment of an artifact (RT-023)', () => {
         const entry = { offset: 4, bit: 4, value: 1 as const };
         expect(() => createMultiTaskZplcFile(code, [task], [], [entry, { ...entry, value: 0 }])).toThrow(/twice|more than once|duplicate/i);
         const many: SafeEntry[] = Array.from({ length: ZPLC_CONSTANTS.MAX_SAFE_ENTRIES + 1 }, (_, index) => ({
-            offset: Math.floor(index / 8), bit: index % 8, value: 1,
+            offset: Math.floor(index / 8),
+            bit: index % 8,
+            value: 1,
         }));
         expect(() => createMultiTaskZplcFile(code, [task], [], many)).toThrow(/at most/);
         expect(createMultiTaskZplcFile(code, [task], [], many.slice(0, ZPLC_CONSTANTS.MAX_SAFE_ENTRIES)).length).toBeGreaterThan(0);

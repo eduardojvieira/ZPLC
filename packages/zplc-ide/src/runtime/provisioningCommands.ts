@@ -39,10 +39,14 @@ function mqttSecurityToRuntimeLevel(level: string | undefined): number {
 
 function mqttProfileToRuntimeLevel(profile: string | undefined): number {
   switch (profile) {
-    case 'generic-broker': return 1;
-    case 'aws-iot-core': return 2;
-    case 'azure-iot-hub': return 3;
-    case 'azure-event-grid-mqtt': return 4;
+    case 'generic-broker':
+      return 1;
+    case 'aws-iot-core':
+      return 2;
+    case 'azure-iot-hub':
+      return 3;
+    case 'azure-event-grid-mqtt':
+      return 4;
     case 'sparkplug-b':
     default:
       return 0;
@@ -55,9 +59,12 @@ function mqttProtocolToRuntimeLevel(version: string | undefined): number {
 
 function mqttTransportToRuntimeLevel(transport: string | undefined): number {
   switch (transport) {
-    case 'tls': return 1;
-    case 'ws': return 2;
-    case 'wss': return 3;
+    case 'tls':
+      return 1;
+    case 'ws':
+      return 2;
+    case 'wss':
+      return 3;
     case 'tcp':
     default:
       return 0;
@@ -66,17 +73,17 @@ function mqttTransportToRuntimeLevel(transport: string | undefined): number {
 
 function modbusParityToRuntimeLevel(parity: string | undefined): number {
   switch (parity) {
-    case 'even': return 1;
-    case 'odd': return 2;
+    case 'even':
+      return 1;
+    case 'odd':
+      return 2;
     case 'none':
     default:
       return 0;
   }
 }
 
-export function buildProvisioningCommands(
-  projectConfig: ZPLCProjectConfig,
-): string[] {
+export function buildProvisioningCommands(projectConfig: ZPLCProjectConfig): string[] {
   assertSafeProjectConfigValue(projectConfig);
   const commands: string[] = [];
   const quote = quoteZephyrShellArg;

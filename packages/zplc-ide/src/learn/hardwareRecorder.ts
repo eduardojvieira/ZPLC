@@ -40,13 +40,18 @@ const MAX_SAMPLES = 10_000;
 function valuesOf(read: readonly WatchVariable[]): HardwareSample['values'] {
   const values: HardwareSample['values'] = {};
   for (const variable of read) {
-    if (variable.type === 'BOOL' && (typeof variable.value === 'boolean' || typeof variable.value === 'number')) values[variable.name] = variable.value === true || (typeof variable.value === 'number' && variable.value !== 0);
+    if (variable.type === 'BOOL' && (typeof variable.value === 'boolean' || typeof variable.value === 'number'))
+      values[variable.name] = variable.value === true || (typeof variable.value === 'number' && variable.value !== 0);
     else if (typeof variable.value === 'number') values[variable.name] = variable.value;
   }
   return values;
 }
 
-export async function recordHardwareTrace(session: RecorderSession, variables: readonly WatchVariable[], options: RecordOptions): Promise<Recording> {
+export async function recordHardwareTrace(
+  session: RecorderSession,
+  variables: readonly WatchVariable[],
+  options: RecordOptions,
+): Promise<Recording> {
   const trace: HardwareSample[] = [];
   const begun = options.now();
   let start = begun;
@@ -62,11 +67,16 @@ export async function recordHardwareTrace(session: RecorderSession, variables: r
       return { ok: false, reason: session.connected ? 'not-running' : 'not-connected', trace };
     }
     let read: WatchVariable[];
-    try { read = await session.readWatchVariables(variables.map((variable) => ({ ...variable }))); } catch { return { ok: false, reason: 'read-failed', trace }; }
+    try {
+      read = await session.readWatchVariables(variables.map((variable) => ({ ...variable })));
+    } catch {
+      return { ok: false, reason: 'read-failed', trace };
+    }
     const elapsed = options.now() - start;
     trace.push({ atMs: Math.round(elapsed), values: valuesOf(read) });
     options.onSample?.(trace);
-    if (options.signal?.aborted || trace.length >= MAX_SAMPLES || elapsed + options.intervalMs > options.durationMs) return { ok: true, trace };
+    if (options.signal?.aborted || trace.length >= MAX_SAMPLES || elapsed + options.intervalMs > options.durationMs)
+      return { ok: true, trace };
     await options.wait(options.intervalMs);
     if (options.signal?.aborted) return { ok: true, trace };
   }

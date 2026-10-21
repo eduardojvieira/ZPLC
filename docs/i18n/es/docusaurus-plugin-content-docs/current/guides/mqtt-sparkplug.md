@@ -3,7 +3,7 @@ slug: /guides/mqtt-sparkplug
 id: mqtt-sparkplug
 title: Publicar con MQTT y Sparkplug B
 sidebar_label: MQTT y Sparkplug B
-description: "Publique variables en un broker y reciba valores de vuelta, con un perfil MQTT genérico o con Sparkplug B, con el contrato que existe hoy."
+description: 'Publique variables en un broker y reciba valores de vuelta, con un perfil MQTT genérico o con Sparkplug B, con el contrato que existe hoy.'
 tags: [how-to, mqtt, sparkplug, communication]
 ---
 
@@ -96,13 +96,13 @@ en el siguiente ciclo.
 La verificación de la documentación combina este fragmento con un proyecto y lo
 compila. Elija el `profile`:
 
-| `profile` | Úselo para | Mensajes |
-| --- | --- | --- |
-| `sparkplug-b` | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con carga protobuf |
-| `generic-broker` | Cualquier broker MQTT | Un mensaje de telemetría en JSON |
-| `aws-iot-core` | AWS IoT Core | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
-| `azure-iot-hub` | Azure IoT Hub | Mensajes de dispositivo a nube en los temas del hub |
-| `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico |
+| `profile`               | Úselo para                            | Mensajes                                                                                                |
+| ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sparkplug-b`           | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con carga protobuf                                         |
+| `generic-broker`        | Cualquier broker MQTT                 | Un mensaje de telemetría en JSON                                                                        |
+| `aws-iot-core`          | AWS IoT Core                          | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
+| `azure-iot-hub`         | Azure IoT Hub                         | Mensajes de dispositivo a nube en los temas del hub                                                     |
+| `azure-event-grid-mqtt` | Azure Event Grid MQTT                 | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico                  |
 
 Mantenga `securityLevel` en `tls-server-verify` o más estricto. Desactivar la
 verificación es un ajuste explícito que una imagen de versión rechaza, y una imagen
@@ -131,11 +131,11 @@ ningún comando imprime un certificado, una clave ni una contraseña guardados.
 identificador de cliente. Estas formas se leen del firmware y pueden cambiar;
 léalas como el contrato de esta versión.
 
-| Perfil | Telemetría | Comandos a una variable |
-| --- | --- | --- |
-| `sparkplug-b` | `spBv1.0/<groupId>/DDATA/<device>`, después de `NBIRTH` | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
-| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>` | `<topicNamespace>/cmd/<device>/tag_<address>` |
-| `azure-iot-hub` | `devices/<device>/messages/events/` | `devices/<device>/messages/devicebound/#` |
+| Perfil                           | Telemetría                                              | Comandos a una variable                         |
+| -------------------------------- | ------------------------------------------------------- | ----------------------------------------------- |
+| `sparkplug-b`                    | `spBv1.0/<groupId>/DDATA/<device>`, después de `NBIRTH` | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
+| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>`                   | `<topicNamespace>/cmd/<device>/tag_<address>`   |
+| `azure-iot-hub`                  | `devices/<device>/messages/events/`                     | `devices/<device>/messages/devicebound/#`       |
 
 Un mensaje genérico es JSON: `{"profile":"...","ts":<tiempo en ms>,"metrics":{"tag_00a0":1.5}}`.
 Una métrica se identifica por `tag_` y la dirección de cuatro dígitos hexadecimales
@@ -195,15 +195,15 @@ Los bloques siguen el único handshake de los doce bloques de comunicación
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Temas y cargas hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, en los cinco perfiles | Prueba del cliente del producto con espías en cada autoridad | Host y `native_sim` |
-| Las cargas de comandos de cada tipo admitido se decodifican, y una malformada se rechaza | Prueba unitaria del decodificador | Host y `native_sim` |
-| Manejadores de bloques: pines, handshake, códigos de estado, límites, traspaso al hilo del cliente | Prueba con un cliente sustituto | Host y `native_sim` |
-| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, sobre sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |
-| TLS rechaza en la compilación un generador aleatorio no criptográfico | Regla de compilación | Compilación |
-| El cliente MQTT del controlador contra un broker | No se ejecuta en el conjunto de pruebas | Ninguno |
-| Una sesión con un broker real, un intercambio TLS, una aplicación anfitriona Sparkplug B, entrega con QoS 1 | No probado | Ninguno |
+| Parte                                                                                                                                                                       | Verificado                                                                                                                                                          | Nivel               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Temas y cargas hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, en los cinco perfiles                                                | Prueba del cliente del producto con espías en cada autoridad                                                                                                        | Host y `native_sim` |
+| Las cargas de comandos de cada tipo admitido se decodifican, y una malformada se rechaza                                                                                    | Prueba unitaria del decodificador                                                                                                                                   | Host y `native_sim` |
+| Manejadores de bloques: pines, handshake, códigos de estado, límites, traspaso al hilo del cliente                                                                          | Prueba con un cliente sustituto                                                                                                                                     | Host y `native_sim` |
+| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, sobre sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host                |
+| TLS rechaza en la compilación un generador aleatorio no criptográfico                                                                                                       | Regla de compilación                                                                                                                                                | Compilación         |
+| El cliente MQTT del controlador contra un broker                                                                                                                            | No se ejecuta en el conjunto de pruebas                                                                                                                             | Ninguno             |
+| Una sesión con un broker real, un intercambio TLS, una aplicación anfitriona Sparkplug B, entrega con QoS 1                                                                 | No probado                                                                                                                                                          | Ninguno             |
 
 ## Vea también
 

@@ -19,7 +19,11 @@ describe('Button (UX-001) in a DOM', () => {
 
   it('is reached by Tab and does not submit a form', async () => {
     const onSubmit = mock((event: { preventDefault: () => void }) => event.preventDefault());
-    const { user } = dom.render(<form onSubmit={onSubmit}><Button>Plain</Button></form>);
+    const { user } = dom.render(
+      <form onSubmit={onSubmit}>
+        <Button>Plain</Button>
+      </form>,
+    );
     await user.tab();
     expect(isFocused(dom.screen.getByRole('button', { name: 'Plain' }))).toBe(true);
     await user.keyboard('{Enter}');
@@ -28,7 +32,14 @@ describe('Button (UX-001) in a DOM', () => {
 
   it('a disabled button leaves the tab order and ignores the pointer', async () => {
     const onClick = mock(() => undefined);
-    const { user } = dom.render(<><Button disabled onClick={onClick}>Off</Button><Button>On</Button></>);
+    const { user } = dom.render(
+      <>
+        <Button disabled onClick={onClick}>
+          Off
+        </Button>
+        <Button>On</Button>
+      </>,
+    );
     const off = dom.screen.getByRole('button', { name: 'Off' });
     expect((off as HTMLButtonElement).disabled).toBe(true);
     await user.tab();
@@ -54,7 +65,9 @@ describe('Button (UX-001) in a DOM', () => {
     await user.tab();
     // keyboard focus opens the tooltip at once, so a person without a pointer reads it too
     expect(dom.screen.getByRole('tooltip').textContent).toBe('Remove the selected task');
-    expect(dom.screen.getByRole('button', { name: 'Remove task' }).getAttribute('aria-describedby')).toBe(dom.screen.getByRole('tooltip').id);
+    expect(dom.screen.getByRole('button', { name: 'Remove task' }).getAttribute('aria-describedby')).toBe(
+      dom.screen.getByRole('tooltip').id,
+    );
     await user.keyboard('{Escape}');
     expect(dom.screen.queryByRole('tooltip')).toBeNull();
   });

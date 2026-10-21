@@ -6,11 +6,11 @@
   "scans": 1,
   "scanMs": 10,
   "inputs": [
-    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1},
-    {"at": "%ID1", "type": "DINT", "value": 5, "beforeScan": 1}
+    { "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 },
+    { "at": "%ID1", "type": "DINT", "value": 5, "beforeScan": 1 }
   ],
   "expect": [
-    {"at": "%QD0", "type": "DINT", "value": 1, "afterScan": 1},
-    {"at": "%QX4.0", "type": "BOOL", "value": false, "afterScan": 1}
+    { "at": "%QD0", "type": "DINT", "value": 1, "afterScan": 1 },
+    { "at": "%QX4.0", "type": "BOOL", "value": false, "afterScan": 1 }
   ]
 }

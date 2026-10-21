@@ -1,6 +1,6 @@
 /**
  * Sidebar Component
- * 
+ *
  * File explorer with hierarchical tree view:
  * - Expandable/collapsible directories
  * - File icons based on language
@@ -57,14 +57,7 @@ interface NewFileModalProps {
   onLanguageChange: (value: PLCLanguage) => void;
 }
 
-function NewFileModal({
-  isOpen,
-  onClose,
-  fileName,
-  language,
-  onFileNameChange,
-  onLanguageChange,
-}: NewFileModalProps) {
+function NewFileModal({ isOpen, onClose, fileName, language, onFileNameChange, onLanguageChange }: NewFileModalProps) {
   const { t } = useT();
   const createFile = useIDEStore((s) => s.createFile);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,9 +83,12 @@ function NewFileModal({
       await createFile(fileName.trim(), language);
       onClose();
     } catch (error) {
-      setError(error instanceof FileNameTakenError || (error instanceof Error && error.message === 'The file may exist on disk. Refresh the project before trying again.')
-        ? error.message
-        : 'Could not create the file. Check the name, folder access, and whether it already exists.');
+      setError(
+        error instanceof FileNameTakenError ||
+          (error instanceof Error && error.message === 'The file may exist on disk. Refresh the project before trying again.')
+          ? error.message
+          : 'Could not create the file. Check the name, folder access, and whether it already exists.',
+      );
       setTimeout(() => inputRef.current?.select(), 0);
     } finally {
       setIsCreating(false);
@@ -114,7 +110,10 @@ function NewFileModal({
           ref={inputRef}
           label={t('newFile.name')}
           value={fileName}
-          onChange={(e) => { setError(null); onFileNameChange(e.target.value); }}
+          onChange={(e) => {
+            setError(null);
+            onFileNameChange(e.target.value);
+          }}
           onKeyDown={handleKeyDown}
           readOnly={isCreating}
           placeholder={t('newFile.placeholder')}
@@ -126,7 +125,10 @@ function NewFileModal({
           id="new-file-language"
           label={t('newFile.language')}
           value={language}
-          onChange={(e) => { setError(null); onLanguageChange(e.target.value as PLCLanguage); }}
+          onChange={(e) => {
+            setError(null);
+            onLanguageChange(e.target.value as PLCLanguage);
+          }}
           disabled={isCreating}
         >
           {Object.values(PLC_LANGUAGES).map((lang) => (
@@ -137,8 +139,16 @@ function NewFileModal({
         </Select>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button onClick={handleClose} disabled={isCreating}>{t('common.cancel')}</Button>
-          <Button variant="primary" onClick={() => { void handleCreate(); }} disabled={!fileName.trim() || isCreating}>
+          <Button onClick={handleClose} disabled={isCreating}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              void handleCreate();
+            }}
+            disabled={!fileName.trim() || isCreating}
+          >
             {isCreating ? t('common.creating') : t('common.create')}
           </Button>
         </div>
@@ -146,7 +156,6 @@ function NewFileModal({
     </Modal>
   );
 }
-
 
 // =============================================================================
 // Display Name Helper
@@ -181,15 +190,29 @@ interface TreeNodeProps {
   onTreeItemActivate: (id: string) => void;
 }
 
-function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onToggleDir, onContextMenu, onKeyDown, onTreeItemRef, onTreeItemFocus, onTreeItemActivate }: TreeNodeProps) {
+function TreeNode({
+  node,
+  depth,
+  activeFileId,
+  focusedTreeId,
+  onFileClick,
+  onToggleDir,
+  onContextMenu,
+  onKeyDown,
+  onTreeItemRef,
+  onTreeItemFocus,
+  onTreeItemActivate,
+}: TreeNodeProps) {
   const paddingLeft = 8 + depth * 16;
 
   // Get icon for file
   const getFileIcon = () => {
     if (node.type === 'directory') {
-      return node.isExpanded 
-        ? <FolderOpen size={16} className="text-[var(--color-accent-yellow)]" />
-        : <FolderClosed size={16} className="text-[var(--color-accent-yellow)]" />;
+      return node.isExpanded ? (
+        <FolderOpen size={16} className="text-[var(--color-accent-yellow)]" />
+      ) : (
+        <FolderClosed size={16} className="text-[var(--color-accent-yellow)]" />
+      );
     }
 
     // Special icon for GVL files
@@ -210,39 +233,50 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
   if (node.type === 'directory') {
     return (
       <div
-          ref={(element) => onTreeItemRef(node.id, element)}
-          role="treeitem"
-          data-tree-node-id={node.id}
-          aria-level={depth}
-          aria-selected={false}
-          aria-expanded={node.isExpanded === true}
-          tabIndex={node.id === focusedTreeId ? 0 : -1}
-          onFocus={(event) => { if (event.target === event.currentTarget) onTreeItemFocus(node.id); }}
-          onKeyDown={(event) => {
-            if (event.target !== event.currentTarget) return;
-            onKeyDown(event, node);
-            if (event.defaultPrevented) event.stopPropagation();
+        ref={(element) => onTreeItemRef(node.id, element)}
+        role="treeitem"
+        data-tree-node-id={node.id}
+        aria-level={depth}
+        aria-selected={false}
+        aria-expanded={node.isExpanded === true}
+        tabIndex={node.id === focusedTreeId ? 0 : -1}
+        onFocus={(event) => {
+          if (event.target === event.currentTarget) onTreeItemFocus(node.id);
+        }}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          onKeyDown(event, node);
+          if (event.defaultPrevented) event.stopPropagation();
+        }}
+        className="group/treeitem"
+      >
+        <div
+          onClick={() => {
+            onTreeItemActivate(node.id);
+            onToggleDir(node.path);
           }}
-          className="group/treeitem"
+          onContextMenu={(event) => {
+            onTreeItemActivate(node.id);
+            onContextMenu(event, node);
+          }}
+          className={
+            'w-full flex items-center gap-1 py-1 cursor-pointer text-sm hover:bg-[var(--color-surface-700)] ' +
+            'text-[var(--color-surface-100)]'
+          }
+          style={{ paddingLeft }}
         >
-          <div
-            onClick={() => { onTreeItemActivate(node.id); onToggleDir(node.path); }}
-            onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
-            className="w-full flex items-center gap-1 py-1 cursor-pointer text-sm hover:bg-[var(--color-surface-700)] text-[var(--color-surface-100)]"
-            style={{ paddingLeft }}
-          >
-            {node.isExpanded ? (
-              <ChevronDown size={14} className="text-[var(--color-surface-400)]" />
-            ) : (
-              <ChevronRight size={14} className="text-[var(--color-surface-400)]" />
-            )}
-            {getFileIcon()}
-            <span className="truncate">{getDisplayName(node.name)}</span>
-            <TreeMarkBadge path={node.path} />
-          </div>
+          {node.isExpanded ? (
+            <ChevronDown size={14} className="text-[var(--color-surface-400)]" />
+          ) : (
+            <ChevronRight size={14} className="text-[var(--color-surface-400)]" />
+          )}
+          {getFileIcon()}
+          <span className="truncate">{getDisplayName(node.name)}</span>
+          <TreeMarkBadge path={node.path} />
+        </div>
 
-          {node.isExpanded && node.children && (
-            <div role="group">
+        {node.isExpanded && node.children && (
+          <div role="group">
             {node.children.map((child) => (
               <TreeNode
                 key={child.id}
@@ -259,8 +293,8 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
                 onTreeItemActivate={onTreeItemActivate}
               />
             ))}
-            </div>
-          )}
+          </div>
+        )}
       </div>
     );
   }
@@ -276,7 +310,9 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
       aria-level={depth}
       aria-selected={isActive}
       tabIndex={node.id === focusedTreeId ? 0 : -1}
-      onFocus={(event) => { if (event.target === event.currentTarget) onTreeItemFocus(node.id); }}
+      onFocus={(event) => {
+        if (event.target === event.currentTarget) onTreeItemFocus(node.id);
+      }}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
         onKeyDown(event, node);
@@ -285,8 +321,14 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
       className="group/treeitem"
     >
       <div
-        onClick={() => { onTreeItemActivate(node.id); onFileClick(node.id); }}
-        onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
+        onClick={() => {
+          onTreeItemActivate(node.id);
+          onFileClick(node.id);
+        }}
+        onContextMenu={(event) => {
+          onTreeItemActivate(node.id);
+          onContextMenu(event, node);
+        }}
         className={`w-full flex items-center gap-2 py-1 cursor-pointer text-sm transition-colors ${
           isActive
             ? 'bg-[var(--menu-item-bg-active)] text-[var(--text-primary)]'
@@ -310,16 +352,8 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
 
 export function Sidebar() {
   const { t, tn } = useT();
-  const {
-    projectName,
-    projectMigrationPreview,
-    fileTree,
-    activeFileId,
-    toggleDirectory,
-    openFile,
-    deleteFile,
-    refreshFileTree,
-  } = useSidebarState();
+  const { projectName, projectMigrationPreview, fileTree, activeFileId, toggleDirectory, openFile, deleteFile, refreshFileTree } =
+    useSidebarState();
 
   // The library folders and the files no build reads, marked in the tree (IDE-023).
   const projectConfig = useIDEStore((state) => state.projectConfig);
@@ -514,22 +548,42 @@ export function Sidebar() {
 
   return (
     <div className="w-full h-full bg-[var(--color-surface-800)] font-sans flex flex-col">
-      <div role="toolbar" className="h-10 flex items-center justify-between gap-2 px-3 border-b border-[var(--color-surface-600)]" aria-label={t('explorer.actions')}>
+      <div
+        role="toolbar"
+        className="h-10 flex items-center justify-between gap-2 px-3 border-b border-[var(--color-surface-600)]"
+        aria-label={t('explorer.actions')}
+      >
         <div className="min-w-0 flex items-center gap-2">
           <FolderOpen size={16} className="shrink-0 text-[var(--color-accent-yellow)]" />
           <span className="truncate text-sm font-medium text-[var(--color-surface-100)]">{projectName || t('explorer.project')}</span>
         </div>
         <div className="flex items-center gap-1">
           <IconButton size="sm" label={t('explorer.newFile')} icon={<Plus size={ICON_SIZES.sm} />} onClick={handleOpenNewFileModal} />
-          <IconButton size="sm" label={t('explorer.newFolder')} icon={<FolderPlus size={ICON_SIZES.sm} />} onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })} />
-          <IconButton size="sm" label={t('explorer.refresh')} icon={<RefreshCw size={ICON_SIZES.sm} />} onClick={() => { void refreshFileTree(); }} />
+          <IconButton
+            size="sm"
+            label={t('explorer.newFolder')}
+            icon={<FolderPlus size={ICON_SIZES.sm} />}
+            onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })}
+          />
+          <IconButton
+            size="sm"
+            label={t('explorer.refresh')}
+            icon={<RefreshCw size={ICON_SIZES.sm} />}
+            onClick={() => {
+              void refreshFileTree();
+            }}
+          />
           <IconButton size="sm" label={t('explorer.closeProject')} icon={<X size={ICON_SIZES.sm} />} onClick={handleCloseProject} />
         </div>
       </div>
 
       {projectMigrationPreview && (
         <div className="px-3 py-2 border-b border-[var(--color-surface-700)]">
-          <div className="mt-2 border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] p-2 text-xs text-[var(--color-surface-200)]">
+          <div
+            className={
+              'mt-2 border border-[var(--color-surface-600)] bg-[var(--color-surface-700)] p-2 text-xs ' + 'text-[var(--color-surface-200)]'
+            }
+          >
             <div className="flex items-start gap-2">
               <TriangleAlert size={15} className="mt-0.5 shrink-0 text-[var(--color-accent-yellow)]" aria-hidden="true" />
               <div className="min-w-0">
@@ -538,7 +592,12 @@ export function Sidebar() {
                 <div className="mt-0.5 text-[var(--color-surface-200)]">{t('explorer.migration.unchanged')}</div>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => setIsMigrationOpen(true)} className="mt-2 text-[var(--color-accent-blue)] underline">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMigrationOpen(true)}
+              className="mt-2 text-[var(--color-accent-blue)] underline"
+            >
               {tn('explorer.migration.review', projectMigrationPreview.changes.length)}
             </Button>
           </div>
@@ -549,30 +608,35 @@ export function Sidebar() {
       {/* File Tree */}
       <div className="flex-1 overflow-y-auto py-1" role="tree" aria-label={t('explorer.files')}>
         <TreeMarksContext.Provider value={marks}>
-        {fileTree ? (
-          fileTree.children && fileTree.children.length > 0 ? (
-            fileTree.children.map((node) => (
-              <TreeNode
-                key={node.id}
-                node={node}
-                depth={1}
-                activeFileId={activeFileId}
-                focusedTreeId={resolvedTreeFocus}
-                onFileClick={handleFileClick}
-                onToggleDir={onToggleDirectory}
-                onContextMenu={handleContextMenu}
-                onKeyDown={handleTreeKeyDown}
-                onTreeItemRef={setTreeItemRef}
-                onTreeItemFocus={setTreeFocus}
-                onTreeItemActivate={focusTreeItem}
+          {fileTree ? (
+            fileTree.children && fileTree.children.length > 0 ? (
+              fileTree.children.map((node) => (
+                <TreeNode
+                  key={node.id}
+                  node={node}
+                  depth={1}
+                  activeFileId={activeFileId}
+                  focusedTreeId={resolvedTreeFocus}
+                  onFileClick={handleFileClick}
+                  onToggleDir={onToggleDirectory}
+                  onContextMenu={handleContextMenu}
+                  onKeyDown={handleTreeKeyDown}
+                  onTreeItemRef={setTreeItemRef}
+                  onTreeItemFocus={setTreeFocus}
+                  onTreeItemActivate={focusTreeItem}
+                />
+              ))
+            ) : (
+              <PanelEmptyState
+                title={t('panel.explorer.empty.title')}
+                description={t('panel.explorer.empty.description')}
+                actionLabel={t('explorer.newFile')}
+                onAction={handleOpenNewFileModal}
               />
-            ))
+            )
           ) : (
-            <PanelEmptyState title={t('panel.explorer.empty.title')} description={t('panel.explorer.empty.description')} actionLabel={t('explorer.newFile')} onAction={handleOpenNewFileModal} />
-          )
-        ) : (
-          <LoadingState label={t('explorer.loading')} />
-        )}
+            <LoadingState label={t('explorer.loading')} />
+          )}
         </TreeMarksContext.Provider>
       </div>
 
@@ -590,7 +654,9 @@ export function Sidebar() {
       <CloseProjectModal
         isOpen={isCloseProjectModalOpen}
         busy={isSavingBeforeClose}
-        onSave={() => { void handleSaveAndCloseProject(); }}
+        onSave={() => {
+          void handleSaveAndCloseProject();
+        }}
         onConfirm={handleDiscardAndCloseProject}
         onCancel={() => setIsCloseProjectModalOpen(false)}
       />
@@ -602,21 +668,38 @@ export function Sidebar() {
           y={contextMenu.y}
           node={contextMenu.node}
           onClose={() => setContextMenu(null)}
-          onNewFolder={() => { setTreeQuestion({ kind: 'new-folder', parent: contextMenu.node.path }); setContextMenu(null); }}
-          onRename={() => { setTreeQuestion({ kind: 'rename', node: contextMenu.node }); setContextMenu(null); }}
+          onNewFolder={() => {
+            setTreeQuestion({ kind: 'new-folder', parent: contextMenu.node.path });
+            setContextMenu(null);
+          }}
+          onRename={() => {
+            setTreeQuestion({ kind: 'rename', node: contextMenu.node });
+            setContextMenu(null);
+          }}
           onDuplicate={() => {
             const path = contextMenu.node.path;
             setContextMenu(null);
             void duplicateEntry(path).catch((error: unknown) => {
-              useIDEStore.getState().addConsoleEntry({ type: 'error', message: error instanceof Error ? error.message : 'Could not duplicate the file.', source: 'system' });
+              useIDEStore.getState().addConsoleEntry({
+                type: 'error',
+                message: error instanceof Error ? error.message : 'Could not duplicate the file.',
+                source: 'system',
+              });
             });
           }}
-          onMove={() => { setTreeQuestion({ kind: 'move', node: contextMenu.node }); setContextMenu(null); }}
+          onMove={() => {
+            setTreeQuestion({ kind: 'move', node: contextMenu.node });
+            setContextMenu(null);
+          }}
           onDelete={() => {
             if (contextMenu.node.type === 'directory') {
               setTreeQuestion({ kind: 'delete-folder', node: contextMenu.node });
             } else {
-              setDeleteConfirm({ fileId: contextMenu.node.id, fileName: contextMenu.node.name, projectSession: contextMenu.projectSession });
+              setDeleteConfirm({
+                fileId: contextMenu.node.id,
+                fileName: contextMenu.node.name,
+                projectSession: contextMenu.projectSession,
+              });
               setDeleteError(null);
             }
             setContextMenu(null);
@@ -632,7 +715,10 @@ export function Sidebar() {
           submitLabel={t('common.create')}
           folders={collectFolders(fileTreeRoot)}
           initialFolder={treeQuestion.parent === '/' ? '' : treeQuestion.parent}
-          onSubmit={async (name, folder) => { await createFolder(folder, name); setTreeQuestion(null); }}
+          onSubmit={async (name, folder) => {
+            await createFolder(folder, name);
+            setTreeQuestion(null);
+          }}
           onCancel={() => setTreeQuestion(null)}
         />
       )}
@@ -641,7 +727,10 @@ export function Sidebar() {
           title={t('explorer.renameTitle', { name: treeQuestion.node.name })}
           initialName={treeQuestion.node.name}
           submitLabel={t('common.rename')}
-          onSubmit={async (name) => { await renameEntry(treeQuestion.node.path, name); setTreeQuestion(null); }}
+          onSubmit={async (name) => {
+            await renameEntry(treeQuestion.node.path, name);
+            setTreeQuestion(null);
+          }}
           onCancel={() => setTreeQuestion(null)}
         />
       )}
@@ -650,15 +739,23 @@ export function Sidebar() {
           name={treeQuestion.node.name}
           folders={collectFolders(fileTreeRoot, treeQuestion.node.type === 'directory' ? treeQuestion.node.path : null)}
           initialFolder={parentPath(treeQuestion.node.path)}
-          onMove={async (folder) => { await moveEntry(treeQuestion.node.path, folder); setTreeQuestion(null); }}
+          onMove={async (folder) => {
+            await moveEntry(treeQuestion.node.path, folder);
+            setTreeQuestion(null);
+          }}
           onCancel={() => setTreeQuestion(null)}
         />
       )}
       {treeQuestion?.kind === 'delete-folder' && (
         <DeleteFolderDialog
           name={treeQuestion.node.name}
-          modifiedFiles={[...useIDEStore.getState().loadedFiles.values()].filter((file) => file.isModified && file.path.startsWith(`${treeQuestion.node.path}/`)).map((file) => file.path)}
-          onConfirm={async () => { await deleteFolder(treeQuestion.node.path); setTreeQuestion(null); }}
+          modifiedFiles={[...useIDEStore.getState().loadedFiles.values()]
+            .filter((file) => file.isModified && file.path.startsWith(`${treeQuestion.node.path}/`))
+            .map((file) => file.path)}
+          onConfirm={async () => {
+            await deleteFolder(treeQuestion.node.path);
+            setTreeQuestion(null);
+          }}
           onCancel={() => setTreeQuestion(null)}
         />
       )}
@@ -670,8 +767,12 @@ export function Sidebar() {
           fileName={deleteConfirm.fileName}
           isDeleting={isDeletingFile}
           error={deleteError}
-          onConfirm={() => { void handleDelete(deleteConfirm.fileId, deleteConfirm.projectSession); }}
-          onCancel={() => { if (!isDeletingFile) setDeleteConfirm(null); }}
+          onConfirm={() => {
+            void handleDelete(deleteConfirm.fileId, deleteConfirm.projectSession);
+          }}
+          onCancel={() => {
+            if (!isDeletingFile) setDeleteConfirm(null);
+          }}
         />
       )}
     </div>

@@ -34,11 +34,20 @@ class FakeNativeAdapter {
   readonly memory = new Map<number, Uint8Array>();
   forced = false;
 
-  async loadProgram(bytes: Uint8Array): Promise<void> { this.calls.push(`load:${bytes.length}`); }
-  async reset(): Promise<void> { this.calls.push('reset'); }
-  async scenarioStep(atMs: number): Promise<void> { this.calls.push(`scenario-step:${atMs}`); }
+  async loadProgram(bytes: Uint8Array): Promise<void> {
+    this.calls.push(`load:${bytes.length}`);
+  }
+  async reset(): Promise<void> {
+    this.calls.push('reset');
+  }
+  async scenarioStep(atMs: number): Promise<void> {
+    this.calls.push(`scenario-step:${atMs}`);
+  }
   // Only the number of forced entries matters to the scenario runtime port, so one empty entry stands in for a real one.
-  async listForcedValues(): Promise<WatchForceEntry[]> { this.calls.push('forces'); return this.forced ? [{} as WatchForceEntry] : []; }
+  async listForcedValues(): Promise<WatchForceEntry[]> {
+    this.calls.push('forces');
+    return this.forced ? [{} as WatchForceEntry] : [];
+  }
   async peek(address: number, length: number): Promise<Uint8Array> {
     this.calls.push(`peek:${address}:${length}`);
     return this.memory.get(address) ?? new Uint8Array([0]);
@@ -116,7 +125,9 @@ describe('createNativeScenarioSession', () => {
         return {
           adapter: {
             // another suite creates its root while this one connects
-            connect: async () => { await mkdir(foreign); },
+            connect: async () => {
+              await mkdir(foreign);
+            },
             disconnect: async () => undefined,
             loadProgram: async () => undefined,
             reset: async () => undefined,
@@ -171,17 +182,29 @@ describe('createNativeScenarioSession', () => {
     let stopReady: (() => void) | undefined;
     let connectStarted: (() => void) | undefined;
     let root = '';
-    const connectStartedPromise = new Promise<void>((resolve) => { connectStarted = resolve; });
-    const connect = new Promise<void>((resolve) => { connectReady = resolve; });
-    const stop = new Promise<void>((resolve) => { stopReady = resolve; });
+    const connectStartedPromise = new Promise<void>((resolve) => {
+      connectStarted = resolve;
+    });
+    const connect = new Promise<void>((resolve) => {
+      connectReady = resolve;
+    });
+    const stop = new Promise<void>((resolve) => {
+      stopReady = resolve;
+    });
     const creating = createNativeScenarioSession(process.env, {
       signal: controller.signal,
       createLifecycle: (persistRoot) => {
         root = persistRoot;
         return {
           adapter: {
-            connect: async () => { calls.push('connect'); connectStarted?.(); await connect; },
-            disconnect: async () => { calls.push('disconnect'); },
+            connect: async () => {
+              calls.push('connect');
+              connectStarted?.();
+              await connect;
+            },
+            disconnect: async () => {
+              calls.push('disconnect');
+            },
             loadProgram: async () => undefined,
             reset: async () => undefined,
             scenarioStep: async () => undefined,
@@ -189,7 +212,12 @@ describe('createNativeScenarioSession', () => {
             peek: async () => new Uint8Array([0]),
             poke: async () => undefined,
           },
-          supervisor: { stopSession: async () => { calls.push('stop'); await stop; } },
+          supervisor: {
+            stopSession: async () => {
+              calls.push('stop');
+              await stop;
+            },
+          },
         };
       },
     });
@@ -198,7 +226,14 @@ describe('createNativeScenarioSession', () => {
     await Promise.resolve();
     expect(calls).toEqual(['connect', 'disconnect', 'stop']);
     let settled = false;
-    void creating.then(() => { settled = true; }, () => { settled = true; });
+    void creating.then(
+      () => {
+        settled = true;
+      },
+      () => {
+        settled = true;
+      },
+    );
     connectReady?.();
     await Promise.resolve();
     expect(settled).toBe(false);
@@ -215,13 +250,19 @@ describe('createNativeScenarioSession', () => {
     const controller = new AbortController();
     const calls: string[] = [];
     let releaseStop: (() => void) | undefined;
-    const stopped = new Promise<void>((resolve) => { releaseStop = resolve; });
+    const stopped = new Promise<void>((resolve) => {
+      releaseStop = resolve;
+    });
     const session = await createNativeScenarioSession(process.env, {
       signal: controller.signal,
       createLifecycle: () => ({
         adapter: {
-          connect: async () => { calls.push('connect'); },
-          disconnect: async () => { calls.push('disconnect'); },
+          connect: async () => {
+            calls.push('connect');
+          },
+          disconnect: async () => {
+            calls.push('disconnect');
+          },
           loadProgram: async () => undefined,
           reset: async () => undefined,
           scenarioStep: async () => undefined,
@@ -229,14 +270,21 @@ describe('createNativeScenarioSession', () => {
           peek: async () => new Uint8Array([0]),
           poke: async () => undefined,
         },
-        supervisor: { stopSession: async () => { calls.push('stop'); await stopped; } },
+        supervisor: {
+          stopSession: async () => {
+            calls.push('stop');
+            await stopped;
+          },
+        },
       }),
     });
     controller.abort();
     await Promise.resolve();
     expect(calls).toEqual(['connect', 'disconnect', 'stop']);
     let settled = false;
-    const closing = session.close().then(() => { settled = true; });
+    const closing = session.close().then(() => {
+      settled = true;
+    });
     await Promise.resolve();
     expect(settled).toBe(false);
     releaseStop?.();
@@ -245,15 +293,19 @@ describe('createNativeScenarioSession', () => {
     expect(await scenarioRoots()).toEqual(before);
   });
 
-  itNative('handshakes with the POSIX runtime and idempotently removes its private persistence root', async () => {
-    const before = await scenarioRoots();
-    const session = await createNativeScenarioSession({ ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
+  itNative(
+    'handshakes with the POSIX runtime and idempotently removes its private persistence root',
+    async () => {
+      const before = await scenarioRoots();
+      const session = await createNativeScenarioSession({ ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
 
-    const during = await scenarioRoots();
-    expect(during.filter((entry) => !before.includes(entry))).toHaveLength(1);
-    expect(await session.runtime.hasForces()).toBe(false);
-    await Promise.all([session.close(), session.close()]);
+      const during = await scenarioRoots();
+      expect(during.filter((entry) => !before.includes(entry))).toHaveLength(1);
+      expect(await session.runtime.hasForces()).toBe(false);
+      await Promise.all([session.close(), session.close()]);
 
-    expect(await scenarioRoots()).toEqual(before);
-  }, 30_000);
+      expect(await scenarioRoots()).toEqual(before);
+    },
+    30_000,
+  );
 });

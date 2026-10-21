@@ -63,7 +63,11 @@ export function nameClash(tree: FileTreeNode, fileName: string, exceptPath: stri
 export const taskProgramName = (fileName: string): string => fileName.replace(/(\.(?:ld|fbd|sfc))\.json$/i, '$1');
 
 /** The tasks with every reference to `oldFileName` pointing at `newFileName`, and how many tasks changed. */
-export function renameTaskPrograms<T extends { programs: string[] }>(tasks: readonly T[], oldFileName: string, newFileName: string): { tasks: T[]; changed: number } {
+export function renameTaskPrograms<T extends { programs: string[] }>(
+  tasks: readonly T[],
+  oldFileName: string,
+  newFileName: string,
+): { tasks: T[]; changed: number } {
   const oldKey = sourceNameKey(taskProgramName(oldFileName));
   const replacement = taskProgramName(newFileName);
   let changed = 0;
@@ -88,14 +92,25 @@ export interface OpenFilesState {
  * file keeps its content, its modified flag, its tab position and its breakpoints under its new path and identity.
  * `nodeAt` gives the node of the new tree at a path (the file's new handle); a file with none is dropped.
  */
-export function remapOpenFiles(state: OpenFilesState, from: string, to: string, nodeAt: (path: string) => FileTreeNode | null): OpenFilesState {
+export function remapOpenFiles(
+  state: OpenFilesState,
+  from: string,
+  to: string,
+  nodeAt: (path: string) => FileTreeNode | null,
+): OpenFilesState {
   const idMap = new Map<string, string | null>();
   const loadedFiles = new Map<string, ProjectFileWithHandle>();
   for (const [id, file] of state.loadedFiles) {
     const newPath = remapPath(file.path, from, to);
-    if (newPath === null) { loadedFiles.set(id, file); continue; }
+    if (newPath === null) {
+      loadedFiles.set(id, file);
+      continue;
+    }
     const node = nodeAt(newPath);
-    if (!node || node.type !== 'file') { idMap.set(id, null); continue; }
+    if (!node || node.type !== 'file') {
+      idMap.set(id, null);
+      continue;
+    }
     const newId = fileTreeFileId(newPath);
     idMap.set(id, newId);
     loadedFiles.set(newId, { ...file, id: newId, name: node.name, path: newPath, parentPath: parentPath(newPath), handle: node.handle });
@@ -103,9 +118,17 @@ export function remapOpenFiles(state: OpenFilesState, from: string, to: string, 
   const mapped = (id: string) => (idMap.has(id) ? idMap.get(id)! : id);
   const openTabs = state.openTabs.map(mapped).filter((id): id is string => id !== null);
   const breakpoints = new Map<string, Set<number>>();
-  for (const [id, lines] of state.breakpoints) { const next = mapped(id); if (next !== null) breakpoints.set(next, lines); }
+  for (const [id, lines] of state.breakpoints) {
+    const next = mapped(id);
+    if (next !== null) breakpoints.set(next, lines);
+  }
   const active = state.activeFileId === null ? null : mapped(state.activeFileId);
-  return { loadedFiles, openTabs, activeFileId: active !== null && openTabs.includes(active) ? active : openTabs.at(-1) ?? null, breakpoints };
+  return {
+    loadedFiles,
+    openTabs,
+    activeFileId: active !== null && openTabs.includes(active) ? active : (openTabs.at(-1) ?? null),
+    breakpoints,
+  };
 }
 
 /** The open files after the entry at `path` (a file, or a folder and everything in it) was deleted. */
@@ -115,7 +138,7 @@ export function removeOpenFiles(state: OpenFilesState, path: string): OpenFilesS
   const openTabs = state.openTabs.filter((id) => !gone.has(id));
   const loadedFiles = new Map([...state.loadedFiles].filter(([id]) => !gone.has(id)));
   const breakpoints = new Map([...state.breakpoints].filter(([id]) => !gone.has(id)));
-  const active = state.activeFileId !== null && !gone.has(state.activeFileId) ? state.activeFileId : openTabs.at(-1) ?? null;
+  const active = state.activeFileId !== null && !gone.has(state.activeFileId) ? state.activeFileId : (openTabs.at(-1) ?? null);
   return { loadedFiles, openTabs, activeFileId: active, breakpoints };
 }
 
@@ -124,12 +147,16 @@ export function preserveExpansion(tree: FileTreeNode, previous: FileTreeNode | n
   if (!previous) return tree;
   const open = new Set<string>();
   const collect = (node: FileTreeNode) => {
-    if (node.type === 'directory') { if (node.isExpanded) open.add(node.path); node.children?.forEach(collect); }
+    if (node.type === 'directory') {
+      if (node.isExpanded) open.add(node.path);
+      node.children?.forEach(collect);
+    }
   };
   collect(previous);
-  const apply = (node: FileTreeNode): FileTreeNode => node.type === 'directory'
-    ? { ...node, isExpanded: open.has(node.path) || node.isExpanded === true && node.path === '/', children: node.children?.map(apply) }
-    : node;
+  const apply = (node: FileTreeNode): FileTreeNode =>
+    node.type === 'directory'
+      ? { ...node, isExpanded: open.has(node.path) || (node.isExpanded === true && node.path === '/'), children: node.children?.map(apply) }
+      : node;
   return apply(tree);
 }
 

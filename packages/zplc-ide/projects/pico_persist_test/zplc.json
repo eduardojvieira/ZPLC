@@ -32,18 +32,14 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 0,
-      "programs": [
-        "FastCounter.st"
-      ]
+      "programs": ["FastCounter.st"]
     },
     {
       "name": "SlowBlink",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 2,
-      "programs": [
-        "SlowBlink.st"
-      ]
+      "programs": ["SlowBlink.st"]
     }
   ],
   "build": {

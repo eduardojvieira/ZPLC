@@ -20,19 +20,15 @@
 _Static_assert(sizeof(float) == 4U, "ZPLC REAL requires 32-bit float");
 _Static_assert(FLT_RADIX == 2, "ZPLC REAL requires binary float");
 _Static_assert(FLT_MANT_DIG == 24, "ZPLC REAL requires IEEE-754 binary32");
-_Static_assert(FLT_MIN_EXP == -125 && FLT_MAX_EXP == 128,
-               "ZPLC REAL requires IEEE-754 binary32 exponent range");
+_Static_assert(FLT_MIN_EXP == -125 && FLT_MAX_EXP == 128, "ZPLC REAL requires IEEE-754 binary32 exponent range");
 
-int zplc_mqtt_command_decode(uint8_t var_type, const uint8_t *payload,
-                             size_t payload_len, uint8_t *out_bytes,
-                             size_t *out_size) {
+int zplc_mqtt_command_decode(uint8_t var_type, const uint8_t *payload, size_t payload_len, uint8_t *out_bytes, size_t *out_size) {
   char text[ZPLC_MQTT_COMMAND_MAX_PAYLOAD + 1U];
   char *end;
   uint8_t bytes[4U];
   size_t size;
 
-  if (payload == NULL || out_bytes == NULL || out_size == NULL ||
-      payload_len == 0U) {
+  if (payload == NULL || out_bytes == NULL || out_size == NULL || payload_len == 0U) {
     return -EINVAL;
   }
   if (payload_len > ZPLC_MQTT_COMMAND_MAX_PAYLOAD) {
@@ -62,8 +58,7 @@ int zplc_mqtt_command_decode(uint8_t var_type, const uint8_t *payload,
 
     errno = 0;
     value = strtol(text, &end, 10);
-    if (errno == ERANGE || end == text || *end != '\0' || value < INT16_MIN ||
-        value > INT16_MAX) {
+    if (errno == ERANGE || end == text || *end != '\0' || value < INT16_MIN || value > INT16_MAX) {
       return -EINVAL;
     }
     bytes[0] = (uint8_t)((uint16_t)value & 0xFFU);

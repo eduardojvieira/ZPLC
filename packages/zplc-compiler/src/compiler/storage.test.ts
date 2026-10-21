@@ -33,7 +33,10 @@ function rejected(source: string): { line: number; message: string } {
 
 /** The cycle of the program: what follows `_cycle:`. */
 function cycle(source: string, options?: Parameters<typeof compileST>[1]): string[] {
-    const lines = asm(source, options).split('\n').map((line) => line.trim()).filter((line) => line !== '');
+    const lines = asm(source, options)
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
     return lines.slice(lines.indexOf('_cycle:') + 1);
 }
 
@@ -98,8 +101,10 @@ VAR n : INT; END_VAR
   n := B#Z;
 END_PROGRAM`).join('\n');
         expect(code).toContain('PUSH8 1');
-        expect(rejected(`TYPE A : (X); END_TYPE\nPROGRAM P\nVAR n : INT; END_VAR\n  n := A#Q;\nEND_PROGRAM`))
-            .toEqual({ line: 4, message: "'Q' is not a value of the enumeration 'A'" });
+        expect(rejected(`TYPE A : (X); END_TYPE\nPROGRAM P\nVAR n : INT; END_VAR\n  n := A#Q;\nEND_PROGRAM`)).toEqual({
+            line: 4,
+            message: "'Q' is not a value of the enumeration 'A'",
+        });
     });
 });
 
@@ -147,21 +152,25 @@ END_PROGRAM`);
     });
 
     it('rejects a bound that is not a constant', () => {
-        expect(rejected('PROGRAM P\nVAR n : INT; a : ARRAY[0..n] OF INT; END_VAR\nEND_PROGRAM').message)
-            .toContain('integer constant expression');
+        expect(rejected('PROGRAM P\nVAR n : INT; a : ARRAY[0..n] OF INT; END_VAR\nEND_PROGRAM').message).toContain(
+            'integer constant expression',
+        );
     });
 
     it('rejects a wrong number of indices', () => {
-        expect(rejected(`
+        expect(
+            rejected(`
 PROGRAM P
 VAR a : ARRAY[0..1, 0..1] OF INT; END_VAR
   a[1] := 1;
-END_PROGRAM`).message).toContain('2 dimensions, 1 given');
+END_PROGRAM`).message,
+        ).toContain('2 dimensions, 1 given');
     });
 
     it('rejects too many initial values', () => {
-        expect(rejected('PROGRAM P\nVAR a : ARRAY[0..1] OF INT := [1, 2, 3]; END_VAR\nEND_PROGRAM').message)
-            .toContain('Too many initial values');
+        expect(rejected('PROGRAM P\nVAR a : ARRAY[0..1] OF INT := [1, 2, 3]; END_VAR\nEND_PROGRAM').message).toContain(
+            'Too many initial values',
+        );
     });
 
     it('fills a long repeat with a loop, not with one store per element', () => {
@@ -180,10 +189,10 @@ describe('references (CMP-024)', () => {
     });
 
     it('refuses a reference stored in a number and the dereference of a number', () => {
-        expect(rejected('PROGRAM P\nVAR x : DINT; y : DINT; END_VAR\n  x := REF(y);\nEND_PROGRAM').message)
-            .toContain('only a REF_TO variable holds one');
-        expect(rejected('PROGRAM P\nVAR x : INT; y : INT; END_VAR\n  y := x^;\nEND_PROGRAM').message)
-            .toContain('is not a reference');
+        expect(rejected('PROGRAM P\nVAR x : DINT; y : DINT; END_VAR\n  x := REF(y);\nEND_PROGRAM').message).toContain(
+            'only a REF_TO variable holds one',
+        );
+        expect(rejected('PROGRAM P\nVAR x : INT; y : INT; END_VAR\n  y := x^;\nEND_PROGRAM').message).toContain('is not a reference');
     });
 
     it('starts a REF_TO variable as NULL, the address no region contains', () => {
@@ -220,25 +229,32 @@ END_PROGRAM`);
         expect(init).toContain('PUSH8 3');
         expect(init).toContain('PUSH8 9');
         expect(init).not.toContain('PUSH8 4');
-        expect(rejected(`
+        expect(
+            rejected(`
 TYPE Pt : STRUCT x : INT; END_STRUCT END_TYPE
 PROGRAM P
 VAR p : Pt := (q := 1); END_VAR
-END_PROGRAM`).message).toContain("Unknown member 'q'");
+END_PROGRAM`).message,
+        ).toContain("Unknown member 'q'");
     });
 
     it('refuses an assignment to a constant, a global constant and a function-block constant', () => {
-        expect(rejected(`
+        expect(
+            rejected(`
 PROGRAM P
 VAR CONSTANT K : INT := 5; END_VAR
   K := 6;
-END_PROGRAM`)).toEqual({ line: 4, message: "Cannot assign to constant 'K'" });
-        expect(rejected(`
+END_PROGRAM`),
+        ).toEqual({ line: 4, message: "Cannot assign to constant 'K'" });
+        expect(
+            rejected(`
 VAR_GLOBAL CONSTANT G : INT := 5; END_VAR
 PROGRAM P
   G := 6;
-END_PROGRAM`).line).toBe(4);
-        expect(rejected(`
+END_PROGRAM`).line,
+        ).toBe(4);
+        expect(
+            rejected(`
 FUNCTION_BLOCK F
 VAR CONSTANT LIM : INT := 5; END_VAR
   LIM := 6;
@@ -246,7 +262,8 @@ END_FUNCTION_BLOCK
 PROGRAM P
 VAR f : F; END_VAR
   f();
-END_PROGRAM`).line).toBe(4);
+END_PROGRAM`).line,
+        ).toBe(4);
     });
 
     it('writes the VAR_TEMP of a function block again at each call', () => {
@@ -304,31 +321,39 @@ END_PROGRAM`).join('\n');
     });
 
     it('refuses a variable of another type and a constant', () => {
-        expect(rejected(`${block}
+        expect(
+            rejected(`${block}
 PROGRAM P
 VAR f : Inc; v : DINT; END_VAR
   f(x := v);
-END_PROGRAM`).message).toContain('VAR_IN_OUT');
-        expect(rejected(`${block}
+END_PROGRAM`).message,
+        ).toContain('VAR_IN_OUT');
+        expect(
+            rejected(`${block}
 VAR_GLOBAL CONSTANT K : INT := 1; END_VAR
 PROGRAM P
 VAR f : Inc; END_VAR
   f(x := K);
-END_PROGRAM`).message).toContain('constant');
+END_PROGRAM`).message,
+        ).toContain('constant');
     });
 });
 
 describe('strings (CMP-021)', () => {
     it('refuses a literal longer than the capacity, in an assignment and in an initial value', () => {
-        expect(rejected(`
+        expect(
+            rejected(`
 PROGRAM P
 VAR s : STRING[3]; END_VAR
   s := 'abcd';
-END_PROGRAM`)).toEqual({ line: 4, message: "String literal of 4 characters does not fit 's' (STRING[3] holds 3)" });
-        expect(rejected(`
+END_PROGRAM`),
+        ).toEqual({ line: 4, message: "String literal of 4 characters does not fit 's' (STRING[3] holds 3)" });
+        expect(
+            rejected(`
 PROGRAM P
 VAR s : STRING[3] := 'abcd'; END_VAR
-END_PROGRAM`).line).toBe(3);
+END_PROGRAM`).line,
+        ).toBe(3);
     });
 
     it('writes the capacity of each string at the first scan', () => {
@@ -380,30 +405,36 @@ END_PROGRAM`).join('\n');
     });
 
     it('refuses a WSTRING where only one-byte strings work', () => {
-        expect(rejected(`
+        expect(
+            rejected(`
 PROGRAM P
 VAR w : WSTRING[5]; v : WSTRING[5]; n AT %QW0 : INT; END_VAR
   n := FIND(w, v);
-END_PROGRAM`).message).toContain('WSTRING');
+END_PROGRAM`).message,
+        ).toContain('WSTRING');
     });
 });
 
 describe('what cannot be copied by value', () => {
     it('refuses a whole structure where a number is expected and a function that returns one', () => {
-        expect(rejected(`
+        expect(
+            rejected(`
 TYPE Pt : STRUCT x : INT; END_STRUCT END_TYPE
 PROGRAM P
 VAR p : Pt; n : DINT; END_VAR
   n := p;
-END_PROGRAM`).message).toContain('use one of its members');
-        expect(rejected(`
+END_PROGRAM`).message,
+        ).toContain('use one of its members');
+        expect(
+            rejected(`
 TYPE Pt : STRUCT x : INT; END_STRUCT END_TYPE
 FUNCTION Make : Pt
 VAR_INPUT a : INT; END_VAR
 END_FUNCTION
 PROGRAM P
 VAR n : INT; END_VAR
-END_PROGRAM`).message).toContain('returns Pt');
+END_PROGRAM`).message,
+        ).toContain('returns Pt');
     });
 
     it('copies a long structure with the byte routine and a short one with words', () => {

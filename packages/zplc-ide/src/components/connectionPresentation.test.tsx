@@ -6,7 +6,11 @@ import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentOperationalStatus } from './operationalStatusPresentation';
 
 // The status bar reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { OperationalStatusView } = await import('./OperationalStatusBar');
 
 const { t } = translatorFor('en');
@@ -20,27 +24,58 @@ describe('UX-018 connection indicator presentation', () => {
   });
 
   it('UX-018 names the native and the browser simulation, whatever the selected mode says', () => {
-    expect(present({ adapterType: 'native', connected: true })).toMatchObject({ state: 'simulation-native', label: 'Simulation · native runtime', tone: 'info', icon: 'monitor' });
-    expect(present({ adapterType: 'wasm', connected: true })).toMatchObject({ state: 'simulation-wasm', label: 'Simulation · browser runtime', tone: 'info', icon: 'globe' });
+    expect(present({ adapterType: 'native', connected: true })).toMatchObject({
+      state: 'simulation-native',
+      label: 'Simulation · native runtime',
+      tone: 'info',
+      icon: 'monitor',
+    });
+    expect(present({ adapterType: 'wasm', connected: true })).toMatchObject({
+      state: 'simulation-wasm',
+      label: 'Simulation · browser runtime',
+      tone: 'info',
+      icon: 'globe',
+    });
   });
 
   it('UX-018 shows that Studio is reaching for a real device while it connects', () => {
-    expect(present({ mode: 'hardware', connecting: true })).toMatchObject({ state: 'hardware-connecting', label: 'Connecting to hardware', icon: 'loader' });
+    expect(present({ mode: 'hardware', connecting: true })).toMatchObject({
+      state: 'hardware-connecting',
+      label: 'Connecting to hardware',
+      icon: 'loader',
+    });
   });
 
   it('UX-018 says real hardware with the board and the link when they are known', () => {
-    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true })).toMatchObject({ state: 'hardware-connected', label: 'Real hardware', tone: 'warning', icon: 'cpu' });
-    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, board: 'rpi_pico', link: 'framed' }).label).toBe('Real hardware · rpi_pico · framed link');
-    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, link: 'shell' }).label).toBe('Real hardware · text shell link');
+    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true })).toMatchObject({
+      state: 'hardware-connected',
+      label: 'Real hardware',
+      tone: 'warning',
+      icon: 'cpu',
+    });
+    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, board: 'rpi_pico', link: 'framed' }).label).toBe(
+      'Real hardware · rpi_pico · framed link',
+    );
+    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, link: 'shell' }).label).toBe(
+      'Real hardware · text shell link',
+    );
   });
 
   it('UX-018 shows a fault of the hardware as a fault, in red with its own icon', () => {
-    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, faulted: true, board: 'rpi_pico' })).toMatchObject({ state: 'hardware-faulted', label: 'Hardware fault · rpi_pico', tone: 'danger', icon: 'alert' });
+    expect(present({ mode: 'hardware', adapterType: 'serial', connected: true, faulted: true, board: 'rpi_pico' })).toMatchObject({
+      state: 'hardware-faulted',
+      label: 'Hardware fault · rpi_pico',
+      tone: 'danger',
+      icon: 'alert',
+    });
   });
 
   it('UX-018 never lets simulation and real hardware share text, icon or tone', () => {
     const simulations = [present({ adapterType: 'native', connected: true }), present({ adapterType: 'wasm', connected: true })];
-    const hardware = [present({ adapterType: 'serial', connected: true, mode: 'hardware' }), present({ adapterType: 'serial', connected: true, faulted: true, mode: 'hardware' })];
+    const hardware = [
+      present({ adapterType: 'serial', connected: true, mode: 'hardware' }),
+      present({ adapterType: 'serial', connected: true, faulted: true, mode: 'hardware' }),
+    ];
     for (const sim of simulations) {
       for (const real of hardware) {
         expect(sim.label).not.toBe(real.label);
@@ -54,13 +89,17 @@ describe('UX-018 connection indicator presentation', () => {
 
   it('UX-018 speaks Spanish when the interface does', () => {
     const es = translatorFor('es').t;
-    expect(presentConnection({ ...idle, adapterType: 'serial', connected: true, mode: 'hardware', board: 'rpi_pico' }, es).label).toBe('Hardware real · rpi_pico');
+    expect(presentConnection({ ...idle, adapterType: 'serial', connected: true, mode: 'hardware', board: 'rpi_pico' }, es).label).toBe(
+      'Hardware real · rpi_pico',
+    );
   });
 });
 
 describe('UX-018 connection indicator rendering', () => {
   it('UX-018 renders the text, an icon that is hidden from readers, and the tone as data, so colour is never the only cue', () => {
-    const out = renderToStaticMarkup(<ConnectionIndicator indicator={present({ mode: 'hardware', adapterType: 'serial', connected: true, board: 'rpi_pico' })} />);
+    const out = renderToStaticMarkup(
+      <ConnectionIndicator indicator={present({ mode: 'hardware', adapterType: 'serial', connected: true, board: 'rpi_pico' })} />,
+    );
     expect(out).toContain('Real hardware · rpi_pico');
     expect(out).toContain('data-connection="hardware-connected"');
     expect(out).toContain('data-tone="warning"');
@@ -71,15 +110,26 @@ describe('UX-018 connection indicator rendering', () => {
 
 describe('UX-018 force banner stays in the status bar', () => {
   const status = { text: 'Running', tone: 'success' as const };
-  const view = (forcedValuesCount: number, forcesUnconfirmed: boolean) => renderToStaticMarkup(
-    <OperationalStatusView
-      indicator={present({ adapterType: 'native', connected: true })}
-      presentation={presentOperationalStatus({
-        mode: 'simulate', adapterType: 'native', connected: true, vmInfo: { cycles: 4 }, status, projectTargetBoard: 'rpi_pico', projectTasks: [],
-        controllerInfo: null, controllerStatus: null, forcedValuesCount, forcesUnconfirmed, nativeTrace: [],
-      })}
-    />,
-  );
+  const view = (forcedValuesCount: number, forcesUnconfirmed: boolean) =>
+    renderToStaticMarkup(
+      <OperationalStatusView
+        indicator={present({ adapterType: 'native', connected: true })}
+        presentation={presentOperationalStatus({
+          mode: 'simulate',
+          adapterType: 'native',
+          connected: true,
+          vmInfo: { cycles: 4 },
+          status,
+          projectTargetBoard: 'rpi_pico',
+          projectTasks: [],
+          controllerInfo: null,
+          controllerStatus: null,
+          forcedValuesCount,
+          forcesUnconfirmed,
+          nativeTrace: [],
+        })}
+      />,
+    );
 
   it('UX-018 shows the connection indicator first in the operational status region', () => {
     const out = view(0, false);

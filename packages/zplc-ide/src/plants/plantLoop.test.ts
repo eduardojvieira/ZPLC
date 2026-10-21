@@ -5,20 +5,33 @@ import type { DeclaredOutput } from '../runtime/ioMap';
 import { createPlantRun } from './plantEngine';
 import { createPlantLoop } from './plantLoop';
 
-const output = (name: string) => ({ path: `Tank.${name}`, name } as unknown as DeclaredOutput);
-const input = (name: string) => ({ path: `Tank.${name}`, name } as unknown as DeclaredInput);
+const output = (name: string) => ({ path: `Tank.${name}`, name }) as unknown as DeclaredOutput;
+const input = (name: string) => ({ path: `Tank.${name}`, name }) as unknown as DeclaredInput;
 
 /** A fake PLC: the program keeps the pump on while LevelLow (until LevelHigh); a scan counter advances with every `scan`. */
 function fakePlc() {
-  const image = new Map<string, boolean>([['Tank.LevelLow', false], ['Tank.LevelHigh', false], ['Tank.PumpFault', false], ['Tank.Pump', false]]);
+  const image = new Map<string, boolean>([
+    ['Tank.LevelLow', false],
+    ['Tank.LevelHigh', false],
+    ['Tank.PumpFault', false],
+    ['Tank.Pump', false],
+  ]);
   let pump = false;
   const writes: Array<[string, boolean]> = [];
   return {
     writes,
     cycles: 0,
-    scan() { if (image.get('Tank.LevelLow')) pump = true; if (image.get('Tank.LevelHigh')) pump = false; image.set('Tank.Pump', pump); this.cycles += 1; },
+    scan() {
+      if (image.get('Tank.LevelLow')) pump = true;
+      if (image.get('Tank.LevelHigh')) pump = false;
+      image.set('Tank.Pump', pump);
+      this.cycles += 1;
+    },
     read: async (points: ReadonlyArray<{ path: string }>) => new Map(points.map((point) => [point.path, image.get(point.path)!] as const)),
-    write: async (point: { path: string }, value: boolean | number) => { image.set(point.path, value as boolean); writes.push([point.path, value as boolean]); },
+    write: async (point: { path: string }, value: boolean | number) => {
+      image.set(point.path, value as boolean);
+      writes.push([point.path, value as boolean]);
+    },
   };
 }
 
@@ -34,7 +47,11 @@ describe('closed-loop plant session (LRN-018)', () => {
     const run = createPlantRun('tank-v1');
     const loop = createPlantLoop({ run, resolved, read: plc.read, write: plc.write, cycles: async () => plc.cycles });
     await loop.poll();
-    expect(plc.writes.sort()).toEqual([['Tank.LevelHigh', false], ['Tank.LevelLow', false], ['Tank.PumpFault', false]]);
+    expect(plc.writes.sort()).toEqual([
+      ['Tank.LevelHigh', false],
+      ['Tank.LevelLow', false],
+      ['Tank.PumpFault', false],
+    ]);
     plc.writes.length = 0;
     let sawLow = false;
     let sawHigh = false;
@@ -75,7 +92,9 @@ describe('closed-loop plant session (LRN-018)', () => {
     const loop = createPlantLoop({ run, resolved, read: plc.read, write: plc.write, cycles: async () => plc.cycles });
     await loop.poll();
     run.setPaused(true);
-    plc.scan(); plc.scan(); plc.scan();
+    plc.scan();
+    plc.scan();
+    plc.scan();
     await loop.poll();
     expect(run.tickCount).toBe(0);
     await loop.step();

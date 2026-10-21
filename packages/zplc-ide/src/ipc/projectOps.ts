@@ -5,11 +5,20 @@
  */
 import type { ProjectFilesBridge, ProjectFilesResult } from '../../electron/projectFilesProtocol';
 import { projectFilesFailure, projectRootId } from './projectFilesHandles';
-import { createBrowserFolder, isBrowserFolder, readBrowserFile, removeBrowserEntry, renameBrowserEntry, writeBrowserFile } from './projectOpsBrowser';
+import {
+  createBrowserFolder,
+  isBrowserFolder,
+  readBrowserFile,
+  removeBrowserEntry,
+  renameBrowserEntry,
+  writeBrowserFile,
+} from './projectOpsBrowser';
 
 /** A browser folder (the picker, or the store of the web build) has no bridge: the operations run on its handles (REL-037). */
 const inBrowser = (handle: unknown): handle is FileSystemDirectoryHandle =>
-  isBrowserFolder(handle) && projectRootId(handle) === null && (typeof window === 'undefined' || window.electronAPI?.projectFiles === undefined);
+  isBrowserFolder(handle) &&
+  projectRootId(handle) === null &&
+  (typeof window === 'undefined' || window.electronAPI?.projectFiles === undefined);
 
 function target(handle: unknown): { bridge: ProjectFilesBridge; rootId: string } {
   const bridge = typeof window === 'undefined' ? undefined : window.electronAPI?.projectFiles;
@@ -20,7 +29,11 @@ function target(handle: unknown): { bridge: ProjectFilesBridge; rootId: string }
 
 async function settled<T>(call: Promise<ProjectFilesResult<T>>): Promise<T> {
   let answer: ProjectFilesResult<T>;
-  try { answer = await call; } catch { throw projectFilesFailure('failed'); }
+  try {
+    answer = await call;
+  } catch {
+    throw projectFilesFailure('failed');
+  }
   if (!answer.ok) throw projectFilesFailure(answer.code);
   return answer.value;
 }

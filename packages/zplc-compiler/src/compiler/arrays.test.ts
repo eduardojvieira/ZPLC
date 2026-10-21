@@ -1,6 +1,6 @@
 /**
  * ZPLC Array Support Tests
- * 
+ *
  * Tests for ARRAY parsing, code generation, and integration.
  */
 
@@ -29,9 +29,9 @@ describe('Array Lexer', () => {
         const tokens = tokenize('ARRAY[0..9] OF INT');
         expect(tokens[0].type).toBe(TokenType.ARRAY);
         expect(tokens[1].type).toBe(TokenType.LBRACKET);
-        expect(tokens[2].type).toBe(TokenType.INTEGER);  // 0
-        expect(tokens[3].type).toBe(TokenType.DOTDOT);   // ..
-        expect(tokens[4].type).toBe(TokenType.INTEGER);  // 9
+        expect(tokens[2].type).toBe(TokenType.INTEGER); // 0
+        expect(tokens[3].type).toBe(TokenType.DOTDOT); // ..
+        expect(tokens[4].type).toBe(TokenType.INTEGER); // 9
         expect(tokens[5].type).toBe(TokenType.RBRACKET);
         expect(tokens[6].type).toBe(TokenType.OF);
         expect(tokens[7].type).toBe(TokenType.INT);
@@ -196,7 +196,7 @@ describe('Array Helper Functions', () => {
             ],
             elementType: 'INT',
         };
-        expect(getArrayElementCount(arrayType)).toBe(12);  // 3 * 4
+        expect(getArrayElementCount(arrayType)).toBe(12); // 3 * 4
     });
 
     it('should calculate total size for 1D array of INT', () => {
@@ -205,7 +205,7 @@ describe('Array Helper Functions', () => {
             dimensions: [{ lowerBound: 0, upperBound: 9 }],
             elementType: 'INT',
         };
-        expect(getArrayTotalSize(arrayType)).toBe(20);  // 10 elements * 2 bytes
+        expect(getArrayTotalSize(arrayType)).toBe(20); // 10 elements * 2 bytes
     });
 
     it('should calculate total size for 1D array of REAL', () => {
@@ -214,7 +214,7 @@ describe('Array Helper Functions', () => {
             dimensions: [{ lowerBound: 0, upperBound: 9 }],
             elementType: 'REAL',
         };
-        expect(getArrayTotalSize(arrayType)).toBe(40);  // 10 elements * 4 bytes
+        expect(getArrayTotalSize(arrayType)).toBe(40); // 10 elements * 4 bytes
     });
 
     it('should identify ArrayType correctly', () => {

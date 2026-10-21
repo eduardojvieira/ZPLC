@@ -73,15 +73,24 @@ export function createToolWorkerHost(options: ToolWorkerHostOptions) {
         clearTimeout(timers.grace);
         signal.removeEventListener('abort', onAbort);
         live.delete(child);
-        try { child.kill(); } catch { /* it already exited */ }
-        if ('error' in outcome) reject(outcome.error); else resolve(outcome.value);
+        try {
+          child.kill();
+        } catch {
+          /* it already exited */
+        }
+        if ('error' in outcome) reject(outcome.error);
+        else resolve(outcome.value);
       };
 
       live.set(child, () => finish({ error: new ToolWorkerError('cancelled') }));
 
       function onAbort(): void {
         if (settled) return;
-        try { child.postMessage({ type: 'cancel' } satisfies ToolWorkerCommand); } catch { /* the process is gone: its exit settles the run */ }
+        try {
+          child.postMessage({ type: 'cancel' } satisfies ToolWorkerCommand);
+        } catch {
+          /* the process is gone: its exit settles the run */
+        }
         timers.grace = setTimeout(() => finish({ error: new ToolWorkerError('cancelled') }), cancelGraceMs);
       }
 

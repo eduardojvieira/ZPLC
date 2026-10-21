@@ -30,7 +30,10 @@ function evidenceLevel(record: Record<string, unknown>): unknown {
   return 'evidence' in record ? record.evidence : undefined;
 }
 
-function asApplicableRecord(boardId: string, value: unknown): { firmwareVersion: string; commit: string; result: 'pass' | 'fail' } | undefined {
+function asApplicableRecord(
+  boardId: string,
+  value: unknown,
+): { firmwareVersion: string; commit: string; result: 'pass' | 'fail' } | undefined {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
   const { schema, board_id: board, firmware_version: version, commit, image_sha256: hash, result } = record;
@@ -65,7 +68,11 @@ export async function supportLevelFromFiles(
   const records: Array<readonly [string, unknown]> = [];
   for (const ref of refs) {
     let value: unknown = null;
-    try { value = JSON.parse((await readText(ref)) ?? 'null'); } catch { value = null; }
+    try {
+      value = JSON.parse((await readText(ref)) ?? 'null');
+    } catch {
+      value = null;
+    }
     records.push([ref, value]);
   }
   return supportLevelFromRecords(boardId, records).level;

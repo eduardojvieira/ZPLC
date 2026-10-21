@@ -111,7 +111,13 @@ export interface LearnProgressOperations {
   importProgress(text: string): Promise<{ progress: LearnProgress; lessons: number }>;
 }
 
-export interface LessonNote { lessonId: string; started?: true; hint?: 1 | 2; solution?: true; last?: true }
+export interface LessonNote {
+  lessonId: string;
+  started?: true;
+  hint?: 1 | 2;
+  solution?: true;
+  last?: true;
+}
 
 type Json = Record<string, unknown>;
 const isObject = (value: unknown): value is Json => {
@@ -123,7 +129,8 @@ const hasExactKeys = (value: Json, keys: readonly string[]): boolean => {
   const own = Object.keys(value);
   return own.length === keys.length && keys.every((key) => own.includes(key));
 };
-const isInt = (value: unknown, min: number, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
+const isInt = (value: unknown, min: number, max: number): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 const isTime = (value: unknown): value is string => typeof value === 'string' && ISO_UTC.test(value) && Number.isFinite(Date.parse(value));
 const isSha = (value: unknown): value is string => typeof value === 'string' && SHA256.test(value);
 
@@ -135,7 +142,15 @@ function parseTrace(value: unknown): TraceLink | null | undefined {
   if (value === null) return null;
   if (!isObject(value) || !hasExactKeys(value, ['scenarioId', 'traceSha256', 'cursor', 'atMs', 'uri'])) return undefined;
   const { scenarioId, traceSha256, cursor, atMs, uri } = value;
-  if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || !isSha(traceSha256) || !isInt(cursor, 0, 100_000) || !isInt(atMs, 0, 3_600_000)) return undefined;
+  if (
+    typeof scenarioId !== 'string' ||
+    scenarioId.length === 0 ||
+    scenarioId.length > 128 ||
+    !isSha(traceSha256) ||
+    !isInt(cursor, 0, 100_000) ||
+    !isInt(atMs, 0, 3_600_000)
+  )
+    return undefined;
   if (uri !== `${SNAPSHOT_URI}${scenarioId}/${cursor}/${traceSha256}`) return undefined;
   return { scenarioId, traceSha256, cursor, atMs, uri };
 }
@@ -157,20 +172,57 @@ function parseFailed(value: unknown): FailedAssertion | undefined {
   const expected = parseSignalMap<boolean>(value.expected, false);
   const observed = parseSignalMap<boolean | null>(value.observed, true);
   const trace = parseTrace(value.trace);
-  if (!isInt(value.index, 0, 255) || typeof value.kind !== 'string' || !(SCENARIO_KINDS as readonly string[]).includes(value.kind)) return undefined;
+  if (!isInt(value.index, 0, 255) || typeof value.kind !== 'string' || !(SCENARIO_KINDS as readonly string[]).includes(value.kind))
+    return undefined;
   if (!(value.atMs === null || isInt(value.atMs, 0, 3_600_000)) || !expected || !observed || trace === undefined) return undefined;
   return { index: value.index, kind: value.kind, atMs: value.atMs as number | null, expected, observed, trace };
 }
 
 /** A grade record, or undefined for anything that is not exactly one. */
 export function parseGradeRecord(value: unknown): GradeRecord | undefined {
-  if (!isObject(value) || !hasExactKeys(value, ['schemaVersion', 'lessonId', 'lessonVersion', 'track', 'scenarioId', 'scenarioSha256', 'programSha256', 'runtimeVersion', 'time', 'result', 'assertions', 'failedAssertions'])) return undefined;
-  if (value.schemaVersion !== 1 || !isLessonId(value.lessonId) || !isInt(value.lessonVersion, 1, 1_000_000) || (value.track !== 'simulation' && value.track !== 'hardware')) return undefined;
+  if (
+    !isObject(value) ||
+    !hasExactKeys(value, [
+      'schemaVersion',
+      'lessonId',
+      'lessonVersion',
+      'track',
+      'scenarioId',
+      'scenarioSha256',
+      'programSha256',
+      'runtimeVersion',
+      'time',
+      'result',
+      'assertions',
+      'failedAssertions',
+    ])
+  )
+    return undefined;
+  if (
+    value.schemaVersion !== 1 ||
+    !isLessonId(value.lessonId) ||
+    !isInt(value.lessonVersion, 1, 1_000_000) ||
+    (value.track !== 'simulation' && value.track !== 'hardware')
+  )
+    return undefined;
   if (typeof value.scenarioId !== 'string' || value.scenarioId.length === 0 || value.scenarioId.length > 128) return undefined;
-  if (!isSha(value.scenarioSha256) || !isSha(value.programSha256) || typeof value.runtimeVersion !== 'string' || value.runtimeVersion.length === 0 || value.runtimeVersion.length > 64) return undefined;
+  if (
+    !isSha(value.scenarioSha256) ||
+    !isSha(value.programSha256) ||
+    typeof value.runtimeVersion !== 'string' ||
+    value.runtimeVersion.length === 0 ||
+    value.runtimeVersion.length > 64
+  )
+    return undefined;
   if (!isTime(value.time) || (value.result !== 'passed' && value.result !== 'failed')) return undefined;
   const assertions = value.assertions;
-  if (!isObject(assertions) || !hasExactKeys(assertions, ['total', 'passed']) || !isInt(assertions.total, 1, 256) || !isInt(assertions.passed, 0, assertions.total)) return undefined;
+  if (
+    !isObject(assertions) ||
+    !hasExactKeys(assertions, ['total', 'passed']) ||
+    !isInt(assertions.total, 1, 256) ||
+    !isInt(assertions.passed, 0, assertions.total)
+  )
+    return undefined;
   if (!Array.isArray(value.failedAssertions) || value.failedAssertions.length > 64) return undefined;
   const failedAssertions: FailedAssertion[] = [];
   for (const item of value.failedAssertions) {
@@ -182,49 +234,89 @@ export function parseGradeRecord(value: unknown): GradeRecord | undefined {
   if (value.result === 'passed' && (failedAssertions.length > 0 || assertions.passed !== assertions.total)) return undefined;
   if (value.result === 'failed' && assertions.passed === assertions.total) return undefined;
   return {
-    schemaVersion: 1, lessonId: value.lessonId, lessonVersion: value.lessonVersion, track: value.track, scenarioId: value.scenarioId,
-    scenarioSha256: value.scenarioSha256, programSha256: value.programSha256, runtimeVersion: value.runtimeVersion, time: value.time,
-    result: value.result, assertions: { total: assertions.total, passed: assertions.passed }, failedAssertions,
+    schemaVersion: 1,
+    lessonId: value.lessonId,
+    lessonVersion: value.lessonVersion,
+    track: value.track,
+    scenarioId: value.scenarioId,
+    scenarioSha256: value.scenarioSha256,
+    programSha256: value.programSha256,
+    runtimeVersion: value.runtimeVersion,
+    time: value.time,
+    result: value.result,
+    assertions: { total: assertions.total, passed: assertions.passed },
+    failedAssertions,
   };
 }
 
 /** The levels of a stored list: ascending and distinct, each 1 or 2; anything else is undefined. */
 function parseHintLevels(value: unknown): Array<1 | 2> | undefined {
   if (!Array.isArray(value) || value.length > 2 || !value.every((level) => level === 1 || level === 2)) return undefined;
-  return value.every((level, index) => index === 0 || level > value[index - 1]) ? [...value] as Array<1 | 2> : undefined;
+  return value.every((level, index) => index === 0 || level > value[index - 1]) ? ([...value] as Array<1 | 2>) : undefined;
 }
 
 /** Version 2 kept the highest level shown: 2 means both were. */
-const levelsOfHighest = (highest: unknown): Array<1 | 2> | undefined => (highest === 0 ? [] : highest === 1 ? [1] : highest === 2 ? [1, 2] : undefined);
+const levelsOfHighest = (highest: unknown): Array<1 | 2> | undefined =>
+  highest === 0 ? [] : highest === 1 ? [1] : highest === 2 ? [1, 2] : undefined;
 
 function parseLesson(id: string, value: unknown, version: number): LessonProgress | undefined {
   const hintKey = version === 2 ? 'hintsUsed' : 'hintsShown';
-  if (!isObject(value) || !hasExactKeys(value, ['state', 'grade', 'passedAt', 'startedAt', hintKey, 'solutionShown', ...(version >= 4 ? ['hardware'] : [])])) return undefined;
+  if (
+    !isObject(value) ||
+    !hasExactKeys(value, ['state', 'grade', 'passedAt', 'startedAt', hintKey, 'solutionShown', ...(version >= 4 ? ['hardware'] : [])])
+  )
+    return undefined;
   if (value.state !== 'in-progress' && value.state !== 'passed') return undefined;
   const hintsShown = version === 2 ? levelsOfHighest(value.hintsUsed) : parseHintLevels(value.hintsShown);
   if (!hintsShown || typeof value.solutionShown !== 'boolean') return undefined;
   if (!(value.passedAt === null || isTime(value.passedAt)) || !(value.startedAt === null || isTime(value.startedAt))) return undefined;
   const grade = value.grade === null ? null : parseGradeRecord(value.grade);
   if (grade === undefined) return undefined;
-  if (grade !== null && (grade.lessonId !== id || grade.result !== 'passed' || value.state !== 'passed' || value.passedAt !== grade.time)) return undefined;
+  if (grade !== null && (grade.lessonId !== id || grade.result !== 'passed' || value.state !== 'passed' || value.passedAt !== grade.time))
+    return undefined;
   if (value.state === 'in-progress' && (grade !== null || value.passedAt !== null)) return undefined;
   if (value.state === 'passed' && value.passedAt === null && grade !== null) return undefined;
   const hardware = version >= 4 && value.hardware !== null ? parseGradeRecord(value.hardware) : null;
-  if (hardware === undefined || (hardware !== null && (hardware.lessonId !== id || hardware.result !== 'passed' || hardware.track !== 'hardware'))) return undefined;
+  if (
+    hardware === undefined ||
+    (hardware !== null && (hardware.lessonId !== id || hardware.result !== 'passed' || hardware.track !== 'hardware'))
+  )
+    return undefined;
   const startedAt = value.startedAt as string | null;
   if (grade?.track === 'hardware') {
     // Before version 4 nothing wrote a hardware grade, but the record allowed one as the pass; it moves out of the pass (LRN-024).
     if (version >= 4) return undefined;
-    return { state: 'in-progress', grade: null, passedAt: null, startedAt, hintsShown, solutionShown: value.solutionShown, hardware: grade };
+    return {
+      state: 'in-progress',
+      grade: null,
+      passedAt: null,
+      startedAt,
+      hintsShown,
+      solutionShown: value.solutionShown,
+      hardware: grade,
+    };
   }
-  return { state: value.state, grade, passedAt: value.passedAt as string | null, startedAt, hintsShown, solutionShown: value.solutionShown, hardware };
+  return {
+    state: value.state,
+    grade,
+    passedAt: value.passedAt as string | null,
+    startedAt,
+    hintsShown,
+    solutionShown: value.solutionShown,
+    hardware,
+  };
 }
 
 function parseDocument(value: unknown, withKind: boolean): LearnProgress | undefined {
   if (!isObject(value)) return undefined;
   const keys = ['schemaVersion', 'last', 'lessons', ...(withKind ? ['kind'] : [])];
   const version = value.schemaVersion;
-  if (!hasExactKeys(value, keys) || typeof version !== 'number' || (version !== LEARN_PROGRESS_SCHEMA_VERSION && !LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS.includes(version))) return undefined;
+  if (
+    !hasExactKeys(value, keys) ||
+    typeof version !== 'number' ||
+    (version !== LEARN_PROGRESS_SCHEMA_VERSION && !LEARN_PROGRESS_PREVIOUS_SCHEMA_VERSIONS.includes(version))
+  )
+    return undefined;
   if (withKind && value.kind !== LEARN_PROGRESS_EXPORT_KIND) return undefined;
   let last: LearnProgress['last'] = null;
   if (value.last !== null) {
@@ -273,7 +365,11 @@ export function parseLessonNote(value: unknown): LessonNote | undefined {
 /** The stored document, or undefined when `raw` is not exactly one. */
 export function parseProgress(raw: string): LearnProgress | undefined {
   if (typeof raw !== 'string' || byteLength(raw) > LEARN_PROGRESS_MAX_BYTES) return undefined;
-  try { return parseDocument(JSON.parse(raw) as unknown, false); } catch { return undefined; }
+  try {
+    return parseDocument(JSON.parse(raw) as unknown, false);
+  } catch {
+    return undefined;
+  }
 }
 
 /** The canonical text of a document: lessons in id order, so equal progress is equal bytes. */
@@ -287,7 +383,15 @@ export function emptyProgress(): LearnProgress {
   return { schemaVersion: LEARN_PROGRESS_SCHEMA_VERSION, last: null, lessons: {} };
 }
 
-const PASSED_WITHOUT_GRADE: LessonProgress = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null };
+const PASSED_WITHOUT_GRADE: LessonProgress = {
+  state: 'passed',
+  grade: null,
+  passedAt: null,
+  startedAt: null,
+  hintsShown: [],
+  solutionShown: false,
+  hardware: null,
+};
 
 /**
  * Reads the progress file of the first release: `{ schemaVersion: 1, mastered: [ids] }`. Every id becomes a lesson passed
@@ -297,7 +401,13 @@ export function migrateLegacyMastery(raw: string): LearnProgress | undefined {
   if (typeof raw !== 'string' || byteLength(raw) > LEGACY_MAX_BYTES) return undefined;
   try {
     const value = JSON.parse(raw) as unknown;
-    if (!isObject(value) || !hasExactKeys(value, ['schemaVersion', 'mastered']) || value.schemaVersion !== 1 || !Array.isArray(value.mastered)) return undefined;
+    if (
+      !isObject(value) ||
+      !hasExactKeys(value, ['schemaVersion', 'mastered']) ||
+      value.schemaVersion !== 1 ||
+      !Array.isArray(value.mastered)
+    )
+      return undefined;
     const lessons: Record<string, LessonProgress> = {};
     for (const id of value.mastered) {
       if (!isLessonId(id) || Object.hasOwn(lessons, id)) return undefined;
@@ -305,7 +415,9 @@ export function migrateLegacyMastery(raw: string): LearnProgress | undefined {
     }
     if (Object.keys(lessons).length > LEARN_PROGRESS_MAX_LESSONS) return undefined;
     return { schemaVersion: LEARN_PROGRESS_SCHEMA_VERSION, last: null, lessons };
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }
 
 /** The text a learner saves to move progress to another machine. */
@@ -314,13 +426,18 @@ export function exportProgress(progress: LearnProgress): string {
   return JSON.stringify({ kind: LEARN_PROGRESS_EXPORT_KIND, schemaVersion, last, lessons });
 }
 
-export type ImportResult = { ok: true; progress: LearnProgress; format: 'export' | 'legacy' } | { ok: false; reason: 'too-large' | 'not-json' | 'invalid' };
+export type ImportResult =
+  { ok: true; progress: LearnProgress; format: 'export' | 'legacy' } | { ok: false; reason: 'too-large' | 'not-json' | 'invalid' };
 
 /** Validates a file the learner chose: an export of this release, or the progress file of the first release. */
 export function parseImport(raw: string): ImportResult {
   if (typeof raw !== 'string' || byteLength(raw) > LEARN_PROGRESS_MAX_BYTES) return { ok: false, reason: 'too-large' };
   let value: unknown;
-  try { value = JSON.parse(raw) as unknown; } catch { return { ok: false, reason: 'not-json' }; }
+  try {
+    value = JSON.parse(raw) as unknown;
+  } catch {
+    return { ok: false, reason: 'not-json' };
+  }
   if (isObject(value) && value.kind === LEARN_PROGRESS_EXPORT_KIND) {
     const progress = parseDocument(value, true);
     return progress ? { ok: true, progress, format: 'export' } : { ok: false, reason: 'invalid' };
@@ -329,8 +446,10 @@ export function parseImport(raw: string): ImportResult {
   return legacy ? { ok: true, progress: legacy, format: 'legacy' } : { ok: false, reason: 'invalid' };
 }
 
-const later = (left: string | null, right: string | null): string | null => (left === null ? right : right === null ? left : left >= right ? left : right);
-const earlier = (left: string | null, right: string | null): string | null => (left === null ? right : right === null ? left : left <= right ? left : right);
+const later = (left: string | null, right: string | null): string | null =>
+  left === null ? right : right === null ? left : left >= right ? left : right;
+const earlier = (left: string | null, right: string | null): string | null =>
+  left === null ? right : right === null ? left : left <= right ? left : right;
 
 /** The newest of two passing records: by time, then by program hash so the choice never depends on the order. */
 function newerGrade(left: GradeRecord | null, right: GradeRecord | null): GradeRecord | null {
@@ -368,7 +487,15 @@ export function mergeProgress(left: LearnProgress, right: LearnProgress): LearnP
   return { schemaVersion: LEARN_PROGRESS_SCHEMA_VERSION, last, lessons };
 }
 
-const blank = (): LessonProgress => ({ state: 'in-progress', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null });
+const blank = (): LessonProgress => ({
+  state: 'in-progress',
+  grade: null,
+  passedAt: null,
+  startedAt: null,
+  hintsShown: [],
+  solutionShown: false,
+  hardware: null,
+});
 
 /**
  * Records one grade. A passing simulation grade passes the lesson; a passing hardware grade is kept as the lesson's hardware
@@ -377,10 +504,17 @@ const blank = (): LessonProgress => ({ state: 'in-progress', grade: null, passed
 export function withGrade(progress: LearnProgress, record: GradeRecord): LearnProgress {
   const current = progress.lessons[record.lessonId] ?? blank();
   const startedAt = current.startedAt ?? record.time;
-  const next: LessonProgress = record.result !== 'passed' ? { ...current, startedAt }
-    : record.track === 'hardware' ? { ...current, startedAt, hardware: newerGrade(current.hardware, record) }
-      : mergeLesson(current, { ...blank(), state: 'passed', grade: record, passedAt: record.time, startedAt });
-  return { ...progress, last: { lessonId: record.lessonId, at: later(progress.last?.at ?? null, record.time)! }, lessons: { ...progress.lessons, [record.lessonId]: next } };
+  const next: LessonProgress =
+    record.result !== 'passed'
+      ? { ...current, startedAt }
+      : record.track === 'hardware'
+        ? { ...current, startedAt, hardware: newerGrade(current.hardware, record) }
+        : mergeLesson(current, { ...blank(), state: 'passed', grade: record, passedAt: record.time, startedAt });
+  return {
+    ...progress,
+    last: { lessonId: record.lessonId, at: later(progress.last?.at ?? null, record.time)! },
+    lessons: { ...progress.lessons, [record.lessonId]: next },
+  };
 }
 
 /** Records that a lesson was opened, a hint level shown, or the solution shown; `at` is when. */
@@ -389,7 +523,9 @@ export function withNote(progress: LearnProgress, note: LessonNote, at: string):
   const next: LessonProgress = {
     ...current,
     startedAt: current.startedAt ?? at,
-    hintsShown: note.hint ? ([1, 2] as const).filter((level) => level === note.hint || current.hintsShown.includes(level)) : current.hintsShown,
+    hintsShown: note.hint
+      ? ([1, 2] as const).filter((level) => level === note.hint || current.hintsShown.includes(level))
+      : current.hintsShown,
     solutionShown: current.solutionShown || note.solution === true,
   };
   return { ...progress, last: { lessonId: note.lessonId, at }, lessons: { ...progress.lessons, [note.lessonId]: next } };
@@ -404,5 +540,7 @@ export function withPassedIds(progress: LearnProgress, ids: readonly string[]): 
 
 /** The ids of the passed lessons, in id order. */
 export function passedLessonIds(progress: LearnProgress): string[] {
-  return Object.keys(progress.lessons).sort().filter((id) => progress.lessons[id]!.state === 'passed');
+  return Object.keys(progress.lessons)
+    .sort()
+    .filter((id) => progress.lessons[id]!.state === 'passed');
 }

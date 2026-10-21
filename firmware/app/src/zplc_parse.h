@@ -36,8 +36,7 @@ extern "C" {
  * @return 0, -EINVAL when there is no number at the start of `text`, -ERANGE when it is outside [min, max]
  *         (or outside what an unsigned long holds). `*out` is written only on 0.
  */
-static inline int zplc_scan_uint(const char *text, int base, uint32_t min, uint32_t max, uint32_t *out,
-                                 const char **end) {
+static inline int zplc_scan_uint(const char *text, int base, uint32_t min, uint32_t max, uint32_t *out, const char **end) {
   char *stop = NULL;
   unsigned long value;
 
@@ -92,8 +91,7 @@ static inline int zplc_scan_int(const char *text, int32_t min, int32_t max, int3
   while (*cursor == ' ' || *cursor == '\t' || *cursor == '\r' || *cursor == '\n') {
     cursor++;
   }
-  if (!((*cursor >= '0' && *cursor <= '9') ||
-        (*cursor == '-' && cursor[1] >= '0' && cursor[1] <= '9'))) {
+  if (!((*cursor >= '0' && *cursor <= '9') || (*cursor == '-' && cursor[1] >= '0' && cursor[1] <= '9'))) {
     return -EINVAL;
   }
   errno = 0;
@@ -120,8 +118,7 @@ static inline int zplc_json_int(const char *text, int32_t min, int32_t max, int3
   if (rc != 0) {
     return rc;
   }
-  if (!(*end == '\0' || *end == ',' || *end == '}' || *end == ']' || *end == ' ' || *end == '\t' ||
-        *end == '\r' || *end == '\n')) {
+  if (!(*end == '\0' || *end == ',' || *end == '}' || *end == ']' || *end == ' ' || *end == '\t' || *end == '\r' || *end == '\n')) {
     return -EINVAL;
   }
   *out = value;
@@ -182,28 +179,28 @@ typedef struct {
 } zplc_config_number_t;
 
 static const zplc_config_number_t zplc_config_numbers[] = {
-    {"wifi_security", 255U},               /* uint8_t */
-    {"modbus_id", 65535U},                 /* uint16_t */
-    {"modbus_tcp_port", 65535U},           /* uint16_t */
-    {"modbus_rtu_baud", 4294967295U},      /* uint32_t */
-    {"modbus_rtu_parity", 2U},             /* zplc_modbus_parity_t: NONE, EVEN, ODD */
-    {"modbus_rtu_client_slave_id", 255U},  /* uint8_t */
+    {"wifi_security", 255U},              /* uint8_t */
+    {"modbus_id", 65535U},                /* uint16_t */
+    {"modbus_tcp_port", 65535U},          /* uint16_t */
+    {"modbus_rtu_baud", 4294967295U},     /* uint32_t */
+    {"modbus_rtu_parity", 2U},            /* zplc_modbus_parity_t: NONE, EVEN, ODD */
+    {"modbus_rtu_client_slave_id", 255U}, /* uint8_t */
     {"modbus_rtu_client_poll_ms", 4294967295U},
-    {"modbus_tcp_client_port", 65535U},    /* uint16_t */
-    {"modbus_tcp_client_unit_id", 255U},   /* uint8_t */
+    {"modbus_tcp_client_port", 65535U},  /* uint16_t */
+    {"modbus_tcp_client_unit_id", 255U}, /* uint8_t */
     {"modbus_tcp_client_poll_ms", 4294967295U},
     {"modbus_tcp_client_timeout_ms", 4294967295U},
-    {"mqtt_profile", 4U},                  /* zplc_mqtt_profile_t: SPARKPLUG_B .. AZURE_EVENT_GRID */
-    {"mqtt_protocol", 1U},                 /* zplc_mqtt_protocol_t: 3.1.1, 5.0 */
-    {"mqtt_transport", 3U},                /* zplc_mqtt_transport_t: TCP, TLS, WS, WSS */
-    {"mqtt_port", 65535U},                 /* uint16_t */
-    {"mqtt_keepalive", 65535U},            /* uint16_t */
+    {"mqtt_profile", 4U},       /* zplc_mqtt_profile_t: SPARKPLUG_B .. AZURE_EVENT_GRID */
+    {"mqtt_protocol", 1U},      /* zplc_mqtt_protocol_t: 3.1.1, 5.0 */
+    {"mqtt_transport", 3U},     /* zplc_mqtt_transport_t: TCP, TLS, WS, WSS */
+    {"mqtt_port", 65535U},      /* uint16_t */
+    {"mqtt_keepalive", 65535U}, /* uint16_t */
     {"mqtt_publish_interval", 4294967295U},
-    {"mqtt_publish_qos", 2U},              /* zplc_mqtt_qos_t */
-    {"mqtt_subscribe_qos", 2U},            /* zplc_mqtt_qos_t */
+    {"mqtt_publish_qos", 2U},   /* zplc_mqtt_qos_t */
+    {"mqtt_subscribe_qos", 2U}, /* zplc_mqtt_qos_t */
     {"mqtt_session_expiry", 4294967295U},
-    {"mqtt_security", 3U},                 /* zplc_mqtt_security_t: NONE .. TLS_MUTUAL */
-    {"mqtt_lwt_qos", 2U},                  /* zplc_mqtt_qos_t */
+    {"mqtt_security", 3U}, /* zplc_mqtt_security_t: NONE .. TLS_MUTUAL */
+    {"mqtt_lwt_qos", 2U},  /* zplc_mqtt_qos_t */
     {"azure_sas_expiry_s", 4294967295U},
 };
 

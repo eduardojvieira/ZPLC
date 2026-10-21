@@ -1,18 +1,9 @@
 {
   "requirement": "CMP-012",
   "title": "a literal beyond the range of a WORD parameter is rejected",
-  "matrix": [
-    "data-types.byte-word-dword"
-  ],
+  "matrix": ["data-types.byte-word-dword"],
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "CONSTANT_OUT_OF_RANGE"
-  ],
-  "messageIncludes": [
-    "65536",
-    "WORD"
-  ]
+  "lines": [5],
+  "codes": ["CONSTANT_OUT_OF_RANGE"],
+  "messageIncludes": ["65536", "WORD"]
 }

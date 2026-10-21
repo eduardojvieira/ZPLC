@@ -17,7 +17,9 @@ export function currentPlatform(): Platform {
 /** The shortcut of a command as text, or null when it has none. */
 export function shortcutText(id: CommandId, platform: Platform = currentPlatform()): string | null {
   const shortcut = commandById(id).shortcut;
-  return shortcut ? formatShortcut(shortcut, platform, { ctrl: t('shortcut.key.ctrl'), shift: t('shortcut.key.shift'), alt: t('shortcut.key.alt') }) : null;
+  return shortcut
+    ? formatShortcut(shortcut, platform, { ctrl: t('shortcut.key.ctrl'), shift: t('shortcut.key.shift'), alt: t('shortcut.key.alt') })
+    : null;
 }
 
 /** A name with the shortcut after it, for a tooltip or an accessible name: `Run (F5)`; the name alone when there is none. */

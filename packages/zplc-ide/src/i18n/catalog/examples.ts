@@ -1,9 +1,10 @@
 /** The title and the one-line summary of each bundled example on the Welcome screen (UX-022, UX-029). Keys `examples.<folder>.title` and `.summary`; the data text, not the lesson prose. */
 export const examplesEn = {
-    'examples.first_blink.title': 'First blink',
+  'examples.first_blink.title': 'First blink',
   'examples.first_blink.summary': 'Reference solution of the first lesson: a lamp that changes state every half second.',
   'examples.verify_my_board.title': 'Verify my board',
-  'examples.verify_my_board.summary': 'Reference solution of the board check: an LED that blinks every half second and stays lit while a push button is pressed.',
+  'examples.verify_my_board.summary':
+    'Reference solution of the board check: an LED that blinks every half second and stays lit while a push button is pressed.',
   'examples.enabled_blink.title': 'Enabled blinker',
   'examples.enabled_blink.summary': 'Reference solution of the blinker lesson: a timer and a memory, gated by an enable input.',
   'examples.two_hand.title': 'Two-hand guard',
@@ -13,31 +14,41 @@ export const examplesEn = {
   'examples.delays.title': 'Timer delays',
   'examples.delays.summary': 'Reference solution of the timer lesson: an off-delay light with TOF and an on-delay filter with TON.',
   'examples.seal_in_ladder.title': 'Seal-in circuit',
-  'examples.seal_in_ladder.summary': 'Reference solution of the seal-in lesson: pressing start holds the motor on and pressing stop drops it.',
+  'examples.seal_in_ladder.summary':
+    'Reference solution of the seal-in lesson: pressing start holds the motor on and pressing stop drops it.',
   'examples.batch_count_fbd.title': 'Batch counter in blocks',
-  'examples.batch_count_fbd.summary': 'Reference solution of the counter lesson: a CTU block counts three parts and lights a lamp until the operator clears it.',
+  'examples.batch_count_fbd.summary':
+    'Reference solution of the counter lesson: a CTU block counts three parts and lights a lamp until the operator clears it.',
   'examples.door_alarm_il.title': 'Door alarm in instruction list',
-  'examples.door_alarm_il.summary': 'Reference solution of the instruction list lesson: a door alarm that holds itself on and is silenced by a button.',
+  'examples.door_alarm_il.summary':
+    'Reference solution of the instruction list lesson: a door alarm that holds itself on and is silenced by a button.',
   'examples.gate_latch.title': 'Gate that holds itself open',
-  'examples.gate_latch.summary': 'Reference solution of the five-languages lesson: a gate that a request opens and holds open, and a close command closes.',
+  'examples.gate_latch.summary':
+    'Reference solution of the five-languages lesson: a gate that a request opens and holds open, and a close command closes.',
   'examples.interlock_guard.title': 'Motor guard interlock',
-  'examples.interlock_guard.summary': 'Reference solution of the interlock lesson: a guard permissive on the start and stop of a motor with speed feedback.',
+  'examples.interlock_guard.summary':
+    'Reference solution of the interlock lesson: a guard permissive on the start and stop of a motor with speed feedback.',
   'examples.typed_steps.title': 'Total and three bands',
   'examples.typed_steps.summary': 'Reference solution of the data lesson: an INT total that grows on each press and three comparisons.',
   'examples.scaling.title': 'Integer scaling',
   'examples.scaling.summary': 'Reference solution of the scaling lesson: raw counts scaled to a percentage, with a warning and an alarm.',
   'examples.fill_mix_sfc.title': 'Fill and mix sequence',
-  'examples.fill_mix_sfc.summary': 'Reference solution of the sequence lesson: three steps in a sequential function chart, with timed transitions.',
+  'examples.fill_mix_sfc.summary':
+    'Reference solution of the sequence lesson: three steps in a sequential function chart, with timed transitions.',
   'examples.pump_pair.title': 'Two pumps, one function block',
-  'examples.pump_pair.summary': 'Reference solution of the function block lesson: one latch block used by two pumps with separate memories.',
+  'examples.pump_pair.summary':
+    'Reference solution of the function block lesson: one latch block used by two pumps with separate memories.',
   'examples.call_panel.title': 'Panel of three calls',
   'examples.call_panel.summary': 'Reference solution of the structures lesson: an array of structures and one FOR loop over three calls.',
   'examples.packing_station.title': 'Packing station',
-  'examples.packing_station.summary': 'Reference solution of the capstone: a belt with an emergency stop, a three-part batch counter and a jam fault.',
+  'examples.packing_station.summary':
+    'Reference solution of the capstone: a belt with an emergency stop, a three-part batch counter and a jam fault.',
   'examples.modbus_register.title': 'Modbus register round trip',
-  'examples.modbus_register.summary': 'Reference solution of the Modbus lesson: a register is written and read back against the simulated Modbus server.',
+  'examples.modbus_register.summary':
+    'Reference solution of the Modbus lesson: a register is written and read back against the simulated Modbus server.',
   'examples.mqtt_loop.title': 'MQTT publish and subscribe',
-  'examples.mqtt_loop.summary': 'Reference solution of the MQTT lesson: publish to the simulated broker and keep a record of the message received.',
+  'examples.mqtt_loop.summary':
+    'Reference solution of the MQTT lesson: publish to the simulated broker and keep a record of the message received.',
   'examples.scan_snapshot.title': 'Scan snapshot',
   'examples.scan_snapshot.summary': 'How one scan works: a button is copied, delayed by one scan and turned into a rising-edge pulse.',
   'examples.blinky.title': 'Blinky',
@@ -47,15 +58,19 @@ export const examplesEn = {
   'examples.motor_start_stop.title': 'Motor start stop',
   'examples.motor_start_stop.summary': 'Start with seal-in; stop, E-stop or overload drops the motor, and a held start cannot restart it.',
   'examples.motor_control.title': 'Motor start/stop in ladder',
-  'examples.motor_control.summary': 'A motor start/stop in ladder: start seals in through the contactor\'s own contact; stop or overload drops it.',
+  'examples.motor_control.summary':
+    "A motor start/stop in ladder: start seals in through the contactor's own contact; stop or overload drops it.",
   'examples.motor_plant.title': 'Motor with speed feedback',
-  'examples.motor_plant.summary': 'Start and stop command a motor; running needs speed feedback, or a start-failure timeout latches a fault.',
+  'examples.motor_plant.summary':
+    'Start and stop command a motor; running needs speed feedback, or a start-failure timeout latches a fault.',
   'examples.tank_level.title': 'Tank level controller',
-  'examples.tank_level.summary': 'A pump that starts at low level and stops at high level; E-stop or pump fault latches an alarm until it is reset.',
+  'examples.tank_level.summary':
+    'A pump that starts at low level and stops at high level; E-stop or pump fault latches an alarm until it is reset.',
   'examples.conveyor_01.title': 'Conveyor with diverter',
   'examples.conveyor_01.summary': 'A conveyor belt with start/stop, a diverter for metal parts and a jam fault that needs a reset.',
   'examples.pedestrian_crossing.title': 'Pedestrian crossing',
-  'examples.pedestrian_crossing.summary': 'A traffic-light sequence: a pedestrian request takes vehicles from green through yellow to red, then shows WALK.',
+  'examples.pedestrian_crossing.summary':
+    'A traffic-light sequence: a pedestrian request takes vehicles from green through yellow to red, then shows WALK.',
   'examples.blinky_st.title': 'Blinky (structured text)',
   'examples.blinky_st.summary': 'A 50% LED blinker in structured text: one TON timer and a toggled state variable.',
   'examples.blinky_il.title': 'Blinky (instruction list)',
@@ -67,7 +82,8 @@ export const examplesEn = {
   'examples.pico_blinky.title': 'Pico blinky',
   'examples.pico_blinky.summary': 'Blinks an LED on GP0 every 500 ms by counting 10 ms scans, and holds GP1 high while it runs.',
   'examples.pico_blinky_ton.title': 'Pico blinky (TON)',
-  'examples.pico_blinky_ton.summary': 'Blinks an LED on GP0 every 500 ms with an IEC TON timer, so the time does not depend on the task interval.',
+  'examples.pico_blinky_ton.summary':
+    'Blinks an LED on GP0 every 500 ms with an IEC TON timer, so the time does not depend on the task interval.',
   'examples.pico_blinky_blink.title': 'Pico blinky (BLINK block)',
   'examples.pico_blinky_blink.summary': 'Blinks an LED on GP0 every 500 ms with BLINK, a ZPLC extension that is not part of IEC 61131-3.',
   'examples.esp32s3_blinky.title': 'ESP32-S3 blinky',
@@ -78,101 +94,141 @@ export const examplesEn = {
   'examples.opta_led_chaser_ld.summary': 'The same sweeping light as a ladder diagram: a TON tick and a six-position shift register.',
   'examples.multitask_demo.title': 'Multitask demo',
   'examples.multitask_demo.summary': 'Two tasks at different rates, 10 ms and 100 ms, each blinking its own LED.',
-  'examples.multitask_demo.noScenario': 'No scenario: the check is the two lights blinking at different rates on the board, which a scenario cannot observe.',
+  'examples.multitask_demo.noScenario':
+    'No scenario: the check is the two lights blinking at different rates on the board, which a scenario cannot observe.',
   'examples.analog_test.title': 'Analog temperature reading',
-  'examples.analog_test.summary': 'Reads the internal temperature sensor of the Pico (%IW8), converts it to degrees Celsius and flags an implausible reading.',
+  'examples.analog_test.summary':
+    'Reads the internal temperature sensor of the Pico (%IW8), converts it to degrees Celsius and flags an implausible reading.',
   'examples.kitchen_sink.title': 'Kitchen sink',
   'examples.kitchen_sink.summary': 'Test fixture that exercises every standard-library function block and function.',
   'examples.pico_persist_test.title': 'Pico two-task smoke test',
-  'examples.pico_persist_test.summary': 'Hardware smoke test: a fast counter task and a 100 ms task that blinks an LED on GP0 every 500 ms.',
-  'examples.pico_persist_test.noScenario': 'No scenario: it is a smoke test of two tasks on the board, checked by watching the LED, not by a simulated plant.',
+  'examples.pico_persist_test.summary':
+    'Hardware smoke test: a fast counter task and a 100 ms task that blinks an LED on GP0 every 500 ms.',
+  'examples.pico_persist_test.noScenario':
+    'No scenario: it is a smoke test of two tasks on the board, checked by watching the LED, not by a simulated plant.',
 } as const;
 
 export const examplesEs: Record<keyof typeof examplesEn, string> = {
-    'examples.first_blink.title': 'Primer parpadeo',
+  'examples.first_blink.title': 'Primer parpadeo',
   'examples.first_blink.summary': 'Solución de referencia de la primera lección: una lámpara que cambia de estado cada medio segundo.',
   'examples.verify_my_board.title': 'Verificar mi placa',
-  'examples.verify_my_board.summary': 'Solución de referencia de la verificación de la placa: un LED que parpadea cada medio segundo y queda encendido mientras se presiona un pulsador.',
+  'examples.verify_my_board.summary':
+    'Solución de referencia de la verificación de la placa: un LED que parpadea cada medio segundo y queda encendido mientras se presiona un pulsador.',
   'examples.enabled_blink.title': 'Parpadeador habilitado',
-  'examples.enabled_blink.summary': 'Solución de referencia de la lección del parpadeador: un temporizador y una memoria, condicionados por una entrada de habilitación.',
+  'examples.enabled_blink.summary':
+    'Solución de referencia de la lección del parpadeador: un temporizador y una memoria, condicionados por una entrada de habilitación.',
   'examples.two_hand.title': 'Mando a dos manos',
   'examples.two_hand.summary': 'Solución de referencia de la lección de lógica booleana: AND, NOT y XOR sobre una prensa con protección.',
   'examples.alarm_latch.title': 'Retención de alarma',
   'examples.alarm_latch.summary': 'Solución de referencia de la lección de alarma: los bloques SR y RS y cuál gana, set o reset.',
   'examples.delays.title': 'Retardos con temporizadores',
-  'examples.delays.summary': 'Solución de referencia de la lección de temporizadores: una luz con retardo a la desconexión (TOF) y un filtro con retardo a la conexión (TON).',
+  'examples.delays.summary':
+    'Solución de referencia de la lección de temporizadores: una luz con retardo a la desconexión (TOF) y un filtro con retardo a la conexión (TON).',
   'examples.seal_in_ladder.title': 'Circuito de autorretención',
-  'examples.seal_in_ladder.summary': 'Solución de referencia de la lección de autorretención: pulsar start mantiene el motor encendido y pulsar stop lo apaga.',
+  'examples.seal_in_ladder.summary':
+    'Solución de referencia de la lección de autorretención: pulsar start mantiene el motor encendido y pulsar stop lo apaga.',
   'examples.batch_count_fbd.title': 'Contador de lote con bloques',
-  'examples.batch_count_fbd.summary': 'Solución de referencia de la lección del contador: un bloque CTU cuenta tres piezas y enciende una lámpara hasta que el operador la borra.',
+  'examples.batch_count_fbd.summary':
+    'Solución de referencia de la lección del contador: un bloque CTU cuenta tres piezas y enciende una lámpara hasta que el operador la borra.',
   'examples.door_alarm_il.title': 'Alarma de puerta en lista de instrucciones',
-  'examples.door_alarm_il.summary': 'Solución de referencia de la lección de lista de instrucciones: una alarma de puerta que se mantiene sola y se silencia con un botón.',
+  'examples.door_alarm_il.summary':
+    'Solución de referencia de la lección de lista de instrucciones: una alarma de puerta que se mantiene sola y se silencia con un botón.',
   'examples.gate_latch.title': 'Portón que se mantiene abierto',
-  'examples.gate_latch.summary': 'Solución de referencia de la lección de cinco lenguajes: un portón que una orden abre y mantiene abierto, y otra cierra.',
+  'examples.gate_latch.summary':
+    'Solución de referencia de la lección de cinco lenguajes: un portón que una orden abre y mantiene abierto, y otra cierra.',
   'examples.interlock_guard.title': 'Enclavamiento de protección del motor',
-  'examples.interlock_guard.summary': 'Solución de referencia de la lección de enclavamientos: un permisivo de protección en el arranque y la parada de un motor con realimentación de velocidad.',
+  'examples.interlock_guard.summary':
+    'Solución de referencia de la lección de enclavamientos: un permisivo de protección en el arranque y la parada de un motor con realimentación de velocidad.',
   'examples.typed_steps.title': 'Un total y tres bandas',
-  'examples.typed_steps.summary': 'Solución de referencia de la lección de datos: un total INT que crece con cada pulsación y tres comparaciones.',
+  'examples.typed_steps.summary':
+    'Solución de referencia de la lección de datos: un total INT que crece con cada pulsación y tres comparaciones.',
   'examples.scaling.title': 'Escalado entero',
-  'examples.scaling.summary': 'Solución de referencia de la lección de escalado: cuentas crudas escaladas a un porcentaje, con una advertencia y una alarma.',
+  'examples.scaling.summary':
+    'Solución de referencia de la lección de escalado: cuentas crudas escaladas a un porcentaje, con una advertencia y una alarma.',
   'examples.fill_mix_sfc.title': 'Secuencia de llenado y mezcla',
-  'examples.fill_mix_sfc.summary': 'Solución de referencia de la lección de secuencias: tres pasos en diagrama funcional secuencial, con transiciones temporizadas.',
+  'examples.fill_mix_sfc.summary':
+    'Solución de referencia de la lección de secuencias: tres pasos en diagrama funcional secuencial, con transiciones temporizadas.',
   'examples.pump_pair.title': 'Dos bombas, un bloque de función',
-  'examples.pump_pair.summary': 'Solución de referencia de la lección de bloques de función: un bloque biestable usado por dos bombas con memorias separadas.',
+  'examples.pump_pair.summary':
+    'Solución de referencia de la lección de bloques de función: un bloque biestable usado por dos bombas con memorias separadas.',
   'examples.call_panel.title': 'Panel de tres llamadas',
-  'examples.call_panel.summary': 'Solución de referencia de la lección de estructuras: un arreglo de estructuras y un bucle FOR sobre tres llamadas.',
+  'examples.call_panel.summary':
+    'Solución de referencia de la lección de estructuras: un arreglo de estructuras y un bucle FOR sobre tres llamadas.',
   'examples.packing_station.title': 'Estación de empaque',
-  'examples.packing_station.summary': 'Solución de referencia del proyecto final: una cinta con parada de emergencia, un contador de lotes de tres piezas y una falla por atasco.',
+  'examples.packing_station.summary':
+    'Solución de referencia del proyecto final: una cinta con parada de emergencia, un contador de lotes de tres piezas y una falla por atasco.',
   'examples.modbus_register.title': 'Ida y vuelta de un registro Modbus',
-  'examples.modbus_register.summary': 'Solución de referencia de la lección de Modbus: un registro se escribe y se lee de vuelta en el servidor Modbus simulado.',
+  'examples.modbus_register.summary':
+    'Solución de referencia de la lección de Modbus: un registro se escribe y se lee de vuelta en el servidor Modbus simulado.',
   'examples.mqtt_loop.title': 'Publicar y suscribirse con MQTT',
-  'examples.mqtt_loop.summary': 'Solución de referencia de la lección de MQTT: publicar en el broker simulado y conservar el registro del mensaje recibido.',
+  'examples.mqtt_loop.summary':
+    'Solución de referencia de la lección de MQTT: publicar en el broker simulado y conservar el registro del mensaje recibido.',
   'examples.scan_snapshot.title': 'Instantánea del ciclo de escaneo',
-  'examples.scan_snapshot.summary': 'Cómo funciona un ciclo de escaneo: un botón se copia, se retrasa un ciclo y se convierte en un pulso de flanco ascendente.',
+  'examples.scan_snapshot.summary':
+    'Cómo funciona un ciclo de escaneo: un botón se copia, se retrasa un ciclo y se convierte en un pulso de flanco ascendente.',
   'examples.blinky.title': 'Blinky',
   'examples.blinky.summary': 'Un parpadeador de LED al 50 % en diagrama de escalera: dos temporizadores TON y bobinas SET/RESET.',
   'examples.edge_counter.title': 'Contador de flancos',
-  'examples.edge_counter.summary': 'Cuenta los flancos ascendentes de una entrada de pulsos con un contador CTU; la salida se activa tras tres pulsos.',
+  'examples.edge_counter.summary':
+    'Cuenta los flancos ascendentes de una entrada de pulsos con un contador CTU; la salida se activa tras tres pulsos.',
   'examples.motor_start_stop.title': 'Marcha y paro de un motor',
-  'examples.motor_start_stop.summary': 'Marcha con autorretención; el paro, el paro de emergencia o la sobrecarga detienen el motor, y una marcha mantenida no puede reiniciarlo.',
+  'examples.motor_start_stop.summary':
+    'Marcha con autorretención; el paro, el paro de emergencia o la sobrecarga detienen el motor, y una marcha mantenida no puede reiniciarlo.',
   'examples.motor_control.title': 'Marcha y paro de un motor en escalera',
-  'examples.motor_control.summary': 'Marcha y paro de un motor en escalera: la marcha se retiene con el contacto auxiliar del contactor; el paro o la sobrecarga lo detienen.',
+  'examples.motor_control.summary':
+    'Marcha y paro de un motor en escalera: la marcha se retiene con el contacto auxiliar del contactor; el paro o la sobrecarga lo detienen.',
   'examples.motor_plant.title': 'Motor con realimentación de velocidad',
-  'examples.motor_plant.summary': 'Marcha y paro ordenan un motor; el estado en marcha exige realimentación de velocidad, o un tiempo de espera de arranque enclava una falla.',
+  'examples.motor_plant.summary':
+    'Marcha y paro ordenan un motor; el estado en marcha exige realimentación de velocidad, o un tiempo de espera de arranque enclava una falla.',
   'examples.tank_level.title': 'Controlador de nivel de tanque',
-  'examples.tank_level.summary': 'Una bomba que arranca con nivel bajo y se detiene con nivel alto; el paro de emergencia o la falla de la bomba enclavan una alarma hasta que se reinicie.',
+  'examples.tank_level.summary':
+    'Una bomba que arranca con nivel bajo y se detiene con nivel alto; el paro de emergencia o la falla de la bomba enclavan una alarma hasta que se reinicie.',
   'examples.conveyor_01.title': 'Cinta transportadora con desviador',
-  'examples.conveyor_01.summary': 'Una cinta transportadora con marcha y paro, un desviador para piezas metálicas y una falla por atasco que requiere reinicio.',
+  'examples.conveyor_01.summary':
+    'Una cinta transportadora con marcha y paro, un desviador para piezas metálicas y una falla por atasco que requiere reinicio.',
   'examples.pedestrian_crossing.title': 'Cruce peatonal',
-  'examples.pedestrian_crossing.summary': 'Una secuencia de semáforo: una solicitud peatonal lleva a los vehículos de verde a amarillo y a rojo, y después muestra CAMINAR.',
+  'examples.pedestrian_crossing.summary':
+    'Una secuencia de semáforo: una solicitud peatonal lleva a los vehículos de verde a amarillo y a rojo, y después muestra CAMINAR.',
   'examples.blinky_st.title': 'Blinky (texto estructurado)',
-  'examples.blinky_st.summary': 'Un parpadeador de LED al 50 % en texto estructurado: un temporizador TON y una variable de estado que se invierte.',
+  'examples.blinky_st.summary':
+    'Un parpadeador de LED al 50 % en texto estructurado: un temporizador TON y una variable de estado que se invierte.',
   'examples.blinky_il.title': 'Blinky (lista de instrucciones)',
-  'examples.blinky_il.summary': 'Un parpadeador de LED al 50 % en lista de instrucciones: dos temporizadores TON que activan los operadores S y R.',
+  'examples.blinky_il.summary':
+    'Un parpadeador de LED al 50 % en lista de instrucciones: dos temporizadores TON que activan los operadores S y R.',
   'examples.blinky_fbd.title': 'Blinky (diagrama de bloques de función)',
-  'examples.blinky_fbd.summary': 'Un parpadeador de LED al 50 % como diagrama de bloques de función: dos temporizadores TON y una retención OR-AND.',
+  'examples.blinky_fbd.summary':
+    'Un parpadeador de LED al 50 % como diagrama de bloques de función: dos temporizadores TON y una retención OR-AND.',
   'examples.blinky_sfc.title': 'Blinky (diagrama funcional secuencial)',
-  'examples.blinky_sfc.summary': 'Un parpadeador de LED al 50 % como diagrama funcional secuencial: dos pasos temporizados, LED_ON y LED_OFF.',
+  'examples.blinky_sfc.summary':
+    'Un parpadeador de LED al 50 % como diagrama funcional secuencial: dos pasos temporizados, LED_ON y LED_OFF.',
   'examples.pico_blinky.title': 'Blinky para Pico',
-  'examples.pico_blinky.summary': 'Hace parpadear un LED en GP0 cada 500 ms contando ciclos de 10 ms, y mantiene GP1 en alto mientras se ejecuta.',
+  'examples.pico_blinky.summary':
+    'Hace parpadear un LED en GP0 cada 500 ms contando ciclos de 10 ms, y mantiene GP1 en alto mientras se ejecuta.',
   'examples.pico_blinky_ton.title': 'Blinky para Pico (TON)',
-  'examples.pico_blinky_ton.summary': 'Hace parpadear un LED en GP0 cada 500 ms con un temporizador TON de IEC, de modo que el tiempo no depende del intervalo de la tarea.',
+  'examples.pico_blinky_ton.summary':
+    'Hace parpadear un LED en GP0 cada 500 ms con un temporizador TON de IEC, de modo que el tiempo no depende del intervalo de la tarea.',
   'examples.pico_blinky_blink.title': 'Blinky para Pico (bloque BLINK)',
-  'examples.pico_blinky_blink.summary': 'Hace parpadear un LED en GP0 cada 500 ms con BLINK, una extensión de ZPLC que no forma parte de IEC 61131-3.',
+  'examples.pico_blinky_blink.summary':
+    'Hace parpadear un LED en GP0 cada 500 ms con BLINK, una extensión de ZPLC que no forma parte de IEC 61131-3.',
   'examples.esp32s3_blinky.title': 'Blinky para ESP32-S3',
   'examples.esp32s3_blinky.summary': 'Hace parpadear un LED en DO0 (GPIO15, pin 8 del conector J1) contando ciclos.',
   'examples.opta_led_chaser.title': 'Luces secuenciales para Opta',
   'examples.opta_led_chaser.summary': 'Una luz que recorre de ida y vuelta las salidas D0 a D3 del Opta, avanzada por un temporizador.',
   'examples.opta_led_chaser_ld.title': 'Luces secuenciales para Opta (escalera)',
-  'examples.opta_led_chaser_ld.summary': 'La misma luz que recorre las salidas, en diagrama de escalera: un pulso de reloj TON y un registro de desplazamiento de seis posiciones.',
+  'examples.opta_led_chaser_ld.summary':
+    'La misma luz que recorre las salidas, en diagrama de escalera: un pulso de reloj TON y un registro de desplazamiento de seis posiciones.',
   'examples.multitask_demo.title': 'Demostración multitarea',
   'examples.multitask_demo.summary': 'Dos tareas con periodos distintos, 10 ms y 100 ms, cada una con su propio LED parpadeando.',
-  'examples.multitask_demo.noScenario': 'Sin escenario: la comprobación son los dos LED que parpadean a ritmos distintos en la placa, algo que un escenario no puede observar.',
+  'examples.multitask_demo.noScenario':
+    'Sin escenario: la comprobación son los dos LED que parpadean a ritmos distintos en la placa, algo que un escenario no puede observar.',
   'examples.analog_test.title': 'Lectura analógica de temperatura',
-  'examples.analog_test.summary': 'Lee el sensor de temperatura interno del Pico (%IW8), lo convierte a grados Celsius y señala una lectura poco verosímil.',
+  'examples.analog_test.summary':
+    'Lee el sensor de temperatura interno del Pico (%IW8), lo convierte a grados Celsius y señala una lectura poco verosímil.',
   'examples.kitchen_sink.title': 'Caso de prueba exhaustivo',
   'examples.kitchen_sink.summary': 'Caso de prueba que ejercita cada bloque de función y cada función de la biblioteca estándar.',
   'examples.pico_persist_test.title': 'Prueba rápida de dos tareas en Pico',
-  'examples.pico_persist_test.summary': 'Prueba rápida de hardware: una tarea contadora rápida y una tarea de 100 ms que hace parpadear un LED en GP0 cada 500 ms.',
-  'examples.pico_persist_test.noScenario': 'Sin escenario: es una prueba rápida de dos tareas en la placa, que se comprueba mirando el LED y no con una planta simulada.',
+  'examples.pico_persist_test.summary':
+    'Prueba rápida de hardware: una tarea contadora rápida y una tarea de 100 ms que hace parpadear un LED en GP0 cada 500 ms.',
+  'examples.pico_persist_test.noScenario':
+    'Sin escenario: es una prueba rápida de dos tareas en la placa, que se comprueba mirando el LED y no con una planta simulada.',
 };

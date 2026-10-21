@@ -1,5 +1,4 @@
-
-import { t } from '../i18n';/**
+import { t } from '../i18n'; /**
  * The search list of the visual editors (LNG-012): the palette of elements, the declared symbols a variable is bound
  * from, the wires a block can have, and the list of commands are all one list with a search box, driven from the
  * keyboard. This is its state machine, with no screen in it.
@@ -37,12 +36,17 @@ function matchRank(text: string, needle: string): number | undefined {
 
 /** The items that every word of the query finds, the best matches first and the order of the list among equals. */
 export function filterItems(items: readonly PickerItem[], query: string): PickerItem[] {
-  const words = query.toLowerCase().split(/\s+/).filter((word) => word !== '');
+  const words = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word !== '');
   if (words.length === 0) return [...items];
   const scored: Array<{ item: PickerItem; score: number; order: number }> = [];
   items.forEach((item, order) => {
     const label = item.label.toLowerCase();
-    const others = [item.detail, item.group, ...(item.keywords ?? [])].filter((value): value is string => value !== undefined).map((value) => value.toLowerCase());
+    const others = [item.detail, item.group, ...(item.keywords ?? [])]
+      .filter((value): value is string => value !== undefined)
+      .map((value) => value.toLowerCase());
     let score = 0;
     for (const word of words) {
       const own = matchRank(label, word);
@@ -67,35 +71,50 @@ export function visibleItems(items: readonly PickerItem[], query: string, option
   const shown = filterItems(items, query);
   const text = query.trim();
   if (!options.allowFreeText || text === '' || shown.some((item) => item.label.toLowerCase() === text.toLowerCase())) return shown;
-  return [...shown, { id: `${FREE_TEXT_PREFIX}${text}`, label: options.freeTextLabel?.(text) ?? t('picker.use', { text }), group: t('picker.groupTyped') }];
+  return [
+    ...shown,
+    { id: `${FREE_TEXT_PREFIX}${text}`, label: options.freeTextLabel?.(text) ?? t('picker.use', { text }), group: t('picker.groupTyped') },
+  ];
 }
 
 export type PickerKey = 'ArrowDown' | 'ArrowUp' | 'Home' | 'End' | 'PageDown' | 'PageUp' | 'Enter' | 'Escape' | 'Tab';
 
-export type PickerOutcome =
-  | { kind: 'none' }
-  | { kind: 'choose'; item: PickerItem }
-  | { kind: 'cancel' };
+export type PickerOutcome = { kind: 'none' } | { kind: 'choose'; item: PickerItem } | { kind: 'cancel' };
 
 const PAGE = 8;
 
 /** What a key does to the list: it moves the active item, chooses it or leaves. */
-export function pickerKey(state: PickerState, shown: readonly PickerItem[], key: PickerKey): { state: PickerState; outcome: PickerOutcome } {
+export function pickerKey(
+  state: PickerState,
+  shown: readonly PickerItem[],
+  key: PickerKey,
+): { state: PickerState; outcome: PickerOutcome } {
   const last = Math.max(0, shown.length - 1);
-  const move = (active: number): { state: PickerState; outcome: PickerOutcome } => ({ state: { ...state, active: Math.min(last, Math.max(0, active)) }, outcome: { kind: 'none' } });
+  const move = (active: number): { state: PickerState; outcome: PickerOutcome } => ({
+    state: { ...state, active: Math.min(last, Math.max(0, active)) },
+    outcome: { kind: 'none' },
+  });
   switch (key) {
-    case 'ArrowDown': return move(state.active >= last ? 0 : state.active + 1);
-    case 'ArrowUp': return move(state.active <= 0 ? last : state.active - 1);
-    case 'Home': return move(0);
-    case 'End': return move(last);
-    case 'PageDown': return move(state.active + PAGE);
-    case 'PageUp': return move(state.active - PAGE);
+    case 'ArrowDown':
+      return move(state.active >= last ? 0 : state.active + 1);
+    case 'ArrowUp':
+      return move(state.active <= 0 ? last : state.active - 1);
+    case 'Home':
+      return move(0);
+    case 'End':
+      return move(last);
+    case 'PageDown':
+      return move(state.active + PAGE);
+    case 'PageUp':
+      return move(state.active - PAGE);
     case 'Enter': {
       const item = shown[Math.min(state.active, last)];
       return item ? { state, outcome: { kind: 'choose', item } } : { state, outcome: { kind: 'none' } };
     }
-    case 'Escape': return { state, outcome: { kind: 'cancel' } };
-    case 'Tab': return { state, outcome: { kind: 'none' } };
+    case 'Escape':
+      return { state, outcome: { kind: 'cancel' } };
+    case 'Tab':
+      return { state, outcome: { kind: 'none' } };
   }
 }
 

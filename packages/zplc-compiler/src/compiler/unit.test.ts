@@ -14,7 +14,11 @@ import { compileMultiTaskProject, CompilerError } from './index.ts';
 import type { CompilerMemoryProfile, MultiTaskCompilationResult, ProgramSource } from './index.ts';
 
 const task = (program: string, index = 0) => ({
-    name: `Task${index}`, trigger: 'cyclic' as const, interval: 10, priority: index, programs: [program],
+    name: `Task${index}`,
+    trigger: 'cyclic' as const,
+    interval: 10,
+    priority: index,
+    programs: [program],
 });
 
 /** `files` are the sources of the project; `programs` the ones a task runs, in task order. */
@@ -28,11 +32,16 @@ function build(files: Record<string, string>, programs: string[], memoryProfile?
 }
 
 /** The diagnostics a failed build reports: message, file, line. */
-function rejected(files: Record<string, string>, programs: string[], memoryProfile?: CompilerMemoryProfile): Array<{ message: string; file?: string; line: number }> {
+function rejected(
+    files: Record<string, string>,
+    programs: string[],
+    memoryProfile?: CompilerMemoryProfile,
+): Array<{ message: string; file?: string; line: number }> {
     try {
         build(files, programs, memoryProfile);
     } catch (error) {
-        if (error instanceof CompilerError) return error.errors.map((each) => ({ message: each.detail, file: each.sourceRef, line: each.line }));
+        if (error instanceof CompilerError)
+            return error.errors.map((each) => ({ message: each.detail, file: each.sourceRef, line: each.line }));
         throw error;
     }
     throw new Error('the project was accepted');
@@ -45,26 +54,41 @@ function listed(result: MultiTaskCompilationResult, name: string): Array<{ pou: 
 
 describe('what every file of a project sees of the others (CMP-042)', () => {
     it('a function block declared in a file that no task runs is available to a program', () => {
-        const result = build({
-            'main.st': 'PROGRAM Project\nVAR d : Echo; seen AT %QX0.0 : BOOL; END_VAR\n  d(sig := TRUE);\n  seen := d.out;\nEND_PROGRAM\n',
-            'echo.st': 'FUNCTION_BLOCK Echo\nVAR_INPUT sig : BOOL; END_VAR\nVAR_OUTPUT out : BOOL; END_VAR\n  out := sig;\nEND_FUNCTION_BLOCK\n',
-        }, ['main.st']);
+        const result = build(
+            {
+                'main.st':
+                    'PROGRAM Project\nVAR d : Echo; seen AT %QX0.0 : BOOL; END_VAR\n  d(sig := TRUE);\n  seen := d.out;\nEND_PROGRAM\n',
+                'echo.st':
+                    'FUNCTION_BLOCK Echo\nVAR_INPUT sig : BOOL; END_VAR\nVAR_OUTPUT out : BOOL; END_VAR\n  out := ' +
+                    'sig;\nEND_FUNCTION_BLOCK\n',
+            },
+            ['main.st'],
+        );
         expect(result.bytecode.length).toBeGreaterThan(0);
     });
 
     it('a type declared in another file is the type of a member and of a variable', () => {
-        const result = build({
-            'main.st': 'PROGRAM Plant\nVAR g : Gauge; seen AT %QW0 : INT; END_VAR\n  g.v.value := 7;\n  seen := g.v.value;\nEND_PROGRAM\n',
-            'types.st': 'TYPE Reading : STRUCT value : INT; scale : INT; END_STRUCT END_TYPE\nFUNCTION_BLOCK Gauge\nVAR v : Reading; END_VAR\nEND_FUNCTION_BLOCK\n',
-        }, ['main.st']);
+        const result = build(
+            {
+                'main.st':
+                    'PROGRAM Plant\nVAR g : Gauge; seen AT %QW0 : INT; END_VAR\n  g.v.value := 7;\n  seen := g.v.value;\nEND_PROGRAM\n',
+                'types.st':
+                    'TYPE Reading : STRUCT value : INT; scale : INT; END_STRUCT END_TYPE\nFUNCTION_BLOCK Gauge\nVAR v : Reading; ' +
+                    'END_VAR\nEND_FUNCTION_BLOCK\n',
+            },
+            ['main.st'],
+        );
         expect(listed(result, 'g')).toHaveLength(1);
     });
 
     it('a type alias of another file replaces its uses', () => {
-        const result = build({
-            'main.st': 'PROGRAM P\nVAR s : Speed; END_VAR\n  s := 9;\nEND_PROGRAM\n',
-            'types.st': 'TYPE Speed : DINT; END_TYPE\n',
-        }, ['main.st']);
+        const result = build(
+            {
+                'main.st': 'PROGRAM P\nVAR s : Speed; END_VAR\n  s := 9;\nEND_PROGRAM\n',
+                'types.st': 'TYPE Speed : DINT; END_TYPE\n',
+            },
+            ['main.st'],
+        );
         expect(result.debugMap.pou.P!.vars.s).toMatchObject({ type: 'DINT', size: 4 });
     });
 
@@ -84,11 +108,14 @@ describe('what every file of a project sees of the others (CMP-042)', () => {
     });
 
     it('a global has one address for every program and appears once in the debug map', () => {
-        const result = build({
-            'a.st': 'PROGRAM A\nVAR here : INT; END_VAR\n  Shared := Shared + 1;\n  here := Shared;\nEND_PROGRAM\n',
-            'b.st': 'PROGRAM B\nVAR there : INT; END_VAR\n  there := Shared;\nEND_PROGRAM\n',
-            'globals.st': 'VAR_GLOBAL\n  Shared : INT;\nEND_VAR\n',
-        }, ['a.st', 'b.st']);
+        const result = build(
+            {
+                'a.st': 'PROGRAM A\nVAR here : INT; END_VAR\n  Shared := Shared + 1;\n  here := Shared;\nEND_PROGRAM\n',
+                'b.st': 'PROGRAM B\nVAR there : INT; END_VAR\n  there := Shared;\nEND_PROGRAM\n',
+                'globals.st': 'VAR_GLOBAL\n  Shared : INT;\nEND_VAR\n',
+            },
+            ['a.st', 'b.st'],
+        );
         const where = listed(result, 'Shared');
         expect(where).toHaveLength(1);
         // and no program keeps a copy of its own: the variables of the programs sit after it
@@ -97,36 +124,48 @@ describe('what every file of a project sees of the others (CMP-042)', () => {
     });
 
     it('two programs may use the same variable name: each keeps its own storage', () => {
-        const result = build({
-            'a.st': 'PROGRAM A\nVAR count : INT; END_VAR\n  count := count + 1;\nEND_PROGRAM\n',
-            'b.st': 'PROGRAM B\nVAR count : INT; END_VAR\n  count := count + 2;\nEND_PROGRAM\n',
-        }, ['a.st', 'b.st']);
+        const result = build(
+            {
+                'a.st': 'PROGRAM A\nVAR count : INT; END_VAR\n  count := count + 1;\nEND_PROGRAM\n',
+                'b.st': 'PROGRAM B\nVAR count : INT; END_VAR\n  count := count + 2;\nEND_PROGRAM\n',
+            },
+            ['a.st', 'b.st'],
+        );
         const where = listed(result, 'count');
         expect(where.map((each) => each.pou).sort()).toEqual(['A', 'B']);
         expect(new Set(where.map((each) => each.addr)).size).toBe(2);
     });
 
     it('a program variable is not seen by the function blocks and functions of the unit', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nVAR secret : INT; f : Peek; END_VAR\n  f();\nEND_PROGRAM\n',
-            'peek.st': 'FUNCTION_BLOCK Peek\nVAR_OUTPUT o : INT; END_VAR\n  o := secret;\nEND_FUNCTION_BLOCK\n',
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nVAR secret : INT; f : Peek; END_VAR\n  f();\nEND_PROGRAM\n',
+                'peek.st': 'FUNCTION_BLOCK Peek\nVAR_OUTPUT o : INT; END_VAR\n  o := secret;\nEND_FUNCTION_BLOCK\n',
+            },
+            ['main.st'],
+        );
         expect(found).toEqual([{ message: "Unknown identifier 'secret'", file: 'src/peek.st', line: 3 }]);
     });
 
     it('an error in a file that no task runs is reported in that file', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nVAR x : INT; END_VAR\n  x := 1;\nEND_PROGRAM\n',
-            'lib.st': 'FUNCTION Broken : INT\n  Broken := missing;\nEND_FUNCTION\n',
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nVAR x : INT; END_VAR\n  x := 1;\nEND_PROGRAM\n',
+                'lib.st': 'FUNCTION Broken : INT\n  Broken := missing;\nEND_FUNCTION\n',
+            },
+            ['main.st'],
+        );
         expect(found).toEqual([{ message: "Unknown identifier 'missing'", file: 'src/lib.st', line: 2 }]);
     });
 
     it('a syntax error of a library file is reported with its file', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nEND_PROGRAM\n',
-            'lib.st': 'FUNCTION_BLOCK Fb\nVAR_INPUT : INT; END_VAR\nEND_FUNCTION_BLOCK\n',
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nEND_PROGRAM\n',
+                'lib.st': 'FUNCTION_BLOCK Fb\nVAR_INPUT : INT; END_VAR\nEND_FUNCTION_BLOCK\n',
+            },
+            ['main.st'],
+        );
         expect(found.length).toBeGreaterThan(0);
         expect(found.every((each) => each.file === 'src/lib.st')).toBe(true);
     });
@@ -134,49 +173,75 @@ describe('what every file of a project sees of the others (CMP-042)', () => {
 
 describe('a declaration made twice is an error at every place it is made (CMP-042)', () => {
     it('a function block declared in two files is reported in both', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nEND_PROGRAM\n',
-            'one.st': '\nFUNCTION_BLOCK Echo\nEND_FUNCTION_BLOCK\n',
-            'two.st': 'FUNCTION_BLOCK echo\nEND_FUNCTION_BLOCK\n',
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nEND_PROGRAM\n',
+                'one.st': '\nFUNCTION_BLOCK Echo\nEND_FUNCTION_BLOCK\n',
+                'two.st': 'FUNCTION_BLOCK echo\nEND_FUNCTION_BLOCK\n',
+            },
+            ['main.st'],
+        );
         expect(found).toEqual([
-            { message: "FUNCTION_BLOCK 'Echo' is declared twice: in src/one.st (line 2) and in src/two.st (line 1)", file: 'src/one.st', line: 2 },
-            { message: "FUNCTION_BLOCK 'echo' is declared twice: in src/one.st (line 2) and in src/two.st (line 1)", file: 'src/two.st', line: 1 },
+            {
+                message: "FUNCTION_BLOCK 'Echo' is declared twice: in src/one.st (line 2) and in src/two.st (line 1)",
+                file: 'src/one.st',
+                line: 2,
+            },
+            {
+                message: "FUNCTION_BLOCK 'echo' is declared twice: in src/one.st (line 2) and in src/two.st (line 1)",
+                file: 'src/two.st',
+                line: 1,
+            },
         ]);
     });
 
     it('a global declared in two files is reported in both', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nEND_PROGRAM\n',
-            'g1.st': 'VAR_GLOBAL\n  Limit : INT;\nEND_VAR\n',
-            'g2.st': 'VAR_GLOBAL\n  Other : INT;\n  Limit : DINT;\nEND_VAR\n',
-        }, ['main.st']);
-        expect(found.map((each) => [each.file, each.line])).toEqual([['src/g1.st', 2], ['src/g2.st', 3]]);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nEND_PROGRAM\n',
+                'g1.st': 'VAR_GLOBAL\n  Limit : INT;\nEND_VAR\n',
+                'g2.st': 'VAR_GLOBAL\n  Other : INT;\n  Limit : DINT;\nEND_VAR\n',
+            },
+            ['main.st'],
+        );
+        expect(found.map((each) => [each.file, each.line])).toEqual([
+            ['src/g1.st', 2],
+            ['src/g2.st', 3],
+        ]);
         expect(found[0]!.message).toContain("global variable 'Limit' is declared twice");
     });
 
     it('a type and a function of the same name are reported', () => {
-        const found = rejected({
-            'main.st': 'PROGRAM P\nEND_PROGRAM\n',
-            'a.st': 'TYPE Thing : STRUCT a : INT; END_STRUCT END_TYPE\n',
-            'b.st': 'FUNCTION Thing : INT\n  Thing := 1;\nEND_FUNCTION\n',
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': 'PROGRAM P\nEND_PROGRAM\n',
+                'a.st': 'TYPE Thing : STRUCT a : INT; END_STRUCT END_TYPE\n',
+                'b.st': 'FUNCTION Thing : INT\n  Thing := 1;\nEND_FUNCTION\n',
+            },
+            ['main.st'],
+        );
         expect(found.map((each) => each.file)).toEqual(['src/a.st', 'src/b.st']);
     });
 
     it('two programs of one name keep the message they always had', () => {
-        const found = rejected({
-            'a.st': 'PROGRAM Same\nEND_PROGRAM\n',
-            'b.st': 'PROGRAM same\nEND_PROGRAM\n',
-        }, ['a.st', 'b.st']);
-        expect(found).toEqual([{ message: "Duplicate PROGRAM name 'same' in 'b.st' (already declared by 'a.st')", file: 'src/b.st', line: 1 }]);
+        const found = rejected(
+            {
+                'a.st': 'PROGRAM Same\nEND_PROGRAM\n',
+                'b.st': 'PROGRAM same\nEND_PROGRAM\n',
+            },
+            ['a.st', 'b.st'],
+        );
+        expect(found).toEqual([
+            { message: "Duplicate PROGRAM name 'same' in 'b.st' (already declared by 'a.st')", file: 'src/b.st', line: 1 },
+        ]);
     });
 });
 
 describe('the debug map of a unit (CMP-042, CMP-054)', () => {
     const files = {
         'main.st': 'PROGRAM Main\nVAR x : INT; f : Echo; END_VAR\n  x := Shared;\n  f(sig := TRUE);\nEND_PROGRAM\n',
-        'echo.st': 'FUNCTION_BLOCK Echo\nVAR_INPUT sig : BOOL; END_VAR\nVAR_OUTPUT out : BOOL; END_VAR\n  out := sig;\nEND_FUNCTION_BLOCK\n',
+        'echo.st':
+            'FUNCTION_BLOCK Echo\nVAR_INPUT sig : BOOL; END_VAR\nVAR_OUTPUT out : BOOL; END_VAR\n  out := sig;\nEND_FUNCTION_BLOCK\n',
         'globals.st': 'VAR_GLOBAL\n  Shared : INT := 3;\nEND_VAR\n',
     };
 
@@ -190,15 +255,12 @@ describe('the debug map of a unit (CMP-042, CMP-054)', () => {
     it('names the POU of a file that has no program by its file name, and by its path only when two share one', () => {
         const names = (files: Record<string, string>) => Object.keys(build(files, ['main.st']).debugMap.pou);
         expect(names({ ...files })).toEqual(['Main', 'echo.st', 'globals.st']);
-        const second = compileMultiTaskProject(
-            { name: 'Unit', version: '1.0.0', tasks: [task('main.st')] },
-            [
-                { name: 'main.st', content: files['main.st'], sourceRef: 'src/main.st' },
-                { name: 'echo.st', content: files['echo.st'], sourceRef: 'src/echo.st' },
-                { name: 'globals.st', content: files['globals.st'], sourceRef: 'src/globals.st' },
-                { name: 'more.st', content: 'VAR_GLOBAL\n  More : INT;\nEND_VAR\n', sourceRef: 'src/lib/globals.st' },
-            ],
-        );
+        const second = compileMultiTaskProject({ name: 'Unit', version: '1.0.0', tasks: [task('main.st')] }, [
+            { name: 'main.st', content: files['main.st'], sourceRef: 'src/main.st' },
+            { name: 'echo.st', content: files['echo.st'], sourceRef: 'src/echo.st' },
+            { name: 'globals.st', content: files['globals.st'], sourceRef: 'src/globals.st' },
+            { name: 'more.st', content: 'VAR_GLOBAL\n  More : INT;\nEND_VAR\n', sourceRef: 'src/lib/globals.st' },
+        ]);
         expect(Object.keys(second.debugMap.pou)).toEqual(['Main', 'echo.st', 'globals.st', 'src/lib/globals.st']);
     });
 
@@ -218,10 +280,13 @@ describe('the debug map of a unit (CMP-042, CMP-054)', () => {
     });
 
     it('gives the entry point of each program as the entry of its task', () => {
-        const result = build({
-            'a.st': 'PROGRAM A\nVAR x : INT; END_VAR\n  x := 1;\nEND_PROGRAM\n',
-            'b.st': 'PROGRAM B\nVAR y : INT; END_VAR\n  y := 2;\nEND_PROGRAM\n',
-        }, ['a.st', 'b.st']);
+        const result = build(
+            {
+                'a.st': 'PROGRAM A\nVAR x : INT; END_VAR\n  x := 1;\nEND_PROGRAM\n',
+                'b.st': 'PROGRAM B\nVAR y : INT; END_VAR\n  y := 2;\nEND_PROGRAM\n',
+            },
+            ['a.st', 'b.st'],
+        );
         expect(result.debugMap.pou.A!.entryPoint).toBe(result.tasks[0]!.entryPoint);
         expect(result.debugMap.pou.B!.entryPoint).toBe(result.tasks[1]!.entryPoint);
         expect(result.tasks[1]!.entryPoint).toBeGreaterThan(result.tasks[0]!.entryPoint);
@@ -249,7 +314,7 @@ describe('memory is limited by the target profile only (CMP-043)', () => {
     });
 
     it('is shared by all the programs of the project', () => {
-        const profile = { workSize: 1024, retainSize: 256, codeSizeMax: 0xB000 };
+        const profile = { workSize: 1024, retainSize: 256, codeSizeMax: 0xb000 };
         const files = {
             'a.st': program([arrayOf('a', 600)]).replace('Main', 'A'),
             'b.st': program([arrayOf('b', 600)]).replace('Main', 'B'),
@@ -264,9 +329,12 @@ describe('memory is limited by the target profile only (CMP-043)', () => {
     });
 
     it('states the bytes required, the bytes available and the three largest consumers', () => {
-        const found = rejected({
-            'main.st': program([arrayOf('tiny', 20), arrayOf('huge', 5000), arrayOf('large', 4000), arrayOf('medium', 300)]),
-        }, ['main.st']);
+        const found = rejected(
+            {
+                'main.st': program([arrayOf('tiny', 20), arrayOf('huge', 5000), arrayOf('large', 4000), arrayOf('medium', 300)]),
+            },
+            ['main.st'],
+        );
         expect(found).toHaveLength(1);
         const message = found[0]!.message;
         expect(message).toContain('WORK allocation exceeds the target memory profile');
@@ -294,13 +362,13 @@ describe('memory is limited by the target profile only (CMP-043)', () => {
         };
         const first = build(files, ['a.st', 'b.st']);
         const addresses = Object.fromEntries(['G1', 'G2', 'a1', 'a2', 'b1'].map((name) => [name, listed(first, name)[0]!.addr]));
-        expect(addresses).toEqual({ G1: 0x2000, G2: 0x2004, a1: 0x2006, a2: 0x2008, b1: 0x200C });
+        expect(addresses).toEqual({ G1: 0x2000, G2: 0x2004, a1: 0x2006, a2: 0x2008, b1: 0x200c });
         // the same project builds to the same layout
         expect(JSON.stringify(build(files, ['a.st', 'b.st']).debugMap.pou)).toBe(JSON.stringify(first.debugMap.pou));
     });
 
     it('keeps the last byte of the region of the profile for the initialization flag', () => {
-        const profile = { workSize: 512, retainSize: 256, codeSizeMax: 0xB000 };
+        const profile = { workSize: 512, retainSize: 256, codeSizeMax: 0xb000 };
         expect(() => build({ 'main.st': program([arrayOf('fits', 511)]) }, ['main.st'], profile)).not.toThrow();
         const found = rejected({ 'main.st': program([arrayOf('over', 512)]) }, ['main.st'], profile);
         expect(found[0]!.message).toContain('513 bytes required, 512 bytes available');

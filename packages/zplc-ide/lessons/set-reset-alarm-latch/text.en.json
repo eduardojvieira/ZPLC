@@ -55,7 +55,5 @@
       "text": "Write SetLatch(S1 := Fault, R := Ack); SetFirst := SetLatch.Q1; ResetLatch(S := Fault, R1 := Ack); ResetFirst := ResetLatch.Q1;"
     }
   ],
-  "faultCases": [
-    "The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone."
-  ]
+  "faultCases": ["The starting program copies Fault to both outputs, so they go OFF at {{t:20}} ms when the fault is gone."]
 }

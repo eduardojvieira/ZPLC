@@ -33,17 +33,20 @@ export function useDeviceLogQueue(addConsoleEntries: ReturnType<typeof useIDESto
     );
   }, [addConsoleEntries]);
 
-  const enqueueDeviceLog = useCallback((line: string) => {
-    deviceLogQueueRef.current.push(line);
+  const enqueueDeviceLog = useCallback(
+    (line: string) => {
+      deviceLogQueueRef.current.push(line);
 
-    if (deviceLogFlushTimerRef.current !== null) {
-      return;
-    }
+      if (deviceLogFlushTimerRef.current !== null) {
+        return;
+      }
 
-    deviceLogFlushTimerRef.current = setTimeout(() => {
-      flushDeviceLogs();
-    }, DEVICE_LOG_FLUSH_MS);
-  }, [flushDeviceLogs]);
+      deviceLogFlushTimerRef.current = setTimeout(() => {
+        flushDeviceLogs();
+      }, DEVICE_LOG_FLUSH_MS);
+    },
+    [flushDeviceLogs],
+  );
 
   return { enqueueDeviceLog, flushDeviceLogs };
 }

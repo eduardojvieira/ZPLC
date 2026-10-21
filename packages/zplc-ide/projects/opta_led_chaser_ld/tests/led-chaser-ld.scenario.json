@@ -5,18 +5,90 @@
   "durationMs": 1300,
   "events": [],
   "expectations": [
-    {"kind": "AT", "atMs": 80, "condition": {"Opta_LED_Chaser.LED_D0": true, "Opta_LED_Chaser.LED_D1": false, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 240, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": true, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 400, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": false, "Opta_LED_Chaser.LED_D2": true, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 570, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": false, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": true}},
-    {"kind": "AT", "atMs": 740, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": false, "Opta_LED_Chaser.LED_D2": true, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 910, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": true, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 1080, "condition": {"Opta_LED_Chaser.LED_D0": true, "Opta_LED_Chaser.LED_D1": false, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "AT", "atMs": 1250, "condition": {"Opta_LED_Chaser.LED_D0": false, "Opta_LED_Chaser.LED_D1": true, "Opta_LED_Chaser.LED_D2": false, "Opta_LED_Chaser.LED_D3": false}},
-    {"kind": "RISING", "fromMs": 140, "withinMs": 20, "condition": {"Opta_LED_Chaser.LED_D1": true}},
-    {"kind": "RISING", "fromMs": 310, "withinMs": 20, "condition": {"Opta_LED_Chaser.LED_D2": true}},
-    {"kind": "RISING", "fromMs": 480, "withinMs": 20, "condition": {"Opta_LED_Chaser.LED_D3": true}},
-    {"kind": "RISING", "fromMs": 990, "withinMs": 20, "condition": {"Opta_LED_Chaser.LED_D0": true}},
-    {"kind": "NEVER", "condition": {"Opta_LED_Chaser.LED_D0": true, "Opta_LED_Chaser.LED_D3": true}}
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": true,
+        "Opta_LED_Chaser.LED_D1": false,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 240,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": true,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 400,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": false,
+        "Opta_LED_Chaser.LED_D2": true,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 570,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": false,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 740,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": false,
+        "Opta_LED_Chaser.LED_D2": true,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 910,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": true,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1080,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": true,
+        "Opta_LED_Chaser.LED_D1": false,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1250,
+      "condition": {
+        "Opta_LED_Chaser.LED_D0": false,
+        "Opta_LED_Chaser.LED_D1": true,
+        "Opta_LED_Chaser.LED_D2": false,
+        "Opta_LED_Chaser.LED_D3": false
+      }
+    },
+    { "kind": "RISING", "fromMs": 140, "withinMs": 20, "condition": { "Opta_LED_Chaser.LED_D1": true } },
+    { "kind": "RISING", "fromMs": 310, "withinMs": 20, "condition": { "Opta_LED_Chaser.LED_D2": true } },
+    { "kind": "RISING", "fromMs": 480, "withinMs": 20, "condition": { "Opta_LED_Chaser.LED_D3": true } },
+    { "kind": "RISING", "fromMs": 990, "withinMs": 20, "condition": { "Opta_LED_Chaser.LED_D0": true } },
+    { "kind": "NEVER", "condition": { "Opta_LED_Chaser.LED_D0": true, "Opta_LED_Chaser.LED_D3": true } }
   ]
 }

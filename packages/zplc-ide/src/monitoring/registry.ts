@@ -14,8 +14,14 @@ export const MONITOR_KEY_LIMIT = 512;
 
 export function setMonitorKeys(owner: string, keys: readonly string[]): void {
   const before = owners.get(owner);
-  if (keys.length === 0 ? before === undefined : before !== undefined && before.length === keys.length && before.every((key, index) => key === keys[index])) return;
-  if (keys.length === 0) owners.delete(owner); else owners.set(owner, keys);
+  if (
+    keys.length === 0
+      ? before === undefined
+      : before !== undefined && before.length === keys.length && before.every((key, index) => key === keys[index])
+  )
+    return;
+  if (keys.length === 0) owners.delete(owner);
+  else owners.set(owner, keys);
   snapshot = [...new Set([...owners.values()].flat())].slice(0, MONITOR_KEY_LIMIT);
   for (const listener of listeners) listener();
 }
@@ -27,5 +33,7 @@ export function monitoredKeys(): readonly string[] {
 
 export function subscribeMonitorKeys(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }

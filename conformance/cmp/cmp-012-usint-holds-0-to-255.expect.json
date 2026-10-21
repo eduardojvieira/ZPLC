@@ -6,8 +6,8 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "DINT", "value": 255},
-    {"at": "%QX4.0", "type": "BOOL", "value": true},
-    {"at": "%QB5", "type": "USINT", "value": 255}
+    { "at": "%QD0", "type": "DINT", "value": 255 },
+    { "at": "%QX4.0", "type": "BOOL", "value": true },
+    { "at": "%QB5", "type": "USINT", "value": 255 }
   ]
 }

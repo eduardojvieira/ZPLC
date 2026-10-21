@@ -5,13 +5,31 @@ import manifest from '../../../../firmware/app/boards/boards.json';
 import { channelIn, descriptionHash, fnv1a32, imageExtent, parseDirectAddress, readBoardIo } from './boardIo';
 
 const channel = (overrides: Record<string, unknown> = {}) => ({
-  id: 'DO0', direction: 'output', kind: 'digital', address: '%QX0.0', pin: 'GP0', dt: { alias: 'led0', controller: 'gpio0', pin: 0 },
-  safe: 0, electrical: '3.3 V logic', pin_status: 'devicetree', source: 'firmware/app/boards/rpi_pico_rp2040.overlay', ...overrides,
+  id: 'DO0',
+  direction: 'output',
+  kind: 'digital',
+  address: '%QX0.0',
+  pin: 'GP0',
+  dt: { alias: 'led0', controller: 'gpio0', pin: 0 },
+  safe: 0,
+  electrical: '3.3 V logic',
+  pin_status: 'devicetree',
+  source: 'firmware/app/boards/rpi_pico_rp2040.overlay',
+  ...overrides,
 });
 const analog = (overrides: Record<string, unknown> = {}) => ({
-  id: 'AI0', direction: 'input', kind: 'analog', address: '%IW4', pin: 'GP26', dt: { controller: 'adc', channel: 0 }, resolution_bits: 12,
-  range: { raw_min: 0, raw_max: 4095, eng_min: 0, eng_max: 3.3, unit: 'V' }, electrical: '0 V to 3.3 V', pin_status: 'devicetree',
-  source: 'firmware/app/boards/rpi_pico_rp2040.overlay', ...overrides,
+  id: 'AI0',
+  direction: 'input',
+  kind: 'analog',
+  address: '%IW4',
+  pin: 'GP26',
+  dt: { controller: 'adc', channel: 0 },
+  resolution_bits: 12,
+  range: { raw_min: 0, raw_max: 4095, eng_min: 0, eng_max: 3.3, unit: 'V' },
+  electrical: '0 V to 3.3 V',
+  pin_status: 'devicetree',
+  source: 'firmware/app/boards/rpi_pico_rp2040.overlay',
+  ...overrides,
 });
 const io = (channels: unknown[]) => readBoardIo({ schema_version: 1, channels, unmapped: [] })!;
 
@@ -48,7 +66,8 @@ describe('the board I/O description (IO-001, IO-005)', () => {
     expect(fnv1a32('foobar')).toBe(0xbf9cf968);
   });
   test('the hash changes with an address and ignores the order of the channels', () => {
-    const a = channel(); const b = channel({ id: 'DO1', address: '%QX0.1' });
+    const a = channel();
+    const b = channel({ id: 'DO1', address: '%QX0.1' });
     expect(descriptionHash('t', io([a, b]))).toBe(descriptionHash('t', io([b, a])));
     expect(descriptionHash('t', io([a]))).not.toBe(descriptionHash('t', io([channel({ address: '%QX0.1' })])));
   });
@@ -59,7 +78,12 @@ describe('LRN-029 the Spanish twins of the human text of a channel', () => {
 
   test('a channel reads its Spanish twins and shows them in Spanish, English otherwise', () => {
     const [read] = io([channel(twins)]).channels;
-    expect(channelIn(read!, 'es')).toMatchObject({ pin: 'GP0 (botón)', location: 'pin 1 del conector', electrical: 'Lógica de 3.3 V', address: '%QX0.0' });
+    expect(channelIn(read!, 'es')).toMatchObject({
+      pin: 'GP0 (botón)',
+      location: 'pin 1 del conector',
+      electrical: 'Lógica de 3.3 V',
+      address: '%QX0.0',
+    });
     expect(channelIn(read!, 'en')).toMatchObject({ pin: 'GP0', location: 'header pin 1', electrical: '3.3 V logic' });
   });
 
@@ -89,9 +113,12 @@ describe('the manifest read by Studio is the one the docs are generated from (IO
   });
 
   test('the generated reference prints the footprint of every board from the size budget (IO-014)', () => {
-    const budget = JSON.parse(readFileSync(join(import.meta.dir, '../../../../tools/firmware-test/size-budget.json'), 'utf8')).boards as Record<string, { measured: { flash: number; ram: number } }>;
+    const budget = JSON.parse(readFileSync(join(import.meta.dir, '../../../../tools/firmware-test/size-budget.json'), 'utf8'))
+      .boards as Record<string, { measured: { flash: number; ram: number } }>;
     for (const entry of manifest as Array<{ board_id: string }>) {
-      const row = docs.split('\n').find((line) => line.startsWith(`| \`${entry.board_id}\` | `) && line.includes(' | ') && /\| [0-9.]+ \| [0-9.]+ \|/.test(line));
+      const row = docs
+        .split('\n')
+        .find((line) => line.startsWith(`| \`${entry.board_id}\` | `) && line.includes(' | ') && /\| [0-9.]+ \| [0-9.]+ \|/.test(line));
       expect(row, entry.board_id).toBeDefined();
       const measured = budget[entry.board_id]!.measured;
       expect(row!.startsWith(`| \`${entry.board_id}\` | ${(measured.flash / 1024).toFixed(1)} | `), entry.board_id).toBe(true);

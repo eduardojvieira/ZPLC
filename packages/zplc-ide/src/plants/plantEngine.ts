@@ -8,7 +8,7 @@
  * Pure TypeScript with no Electron, store or component import.
  */
 export const PLANT_KINDS = ['motor-v1', 'conveyor-v1', 'tank-v1', 'pedestrian-v1'] as const;
-export type PlantKind = typeof PLANT_KINDS[number];
+export type PlantKind = (typeof PLANT_KINDS)[number];
 export type PlantState = Readonly<Record<string, number | boolean | string>>;
 export type Signals = Readonly<Record<string, boolean>>;
 
@@ -49,13 +49,20 @@ const conveyor: PlantModel = {
   step: (s, r) => {
     if (!r.belt || s.jam) return { ...s, moving: false };
     const moved = (s.position as number) + 50;
-    return moved >= 1000 ? { ...s, position: 0, classified: (s.classified as number) + 1, moving: true } : { ...s, position: moved, moving: true };
+    return moved >= 1000
+      ? { ...s, position: 0, classified: (s.classified as number) + 1, moving: true }
+      : { ...s, position: moved, moving: true };
   },
   act: (s, a) => (a === 'jam' || a === 'metalPart' ? toggle(s, a) : s),
   sense: (s) => {
     const at = s.position as number;
     const atClassifier = at >= 200 && at < 300;
-    return { partAtClassifier: atClassifier, metalDetected: atClassifier && s.metalPart === true, partAtDiverter: at >= 700 && at < 800, jamDetected: s.jam === true };
+    return {
+      partAtClassifier: atClassifier,
+      metalDetected: atClassifier && s.metalPart === true,
+      partAtDiverter: at >= 700 && at < 800,
+      jamDetected: s.jam === true,
+    };
   },
 };
 
@@ -65,7 +72,11 @@ const tank: PlantModel = {
   drives: ['levelLow', 'levelHigh', 'pumpFault'],
   actions: ['pumpFault'],
   initial: () => ({ level: 500, filling: false, pumpFault: false }),
-  step: (s, r) => ({ ...s, filling: r.pump === true && !s.pumpFault, level: clamp((s.level as number) + (r.pump && !s.pumpFault ? 20 : 0) - 8, 0, 1000) }),
+  step: (s, r) => ({
+    ...s,
+    filling: r.pump === true && !s.pumpFault,
+    level: clamp((s.level as number) + (r.pump && !s.pumpFault ? 20 : 0) - 8, 0, 1000),
+  }),
   act: (s, a) => (a === 'pumpFault' ? toggle(s, 'pumpFault') : s),
   sense: (s) => ({ levelLow: (s.level as number) <= 200, levelHigh: (s.level as number) >= 800, pumpFault: s.pumpFault === true }),
 };
@@ -84,11 +95,21 @@ const crossing: PlantModel = {
     const scans = (s.scans as number) + 1;
     return scans >= CROSSING_SCANS ? { ...s, phase: 'cleared', scans: 0 } : { ...s, scans };
   },
-  act: (s, a) => (a === 'blocked' ? toggle(s, 'blocked') : a === 'request' && (s.phase === 'approaching' || s.phase === 'cleared') ? { ...s, phase: 'waiting', scans: 0 } : s),
+  act: (s, a) =>
+    a === 'blocked'
+      ? toggle(s, 'blocked')
+      : a === 'request' && (s.phase === 'approaching' || s.phase === 'cleared')
+        ? { ...s, phase: 'waiting', scans: 0 }
+        : s,
   sense: (s) => ({ pedRequest: s.phase === 'waiting' }),
 };
 
-export const PLANT_MODELS: Record<PlantKind, PlantModel> = { 'motor-v1': motor, 'conveyor-v1': conveyor, 'tank-v1': tank, 'pedestrian-v1': crossing };
+export const PLANT_MODELS: Record<PlantKind, PlantModel> = {
+  'motor-v1': motor,
+  'conveyor-v1': conveyor,
+  'tank-v1': tank,
+  'pedestrian-v1': crossing,
+};
 
 /** One running plant: play, pause, step and the fault actions. `tick` is called once per PLC scan. */
 export function createPlantRun(kind: PlantKind) {
@@ -99,19 +120,36 @@ export function createPlantRun(kind: PlantKind) {
     tickCount: 0,
     paused: false,
     /** One scan of the plant; does nothing while paused. */
-    tick(reads: Signals): void { if (!run.paused) run.step(reads); },
+    tick(reads: Signals): void {
+      if (!run.paused) run.step(reads);
+    },
     /** Exactly one scan, paused or not. */
-    step(reads: Signals): void { run.state = model.step(run.state, reads); run.tickCount += 1; },
-    setPaused(paused: boolean): void { run.paused = paused; },
-    act(action: string): void { if (model.actions.includes(action)) run.state = model.act(run.state, action); },
+    step(reads: Signals): void {
+      run.state = model.step(run.state, reads);
+      run.tickCount += 1;
+    },
+    setPaused(paused: boolean): void {
+      run.paused = paused;
+    },
+    act(action: string): void {
+      if (model.actions.includes(action)) run.state = model.act(run.state, action);
+    },
     sense: (): Record<string, boolean> => model.sense(run.state),
-    reset(): void { run.state = model.initial(); run.tickCount = 0; },
+    reset(): void {
+      run.state = model.initial();
+      run.tickCount = 0;
+    },
   };
   return run;
 }
 export type PlantRun = ReturnType<typeof createPlantRun>;
 
-export interface TraceRow { tick: number; reads: Signals; sense: Record<string, boolean>; state: PlantState }
+export interface TraceRow {
+  tick: number;
+  reads: Signals;
+  sense: Record<string, boolean>;
+  state: PlantState;
+}
 
 /** Runs a plant against a scripted program and returns the trace; `schedule` maps a scan to the actions done before it. */
 export function tracePlant(

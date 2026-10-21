@@ -1,7 +1,8 @@
 // The capability table of the five languages, produced from named journeys and not written by hand (LNG-001, LNG-027).
 //
 //   bun tools/docs/generate_language_capabilities.ts           write the table into the Languages page, in both languages
-//   bun tools/docs/generate_language_capabilities.ts --check   exit 1 when the pages are stale or a cell names a journey that does not exist
+//   bun tools/docs/generate_language_capabilities.ts --check   exit 1 when the pages are stale or a cell names a journey
+//                                                              that does not exist
 //
 // The source is tools/docs/language-capabilities.json: for each language and capability the one journey of the ZPLC
 // application that shows it, end to end, in a real window. A cell is refused when it is empty, or names a unit test, a
@@ -21,7 +22,10 @@ const JOURNEYS = 'packages/zplc-ide/scripts/journeys.ts';
 
 /** The only kind of check a cell may name; the others are read from the file so that they can be refused by name. */
 export type Cell = { kind: 'journey'; ref: string } | { kind: string; ref?: string } | null;
-export interface CapabilityTable { capabilities: string[]; languages: Record<string, Record<string, Cell>> }
+export interface CapabilityTable {
+  capabilities: string[];
+  languages: Record<string, Record<string, Cell>>;
+}
 
 export const LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const CAPABILITIES = ['edit', 'build', 'simulate', 'debug', 'pause', 'watch', 'force', 'deploy'] as const;
@@ -43,8 +47,14 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   force: { en: 'Force', es: 'Forzar' },
   deploy: { en: 'Deploy (click Deploy and confirm)', es: 'Cargar (pulsar Cargar y confirmar)' },
 };
-const JOURNEY: L10n = { en: 'ZPLC application journey in the native simulation', es: 'Recorrido de la aplicación ZPLC en la simulación nativa' };
-const DEPLOY_JOURNEY: L10n = { en: 'ZPLC application journey: Deploy clicked against an emulated board', es: 'Recorrido de la aplicación ZPLC: Cargar pulsado contra una placa emulada' };
+const JOURNEY: L10n = {
+  en: 'ZPLC application journey in the native simulation',
+  es: 'Recorrido de la aplicación ZPLC en la simulación nativa',
+};
+const DEPLOY_JOURNEY: L10n = {
+  en: 'ZPLC application journey: Deploy clicked against an emulated board',
+  es: 'Recorrido de la aplicación ZPLC: Cargar pulsado contra una placa emulada',
+};
 
 export function loadTable(root = ROOT): CapabilityTable {
   return JSON.parse(readFileSync(join(root, SOURCE), 'utf8')) as CapabilityTable;
@@ -60,7 +70,8 @@ export function unresolved(source: CapabilityTable, root = ROOT): string[] {
       const where = `${language}/${capability}`;
       if (cell === undefined) problems.push(`${where}: no entry`);
       else if (cell === null) problems.push(`${where}: no check; a cell must name an end-to-end journey`);
-      else if (cell.kind !== 'journey' || typeof cell.ref !== 'string') problems.push(`${where}: a '${cell.kind}' check is not end to end; a cell must name a journey of the ZPLC application`);
+      else if (cell.kind !== 'journey' || typeof cell.ref !== 'string')
+        problems.push(`${where}: a '${cell.kind}' check is not end to end; a cell must name a journey of the ZPLC application`);
       else if (!journeys.includes(`name: '${cell.ref}'`)) problems.push(`${where}: no journey named '${cell.ref}'`);
     }
   }
@@ -106,5 +117,8 @@ if (import.meta.main) {
     process.exit(problems.length + stale.length > 0 ? 1 : 0);
   }
   if (problems.length > 0) process.exit(1);
-  for (const { file, content } of stale) { writeFileSync(join(ROOT, file), content); console.log(`Wrote ${file}`); }
+  for (const { file, content } of stale) {
+    writeFileSync(join(ROOT, file), content);
+    console.log(`Wrote ${file}`);
+  }
 }

@@ -18,7 +18,8 @@ export const interlockEn = {
   'interlock.declaredInterlockCoverageRequi': 'Declared interlock coverage requires the desktop app.',
   'interlock.openASavedProject': 'Open a saved project folder to check declared interlocks.',
   'interlock.declaredInterlockCoverageIs': 'Declared interlock coverage is unavailable.',
-  'interlock.checksExactNeverCoverage': 'Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.',
+  'interlock.checksExactNeverCoverage':
+    'Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.',
 } as const;
 
 export const interlockEs: Record<keyof typeof interlockEn, string> = {
@@ -40,5 +41,6 @@ export const interlockEs: Record<keyof typeof interlockEn, string> = {
   'interlock.declaredInterlockCoverageRequi': 'La cobertura de enclavamientos declarados requiere la aplicación de escritorio.',
   'interlock.openASavedProject': 'Abra una carpeta de proyecto guardada para comprobar los enclavamientos declarados.',
   'interlock.declaredInterlockCoverageIs': 'La cobertura de enclavamientos declarados no está disponible.',
-  'interlock.checksExactNeverCoverage': 'Comprueba la cobertura exacta de NEVER en los escenarios guardados. No establece seguridad física, temporización ni certificación.',
+  'interlock.checksExactNeverCoverage':
+    'Comprueba la cobertura exacta de NEVER en los escenarios guardados. No establece seguridad física, temporización ni certificación.',
 };

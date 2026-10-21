@@ -8,25 +8,33 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { InterlockCoverage } from './InterlockCoverage';
 import type { WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
 
-const render = (props: Partial<Parameters<typeof InterlockCoverage>[0]> = {}) => renderToStaticMarkup(
-  <InterlockCoverage availability="ready" state="idle" busy={false} onCheck={() => undefined} {...props} />,
-);
+const render = (props: Partial<Parameters<typeof InterlockCoverage>[0]> = {}) =>
+  renderToStaticMarkup(<InterlockCoverage availability="ready" state="idle" busy={false} onCheck={() => undefined} {...props} />);
 const pair = (a: string, b: string) => ({ outputs: [a, b] as [string, string] });
-const covered = (declared: ReturnType<typeof pair>[], uncovered: ReturnType<typeof pair>[]): WorkspaceSafetyPresentation => (
-  { kind: uncovered.length > 0 ? 'uncovered' : 'covered', declared, covered: declared.filter((entry) => !uncovered.includes(entry)), uncovered, diagnostics: [] } as unknown as WorkspaceSafetyPresentation
-);
+const covered = (declared: ReturnType<typeof pair>[], uncovered: ReturnType<typeof pair>[]): WorkspaceSafetyPresentation =>
+  ({
+    kind: uncovered.length > 0 ? 'uncovered' : 'covered',
+    declared,
+    covered: declared.filter((entry) => !uncovered.includes(entry)),
+    uncovered,
+    diagnostics: [],
+  }) as unknown as WorkspaceSafetyPresentation;
 
 describe('InterlockCoverage (IDE-032)', () => {
   it('has its title, a check button and the claim it does not make', () => {
     const html = render();
     expect(html).toContain('Declared interlock coverage');
     expect(html).toContain('Check declared interlocks');
-    expect(html).toContain('Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.');
+    expect(html).toContain(
+      'Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.',
+    );
     expect(html).not.toContain('disabled=""');
   });
 
   it('cannot be run until the project is saved and linked, and says what to do', () => {
-    expect(render({ availability: 'link-required' })).toContain('Save the project and choose zplc.json in Tests to check declared interlocks.');
+    expect(render({ availability: 'link-required' })).toContain(
+      'Save the project and choose zplc.json in Tests to check declared interlocks.',
+    );
     expect(render({ availability: 'unsaved' })).toContain('Save all changes before checking declared interlocks.');
     expect(render({ availability: 'desktop-unavailable' })).toContain('requires the desktop app');
     expect(render({ availability: 'project-required' })).toContain('Open a saved project folder');

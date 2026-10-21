@@ -11,11 +11,25 @@ import { LOADING_DELAY_MS, startDelay } from './logic/delay';
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
-  return <span className={cx('ui-badge', className)} data-tone={tone}>{children}</span>;
+  return (
+    <span className={cx('ui-badge', className)} data-tone={tone}>
+      {children}
+    </span>
+  );
 }
 
 /** A small coloured dot with a text that says what it means: the text is shown, or read by a screen reader only. */
-export function StatusDot({ tone = 'neutral', label, showLabel = false, className }: { tone?: Tone; label: string; showLabel?: boolean; className?: string }) {
+export function StatusDot({
+  tone = 'neutral',
+  label,
+  showLabel = false,
+  className,
+}: {
+  tone?: Tone;
+  label: string;
+  showLabel?: boolean;
+  className?: string;
+}) {
   return (
     <span className={cx('ui-status', className)} data-tone={tone}>
       <span className="ui-status-dot" aria-hidden="true" />
@@ -29,7 +43,9 @@ export function SignalChip({ tone, className, detail }: { tone: SignalTone; clas
   const cue = SIGNAL_CUES[tone];
   return (
     <span className={cx('ui-signal ui-tabular', SIGNAL_CHIP_CLASS[tone], className)} data-signal={tone}>
-      <span aria-hidden="true" className="ui-signal-glyph">{cue.glyph}</span>
+      <span aria-hidden="true" className="ui-signal-glyph">
+        {cue.glyph}
+      </span>
       <span>{detail ?? cue.label}</span>
     </span>
   );
@@ -75,7 +91,11 @@ export function EmptyState({ icon, title, description, action, headingLevel = 3,
   const Heading = `h${headingLevel}` as const;
   return (
     <div className={cx('ui-empty', className)}>
-      {icon !== undefined && <div aria-hidden="true" className="ui-empty-icon">{icon}</div>}
+      {icon !== undefined && (
+        <div aria-hidden="true" className="ui-empty-icon">
+          {icon}
+        </div>
+      )}
       <Heading className="ui-empty-title">{title}</Heading>
       {description !== undefined && <p className="ui-empty-description">{description}</p>}
       {action !== undefined && <div className="ui-empty-action">{action}</div>}
@@ -105,7 +125,9 @@ export function LoadingState({ label, delayMs = LOADING_DELAY_MS, className }: L
   return (
     <div className={cx('ui-empty', className)} data-state="loading">
       <Spinner label={label} />
-      <p className="ui-empty-description" aria-hidden="true">{label}</p>
+      <p className="ui-empty-description" aria-hidden="true">
+        {label}
+      </p>
     </div>
   );
 }
@@ -132,7 +154,10 @@ export function ErrorState({ title, message, action, headingLevel = 3, className
   );
 }
 
-export interface PropertyItem { label: string; value: ReactNode }
+export interface PropertyItem {
+  label: string;
+  value: ReactNode;
+}
 
 /** A definition list of facts (the inspector's pattern): a label column and a wrapping value column. */
 export function PropertyList({ items, className, label }: { items: readonly PropertyItem[]; className?: string; label?: string }) {

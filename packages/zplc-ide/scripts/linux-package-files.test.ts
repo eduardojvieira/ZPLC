@@ -9,7 +9,9 @@ import { fileOfPackage, udevRuleProblems } from './linux-package-files';
 
 const have = (tool: string) => Bun.spawnSync(['sh', '-c', `command -v ${tool}`]).exitCode === 0;
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => {
+  for (const root of roots) rmSync(root, { recursive: true, force: true });
+});
 
 function fakeDeb(content: string | null): string {
   const root = mkdtempSync(join(tmpdir(), 'zplc-fake-deb-'));
@@ -38,7 +40,9 @@ describe.skipIf(!have('ar') || !have('tar'))('the udev rule inside a .deb (REL-0
   it('has no problem when the package holds the rule that was generated, and names the problem when it does not', () => {
     expect(udevRuleProblems(fakeDeb('the generated rule\n'), 'the generated rule\n')).toEqual([]);
     expect(udevRuleProblems(fakeDeb(null), 'the generated rule\n')[0]).toContain('does not hold');
-    expect(udevRuleProblems(fakeDeb('an older rule\n'), 'the generated rule\n')[0]).toContain('not the rule that scripts/release/udev-rules.ts generates');
+    expect(udevRuleProblems(fakeDeb('an older rule\n'), 'the generated rule\n')[0]).toContain(
+      'not the rule that scripts/release/udev-rules.ts generates',
+    );
   });
 
   it('refuses a file that is not a package', () => {
@@ -53,12 +57,26 @@ function fakeRpm(content: string): string {
   for (const folder of ['BUILD', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS', 'BUILDROOT']) mkdirSync(join(root, folder));
   writeFileSync(join(root, 'SOURCES/rule'), content);
   const spec = [
-    'Name: zplc-fake', 'Version: 1', 'Release: 1', 'Summary: a package that holds one rule', 'License: MIT', 'BuildArch: noarch', 'Source0: rule',
-    '%description', 'x', '%install', `mkdir -p %{buildroot}${RULE_TARGET.slice(0, RULE_TARGET.lastIndexOf('/'))}`, `cp %{SOURCE0} %{buildroot}${RULE_TARGET}`,
-    '%files', RULE_TARGET,
+    'Name: zplc-fake',
+    'Version: 1',
+    'Release: 1',
+    'Summary: a package that holds one rule',
+    'License: MIT',
+    'BuildArch: noarch',
+    'Source0: rule',
+    '%description',
+    'x',
+    '%install',
+    `mkdir -p %{buildroot}${RULE_TARGET.slice(0, RULE_TARGET.lastIndexOf('/'))}`,
+    `cp %{SOURCE0} %{buildroot}${RULE_TARGET}`,
+    '%files',
+    RULE_TARGET,
   ].join('\n');
   writeFileSync(join(root, 'SPECS/fake.spec'), `${spec}\n`);
-  const built = Bun.spawnSync(['rpmbuild', '--define', `_topdir ${root}`, '-bb', join(root, 'SPECS/fake.spec')], { stdout: 'pipe', stderr: 'pipe' });
+  const built = Bun.spawnSync(['rpmbuild', '--define', `_topdir ${root}`, '-bb', join(root, 'SPECS/fake.spec')], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
   if (built.exitCode !== 0) throw new Error(built.stderr.toString());
   return join(root, 'RPMS/noarch/zplc-fake-1-1.noarch.rpm');
 }

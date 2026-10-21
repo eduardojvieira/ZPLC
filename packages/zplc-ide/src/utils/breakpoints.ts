@@ -9,13 +9,21 @@ export function breakpointFileKey(file: { path?: string; name?: string } | undef
 }
 
 function normalizeBreakpointName(fileName: string): string {
-  return fileName.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '').toLowerCase();
+  return fileName
+    .replace(/^.*[\\/]/, '')
+    .replace(/\.[^.]+$/, '')
+    .toLowerCase();
 }
 
 function sourceRefMatchesFile(sourceRef: string, fileName: string): boolean {
   // Project-relative keys; graphical models also match without their ".json" suffix.
   const normalizeSourceKey = (value: string) =>
-    value.replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/^file:/i, '').replace(/\.json$/i, '').toLowerCase();
+    value
+      .replace(/\\/g, '/')
+      .replace(/^(\.\/)+/, '')
+      .replace(/^file:/i, '')
+      .replace(/\.json$/i, '')
+      .toLowerCase();
   return normalizeSourceKey(sourceRef) === normalizeSourceKey(fileName);
 }
 
@@ -34,10 +42,7 @@ function findPOU(debugMap: DebugMap, fileName: string): DebugPOUInfo | null {
     const normalizedPouName = normalizeBreakpointName(name);
     const fullPouName = name.toLowerCase();
 
-    if (
-      fullPouName === fullFileName ||
-      normalizedPouName === normalizedFileName
-    ) {
+    if (fullPouName === fullFileName || normalizedPouName === normalizedFileName) {
       return info;
     }
   }
@@ -63,16 +68,17 @@ export function doesCurrentPOUMatchFile(
     ? Object.entries(debugMap.pou).find(([name]) => name.toLowerCase() === currentPOU.toLowerCase())?.[1]
     : undefined;
   if (currentInfo?.sourceRef) {
-    return sourceRefMatchesFile(currentInfo.sourceRef, fileName)
-      || sourceRefMatchesFile(currentInfo.sourceRef, fileId);
+    return sourceRefMatchesFile(currentInfo.sourceRef, fileName) || sourceRefMatchesFile(currentInfo.sourceRef, fileId);
   }
 
   const normalizedCurrentPOU = normalizeBreakpointName(currentPOU);
   const normalizedFileName = normalizeBreakpointName(fileName);
   const normalizedFileId = normalizeBreakpointName(fileId.replace(/-/g, '.'));
-  return normalizedCurrentPOU === normalizedFileName
-    || normalizedCurrentPOU === normalizedFileId
-    || fileId.toLowerCase().includes(normalizedCurrentPOU);
+  return (
+    normalizedCurrentPOU === normalizedFileName ||
+    normalizedCurrentPOU === normalizedFileId ||
+    fileId.toLowerCase().includes(normalizedCurrentPOU)
+  );
 }
 
 function getExecutableLines(pouInfo: DebugPOUInfo): Set<number> {
@@ -97,10 +103,7 @@ function getExecutableLines(pouInfo: DebugPOUInfo): Set<number> {
   return lines;
 }
 
-export function getEligibleBreakpointLines(
-  debugMap: DebugMap | null,
-  fileName: string,
-): number[] {
+export function getEligibleBreakpointLines(debugMap: DebugMap | null, fileName: string): number[] {
   if (!debugMap || !fileName) {
     return [];
   }
@@ -113,11 +116,7 @@ export function getEligibleBreakpointLines(
   return Array.from(getExecutableLines(pouInfo)).sort((a, b) => a - b);
 }
 
-export function getBreakpointPCForLine(
-  debugMap: DebugMap | null,
-  fileName: string,
-  lineNumber: number,
-): number | null {
+export function getBreakpointPCForLine(debugMap: DebugMap | null, fileName: string, lineNumber: number): number | null {
   if (!debugMap || !fileName || lineNumber < 1) {
     return null;
   }
@@ -127,9 +126,7 @@ export function getBreakpointPCForLine(
     return null;
   }
 
-  const breakpoint = pouInfo.breakpoints.find(
-    (entry) => entry.valid && entry.line === lineNumber,
-  );
+  const breakpoint = pouInfo.breakpoints.find((entry) => entry.valid && entry.line === lineNumber);
   if (breakpoint) {
     return breakpoint.pc;
   }
@@ -138,11 +135,7 @@ export function getBreakpointPCForLine(
   return mapping?.pc ?? null;
 }
 
-export function isLineBreakpointEligible(
-  debugMap: DebugMap | null,
-  fileName: string,
-  lineNumber: number,
-): boolean {
+export function isLineBreakpointEligible(debugMap: DebugMap | null, fileName: string, lineNumber: number): boolean {
   if (!debugMap || !fileName || lineNumber < 1) {
     return false;
   }
@@ -155,19 +148,13 @@ export function isLineBreakpointEligible(
   return getExecutableLines(pouInfo).has(lineNumber);
 }
 
-export function filterEligibleBreakpointLines(
-  debugMap: DebugMap | null,
-  fileName: string,
-  lines: Iterable<number>,
-): number[] {
+export function filterEligibleBreakpointLines(debugMap: DebugMap | null, fileName: string, lines: Iterable<number>): number[] {
   return Array.from(lines).filter((lineNumber) => isLineBreakpointEligible(debugMap, fileName, lineNumber));
 }
 
 /** Hover text of a breakpoint dot: an armed one stays plain, one the runtime refused says why it will not stop. */
 export function breakpointHoverMessage(line: number, inactiveReason: string | null): string {
-  return inactiveReason
-    ? `Breakpoint at line ${line} is not active: ${inactiveReason}`
-    : `Breakpoint at line ${line}`;
+  return inactiveReason ? `Breakpoint at line ${line} is not active: ${inactiveReason}` : `Breakpoint at line ${line}`;
 }
 
 /**

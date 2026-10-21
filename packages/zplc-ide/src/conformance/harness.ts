@@ -24,13 +24,20 @@ export const ACCESS: Record<Exclude<CellType, 'BOOL'>, Access> = {
 
 export const label = (cell: Cell) => `${cell.at ?? cell.var} (${cell.type})`;
 
-export async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'> & { tasks: TaskSpec[] }, scanMs: number): Promise<string> {
+export async function workspace(
+  found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'> & { tasks: TaskSpec[] },
+  scanMs: number,
+): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-conformance-'));
   await mkdir(join(root, 'src'));
   const program = `main${found.extension}`;
   await copyFile(found.source, join(root, 'src', program));
   for (const extra of found.extras) await copyFile(extra, join(root, 'src', basename(extra)));
-  const tasks = found.tasks.length > 0 ? found.tasks : [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }];
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' }, tasks }));
+  const tasks =
+    found.tasks.length > 0 ? found.tasks : [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }];
+  await writeFile(
+    join(root, 'zplc.json'),
+    JSON.stringify({ schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' }, tasks }),
+  );
   return root;
 }

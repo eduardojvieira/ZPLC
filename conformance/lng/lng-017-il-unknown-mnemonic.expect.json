@@ -4,13 +4,7 @@
   "matrix": ["il.unknown-mnemonic"],
   "build": "fails",
   "elements": ["line:7"],
-  "lines": [
-    7
-  ],
-  "codes": [
-    "TRANSLATION_FAILED"
-  ],
-  "messageIncludes": [
-    "ANDD"
-  ]
+  "lines": [7],
+  "codes": ["TRANSLATION_FAILED"],
+  "messageIncludes": ["ANDD"]
 }

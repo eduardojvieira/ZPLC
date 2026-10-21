@@ -18,9 +18,7 @@
  * ============================================================================
  */
 
-static unsigned int enter(const zplc_sched_port_t *port) {
-  return port->enter != NULL ? port->enter(port->ctx) : 0U;
-}
+static unsigned int enter(const zplc_sched_port_t *port) { return port->enter != NULL ? port->enter(port->ctx) : 0U; }
 
 static void leave(const zplc_sched_port_t *port, unsigned int key) {
   if (port->leave != NULL) {
@@ -28,8 +26,7 @@ static void leave(const zplc_sched_port_t *port, unsigned int key) {
   }
 }
 
-static void trace(const zplc_sched_core_t *core, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a,
-                  uint64_t b) {
+static void trace(const zplc_sched_core_t *core, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b) {
   if (core->trace != NULL) {
     core->trace(core->trace_ctx, kind, task_id, a, b);
   }
@@ -220,8 +217,7 @@ uint8_t zplc_sched_core_begin_step(zplc_sched_core_t *core, uint64_t release_us,
   for (index = 0U; index < core->capacity && count < capacity; ++index) {
     zplc_sched_slot_t *slot = &core->slot[index];
 
-    if (slot->registered == 0U ||
-        (slot->task.state != ZPLC_TASK_STATE_PAUSED && slot->task.state != ZPLC_TASK_STATE_READY)) {
+    if (slot->registered == 0U || (slot->task.state != ZPLC_TASK_STATE_PAUSED && slot->task.state != ZPLC_TASK_STATE_READY)) {
       continue;
     }
     slot->task.state = ZPLC_TASK_STATE_RUNNING;
@@ -254,8 +250,7 @@ uint8_t zplc_sched_core_set_running(zplc_sched_core_t *core) {
   for (index = 0U; index < core->capacity; ++index) {
     zplc_sched_slot_t *slot = &core->slot[index];
 
-    if (slot->registered != 0U &&
-        (slot->task.state == ZPLC_TASK_STATE_READY || slot->task.state == ZPLC_TASK_STATE_PAUSED)) {
+    if (slot->registered != 0U && (slot->task.state == ZPLC_TASK_STATE_READY || slot->task.state == ZPLC_TASK_STATE_PAUSED)) {
       slot->task.state = ZPLC_TASK_STATE_RUNNING;
       slot->pending = 0U;
       moved++;
@@ -411,8 +406,8 @@ static int latch_state_locked(zplc_sched_core_t *core, zplc_sched_fault_reason_t
   return first;
 }
 
-int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port,
-                                      zplc_sched_fault_reason_t reason, uint16_t task_id) {
+int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason,
+                                      uint16_t task_id) {
   unsigned int key = enter(port);
   const int first = latch_state_locked(core, reason, task_id);
 
@@ -424,8 +419,7 @@ int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_
   return port->reset_image != NULL ? port->reset_image(port->ctx) : 0;
 }
 
-zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, const zplc_sched_port_t *port,
-                                                int image_result) {
+zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, const zplc_sched_port_t *port, int image_result) {
   zplc_sched_safe_result_t out = {0, 0};
   int pins_result = port->drive_safe_pins != NULL ? port->drive_safe_pins(port->ctx) : 0;
 
@@ -457,8 +451,7 @@ int zplc_sched_core_lock_failure(zplc_sched_core_t *core, const zplc_sched_port_
   return ZPLC_SCHED_ERR_LOCK;
 }
 
-int zplc_sched_core_fault(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason,
-                          uint16_t task_id) {
+int zplc_sched_core_fault(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason, uint16_t task_id) {
   zplc_sched_safe_result_t settled;
   int image_result;
 
@@ -510,8 +503,8 @@ int zplc_sched_core_drive_safe_outputs(zplc_sched_core_t *core, const zplc_sched
  */
 
 /* The system registers at the end of the input image: the time of the scan before it, the clock and the flags. */
-static void write_system_registers(const zplc_sched_core_t *core, uint16_t task_id, uint32_t cycle_time_us,
-                                   uint32_t uptime_ms, int first_scan) {
+static void write_system_registers(const zplc_sched_core_t *core, uint16_t task_id, uint32_t cycle_time_us, uint32_t uptime_ms,
+                                   int first_scan) {
   uint8_t flags = 0U;
 
   (void)zplc_ipi_write32(ZPLC_SYS_REG_OFFSET, cycle_time_us);
@@ -534,9 +527,8 @@ static void write_system_registers(const zplc_sched_core_t *core, uint16_t task_
  * at the instant the batch did. The duration of a part therefore includes the little between two tasks, and the
  * clock is read once per task and not twice.
  */
-static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_slot_t *slot, int step_mode,
-                    uint64_t start_us, uint64_t batch_start_us, uint64_t *ended_us, int *latched,
-                    zplc_sched_scan_report_t *report) {
+static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_slot_t *slot, int step_mode, uint64_t start_us,
+                    uint64_t batch_start_us, uint64_t *ended_us, int *latched, zplc_sched_scan_report_t *report) {
   zplc_vm_t *vm = slot->vm;
   const uint16_t task_id = slot->task.config.id;
   uint64_t end_us;
@@ -611,8 +603,7 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
   if (slot->task.stats.avg_exec_time_us == 0U) {
     slot->task.stats.avg_exec_time_us = exec_us;
   } else {
-    slot->task.stats.avg_exec_time_us =
-        (uint32_t)(((uint64_t)slot->task.stats.avg_exec_time_us * 7U + exec_us) / 8U);
+    slot->task.stats.avg_exec_time_us = (uint32_t)(((uint64_t)slot->task.stats.avg_exec_time_us * 7U + exec_us) / 8U);
   }
   if (step_mode == 0 && breakpoint == 0) {
     if (over_us != 0U || forced != 0) {
@@ -635,8 +626,7 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
       report->warning_task = task_id;
     }
   }
-  hil_trace_task((uint8_t)task_id, clamp_u32(start_us / 1000U), clamp_u32(end_us / 1000U), exec_us,
-                 over_us != 0U || forced != 0);
+  hil_trace_task((uint8_t)task_id, clamp_u32(start_us / 1000U), clamp_u32(end_us / 1000U), exec_us, over_us != 0U || forced != 0);
 
   if (result >= 0 && vm->error == ZPLC_VM_HALTED && step_mode == 0 && core->keep_halted_vm == 0U) {
     zplc_vm_reset_cycle(vm);
@@ -655,8 +645,8 @@ static int run_task(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc
   return result;
 }
 
-int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order, uint8_t count,
-                         int step_mode, zplc_sched_scan_report_t *report) {
+int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order, uint8_t count, int step_mode,
+                         zplc_sched_scan_report_t *report) {
   zplc_sched_scan_report_t local;
   int result = 0;
   int faulted = 0;
@@ -739,8 +729,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     int task_result;
 
     key = enter(port);
-    admitted = zplc_sched_core_is_running(core) && slot->registered != 0U &&
-               slot->task.state == ZPLC_TASK_STATE_RUNNING;
+    admitted = zplc_sched_core_is_running(core) && slot->registered != 0U && slot->task.state == ZPLC_TASK_STATE_RUNNING;
     leave(port, key);
     if (admitted == 0) {
       continue;
@@ -889,8 +878,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
     if (port->stop_releases != NULL) {
       port->stop_releases(port->ctx);
     }
-    if (pause_safe_result == 0 && port->watchdog_state != NULL &&
-        port->watchdog_state(port->ctx, ZPLC_WDT_STATE_PAUSED) != 0) {
+    if (pause_safe_result == 0 && port->watchdog_state != NULL && port->watchdog_state(port->ctx, ZPLC_WDT_STATE_PAUSED) != 0) {
       (void)zplc_sched_core_fault(core, port, ZPLC_SCHED_FAULT_IO, 0U);
       report->faulted = 1U;
       result = ZPLC_SCHED_ERR_IO;
@@ -904,9 +892,7 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
  * ============================================================================
  */
 
-static void sample_mark_valid(zplc_io_samples_t *samples, size_t index) {
-  samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U));
-}
+static void sample_mark_valid(zplc_io_samples_t *samples, size_t index) { samples->valid[index / 8U] |= (uint8_t)(1U << (index % 8U)); }
 
 static int sample_is_valid(const zplc_io_samples_t *samples, size_t index) {
   return (samples->valid[index / 8U] & (1U << (index % 8U))) != 0U;
@@ -1061,8 +1047,7 @@ zplc_hal_result_t zplc_io_drive_safe(const zplc_io_ops_t *ops) {
     if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT || channel->kind != ZPLC_IO_KIND_DIGITAL) {
       continue;
     }
-    level = zplc_core_declared_safe(channel->image_offset, channel->bit, &declared) != 0 ? (uint16_t)declared
-                                                                                       : (uint16_t)channel->safe;
+    level = zplc_core_declared_safe(channel->image_offset, channel->bit, &declared) != 0 ? (uint16_t)declared : (uint16_t)channel->safe;
     result = (ops != NULL && ops->write != NULL) ? ops->write(channel, level) : zplc_io_write_channel(channel, level);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL && first_error == ZPLC_HAL_OK) {
       first_error = result;

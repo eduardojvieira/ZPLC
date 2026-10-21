@@ -11,7 +11,9 @@ describe('Inspector (UX-011) in a DOM', () => {
     dom.render(<WorkbenchInspector />);
     expect(dom.screen.getByRole('complementary', { name: dom.t('workbench.inspector.region') })).toBeTruthy();
     expect(dom.screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual([
-      dom.t('workbench.inspector.activeFile'), dom.t('workbench.inspector.project'), dom.t('workbench.inspector.evidence'),
+      dom.t('workbench.inspector.activeFile'),
+      dom.t('workbench.inspector.project'),
+      dom.t('workbench.inspector.evidence'),
     ]);
   });
 
@@ -28,7 +30,9 @@ describe('Inspector (UX-011) in a DOM', () => {
     dom.render(<WorkbenchInspector />);
     const term = dom.screen.getAllByText(dom.t('workbench.inspector.project')).find((node) => node.tagName === 'DT')!;
     expect(term.nextElementSibling?.textContent).toBe('Boiler line');
-    await dom.act(async () => { useIDEStore.setState({ projectName: 'Pump station' }); });
+    await dom.act(async () => {
+      useIDEStore.setState({ projectName: 'Pump station' });
+    });
     expect(term.nextElementSibling?.textContent).toBe('Pump station');
   });
 

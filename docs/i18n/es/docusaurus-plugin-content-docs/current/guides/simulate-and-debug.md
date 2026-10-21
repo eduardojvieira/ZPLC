@@ -3,7 +3,7 @@ slug: /guides/simulate-and-debug
 id: simulate-and-debug
 title: Simular y depurar un programa
 sidebar_label: Simular y depurar
-description: "Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de parada, avance paso a paso y vea qué conserva cada control."
+description: 'Ejecute un programa en el simulador, observe sus variables, deténgalo en un punto de parada, avance paso a paso y vea qué conserva cada control.'
 tags: [how-to, debugging, simulation, puntos de parada]
 ---
 
@@ -67,13 +67,13 @@ depuración relaciona las instrucciones con el elemento que usted editó.
 
 ## 3. Qué conserva cada control
 
-| Control | Imagen de salida | Forzados | El ciclo |
-| --- | --- | --- | --- |
-| Pausar (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
+| Control                | Imagen de salida                          | Forzados     | El ciclo                                                                          |
+| ---------------------- | ----------------------------------------- | ------------ | --------------------------------------------------------------------------------- |
+| Pausar (F6)            | Se conserva                               | Se conservan | Se detiene entre ciclos                                                           |
 | Avanzar un ciclo (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de parada |
-| Reanudar (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí |
-| Detener (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
-| Reiniciar (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
+| Reanudar (F5)          | Se conserva                               | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí                       |
+| Detener (Shift+F5)     | Se pone en cero                           | Se borran    | Cada tarea vuelve a su punto de entrada                                           |
+| Reiniciar (F8)         | Un reinicio en frío: valores iniciales    | Se borran    | Empieza de nuevo desde el primer ciclo                                            |
 
 La tabla completa, con las pruebas que la respaldan, está en
 [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
@@ -89,12 +89,12 @@ hasta ese ciclo.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
+| Parte                                                                                     | Verificado                                                                 | Nivel               |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------- |
 | Un punto de parada se enlaza y detiene el ciclo, y Reanudar termina el ciclo interrumpido | Los recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
-| Un forzado fijado en un punto de parada lo ve el resto del ciclo | El recorrido 18 en la aplicación real | Host |
-| La pausa, el paso y la detención conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
-| Las mismas detenciones en una placa | No probado | Ninguno |
+| Un forzado fijado en un punto de parada lo ve el resto del ciclo                          | El recorrido 18 en la aplicación real                                      | Host                |
+| La pausa, el paso y la detención conservan y borran lo que dice la tabla                  | Las suites de Zephyr en `native_sim` y QEMU                                | Destino emulado     |
+| Las mismas detenciones en una placa                                                       | No probado                                                                 | Ninguno             |
 
 ## Vea también
 

@@ -24,17 +24,41 @@ import { McpServer } from '@modelcontextprotocol/server';
 import { buildMcpServer, createMcpDispatcher, MCP_RESOURCE_URIS, MCP_TOOL_NAMES, openMcpWorkspace } from './server';
 
 const temporary: string[] = [];
-afterEach(async () => { await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
+afterEach(async () => {
+  await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
+});
 
 async function workspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), 'zplc-mcp-link-')); temporary.push(root);
-  await mkdir(join(root, 'src')); await mkdir(join(root, 'tests'));
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'MCP link', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+  const root = await mkdtemp(join(tmpdir(), 'zplc-mcp-link-'));
+  temporary.push(root);
+  await mkdir(join(root, 'src'));
+  await mkdir(join(root, 'tests'));
+  await writeFile(
+    join(root, 'zplc.json'),
+    JSON.stringify({
+      schemaVersion: 2,
+      name: 'MCP link',
+      version: '1.0.0',
+      target: { board: 'posix' },
+      tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }],
+    }),
+  );
   await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
   return root;
 }
 
-interface Registered { tools: Array<{ name: string; inputSchema: { shape: Record<string, unknown>; safeParse: (value: unknown) => { success: boolean } }; annotations: Record<string, unknown> }>; resources: Array<{ name: string; uri: string | { uriTemplate: { toString(): string } }; read: (...args: unknown[]) => Promise<{ contents: Array<{ text: string }> }> }> }
+interface Registered {
+  tools: Array<{
+    name: string;
+    inputSchema: { shape: Record<string, unknown>; safeParse: (value: unknown) => { success: boolean } };
+    annotations: Record<string, unknown>;
+  }>;
+  resources: Array<{
+    name: string;
+    uri: string | { uriTemplate: { toString(): string } };
+    read: (...args: unknown[]) => Promise<{ contents: Array<{ text: string }> }>;
+  }>;
+}
 
 /** Builds the real server and returns what it registered, read from the registration calls themselves. */
 async function registered(): Promise<Registered> {
@@ -43,27 +67,52 @@ async function registered(): Promise<Registered> {
   expect(bound).toBeDefined();
   const record: Registered = { tools: [], resources: [] };
   const proto = McpServer.prototype as unknown as Record<string, (...args: unknown[]) => unknown>;
-  const registerTool = proto.registerTool; const registerResource = proto.registerResource;
+  const registerTool = proto.registerTool;
+  const registerResource = proto.registerResource;
   proto.registerTool = function (this: unknown, name: string, config: Registered['tools'][number], callback: unknown) {
     record.tools.push({ name, inputSchema: config.inputSchema, annotations: config.annotations });
     return registerTool.call(this, name, config, callback);
   } as never;
-  proto.registerResource = function (this: unknown, name: string, uri: Registered['resources'][number]['uri'], config: unknown, read: Registered['resources'][number]['read']) {
+  proto.registerResource = function (
+    this: unknown,
+    name: string,
+    uri: Registered['resources'][number]['uri'],
+    config: unknown,
+    read: Registered['resources'][number]['read'],
+  ) {
     record.resources.push({ name, uri, read });
     return registerResource.call(this, name, uri, config, read);
   } as never;
-  try { buildMcpServer(bound!); } finally { proto.registerTool = registerTool; proto.registerResource = registerResource; }
+  try {
+    buildMcpServer(bound!);
+  } finally {
+    proto.registerTool = registerTool;
+    proto.registerResource = registerResource;
+  }
   return record;
 }
 
 describe('IDE-030: the tools an assistant can call are a closed list that names no physical operation (AGENTS.md rule 7)', () => {
   test('the list is the one below, and no name flashes, deploys, forces, stops, resets or opens a serial line or a shell', () => {
     expect([...MCP_TOOL_NAMES]).toEqual([
-      'project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check', 'tests_run',
-      'scenario_run', 'simulation_start', 'simulation_step', 'runtime_snapshot', 'trace_get', 'boards_list', 'toolchain_inspect',
+      'project_inspect',
+      'project_validate',
+      'compiler_check',
+      'compiler_compile',
+      'symbols_list',
+      'safety_check',
+      'tests_run',
+      'scenario_run',
+      'simulation_start',
+      'simulation_step',
+      'runtime_snapshot',
+      'trace_get',
+      'boards_list',
+      'toolchain_inspect',
       'firmware_build',
     ]);
-    for (const name of MCP_TOOL_NAMES) expect(name, name).not.toMatch(/flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug/);
+    for (const name of MCP_TOOL_NAMES)
+      expect(name, name).not.toMatch(/flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug/);
   });
 
   test('the resources are read-only documents and snapshots: none of them is a command', () => {
@@ -84,10 +133,14 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     for (const tool of tools) {
       for (const key of Object.keys(tool.inputSchema.shape)) expect(allowed.has(key), `${tool.name} takes '${key}'`).toBe(true);
       // And an argument that names a port, a device or a session is refused, whatever else is supplied.
-      const base = tool.name.startsWith('simulation_step') || tool.name === 'runtime_snapshot'
-        ? { scenarioId: 'smoke', cursor: 0, traceSha256: 'a'.repeat(64) }
-        : tool.name === 'firmware_build' ? { ideId: 'posix' }
-          : ['scenario_run', 'simulation_start', 'trace_get'].includes(tool.name) ? { scenarioId: 'smoke' } : {};
+      const base =
+        tool.name.startsWith('simulation_step') || tool.name === 'runtime_snapshot'
+          ? { scenarioId: 'smoke', cursor: 0, traceSha256: 'a'.repeat(64) }
+          : tool.name === 'firmware_build'
+            ? { ideId: 'posix' }
+            : ['scenario_run', 'simulation_start', 'trace_get'].includes(tool.name)
+              ? { scenarioId: 'smoke' }
+              : {};
       for (const extra of ['port', 'serialPort', 'device', 'baud', 'host', 'address', 'session', 'deploy', 'command']) {
         expect(tool.inputSchema.safeParse({ ...base, [extra]: 'x' }).success, `${tool.name} accepted '${extra}'`).toBe(false);
       }
@@ -99,22 +152,47 @@ describe('COM-030: the MCP server cannot open the device link', () => {
   });
 
   test('the module graph of the MCP entry point holds no serial, upload or socket module', async () => {
-    const built = await Bun.build({ entrypoints: [join(import.meta.dir, 'index.ts')], target: 'bun', minify: false, metafile: true } as never);
+    const built = await Bun.build({
+      entrypoints: [join(import.meta.dir, 'index.ts')],
+      target: 'bun',
+      minify: false,
+      metafile: true,
+    } as never);
     expect(built.success).toBe(true);
-    const metafile = (built as unknown as { metafile: { inputs: Record<string, { imports: Array<{ path: string; external?: boolean; kind: string }> }> } }).metafile;
+    const metafile = (
+      built as unknown as { metafile: { inputs: Record<string, { imports: Array<{ path: string; external?: boolean; kind: string }> }> } }
+    ).metafile;
     const modules = Object.keys(metafile.inputs);
     expect(modules.length).toBeGreaterThan(20);
 
     // The modules of the IDE that talk to a device: the Web Serial and node serial back ends, the link
     // manager, the upload and deploy protocol, the handshake, and the Electron main process that owns the
     // port selection. None of them is in the graph.
-    const deviceLink = new RegExp(String.raw`(?:^|\/)(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|` + String.raw`provisioningCommands)|uploader\/|electron\/(?:main|preload|serialPort))`);
+    const deviceLink = new RegExp(
+      String.raw`(?:^|\/)(?:runtime\/(?:serialAdapter|serialConsole|connectionManager|deviceHandshake|uploadProtocol|uploadTrace|` +
+        String.raw`provisioningCommands)|uploader\/|electron\/(?:main|preload|serialPort))`,
+    );
     expect(modules.filter((path) => deviceLink.test(path))).toEqual([]);
 
     // Nor a node module that opens a socket or a port.
     const external = new Set<string>();
-    for (const input of Object.values(metafile.inputs)) for (const edge of input.imports) if (!edge.path.startsWith('.') && !edge.path.startsWith('/')) external.add(edge.path.replace(/^node:/, ''));
-    for (const forbidden of ['net', 'dgram', 'tls', 'http', 'https', 'http2', 'serialport', '@serialport/bindings-cpp', 'ws', 'usb', 'worker_threads', 'cluster']) {
+    for (const input of Object.values(metafile.inputs))
+      for (const edge of input.imports)
+        if (!edge.path.startsWith('.') && !edge.path.startsWith('/')) external.add(edge.path.replace(/^node:/, ''));
+    for (const forbidden of [
+      'net',
+      'dgram',
+      'tls',
+      'http',
+      'https',
+      'http2',
+      'serialport',
+      '@serialport/bindings-cpp',
+      'ws',
+      'usb',
+      'worker_threads',
+      'cluster',
+    ]) {
       expect(external.has(forbidden), `the MCP graph imports '${forbidden}'`).toBe(false);
     }
 
@@ -130,9 +208,14 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     // shares. A module that imports child_process, or asks the list, and is not named here is a new way out and
     // must be added on purpose.
     // (an edge is the specifier as written or the resolved absolute path, so the list is matched by its file name)
-    const importing = (target: RegExp) => modules.filter((path) => metafile.inputs[path]!.imports.some((edge) => target.test(edge.path))).sort();
+    const importing = (target: RegExp) =>
+      modules.filter((path) => metafile.inputs[path]!.imports.some((edge) => target.test(edge.path))).sort();
     expect(importing(/^(?:node:)?child_process$/)).toEqual(['shared/spawnAllowList.ts', 'src/cli/firmwareBuildRunner.ts']);
-    expect(importing(/(?:^|\/)spawnAllowList(?:\.(?:js|ts))?$/)).toEqual(['shared/nativeSimulationSupervisor.ts', 'src/cli/firmwareBuildRunner.ts', 'src/cli/toolApiToolchain.ts']);
+    expect(importing(/(?:^|\/)spawnAllowList(?:\.(?:js|ts))?$/)).toEqual([
+      'shared/nativeSimulationSupervisor.ts',
+      'src/cli/firmwareBuildRunner.ts',
+      'src/cli/toolApiToolchain.ts',
+    ]);
   });
 
   test('running the tools and reading the resources opens no socket, port or datagram', async () => {
@@ -141,8 +224,14 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     expect(bound).toBeDefined();
 
     const touched: string[] = [];
-    const trap = (what: string) => () => { touched.push(what); throw new Error(`device link touched: ${what}`); };
-    const originalNet = net.Socket.prototype.connect; const originalDgram = dgram.createSocket; const originalTls = tls.connect; const originalNetConnect = net.connect;
+    const trap = (what: string) => () => {
+      touched.push(what);
+      throw new Error(`device link touched: ${what}`);
+    };
+    const originalNet = net.Socket.prototype.connect;
+    const originalDgram = dgram.createSocket;
+    const originalTls = tls.connect;
+    const originalNetConnect = net.connect;
     const serial = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
     const bunRecord = Bun as unknown as Record<string, unknown>;
     const originalBun = { connect: bunRecord.connect, listen: bunRecord.listen, udpSocket: bunRecord.udpSocket };
@@ -150,12 +239,24 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     net.connect = trap('net.connect') as never;
     (dgram as unknown as Record<string, unknown>).createSocket = trap('dgram.createSocket');
     (tls as unknown as Record<string, unknown>).connect = trap('tls.connect');
-    bunRecord.connect = trap('Bun.connect'); bunRecord.listen = trap('Bun.listen'); bunRecord.udpSocket = trap('Bun.udpSocket');
-    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { serial: new Proxy({}, { get: trap('navigator.serial'), has: trap('navigator.serial') }) } });
+    bunRecord.connect = trap('Bun.connect');
+    bunRecord.listen = trap('Bun.listen');
+    bunRecord.udpSocket = trap('Bun.udpSocket');
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { serial: new Proxy({}, { get: trap('navigator.serial'), has: trap('navigator.serial') }) },
+    });
     try {
       const dispatch = createMcpDispatcher(bound!);
       const signal = new AbortController().signal;
-      for (const tool of ['project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check'] as const) {
+      for (const tool of [
+        'project_inspect',
+        'project_validate',
+        'compiler_check',
+        'compiler_compile',
+        'symbols_list',
+        'safety_check',
+      ] as const) {
         const result = await dispatch(tool, {}, signal);
         expect(result.isError ?? false, `${tool}: ${JSON.stringify(result.structuredContent)}`).toBe(false);
       }
@@ -165,10 +266,13 @@ describe('COM-030: the MCP server cannot open the device link', () => {
         expect(out.contents.length).toBeGreaterThan(0);
       }
     } finally {
-      net.Socket.prototype.connect = originalNet as never; net.connect = originalNetConnect;
-      (dgram as unknown as Record<string, unknown>).createSocket = originalDgram; (tls as unknown as Record<string, unknown>).connect = originalTls;
+      net.Socket.prototype.connect = originalNet as never;
+      net.connect = originalNetConnect;
+      (dgram as unknown as Record<string, unknown>).createSocket = originalDgram;
+      (tls as unknown as Record<string, unknown>).connect = originalTls;
       Object.assign(bunRecord, originalBun);
-      if (serial) Object.defineProperty(globalThis, 'navigator', serial); else delete (globalThis as Record<string, unknown>).navigator;
+      if (serial) Object.defineProperty(globalThis, 'navigator', serial);
+      else delete (globalThis as Record<string, unknown>).navigator;
     }
     expect(touched).toEqual([]);
   });
@@ -181,15 +285,33 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     const python = Bun.which('python3');
     const project = join(root, 'packages/zplc-ide/projects/motor_start_stop');
     const commands: string[][] = [
-      [process.execPath, join(root, 'packages/zplc-hil/src/cli.ts'), 'run', '--board', 'rpi_pico', '--workspace', project, '--scenario', join(project, 'tests/motor-start-stop.scenario.json')],
-      ...(python ? [[python, '-B', join(root, 'tools/hil/run_chain.py'), 'rpi_pico'], [python, '-B', join(root, 'tools/hil/compare_sim.py'), 'rpi_pico']] : []),
+      [
+        process.execPath,
+        join(root, 'packages/zplc-hil/src/cli.ts'),
+        'run',
+        '--board',
+        'rpi_pico',
+        '--workspace',
+        project,
+        '--scenario',
+        join(project, 'tests/motor-start-stop.scenario.json'),
+      ],
+      ...(python
+        ? [
+            [python, '-B', join(root, 'tools/hil/run_chain.py'), 'rpi_pico'],
+            [python, '-B', join(root, 'tools/hil/compare_sim.py'), 'rpi_pico'],
+          ]
+        : []),
     ];
     expect(commands.length).toBe(3);
     const env = { ...process.env, ZPLC_HIL_FORBID_SERIAL: '1', ZPLC_SERIAL_PORT: '' };
     for (const command of commands) {
       const done = Bun.spawnSync(command, { cwd: root, env, stdin: 'ignore', stdout: 'pipe', stderr: 'pipe' });
-      expect({ command: command.slice(1, 3).join(' '), exit: done.exitCode, says: done.stderr.toString().includes('interactive terminal') })
-        .toEqual({ command: command.slice(1, 3).join(' '), exit: 2, says: true });
+      expect({
+        command: command.slice(1, 3).join(' '),
+        exit: done.exitCode,
+        says: done.stderr.toString().includes('interactive terminal'),
+      }).toEqual({ command: command.slice(1, 3).join(' '), exit: 2, says: true });
     }
   }, 60_000);
 });

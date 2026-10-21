@@ -5,7 +5,11 @@ import { describe, expect, it, mock } from 'bun:test';
 import type { DebugMap } from '../compiler';
 
 // The hook module imports the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { describeBreakpointHit } = await import('./useDebugController');
 
 const DEBUG_MAP: DebugMap = {
@@ -25,7 +29,18 @@ const DEBUG_MAP: DebugMap = {
       breakpoints: [{ line: 9, pc: 0x68, valid: true }],
     },
   },
-  memoryLayout: { ipiBase: 0, ipiSize: 0x1000, opiBase: 0x1000, opiSize: 0x1000, workBase: 0x2000, workSize: 0x2000, retainBase: 0x4000, retainSize: 0x1000, codeBase: 0, codeSize: 128 },
+  memoryLayout: {
+    ipiBase: 0,
+    ipiSize: 0x1000,
+    opiBase: 0x1000,
+    opiSize: 0x1000,
+    workBase: 0x2000,
+    workSize: 0x2000,
+    retainBase: 0x4000,
+    retainSize: 0x1000,
+    codeBase: 0,
+    codeSize: 128,
+  },
 };
 
 /** LX-2b: the real-app run wrote "Breakpoint hit at PC=0x68" with no line, though the editor highlighted line 9. */
@@ -46,7 +61,10 @@ describe('the Console entry for a breakpoint hit', () => {
 
   // The real-app journey 7 matches this prefix.
   it('keeps the prefix "Breakpoint hit at PC=0x" and writes the pc in upper-case hex', () => {
-    const { message } = describeBreakpointHit({ ...DEBUG_MAP, pou: { Main: { ...DEBUG_MAP.pou.Main, sourceMap: [{ pc: 0xab, line: 3, column: 1, length: 2 }] } } }, 0xab);
+    const { message } = describeBreakpointHit(
+      { ...DEBUG_MAP, pou: { Main: { ...DEBUG_MAP.pou.Main, sourceMap: [{ pc: 0xab, line: 3, column: 1, length: 2 }] } } },
+      0xab,
+    );
     expect(message.startsWith('Breakpoint hit at PC=0x')).toBe(true);
     expect(message).toBe('Breakpoint hit at PC=0xAB, line 3');
   });

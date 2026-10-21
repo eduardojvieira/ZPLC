@@ -7,10 +7,12 @@ import { join } from 'node:path';
 import { parseLockfile } from './lockfile';
 import { bundledDevDependencies, collectNotices, findFonts, matchFonts, renderNotices, type FontRegistry } from './licenses';
 
-const LOCK = `{
+const LOCK =
+  `{
   "workspaces": {
     "": { "name": "root" },
-    "packages/app": { "name": "@fx/app", "dependencies": { "left": "^1", "@sc/pkg": "^1" }, "devDependencies": { "editor": "^1", "tool": "^1" } }
+    "packages/app": { "name": "@fx/app", "dependencies": { "left": "^1", "@sc/pkg": "^1" }, "devDependencies": { "editor": "^1", "tool": ` +
+  `"^1" } }
   },
   "packages": {
     "@fx/app": ["@fx/app@workspace:packages/app"],
@@ -30,9 +32,22 @@ function install(path: string, manifest: Record<string, unknown>, files: Record<
 }
 
 function installAll(): void {
-  install('node_modules/left', { name: 'left', version: '1.0.0', license: 'MIT', repository: { url: 'git+https://example.test/left.git' } }, { LICENSE: 'Copyright (c) Left Authors\nMIT text' });
-  install('node_modules/deep', { name: 'deep', version: '2.0.0', licenses: [{ type: 'BSD-3-Clause' }] }, { 'LICENSE.md': 'Deep BSD text', NOTICE: 'Deep notice' });
-  install('node_modules/@sc/pkg', { name: '@sc/pkg', version: '1.2.3', license: { type: 'Apache-2.0' }, homepage: 'https://sc.example.test' });
+  install(
+    'node_modules/left',
+    { name: 'left', version: '1.0.0', license: 'MIT', repository: { url: 'git+https://example.test/left.git' } },
+    { LICENSE: 'Copyright (c) Left Authors\nMIT text' },
+  );
+  install(
+    'node_modules/deep',
+    { name: 'deep', version: '2.0.0', licenses: [{ type: 'BSD-3-Clause' }] },
+    { 'LICENSE.md': 'Deep BSD text', NOTICE: 'Deep notice' },
+  );
+  install('node_modules/@sc/pkg', {
+    name: '@sc/pkg',
+    version: '1.2.3',
+    license: { type: 'Apache-2.0' },
+    homepage: 'https://sc.example.test',
+  });
   install('node_modules/editor', { name: 'editor', version: '1.0.0', license: 'MIT' }, { LICENSE: 'Editor text' });
   install('node_modules/tool', { name: 'tool', version: '1.0.0', license: 'GPL-3.0' }, { LICENSE: 'tool text' });
 }
@@ -45,9 +60,19 @@ afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 describe('collectNotices (REL-019)', () => {
   test('covers the production closure and the named bundled packages, and not the build tooling', () => {
-    const { notices, missing } = collectNotices({ repoRoot: root, lock: parseLockfile(LOCK), workspacePath: 'packages/app', bundled: ['editor'] });
+    const { notices, missing } = collectNotices({
+      repoRoot: root,
+      lock: parseLockfile(LOCK),
+      workspacePath: 'packages/app',
+      bundled: ['editor'],
+    });
     expect(missing).toEqual([]);
-    expect(notices.map((notice) => `${notice.name}@${notice.version}`)).toEqual(['@sc/pkg@1.2.3', 'deep@2.0.0', 'editor@1.0.0', 'left@1.0.0']);
+    expect(notices.map((notice) => `${notice.name}@${notice.version}`)).toEqual([
+      '@sc/pkg@1.2.3',
+      'deep@2.0.0',
+      'editor@1.0.0',
+      'left@1.0.0',
+    ]);
   });
 
   test('reads the licence from the three forms package.json has, with its text', () => {
@@ -74,7 +99,12 @@ describe('collectNotices (REL-019)', () => {
 
 describe('bundledDevDependencies (REL-019)', () => {
   test('is the declared development dependencies that the renderer sources import', () => {
-    const imports = ["import { a } from 'editor';", "import b from '@sc/pkg/sub';", "import c from './local';", "const d = await import('tool-not-imported-here');"];
+    const imports = [
+      "import { a } from 'editor';",
+      "import b from '@sc/pkg/sub';",
+      "import c from './local';",
+      "const d = await import('tool-not-imported-here');",
+    ];
     expect(bundledDevDependencies(imports, ['editor', 'tool', 'tool-not-imported-here'])).toEqual(['editor', 'tool-not-imported-here']);
   });
 });
@@ -82,7 +112,15 @@ describe('bundledDevDependencies (REL-019)', () => {
 describe('fonts (REL-019)', () => {
   const registry: FontRegistry = {
     schema: 1,
-    fonts: [{ pattern: '^codicon-[A-Za-z0-9_-]+\\.ttf$', name: 'Codicons', licence: 'CC-BY-4.0', source: 'https://github.com/microsoft/vscode-codicons', copyright: 'Copyright (c) Microsoft Corporation' }],
+    fonts: [
+      {
+        pattern: '^codicon-[A-Za-z0-9_-]+\\.ttf$',
+        name: 'Codicons',
+        licence: 'CC-BY-4.0',
+        source: 'https://github.com/microsoft/vscode-codicons',
+        copyright: 'Copyright (c) Microsoft Corporation',
+      },
+    ],
   };
 
   test('finds the font files of a tree', () => {
@@ -104,8 +142,18 @@ describe('renderNotices (REL-019)', () => {
   test('writes every package with its licence and text, the fonts, and no date, so the file is reproducible', () => {
     const { notices } = collectNotices({ repoRoot: root, lock: parseLockfile(LOCK), workspacePath: 'packages/app', bundled: [] });
     const text = renderNotices({
-      product: 'ZPLC', version: '2.0.0-rc.4', notices,
-      fonts: [{ file: 'assets/codicon-ngg6Pgfi.ttf', name: 'Codicons', licence: 'CC-BY-4.0', source: 'https://github.com/microsoft/vscode-codicons', copyright: 'Copyright (c) Microsoft Corporation' }],
+      product: 'ZPLC',
+      version: '2.0.0-rc.4',
+      notices,
+      fonts: [
+        {
+          file: 'assets/codicon-ngg6Pgfi.ttf',
+          name: 'Codicons',
+          licence: 'CC-BY-4.0',
+          source: 'https://github.com/microsoft/vscode-codicons',
+          copyright: 'Copyright (c) Microsoft Corporation',
+        },
+      ],
     });
     expect(text).toContain('ZPLC 2.0.0-rc.4');
     expect(text).toContain('left@1.0.0');
@@ -115,6 +163,8 @@ describe('renderNotices (REL-019)', () => {
     expect(text).toContain('CC-BY-4.0');
     expect(text).toContain('LICENSES.chromium.html');
     expect(text).not.toMatch(/\b20\d\d-\d\d-\d\d\b/);
-    expect(renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] })).toBe(renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] }));
+    expect(renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] })).toBe(
+      renderNotices({ product: 'ZPLC', version: '2.0.0-rc.4', notices, fonts: [] }),
+    );
   });
 });

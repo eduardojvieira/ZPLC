@@ -24,9 +24,24 @@ export interface PackageNotice {
   directory: string;
 }
 
-export interface FontRecord { pattern: string; name: string; licence: string; source: string; copyright?: string }
-export interface FontRegistry { schema: 1; fonts: FontRecord[] }
-export interface FontNotice { file: string; name: string; licence: string; source: string; copyright?: string }
+export interface FontRecord {
+  pattern: string;
+  name: string;
+  licence: string;
+  source: string;
+  copyright?: string;
+}
+export interface FontRegistry {
+  schema: 1;
+  fonts: FontRecord[];
+}
+export interface FontNotice {
+  file: string;
+  name: string;
+  licence: string;
+  source: string;
+  copyright?: string;
+}
 
 const LICENCE_FILE = /^(licen[sc]e|copying|notice)(\..*)?$/i;
 const FONT_FILE = /\.(ttf|otf|woff2?|eot)$/i;
@@ -34,7 +49,8 @@ const FONT_FILE = /\.(ttf|otf|woff2?|eot)$/i;
 function licenceOf(manifest: { license?: unknown; licenses?: unknown }): string {
   const one = (value: unknown): string | undefined => {
     if (typeof value === 'string' && value.trim() !== '') return value.trim();
-    if (value && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string') return (value as { type: string }).type;
+    if (value && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string')
+      return (value as { type: string }).type;
     return undefined;
   };
   const direct = one(manifest.license);
@@ -49,7 +65,10 @@ function licenceOf(manifest: { license?: unknown; licenses?: unknown }): string 
 function repositoryOf(value: unknown): string | undefined {
   const raw = typeof value === 'string' ? value : value && typeof value === 'object' ? (value as { url?: unknown }).url : undefined;
   if (typeof raw !== 'string' || raw === '') return undefined;
-  return raw.replace(/^git\+/, '').replace(/^git:\/\//, 'https://').replace(/\.git$/, '');
+  return raw
+    .replace(/^git\+/, '')
+    .replace(/^git:\/\//, 'https://')
+    .replace(/\.git$/, '');
 }
 
 export function readNotice(directory: string): PackageNotice {
@@ -79,7 +98,10 @@ export interface CollectOptions {
   bundled: readonly string[];
 }
 
-export function collectNotices({ repoRoot, lock, workspacePath, bundled }: CollectOptions): { notices: PackageNotice[]; missing: string[] } {
+export function collectNotices({ repoRoot, lock, workspacePath, bundled }: CollectOptions): {
+  notices: PackageNotice[];
+  missing: string[];
+} {
   const workspace = lock.workspaces.get(workspacePath);
   if (!workspace) throw new Error(`bun.lock has no workspace "${workspacePath}"`);
   const entries = new Map<string, LockPackage>();
@@ -93,7 +115,10 @@ export function collectNotices({ repoRoot, lock, workspacePath, bundled }: Colle
   for (const entry of entries.values()) {
     if (entry.workspacePath !== undefined) continue; // this repository's own packages are the product, not a third party
     const directory = locateInstalled(repoRoot, lock, entry);
-    if (directory === undefined) { missing.push(`${entry.id} is locked but not installed`); continue; }
+    if (directory === undefined) {
+      missing.push(`${entry.id} is locked but not installed`);
+      continue;
+    }
     notices.set(entry.id, readNotice(directory));
   }
   const sorted = [...notices.values()].sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
@@ -139,13 +164,25 @@ export function matchFonts(files: readonly string[], registry: FontRegistry): { 
   for (const file of files) {
     const base = file.slice(file.lastIndexOf('/') + 1);
     const record = registry.fonts.find((candidate) => new RegExp(candidate.pattern).test(base));
-    if (record) fonts.push({ file, name: record.name, licence: record.licence, source: record.source, ...(record.copyright === undefined ? {} : { copyright: record.copyright }) });
+    if (record)
+      fonts.push({
+        file,
+        name: record.name,
+        licence: record.licence,
+        source: record.source,
+        ...(record.copyright === undefined ? {} : { copyright: record.copyright }),
+      });
     else unknown.push(file);
   }
   return { fonts, unknown };
 }
 
-export interface RenderInput { product: string; version: string; notices: readonly PackageNotice[]; fonts: readonly FontNotice[] }
+export interface RenderInput {
+  product: string;
+  version: string;
+  notices: readonly PackageNotice[];
+  fonts: readonly FontNotice[];
+}
 
 export function renderNotices({ product, version, notices, fonts }: RenderInput): string {
   const lines: string[] = [
@@ -182,7 +219,8 @@ function sourcesOf(directory: string): string[] {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       const path = join(current, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|spec)\.(ts|tsx)$/.test(entry.name) && !/\.d\.ts$/.test(entry.name)) sources.push(readFileSync(path, 'utf8'));
+      else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|spec)\.(ts|tsx)$/.test(entry.name) && !/\.d\.ts$/.test(entry.name))
+        sources.push(readFileSync(path, 'utf8'));
     }
   };
   if (existsSync(directory)) walk(directory);
@@ -197,12 +235,21 @@ function main(argv: string[]): number {
     else if (flag === '--out') options.out = argv[++index] ?? '';
     else if (flag === '--dist') options.dist = argv[++index] ?? '';
     else if (flag === '--no-fonts') options.fonts = false;
-    else { console.error(`licenses: unknown argument ${flag}`); return 2; }
+    else {
+      console.error(`licenses: unknown argument ${flag}`);
+      return 2;
+    }
   }
-  if (!options.out) { console.error('usage: licenses.ts --out <file> [--package packages/zplc-ide] [--dist dist] [--no-fonts]'); return 2; }
+  if (!options.out) {
+    console.error('usage: licenses.ts --out <file> [--package packages/zplc-ide] [--dist dist] [--no-fonts]');
+    return 2;
+  }
   const root = resolve(dirname(import.meta.path), '..', '..');
   const lock = parseLockfile(readFileSync(join(root, 'bun.lock'), 'utf8'));
-  const manifest = JSON.parse(readFileSync(join(root, options.pkg, 'package.json'), 'utf8')) as { version: string; devDependencies?: Record<string, string> };
+  const manifest = JSON.parse(readFileSync(join(root, options.pkg, 'package.json'), 'utf8')) as {
+    version: string;
+    devDependencies?: Record<string, string>;
+  };
   const bundled = bundledDevDependencies(sourcesOf(join(root, options.pkg, 'src')), Object.keys(manifest.devDependencies ?? {}));
   const { notices, missing } = collectNotices({ repoRoot: root, lock, workspacePath: options.pkg, bundled });
 
@@ -213,11 +260,14 @@ function main(argv: string[]): number {
   if (options.fonts) {
     const registry = JSON.parse(readFileSync(join(root, 'scripts/release/font-licences.json'), 'utf8')) as FontRegistry;
     const distDirectory = join(root, options.pkg, options.dist);
-    if (!existsSync(distDirectory)) problems.push(`${relative(root, distDirectory)} does not exist: build the renderer first so its fonts can be listed`);
+    if (!existsSync(distDirectory))
+      problems.push(`${relative(root, distDirectory)} does not exist: build the renderer first so its fonts can be listed`);
     const files = [
       ...findFonts(distDirectory),
       // a bundled package ships through dist; the fonts of the others are copied as they are
-      ...notices.filter((notice) => !bundled.includes(notice.name)).flatMap((notice) => findFonts(notice.directory).map((file) => `node_modules/${notice.name}/${file}`)),
+      ...notices
+        .filter((notice) => !bundled.includes(notice.name))
+        .flatMap((notice) => findFonts(notice.directory).map((file) => `node_modules/${notice.name}/${file}`)),
     ];
     const matched = matchFonts(files, registry);
     fonts = matched.fonts;
@@ -231,8 +281,17 @@ function main(argv: string[]): number {
   writeFileSync(options.out, renderNotices({ product: builder.productName ?? 'ZPLC', version: manifest.version, notices, fonts }));
   const histogram = new Map<string, number>();
   for (const notice of notices) histogram.set(notice.license, (histogram.get(notice.license) ?? 0) + 1);
-  console.log(`licenses: ${notices.length} packages (${bundled.length} bundled development dependencies: ${bundled.join(', ') || 'none'}), ${fonts.length} fonts, written to ${options.out}`);
-  console.log(`licenses: ${[...histogram].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(', ')}`);
+  console.log(
+    `licenses: ${notices.length} packages (${bundled.length} bundled development dependencies: ${
+      bundled.join(', ') || 'none'
+    }), ${fonts.length} fonts, written to ${options.out}`,
+  );
+  console.log(
+    `licenses: ${[...histogram]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => `${name} ${count}`)
+      .join(', ')}`,
+  );
   return 0;
 }
 

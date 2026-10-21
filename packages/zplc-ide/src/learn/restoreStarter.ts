@@ -3,13 +3,17 @@
  * a file the learner added stays; every path is checked before the first write, so a bad one writes nothing. It only ever
  * writes under the folder handle it is given, which is the lesson workspace the window has open.
  */
-export interface StarterFile { path: string; content: string }
+export interface StarterFile {
+  path: string;
+  content: string;
+}
 
 const SEGMENT = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
 
 function segmentsOf(path: string): string[] {
   const segments = path.split('/');
-  if (segments.length === 0 || !segments.every((segment) => segment !== '.' && segment !== '..' && SEGMENT.test(segment))) throw new Error('A starter file path leaves the workspace');
+  if (segments.length === 0 || !segments.every((segment) => segment !== '.' && segment !== '..' && SEGMENT.test(segment)))
+    throw new Error('A starter file path leaves the workspace');
   return segments;
 }
 

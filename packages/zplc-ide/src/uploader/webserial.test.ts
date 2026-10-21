@@ -39,7 +39,11 @@ describe('disconnect', () => {
       _reader: null,
       _readerTask: null,
       writer: { releaseLock: () => undefined },
-      port: { close: async () => { throw closeError; } },
+      port: {
+        close: async () => {
+          throw closeError;
+        },
+      },
       onReaderTerminated: (reason: string) => readerTerminations.push(reason),
     } as unknown as SerialConnection;
 
@@ -56,7 +60,9 @@ describe('connect', () => {
       readable: null,
       writable: null,
       open: async () => undefined,
-      close: async () => { closeCalls += 1; },
+      close: async () => {
+        closeCalls += 1;
+      },
     } as unknown as SerialPort;
 
     await expect(connect(port)).rejects.toThrow('Port is not readable/writable');
@@ -66,7 +72,11 @@ describe('connect', () => {
   it('reports an unexpected reader completion once and marks the connection closed', async () => {
     let streamController!: ReadableStreamDefaultController<Uint8Array>;
     const port = {
-      readable: new ReadableStream<Uint8Array>({ start(controller) { streamController = controller; } }),
+      readable: new ReadableStream<Uint8Array>({
+        start(controller) {
+          streamController = controller;
+        },
+      }),
       writable: new WritableStream<Uint8Array>({ write: async () => undefined }),
       open: async () => undefined,
       close: async () => undefined,

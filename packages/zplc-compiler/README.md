@@ -61,12 +61,12 @@ Compiles ST source to bytecode.
 
 ```typescript
 interface CompilationResult {
-  assembly: string;        // Generated assembly
-  bytecode: Uint8Array;    // Raw bytecode
-  zplcFile: Uint8Array;    // Complete .zplc file with headers
-  entryPoint: number;      // Entry point address
-  codeSize: number;        // Code size in bytes
-  debugMap?: DebugMap;     // Source-level debug info (optional)
+  assembly: string; // Generated assembly
+  bytecode: Uint8Array; // Raw bytecode
+  zplcFile: Uint8Array; // Complete .zplc file with headers
+  entryPoint: number; // Entry point address
+  codeSize: number; // Code size in bytes
+  debugMap?: DebugMap; // Source-level debug info (optional)
 }
 ```
 
@@ -81,6 +81,7 @@ Compiles multiple programs into a single .zplc file with task definitions.
 ## Supported Language Features
 
 ### Data Types
+
 - `BOOL`, `BYTE`, `SINT`, `USINT`
 - `INT`, `UINT`, `WORD`
 - `DINT`, `UDINT`, `DWORD`
@@ -90,6 +91,7 @@ Compiles multiple programs into a single .zplc file with task definitions.
 - Structs: `TYPE ... END_TYPE`
 
 ### Statements
+
 - Assignment: `:=`
 - IF/ELSIF/ELSE/END_IF
 - CASE/OF/END_CASE
@@ -100,6 +102,7 @@ Compiles multiple programs into a single .zplc file with task definitions.
 - Function block instances
 
 ### Operators
+
 - Arithmetic: `+`, `-`, `*`, `/`, `MOD`
 - Comparison: `=`, `<>`, `<`, `>`, `<=`, `>=`
 - Logical: `AND`, `OR`, `XOR`, `NOT`

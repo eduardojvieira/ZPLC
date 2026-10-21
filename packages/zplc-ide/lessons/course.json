@@ -53,10 +53,7 @@
       "id": 0,
       "level": "foundation",
       "requires": null,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board",
         "es": "Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa"
@@ -70,10 +67,7 @@
       "id": 1,
       "level": "foundation",
       "requires": 0,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "How a PLC thinks: the scan cycle, then a first blink",
         "es": "Cómo piensa un PLC: el ciclo de escaneo y un primer parpadeo"
@@ -87,10 +81,7 @@
       "id": 2,
       "level": "foundation",
       "requires": 1,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop",
         "es": "Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura"
@@ -104,10 +95,7 @@
       "id": 3,
       "level": "foundation",
       "requires": 2,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Timers, edges and counters",
         "es": "Temporizadores, flancos y contadores"
@@ -121,10 +109,7 @@
       "id": 4,
       "level": "intermediate",
       "requires": 3,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Data: types, arithmetic, comparison, analog scaling",
         "es": "Datos: tipos, aritmética, comparación y escalado analógico"
@@ -138,10 +123,7 @@
       "id": 5,
       "level": "intermediate",
       "requires": 3,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "State machines and sequences",
         "es": "Máquinas de estado y secuencias"
@@ -155,10 +137,7 @@
       "id": 6,
       "level": "intermediate",
       "requires": 5,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Feedback, faults and interlocks",
         "es": "Realimentación, fallas y enclavamientos"
@@ -172,10 +151,7 @@
       "id": 7,
       "level": "intermediate",
       "requires": 4,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Structuring programs: functions, function blocks, structures, arrays, tasks",
         "es": "Estructura de programas: funciones, bloques de función, estructuras, arreglos y tareas"
@@ -189,9 +165,7 @@
       "id": 8,
       "level": "advanced",
       "requires": 6,
-      "tracks": [
-        "simulation"
-      ],
+      "tracks": ["simulation"],
       "title": {
         "en": "Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints",
         "es": "Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción"
@@ -205,10 +179,7 @@
       "id": 9,
       "level": "advanced",
       "requires": 7,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Instruction List, and one logic in five languages",
         "es": "Lista de instrucciones y una misma lógica en cinco lenguajes"
@@ -222,10 +193,7 @@
       "id": 10,
       "level": "advanced",
       "requires": 7,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Communications: Modbus and MQTT basics",
         "es": "Comunicaciones: fundamentos de Modbus y MQTT"
@@ -239,10 +207,7 @@
       "id": 11,
       "level": "advanced",
       "requires": 8,
-      "tracks": [
-        "simulation",
-        "hardware"
-      ],
+      "tracks": ["simulation", "hardware"],
       "title": {
         "en": "Capstone: a small machine from description to tested program",
         "es": "Proyecto final: una máquina pequeña, de la descripción al programa probado"

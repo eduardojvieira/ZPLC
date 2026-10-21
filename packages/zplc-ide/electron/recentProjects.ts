@@ -21,7 +21,11 @@ export const RECENT_PROJECTS_LIMITS = {
   maxBytes: 128 * 1024,
 } as const;
 
-export interface RecentEntry { id: string; path: string; lastOpenedAt: number }
+export interface RecentEntry {
+  id: string;
+  path: string;
+  lastOpenedAt: number;
+}
 
 /** The key of a project in main-process storage: a hash of its real path. It is also the opaque id the renderer gets. */
 export function projectKey(realPath: string): string {
@@ -29,8 +33,13 @@ export function projectKey(realPath: string): string {
 }
 
 function isPlausiblePath(value: unknown): value is string {
-  return typeof value === 'string' && value.length >= 1 && value.length <= RECENT_PROJECTS_LIMITS.maxPathChars
-    && !value.includes('\0') && path.isAbsolute(value);
+  return (
+    typeof value === 'string' &&
+    value.length >= 1 &&
+    value.length <= RECENT_PROJECTS_LIMITS.maxPathChars &&
+    !value.includes('\0') &&
+    path.isAbsolute(value)
+  );
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -69,12 +78,17 @@ export function createRecentProjects(userDataPath: string, now: () => number = D
   let pending: Promise<unknown> = Promise.resolve();
 
   const validDirectory = async (): Promise<boolean> => {
-    try { const status = await lstat(userDataPath); return status.isDirectory() && !status.isSymbolicLink(); } catch { return false; }
+    try {
+      const status = await lstat(userDataPath);
+      return status.isDirectory() && !status.isSymbolicLink();
+    } catch {
+      return false;
+    }
   };
 
   const read = async (): Promise<RecentEntry[]> => {
     try {
-      if (!await validDirectory()) return [];
+      if (!(await validDirectory())) return [];
       const status = await lstat(file);
       if (status.isSymbolicLink() || !status.isFile() || status.size > RECENT_PROJECTS_LIMITS.maxBytes) return [];
       return parseRecentProjects(await readFile(file, 'utf8')) ?? [];
@@ -85,7 +99,7 @@ export function createRecentProjects(userDataPath: string, now: () => number = D
 
   const write = async (entries: readonly RecentEntry[]): Promise<void> => {
     await mkdir(userDataPath, { recursive: true, mode: 0o700 });
-    if (!await validDirectory()) throw new Error('Invalid recent projects directory');
+    if (!(await validDirectory())) throw new Error('Invalid recent projects directory');
     const temporary = path.join(userDataPath, `.${RECENT_PROJECTS_FILENAME}.${randomUUID()}`);
     try {
       await writeFile(temporary, JSON.stringify({ schemaVersion: 1, projects: entries }), { encoding: 'utf8', mode: 0o600, flag: 'wx' });
@@ -118,7 +132,10 @@ export function createRecentProjects(userDataPath: string, now: () => number = D
     record(realPath: string): Promise<void> {
       if (!isPlausiblePath(realPath)) return Promise.reject(new Error(INVALID));
       return update((entries) => ({
-        entries: [{ id: projectKey(realPath), path: realPath, lastOpenedAt: now() }, ...entries.filter((entry) => entry.path !== realPath)].slice(0, RECENT_PROJECTS_LIMITS.maxEntries),
+        entries: [
+          { id: projectKey(realPath), path: realPath, lastOpenedAt: now() },
+          ...entries.filter((entry) => entry.path !== realPath),
+        ].slice(0, RECENT_PROJECTS_LIMITS.maxEntries),
         result: undefined,
       }));
     },

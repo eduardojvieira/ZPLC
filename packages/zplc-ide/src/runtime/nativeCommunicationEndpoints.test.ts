@@ -18,9 +18,14 @@ import { NativeAdapter } from './nativeAdapter';
 
 const found = existsSync(nativeRuntimeBinary);
 const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const itSimulated = (found || !inCi
-  ? it.skipIf(!found)
-  : (name: string) => it(name, () => { throw new Error(`zplc_runtime not found (${nativeRuntimeBinary}); CI is set`); })) as ReturnType<typeof it.skipIf>;
+const itSimulated = (
+  found || !inCi
+    ? it.skipIf(!found)
+    : (name: string) =>
+        it(name, () => {
+          throw new Error(`zplc_runtime not found (${nativeRuntimeBinary}); CI is set`);
+        })
+) as ReturnType<typeof it.skipIf>;
 
 const PROGRAM = `PROGRAM Demo
 VAR
@@ -49,52 +54,76 @@ END_PROGRAM
 const STATUS_UNAVAILABLE = 10;
 
 describe('COM-009 the endpoints that the Studio session starts', () => {
-  itSimulated('a program meets a Modbus server and a broker with no address of theirs, and a cloud block says it is unavailable', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'zplc-endpoints-'));
-    const persist = await mkdtemp(join(tmpdir(), 'zplc-endpoints-run-'));
-    await mkdir(join(root, 'src'));
-    await writeFile(join(root, 'src', 'main.st'), PROGRAM);
-    await writeFile(join(root, 'zplc.json'), JSON.stringify({
-      schemaVersion: 2, name: 'endpoints', version: '1.0.0', target: { board: 'posix' },
-      tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
-    }));
-    const environment = {
-      ...nativeSimulationEnvironment({ ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persist }, true, '/unused'),
-      ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
-    };
-    const supervisor = new NativeSimulationSupervisor({ clientName: 'zplc-endpoints-test', clientVersion: productManifest.version, environment });
-    const adapter = new NativeAdapter(supervisor);
-    const console: string[] = [];
-    adapter.setEventHandlers({ onSerialData: (line) => console.push(line) });
-    try {
-      const compiled = await compilerCompile(root);
-      if (!compiled.ok || !compiled.zplcFile) throw new Error(`the program does not build: ${JSON.stringify(compiled.evidence.diagnostics)}`);
-      await adapter.connect();
-      expect(console.join('\n')).toMatch(/endpoints on 127\.0\.0\.1/);
-      await adapter.loadProgram(compiled.zplcFile);
-      const read = async (at: string, type: 'UINT' | 'BOOL' | 'DINT') => {
-        const where = cellLocation(at, type);
-        const bytes = await adapter.peek(where.address, where.size);
-        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        if (type === 'BOOL') return (bytes[0]! & (1 << (where.bit ?? 0))) !== 0 ? 1 : 0;
-        return type === 'UINT' ? view.getUint16(0, true) : view.getInt32(0, true);
+  itSimulated(
+    'a program meets a Modbus server and a broker with no address of theirs, and a cloud block says it is unavailable',
+    async () => {
+      const root = await mkdtemp(join(tmpdir(), 'zplc-endpoints-'));
+      const persist = await mkdtemp(join(tmpdir(), 'zplc-endpoints-run-'));
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'src', 'main.st'), PROGRAM);
+      await writeFile(
+        join(root, 'zplc.json'),
+        JSON.stringify({
+          schemaVersion: 2,
+          name: 'endpoints',
+          version: '1.0.0',
+          target: { board: 'posix' },
+          tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+        }),
+      );
+      const environment = {
+        ...nativeSimulationEnvironment(
+          { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persist },
+          true,
+          '/unused',
+        ),
+        ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
       };
-      let seen = { value: 0, read: 0, published: 0, cloud: 0 };
-      for (let scan = 1; scan <= 1500; scan += 1) {
-        await adapter.scenarioStep((scan - 1) * 10);
-        seen = { value: await read('%QW0', 'UINT'), read: await read('%QX2.1', 'BOOL'), published: await read('%QX2.3', 'BOOL'), cloud: await read('%QD1', 'DINT') };
-        if (seen.read === 1 && seen.published === 1) break;
-        await Bun.sleep(4);
+      const supervisor = new NativeSimulationSupervisor({
+        clientName: 'zplc-endpoints-test',
+        clientVersion: productManifest.version,
+        environment,
+      });
+      const adapter = new NativeAdapter(supervisor);
+      const console: string[] = [];
+      adapter.setEventHandlers({ onSerialData: (line) => console.push(line) });
+      try {
+        const compiled = await compilerCompile(root);
+        if (!compiled.ok || !compiled.zplcFile)
+          throw new Error(`the program does not build: ${JSON.stringify(compiled.evidence.diagnostics)}`);
+        await adapter.connect();
+        expect(console.join('\n')).toMatch(/endpoints on 127\.0\.0\.1/);
+        await adapter.loadProgram(compiled.zplcFile);
+        const read = async (at: string, type: 'UINT' | 'BOOL' | 'DINT') => {
+          const where = cellLocation(at, type);
+          const bytes = await adapter.peek(where.address, where.size);
+          const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+          if (type === 'BOOL') return (bytes[0]! & (1 << (where.bit ?? 0))) !== 0 ? 1 : 0;
+          return type === 'UINT' ? view.getUint16(0, true) : view.getInt32(0, true);
+        };
+        let seen = { value: 0, read: 0, published: 0, cloud: 0 };
+        for (let scan = 1; scan <= 1500; scan += 1) {
+          await adapter.scenarioStep((scan - 1) * 10);
+          seen = {
+            value: await read('%QW0', 'UINT'),
+            read: await read('%QX2.1', 'BOOL'),
+            published: await read('%QX2.3', 'BOOL'),
+            cloud: await read('%QD1', 'DINT'),
+          };
+          if (seen.read === 1 && seen.published === 1) break;
+          await Bun.sleep(4);
+        }
+        expect(seen.read).toBe(1);
+        expect(seen.value).toBe(0xcafe);
+        expect(seen.published).toBe(1);
+        expect(seen.cloud).toBe(STATUS_UNAVAILABLE);
+      } finally {
+        await adapter.disconnect().catch(() => undefined);
+        await supervisor.stopSession().catch(() => undefined);
+        await rm(persist, { recursive: true, force: true });
+        await rm(root, { recursive: true, force: true });
       }
-      expect(seen.read).toBe(1);
-      expect(seen.value).toBe(0xcafe);
-      expect(seen.published).toBe(1);
-      expect(seen.cloud).toBe(STATUS_UNAVAILABLE);
-    } finally {
-      await adapter.disconnect().catch(() => undefined);
-      await supervisor.stopSession().catch(() => undefined);
-      await rm(persist, { recursive: true, force: true });
-      await rm(root, { recursive: true, force: true });
-    }
-  }, 60_000);
+    },
+    60_000,
+  );
 });

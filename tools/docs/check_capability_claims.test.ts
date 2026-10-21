@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 
 import {
-  applyAllowlist, checkSentence, loadRegistry, loadTruth, numberOf, registryErrors, sentencesOf, unreleasedSection,
-  type Finding, type Registry, type Truth,
+  applyAllowlist,
+  checkSentence,
+  loadRegistry,
+  loadTruth,
+  numberOf,
+  registryErrors,
+  sentencesOf,
+  unreleasedSection,
+  type Finding,
+  type Registry,
+  type Truth,
 } from './check_capability_claims';
 
 const FENCE = '`'.repeat(3);
@@ -15,11 +24,23 @@ const ids = (sentence: string, using: Truth = real) => findings(sentence, using)
 describe('capability claims: what the public text says ZPLC can do is backed by a check (DOC-012)', () => {
   it('reads sentences across wrapped lines, and leaves out code, front matter and generated blocks', () => {
     const text = [
-      '---', 'title: A page', '---', '',
-      'ZPLC runs on every board', 'and it is certified.', '',
-      `${FENCE}text`, 'certified in a code block', FENCE, '',
-      '{/* >>> GENERATED (tool): x. Do not edit. >>> */}', 'certified in a generated block', '{/* <<< END GENERATED: x <<< */}', '',
-      '- A list item that mentions `certified` as code.', '- A second item.',
+      '---',
+      'title: A page',
+      '---',
+      '',
+      'ZPLC runs on every board',
+      'and it is certified.',
+      '',
+      `${FENCE}text`,
+      'certified in a code block',
+      FENCE,
+      '',
+      '{/* >>> GENERATED (tool): x. Do not edit. >>> */}',
+      'certified in a generated block',
+      '{/* <<< END GENERATED: x <<< */}',
+      '',
+      '- A list item that mentions `certified` as code.',
+      '- A second item.',
     ].join('\n');
     expect(sentencesOf(text).map((found) => [found.line, found.sentence])).toEqual([
       [5, 'ZPLC runs on every board and it is certified.'],
@@ -29,7 +50,11 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
   });
 
   it('lets the header row of a table limit its rows, as "What it does not establish" does', () => {
-    const table = ['| Level | What it establishes | What it does not establish |', '| --- | --- | --- |', '| Production-qualified | A package exists. | Safety certification. |'].join('\n');
+    const table = [
+      '| Level | What it establishes | What it does not establish |',
+      '| --- | --- | --- |',
+      '| Production-qualified | A package exists. | Safety certification. |',
+    ].join('\n');
     expect(ids(sentencesOf(table)[0]!.sentence)).toEqual([]);
     expect(ids('Production-qualified: safety certification.')).toEqual(['safety']);
   });
@@ -56,7 +81,8 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
   });
 
   it('flags a published timing figure that cites no hardware record, and passes one that links a record of a board (HIL-016)', () => {
-    const cited = (sentence: string, cites: string[], using: Truth = real) => checkSentence('p.md', 1, sentence, registry, using, cites).map((finding) => finding.rule);
+    const cited = (sentence: string, cites: string[], using: Truth = real) =>
+      checkSentence('p.md', 1, sentence, registry, using, cites).map((finding) => finding.rule);
     const withRecord = truth({ recordRefs: ['records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'] });
     // a figure that was measured, said as a fact
     expect(ids('A scan of the blink program takes 120 µs on the Pico.')).toEqual(['timing-figure']);
@@ -65,7 +91,9 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     // with no record of any board there is nothing to cite, and a link to something else is not a record
     expect(cited('A scan takes 120 µs on the Pico.', ['../reference/boards.md'], withRecord)).toEqual(['timing-figure']);
     expect(cited('A scan takes 120 µs on the Pico.', [], withRecord)).toEqual(['timing-figure']);
-    expect(cited('A scan takes 120 µs on the Pico.', ['records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'], real)).toEqual(['timing-figure']);
+    expect(cited('A scan takes 120 µs on the Pico.', ['records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'], real)).toEqual([
+      'timing-figure',
+    ]);
     // the figure cites a record that the manifest lists
     expect(cited('A scan takes 120 µs on the Pico.', ['../../records/rpi-pico-rp2040-2026-10-11-ab12cd34.json'], withRecord)).toEqual([]);
     // a value that a person configures, a limit, or a sentence that limits what it says is not a measured figure
@@ -86,10 +114,18 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
   });
 
   it('takes the state of a language element from the executed cases, so a row that works backs its claim', () => {
-    const rule: Registry = { schemaVersion: 1, counts: [], rules: [{ id: 'structures', pattern: '\\bstructs?\\b', evidence: { rows: ['data-types.struct'] } }] };
+    const rule: Registry = {
+      schemaVersion: 1,
+      counts: [],
+      rules: [{ id: 'structures', pattern: '\\bstructs?\\b', evidence: { rows: ['data-types.struct'] } }],
+    };
     expect(findings('Structs are supported.', truth({ rows: new Map([['data-types.struct', 'works']]) }), rule)).toEqual([]);
-    expect(findings('Structs are supported.', truth({ rows: new Map([['data-types.struct', 'broken']]) }), rule)[0]!.message).toContain('data-types.struct is broken');
-    expect(registryErrors({ ...rule, rules: [{ id: 'x', pattern: 'x', evidence: { rows: ['no.such.row'] } }] }, new Set(real.rows.keys()))[0]).toContain('no.such.row');
+    expect(findings('Structs are supported.', truth({ rows: new Map([['data-types.struct', 'broken']]) }), rule)[0]!.message).toContain(
+      'data-types.struct is broken',
+    );
+    expect(
+      registryErrors({ ...rule, rules: [{ id: 'x', pattern: 'x', evidence: { rows: ['no.such.row'] } }] }, new Set(real.rows.keys()))[0],
+    ).toContain('no.such.row');
   });
 
   it('backs a board claim only by a hardware record, and the browser simulator only by its capability profile', () => {
@@ -122,17 +158,26 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
 
   it('can only shrink its allowlist: an entry that matches no finding is an error', () => {
     const finding: Finding = { file: 'a.md', line: 1, rule: 'board-capability', message: 'm', sentence: 'A plan for the Pico runs.' };
-    expect(applyAllowlist([finding], [{ file: 'a.md', startsWith: 'A plan', reason: 'A plan, not a claim.' }])).toEqual({ kept: [], errors: [] });
+    expect(applyAllowlist([finding], [{ file: 'a.md', startsWith: 'A plan', reason: 'A plan, not a claim.' }])).toEqual({
+      kept: [],
+      errors: [],
+    });
     const unused = applyAllowlist([], [{ file: 'a.md', startsWith: 'A plan', reason: 'A plan, not a claim.' }]);
     expect(unused.errors[0]).toContain('matches no finding');
   });
 
   it('holds for the public text of this repository', () => {
-    const result = Bun.spawnSync(['bun', 'tools/docs/check_capability_claims.ts'], { cwd: new URL('../../', import.meta.url).pathname, stdout: 'pipe', stderr: 'pipe' });
+    const result = Bun.spawnSync(['bun', 'tools/docs/check_capability_claims.ts'], {
+      cwd: new URL('../../', import.meta.url).pathname,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
   }, 60_000); // the wait is the child process reading 266 files, not what the test measures: a loaded machine needs more than 5 s
 });
 
 function numberWord(value: number): string {
-  return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'][value] ?? String(value);
+  return (
+    ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'][value] ?? String(value)
+  );
 }

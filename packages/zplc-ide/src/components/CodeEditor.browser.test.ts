@@ -44,7 +44,11 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     await app.open({ name: 'main.st', language: 'ST', content: ST });
     await caretOnBlankLine(app);
     await app.type('x := TRUE;');
-    await app.until('the store to hold the typed text', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return s.loadedFiles.get(s.activeFileId)?.content.includes('x := TRUE;'); })`);
+    await app.until(
+      'the store to hold the typed text',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `s.loadedFiles.get(s.activeFileId)?.content.includes('x := TRUE;'); })`,
+    );
     expect(await app.fileContent()).toBe('PROGRAM Main\nVAR\n  x : BOOL;\nEND_VAR\nx := TRUE;\nEND_PROGRAM\n');
   });
 
@@ -58,7 +62,11 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     expect(option.name).toContain('x');
     await app.type('x');
     await app.press('Enter');
-    await app.until('the variable in the source', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return s.loadedFiles.get(s.activeFileId)?.content.includes('\\nx\\n'); })`);
+    await app.until(
+      'the variable in the source',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `s.loadedFiles.get(s.activeFileId)?.content.includes('\\nx\\n'); })`,
+    );
   });
 
   test('a statement that does not parse is reported with its position and the report clears when it is fixed', async () => {
@@ -66,12 +74,20 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     await app.open({ name: 'main.st', language: 'ST', content: ST });
     await caretOnBlankLine(app);
     await app.type('x := 1 +;');
-    const diagnostics = await app.until<Array<{ type: string; line: number; message: string }>>('a parser diagnostic', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const d = useIDEStore.getState().stBufferDiagnostics?.diagnostics ?? []; return d.length > 0 ? d : null; })`);
+    const diagnostics = await app.until<Array<{ type: string; line: number; message: string }>>(
+      'a parser diagnostic',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const d = useIDEStore.getState().stBufferDiagnostics?.diagnostics ` +
+        `?? []; return d.length > 0 ? d : null; })`,
+    );
     expect(diagnostics[0]!.type).toBe('error');
     expect(diagnostics[0]!.line).toBe(5);
     for (let i = 0; i < 5; i++) await app.press('Backspace');
     await app.type('TRUE;');
-    await app.until('no diagnostic', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => (useIDEStore.getState().stBufferDiagnostics?.diagnostics ?? []).length === 0 && useIDEStore.getState().stBufferDiagnostics !== null)`);
+    await app.until(
+      'no diagnostic',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => (useIDEStore.getState().stBufferDiagnostics?.diagnostics ?? ` +
+        `[]).length === 0 && useIDEStore.getState().stBufferDiagnostics !== null)`,
+    );
   });
 
   test('Tab is a character until Ctrl+M, then it moves the focus out of the editor', async () => {
@@ -95,7 +111,11 @@ describe('Instruction List editor in a browser (VF-007, LNG-015)', () => {
     await app.axNode('textbox', editorName('src/main.il', en));
     await caretOnBlankLine(app);
     await app.type('LD x');
-    await app.until('the store to hold the typed text', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return s.loadedFiles.get(s.activeFileId)?.content.includes('LD x'); })`);
+    await app.until(
+      'the store to hold the typed text',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `s.loadedFiles.get(s.activeFileId)?.content.includes('LD x'); })`,
+    );
     expect(await app.fileContent()).toContain('END_VAR\nLD x\nEND_PROGRAM');
   });
 

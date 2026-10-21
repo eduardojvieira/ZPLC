@@ -29,10 +29,10 @@ static void record(const char *name) {
   }
 }
 
-#define STEP_FN(fn_name, label)                                                \
-  static int fn_name(void) {                                                   \
-    record(label);                                                             \
-    return 0;                                                                  \
+#define STEP_FN(fn_name, label) \
+  static int fn_name(void) {    \
+    record(label);              \
+    return 0;                   \
   }
 STEP_FN(step_hal, "hal")
 STEP_FN(step_core, "core")
@@ -67,12 +67,9 @@ static void before_each(void *fixture) {
 static void assert_trace(const char *const *expected, size_t count) {
   size_t index;
 
-  zassert_equal(trace_count, count, "ran %u steps, expected %u",
-                (unsigned)trace_count, (unsigned)count);
+  zassert_equal(trace_count, count, "ran %u steps, expected %u", (unsigned)trace_count, (unsigned)count);
   for (index = 0U; index < count; index++) {
-    zassert_true(strcmp(trace[index], expected[index]) == 0,
-                 "step %u was %s, expected %s", (unsigned)index, trace[index],
-                 expected[index]);
+    zassert_true(strcmp(trace[index], expected[index]) == 0, "step %u was %s, expected %s", (unsigned)index, trace[index], expected[index]);
   }
 }
 
@@ -87,8 +84,7 @@ ZTEST(runtime_boot, test_runtime_steps_run_before_services_in_plan_order) {
       {"modbus", ZPLC_BOOT_SERVICE, step_modbus},
       {"cloud", ZPLC_BOOT_SERVICE, step_cloud},
   };
-  static const char *const expected[] = {"hal",     "core",         "scheduler", "program_store",
-                                         "control_link", "network", "modbus",    "cloud"};
+  static const char *const expected[] = {"hal", "core", "scheduler", "program_store", "control_link", "network", "modbus", "cloud"};
   zplc_boot_report_t report;
 
   zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), 0, "plan runs");
@@ -108,8 +104,7 @@ ZTEST(runtime_boot, test_failing_services_do_not_stop_the_runtime) {
   static const char *const expected[] = {"hal", "scheduler", "network", "modbus", "cloud"};
   zplc_boot_report_t report;
 
-  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), 0,
-                "a service that fails is not a boot failure");
+  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), 0, "a service that fails is not a boot failure");
   assert_trace(expected, ARRAY_SIZE(expected));
   zassert_equal(report.executed, ARRAY_SIZE(plan), "every step still ran");
   zassert_equal(report.service_failures, 2U, "both failures are counted");
@@ -126,8 +121,7 @@ ZTEST(runtime_boot, test_runtime_failure_stops_before_any_service) {
   static const char *const expected[] = {"hal", "scheduler"};
   zplc_boot_report_t report;
 
-  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), -ENOMEM,
-                "the runtime failure is returned");
+  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), -ENOMEM, "the runtime failure is returned");
   assert_trace(expected, ARRAY_SIZE(expected));
   zassert_equal(report.failed_step, 1U, "the report names the step that failed");
 }
@@ -140,8 +134,7 @@ ZTEST(runtime_boot, test_a_service_ahead_of_a_runtime_step_is_refused_before_any
   };
   zplc_boot_report_t report;
 
-  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), -EINVAL,
-                "a plan that starts a service before the scheduler is refused");
+  zassert_equal(zplc_boot_run(plan, ARRAY_SIZE(plan), &report), -EINVAL, "a plan that starts a service before the scheduler is refused");
   zassert_equal(trace_count, 0U, "and nothing of it ran");
 }
 

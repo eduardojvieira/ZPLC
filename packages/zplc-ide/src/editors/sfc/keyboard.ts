@@ -59,8 +59,23 @@ export interface SFCArgument {
 
 /** The commands of the table that act on the canvas; the editor itself runs the others. */
 export const SFC_MODEL_COMMANDS: readonly string[] = [
-  'focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'insertStep', 'insertInitialStep', 'insertTransition',
-  'openPalette', 'insertElement', 'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS, ...EXTEND_COMMANDS,
+  'focusLeft',
+  'focusRight',
+  'focusUp',
+  'focusDown',
+  'focusFirst',
+  'insertStep',
+  'insertInitialStep',
+  'insertTransition',
+  'openPalette',
+  'insertElement',
+  'bindVariable',
+  'connect',
+  'disconnect',
+  'editComment',
+  'deleteSelection',
+  ...ARRANGE_COMMANDS,
+  ...EXTEND_COMMANDS,
 ];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
@@ -82,7 +97,13 @@ const refuse = (state: SFCState, say: string): SFCOutcome => ({ ...state, change
 
 /** The elements of the palette as list items. */
 export function paletteChoices(): PickerItem[] {
-  return SFC_PALETTE.map((element) => ({ id: element.type, label: element.label, detail: element.description, group: element.category, keywords: [element.type] }));
+  return SFC_PALETTE.map((element) => ({
+    id: element.type,
+    label: element.label,
+    detail: element.description,
+    group: element.category,
+    keywords: [element.type],
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +120,13 @@ function newNode(
   const ids = state.nodes.map((node) => node.id);
   const position = at ?? freePosition(state.nodes, anchor, { width: 240, height: 110 }, placement);
   if (type === 'transition') {
-    return { id: numberedId('transition', ids), type: 'transition', position, selected: true, data: { condition: 'TRUE', fromStep: '', toStep: '', debugActive: false } };
+    return {
+      id: numberedId('transition', ids),
+      type: 'transition',
+      position,
+      selected: true,
+      data: { condition: 'TRUE', fromStep: '', toStep: '', debugActive: false },
+    };
   }
   const names = state.nodes.filter(isStep).map((node) => String(data(node).name ?? ''));
   const initial = type === 'initial_step';
@@ -116,7 +143,8 @@ function insert(state: SFCState, type: 'step' | 'initial_step' | 'transition', a
   const anchor = cursorNode(state.nodes);
   // a transition goes below a step, and a step goes below a transition: that is the order of a chart; an element that is
   // dropped at a place is put there and wired to nothing
-  const joins = at === undefined && anchor !== undefined && ((type === 'transition' && isStep(anchor)) || (type !== 'transition' && !isStep(anchor)));
+  const joins =
+    at === undefined && anchor !== undefined && ((type === 'transition' && isStep(anchor)) || (type !== 'transition' && !isStep(anchor)));
   const node = newNode(state, type, anchor, joins ? 'below' : 'right', at);
   const deselected = state.nodes.map((existing) => (existing.selected ? { ...existing, selected: false } : existing));
   const edges = state.edges.map((edge) => (edge.selected ? { ...edge, selected: false } : edge));
@@ -125,8 +153,19 @@ function insert(state: SFCState, type: 'step' | 'initial_step' | 'transition', a
     const wire = sfcEdge(anchor.id, node.id);
     // a transition that already leads to a step is not given another: the new step is put beside it, unwired
     const taken = type !== 'transition' && edges.some((edge) => edge.source === anchor.id);
-    if (!taken) return { nodes: [...deselected, node], edges: [...edges, wire], changed: true, say: t('sfc.inserted.after', { kind, name: nodeTitle(node), anchor: nodeTitle(anchor) }) };
-    return { nodes: [...deselected, node], edges, changed: true, say: t('sfc.inserted.taken', { kind, name: nodeTitle(node), anchor: nodeTitle(anchor) }) };
+    if (!taken)
+      return {
+        nodes: [...deselected, node],
+        edges: [...edges, wire],
+        changed: true,
+        say: t('sfc.inserted.after', { kind, name: nodeTitle(node), anchor: nodeTitle(anchor) }),
+      };
+    return {
+      nodes: [...deselected, node],
+      edges,
+      changed: true,
+      say: t('sfc.inserted.taken', { kind, name: nodeTitle(node), anchor: nodeTitle(anchor) }),
+    };
   }
   const hint = at === undefined && anchor && isStep(anchor) && type !== 'transition' ? t('sfc.insertHint') : '';
   return { nodes: [...deselected, node], edges, changed: true, say: t('sfc.inserted', { kind, name: nodeTitle(node), hint }) };
@@ -145,7 +184,9 @@ function wireChoices(state: SFCState, node: Node): PickerItem[] {
     const replaced = isStep(source)
       ? state.edges.find((edge) => edge.target === target.id)
       : state.edges.find((edge) => edge.source === source.id);
-    const old = replaced ? state.nodes.find((candidate) => candidate.id === (isStep(source) ? replaced.source : replaced.target)) : undefined;
+    const old = replaced
+      ? state.nodes.find((candidate) => candidate.id === (isStep(source) ? replaced.source : replaced.target))
+      : undefined;
     choices.push({
       id: JSON.stringify([source.id, 'out', target.id, 'in']),
       label: `${nodeTitle(source)} → ${nodeTitle(target)}`,
@@ -178,7 +219,12 @@ function wiresOf(state: SFCState, node: Node): PickerItem[] {
   };
   return state.edges
     .filter((edge) => edge.source === node.id || edge.target === node.id)
-    .map((edge) => ({ id: edge.id, label: `${title(edge.source)} → ${title(edge.target)}`, detail: `${edge.source} → ${edge.target}`, group: t('keyboard.group.wires') }));
+    .map((edge) => ({
+      id: edge.id,
+      label: `${title(edge.source)} → ${title(edge.target)}`,
+      detail: `${edge.source} → ${edge.target}`,
+      group: t('keyboard.group.wires'),
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +235,13 @@ function wiresOf(state: SFCState, node: Node): PickerItem[] {
 export function runSFCCommand(model: SFCModel, state: SFCState, command: string, argument: SFCArgument = {}): SFCOutcome {
   if (isArrangeCommand(command)) {
     const arranged = arrangeSelection(state.nodes, command);
-    return { nodes: arranged.nodes, edges: state.edges, changed: arranged.changed, say: arranged.say, ...(arranged.refused ? { refused: true } : {}) };
+    return {
+      nodes: arranged.nodes,
+      edges: state.edges,
+      changed: arranged.changed,
+      say: arranged.say,
+      ...(arranged.refused ? { refused: true } : {}),
+    };
   }
   if (isExtendCommand(command)) {
     const extended = extendSelection(state.nodes, state.edges, command);
@@ -197,7 +249,10 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
   }
   const here = cursorNode(state.nodes);
   switch (command) {
-    case 'focusLeft': case 'focusRight': case 'focusUp': case 'focusDown': {
+    case 'focusLeft':
+    case 'focusRight':
+    case 'focusUp':
+    case 'focusDown': {
       const direction = command.slice('focus'.length).toLowerCase() as Direction;
       if (state.nodes.length === 0) return refuse(state, 'There are no steps or transitions on the chart.');
       if (!here) return select(state, firstNode(state.nodes)!);
@@ -208,14 +263,20 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
       const first = firstNode(state.nodes);
       return first ? select(state, first) : refuse(state, 'There are no steps or transitions on the chart.');
     }
-    case 'insertStep': return insert(state, 'step');
-    case 'insertInitialStep': return insert(state, 'initial_step');
-    case 'insertTransition': return insert(state, 'transition');
+    case 'insertStep':
+      return insert(state, 'step');
+    case 'insertInitialStep':
+      return insert(state, 'initial_step');
+    case 'insertTransition':
+      return insert(state, 'transition');
     case 'insertElement': {
       const type = argument.elementType;
-      return type === 'step' || type === 'initial_step' || type === 'transition' ? insert(state, type, argument.position) : refuse(state, 'Choose the element to insert.');
+      return type === 'step' || type === 'initial_step' || type === 'transition'
+        ? insert(state, type, argument.position)
+        : refuse(state, 'Choose the element to insert.');
     }
-    case 'openPalette': return { ...state, changed: false, say: t('keyboard.palette.element'), prompt: { kind: 'palette' } };
+    case 'openPalette':
+      return { ...state, changed: false, say: t('keyboard.palette.element'), prompt: { kind: 'palette' } };
     case 'bindVariable': {
       if (!here) return refuse(state, 'Select a step or a transition first.');
       return argument.name === undefined ? askName(model, state, here) : setName(state, here, argument.name);
@@ -224,8 +285,19 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
       if (!here) return refuse(state, 'Select a step or a transition first: a wire is drawn from or to it.');
       if (argument.wire === undefined) {
         const choices = wireChoices(state, here);
-        if (choices.length === 0) return refuse(state, `${nodeTitle(here)} has no wire that can be drawn: a step joins a transition, and a transition a step, and there is none free.`);
-        return { ...state, changed: false, say: t('keyboard.wiresDrawable', { name: nodeTitle(here), count: choices.length }), prompt: { kind: 'connect', nodeId: here.id }, choices, title: t('keyboard.drawWireTitle', { name: nodeTitle(here) }) };
+        if (choices.length === 0)
+          return refuse(
+            state,
+            `${nodeTitle(here)} has no wire that can be drawn: a step joins a transition, and a transition a step, and there is none free.`,
+          );
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.wiresDrawable', { name: nodeTitle(here), count: choices.length }),
+          prompt: { kind: 'connect', nodeId: here.id },
+          choices,
+          title: t('keyboard.drawWireTitle', { name: nodeTitle(here) }),
+        };
       }
       return drawWire(state, argument.wire);
     }
@@ -234,17 +306,37 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
       if (argument.edgeId === undefined) {
         const choices = wiresOf(state, here);
         if (choices.length === 0) return refuse(state, `${nodeTitle(here)} has no wire to remove.`);
-        return { ...state, changed: false, say: t('keyboard.wiresRemovable', { name: nodeTitle(here), count: choices.length }), prompt: { kind: 'disconnect', nodeId: here.id }, choices, title: t('keyboard.removeWireTitle', { name: nodeTitle(here) }) };
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.wiresRemovable', { name: nodeTitle(here), count: choices.length }),
+          prompt: { kind: 'disconnect', nodeId: here.id },
+          choices,
+          title: t('keyboard.removeWireTitle', { name: nodeTitle(here) }),
+        };
       }
       if (!state.edges.some((edge) => edge.id === argument.edgeId)) return refuse(state, 'That wire is not on the chart any more.');
-      return { nodes: state.nodes, edges: state.edges.filter((edge) => edge.id !== argument.edgeId), changed: true, say: t('keyboard.wireRemoved') };
+      return {
+        nodes: state.nodes,
+        edges: state.edges.filter((edge) => edge.id !== argument.edgeId),
+        changed: true,
+        say: t('keyboard.wireRemoved'),
+      };
     }
     case 'editComment': {
       if (!here) return refuse(state, 'Select a step or a transition first.');
-      if (argument.text === undefined) return { ...state, changed: false, say: t('keyboard.commentOf', { name: nodeTitle(here) }), prompt: { kind: 'comment', nodeId: here.id } };
+      if (argument.text === undefined)
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.commentOf', { name: nodeTitle(here) }),
+          prompt: { kind: 'comment', nodeId: here.id },
+        };
       const text = argument.text.trim();
       return {
-        nodes: state.nodes.map((node) => (node.id === here.id ? { ...node, data: { ...node.data, comment: text === '' ? undefined : text } } : node)),
+        nodes: state.nodes.map((node) =>
+          node.id === here.id ? { ...node, data: { ...node.data, comment: text === '' ? undefined : text } } : node,
+        ),
         edges: state.edges,
         changed: true,
         say: text === '' ? t('keyboard.commentCleared') : t('keyboard.commentSet'),
@@ -262,33 +354,57 @@ export function runSFCCommand(model: SFCModel, state: SFCState, command: string,
         say: t('keyboard.deleted', { things: tn('keyboard.elements', doomed.size), wires: tn('keyboard.wires', wires.length) }),
       };
     }
-    default: return refuse(state, `${command} is not a command of the sequential function chart editor.`);
+    default:
+      return refuse(state, `${command} is not a command of the sequential function chart editor.`);
   }
 }
 
 function select(state: SFCState, node: Node): SFCOutcome {
-  return { ...selectOnly(state.nodes, state.edges, node.id), changed: false, say: t(isStep(node) ? 'sfc.selected.step' : 'sfc.selected.transition', { name: nodeTitle(node) }) };
+  return {
+    ...selectOnly(state.nodes, state.edges, node.id),
+    changed: false,
+    say: t(isStep(node) ? 'sfc.selected.step' : 'sfc.selected.transition', { name: nodeTitle(node) }),
+  };
 }
 
 function askName(model: SFCModel, state: SFCState, node: Node): SFCOutcome {
   if (isStep(node)) {
-    return { ...state, changed: false, say: t('sfc.nameOfStep.say', { name: nodeTitle(node) }), prompt: { kind: 'bind', nodeId: node.id }, choices: [], allowFreeText: true, title: t('sfc.nameOfStep.title', { name: nodeTitle(node) }) };
+    return {
+      ...state,
+      changed: false,
+      say: t('sfc.nameOfStep.say', { name: nodeTitle(node) }),
+      prompt: { kind: 'bind', nodeId: node.id },
+      choices: [],
+      allowFreeText: true,
+      title: t('sfc.nameOfStep.title', { name: nodeTitle(node) }),
+    };
   }
   // a condition is a BOOL variable, or an expression typed
   const symbols = declaredSymbols(model.variables).filter((symbol) => sameType(symbol.type, 'BOOL'));
-  return { ...state, changed: false, say: t('sfc.condition.say', { name: nodeTitle(node) }), prompt: { kind: 'bind', nodeId: node.id }, choices: symbolItems(symbols), allowFreeText: true, title: t('sfc.condition.title', { name: nodeTitle(node) }) };
+  return {
+    ...state,
+    changed: false,
+    say: t('sfc.condition.say', { name: nodeTitle(node) }),
+    prompt: { kind: 'bind', nodeId: node.id },
+    choices: symbolItems(symbols),
+    allowFreeText: true,
+    title: t('sfc.condition.title', { name: nodeTitle(node) }),
+  };
 }
 
 function setName(state: SFCState, node: Node, answer: string): SFCOutcome {
   const text = answer.trim();
   const patch = (fields: Record<string, unknown>, say: string): SFCOutcome => ({
-    nodes: state.nodes.map((candidate) => (candidate.id === node.id ? { ...candidate, data: { ...candidate.data, ...fields } } : candidate)),
+    nodes: state.nodes.map((candidate) =>
+      candidate.id === node.id ? { ...candidate, data: { ...candidate.data, ...fields } } : candidate,
+    ),
     edges: state.edges,
     changed: true,
     say,
   });
   if (isStep(node)) {
-    if (!IDENTIFIER.test(text)) return refuse(state, `'${text}' is not a name: use letters, digits and underscores, not starting with a digit.`);
+    if (!IDENTIFIER.test(text))
+      return refuse(state, `'${text}' is not a name: use letters, digits and underscores, not starting with a digit.`);
     const clash = nodesToSteps(state.nodes).find((step) => step.id !== node.id && step.name.toLowerCase() === text.toLowerCase());
     if (clash) return refuse(state, `${text} is already the name of another step.`);
     return patch({ name: text }, `Named the step ${text}.`);
@@ -304,7 +420,8 @@ function drawWire(state: SFCState, wire: string): SFCOutcome {
   } catch {
     return refuse(state, 'That wire is not one of the choices.');
   }
-  if (!Array.isArray(parsed) || parsed.length !== 4 || parsed.some((part) => typeof part !== 'string')) return refuse(state, 'That wire is not one of the choices.');
+  if (!Array.isArray(parsed) || parsed.length !== 4 || parsed.some((part) => typeof part !== 'string'))
+    return refuse(state, 'That wire is not one of the choices.');
   const [source, sourceHandle, target, targetHandle] = parsed as [string, string, string, string];
   const edges = connectSFC(state.nodes, state.edges, { source, sourceHandle, target, targetHandle });
   if (!edges) return refuse(state, 'Wire refused: a wire joins a step to a transition, or a transition to a step.');
@@ -319,7 +436,17 @@ export function sfcCanvasCommands(model: SFCModel): CanvasCommands<SFCArgument> 
     palette: paletteChoices,
     paletteTitle: t('sfc.paletteTitle'),
     palettePlaceholder: t('sfc.palettePlaceholder'),
-    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', ...EXTEND_COMMANDS, 'toggleBreakpoint', 'showCommands', 'fitView']),
+    readOnlyCommands: new Set([
+      'focusLeft',
+      'focusRight',
+      'focusUp',
+      'focusDown',
+      'focusFirst',
+      ...EXTEND_COMMANDS,
+      'toggleBreakpoint',
+      'showCommands',
+      'fitView',
+    ]),
     answer: {
       palette: (id) => ({ elementType: id }),
       bind: (name) => ({ name }),

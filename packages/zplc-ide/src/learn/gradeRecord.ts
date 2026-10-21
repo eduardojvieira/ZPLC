@@ -8,23 +8,39 @@
 import type { FailedAssertion, GradeRecord } from '../../shared/learnProgressModel';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
 
-export interface ObservedAssertion { kind: string; passed: boolean; atMs?: number }
-export interface TraceSample { atMs: number; outputs: Record<string, boolean> }
+export interface ObservedAssertion {
+  kind: string;
+  passed: boolean;
+  atMs?: number;
+}
+export interface TraceSample {
+  atMs: number;
+  outputs: Record<string, boolean>;
+}
 
 /** The address of one sample of a recorded trace in the replay resource (`zplc://runtime/snapshot/...`). */
 export function snapshotUri(scenarioId: string, cursor: number, traceSha256: string): string {
   return `zplc://runtime/snapshot/${scenarioId}/${cursor}/${traceSha256}`;
 }
 
-const conditionText = (condition: Record<string, boolean>): string => Object.entries(condition).map(([signal, value]) => `${signal} = ${value}`).join(', ');
+const conditionText = (condition: Record<string, boolean>): string =>
+  Object.entries(condition)
+    .map(([signal, value]) => `${signal} = ${value}`)
+    .join(', ');
 
 /** One expectation as a learner reads it: its kind, its window and what it requires. */
 export function describeExpectation(expectation: ScenarioExpectation): string {
   const { kind, atMs, fromMs, withinMs, forMs } = expectation;
-  const window = kind === 'AT' ? ` ${atMs} ms`
-    : kind === 'FOR' ? ` ${fromMs} to ${(fromMs ?? 0) + (forMs ?? 0)} ms`
-      : fromMs !== undefined && withinMs !== undefined ? ` ${fromMs} to ${fromMs + withinMs} ms`
-        : fromMs !== undefined ? ` from ${fromMs} ms` : '';
+  const window =
+    kind === 'AT'
+      ? ` ${atMs} ms`
+      : kind === 'FOR'
+        ? ` ${fromMs} to ${(fromMs ?? 0) + (forMs ?? 0)} ms`
+        : fromMs !== undefined && withinMs !== undefined
+          ? ` ${fromMs} to ${fromMs + withinMs} ms`
+          : fromMs !== undefined
+            ? ` from ${fromMs} ms`
+            : '';
   const until = expectation.until ? ` until ${conditionText(expectation.until)}` : '';
   return `${kind}${window}: ${conditionText(expectation.condition)}${until}`;
 }
@@ -35,7 +51,12 @@ export function describeExpectation(expectation: ScenarioExpectation): string {
  * it required, the values the trace holds then (null where the samples handed in do not hold them), and the address of
  * that sample in the trace.
  */
-export function failedAssertionsOf(scenario: ScenarioFile, assertions: readonly ObservedAssertion[], trace: readonly TraceSample[], traceSha256: string): FailedAssertion[] {
+export function failedAssertionsOf(
+  scenario: ScenarioFile,
+  assertions: readonly ObservedAssertion[],
+  trace: readonly TraceSample[],
+  traceSha256: string,
+): FailedAssertion[] {
   const result: FailedAssertion[] = [];
   assertions.forEach((assertion, index) => {
     if (assertion.passed) return;
@@ -47,23 +68,34 @@ export function failedAssertionsOf(scenario: ScenarioFile, assertions: readonly 
     const cursor = onTimeline ? atMs / scenario.tickMs : -1;
     const sample = onTimeline ? trace.find((item) => item.atMs === atMs) : undefined;
     const observed: Record<string, boolean | null> = {};
-    for (const signal of Object.keys(expected)) observed[signal] = sample && typeof sample.outputs[signal] === 'boolean' ? sample.outputs[signal]! : null;
+    for (const signal of Object.keys(expected))
+      observed[signal] = sample && typeof sample.outputs[signal] === 'boolean' ? sample.outputs[signal]! : null;
     result.push({
-      index, kind: assertion.kind, atMs, expected: { ...expected }, observed,
+      index,
+      kind: assertion.kind,
+      atMs,
+      expected: { ...expected },
+      observed,
       trace: onTimeline ? { scenarioId: scenario.id, traceSha256, cursor, atMs, uri: snapshotUri(scenario.id, cursor, traceSha256) } : null,
     });
   });
   return result;
 }
 
-const valuesText = (values: Record<string, boolean | null>, unknown: string): string => Object.entries(values).map(([signal, value]) => `${signal} = ${value === null ? unknown : value}`).join(', ');
+const valuesText = (values: Record<string, boolean | null>, unknown: string): string =>
+  Object.entries(values)
+    .map(([signal, value]) => `${signal} = ${value === null ? unknown : value}`)
+    .join(', ');
 
 /** One failed assertion as a sentence for the learner: what it required, at which instant, and what the trace holds. */
 export function describeFailure(failure: FailedAssertion, expectation: ScenarioExpectation | undefined, locale: 'en' | 'es'): string {
   const what = expectation ? describeExpectation(expectation) : failure.kind;
   const when = failure.atMs === null ? '' : locale === 'es' ? `a ${failure.atMs} ms ` : `at ${failure.atMs} ms `;
   return locale === 'es'
-    ? `${what} · ${when}se esperaba ${valuesText(failure.expected, 'desconocido')}; se observó ${valuesText(failure.observed, 'desconocido')}`
+    ? `${what} · ${when}se esperaba ${valuesText(
+        failure.expected,
+        'desconocido',
+      )}; se observó ${valuesText(failure.observed, 'desconocido')}`
     : `${what} · ${when}expected ${valuesText(failure.expected, 'unknown')}; observed ${valuesText(failure.observed, 'unknown')}`;
 }
 

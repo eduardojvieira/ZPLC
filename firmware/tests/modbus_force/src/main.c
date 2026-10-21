@@ -100,8 +100,7 @@ static void load_program(void) {
   crc = crc32_update(0xFFFFFFFFU, file, 12U);
   crc = crc32_update(crc, file + 16U, offset - 16U) ^ 0xFFFFFFFFU;
   put_u32(file + 12U, crc);
-  zassert_equal(zplc_core_load(file, offset, workspace, sizeof(workspace)), ZPLC_LOADER_OK,
-                "the program with its Modbus tags loads");
+  zassert_equal(zplc_core_load(file, offset, workspace, sizeof(workspace)), ZPLC_LOADER_OK, "the program with its Modbus tags loads");
   zassert_equal(zplc_core_get_tag_count(), 3U, "three tags");
 }
 
@@ -118,15 +117,12 @@ static void before_each(void *fixture) {
   load_program(); /* a load is a cold start: memory and forces are clean (RT-016) */
 }
 
-static const uint8_t *mem(uint16_t address) {
-  return zplc_mem_get_region(ZPLC_MEM_WORK_BASE) + (address - ZPLC_MEM_WORK_BASE);
-}
+static const uint8_t *mem(uint16_t address) { return zplc_mem_get_region(ZPLC_MEM_WORK_BASE) + (address - ZPLC_MEM_WORK_BASE); }
 
 ZTEST(modbus_force, test_an_unforced_register_is_written) {
   const uint8_t request[] = {0x12U, 0x34U};
 
-  zassert_ok(zplc_modbus_write_mapped(0U, 1U, request, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER),
-             "a write of a mapped register");
+  zassert_ok(zplc_modbus_write_mapped(0U, 1U, request, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), "a write of a mapped register");
   zassert_equal(mem(REG_VAR)[0], 0x34U, "low byte (Modbus is big endian, memory is little endian)");
   zassert_equal(mem(REG_VAR)[1], 0x12U, "high byte");
 }
@@ -136,8 +132,7 @@ ZTEST(modbus_force, test_a_forced_register_keeps_the_forced_value) {
   const uint8_t request[] = {0x12U, 0x34U};
 
   zassert_ok(zplc_force_set_bytes(REG_VAR, forced, sizeof(forced)), "the variable is forced");
-  zassert_ok(zplc_modbus_write_mapped(0U, 1U, request, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER),
-             "the write is accepted");
+  zassert_ok(zplc_modbus_write_mapped(0U, 1U, request, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), "the write is accepted");
   zassert_equal(mem(REG_VAR)[0], 0xAAU, "the forced low byte stays");
   zassert_equal(mem(REG_VAR)[1], 0xBBU, "the forced high byte stays");
 }
@@ -147,13 +142,11 @@ ZTEST(modbus_force, test_a_forced_32_bit_value_keeps_both_words) {
   const uint8_t request[] = {0x11U, 0x22U, 0x33U, 0x44U};
 
   zassert_ok(zplc_force_set_bytes(DINT_VAR, forced, sizeof(forced)), "the variable is forced");
-  zassert_ok(zplc_modbus_write_mapped(10U, 2U, request, false, true, ZPLC_MODBUS_AREA_HOLDING_REGISTER),
-             "a write of both registers");
+  zassert_ok(zplc_modbus_write_mapped(10U, 2U, request, false, true, ZPLC_MODBUS_AREA_HOLDING_REGISTER), "a write of both registers");
   zassert_mem_equal(mem(DINT_VAR), forced, sizeof(forced), "the forced value stays");
 
   zassert_ok(zplc_force_clear(DINT_VAR), "the force is released");
-  zassert_ok(zplc_modbus_write_mapped(10U, 2U, request, false, true, ZPLC_MODBUS_AREA_HOLDING_REGISTER),
-             "and the same write");
+  zassert_ok(zplc_modbus_write_mapped(10U, 2U, request, false, true, ZPLC_MODBUS_AREA_HOLDING_REGISTER), "and the same write");
   zassert_equal(mem(DINT_VAR)[0], 0x44U, "now lands: low byte");
   zassert_equal(mem(DINT_VAR)[3], 0x11U, "high byte");
 }

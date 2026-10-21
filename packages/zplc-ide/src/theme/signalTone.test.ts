@@ -1,13 +1,25 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { contrastRatio, parseColor, composite } from './color';
-import { SIGNAL_CHIP_CLASS, SIGNAL_CUES, SIGNAL_PAINT, SIGNAL_TEXT_CLASS, SIGNAL_TONES, sampleTone, signalMark, signalTone } from './signalTone';
+import {
+  SIGNAL_CHIP_CLASS,
+  SIGNAL_CUES,
+  SIGNAL_PAINT,
+  SIGNAL_TEXT_CLASS,
+  SIGNAL_TONES,
+  sampleTone,
+  signalMark,
+  signalTone,
+} from './signalTone';
 import { THEME_IDS, TOKEN_NAMES, resolveTokens } from './tokens';
 
 const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const watchPanel = readFileSync(new URL('../components/DebugWatchPanel.tsx', import.meta.url), 'utf8');
 
-/** UX-009: FALSE is neutral, green is confirmed TRUE, amber is forced or a warning, red is fault only, and every state has a cue other than colour. */
+/**
+ * UX-009: FALSE is neutral, green is confirmed TRUE, amber is forced or a warning, red is fault only, and every state has a cue other than
+ * colour.
+ */
 // The title is the name the evidence record of UX-009 holds (tools/ci/requirement-evidence.json); the stopgap it names is lifted.
 describe('signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trace and the I/O faceplate are not on it yet)', () => {
   it('keeps FALSE neutral, shows TRUE as confirmed and forced as attention', () => {
@@ -88,7 +100,11 @@ describe('signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trac
 
   it('UX-009 paints SVG from the same tokens as the classes, and marks every state but a plain number', () => {
     for (const tone of SIGNAL_TONES) {
-      expect(SIGNAL_PAINT[tone]).toEqual({ fg: `var(--signal-${tone}-fg)`, bg: `var(--signal-${tone}-bg)`, border: `var(--signal-${tone}-border)` });
+      expect(SIGNAL_PAINT[tone]).toEqual({
+        fg: `var(--signal-${tone}-fg)`,
+        bg: `var(--signal-${tone}-bg)`,
+        border: `var(--signal-${tone}-border)`,
+      });
       expect(signalMark(tone)).toBe(tone === 'value' ? '' : SIGNAL_CUES[tone].glyph);
     }
   });

@@ -4,20 +4,45 @@ import { compareDeployFacts, type DeployFacts } from './deployComparison';
 
 const { t } = translatorFor('en');
 const facts: DeployFacts = {
-  project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: 1, minor: 0, draft: 6 }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 },
-  device: { board: 'stm32f746g_disco', boardProfile: 'stm32f746g_disco/stm32f746xx', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: 1, minor: 0 }, draft: 6, maxArtifactBytes: 4096, maxTasks: 4 },
+  project: {
+    name: 'Pump station',
+    board: 'STM32F746G Discovery',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    abi: { major: 1, minor: 0, draft: 6 },
+    sha256: 'a1b2c3d4e5f6a7b8c9d0',
+    byteLength: 512,
+    taskCount: 2,
+  },
+  device: {
+    board: 'stm32f746g_disco',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    zplcVersion: '1.0.0',
+    zephyrVersion: '4.0.0',
+    abi: { major: 1, minor: 0 },
+    draft: 6,
+    maxArtifactBytes: 4096,
+    maxTasks: 4,
+  },
   declaredSafe: [],
   transfer: 'framed',
 };
 const row = (compared: ReturnType<typeof compareDeployFacts>, id: string) => compared.rows.find((entry) => entry.id === id)!;
-const withDevice = (device: Partial<NonNullable<DeployFacts['device']>>): DeployFacts => ({ ...facts, device: { ...facts.device!, ...device } });
+const withDevice = (device: Partial<NonNullable<DeployFacts['device']>>): DeployFacts => ({
+  ...facts,
+  device: { ...facts.device!, ...device },
+});
 
 describe('UX-019 deploy comparison of the project and the device', () => {
   it('UX-019 compares board, profile, firmware and ABI version, program identity, size and tasks, in that order', () => {
     const compared = compareDeployFacts(facts, t);
     expect(compared.rows.map((entry) => entry.id)).toEqual(['board', 'profile', 'firmware', 'abi', 'identity', 'size', 'tasks']);
     expect(compared.blocked).toBe(false);
-    expect(row(compared, 'board')).toMatchObject({ label: 'Board', project: 'STM32F746G Discovery', device: 'stm32f746g_disco', status: 'match' });
+    expect(row(compared, 'board')).toMatchObject({
+      label: 'Board',
+      project: 'STM32F746G Discovery',
+      device: 'stm32f746g_disco',
+      status: 'match',
+    });
     expect(row(compared, 'abi')).toMatchObject({ project: '1.0, contract draft 6', device: '1.0, contract draft 6', status: 'match' });
     expect(row(compared, 'size')).toMatchObject({ project: '512 bytes', device: 'Up to 4096 bytes', status: 'match' });
     expect(row(compared, 'tasks')).toMatchObject({ project: '2', device: 'Up to 4', status: 'match' });
@@ -70,11 +95,24 @@ describe('UX-019 deploy comparison of the project and the device', () => {
   });
 
   it('UX-019 states the safe values of the outputs during the transfer exactly as the runtime guarantees them (RT-023)', () => {
-    expect(compareDeployFacts(facts, t).safeState).toBe('Every output stays off while the old program stops, the new one is written and the PLC stays stopped.');
-    const declared = compareDeployFacts({ ...facts, declaredSafe: [{ address: '%QX0.1', value: true }, { address: '%QX0.3', value: false }] }, t);
+    expect(compareDeployFacts(facts, t).safeState).toBe(
+      'Every output stays off while the old program stops, the new one is written and the PLC stays stopped.',
+    );
+    const declared = compareDeployFacts(
+      {
+        ...facts,
+        declaredSafe: [
+          { address: '%QX0.1', value: true },
+          { address: '%QX0.3', value: false },
+        ],
+      },
+      t,
+    );
     expect(declared.safeState).toContain('Declared by the project: %QX0.1: on, %QX0.3: off.');
     expect(declared.safeState).toContain('Every other output is off.');
-    expect(declared.scope).toBe('This is checked by host and simulator tests. The ZPLC application does not measure the pins of this board.');
+    expect(declared.scope).toBe(
+      'This is checked by host and simulator tests. The ZPLC application does not measure the pins of this board.',
+    );
   });
 
   it('UX-019 says how the program travels, and that the older text shell does not read it back (COM-028)', () => {

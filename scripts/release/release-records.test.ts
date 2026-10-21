@@ -42,12 +42,19 @@ describe('the changelog holds only tagged versions (REL-031)', () => {
   });
 
   test('refuses a heading for a version above the one of package.json, which no tag can exist for yet', () => {
-    expect(checkChangelog({ text, tags, productVersion: '2.0.0-rc.3', untagged: {} })).toEqual(['## 2.0.0-rc.4 is above the product version 2.0.0-rc.3 of package.json']);
+    expect(checkChangelog({ text, tags, productVersion: '2.0.0-rc.3', untagged: {} })).toEqual([
+      '## 2.0.0-rc.4 is above the product version 2.0.0-rc.3 of package.json',
+    ]);
   });
 
   test('refuses headings that are not Unreleased or a dated version, and versions out of order', () => {
     const odd = '## Next\n\n## 2.0.0-rc.1 - 2026-08-31\n\n## 2.0.0-rc.3 - 2026-09-01\n\n## 2.0.0-rc.2 - soon\n';
-    const problems = checkChangelog({ text: odd, tags: [], productVersion: '2.0.0-rc.3', untagged: { '2.0.0-rc.1': 'x', '2.0.0-rc.2': 'x' } });
+    const problems = checkChangelog({
+      text: odd,
+      tags: [],
+      productVersion: '2.0.0-rc.3',
+      untagged: { '2.0.0-rc.1': 'x', '2.0.0-rc.2': 'x' },
+    });
     expect(problems).toContain('"## Next" is neither "## Unreleased" nor "## <version> - <date>"');
     expect(problems).toContain('"## 2.0.0-rc.2 - soon" is neither "## Unreleased" nor "## <version> - <date>"');
     expect(problems).toContain('## 2.0.0-rc.3 is newer than the heading before it: versions go from newest to oldest');
@@ -63,8 +70,15 @@ describe('the changelog holds only tagged versions (REL-031)', () => {
 
 describe('the product identity is fixed (REL-031)', () => {
   test('records decision D-03: the product is ZPLC, under the reverse-DNS root that the owner confirms', () => {
-    const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string; decision: string }>('scripts/release/identity.json');
-    expect({ productName: identity.productName, appId: identity.appId, executableName: identity.executableName, desktopName: identity.desktopName }).toEqual({
+    const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string; decision: string }>(
+      'scripts/release/identity.json',
+    );
+    expect({
+      productName: identity.productName,
+      appId: identity.appId,
+      executableName: identity.executableName,
+      desktopName: identity.desktopName,
+    }).toEqual({
       productName: 'ZPLC',
       appId: 'com.zenithindustrialcloud.zplc',
       executableName: 'zplc',
@@ -75,10 +89,21 @@ describe('the product identity is fixed (REL-031)', () => {
   });
 
   test('electron-builder.yml and the package carry the recorded product name and appId', () => {
-    const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string }>('scripts/release/identity.json');
-    const builder = Bun.YAML.parse(read('packages/zplc-ide/electron-builder.yml')) as { productName: string; appId: string; executableName: string };
+    const identity = json<{ productName: string; appId: string; executableName: string; desktopName: string }>(
+      'scripts/release/identity.json',
+    );
+    const builder = Bun.YAML.parse(read('packages/zplc-ide/electron-builder.yml')) as {
+      productName: string;
+      appId: string;
+      executableName: string;
+    };
     const manifest = json<{ desktopName: string }>('packages/zplc-ide/package.json');
-    expect({ productName: builder.productName, appId: builder.appId, executableName: builder.executableName, desktopName: manifest.desktopName }).toEqual({
+    expect({
+      productName: builder.productName,
+      appId: builder.appId,
+      executableName: builder.executableName,
+      desktopName: manifest.desktopName,
+    }).toEqual({
       productName: identity.productName,
       appId: identity.appId,
       executableName: identity.executableName,

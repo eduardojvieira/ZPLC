@@ -31,18 +31,18 @@ export const extendedTimerTests: HILTestCase[] = [
         type: 'timing',
         timing: {
           afterMs: 200,
-          tolerancePercent: 15
-        }
+          tolerancePercent: 15,
+        },
       },
       {
         type: 'pattern',
-        pattern: /"name":"TOF".*"q":true/
+        pattern: /"name":"TOF".*"q":true/,
       },
       {
         type: 'pattern',
-        pattern: /"name":"TOF".*"q":false/
-      }
-    ]
+        pattern: /"name":"TOF".*"q":false/,
+      },
+    ],
   },
   {
     id: 'blocks.timers.tp',
@@ -68,15 +68,15 @@ export const extendedTimerTests: HILTestCase[] = [
         type: 'timing',
         timing: {
           afterMs: 300,
-          tolerancePercent: 15
-        }
+          tolerancePercent: 15,
+        },
       },
       {
         type: 'pattern',
-        pattern: /"name":"TP".*"q":true/
-      }
-    ]
-  }
+        pattern: /"name":"TP".*"q":true/,
+      },
+    ],
+  },
 ];
 
 export const counterTests: HILTestCase[] = [
@@ -103,14 +103,14 @@ export const counterTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /"name":"CTU".*"cv":3/
+        pattern: /"name":"CTU".*"cv":3/,
       },
       {
         type: 'pattern',
-        pattern: /"name":"CTU".*"q":true/
-      }
-    ]
-  }
+        pattern: /"name":"CTU".*"q":true/,
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: extended timer blocks (HIL-001)', extendedTimerTests);

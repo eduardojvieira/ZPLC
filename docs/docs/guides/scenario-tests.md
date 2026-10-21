@@ -3,7 +3,7 @@ slug: /guides/scenario-tests
 id: scenario-tests
 title: Write and run scenario tests
 sidebar_label: Scenario tests
-description: "Check what a program does with a scripted scenario: write the file, run it in ZPLC or from the command line, and read the result."
+description: 'Check what a program does with a scripted scenario: write the file, run it in ZPLC or from the command line, and read the result.'
 tags: [how-to, tests, scenarios, simulation]
 ---
 
@@ -113,11 +113,11 @@ assertion, and exits with 0 on a pass and 1 on a failure. To run one scenario by
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host |
-| The scenario reader refuses a malformed file and enforces its limits | Unit tests of the test engine | Host |
-| The real scan time of a board, a physical input, a safety validation | Not tested | None |
+| Part                                                                                                       | Verified                                              | Level |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----- |
+| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host  |
+| The scenario reader refuses a malformed file and enforces its limits                                       | Unit tests of the test engine                         | Host  |
+| The real scan time of a board, a physical input, a safety validation                                       | Not tested                                            | None  |
 
 A scenario that passes means that the logic did what you wrote on the virtual
 clock: [Safety and limitations](../safety-and-limitations.md).

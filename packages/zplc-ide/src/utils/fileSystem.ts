@@ -1,25 +1,14 @@
 /**
  * File System Access API Utilities
- * 
+ *
  * Provides functions for opening directories, reading files, and writing
  * changes back to disk using the browser's File System Access API.
- * 
+ *
  */
 
-import type {
-  FileTreeNode,
-  PLCLanguage,
-  ZPLCProjectConfig,
-  ZPLCProjectV2,
-  ProjectFileWithHandle,
-  POUType,
-} from '../types';
+import type { FileTreeNode, PLCLanguage, ZPLCProjectConfig, ZPLCProjectV2, ProjectFileWithHandle, POUType } from '../types';
 import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelDiagnostic } from '../project/projectModel';
-import { 
-  getExtensionForLanguage,
-  getLanguageFromFilename,
-  isFileSystemAccessSupported,
-} from '../types';
+import { getExtensionForLanguage, getLanguageFromFilename, isFileSystemAccessSupported } from '../types';
 import { newProjectConfig, newProjectProgram, SIMULATION_TARGET, type NewProjectChoices } from '../project/newProject';
 import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
@@ -117,9 +106,11 @@ export function findSameSourceName(folder: FileTreeNode, fileName: string): File
 /** New File refused the name because the folder already has that file, or one the build reads as the same file. */
 export class FileNameTakenError extends Error {
   constructor(existing: string, wanted: string) {
-    super(existing === wanted
-      ? `${existing} already exists.`
-      : `${existing} already exists, and the build reads it as the same name as ${wanted}. Choose another name.`);
+    super(
+      existing === wanted
+        ? `${existing} already exists.`
+        : `${existing} already exists, and the build reads it as the same name as ${wanted}. Choose another name.`,
+    );
     this.name = 'FileNameTakenError';
   }
 }
@@ -148,10 +139,7 @@ function fileTreeDirectoryId(path: string): string {
 /**
  * Recursively read a directory and build a file tree
  */
-export async function readDirectoryRecursive(
-  dirHandle: FileSystemDirectoryHandle,
-  path: string = ''
-): Promise<FileTreeNode> {
+export async function readDirectoryRecursive(dirHandle: FileSystemDirectoryHandle, path: string = ''): Promise<FileTreeNode> {
   return (await readTree(dirHandle, path)).node;
 }
 
@@ -230,7 +218,7 @@ async function readTree(dirHandle: FileSystemDirectoryHandle, path: string): Pro
 function detectPOUType(filename: string): POUType | undefined {
   // GVL files have .gvl extension
   if (filename.endsWith('.gvl')) return 'GVL';
-  
+
   // For .st files, we'd need to parse content to determine PRG/FB/FUN
   // For now, assume PRG for .st files in src/ and FB for files in fb/
   // This is a heuristic - proper detection requires parsing
@@ -252,10 +240,7 @@ export async function readFileContent(handle: FileSystemFileHandle): Promise<str
 /**
  * Write content to a file handle
  */
-export async function writeFileContent(
-  handle: FileSystemFileHandle,
-  content: string
-): Promise<void> {
+export async function writeFileContent(handle: FileSystemFileHandle, content: string): Promise<void> {
   const writable = await handle.createWritable();
   await writable.write(content);
   await writable.close();
@@ -264,9 +249,7 @@ export async function writeFileContent(
 /**
  * Load a specific file from the file tree
  */
-export async function loadFileFromTree(
-  node: FileTreeNode
-): Promise<ProjectFileWithHandle | null> {
+export async function loadFileFromTree(node: FileTreeNode): Promise<ProjectFileWithHandle | null> {
   if (node.type !== 'file' || !node.handle) {
     return null;
   }
@@ -302,11 +285,7 @@ function isNotFoundError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotFoundError';
 }
 
-async function assertProjectFileAbsent(
-  dirHandle: FileSystemDirectoryHandle,
-  name: string,
-  path: string,
-): Promise<void> {
+async function assertProjectFileAbsent(dirHandle: FileSystemDirectoryHandle, name: string, path: string): Promise<void> {
   try {
     await dirHandle.getFileHandle(name);
   } catch (error) {
@@ -333,9 +312,7 @@ async function preflightNewProject(dirHandle: FileSystemDirectoryHandle, languag
   await assertProjectFileAbsent(srcHandle, 'globals.gvl', 'src/globals.gvl');
 }
 
-export async function readProjectConfig(
-  dirHandle: FileSystemDirectoryHandle
-): Promise<ProjectConfigReadResult> {
+export async function readProjectConfig(dirHandle: FileSystemDirectoryHandle): Promise<ProjectConfigReadResult> {
   let configHandle: FileSystemFileHandle;
   try {
     configHandle = await dirHandle.getFileHandle('zplc.json');
@@ -358,7 +335,13 @@ export async function readProjectConfig(
     const content = await file.text();
     const parsed = parseAndMigrateProject(JSON.parse(content) as unknown);
     return parsed.ok
-      ? { kind: 'valid', config: parsed.project, changed: parsed.changed, sourceSchemaVersion: parsed.sourceSchemaVersion, changes: parsed.changes }
+      ? {
+          kind: 'valid',
+          config: parsed.project,
+          changed: parsed.changed,
+          sourceSchemaVersion: parsed.sourceSchemaVersion,
+          changes: parsed.changes,
+        }
       : { kind: 'invalid', diagnostics: parsed.diagnostics };
   } catch {
     return { kind: 'invalid', diagnostics: [{ path: '$', message: 'Unable to parse project configuration' }] };
@@ -368,10 +351,7 @@ export async function readProjectConfig(
 /**
  * Write zplc.json to a directory
  */
-export async function writeProjectConfig(
-  dirHandle: FileSystemDirectoryHandle,
-  config: ZPLCProjectConfig
-): Promise<ZPLCProjectV2> {
+export async function writeProjectConfig(dirHandle: FileSystemDirectoryHandle, config: ZPLCProjectConfig): Promise<ZPLCProjectV2> {
   const parsed = parseAndMigrateProject(config);
   if (!parsed.ok) throw new Error('Project configuration is invalid');
   const content = JSON.stringify(parsed.project, null, 2);
@@ -449,9 +429,11 @@ Thumbs.db
 export type ProjectCopyFile = { path: string; content: string };
 
 function splitCopyPath(path: string): string[] {
-  if (!path || path.startsWith('/') || /^[a-z]:\//i.test(path) || path.includes('\\') || path.includes('\0')) throw new Error(`Cannot copy example: unsafe path ${path || '(empty)'}`);
+  if (!path || path.startsWith('/') || /^[a-z]:\//i.test(path) || path.includes('\\') || path.includes('\0'))
+    throw new Error(`Cannot copy example: unsafe path ${path || '(empty)'}`);
   const segments = path.split('/');
-  if (segments.some((segment) => !segment || segment === '.' || segment === '..')) throw new Error(`Cannot copy example: unsafe path ${path}`);
+  if (segments.some((segment) => !segment || segment === '.' || segment === '..'))
+    throw new Error(`Cannot copy example: unsafe path ${path}`);
   return segments;
 }
 
@@ -562,10 +544,7 @@ export function collectFilePaths(tree: FileTreeNode): string[] {
 /**
  * Toggle directory expansion in tree (immutable update)
  */
-export function toggleDirectoryExpanded(
-  tree: FileTreeNode,
-  dirPath: string
-): FileTreeNode {
+export function toggleDirectoryExpanded(tree: FileTreeNode, dirPath: string): FileTreeNode {
   if (tree.path === dirPath && tree.type === 'directory') {
     return { ...tree, isExpanded: !tree.isExpanded };
   }
@@ -573,7 +552,7 @@ export function toggleDirectoryExpanded(
   if (tree.children) {
     return {
       ...tree,
-      children: tree.children.map(child => toggleDirectoryExpanded(child, dirPath)),
+      children: tree.children.map((child) => toggleDirectoryExpanded(child, dirPath)),
     };
   }
 

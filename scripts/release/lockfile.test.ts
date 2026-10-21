@@ -2,7 +2,8 @@
 import { describe, expect, test } from 'bun:test';
 import { integrityHex, keyChain, parseLockfile, productionClosure, resolveDependency, splitId, stripTrailingCommas } from './lockfile';
 
-const FIXTURE = `{
+const FIXTURE =
+  `{
   "lockfileVersion": 1,
   "workspaces": {
     "": { "name": "root", "devDependencies": { "typescript": "^5", }, },
@@ -16,7 +17,8 @@ const FIXTURE = `{
   "packages": {
     "@fx/app": ["@fx/app@workspace:packages/app"],
     "@fx/lib": ["@fx/lib@workspace:packages/lib"],
-    "left": ["left@1.0.0", "", { "dependencies": { "shared": "^2", "@sc/pkg": "^1" }, "optionalDependencies": { "fast": "^1" } }, "sha512-AAAA"],
+    "left": ["left@1.0.0", "", { "dependencies": { "shared": "^2", "@sc/pkg": "^1" }, "optionalDependencies": { "fast": "^1" } }, ` +
+  `"sha512-AAAA"],
     "left/shared": ["shared@2.0.0", "", {}, "sha512-BBBB"],
     "shared": ["shared@3.0.0", "", {}, "sha512-CCCC"],
     "@sc/pkg": ["@sc/pkg@1.2.3", "", { "peerDependencies": { "peer": "*", "soft": "*" }, "optionalPeers": ["soft"] }, "sha512-DDDD"],
@@ -63,7 +65,13 @@ describe('the lockfile dependency graph (REL-018, REL-019)', () => {
     const { packages, unresolved } = productionClosure(lock, 'packages/app');
     expect(unresolved).toEqual([]);
     expect(packages.map((entry) => entry.id)).toEqual([
-      '@fx/lib@workspace:packages/lib', '@sc/pkg@1.2.3', 'fast@1.0.0', 'left@1.0.0', 'shared@2.0.0', 'peer@4.0.0', 'shared@3.0.0',
+      '@fx/lib@workspace:packages/lib',
+      '@sc/pkg@1.2.3',
+      'fast@1.0.0',
+      'left@1.0.0',
+      'shared@2.0.0',
+      'peer@4.0.0',
+      'shared@3.0.0',
     ]);
   });
 

@@ -13,16 +13,16 @@ Every registered function and function block, with its signature or pin table an
 
 ## High-value categories
 
-| Category | Grounding source | Examples |
-|---|---|---|
-| Timers | `stdlib/timers.ts` | `TON`, `TOF`, `TP` |
-| Counters | `stdlib/counters.ts` | `CTU`, `CTD`, `CTUD` |
-| Bistables and triggers | `stdlib/bistables.ts` | `R_TRIG`, `F_TRIG`, `RS`, `SR` |
-| System buffers | `stdlib/system.ts` | `FIFO`, `LIFO` |
-| Strings | `stdlib/strings.ts` | `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`, `STRCMP` |
-| Math and logic | `stdlib/math.ts`, `stdlib/functions.ts`, `stdlib/bitwise.ts` | `ABS`, `SQRT`, `LIMIT`, `SEL`, `MUX`, `SHL`, `SHR` |
-| Process helpers | `stdlib/process.ts` | `HYSTERESIS`, `DEADBAND`, `PID_Compact`, `NORM_X`, `SCALE_X` |
-| Communication FBs | `stdlib/communication.ts` | `MB_READ_HREG`, `MB_WRITE_COIL`, `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` |
+| Category               | Grounding source                                             | Examples                                                                                 |
+| ---------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Timers                 | `stdlib/timers.ts`                                           | `TON`, `TOF`, `TP`                                                                       |
+| Counters               | `stdlib/counters.ts`                                         | `CTU`, `CTD`, `CTUD`                                                                     |
+| Bistables and triggers | `stdlib/bistables.ts`                                        | `R_TRIG`, `F_TRIG`, `RS`, `SR`                                                           |
+| System buffers         | `stdlib/system.ts`                                           | `FIFO`, `LIFO`                                                                           |
+| Strings                | `stdlib/strings.ts`                                          | `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`, `STRCMP` |
+| Math and logic         | `stdlib/math.ts`, `stdlib/functions.ts`, `stdlib/bitwise.ts` | `ABS`, `SQRT`, `LIMIT`, `SEL`, `MUX`, `SHL`, `SHR`                                       |
+| Process helpers        | `stdlib/process.ts`                                          | `HYSTERESIS`, `DEADBAND`, `PID_Compact`, `NORM_X`, `SCALE_X`                             |
+| Communication FBs      | `stdlib/communication.ts`                                    | `MB_READ_HREG`, `MB_WRITE_COIL`, `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`        |
 
 ## Timer and counter blocks
 
@@ -38,10 +38,10 @@ Examples:
 
 The counters count rising edges and keep `CV` and `PV` as `INT`. What each block does today:
 
-| Block | Count | Priority | `CV` limit | Outputs |
-|---|---|---|---|---|
-| `CTU` | +1 on a rising edge of `CU` | `R` sets `CV` to 0 | stops at 32767 | `Q` is `CV >= PV` |
-| `CTD` | -1 on a rising edge of `CD` | `LD` sets `CV` to `PV` | stops at -32768 | `Q` is `CV <= 0` |
+| Block  | Count                                                 | Priority                       | `CV` limit                   | Outputs                               |
+| ------ | ----------------------------------------------------- | ------------------------------ | ---------------------------- | ------------------------------------- |
+| `CTU`  | +1 on a rising edge of `CU`                           | `R` sets `CV` to 0             | stops at 32767               | `Q` is `CV >= PV`                     |
+| `CTD`  | -1 on a rising edge of `CD`                           | `LD` sets `CV` to `PV`         | stops at -32768              | `Q` is `CV <= 0`                      |
 | `CTUD` | +1 on `CU`, -1 on `CD`; both edges in one call cancel | `R`, then `LD`, then the edges | stops at 32767 and at -32768 | `QU` is `CV >= PV`, `QD` is `CV <= 0` |
 
 The edge detector runs on every call, also while `R` or `LD` is TRUE. The comparisons are signed, so a counter counts below zero and takes a negative preset. The full rules and the evidence are in [section 2 of the runtime reference](../runtime/stdlib.md#2-counters).
@@ -50,17 +50,17 @@ The edge detector runs on every call, also while `R` or `LD` is TRUE. The compar
 
 The current string surface in `stdlib/strings.ts` includes:
 
-| Function | Description | Example |
-|---|---|---|
-| `LEN(STR)` | Returns length of string | `LEN('ABC')` -> 3 |
-| `LEFT(STR, N)` | First N characters | `LEFT('HELLO', 2)` -> 'HE' |
-| `RIGHT(STR, N)` | Last N characters | `RIGHT('HELLO', 2)` -> 'LO' |
-| `MID(STR, P, N)` | N chars starting at P | `MID('HELLO', 2, 3)` -> 'ELL' |
-| `CONCAT(S1, S2)` | Join two strings | `CONCAT('A', 'B')` -> 'AB' |
-| `INSERT(S1, S2, P)` | Insert S2 into S1 after the P-th char | `INSERT('AB', 'X', 1)` -> 'AXB' |
-| `DELETE(S1, P, N)` | Delete N chars starting at P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
+| Function                | Description                           | Example                                  |
+| ----------------------- | ------------------------------------- | ---------------------------------------- |
+| `LEN(STR)`              | Returns length of string              | `LEN('ABC')` -> 3                        |
+| `LEFT(STR, N)`          | First N characters                    | `LEFT('HELLO', 2)` -> 'HE'               |
+| `RIGHT(STR, N)`         | Last N characters                     | `RIGHT('HELLO', 2)` -> 'LO'              |
+| `MID(STR, P, N)`        | N chars starting at P                 | `MID('HELLO', 2, 3)` -> 'ELL'            |
+| `CONCAT(S1, S2)`        | Join two strings                      | `CONCAT('A', 'B')` -> 'AB'               |
+| `INSERT(S1, S2, P)`     | Insert S2 into S1 after the P-th char | `INSERT('AB', 'X', 1)` -> 'AXB'          |
+| `DELETE(S1, P, N)`      | Delete N chars starting at P          | `DELETE('HELLO', 2, 2)` -> 'HLO'         |
 | `REPLACE(S1, S2, P, N)` | Replace N chars starting at P with S2 | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
-| `FIND(S1, S2)` | Find position of S2 in S1 | `FIND('HELLO', 'L')` -> 3 |
+| `FIND(S1, S2)`          | Find position of S2 in S1             | `FIND('HELLO', 'L')` -> 3                |
 
 None of these changes its arguments: each returns a new string. In `MID`, `DELETE` and
 `REPLACE` the position comes before the count; IEC 61131-3 writes the length first, so a

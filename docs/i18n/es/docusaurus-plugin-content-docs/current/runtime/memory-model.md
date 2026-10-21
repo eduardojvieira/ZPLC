@@ -9,13 +9,13 @@ El contrato público de memoria está definido sobre todo por:
 
 `zplc_isa.h` expone cinco regiones lógicas:
 
-| Región | Base | Rol |
-|---|---:|---|
-| IPI | `0x0000` | imagen de proceso de entradas |
-| OPI | `0x1000` | imagen de proceso de salidas |
-| WORK | `0x2000` | memoria de trabajo |
-| RETAIN | `0x4000` | memoria retentiva |
-| CODE | `0x5000` | bytecode cargado |
+| Región |     Base | Rol                           |
+| ------ | -------: | ----------------------------- |
+| IPI    | `0x0000` | imagen de proceso de entradas |
+| OPI    | `0x1000` | imagen de proceso de salidas  |
+| WORK   | `0x2000` | memoria de trabajo            |
+| RETAIN | `0x4000` | memoria retentiva             |
+| CODE   | `0x5000` | bytecode cargado              |
 
 ```mermaid
 flowchart LR

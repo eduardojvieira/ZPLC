@@ -19,8 +19,7 @@ static zplc_program_view_t program_store_verified_view;
  * refuses. The mutex owns it. */
 static zplc_pstore_rollback_t program_store_rollback;
 
-static int admit_with_loader(const uint8_t *program, size_t length,
-                             void *context) {
+static int admit_with_loader(const uint8_t *program, size_t length, void *context) {
   uint8_t *workspace = zplc_verify_scratch_take();
   int result;
 
@@ -28,9 +27,7 @@ static int admit_with_loader(const uint8_t *program, size_t length,
   if (workspace == NULL) {
     return -1;
   }
-  result = zplc_loader_verify(program, length, workspace,
-                              ZPLC_LOADER_VERIFY_WORKSPACE_SIZE,
-                              &program_store_verified_view);
+  result = zplc_loader_verify(program, length, workspace, ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &program_store_verified_view);
   zplc_verify_scratch_give();
   return result == ZPLC_LOADER_OK ? 0 : -1;
 }
@@ -48,39 +45,31 @@ int zplc_program_store_prepare(uint8_t *workspace, size_t workspace_capacity) {
 
   if (zplc_lock_take(&program_store_mutex, "program store lock") != 0)
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
-  result = zplc_pstore_probe(&store_config, workspace, workspace_capacity,
-                             &program_store_rollback);
+  result = zplc_pstore_probe(&store_config, workspace, workspace_capacity, &program_store_rollback);
   k_mutex_unlock(&program_store_mutex);
   return result;
 }
 
-int zplc_program_store_commit(uint8_t *workspace, size_t program_size,
-                              size_t workspace_capacity) {
+int zplc_program_store_commit(uint8_t *workspace, size_t program_size, size_t workspace_capacity) {
   int result;
 
   if (zplc_lock_take(&program_store_mutex, "program store lock") != 0)
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
-  result = zplc_pstore_commit_probed(&store_config, &program_store_rollback,
-                                     workspace, program_size,
-                                     workspace_capacity);
+  result = zplc_pstore_commit_probed(&store_config, &program_store_rollback, workspace, program_size, workspace_capacity);
   /* An answer is for one commit: after it, whatever its result, the records are another's. */
   memset(&program_store_rollback, 0, sizeof(program_store_rollback));
   k_mutex_unlock(&program_store_mutex);
   return result;
 }
 
-zplc_program_store_restore_t zplc_program_store_restore(
-    uint8_t *workspace, size_t workspace_capacity, size_t *program_size) {
+zplc_program_store_restore_t zplc_program_store_restore(uint8_t *workspace, size_t workspace_capacity, size_t *program_size) {
   zplc_program_store_restore_t result;
 
   if (zplc_lock_take(&program_store_mutex, "program store lock") != 0)
     return ZPLC_PROGRAM_STORE_ERROR;
   /* A program of the first firmware is read and admitted into the caller's buffer, and the commit that migrates it
    * has no upload in front of it to find its rollback: the restore leaves it. */
-  result = zplc_pstore_restore_probed(&store_config, workspace,
-                                      workspace_capacity, program_size,
-                                      &program_store_rollback);
+  result = zplc_pstore_restore_probed(&store_config, workspace, workspace_capacity, program_size, &program_store_rollback);
   k_mutex_unlock(&program_store_mutex);
-  return result == ZPLC_PROGRAM_STORE_UNVERIFIABLE ? ZPLC_PROGRAM_STORE_ERROR
-                                                   : result;
+  return result == ZPLC_PROGRAM_STORE_UNVERIFIABLE ? ZPLC_PROGRAM_STORE_ERROR : result;
 }

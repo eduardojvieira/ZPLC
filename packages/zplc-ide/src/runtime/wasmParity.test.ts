@@ -65,7 +65,12 @@ async function instance(): Promise<CoreExports> {
 function load(core: CoreExports, artifact: Uint8Array): number {
   expect(artifact.byteLength).toBeLessThanOrEqual(core.zplc_shim_artifact_capacity());
   new Uint8Array(core.memory.buffer).set(artifact, core.zplc_shim_artifact());
-  return core.zplc_core_load(core.zplc_shim_artifact(), artifact.byteLength, core.zplc_shim_workspace(), core.zplc_shim_workspace_capacity());
+  return core.zplc_core_load(
+    core.zplc_shim_artifact(),
+    artifact.byteLength,
+    core.zplc_shim_workspace(),
+    core.zplc_shim_workspace_capacity(),
+  );
 }
 
 function read(core: CoreExports, address: number, size: number): Uint8Array {
@@ -76,7 +81,11 @@ function read(core: CoreExports, address: number, size: number): Uint8Array {
 }
 
 /** What differed from the expectation of the case when its artifact runs in the WebAssembly core; an empty list is a pass. */
-async function runOnWasm(expectation: RunExpectation, zplcFile: Uint8Array, addressOf: (cell: { at?: string; var?: string; type: CellType }) => { address: number; bit?: number } | string): Promise<string[]> {
+async function runOnWasm(
+  expectation: RunExpectation,
+  zplcFile: Uint8Array,
+  addressOf: (cell: { at?: string; var?: string; type: CellType }) => { address: number; bit?: number } | string,
+): Promise<string[]> {
   const core = await instance();
   const refused = load(core, zplcFile);
   if (refused !== 0) return [`the loader of the WebAssembly core refused the artifact: error ${refused}`];
@@ -98,21 +107,27 @@ async function runOnWasm(expectation: RunExpectation, zplcFile: Uint8Array, addr
     core.zplc_hal_posix_set_tick_override((scan - 1) * expectation.scanMs);
     const result = core.zplc_core_run_cycle();
     if (result < 0) {
-      if (!expectation.fault || scan !== expectation.scans) return [...failures, `scan ${scan}: the VM faulted: error ${core.zplc_core_get_error()}`];
+      if (!expectation.fault || scan !== expectation.scans)
+        return [...failures, `scan ${scan}: the VM faulted: error ${core.zplc_core_get_error()}`];
       faulted = true;
     }
     for (const check of expectation.expect.filter((candidate) => candidate.afterScan === scan)) {
       const where = addressOf(check);
-      if (typeof where === 'string') { failures.push(`after scan ${scan}: ${label(check)}: ${where}`); continue; }
+      if (typeof where === 'string') {
+        failures.push(`after scan ${scan}: ${label(check)}: ${where}`);
+        continue;
+      }
       const bytes = read(core, where.address, cellSize(check.type));
-      const observed = check.type === 'BOOL'
-        ? (bytes[0]! & (1 << (where.bit ?? 0))) !== 0
-        : ACCESS[check.type][0](new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+      const observed =
+        check.type === 'BOOL'
+          ? (bytes[0]! & (1 << (where.bit ?? 0))) !== 0
+          : ACCESS[check.type][0](new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
       const wanted = check.type === 'REAL' ? Math.fround(check.value as number) : check.value;
       if (observed !== wanted) failures.push(`after scan ${scan}: ${label(check)} expected ${check.value}, observed ${observed}`);
     }
   }
-  if (expectation.fault && !faulted) failures.push(`the last scan (${expectation.scans}) was expected to end in a VM fault, and it completed`);
+  if (expectation.fault && !faulted)
+    failures.push(`the last scan (${expectation.scans}) was expected to end in a VM fault, and it completed`);
   return failures;
 }
 
@@ -121,11 +136,14 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
   const root = await workspace({ ...found, tasks: expectation.tasks }, expectation.scanMs);
   try {
     const built = await compilerCompile(root);
-    if (!built.ok || !built.zplcFile) return [`the build failed: ${built.evidence.diagnostics.map((diagnostic) => diagnostic.message).join('; ')}`];
+    if (!built.ok || !built.zplcFile)
+      return [`the build failed: ${built.evidence.diagnostics.map((diagnostic) => diagnostic.message).join('; ')}`];
     const map = built.debugMap;
     return await runOnWasm(expectation, built.zplcFile, (cell) => {
       if (cell.at !== undefined) return cellLocation(cell.at, cell.type);
-      const entry = Object.values(map?.pou ?? {}).map((pou) => pou.vars[cell.var!]).find(Boolean);
+      const entry = Object.values(map?.pou ?? {})
+        .map((pou) => pou.vars[cell.var!])
+        .find(Boolean);
       return entry ? { address: entry.addr, bit: entry.bitOffset } : `the debug map has no variable "${cell.var}"`;
     });
   } finally {
@@ -147,9 +165,13 @@ const leftOut = runnable.filter((found) => !cases.includes(found));
 
 describe('the core in WebAssembly gives the results of the conformance cases (IDE-025)', () => {
   for (const found of cases) {
-    itWasm(found.name, async () => {
-      expect(await runCase(found)).toEqual([]);
-    }, 30_000);
+    itWasm(
+      found.name,
+      async () => {
+        expect(await runCase(found)).toEqual([]);
+      },
+      30_000,
+    );
   }
 
   it('runs every conformance case of one task that builds, and leaves out only the cases of several tasks and of the session', () => {

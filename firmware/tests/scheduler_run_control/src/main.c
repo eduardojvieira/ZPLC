@@ -37,9 +37,7 @@
 #ifdef HAVE_EMULATED_OUTPUT
 #define LED0_CONTROLLER DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(led0), gpios))
 #define LED0_PIN DT_GPIO_PIN(DT_ALIAS(led0), gpios)
-#define assert_physical_output(expected, message)                              \
-  zassert_equal(gpio_emul_output_get(LED0_CONTROLLER, LED0_PIN), (expected),  \
-                message)
+#define assert_physical_output(expected, message) zassert_equal(gpio_emul_output_get(LED0_CONTROLLER, LED0_PIN), (expected), message)
 #else
 #define assert_physical_output(expected, message) ((void)(expected))
 #endif
@@ -86,36 +84,63 @@
 #define PEER_TASK_ID 9U
 
 static const uint8_t run_control_code[] = {
-    OP_LOAD8, ADDRESS_LOW(WORK_COUNTER), ADDRESS_HIGH(WORK_COUNTER),
-    OP_PUSH8, 1U,
+    OP_LOAD8,
+    ADDRESS_LOW(WORK_COUNTER),
+    ADDRESS_HIGH(WORK_COUNTER),
+    OP_PUSH8,
+    1U,
     OP_ADD,
-    OP_STORE8, ADDRESS_LOW(WORK_COUNTER), ADDRESS_HIGH(WORK_COUNTER),
-    OP_LOAD8, ADDRESS_LOW(ZPLC_SYS_FLAGS), ADDRESS_HIGH(ZPLC_SYS_FLAGS),
-    OP_STORE8, ADDRESS_LOW(WORK_FLAGS_FIRST), ADDRESS_HIGH(WORK_FLAGS_FIRST),
-    OP_LOAD8, ADDRESS_LOW(ZPLC_SYS_TASK_ID), ADDRESS_HIGH(ZPLC_SYS_TASK_ID),
-    OP_STORE8, ADDRESS_LOW(WORK_ID_FIRST), ADDRESS_HIGH(WORK_ID_FIRST),
-    OP_PUSH8, 0U, /* PART_ONE_VALUE_INDEX: patched per test */
-    OP_STORE8, ADDRESS_LOW(OPI_BYTE_0), ADDRESS_HIGH(OPI_BYTE_0),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_COUNTER),
+    ADDRESS_HIGH(WORK_COUNTER),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_SYS_FLAGS),
+    ADDRESS_HIGH(ZPLC_SYS_FLAGS),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_FLAGS_FIRST),
+    ADDRESS_HIGH(WORK_FLAGS_FIRST),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_SYS_TASK_ID),
+    ADDRESS_HIGH(ZPLC_SYS_TASK_ID),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_ID_FIRST),
+    ADDRESS_HIGH(WORK_ID_FIRST),
+    OP_PUSH8,
+    0U, /* PART_ONE_VALUE_INDEX: patched per test */
+    OP_STORE8,
+    ADDRESS_LOW(OPI_BYTE_0),
+    ADDRESS_HIGH(OPI_BYTE_0),
     /* REMAINDER_PC */
-    OP_LOAD8, ADDRESS_LOW(ZPLC_SYS_FLAGS), ADDRESS_HIGH(ZPLC_SYS_FLAGS),
-    OP_STORE8, ADDRESS_LOW(WORK_FLAGS_REMAINDER),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_SYS_FLAGS),
+    ADDRESS_HIGH(ZPLC_SYS_FLAGS),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_FLAGS_REMAINDER),
     ADDRESS_HIGH(WORK_FLAGS_REMAINDER),
-    OP_LOAD8, ADDRESS_LOW(ZPLC_SYS_TASK_ID), ADDRESS_HIGH(ZPLC_SYS_TASK_ID),
-    OP_STORE8, ADDRESS_LOW(WORK_ID_REMAINDER), ADDRESS_HIGH(WORK_ID_REMAINDER),
-    OP_LOAD8, ADDRESS_LOW(WORK_PEER_COUNT), ADDRESS_HIGH(WORK_PEER_COUNT),
-    OP_STORE8, ADDRESS_LOW(WORK_PEER_SEEN), ADDRESS_HIGH(WORK_PEER_SEEN),
-    OP_PUSH8, REMAINDER_VALUE,
-    OP_STORE8, ADDRESS_LOW(OPI_BYTE_1), ADDRESS_HIGH(OPI_BYTE_1),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_SYS_TASK_ID),
+    ADDRESS_HIGH(ZPLC_SYS_TASK_ID),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_ID_REMAINDER),
+    ADDRESS_HIGH(WORK_ID_REMAINDER),
+    OP_LOAD8,
+    ADDRESS_LOW(WORK_PEER_COUNT),
+    ADDRESS_HIGH(WORK_PEER_COUNT),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_PEER_SEEN),
+    ADDRESS_HIGH(WORK_PEER_SEEN),
+    OP_PUSH8,
+    REMAINDER_VALUE,
+    OP_STORE8,
+    ADDRESS_LOW(OPI_BYTE_1),
+    ADDRESS_HIGH(OPI_BYTE_1),
     OP_HALT,
 };
 
 /* The peer task counts its own scans and stops. */
 static const uint8_t peer_code[] = {
-    OP_LOAD8, ADDRESS_LOW(WORK_PEER_COUNT), ADDRESS_HIGH(WORK_PEER_COUNT),
-    OP_PUSH8, 1U,
-    OP_ADD,
-    OP_STORE8, ADDRESS_LOW(WORK_PEER_COUNT), ADDRESS_HIGH(WORK_PEER_COUNT),
-    OP_HALT,
+    OP_LOAD8,  ADDRESS_LOW(WORK_PEER_COUNT), ADDRESS_HIGH(WORK_PEER_COUNT), OP_PUSH8, 1U, OP_ADD,
+    OP_STORE8, ADDRESS_LOW(WORK_PEER_COUNT), ADDRESS_HIGH(WORK_PEER_COUNT), OP_HALT,
 };
 
 static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t length) {
@@ -148,25 +173,20 @@ static void write_u32_le(uint8_t *data, uint32_t value) {
  * peer, a second task that is one instruction longer than a no-op sits in slot
  * zero, so it is released and run before the task under test in every batch;
  * the slot of the task under test is returned through `slot`. */
-static size_t build_run_control_program(uint8_t *program, uint32_t interval_us,
-                                        uint8_t part_one_value, bool peer,
-                                        int *slot) {
+static size_t build_run_control_program(uint8_t *program, uint32_t interval_us, uint8_t part_one_value, bool peer, int *slot) {
   const size_t main_size = sizeof(run_control_code);
   const size_t code_size = main_size + (peer ? sizeof(peer_code) : 0U);
   const size_t task_count = peer ? 2U : 1U;
   const size_t task_bytes = task_count * ZPLC_TASK_DEF_SIZE;
-  const size_t code_offset =
-      ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
+  const size_t code_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
   const size_t task_offset = code_offset + code_size;
   const size_t total = task_offset + task_bytes;
   uint8_t *task = program + task_offset;
   uint32_t crc;
 
   zassert_true(total <= PROGRAM_CAPACITY, "program buffer overflow");
-  zassert_equal(run_control_code[PART_ONE_VALUE_INDEX - 1U], OP_PUSH8,
-                "part one value index must follow its push");
-  zassert_equal(run_control_code[REMAINDER_PC], OP_LOAD8,
-                "remainder must start at its first load");
+  zassert_equal(run_control_code[PART_ONE_VALUE_INDEX - 1U], OP_PUSH8, "part one value index must follow its push");
+  zassert_equal(run_control_code[REMAINDER_PC], OP_LOAD8, "remainder must start at its first load");
   memset(program, 0, total);
   memcpy(program, "ZPLC", 4U);
   write_u16_le(program + 4U, ZPLC_VERSION_MAJOR);
@@ -213,27 +233,21 @@ static void clear_scheduler(void) {
 
     zassert_true(result == 0 || result == -2, "unregister task");
   }
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "scheduler must be idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "scheduler must be idle");
 }
 
-static uint8_t work_byte(uint16_t offset) {
-  return zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[offset];
-}
+static uint8_t work_byte(uint16_t offset) { return zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[offset]; }
 
 /* Loads the program and returns the slot of the task under test. */
-static int load_run_control_program(uint32_t interval_us,
-                                    uint8_t part_one_value, bool peer) {
+static int load_run_control_program(uint32_t interval_us, uint8_t part_one_value, bool peer) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   int slot;
 
   clear_scheduler();
   zplc_force_clear_all();
-  size = build_run_control_program(program, interval_us, part_one_value, peer,
-                                   &slot);
-  zassert_equal(zplc_sched_load(program, size), peer ? 2 : 1,
-                "load run-control program");
+  size = build_run_control_program(program, interval_us, part_one_value, peer, &slot);
+  zassert_equal(zplc_sched_load(program, size), peer ? 2 : 1, "load run-control program");
   memset(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), 0, 8U);
   memset(zplc_mem_get_region(ZPLC_MEM_OPI_BASE), 0, 8U);
   return slot;
@@ -242,8 +256,7 @@ static int load_run_control_program(uint32_t interval_us,
 static void force_unused_output_byte(void) {
   const uint8_t forced = UNUSED_FORCED_VALUE;
 
-  zassert_ok(zplc_force_set_bytes(OPI_BYTE_2, &forced, 1U),
-             "force an output byte the program never writes");
+  zassert_ok(zplc_force_set_bytes(OPI_BYTE_2, &forced, 1U), "force an output byte the program never writes");
 }
 
 static void assert_force_kept(uint16_t address, uint8_t value) {
@@ -252,9 +265,7 @@ static void assert_force_kept(uint16_t address, uint8_t value) {
   uint8_t entry_value = 0U;
 
   zassert_equal(zplc_force_get_count(), 1U, "the force table must be kept");
-  zassert_ok(zplc_force_get(0U, &entry_address, &entry_size, &entry_value,
-                            sizeof(entry_value)),
-             "read the force entry");
+  zassert_ok(zplc_force_get(0U, &entry_address, &entry_size, &entry_value, sizeof(entry_value)), "read the force entry");
   zassert_equal(entry_address, address, "force entry address changed");
   zassert_equal(entry_size, 1U, "force entry size changed");
   zassert_equal(entry_value, value, "force entry value changed");
@@ -266,15 +277,12 @@ static void assert_force_kept(uint16_t address, uint8_t value) {
 static void wait_until_paused(int slot, zplc_sched_vm_snapshot_t *snapshot) {
   int waited_ms = 0;
 
-  while (zplc_sched_get_state() != ZPLC_SCHED_STATE_PAUSED &&
-         waited_ms < 2000) {
+  while (zplc_sched_get_state() != ZPLC_SCHED_STATE_PAUSED && waited_ms < 2000) {
     k_msleep(5);
     waited_ms += 5;
   }
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "scheduler did not pause");
-  zassert_ok(zplc_sched_debug_snapshot(slot, snapshot),
-             "snapshot paused task");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "scheduler did not pause");
+  zassert_ok(zplc_sched_debug_snapshot(slot, snapshot), "snapshot paused task");
 }
 
 static void wait_for_output_commit(uint32_t after_count) {
@@ -307,16 +315,14 @@ static void scheduler_teardown(void *fixture) {
 /* RT-017: a breakpoint pause keeps the image and forces; resume continues.
  * Fails without the fix: the pause zeroes the output image and the force table,
  * so the resumed scan finishes on a blank image and the output stays off. */
-ZTEST(zplc_scheduler_run_control,
-      test_breakpoint_pause_keeps_image_and_resume_drives_it_again) {
+ZTEST(zplc_scheduler_run_control, test_breakpoint_pause_keeps_image_and_resume_drives_it_again) {
   int slot;
   zplc_sched_vm_snapshot_t snapshot;
   zplc_sched_stats_t before_resume;
 
   slot = load_run_control_program(FAST_INTERVAL_US, 0x01U, false);
   force_unused_output_byte();
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
   zassert_ok(zplc_sched_start(), "start scheduler");
   wait_until_paused(slot, &snapshot);
 
@@ -324,66 +330,52 @@ ZTEST(zplc_scheduler_run_control,
   zassert_equal(snapshot.pc, REMAINDER_PC, "paused at the breakpoint");
   zassert_equal(work_byte(0U), 1U, "the first part ran once");
   assert_physical_output(0, "physical output must be safe while paused");
-  zassert_equal(zplc_opi_read8(0U), 0x01U,
-                "paused output image keeps what the scan wrote");
+  zassert_equal(zplc_opi_read8(0U), 0x01U, "paused output image keeps what the scan wrote");
   zassert_equal(zplc_opi_read8(1U), 0U, "the remainder has not run");
-  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE,
-                "forced byte stays in the paused image");
+  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE, "forced byte stays in the paused image");
   assert_force_kept(OPI_BYTE_2, UNUSED_FORCED_VALUE);
 
   /* Resume. The outputs are not driven by the resume itself: the first normal
    * commit does it, from the preserved image, after the scan has finished. */
-  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC),
-             "remove the breakpoint");
+  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC), "remove the breakpoint");
   zassert_ok(zplc_sched_get_stats(&before_resume), "read resume baseline");
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_resume(), "resume scheduler");
-  zassert_ok(zplc_sched_test_wait_before_commit(1000),
-             "resumed scan did not reach its commit");
+  zassert_ok(zplc_sched_test_wait_before_commit(1000), "resumed scan did not reach its commit");
   assert_physical_output(0, "resume must not energize outputs before commit");
-  zassert_equal(work_byte(0U), 1U,
-                "the interrupted scan continued instead of restarting");
+  zassert_equal(work_byte(0U), 1U, "the interrupted scan continued instead of restarting");
   zassert_equal(zplc_opi_read8(0U), 0x01U, "preserved image is unchanged");
-  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE,
-                "the remainder of the scan wrote its output");
-  zassert_equal(work_byte(2U), work_byte(1U),
-                "both parts of the scan saw the same system flags");
-  zassert_true((work_byte(1U) & ZPLC_SYS_FLAG_FIRST_SCAN) != 0U,
-               "an interrupted first scan stays a first scan");
+  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE, "the remainder of the scan wrote its output");
+  zassert_equal(work_byte(2U), work_byte(1U), "both parts of the scan saw the same system flags");
+  zassert_true((work_byte(1U) & ZPLC_SYS_FLAG_FIRST_SCAN) != 0U, "an interrupted first scan stays a first scan");
   zplc_sched_test_release_before_commit();
   wait_for_output_commit(before_resume.output_commit_count);
   assert_physical_output(1, "commit drives the output from the kept image");
   assert_force_kept(OPI_BYTE_2, UNUSED_FORCED_VALUE);
-  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE,
-                "forced byte survives the resumed scan");
+  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE, "forced byte survives the resumed scan");
 }
 
 /* RT-017: a force is kept while paused and reaches the pins after resume.
  * The program writes 0 to output 0 while the table forces it on: the output is
  * safe while paused and follows the force, not the program, once the scan is
  * committed after resume. */
-ZTEST(zplc_scheduler_run_control,
-      test_force_is_kept_while_paused_and_applied_after_resume) {
+ZTEST(zplc_scheduler_run_control, test_force_is_kept_while_paused_and_applied_after_resume) {
   int slot;
   const uint8_t forced_on = 0x01U;
   zplc_sched_vm_snapshot_t snapshot;
   zplc_sched_stats_t before_resume;
 
   slot = load_run_control_program(FAST_INTERVAL_US, 0x00U, false);
-  zassert_ok(zplc_force_set_bytes(OPI_BYTE_0, &forced_on, 1U),
-             "force output 0 on");
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_force_set_bytes(OPI_BYTE_0, &forced_on, 1U), "force output 0 on");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
   zassert_ok(zplc_sched_start(), "start scheduler");
   wait_until_paused(slot, &snapshot);
 
   assert_physical_output(0, "a forced output is still safe while paused");
-  zassert_equal(zplc_opi_read8(0U), forced_on,
-                "the force wins over the program in the paused image");
+  zassert_equal(zplc_opi_read8(0U), forced_on, "the force wins over the program in the paused image");
   assert_force_kept(OPI_BYTE_0, forced_on);
 
-  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC),
-             "remove the breakpoint");
+  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC), "remove the breakpoint");
   zassert_ok(zplc_sched_get_stats(&before_resume), "read resume baseline");
   zassert_ok(zplc_sched_resume(), "resume scheduler");
   wait_for_output_commit(before_resume.output_commit_count);
@@ -395,8 +387,7 @@ ZTEST(zplc_scheduler_run_control,
 /* RT-017: the pause command keeps the image and forces with the pins safe.
  * The shell `zplc dbg pause` lands between scans: the image and the forces
  * stay, the physical output is safe. */
-ZTEST(zplc_scheduler_run_control,
-      test_external_pause_keeps_image_and_forces_with_safe_output) {
+ZTEST(zplc_scheduler_run_control, test_external_pause_keeps_image_and_forces_with_safe_output) {
   int slot;
   zplc_sched_stats_t before_resume;
   int waited_ms = 0;
@@ -413,10 +404,8 @@ ZTEST(zplc_scheduler_run_control,
 
   assert_physical_output(0, "physical output must be safe while paused");
   zassert_equal(zplc_opi_read8(0U), 0x01U, "pause keeps the output image");
-  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE,
-                "pause keeps every byte of the output image");
-  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE,
-                "pause keeps the forced byte");
+  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE, "pause keeps every byte of the output image");
+  zassert_equal(zplc_opi_read8(2U), UNUSED_FORCED_VALUE, "pause keeps the forced byte");
   assert_force_kept(OPI_BYTE_2, UNUSED_FORCED_VALUE);
 
   zassert_ok(zplc_sched_get_stats(&before_resume), "read resume baseline");
@@ -428,21 +417,17 @@ ZTEST(zplc_scheduler_run_control,
 /* RT-017: a step keeps the image and forces and leaves the pins safe.
  * A stepped scan is committed, the runtime is then paused, so the physical
  * output is safe and the image shows the stepped scan. */
-ZTEST(zplc_scheduler_run_control,
-      test_step_keeps_image_and_forces_with_safe_output) {
+ZTEST(zplc_scheduler_run_control, test_step_keeps_image_and_forces_with_safe_output) {
   int slot;
   slot = load_run_control_program(FAST_INTERVAL_US, 0x01U, false);
   force_unused_output_byte();
 
   zassert_ok(zplc_sched_step(), "step one scan");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "step leaves the scheduler paused");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "step leaves the scheduler paused");
   assert_physical_output(0, "physical output must be safe after a step");
   zassert_equal(work_byte(0U), 1U, "the scan ran once");
-  zassert_equal(zplc_opi_read8(0U), 0x01U,
-                "the stepped scan stays visible in the output image");
-  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE,
-                "the whole scan wrote its outputs");
+  zassert_equal(zplc_opi_read8(0U), 0x01U, "the stepped scan stays visible in the output image");
+  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE, "the whole scan wrote its outputs");
   assert_force_kept(OPI_BYTE_2, UNUSED_FORCED_VALUE);
 }
 
@@ -450,14 +435,12 @@ ZTEST(zplc_scheduler_run_control,
  * It pauses at the cycle boundary; from the boundary a step runs one scan.
  * Fails without the fix: the second step restarts the scan from the entry
  * point and stops at the same breakpoint again. */
-ZTEST(zplc_scheduler_run_control,
-      test_step_from_breakpoint_finishes_the_interrupted_scan) {
+ZTEST(zplc_scheduler_run_control, test_step_from_breakpoint_finishes_the_interrupted_scan) {
   int slot;
   zplc_sched_vm_snapshot_t snapshot;
 
   slot = load_run_control_program(FAST_INTERVAL_US, 0x01U, false);
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
 
   zassert_ok(zplc_sched_step(), "first step stops at the breakpoint");
   zassert_ok(zplc_sched_debug_snapshot(slot, &snapshot), "snapshot first step");
@@ -467,17 +450,12 @@ ZTEST(zplc_scheduler_run_control,
   zassert_equal(zplc_opi_read8(1U), 0U, "remainder has not run");
 
   zassert_ok(zplc_sched_step(), "second step finishes the scan");
-  zassert_ok(zplc_sched_debug_snapshot(slot, &snapshot),
-             "snapshot second step");
-  zassert_equal(snapshot.paused, 0U,
-                "second step ends at the cycle boundary, not at the break");
+  zassert_ok(zplc_sched_debug_snapshot(slot, &snapshot), "snapshot second step");
+  zassert_equal(snapshot.paused, 0U, "second step ends at the cycle boundary, not at the break");
   zassert_equal(work_byte(0U), 1U, "the first part did not run again");
-  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE,
-                "the remainder of the interrupted scan ran");
-  zassert_equal(work_byte(2U), work_byte(1U),
-                "both parts of the scan saw the same system flags");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "step leaves the scheduler paused");
+  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE, "the remainder of the interrupted scan ran");
+  zassert_equal(work_byte(2U), work_byte(1U), "both parts of the scan saw the same system flags");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "step leaves the scheduler paused");
 
   zassert_ok(zplc_sched_step(), "third step runs one scan");
   zassert_ok(zplc_sched_debug_snapshot(slot, &snapshot), "snapshot third step");
@@ -494,12 +472,10 @@ ZTEST(zplc_scheduler_run_control, test_stop_after_resume_abandons_the_scan) {
   zplc_sched_vm_snapshot_t snapshot;
 
   slot = load_run_control_program(SLOW_INTERVAL_US, 0x01U, false);
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
   zassert_ok(zplc_sched_step(), "step to the breakpoint");
   zassert_equal(work_byte(0U), 1U, "first part ran once");
-  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC),
-             "remove the breakpoint");
+  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC), "remove the breakpoint");
 
   zassert_ok(zplc_sched_resume(), "resume arms the interrupted scan");
   zassert_ok(zplc_sched_stop(), "stop before any task ran");
@@ -507,10 +483,8 @@ ZTEST(zplc_scheduler_run_control, test_stop_after_resume_abandons_the_scan) {
   zassert_ok(zplc_sched_step(), "step after stop");
   zassert_ok(zplc_sched_debug_snapshot(slot, &snapshot), "snapshot after step");
   zassert_equal(snapshot.paused, 0U, "no scan is left interrupted");
-  zassert_equal(work_byte(0U), 2U,
-                "step after stop starts a new scan from the entry point");
-  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE,
-                "the new scan ran to its end");
+  zassert_equal(work_byte(0U), 2U, "step after stop starts a new scan from the entry point");
+  zassert_equal(zplc_opi_read8(1U), REMAINDER_VALUE, "the new scan ran to its end");
 }
 
 /* STOP while paused at a breakpoint: outputs safe, image zeroed, forces
@@ -522,15 +496,13 @@ ZTEST(zplc_scheduler_run_control, test_stop_while_paused_resets_the_task_vm) {
 
   slot = load_run_control_program(FAST_INTERVAL_US, 0x01U, false);
   force_unused_output_byte();
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
   zassert_ok(zplc_sched_step(), "step to the breakpoint");
   zassert_equal(zplc_opi_read8(0U), 0x01U, "image is kept while paused");
   assert_force_kept(OPI_BYTE_2, UNUSED_FORCED_VALUE);
 
   zassert_ok(zplc_sched_stop(), "stop scheduler");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "stop leaves the scheduler idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "stop leaves the scheduler idle");
   assert_physical_output(0, "physical output must be safe after stop");
   zassert_equal(zplc_opi_read8(0U), 0U, "stop zeroes the output image");
   zassert_equal(zplc_opi_read8(1U), 0U, "stop zeroes every output byte");
@@ -547,8 +519,7 @@ ZTEST(zplc_scheduler_run_control, test_stop_while_paused_resets_the_task_vm) {
  * after a resume from a pause that landed between scans. Resume only arms the
  * "skip one breakpoint" mark of a VM that is stopped at a breakpoint.
  * Fails without the fix: the first scan after the resume runs through. */
-ZTEST(zplc_scheduler_run_control,
-      test_resume_from_external_pause_keeps_entry_breakpoint_armed) {
+ZTEST(zplc_scheduler_run_control, test_resume_from_external_pause_keeps_entry_breakpoint_armed) {
   int slot;
   zplc_sched_vm_snapshot_t snapshot;
   uint8_t scans_before_resume;
@@ -564,22 +535,19 @@ ZTEST(zplc_scheduler_run_control,
   scans_before_resume = work_byte(0U);
   zassert_true(scans_before_resume > 0U, "the program ran before the pause");
 
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, 0U),
-             "break at the entry point");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, 0U), "break at the entry point");
   zassert_ok(zplc_sched_resume(), "resume scheduler");
   wait_until_paused(slot, &snapshot);
 
   zassert_true(snapshot.paused != 0U, "entry breakpoint stops the scan");
   zassert_equal(snapshot.pc, 0U, "stopped at the entry point");
-  zassert_equal(work_byte(0U), scans_before_resume,
-                "no instruction ran after the resume");
+  zassert_equal(work_byte(0U), scans_before_resume, "no instruction ran after the resume");
 }
 
 /* RT-017: an interrupted scan keeps its task id and first-scan flag.
  * Another task runs between its two parts: the peer sits ahead of it in every
  * batch and rewrites the task id register before the remainder continues. */
-ZTEST(zplc_scheduler_run_control,
-      test_interrupted_scan_keeps_its_task_id_and_first_scan_flag) {
+ZTEST(zplc_scheduler_run_control, test_interrupted_scan_keeps_its_task_id_and_first_scan_flag) {
   int slot;
   zplc_sched_vm_snapshot_t snapshot;
   zplc_sched_stats_t before_resume;
@@ -587,29 +555,22 @@ ZTEST(zplc_scheduler_run_control,
 
   slot = load_run_control_program(FAST_INTERVAL_US, 0x01U, true);
   zassert_equal(slot, 1, "the task under test follows the peer");
-  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC),
-             "break at the remainder of the scan");
+  zassert_ok(zplc_sched_debug_add_breakpoint(slot, REMAINDER_PC), "break at the remainder of the scan");
   zassert_ok(zplc_sched_start(), "start scheduler");
   wait_until_paused(slot, &snapshot);
   zassert_equal(snapshot.pc, REMAINDER_PC, "paused at the breakpoint");
   zassert_equal(work_byte(3U), TASK_ID, "first part saw its task id");
   peer_count_at_break = work_byte(5U);
 
-  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC),
-             "remove the breakpoint");
+  zassert_ok(zplc_sched_debug_remove_breakpoint(slot, REMAINDER_PC), "remove the breakpoint");
   zassert_ok(zplc_sched_get_stats(&before_resume), "read resume baseline");
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_resume(), "resume scheduler");
-  zassert_ok(zplc_sched_test_wait_before_commit(1000),
-             "resumed batch did not reach its commit");
-  zassert_equal(work_byte(6U), (uint8_t)(peer_count_at_break + 1U),
-                "the peer ran between the two parts of the scan");
-  zassert_equal(work_byte(4U), TASK_ID,
-                "the remainder still sees the id of its own task");
-  zassert_equal(work_byte(2U), work_byte(1U),
-                "both parts of the scan saw the same system flags");
-  zassert_true((work_byte(2U) & ZPLC_SYS_FLAG_FIRST_SCAN) != 0U,
-               "the remainder of the first scan sees the first-scan flag");
+  zassert_ok(zplc_sched_test_wait_before_commit(1000), "resumed batch did not reach its commit");
+  zassert_equal(work_byte(6U), (uint8_t)(peer_count_at_break + 1U), "the peer ran between the two parts of the scan");
+  zassert_equal(work_byte(4U), TASK_ID, "the remainder still sees the id of its own task");
+  zassert_equal(work_byte(2U), work_byte(1U), "both parts of the scan saw the same system flags");
+  zassert_true((work_byte(2U) & ZPLC_SYS_FLAG_FIRST_SCAN) != 0U, "the remainder of the first scan sees the first-scan flag");
   zplc_sched_test_release_before_commit();
   wait_for_output_commit(before_resume.output_commit_count);
 }
@@ -620,8 +581,7 @@ ZTEST(zplc_scheduler_run_control,
  * Fails without the load driving the safe state: the pin keeps the level it had until the first stop. */
 #define DECLARED_SAFE_CAPACITY (PROGRAM_CAPACITY + 16U)
 
-static size_t build_declaring_program(uint8_t *program, const uint8_t *entries, size_t entries_size,
-                                      uint8_t part_one_value) {
+static size_t build_declaring_program(uint8_t *program, const uint8_t *entries, size_t entries_size, uint8_t part_one_value) {
   int slot;
   const size_t size = build_run_control_program(program, FAST_INTERVAL_US, part_one_value, false, &slot);
 
@@ -708,5 +668,4 @@ ZTEST(zplc_scheduler_run_control, test_a_declaration_for_an_output_the_board_doe
   zassert_equal(zplc_core_declared_safe_count(), 1U, "and the program that was there is untouched");
 }
 
-ZTEST_SUITE(zplc_scheduler_run_control, NULL, scheduler_setup, NULL, NULL,
-            scheduler_teardown);
+ZTEST_SUITE(zplc_scheduler_run_control, NULL, scheduler_setup, NULL, NULL, scheduler_teardown);

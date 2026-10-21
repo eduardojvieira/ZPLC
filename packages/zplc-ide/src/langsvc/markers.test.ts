@@ -3,7 +3,15 @@ import { describe, expect, it } from 'bun:test';
 import { applyProjectMarkers } from './markers';
 import type { STLiveDiagnostic } from '../types';
 
-interface Marker { message: string; code?: string; severity: number; startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number }
+interface Marker {
+  message: string;
+  code?: string;
+  severity: number;
+  startLineNumber: number;
+  startColumn: number;
+  endLineNumber: number;
+  endColumn: number;
+}
 
 function fakeMonaco(files: Record<string, string>) {
   const set = new Map<string, Marker[]>();
@@ -19,8 +27,13 @@ function fakeMonaco(files: Record<string, string>) {
   const monaco = {
     MarkerSeverity: { Error: 8, Warning: 4 },
     editor: {
-      getModels: () => [...models, { uri: { path: '/3/untitled' }, getLineCount: () => 1, getLineMaxColumn: () => 1, isDisposed: () => false }],
-      setModelMarkers: (model: { uri: { path: string } }, owner: string, markers: Marker[]) => { set.set(`${owner}:${model.uri.path}`, markers); },
+      getModels: () => [
+        ...models,
+        { uri: { path: '/3/untitled' }, getLineCount: () => 1, getLineMaxColumn: () => 1, isDisposed: () => false },
+      ],
+      setModelMarkers: (model: { uri: { path: string } }, owner: string, markers: Marker[]) => {
+        set.set(`${owner}:${model.uri.path}`, markers);
+      },
     },
   };
   return { monaco: monaco as unknown as Parameters<typeof applyProjectMarkers>[0], set };
@@ -33,19 +46,44 @@ describe('the diagnostics of the project as markers (LNG-015)', () => {
 
   it('puts each diagnostic on the model of its file, with the range of the front end', () => {
     const { monaco, set } = fakeMonaco(files);
-    applyProjectMarkers(monaco, 'live', [
-      diagnostic({ file: 'src/main.st', line: 2, column: 8, endLine: 2, endColumn: 9, message: 'Expected expression' }),
-      diagnostic({ file: 'src/lib.st', line: 1, column: 10, endLine: 1, endColumn: 11, type: 'warning', code: 'ST_WARNING', message: 'unused' }),
-    ], 'src/main.st');
-    expect(set.get('live:/3/file:src/main.st')).toEqual([{ message: 'Expected expression', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 }]);
-    expect(set.get('live:/3/file:src/lib.st')).toEqual([{ message: 'unused', severity: 4, startLineNumber: 1, startColumn: 10, endLineNumber: 1, endColumn: 11 }]);
+    applyProjectMarkers(
+      monaco,
+      'live',
+      [
+        diagnostic({ file: 'src/main.st', line: 2, column: 8, endLine: 2, endColumn: 9, message: 'Expected expression' }),
+        diagnostic({
+          file: 'src/lib.st',
+          line: 1,
+          column: 10,
+          endLine: 1,
+          endColumn: 11,
+          type: 'warning',
+          code: 'ST_WARNING',
+          message: 'unused',
+        }),
+      ],
+      'src/main.st',
+    );
+    expect(set.get('live:/3/file:src/main.st')).toEqual([
+      { message: 'Expected expression', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 },
+    ]);
+    expect(set.get('live:/3/file:src/lib.st')).toEqual([
+      { message: 'unused', severity: 4, startLineNumber: 1, startColumn: 10, endLineNumber: 1, endColumn: 11 },
+    ]);
     expect(set.has('live:/3/untitled')).toBe(false);
   });
 
   it('gives the marker the stable code of the problem, the one a build reports (CMP-006)', () => {
     const { monaco, set } = fakeMonaco(files);
-    applyProjectMarkers(monaco, 'live', [diagnostic({ file: 'src/main.st', line: 2, column: 8, endLine: 2, endColumn: 9, errorCode: 'UNEXPECTED_TOKEN' })], 'src/main.st');
-    expect(set.get('live:/3/file:src/main.st')).toEqual([{ message: 'bad', code: 'UNEXPECTED_TOKEN', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 }]);
+    applyProjectMarkers(
+      monaco,
+      'live',
+      [diagnostic({ file: 'src/main.st', line: 2, column: 8, endLine: 2, endColumn: 9, errorCode: 'UNEXPECTED_TOKEN' })],
+      'src/main.st',
+    );
+    expect(set.get('live:/3/file:src/main.st')).toEqual([
+      { message: 'bad', code: 'UNEXPECTED_TOKEN', severity: 8, startLineNumber: 2, startColumn: 8, endLineNumber: 2, endColumn: 9 },
+    ]);
   });
 
   it('clears the markers of a file that has none now, and everything when the effect is cleaned up', () => {
@@ -58,7 +96,12 @@ describe('the diagnostics of the project as markers (LNG-015)', () => {
 
   it('keeps a position inside its file and gives a one-character range when the front end gave no extent', () => {
     const { monaco, set } = fakeMonaco(files);
-    applyProjectMarkers(monaco, 'live', [diagnostic({ file: 'src/main.st', line: 99, column: 99 }), diagnostic({ line: 2, column: 3 })], 'src/main.st');
+    applyProjectMarkers(
+      monaco,
+      'live',
+      [diagnostic({ file: 'src/main.st', line: 99, column: 99 }), diagnostic({ line: 2, column: 3 })],
+      'src/main.st',
+    );
     expect(set.get('live:/3/file:src/main.st')).toEqual([
       { message: 'bad', severity: 8, startLineNumber: 4, startColumn: 1, endLineNumber: 4, endColumn: 1 },
       { message: 'bad', severity: 8, startLineNumber: 2, startColumn: 3, endLineNumber: 2, endColumn: 4 },

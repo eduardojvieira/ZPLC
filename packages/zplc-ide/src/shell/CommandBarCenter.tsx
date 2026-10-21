@@ -13,7 +13,14 @@ import { useShellLayout } from '../store/useShellLayout';
 import { IconButton, MenuButton } from '../ui';
 
 /** What the bar shows only above the compact width, and the compact shell offers here instead. */
-const OVERFLOW: readonly CommandId[] = ['project.settings', 'view.themeLight', 'view.themeDark', 'view.themeHighContrast', 'view.themeSystem', 'help.shortcuts'];
+const OVERFLOW: readonly CommandId[] = [
+  'project.settings',
+  'view.themeLight',
+  'view.themeDark',
+  'view.themeHighContrast',
+  'view.themeSystem',
+  'help.shortcuts',
+];
 
 export function CommandBarCenter() {
   const { t } = useT();
@@ -22,10 +29,26 @@ export function CommandBarCenter() {
   return (
     <>
       <div className="flex min-w-0 flex-1 items-center justify-center px-2">
-        <span data-project-name className="truncate text-sm text-[var(--color-surface-200)]">{projectName}</span>
+        <span data-project-name className="truncate text-sm text-[var(--color-surface-200)]">
+          {projectName}
+        </span>
       </div>
-      <IconButton label={withShortcut(t('commandBar.inspector'), 'view.toggleSecondarySidebar')} icon={<PanelRight size={16} />} aria-pressed={inspectorShown} data-toggle-inspector onClick={() => { runCommand('view.toggleSecondarySidebar'); }} />
-      <IconButton label={withShortcut(t('commandBar.palette'), 'view.commandPalette')} icon={<Command size={16} />} onClick={() => { runCommand('view.commandPalette'); }} />
+      <IconButton
+        label={withShortcut(t('commandBar.inspector'), 'view.toggleSecondarySidebar')}
+        icon={<PanelRight size={16} />}
+        aria-pressed={inspectorShown}
+        data-toggle-inspector
+        onClick={() => {
+          runCommand('view.toggleSecondarySidebar');
+        }}
+      />
+      <IconButton
+        label={withShortcut(t('commandBar.palette'), 'view.commandPalette')}
+        icon={<Command size={16} />}
+        onClick={() => {
+          runCommand('view.commandPalette');
+        }}
+      />
       <MenuButton
         label={t('commandBar.more')}
         variant="ghost"
@@ -37,7 +60,9 @@ export function CommandBarCenter() {
           label: t(commandById(id).titleKey),
           shortcut: shortcutText(id) ?? undefined,
           separatorBefore: index === 1 || id === 'help.shortcuts',
-          onSelect: () => { runCommand(id); },
+          onSelect: () => {
+            runCommand(id);
+          },
         }))}
       >
         <Ellipsis size={16} aria-hidden="true" />

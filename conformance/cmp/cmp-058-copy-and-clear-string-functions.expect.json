@@ -6,11 +6,11 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 5},
-    {"at": "%QX8.0", "type": "BOOL", "value": true},
-    {"at": "%QW1", "type": "INT", "value": 0},
-    {"at": "%QW2", "type": "INT", "value": 3},
-    {"at": "%QX8.1", "type": "BOOL", "value": true},
-    {"at": "%QW3", "type": "INT", "value": 5}
+    { "at": "%QW0", "type": "INT", "value": 5 },
+    { "at": "%QX8.0", "type": "BOOL", "value": true },
+    { "at": "%QW1", "type": "INT", "value": 0 },
+    { "at": "%QW2", "type": "INT", "value": 3 },
+    { "at": "%QX8.1", "type": "BOOL", "value": true },
+    { "at": "%QW3", "type": "INT", "value": 5 }
   ]
 }

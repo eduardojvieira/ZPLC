@@ -86,24 +86,13 @@ const sidebars = {
           type: 'category',
           label: 'Functions and function blocks',
           collapsed: true,
-          items: [
-            'reference/functions',
-            'reference/function-blocks',
-            'languages/stdlib',
-            'runtime/stdlib',
-          ],
+          items: ['reference/functions', 'reference/function-blocks', 'languages/stdlib', 'runtime/stdlib'],
         },
         {
           type: 'category',
           label: 'Projects and tools',
           collapsed: true,
-          items: [
-            'reference/project-file',
-            'reference/scenario-file',
-            'reference/cli',
-            'reference/mcp',
-            'reference/diagnostic-codes',
-          ],
+          items: ['reference/project-file', 'reference/scenario-file', 'reference/cli', 'reference/mcp', 'reference/diagnostic-codes'],
         },
         {
           type: 'category',
@@ -146,14 +135,7 @@ const sidebars = {
           type: 'category',
           label: 'ZPLC application',
           collapsed: true,
-          items: [
-            'ide/index',
-            'ide/overview',
-            'ide/features',
-            'ide/editors',
-            'ide/compiler',
-            'ide/browser',
-          ],
+          items: ['ide/index', 'ide/overview', 'ide/features', 'ide/editors', 'ide/compiler', 'ide/browser'],
         },
         'languages/index',
         {

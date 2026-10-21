@@ -30,9 +30,7 @@ export function consumeSerialConsoleChunk(remainder: string, chunk: string): Ser
   const combined = `${remainder}${chunk}`;
   const parts = combined.split(/\r?\n/);
   const nextRemainder = parts.pop() ?? '';
-  const lines = parts
-    .map(normalizeLine)
-    .filter((line): line is string => line !== null);
+  const lines = parts.map(normalizeLine).filter((line): line is string => line !== null);
 
   return {
     lines,

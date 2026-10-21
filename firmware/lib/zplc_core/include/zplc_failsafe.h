@@ -80,9 +80,9 @@ typedef enum {
 typedef struct zplc_fault_record {
   uint32_t magic;
   uint16_t version;
-  uint8_t kind;      /**< zplc_fault_kind_t */
-  uint8_t reason;    /**< a processor fault: the kernel's fatal-error reason; a scheduler fault: zplc_sched_fault_reason_t */
-  uint16_t task_id;  /**< the task a scheduler fault belongs to */
+  uint8_t kind;     /**< zplc_fault_kind_t */
+  uint8_t reason;   /**< a processor fault: the kernel's fatal-error reason; a scheduler fault: zplc_sched_fault_reason_t */
+  uint16_t task_id; /**< the task a scheduler fault belongs to */
   uint16_t reserved;
   uint32_t pc;       /**< the program counter of the faulting instruction, when the processor gave it */
   uint32_t sequence; /**< records written since the RAM was last initialised */
@@ -92,8 +92,8 @@ typedef struct zplc_fault_record {
 /**
  * @brief Fill a record. The checksum is computed; nothing else is touched.
  */
-void zplc_fault_record_make(zplc_fault_record_t *record, zplc_fault_kind_t kind, uint8_t reason, uint16_t task_id,
-                            uint32_t pc, uint32_t sequence);
+void zplc_fault_record_make(zplc_fault_record_t *record, zplc_fault_kind_t kind, uint8_t reason, uint16_t task_id, uint32_t pc,
+                            uint32_t sequence);
 
 /** @brief 1 when the record is whole, is ours and names a kind; 0 for RAM that holds anything else. */
 int zplc_fault_record_valid(const zplc_fault_record_t *record);
@@ -136,8 +136,8 @@ int zplc_reset_may_run(zplc_reset_cause_t cause);
 
 /** @brief What the profile's watchdog does while the runtime is in a state. */
 typedef enum {
-  ZPLC_WDT_DISARM = 0, /**< stop the watchdog (the hardware can) */
-  ZPLC_WDT_FEED = 1,   /**< keep it fed from the control path, so that the wait does not reset the board */
+  ZPLC_WDT_DISARM = 0,    /**< stop the watchdog (the hardware can) */
+  ZPLC_WDT_FEED = 1,      /**< keep it fed from the control path, so that the wait does not reset the board */
   ZPLC_WDT_LET_EXPIRE = 2 /**< leave it armed and unfed: it resets the board (a latched fault) */
 } zplc_wdt_action_t;
 
@@ -149,9 +149,9 @@ typedef enum {
 } zplc_wdt_state_t;
 
 typedef struct {
-  uint8_t stop;   /**< ZPLC_WDT_DISARM or ZPLC_WDT_FEED */
-  uint8_t pause;  /**< ZPLC_WDT_DISARM or ZPLC_WDT_FEED */
-  uint8_t fault;  /**< ZPLC_WDT_DISARM or ZPLC_WDT_LET_EXPIRE */
+  uint8_t stop;  /**< ZPLC_WDT_DISARM or ZPLC_WDT_FEED */
+  uint8_t pause; /**< ZPLC_WDT_DISARM or ZPLC_WDT_FEED */
+  uint8_t fault; /**< ZPLC_WDT_DISARM or ZPLC_WDT_LET_EXPIRE */
 } zplc_wdt_policy_t;
 
 /**
@@ -197,10 +197,10 @@ uint32_t zplc_wdt_mwdt_ticks_for(uint32_t timeout_ms);
 /** @brief What the previous run and the reset left, read once at boot. */
 typedef struct {
   zplc_reset_cause_t cause;
-  uint32_t raw_bits;        /**< what the part reported, in the platform's own bits */
-  uint32_t supported_bits;  /**< what the part can report; 0 when it cannot say */
-  uint8_t reported;         /**< the part answered when asked for a cause */
-  uint8_t has_fault;        /**< a valid record was found: fault is the fault of the previous run */
+  uint32_t raw_bits;       /**< what the part reported, in the platform's own bits */
+  uint32_t supported_bits; /**< what the part can report; 0 when it cannot say */
+  uint8_t reported;        /**< the part answered when asked for a cause */
+  uint8_t has_fault;       /**< a valid record was found: fault is the fault of the previous run */
   zplc_fault_record_t fault;
 } zplc_reset_report_t;
 

@@ -1,19 +1,10 @@
 {
   "requirement": "CMP-041",
   "title": "a block that extends a FINAL function block is rejected",
-  "matrix": [
-    "pous.extends-override-final-super"
-  ],
+  "matrix": ["pous.extends-override-final-super"],
   "note": "IEC 61131-3 ed. 3, FINAL: a function block declared FINAL cannot be extended; the diagnostic is at the block that extends it",
   "build": "fails",
-  "lines": [
-    4
-  ],
-  "codes": [
-    "INVALID_INHERITANCE"
-  ],
-  "messageIncludes": [
-    "Sealed",
-    "FINAL"
-  ]
+  "lines": [4],
+  "codes": ["INVALID_INHERITANCE"],
+  "messageIncludes": ["Sealed", "FINAL"]
 }

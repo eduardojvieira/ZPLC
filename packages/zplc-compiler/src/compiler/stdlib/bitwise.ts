@@ -120,43 +120,43 @@ export const ROL_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; ROL(IN, N) - Rotate left`);
-        
+
         // Emit arguments; a BYTE or WORD rotates within its own width
         const width = operandWidth(ctx, args[0]);
-        emitBitOperand(ctx, args[0], width);  // IN
-        ctx.emitExpression(args[1]);  // N
-        
+        emitBitOperand(ctx, args[0], width); // IN
+        ctx.emitExpression(args[1]); // N
+
         // Stack: [IN, N]
         // We need: (IN << N) | (IN >> (width - N))
-        
+
         // Mask N to 0..width-1
         ctx.emit(`    PUSH8 ${width - 1}`);
-        ctx.emit(`    AND`);          // N = N & (width - 1)
-        
+        ctx.emit(`    AND`); // N = N & (width - 1)
+
         // Stack: [IN, N_masked]
-        ctx.emit(`    DUP`);          // [IN, N, N]
-        ctx.emit(`    ROT`);          // [N, N, IN]
-        ctx.emit(`    DUP`);          // [N, N, IN, IN]
-        ctx.emit(`    ROT`);          // [N, IN, IN, N]
-        
+        ctx.emit(`    DUP`); // [IN, N, N]
+        ctx.emit(`    ROT`); // [N, N, IN]
+        ctx.emit(`    DUP`); // [N, N, IN, IN]
+        ctx.emit(`    ROT`); // [N, IN, IN, N]
+
         // Left shift: IN << N
-        ctx.emit(`    SHL`);          // [N, IN, IN<<N]
-        
+        ctx.emit(`    SHL`); // [N, IN, IN<<N]
+
         // Prepare for right shift
-        ctx.emit(`    ROT`);          // [IN, IN<<N, N]
+        ctx.emit(`    ROT`); // [IN, IN<<N, N]
         ctx.emit(`    PUSH8 ${width}`);
         ctx.emit(`    SWAP`);
-        ctx.emit(`    SUB`);          // [IN, IN<<N, width-N]
-        
-        ctx.emit(`    ROT`);          // [IN<<N, width-N, IN]
-        ctx.emit(`    SWAP`);         // [IN<<N, IN, width-N]
-        
+        ctx.emit(`    SUB`); // [IN, IN<<N, width-N]
+
+        ctx.emit(`    ROT`); // [IN<<N, width-N, IN]
+        ctx.emit(`    SWAP`); // [IN<<N, IN, width-N]
+
         // Right shift: IN >> (width - N)
-        ctx.emit(`    SHR`);          // [IN<<N, IN>>(width-N)]
-        
+        ctx.emit(`    SHR`); // [IN<<N, IN>>(width-N)]
+
         // Combine with OR
-        ctx.emit(`    OR`);           // [result]
-        emitCut(ctx, width);          // the bits shifted past the declared width are not part of it
+        ctx.emit(`    OR`); // [result]
+        emitCut(ctx, width); // the bits shifted past the declared width are not part of it
     },
 };
 
@@ -193,43 +193,43 @@ export const ROR_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; ROR(IN, N) - Rotate right`);
-        
+
         // Emit arguments; a BYTE or WORD rotates within its own width
         const width = operandWidth(ctx, args[0]);
-        emitBitOperand(ctx, args[0], width);  // IN
-        ctx.emitExpression(args[1]);  // N
-        
+        emitBitOperand(ctx, args[0], width); // IN
+        ctx.emitExpression(args[1]); // N
+
         // Stack: [IN, N]
         // We need: (IN >> N) | (IN << (width - N))
-        
+
         // Mask N to 0..width-1
         ctx.emit(`    PUSH8 ${width - 1}`);
-        ctx.emit(`    AND`);          // N = N & (width - 1)
-        
+        ctx.emit(`    AND`); // N = N & (width - 1)
+
         // Stack: [IN, N_masked]
-        ctx.emit(`    DUP`);          // [IN, N, N]
-        ctx.emit(`    ROT`);          // [N, N, IN]
-        ctx.emit(`    DUP`);          // [N, N, IN, IN]
-        ctx.emit(`    ROT`);          // [N, IN, IN, N]
-        
+        ctx.emit(`    DUP`); // [IN, N, N]
+        ctx.emit(`    ROT`); // [N, N, IN]
+        ctx.emit(`    DUP`); // [N, N, IN, IN]
+        ctx.emit(`    ROT`); // [N, IN, IN, N]
+
         // Right shift: IN >> N
-        ctx.emit(`    SHR`);          // [N, IN, IN>>N]
-        
+        ctx.emit(`    SHR`); // [N, IN, IN>>N]
+
         // Prepare for left shift
-        ctx.emit(`    ROT`);          // [IN, IN>>N, N]
+        ctx.emit(`    ROT`); // [IN, IN>>N, N]
         ctx.emit(`    PUSH8 ${width}`);
         ctx.emit(`    SWAP`);
-        ctx.emit(`    SUB`);          // [IN, IN>>N, width-N]
-        
-        ctx.emit(`    ROT`);          // [IN>>N, width-N, IN]
-        ctx.emit(`    SWAP`);         // [IN>>N, IN, width-N]
-        
+        ctx.emit(`    SUB`); // [IN, IN>>N, width-N]
+
+        ctx.emit(`    ROT`); // [IN>>N, width-N, IN]
+        ctx.emit(`    SWAP`); // [IN>>N, IN, width-N]
+
         // Left shift: IN << (width - N)
-        ctx.emit(`    SHL`);          // [IN>>N, IN<<(width-N)]
-        
+        ctx.emit(`    SHL`); // [IN>>N, IN<<(width-N)]
+
         // Combine with OR
-        ctx.emit(`    OR`);           // [result]
-        emitCut(ctx, width);          // the bits shifted past the declared width are not part of it
+        ctx.emit(`    OR`); // [result]
+        emitCut(ctx, width); // the bits shifted past the declared width are not part of it
     },
 };
 
@@ -265,10 +265,10 @@ export const SHL_FN: FunctionDef = {
 
         ctx.emit(`    ; SHL(IN, N)`);
         const width = operandWidth(ctx, args[0]);
-        emitBitOperand(ctx, args[0], width);  // IN
-        ctx.emitExpression(args[1]);  // N
+        emitBitOperand(ctx, args[0], width); // IN
+        ctx.emitExpression(args[1]); // N
         ctx.emit(`    SHL`);
-        emitCut(ctx, width);          // a BYTE or WORD drops the bits shifted past its width
+        emitCut(ctx, width); // a BYTE or WORD drops the bits shifted past its width
     },
 };
 
@@ -303,8 +303,8 @@ export const SHR_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; SHR(IN, N)`);
-        emitBitOperand(ctx, args[0], operandWidth(ctx, args[0]));  // IN
-        ctx.emitExpression(args[1]);  // N
+        emitBitOperand(ctx, args[0], operandWidth(ctx, args[0])); // IN
+        ctx.emitExpression(args[1]); // N
         ctx.emit(`    SHR`);
     },
 };
@@ -332,8 +332,8 @@ export const AND_WORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; AND_WORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    AND`);
         // Mask to 16 bits
         ctx.emit(`    PUSH16 0xFFFF`);
@@ -364,8 +364,8 @@ export const OR_WORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; OR_WORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    OR`);
         // Mask to 16 bits
         ctx.emit(`    PUSH16 0xFFFF`);
@@ -396,8 +396,8 @@ export const XOR_WORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; XOR_WORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    XOR`);
         // Mask to 16 bits
         ctx.emit(`    PUSH16 0xFFFF`);
@@ -428,7 +428,7 @@ export const NOT_WORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; NOT_WORD(IN)`);
-        ctx.emitExpression(args[0]);  // IN
+        ctx.emitExpression(args[0]); // IN
         ctx.emit(`    NOT`);
         // Mask to 16 bits
         ctx.emit(`    PUSH16 0xFFFF`);
@@ -458,8 +458,8 @@ export const AND_DWORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; AND_DWORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    AND`);
     },
 };
@@ -486,8 +486,8 @@ export const OR_DWORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; OR_DWORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    OR`);
     },
 };
@@ -514,8 +514,8 @@ export const XOR_DWORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; XOR_DWORD(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1
-        ctx.emitExpression(args[1]);  // IN2
+        ctx.emitExpression(args[0]); // IN1
+        ctx.emitExpression(args[1]); // IN2
         ctx.emit(`    XOR`);
     },
 };
@@ -542,7 +542,7 @@ export const NOT_DWORD_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; NOT_DWORD(IN)`);
-        ctx.emitExpression(args[0]);  // IN
+        ctx.emitExpression(args[0]); // IN
         ctx.emit(`    NOT`);
     },
 };

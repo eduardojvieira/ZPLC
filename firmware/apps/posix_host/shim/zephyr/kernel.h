@@ -57,8 +57,8 @@ struct k_thread {
 };
 typedef void (*k_thread_entry_t)(void *, void *, void *);
 
-int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry,
-                    void *a, void *b, void *c, int priority, uint32_t options, int delay);
+int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry, void *a, void *b, void *c, int priority,
+                    uint32_t options, int delay);
 int k_thread_name_set(struct k_thread *thread, const char *name);
 
 /* The monotonic clock of the machine, in milliseconds: the time limits of a request are real time. */

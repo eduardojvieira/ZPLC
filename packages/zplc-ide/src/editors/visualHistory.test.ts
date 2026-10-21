@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  GESTURE_COALESCE_MS, recordVisualSnapshot, redoVisualSnapshot, undoVisualSnapshot, VISUAL_HISTORY_LIMIT, type VisualHistories,
+  GESTURE_COALESCE_MS,
+  recordVisualSnapshot,
+  redoVisualSnapshot,
+  undoVisualSnapshot,
+  VISUAL_HISTORY_LIMIT,
+  type VisualHistories,
 } from './visualHistory';
 
 describe('visual snapshot history (LNG-010)', () => {
@@ -86,8 +91,16 @@ describe('visual snapshot history (LNG-010)', () => {
 
   it('edits of one field that follow one another are one entry, and another field is another', () => {
     const at = 10_000;
-    let histories = recordVisualSnapshot(new Map(), key, 'a', 'ab', { coalesce: 'name:s1', at, selection: { before: ['step:s1'], after: ['step:s1'] } }).histories;
-    histories = recordVisualSnapshot(histories, key, 'ab', 'abc', { coalesce: 'name:s1', at: at + 200, selection: { before: ['step:s1'], after: ['step:s1'] } }).histories;
+    let histories = recordVisualSnapshot(new Map(), key, 'a', 'ab', {
+      coalesce: 'name:s1',
+      at,
+      selection: { before: ['step:s1'], after: ['step:s1'] },
+    }).histories;
+    histories = recordVisualSnapshot(histories, key, 'ab', 'abc', {
+      coalesce: 'name:s1',
+      at: at + 200,
+      selection: { before: ['step:s1'], after: ['step:s1'] },
+    }).histories;
     histories = recordVisualSnapshot(histories, key, 'abc', 'abcd', { coalesce: 'name:s1', at: at + 400 }).histories;
     expect(histories.get(key)?.snapshots).toEqual(['a', 'abcd']);
     histories = recordVisualSnapshot(histories, key, 'abcd', 'abcd!', { coalesce: 'condition:t1', at: at + 500 }).histories;

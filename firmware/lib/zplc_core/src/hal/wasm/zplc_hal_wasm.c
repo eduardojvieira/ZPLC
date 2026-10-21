@@ -54,16 +54,20 @@ ZPLC_HOST_IMPORT("log") extern void zplc_host_log(const char *line);
 /* A host build: no module, so no host. The persistence of such a build is "not available". */
 static uint32_t zplc_host_clock_ms(void) { return 0U; }
 static int32_t zplc_host_persist_save(const char *key, const void *data, uint32_t length) {
-    (void)key; (void)data; (void)length;
-    return ZPLC_HAL_NOT_IMPL;
+  (void)key;
+  (void)data;
+  (void)length;
+  return ZPLC_HAL_NOT_IMPL;
 }
 static int32_t zplc_host_persist_load(const char *key, void *data, uint32_t length) {
-    (void)key; (void)data; (void)length;
-    return ZPLC_HAL_NOT_IMPL;
+  (void)key;
+  (void)data;
+  (void)length;
+  return ZPLC_HAL_NOT_IMPL;
 }
 static int32_t zplc_host_persist_delete(const char *key) {
-    (void)key;
-    return ZPLC_HAL_NOT_IMPL;
+  (void)key;
+  return ZPLC_HAL_NOT_IMPL;
 }
 static void zplc_host_log(const char *line) { (void)line; }
 
@@ -78,16 +82,14 @@ static uint32_t tick_override_ms = 0U;
 
 /* The logical clock of a scenario: the session sets it for the length of a scenario step and clears it after, as it
  * does on the POSIX port (zplc_hal_posix.h). */
-void zplc_hal_posix_set_tick_override(uint32_t tick_ms)
-{
-    tick_override_ms = tick_ms;
-    tick_override_active = 1;
+void zplc_hal_posix_set_tick_override(uint32_t tick_ms) {
+  tick_override_ms = tick_ms;
+  tick_override_active = 1;
 }
 
-void zplc_hal_posix_clear_tick_override(void)
-{
-    tick_override_active = 0;
-    tick_override_ms = 0U;
+void zplc_hal_posix_clear_tick_override(void) {
+  tick_override_active = 0;
+  tick_override_ms = 0U;
 }
 
 /* ============================================================================
@@ -97,12 +99,11 @@ void zplc_hal_posix_clear_tick_override(void)
 /**
  * @brief The current tick in milliseconds: the logical clock of a scenario, or the host's clock.
  */
-uint32_t zplc_hal_tick(void)
-{
-    if (tick_override_active != 0) {
-        return tick_override_ms;
-    }
-    return zplc_host_clock_ms();
+uint32_t zplc_hal_tick(void) {
+  if (tick_override_active != 0) {
+    return tick_override_ms;
+  }
+  return zplc_host_clock_ms();
 }
 
 /* A sleep that never sees the host's clock move gives up after this many reads, so that a host whose clock stands still
@@ -118,17 +119,16 @@ uint32_t zplc_hal_tick(void)
  * itself never sleeps: the host calls it again when the next release is due (zplc_wasm_poll_timeout_ms). The sleep is
  * here so that the port keeps the contract of the HAL, which the timing self-test holds it to (IO-013).
  */
-void zplc_hal_sleep(uint32_t ms)
-{
-    const uint32_t start = zplc_host_clock_ms();
-    uint32_t seen = start;
-    uint32_t idle = 0U;
+void zplc_hal_sleep(uint32_t ms) {
+  const uint32_t start = zplc_host_clock_ms();
+  uint32_t seen = start;
+  uint32_t idle = 0U;
 
-    while ((uint32_t)(seen - start) < ms && idle < ZPLC_WASM_SLEEP_IDLE_READS) {
-        const uint32_t now = zplc_host_clock_ms();
-        idle = (now == seen) ? idle + 1U : 0U;
-        seen = now;
-    }
+  while ((uint32_t)(seen - start) < ms && idle < ZPLC_WASM_SLEEP_IDLE_READS) {
+    const uint32_t now = zplc_host_clock_ms();
+    idle = (now == seen) ? idle + 1U : 0U;
+    seen = now;
+  }
 }
 
 /* ============================================================================
@@ -137,93 +137,82 @@ void zplc_hal_sleep(uint32_t ms)
  * There are no pins in a browser: the I/O table is empty and these answer "not available", as on the POSIX port.
  */
 
-zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value)
-{
-    (void)channel;
-    if (value == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
+zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
+  (void)channel;
+  if (value == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  *value = 0;
+  return ZPLC_HAL_NOT_IMPL;
+}
+
+zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
+  (void)channel;
+  (void)value;
+  return ZPLC_HAL_NOT_IMPL;
+}
+
+zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
+  (void)channel;
+  if (value != NULL) {
     *value = 0;
-    return ZPLC_HAL_NOT_IMPL;
+  }
+  return ZPLC_HAL_NOT_IMPL;
 }
 
-zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value)
-{
-    (void)channel;
-    (void)value;
-    return ZPLC_HAL_NOT_IMPL;
-}
-
-zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value)
-{
-    (void)channel;
-    if (value != NULL) {
-        *value = 0;
-    }
-    return ZPLC_HAL_NOT_IMPL;
-}
-
-zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value)
-{
-    (void)channel;
-    (void)value;
-    return ZPLC_HAL_NOT_IMPL;
+zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
+  (void)channel;
+  (void)value;
+  return ZPLC_HAL_NOT_IMPL;
 }
 
 /* ============================================================================
  * Persistence Functions
  * ============================================================================ */
 
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len)
-{
-    if (key == NULL || data == NULL || len == 0U || len > 0xFFFFFFFFU) {
-        return ZPLC_HAL_ERROR;
-    }
-    return (zplc_hal_result_t)zplc_host_persist_save(key, data, (uint32_t)len);
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
+  if (key == NULL || data == NULL || len == 0U || len > 0xFFFFFFFFU) {
+    return ZPLC_HAL_ERROR;
+  }
+  return (zplc_hal_result_t)zplc_host_persist_save(key, data, (uint32_t)len);
 }
 
-zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len)
-{
-    if (key == NULL || data == NULL || len == 0U || len > 0xFFFFFFFFU) {
-        return ZPLC_HAL_ERROR;
-    }
-    return (zplc_hal_result_t)zplc_host_persist_load(key, data, (uint32_t)len);
+zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len) {
+  if (key == NULL || data == NULL || len == 0U || len > 0xFFFFFFFFU) {
+    return ZPLC_HAL_ERROR;
+  }
+  return (zplc_hal_result_t)zplc_host_persist_load(key, data, (uint32_t)len);
 }
 
-zplc_hal_result_t zplc_hal_persist_delete(const char *key)
-{
-    if (key == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    return (zplc_hal_result_t)zplc_host_persist_delete(key);
+zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
+  if (key == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  return (zplc_hal_result_t)zplc_host_persist_delete(key);
 }
 
 /* ============================================================================
  * Synchronization Functions
  * ============================================================================ */
 
-zplc_hal_mutex_t zplc_hal_mutex_create(void)
-{
-    /* One thread runs the module, so a lock never waits: the handle is a token. */
-    return (zplc_hal_mutex_t)1;
+zplc_hal_mutex_t zplc_hal_mutex_create(void) {
+  /* One thread runs the module, so a lock never waits: the handle is a token. */
+  return (zplc_hal_mutex_t)1;
 }
 
-zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex)
-{
-    (void)mutex;
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
+  (void)mutex;
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex)
-{
-    (void)mutex;
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
+  (void)mutex;
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex)
-{
-    /* The handle of zplc_hal_mutex_create() is a token: there is nothing to release. */
-    return mutex != NULL ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  /* The handle of zplc_hal_mutex_create() is a token: there is nothing to release. */
+  return mutex != NULL ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
 }
 
 /* ============================================================================
@@ -233,17 +222,13 @@ zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex)
  * so a program that uses one gets STATUS 10 (UNAVAILABLE) from the dispatcher of the core.
  */
 
-zplc_hal_result_t zplc_hal_net_init(void)
-{
-    return ZPLC_HAL_NOT_IMPL;
-}
+zplc_hal_result_t zplc_hal_net_init(void) { return ZPLC_HAL_NOT_IMPL; }
 
-zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
-{
-    if (buf != NULL && len > 0U) {
-        buf[0] = '\0';
-    }
-    return ZPLC_HAL_NOT_IMPL;
+zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
+  if (buf != NULL && len > 0U) {
+    buf[0] = '\0';
+  }
+  return ZPLC_HAL_NOT_IMPL;
 }
 
 /* ============================================================================
@@ -253,32 +238,27 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
 /**
  * @brief Format one line and hand it to the host. A line longer than the buffer is cut.
  */
-void zplc_hal_log(const char *fmt, ...)
-{
-    char line[256];
-    va_list args;
+void zplc_hal_log(const char *fmt, ...) {
+  char line[256];
+  va_list args;
 
-    va_start(args, fmt);
-    (void)vsnprintf(line, sizeof(line), fmt, args);
-    va_end(args);
+  va_start(args, fmt);
+  (void)vsnprintf(line, sizeof(line), fmt, args);
+  va_end(args);
 
-    zplc_host_log(line);
+  zplc_host_log(line);
 }
 
 /* ============================================================================
  * System Initialization
  * ============================================================================ */
 
-zplc_hal_result_t zplc_hal_init(void)
-{
-    zplc_hal_posix_clear_tick_override();
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_init(void) {
+  zplc_hal_posix_clear_tick_override();
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_shutdown(void)
-{
-    return ZPLC_HAL_OK;
-}
+zplc_hal_result_t zplc_hal_shutdown(void) { return ZPLC_HAL_OK; }
 
 /* ============================================================================
  * I/O Table (IO-001, IO-007)
@@ -287,11 +267,8 @@ zplc_hal_result_t zplc_hal_shutdown(void)
  * channel. The accessors are the same on every port.
  */
 
-static const zplc_io_table_t zplc_io_empty_description = {
-    "wasm", 0U, 0U, 0U, 0U, NULL};
+static const zplc_io_table_t zplc_io_empty_description = {"wasm", 0U, 0U, 0U, 0U, NULL};
 
-const zplc_io_table_t *zplc_io_table(void) {
-  return &zplc_io_empty_description;
-}
+const zplc_io_table_t *zplc_io_table(void) { return &zplc_io_empty_description; }
 
 #include "../common/zplc_io_common.inc"

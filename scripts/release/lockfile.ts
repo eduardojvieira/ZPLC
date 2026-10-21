@@ -82,7 +82,10 @@ const WORKSPACE_PREFIX = 'workspace:';
 
 export function parseLockfile(text: string): Lockfile {
   const raw = JSON.parse(stripTrailingCommas(text)) as {
-    workspaces?: Record<string, { name?: string; version?: string; dependencies?: Record<string, string>; devDependencies?: Record<string, string> }>;
+    workspaces?: Record<
+      string,
+      { name?: string; version?: string; dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
+    >;
     packages?: Record<string, unknown[]>;
   };
   if (!raw.packages || !raw.workspaces) throw new Error('bun.lock: no "packages" or "workspaces" section');
@@ -143,7 +146,11 @@ export interface ClosureOptions {
  * Every package that `names` need at run time when resolved from `chain`: theirs, and the workspace packages among
  * them. Optional and (non-optional) peer dependencies count; a name the lockfile cannot resolve is reported.
  */
-export function closureFrom(lock: Lockfile, chain: readonly string[], names: readonly string[]): { packages: LockPackage[]; unresolved: string[] } {
+export function closureFrom(
+  lock: Lockfile,
+  chain: readonly string[],
+  names: readonly string[],
+): { packages: LockPackage[]; unresolved: string[] } {
   const seen = new Map<string, LockPackage>();
   const unresolved = new Set<string>();
   const queue: Array<{ chain: readonly string[]; names: readonly string[] }> = [{ chain, names }];
@@ -151,7 +158,10 @@ export function closureFrom(lock: Lockfile, chain: readonly string[], names: rea
     const next = queue.pop()!;
     for (const name of next.names) {
       const found = resolveDependency(lock, next.chain, name);
-      if (!found) { unresolved.add(`${next.chain.join('/')} -> ${name}`); continue; }
+      if (!found) {
+        unresolved.add(`${next.chain.join('/')} -> ${name}`);
+        continue;
+      }
       if (seen.has(found.key)) continue;
       seen.set(found.key, found);
       if (found.workspacePath !== undefined) {
@@ -166,10 +176,18 @@ export function closureFrom(lock: Lockfile, chain: readonly string[], names: rea
 }
 
 /** Everything a workspace package needs at run time: its dependencies and theirs. */
-export function productionClosure(lock: Lockfile, workspacePath: string, options: ClosureOptions = {}): { packages: LockPackage[]; unresolved: string[] } {
+export function productionClosure(
+  lock: Lockfile,
+  workspacePath: string,
+  options: ClosureOptions = {},
+): { packages: LockPackage[]; unresolved: string[] } {
   const root = lock.workspaces.get(workspacePath);
   if (!root) throw new Error(`bun.lock has no workspace "${workspacePath}"`);
-  return closureFrom(lock, [root.name], [...Object.keys(root.dependencies), ...(options.includeDev ? Object.keys(root.devDependencies) : [])]);
+  return closureFrom(
+    lock,
+    [root.name],
+    [...Object.keys(root.dependencies), ...(options.includeDev ? Object.keys(root.devDependencies) : [])],
+  );
 }
 
 const storeListings = new Map<string, string[]>();
@@ -196,12 +214,14 @@ export function locateInstalled(repoRoot: string, lock: Lockfile, entry: LockPac
   const nested = entry.chain.join('/node_modules/');
   const candidates: string[] = [];
   const owner = [...lock.workspaces.entries()].find(([, workspace]) => workspace.name === entry.chain[0]);
-  if (owner && entry.chain.length > 1) candidates.push(join(repoRoot, owner[0], 'node_modules', entry.chain.slice(1).join('/node_modules/')));
+  if (owner && entry.chain.length > 1)
+    candidates.push(join(repoRoot, owner[0], 'node_modules', entry.chain.slice(1).join('/node_modules/')));
   for (const base of bases) candidates.push(join(base, 'node_modules', nested));
   for (const base of bases) candidates.push(join(base, 'node_modules', entry.name));
   const prefix = `${entry.name.replace('/', '+')}@${entry.version}`;
   for (const folder of storeFolders(repoRoot)) {
-    if (folder === prefix || folder.startsWith(`${prefix}+`)) candidates.push(join(repoRoot, 'node_modules', '.bun', folder, 'node_modules', entry.name));
+    if (folder === prefix || folder.startsWith(`${prefix}+`))
+      candidates.push(join(repoRoot, 'node_modules', '.bun', folder, 'node_modules', entry.name));
   }
   for (const directory of candidates) {
     const manifest = join(directory, 'package.json');
@@ -209,7 +229,9 @@ export function locateInstalled(repoRoot: string, lock: Lockfile, entry: LockPac
     try {
       const parsed = JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string; version?: string };
       if (parsed.name === entry.name && parsed.version === entry.version) return directory;
-    } catch { /* an unreadable manifest is not this package */ }
+    } catch {
+      /* an unreadable manifest is not this package */
+    }
   }
   return undefined;
 }

@@ -17,15 +17,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                      \
-  do {                                                                        \
-    test_count++;                                                             \
-    if (!(cond)) {                                                            \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                 \
-      fail_count++;                                                           \
-    } else {                                                                  \
-      printf("PASS: %s\n", msg);                                              \
-    }                                                                         \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static int create_fails;
@@ -33,9 +33,7 @@ static zplc_hal_result_t lock_result = ZPLC_HAL_OK;
 static int locks_held;
 static int token;
 
-zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  return create_fails != 0 ? NULL : (zplc_hal_mutex_t)&token;
-}
+zplc_hal_mutex_t zplc_hal_mutex_create(void) { return create_fails != 0 ? NULL : (zplc_hal_mutex_t)&token; }
 
 zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
   if (mutex == NULL) {
@@ -47,9 +45,7 @@ zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
   return lock_result;
 }
 
-zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
-  return mutex == NULL ? ZPLC_HAL_ERROR : ZPLC_HAL_OK;
-}
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) { return mutex == NULL ? ZPLC_HAL_ERROR : ZPLC_HAL_OK; }
 
 zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
   if (mutex == NULL) {

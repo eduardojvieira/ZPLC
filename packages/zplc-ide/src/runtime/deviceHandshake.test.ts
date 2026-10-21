@@ -26,7 +26,12 @@ const info = {
 };
 
 /** A header and one code segment holding the given code (HALT by default: it touches no process image). */
-function artifact(major = 1, minor = 0, draft: number = ZPLC_CONSTANTS.DRAFT_COUNTER, code: number[] = [ZPLC_CONTRACT.Opcode.HALT]): Uint8Array {
+function artifact(
+  major = 1,
+  minor = 0,
+  draft: number = ZPLC_CONSTANTS.DRAFT_COUNTER,
+  code: number[] = [ZPLC_CONTRACT.Opcode.HALT],
+): Uint8Array {
   const table = ZPLC_CONSTANTS.HEADER_SIZE + ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE;
   const bytes = new Uint8Array(table + code.length);
   const view = new DataView(bytes.buffer);
@@ -73,8 +78,12 @@ describe('the program memory a firmware reports (COM-028)', () => {
   });
 
   it('still refuses a key that is not one of those', () => {
-    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, secret: 1 } })).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
-    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, code_size: -1 } })).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
+    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, secret: 1 } })).toThrow(
+      'ZPLC_DEVICE_HANDSHAKE_INVALID',
+    );
+    expect(() => parseDeviceSystemInfo({ ...info, memory: { ...withCapacity(4096).memory, code_size: -1 } })).toThrow(
+      'ZPLC_DEVICE_HANDSHAKE_INVALID',
+    );
   });
 
   it('refuses a program larger than the device accepts, with both numbers, and accepts one that fits', () => {
@@ -95,7 +104,12 @@ describe('device handshake admission', () => {
   it('rejects non-plain, malformed, oversized and legacy payloads without echoing them', () => {
     const secret = 'sentinel-secret';
     const getter = Object.create(null) as Record<string, unknown>;
-    Object.defineProperty(getter, 'board', { enumerable: true, get: () => { throw new Error(secret); } });
+    Object.defineProperty(getter, 'board', {
+      enumerable: true,
+      get: () => {
+        throw new Error(secret);
+      },
+    });
     for (const payload of [
       { ...info, extra: secret },
       { ...info, board: secret.repeat(20) },
@@ -104,8 +118,22 @@ describe('device handshake admission', () => {
       { ...info, device_protocol_version: undefined },
       getter,
       Object.assign(Object.create({ inherited: true }), info),
-      new Proxy({}, { getPrototypeOf: () => { throw new Error(secret); } }),
-      new Proxy({}, { ownKeys: () => { throw new Error(secret); } }),
+      new Proxy(
+        {},
+        {
+          getPrototypeOf: () => {
+            throw new Error(secret);
+          },
+        },
+      ),
+      new Proxy(
+        {},
+        {
+          ownKeys: () => {
+            throw new Error(secret);
+          },
+        },
+      ),
     ]) {
       expect(() => parseDeviceHandshake(payload)).toThrow(DeviceAdmissionError);
       expect(() => parseDeviceHandshake(payload)).not.toThrow(secret);
@@ -127,7 +155,8 @@ describe('device handshake admission', () => {
       { ...info, memory: { ...info.memory, work_size: 0x1_0000_0000 } },
       { ...info, cpu_freq_mhz: 1_000_001 },
       { ...info, capabilities: { ...info.capabilities, max_tasks: 1025 } },
-    ]) expect(() => parseDeviceSystemInfo(invalid)).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
+    ])
+      expect(() => parseDeviceSystemInfo(invalid)).toThrow('ZPLC_DEVICE_HANDSHAKE_INVALID');
   });
 
   it('returns stable, content-free codes for artifact, protocol, board and ABI denials', () => {
@@ -206,7 +235,7 @@ describe('device handshake: the I/O description of the firmware (IO-004)', () =>
   const identity = getBoardIoIdentity('stm32f746g_disco')!;
   const io = { schema: 1, board_id: identity.boardId, hash: identity.hash, channels: 2, input_bytes: 1, output_bytes: 1 };
   const Op = ZPLC_CONTRACT.Opcode;
-  const storeOutputByte = (byte: number) => [Op.STORE8, 0x1000 + byte & 0xff, (0x1000 + byte) >> 8, Op.HALT];
+  const storeOutputByte = (byte: number) => [Op.STORE8, (0x1000 + byte) & 0xff, (0x1000 + byte) >> 8, Op.HALT];
   const loadInputByte = (byte: number) => [Op.LOAD8, byte & 0xff, byte >> 8, Op.HALT];
 
   it('reads the io object of the handshake and keeps it apart from the cache copy', () => {
@@ -225,7 +254,13 @@ describe('device handshake: the I/O description of the firmware (IO-004)', () =>
 
   it('leaves the system information as it is when the image does not answer `sys io` or answers something else', async () => {
     const system = parseDeviceSystemInfo(info);
-    for (const answer of [async () => { throw new Error('Command timeout'); }, async () => ({ ...io, extra: 1 }), async () => 'ERROR: unknown command']) {
+    for (const answer of [
+      async () => {
+        throw new Error('Command timeout');
+      },
+      async () => ({ ...io, extra: 1 }),
+      async () => 'ERROR: unknown command',
+    ]) {
       expect((await joinDeviceIo(system, answer)).io).toBeUndefined();
     }
   });
@@ -240,12 +275,15 @@ describe('device handshake: the I/O description of the firmware (IO-004)', () =>
       { ...io, board_id: '' },
       'text',
       null,
-    ]) expect(() => parseDeviceHandshake({ ...info, io: bad })).toThrow(DeviceAdmissionError);
+    ])
+      expect(() => parseDeviceHandshake({ ...info, io: bad })).toThrow(DeviceAdmissionError);
   });
 
   it('admits a program that stays on the channels of the board', () => {
     const handshake = parseDeviceHandshake({ ...info, io });
-    expect(validateHardwareDeployAdmission(artifact(1, 0, ZPLC_CONSTANTS.DRAFT_COUNTER, storeOutputByte(0)), 'stm32f746g_disco', handshake)).toEqual(handshake);
+    expect(
+      validateHardwareDeployAdmission(artifact(1, 0, ZPLC_CONSTANTS.DRAFT_COUNTER, storeOutputByte(0)), 'stm32f746g_disco', handshake),
+    ).toEqual(handshake);
   });
 
   it('refuses a program that uses a byte the board has no channel for, naming the board', () => {
@@ -261,7 +299,10 @@ describe('device handshake: the I/O description of the firmware (IO-004)', () =>
   });
 
   it('refuses when the firmware was built from another description than the one Studio holds', () => {
-    const error = refusal(artifact(1, 0, ZPLC_CONSTANTS.DRAFT_COUNTER, loadInputByte(0)), parseDeviceHandshake({ ...info, io: { ...io, hash: '00000000' } }));
+    const error = refusal(
+      artifact(1, 0, ZPLC_CONSTANTS.DRAFT_COUNTER, loadInputByte(0)),
+      parseDeviceHandshake({ ...info, io: { ...io, hash: '00000000' } }),
+    );
     expect(error.code).toBe('ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH');
     expect(error.detail).toContain('00000000');
   });

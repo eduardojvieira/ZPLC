@@ -2,12 +2,29 @@
 // The fixtures are small in-memory projects; the last block runs the rules over the repository itself.
 import { describe, expect, it } from 'bun:test';
 
-import { adoptOffenders, checkIdeStructure, checkRepository, readExceptions, readOffenders, ratchetOffenders, wholeStoreSubscriptions, type LayeringException, type Offender, type SourceModule } from './ide-structure';
+import {
+  adoptOffenders,
+  checkIdeStructure,
+  checkRepository,
+  readExceptions,
+  readOffenders,
+  ratchetOffenders,
+  wholeStoreSubscriptions,
+  type LayeringException,
+  type Offender,
+  type SourceModule,
+} from './ide-structure';
 
 const IDE = 'packages/zplc-ide/';
 const mod = (path: string, text = ''): SourceModule => ({ path: `${IDE}${path}`, text });
 const lines = (count: number): string => `${'export const x = 1;\n'.repeat(count)}`;
-const offender = (file: string, count: number): Offender => ({ file: `${IDE}${file}`, requirement: 'IDE-014', added: '2026-10-10', lines: count, reason: 'split it' });
+const offender = (file: string, count: number): Offender => ({
+  file: `${IDE}${file}`,
+  requirement: 'IDE-014',
+  added: '2026-10-10',
+  lines: count,
+  reason: 'split it',
+});
 const check = (modules: SourceModule[], offenders: Offender[] = [], limit = 100) => checkIdeStructure(modules, { limit, offenders });
 
 describe('layering (IDE-033): the store keeps off the components and the command line keeps off the Electron host', () => {
@@ -41,12 +58,14 @@ describe('layering (IDE-033): the store keeps off the components and the command
   });
 
   it('accepts the other directions: a component using the store and the electron folder using the store of nobody', () => {
-    expect(check([
-      mod('src/components/Panel.tsx', "import { useThing } from '../store/useThing';\n"),
-      mod('src/store/useThing.ts', 'export const useThing = 1;\n'),
-      mod('src/cli/run.ts', "import { shared } from '../project/shared';\n"),
-      mod('src/project/shared.ts', 'export const shared = 1;\n'),
-    ])).toEqual([]);
+    expect(
+      check([
+        mod('src/components/Panel.tsx', "import { useThing } from '../store/useThing';\n"),
+        mod('src/store/useThing.ts', 'export const useThing = 1;\n'),
+        mod('src/cli/run.ts', "import { shared } from '../project/shared';\n"),
+        mod('src/project/shared.ts', 'export const shared = 1;\n'),
+      ]),
+    ).toEqual([]);
   });
 });
 
@@ -66,7 +85,10 @@ describe('a component must not subscribe to the whole store (IDE-013)', () => {
   });
 
   it('is reported with the module and the line, for a module outside the store', () => {
-    const problems = check([mod('src/components/Panel.tsx', "import { useIDEStore } from '../store/useIDEStore';\nexport const P = () => useIDEStore();\n"), mod('src/store/useIDEStore.ts', 'export const useIDEStore = () => 1;\n')]);
+    const problems = check([
+      mod('src/components/Panel.tsx', "import { useIDEStore } from '../store/useIDEStore';\nexport const P = () => useIDEStore();\n"),
+      mod('src/store/useIDEStore.ts', 'export const useIDEStore = () => 1;\n'),
+    ]);
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('IDE-013');
     expect(problems[0]).toContain('src/components/Panel.tsx:2');
@@ -78,22 +100,46 @@ describe('a component must not subscribe to the whole store (IDE-013)', () => {
 });
 
 describe('ratchetOffenders', () => {
-  const sizes = new Map([[`${IDE}src/shrunk.ts`, 120], [`${IDE}src/grown.ts`, 200], [`${IDE}src/split.ts`, 40], [`${IDE}src/same.ts`, 150]]);
+  const sizes = new Map([
+    [`${IDE}src/shrunk.ts`, 120],
+    [`${IDE}src/grown.ts`, 200],
+    [`${IDE}src/split.ts`, 40],
+    [`${IDE}src/same.ts`, 150],
+  ]);
 
   it('lowers an entry that shrank, drops one that is within the limit or gone, and never raises one', () => {
-    const entries = [offender('src/shrunk.ts', 150), offender('src/grown.ts', 150), offender('src/split.ts', 150), offender('src/gone.ts', 150), offender('src/same.ts', 150)];
-    expect(ratchetOffenders(entries, sizes, 100).map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual(['src/shrunk.ts:120', 'src/grown.ts:150', 'src/same.ts:150']);
+    const entries = [
+      offender('src/shrunk.ts', 150),
+      offender('src/grown.ts', 150),
+      offender('src/split.ts', 150),
+      offender('src/gone.ts', 150),
+      offender('src/same.ts', 150),
+    ];
+    expect(ratchetOffenders(entries, sizes, 100).map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual([
+      'src/shrunk.ts:120',
+      'src/grown.ts:150',
+      'src/same.ts:150',
+    ]);
   });
 });
 
 describe('adoptOffenders (IDE-014, VF-017)', () => {
-  const sizes = new Map([[`${IDE}src/shrunk.ts`, 120], [`${IDE}src/grown.ts`, 200], [`${IDE}src/split.ts`, 40], [`${IDE}src/new.ts`, 130]]);
+  const sizes = new Map([
+    [`${IDE}src/shrunk.ts`, 120],
+    [`${IDE}src/grown.ts`, 200],
+    [`${IDE}src/split.ts`, 40],
+    [`${IDE}src/new.ts`, 130],
+  ]);
   const adopted = { requirement: 'IDE-014', added: '2026-10-21', reason: 'reformatted' };
 
   it('raises an entry that grew, lists a module that crossed the limit, and drops one within it', () => {
     const entries = [offender('src/shrunk.ts', 150), offender('src/grown.ts', 150), offender('src/split.ts', 150)];
     const list = adoptOffenders(entries, sizes, 100, adopted);
-    expect(list.map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual(['src/grown.ts:200', 'src/new.ts:130', 'src/shrunk.ts:120']);
+    expect(list.map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual([
+      'src/grown.ts:200',
+      'src/new.ts:130',
+      'src/shrunk.ts:120',
+    ]);
     expect(list.find((entry) => entry.file.endsWith('src/new.ts'))).toMatchObject(adopted);
   });
 });
@@ -103,18 +149,34 @@ describe('layering exceptions (IDE-033)', () => {
     mod('src/cli/run.ts', "import { supervise } from '../../electron/supervisor';\n"),
     mod('electron/supervisor.ts', 'export const supervise = 1;\n'),
   ];
-  const exception = (file: string, imports: string): LayeringException => ({ file: `${IDE}${file}`, imports: `${IDE}${imports}`, requirement: 'IDE-033', added: '2026-10-10', reason: 'cannot move yet' });
+  const exception = (file: string, imports: string): LayeringException => ({
+    file: `${IDE}${file}`,
+    imports: `${IDE}${imports}`,
+    requirement: 'IDE-033',
+    added: '2026-10-10',
+    reason: 'cannot move yet',
+  });
 
   it('accepts the listed import and only that one', () => {
-    expect(checkIdeStructure(modules, { limit: 100, offenders: [], exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')] })).toEqual([]);
+    expect(
+      checkIdeStructure(modules, { limit: 100, offenders: [], exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')] }),
+    ).toEqual([]);
     const other = [...modules, mod('src/cli/other.ts', "import { supervise } from '../../electron/supervisor';\n")];
-    const problems = checkIdeStructure(other, { limit: 100, offenders: [], exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')] });
+    const problems = checkIdeStructure(other, {
+      limit: 100,
+      offenders: [],
+      exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')],
+    });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('src/cli/other.ts');
   });
 
   it('fails an exception whose import is gone', () => {
-    const problems = checkIdeStructure([mod('src/cli/run.ts', 'export const run = 1;\n')], { limit: 100, offenders: [], exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')] });
+    const problems = checkIdeStructure([mod('src/cli/run.ts', 'export const run = 1;\n')], {
+      limit: 100,
+      offenders: [],
+      exceptions: [exception('src/cli/run.ts', 'electron/supervisor.ts')],
+    });
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('matches no import');
   });
@@ -141,17 +203,17 @@ describe('import cycles (IDE-033)', () => {
   });
 
   it('ignores type-only and dynamic imports, which cannot create an initialisation cycle', () => {
-    expect(check([
-      mod('src/a.ts', "import type { B } from './b';\nexport const a = 1;\nexport type A = B;\n"),
-      mod('src/b.ts', "export const load = () => import('./a');\nexport type B = number;\n"),
-      mod('src/c.ts', "import { type B } from './b';\nexport const c = 1;\n"),
-    ])).toEqual([]);
+    expect(
+      check([
+        mod('src/a.ts', "import type { B } from './b';\nexport const a = 1;\nexport type A = B;\n"),
+        mod('src/b.ts', "export const load = () => import('./a');\nexport type B = number;\n"),
+        mod('src/c.ts', "import { type B } from './b';\nexport const c = 1;\n"),
+      ]),
+    ).toEqual([]);
   });
 
   it('does not follow a package import with the same name as a module', () => {
-    expect(check([
-      mod('src/zod.ts', "import { z } from 'zod';\nexport const schema = z;\n"),
-    ])).toEqual([]);
+    expect(check([mod('src/zod.ts', "import { z } from 'zod';\nexport const schema = z;\n")])).toEqual([]);
   });
 });
 
@@ -164,12 +226,14 @@ describe('module size (IDE-014): a hand-written module has at most the limit of 
   });
 
   it('accepts a module at the limit, and ignores tests and declaration files', () => {
-    expect(check([
-      mod('src/edge.ts', lines(100)),
-      mod('src/big.test.ts', lines(500)),
-      mod('src/big.test.tsx', lines(500)),
-      mod('src/types/globals.d.ts', lines(500)),
-    ])).toEqual([]);
+    expect(
+      check([
+        mod('src/edge.ts', lines(100)),
+        mod('src/big.test.ts', lines(500)),
+        mod('src/big.test.tsx', lines(500)),
+        mod('src/types/globals.d.ts', lines(500)),
+      ]),
+    ).toEqual([]);
   });
 
   it('accepts a listed offender at exactly its recorded size', () => {

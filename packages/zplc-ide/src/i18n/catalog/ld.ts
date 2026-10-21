@@ -29,7 +29,8 @@ export const ldEn = {
   'ld.set': 'Set',
   'ld.r': '(R)',
   'ld.reset': 'Reset',
-  'ld.arrowsMoveTheCursor': 'Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes',
+  'ld.arrowsMoveTheCursor':
+    'Arrows move the cursor • I opens the palette • F2 binds a variable • F1 lists every key • Ctrl/Cmd+C/V copies the selected rung • Delete removes',
 } as const;
 
 export const ldEs: Record<keyof typeof ldEn, string> = {
@@ -50,7 +51,8 @@ export const ldEs: Record<keyof typeof ldEn, string> = {
   'ld.breakpointOnRung': 'Punto de interrupción en el peldaño {number}',
   'ld.thisRungHasNo': 'Este peldaño no tiene ninguna instrucción en la que detenerse',
   'ld.breakpointOnRungIs': 'El punto de interrupción del peldaño {number} no está activo: {inactiveReason}',
-  'ld.toggleTheBreakpointOn': 'Alternar el punto de interrupción del peldaño {number}: se activa al cargar el programa (F9 en el peldaño seleccionado)',
+  'ld.toggleTheBreakpointOn':
+    'Alternar el punto de interrupción del peldaño {number}: se activa al cargar el programa (F9 en el peldaño seleccionado)',
   'ld.toggleTheBreakpointOn2': 'Alternar el punto de interrupción del peldaño {number} (F9 en el peldaño seleccionado)',
   'ld.addParallelBranch': 'Agregar una rama paralela',
   'ld.moveRungUp': 'Subir el peldaño',
@@ -62,5 +64,6 @@ export const ldEs: Record<keyof typeof ldEn, string> = {
   'ld.set': 'Set',
   'ld.r': '(R)',
   'ld.reset': 'Reset',
-  'ld.arrowsMoveTheCursor': 'Las flechas mueven el cursor • I abre la paleta • F2 asigna una variable • F1 lista todas las teclas • Ctrl/Cmd+C/V copia el peldaño seleccionado • Supr elimina',
+  'ld.arrowsMoveTheCursor':
+    'Las flechas mueven el cursor • I abre la paleta • F2 asigna una variable • F1 lista todas las teclas • Ctrl/Cmd+C/V copia el peldaño seleccionado • Supr elimina',
 };

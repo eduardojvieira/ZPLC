@@ -14,16 +14,16 @@ export function getNodeType(blockType: string): string {
   if (blockType === 'variable' || blockType === 'input' || blockType === 'output') {
     return 'variable';
   }
-  
+
   // Categorized blocks
   if (isLogicGate(blockType)) return 'logicGate';
   if (isComparison(blockType)) return 'comparison';
   if (isMathOperator(blockType)) return 'math';
   if (isFunctionBlock(blockType)) return 'functionBlock';
-  
+
   // Functions like MAX, MIN, LIMIT, SEL also use math node style
   if (['MAX', 'MIN', 'LIMIT', 'SEL', 'MUX'].includes(blockType)) return 'math';
-  
+
   // Default to function block for unknown types
   return 'functionBlock';
 }

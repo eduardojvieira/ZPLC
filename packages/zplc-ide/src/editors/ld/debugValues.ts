@@ -14,8 +14,15 @@ export function debugValuesOf(monitor: Pick<Monitor, 'active' | 'values' | 'flag
   for (const [variable, { reading, type }] of monitor.values) {
     const flags = monitor.flagsOf(variable);
     values.set(variable, {
-      value: reading ?? null, type: type || null, address: null, region: null, size: null, loading: false, exists: true,
-      error: flags?.fault ? t('editor.readFault') : null, forced: flags?.forced === true,
+      value: reading ?? null,
+      type: type || null,
+      address: null,
+      region: null,
+      size: null,
+      loading: false,
+      exists: true,
+      error: flags?.fault ? t('editor.readFault') : null,
+      forced: flags?.forced === true,
     });
   }
   return values;

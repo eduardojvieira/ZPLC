@@ -20,7 +20,9 @@ const base = {
 describe('presentOperationalStatus', () => {
   it('keeps a disconnected simulation honest', () => {
     expect(presentOperationalStatus(base)).toMatchObject({
-      mode: 'SIMULATION', runtime: 'No runtime session', status: { text: 'Disconnected', tone: 'neutral' },
+      mode: 'SIMULATION',
+      runtime: 'No runtime session',
+      status: { text: 'Disconnected', tone: 'neutral' },
     });
     expect(presentOperationalStatus(base).target).toBeUndefined();
   });
@@ -37,12 +39,23 @@ describe('presentOperationalStatus', () => {
     });
 
     expect(result).toMatchObject({
-      runtime: 'Native POSIX', target: 'Local POSIX', cycles: 0, taskIntervalMs: 10, overruns: 2,
+      runtime: 'Native POSIX',
+      target: 'Local POSIX',
+      cycles: 0,
+      taskIntervalMs: 10,
+      overruns: 2,
     });
   });
 
   it('presents the state in the words of the interface, accents included, and still refuses markup', () => {
-    const shown = (text: string) => presentOperationalStatus({ ...base, adapterType: 'native', connected: true, vmInfo: { cycles: 0 }, status: { text, tone: 'success' } }).status.text;
+    const shown = (text: string) =>
+      presentOperationalStatus({
+        ...base,
+        adapterType: 'native',
+        connected: true,
+        vmInfo: { cycles: 0 },
+        status: { text, tone: 'success' },
+      }).status.text;
     expect(shown('En ejecución')).toBe('En ejecución');
     expect(shown('Conectado · falta cargar')).toBe('Conectado · falta cargar');
     expect(shown('<script>')).toBe('Status unavailable');
@@ -108,23 +121,44 @@ describe('presentOperationalStatus', () => {
     expect(presentOperationalStatus({ ...connected, forcedValuesCount: 4 }).force).toEqual({ kind: 'active', text: '4 active forces' });
     expect(presentOperationalStatus({ ...connected, forcedValuesCount: 8 }).force).toEqual({ kind: 'active', text: '8 active forces' });
     expect(presentOperationalStatus({ ...connected, forcedValuesCount: 4, forcesUnconfirmed: true }).force).toEqual({
-      kind: 'unconfirmed', text: 'Force state unconfirmed — verify and reconnect before operating.',
+      kind: 'unconfirmed',
+      text: 'Force state unconfirmed — verify and reconnect before operating.',
     });
     expect(presentOperationalStatus({ ...base, forcedValuesCount: 1 }).force).toEqual({
-      kind: 'unconfirmed', text: 'Force state unconfirmed — verify and reconnect before operating.',
+      kind: 'unconfirmed',
+      text: 'Force state unconfirmed — verify and reconnect before operating.',
     });
     expect(presentOperationalStatus({ ...connected, forcedValuesCount: 9 }).force).toEqual({
-      kind: 'unconfirmed', text: 'Force state unconfirmed — verify and reconnect before operating.',
+      kind: 'unconfirmed',
+      text: 'Force state unconfirmed — verify and reconnect before operating.',
     });
   });
 
   it('fails closed for connected runtime mode mismatches', () => {
     for (const incompatible of [
-      { ...base, mode: 'simulate' as const, adapterType: 'serial' as const, connected: true, vmInfo: { cycles: 7 }, controllerInfo: { board: 'Nucleo H743ZI', zplc_version: '1.5.0' }, controllerStatus: { stats: { overruns: 3 } } },
-      { ...base, mode: 'hardware' as const, adapterType: 'native' as const, connected: true, vmInfo: { cycles: 7 }, nativeTrace: [{ source: 'native', overruns: 3 }] },
+      {
+        ...base,
+        mode: 'simulate' as const,
+        adapterType: 'serial' as const,
+        connected: true,
+        vmInfo: { cycles: 7 },
+        controllerInfo: { board: 'Nucleo H743ZI', zplc_version: '1.5.0' },
+        controllerStatus: { stats: { overruns: 3 } },
+      },
+      {
+        ...base,
+        mode: 'hardware' as const,
+        adapterType: 'native' as const,
+        connected: true,
+        vmInfo: { cycles: 7 },
+        nativeTrace: [{ source: 'native', overruns: 3 }],
+      },
     ]) {
       const result = presentOperationalStatus(incompatible);
-      expect(result).toMatchObject({ runtime: 'No compatible runtime session', status: { text: 'Runtime mode mismatch · reconnect required', tone: 'danger' } });
+      expect(result).toMatchObject({
+        runtime: 'No compatible runtime session',
+        status: { text: 'Runtime mode mismatch · reconnect required', tone: 'danger' },
+      });
       expect(result).not.toHaveProperty('cycles');
       expect(result).not.toHaveProperty('overruns');
       expect(result.target).toBe(incompatible.mode === 'hardware' ? 'rpi_pico (configured)' : undefined);

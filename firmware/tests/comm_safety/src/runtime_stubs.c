@@ -11,8 +11,7 @@
 #include "program_store.h"
 
 static uint8_t s_program_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE];
-static uint8_t s_program_staging_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE +
-                                     ZPLC_PROGRAM_STORE_FOOTER_SIZE];
+static uint8_t s_program_staging_buf[ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE];
 
 uint8_t *program_buffer = s_program_buf;
 size_t program_buffer_size = ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE;

@@ -13,7 +13,12 @@
     { "kind": "AT", "atMs": 90, "condition": { "PedestrianCrossing.VehicleRed": true, "PedestrianCrossing.PedStop": true } },
     { "kind": "AT", "atMs": 110, "condition": { "PedestrianCrossing.VehicleGreen": true, "PedestrianCrossing.PedStop": true } },
     { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 60, "condition": { "PedestrianCrossing.PedWalk": true } },
-    { "kind": "FOR", "fromMs": 60, "forMs": 20, "condition": { "PedestrianCrossing.VehicleRed": true, "PedestrianCrossing.PedWalk": true } },
+    {
+      "kind": "FOR",
+      "fromMs": 60,
+      "forMs": 20,
+      "condition": { "PedestrianCrossing.VehicleRed": true, "PedestrianCrossing.PedWalk": true }
+    },
     { "kind": "RISING", "fromMs": 60, "withinMs": 0, "condition": { "PedestrianCrossing.PedWalk": true } },
     { "kind": "FALLING", "fromMs": 90, "withinMs": 0, "condition": { "PedestrianCrossing.PedWalk": false } },
     { "kind": "NEVER", "condition": { "PedestrianCrossing.VehicleGreen": true, "PedestrianCrossing.PedWalk": true } },

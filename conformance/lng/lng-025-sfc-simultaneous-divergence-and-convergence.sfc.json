@@ -89,20 +89,14 @@
       "fromStep": "s_a",
       "toStep": "s_b1",
       "condition": "TRUE",
-      "toSteps": [
-        "s_b1",
-        "s_b2"
-      ]
+      "toSteps": ["s_b1", "s_b2"]
     },
     {
       "id": "t_join",
       "fromStep": "s_b1",
       "toStep": "s_d",
       "condition": "Join",
-      "fromSteps": [
-        "s_b1",
-        "s_b2"
-      ]
+      "fromSteps": ["s_b1", "s_b2"]
     }
   ],
   "actions": [

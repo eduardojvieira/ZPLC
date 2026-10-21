@@ -56,7 +56,5 @@
       "text": "Write Led := Blink OR Button; and keep OnBoardLed := Led;"
     }
   ],
-  "faultCases": [
-    "The starter ignores the button: while it is pressed, the LED keeps blinking."
-  ]
+  "faultCases": ["The starter ignores the button: while it is pressed, the LED keeps blinking."]
 }

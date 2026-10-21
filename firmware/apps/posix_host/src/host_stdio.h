@@ -18,10 +18,10 @@
 #define ZPLC_HOST_STDIO_PENDING_MAX ZPLC_NATIVE_REQUEST_MAX
 
 typedef enum {
-    ZPLC_HOST_STDIO_TIMEOUT = 0,
-    ZPLC_HOST_STDIO_READY = 1,
-    ZPLC_HOST_STDIO_EOF = 2,
-    ZPLC_HOST_STDIO_ERROR = 3,
+  ZPLC_HOST_STDIO_TIMEOUT = 0,
+  ZPLC_HOST_STDIO_READY = 1,
+  ZPLC_HOST_STDIO_EOF = 2,
+  ZPLC_HOST_STDIO_ERROR = 3,
 } zplc_host_stdio_result_t;
 
 /*
@@ -39,9 +39,6 @@ typedef enum {
  * On POSIX the descriptor is read directly, so the same stream must not also be
  * read through stdio.
  */
-zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input,
-                                                         char *buffer,
-                                                         size_t buffer_size,
-                                                         unsigned int timeout_ms);
+zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input, char *buffer, size_t buffer_size, unsigned int timeout_ms);
 
 #endif /* ZPLC_HOST_STDIO_H */

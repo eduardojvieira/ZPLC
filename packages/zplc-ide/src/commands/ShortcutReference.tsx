@@ -17,7 +17,11 @@ function ReferenceBody() {
       title={t('shortcuts.title')}
       description={t('shortcuts.description')}
       size="lg"
-      footer={<Button variant="primary" onClick={closeSurfaces}>{t('shortcuts.close')}</Button>}
+      footer={
+        <Button variant="primary" onClick={closeSurfaces}>
+          {t('shortcuts.close')}
+        </Button>
+      }
     >
       {COMMAND_CATEGORIES.map((category) => {
         const commands = commandsIn(category);
@@ -31,7 +35,13 @@ function ReferenceBody() {
                 return (
                   <div key={command.id} data-command={command.id} className="flex items-baseline justify-between gap-4 px-3 py-1.5 text-sm">
                     <dt>{t(command.titleKey)}</dt>
-                    <dd>{shortcut === null ? <span className="text-[var(--text-secondary)]">{t('shortcuts.none')}</span> : <kbd className="font-mono">{shortcut}</kbd>}</dd>
+                    <dd>
+                      {shortcut === null ? (
+                        <span className="text-[var(--text-secondary)]">{t('shortcuts.none')}</span>
+                      ) : (
+                        <kbd className="font-mono">{shortcut}</kbd>
+                      )}
+                    </dd>
                   </div>
                 );
               })}

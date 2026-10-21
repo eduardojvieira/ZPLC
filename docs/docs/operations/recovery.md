@@ -22,12 +22,12 @@ recovery. ZPLC does not fabricate a universal hardware recovery procedure.
 
 ## Recovery decision
 
-| Situation | Safe action | Evidence limit |
-| --- | --- | --- |
-| Runtime or program fault | Keep outputs in the runtime safe state; inspect status and trace. | Host trace is not electrical proof. |
-| Lost connection | Reconnect and verify board/profile/ABI before any deploy. | A serial identity is not HIL qualification. |
-| Program replacement | Compile, test, simulate, then use the human-confirmed deploy flow. | Deploy changes control logic; it is not firmware flash. |
-| Firmware failure | Stop and follow the exact board/runner recovery procedure. | Current profiles have no HIL evidence references. |
+| Situation                 | Safe action                                                              | Evidence limit                                                       |
+| ------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Runtime or program fault  | Keep outputs in the runtime safe state; inspect status and trace.        | Host trace is not electrical proof.                                  |
+| Lost connection           | Reconnect and verify board/profile/ABI before any deploy.                | A serial identity is not HIL qualification.                          |
+| Program replacement       | Compile, test, simulate, then use the human-confirmed deploy flow.       | Deploy changes control logic; it is not firmware flash.              |
+| Firmware failure          | Stop and follow the exact board/runner recovery procedure.               | Current profiles have no HIL evidence references.                    |
 | Persisted program concern | Reboot only under the site procedure; inspect restored state before RUN. | Power-cut and target persistence claims require target/HIL evidence. |
 
 ## Safe state and restart

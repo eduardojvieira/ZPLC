@@ -90,90 +90,124 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
   const [ask, setAsk] = useState<Ask | null>(null);
   const [status, setStatus] = useState('');
 
-  const apply = useCallback((outcome: CanvasOutcome, announced = false) => {
-    const nodes = outcome.nodes.map(decorate);
-    if (outcome.changed) commit(nodes, outcome.edges);
-    else show(nodes, outcome.edges);
-    // an alignment is said once, by the shared announcer; the status region says the rest (UX-033)
-    if (announced) announce(outcome.say, outcome.refused ? 'assertive' : 'polite');
-    else setStatus(outcome.say);
-    const prompt = outcome.prompt;
-    // a node that is replaced while the canvas is rebuilt takes the focus with it: the canvas itself holds it meanwhile
-    if (outcome.changed && !prompt && !wrapperRef.current?.contains(document.activeElement)) wrapperRef.current?.focus();
-    if (prompt?.kind === 'palette') {
-      setAsk({ kind: 'palette', title: commands.paletteTitle, items: commands.palette(), allowFreeText: false, placeholder: commands.palettePlaceholder });
-    } else if (prompt?.kind === 'comment') {
-      const selected = nodes.find((node) => node.selected);
-      const has = selected !== undefined && commentOf(selected) !== undefined;
-      setAsk({ kind: 'comment', title: 'Comment', items: has ? [{ id: '__clear', label: 'Clear the comment' }] : [], allowFreeText: true, placeholder: 'Type the comment' });
-    } else if (prompt) {
-      setAsk({ kind: prompt.kind, title: outcome.title ?? 'Choose', items: outcome.choices ?? [], allowFreeText: outcome.allowFreeText === true });
-    }
-    // the focus goes to the element of the cursor, so that a screen reader says it, and the canvas pans to it
-    const selected = nodes.filter((node) => node.selected);
-    if (selected.length === 1 && !prompt) {
-      const id = selected[0]!.id;
-      // The list that was just answered is still being removed in the first frame, and the canvas draws a new node hidden
-      // until it has measured it: a node that is hidden cannot take the focus, so the focus is asked for until it holds.
-      const focus = (attempt: number) => requestAnimationFrame(() => {
-        if (document.querySelector('[data-keyboard-picker]')) {
-          if (attempt < 30) focus(attempt + 1);
-          return;
-        }
-        const wrapper = wrapperRef.current;
-        const target = [...(wrapper?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find((element) => element.getAttribute('data-id') === id);
-        target?.focus();
-        if (document.activeElement === target) return;
-        // until the node can take it, the canvas holds the focus, so that the next key is still a key of the editor
-        if (!wrapper?.contains(document.activeElement)) wrapper?.focus();
-        if (target && attempt < 30) focus(attempt + 1);
-      });
-      focus(0);
-    }
-  }, [commands, commentOf, commit, decorate, show, wrapperRef]);
+  const apply = useCallback(
+    (outcome: CanvasOutcome, announced = false) => {
+      const nodes = outcome.nodes.map(decorate);
+      if (outcome.changed) commit(nodes, outcome.edges);
+      else show(nodes, outcome.edges);
+      // an alignment is said once, by the shared announcer; the status region says the rest (UX-033)
+      if (announced) announce(outcome.say, outcome.refused ? 'assertive' : 'polite');
+      else setStatus(outcome.say);
+      const prompt = outcome.prompt;
+      // a node that is replaced while the canvas is rebuilt takes the focus with it: the canvas itself holds it meanwhile
+      if (outcome.changed && !prompt && !wrapperRef.current?.contains(document.activeElement)) wrapperRef.current?.focus();
+      if (prompt?.kind === 'palette') {
+        setAsk({
+          kind: 'palette',
+          title: commands.paletteTitle,
+          items: commands.palette(),
+          allowFreeText: false,
+          placeholder: commands.palettePlaceholder,
+        });
+      } else if (prompt?.kind === 'comment') {
+        const selected = nodes.find((node) => node.selected);
+        const has = selected !== undefined && commentOf(selected) !== undefined;
+        setAsk({
+          kind: 'comment',
+          title: 'Comment',
+          items: has ? [{ id: '__clear', label: 'Clear the comment' }] : [],
+          allowFreeText: true,
+          placeholder: 'Type the comment',
+        });
+      } else if (prompt) {
+        setAsk({
+          kind: prompt.kind,
+          title: outcome.title ?? 'Choose',
+          items: outcome.choices ?? [],
+          allowFreeText: outcome.allowFreeText === true,
+        });
+      }
+      // the focus goes to the element of the cursor, so that a screen reader says it, and the canvas pans to it
+      const selected = nodes.filter((node) => node.selected);
+      if (selected.length === 1 && !prompt) {
+        const id = selected[0]!.id;
+        // The list that was just answered is still being removed in the first frame, and the canvas draws a new node hidden
+        // until it has measured it: a node that is hidden cannot take the focus, so the focus is asked for until it holds.
+        const focus = (attempt: number) =>
+          requestAnimationFrame(() => {
+            if (document.querySelector('[data-keyboard-picker]')) {
+              if (attempt < 30) focus(attempt + 1);
+              return;
+            }
+            const wrapper = wrapperRef.current;
+            const target = [...(wrapper?.querySelectorAll<HTMLElement>('.react-flow__node') ?? [])].find(
+              (element) => element.getAttribute('data-id') === id,
+            );
+            target?.focus();
+            if (document.activeElement === target) return;
+            // until the node can take it, the canvas holds the focus, so that the next key is still a key of the editor
+            if (!wrapper?.contains(document.activeElement)) wrapper?.focus();
+            if (target && attempt < 30) focus(attempt + 1);
+          });
+        focus(0);
+      }
+    },
+    [commands, commentOf, commit, decorate, show, wrapperRef],
+  );
 
-  const run = useCallback((command: string, argument?: Argument) => {
-    if (commands.editorCommands.has(command)) {
-      editorCommand(command);
-      return;
-    }
-    if (command === 'showCommands') {
-      setAsk({
-        kind: 'commands',
-        title: `Commands of the ${commands.editor === 'fbd' ? 'function block' : 'sequential function chart'} editor`,
-        items: actionsOf(commands.editor).map((action) => ({ id: action.id, label: action.description.en, detail: keysText(action) })),
-        allowFreeText: false,
-        placeholder: 'Type to search the commands',
-      });
-      return;
-    }
-    apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument), isArrangeCommand(command));
-  }, [apply, commands, edgesRef, editorCommand, nodesRef]);
+  const run = useCallback(
+    (command: string, argument?: Argument) => {
+      if (commands.editorCommands.has(command)) {
+        editorCommand(command);
+        return;
+      }
+      if (command === 'showCommands') {
+        setAsk({
+          kind: 'commands',
+          title: `Commands of the ${commands.editor === 'fbd' ? 'function block' : 'sequential function chart'} editor`,
+          items: actionsOf(commands.editor).map((action) => ({ id: action.id, label: action.description.en, detail: keysText(action) })),
+          allowFreeText: false,
+          placeholder: 'Type to search the commands',
+        });
+        return;
+      }
+      apply(commands.run(nodesRef.current ?? [], edgesRef.current ?? [], command, argument), isArrangeCommand(command));
+    },
+    [apply, commands, edgesRef, editorCommand, nodesRef],
+  );
 
-  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
-    if (keysBelongToControl(event.target)) return;
-    // the menu of the element that has the focus, or of the canvas when the focus is on the canvas itself (UX-033)
-    if (isContextMenuKey(event)) {
-      const target = event.target as Element;
-      const element = target.closest('.react-flow__node, .react-flow__edge') ?? wrapperRef.current?.querySelector('.react-flow__pane') ?? target;
+  const onKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (keysBelongToControl(event.target)) return;
+      // the menu of the element that has the focus, or of the canvas when the focus is on the canvas itself (UX-033)
+      if (isContextMenuKey(event)) {
+        const target = event.target as Element;
+        const element =
+          target.closest('.react-flow__node, .react-flow__edge') ?? wrapperRef.current?.querySelector('.react-flow__pane') ?? target;
+        event.preventDefault();
+        openContextMenuOn(element);
+        return;
+      }
+      const command = actionFor(commands.editor, event);
+      if (!command) return;
+      if (readOnly && !commands.readOnlyCommands.has(command)) return;
+      if (command === 'toggleBreakpoint' && !(nodesRef.current ?? []).some((node) => node.selected)) return;
       event.preventDefault();
-      openContextMenuOn(element);
-      return;
-    }
-    const command = actionFor(commands.editor, event);
-    if (!command) return;
-    if (readOnly && !commands.readOnlyCommands.has(command)) return;
-    if (command === 'toggleBreakpoint' && !(nodesRef.current ?? []).some((node) => node.selected)) return;
-    event.preventDefault();
-    run(command);
-  }, [commands, nodesRef, readOnly, run, wrapperRef]);
+      run(command);
+    },
+    [commands, nodesRef, readOnly, run, wrapperRef],
+  );
 
-  // React Flow moves the focused node with the arrow keys, whatever the modifiers: a key of the table that is an arrow runs here, first, and stops there
-  const onKeyDownCapture = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
-    if (!event.key.startsWith('Arrow') || keysBelongToControl(event.target) || !actionFor(commands.editor, event)) return;
-    onKeyDown(event);
-    event.stopPropagation();
-  }, [commands.editor, onKeyDown]);
+  // React Flow moves the focused node with the arrow keys, whatever the modifiers: a key of the table that is an arrow runs here, first,
+  // and stops there
+  const onKeyDownCapture = useCallback(
+    (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (!event.key.startsWith('Arrow') || keysBelongToControl(event.target) || !actionFor(commands.editor, event)) return;
+      onKeyDown(event);
+      event.stopPropagation();
+    },
+    [commands.editor, onKeyDown],
+  );
 
   const overlay = useMemo(() => {
     if (!ask || (readOnly && ask.kind !== 'commands')) return null;
@@ -181,12 +215,24 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
       setAsk(null);
       const typed = freeTextOf(item);
       switch (ask.kind) {
-        case 'palette': run('insertElement', commands.answer.palette(item.id)); break;
-        case 'bind': run('bindVariable', commands.answer.bind(typed ?? item.id)); break;
-        case 'connect': run('connect', commands.answer.connect(item.id)); break;
-        case 'disconnect': run('disconnect', commands.answer.disconnect(item.id)); break;
-        case 'comment': run('editComment', commands.answer.comment(item.id === '__clear' ? '' : typed ?? item.label)); break;
-        case 'commands': run(item.id); break;
+        case 'palette':
+          run('insertElement', commands.answer.palette(item.id));
+          break;
+        case 'bind':
+          run('bindVariable', commands.answer.bind(typed ?? item.id));
+          break;
+        case 'connect':
+          run('connect', commands.answer.connect(item.id));
+          break;
+        case 'disconnect':
+          run('disconnect', commands.answer.disconnect(item.id));
+          break;
+        case 'comment':
+          run('editComment', commands.answer.comment(item.id === '__clear' ? '' : (typed ?? item.label)));
+          break;
+        case 'commands':
+          run(item.id);
+          break;
       }
     };
     return (
@@ -194,7 +240,13 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
         title={ask.title}
         items={ask.items}
         allowFreeText={ask.allowFreeText}
-        freeTextLabel={ask.kind === 'comment' ? (text) => t('editors.canvas.setComment', { text }) : ask.kind === 'bind' ? (text) => t('editors.canvas.use', { text }) : undefined}
+        freeTextLabel={
+          ask.kind === 'comment'
+            ? (text) => t('editors.canvas.setComment', { text })
+            : ask.kind === 'bind'
+              ? (text) => t('editors.canvas.use', { text })
+              : undefined
+        }
         placeholder={ask.placeholder ?? (ask.kind === 'bind' ? t('editors.canvas.searchOrType') : t('editors.search.placeholder'))}
         emptyText={ask.kind === 'connect' ? t('editors.canvas.noWire') : undefined}
         onChoose={choose}
@@ -203,6 +255,10 @@ export function useCanvasKeyboard<Argument>(options: CanvasKeyboardOptions<Argum
     );
   }, [ask, commands, readOnly, run]);
 
-  const statusRegion = <div role="status" aria-live="polite" data-visual-status className="sr-only">{status}</div>;
+  const statusRegion = (
+    <div role="status" aria-live="polite" data-visual-status className="sr-only">
+      {status}
+    </div>
+  );
   return { onKeyDown, onKeyDownCapture, run, overlay, status: statusRegion };
 }

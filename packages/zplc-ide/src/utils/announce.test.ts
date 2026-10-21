@@ -21,7 +21,9 @@ describe('the shared announcer (UX-026)', () => {
 
   it('keeps one snapshot object between changes and tells every subscriber of a change, until it unsubscribes', () => {
     let heard = 0;
-    const stop = subscribeAnnouncements(() => { heard += 1; });
+    const stop = subscribeAnnouncements(() => {
+      heard += 1;
+    });
     const before = announcementsSnapshot();
     expect(announcementsSnapshot()).toBe(before);
     announce('Saved');

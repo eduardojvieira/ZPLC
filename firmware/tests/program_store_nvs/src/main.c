@@ -137,8 +137,12 @@ ZTEST(program_store_nvs, test_largest_artifact_deploys_restores_and_rolls_back) 
 ZTEST(program_store_nvs, test_chunk_boundaries_round_trip) {
   const size_t footer = ZPLC_PROGRAM_STORE_FOOTER_SIZE;
   const size_t sizes[] = {ZPLC_FILE_HEADER_SIZE + ZPLC_SEGMENT_ENTRY_SIZE + 3U,
-                          CHUNK - footer - 1U, CHUNK - footer, CHUNK - footer + 1U,
-                          2U * CHUNK - footer, 2U * CHUNK - footer + 1U, 7U * CHUNK + 5U};
+                          CHUNK - footer - 1U,
+                          CHUNK - footer,
+                          CHUNK - footer + 1U,
+                          2U * CHUNK - footer,
+                          2U * CHUNK - footer + 1U,
+                          7U * CHUNK + 5U};
   size_t restored = 0U;
   size_t index;
 
@@ -166,8 +170,7 @@ ZTEST(program_store_nvs, test_a_damaged_chunk_falls_back_to_the_previous_program
 
   /* A chunk in the middle of the slot the active record names is damaged. */
   memset(active, 0, sizeof(active));
-  zassert_equal(zplc_hal_persist_load("program_v1_active", active, sizeof(active)), ZPLC_HAL_OK,
-                "the active record is read");
+  zassert_equal(zplc_hal_persist_load("program_v1_active", active, sizeof(active)), ZPLC_HAL_OK, "the active record is read");
   zassert_true(active[6] <= 1U, "it names a slot");
   (void)snprintf(key, sizeof(key), "program_v1_slot_%c_payload_2", active[6] == 0U ? 'a' : 'b');
   memset(junk, 0x77, sizeof(junk));
@@ -180,12 +183,9 @@ ZTEST(program_store_nvs, test_a_damaged_chunk_falls_back_to_the_previous_program
 ZTEST(program_store_nvs, test_only_the_keys_of_the_store_are_mapped) {
   uint8_t junk[8] = {0};
 
-  zassert_equal(zplc_hal_persist_save("program_v1_slot_c_payload_2", junk, sizeof(junk)), ZPLC_HAL_ERROR,
-                "a slot that does not exist");
-  zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_0", junk, sizeof(junk)), ZPLC_HAL_ERROR,
-                "chunk 0 is the unnumbered key");
-  zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_x", junk, sizeof(junk)), ZPLC_HAL_ERROR,
-                "a chunk number is decimal");
+  zassert_equal(zplc_hal_persist_save("program_v1_slot_c_payload_2", junk, sizeof(junk)), ZPLC_HAL_ERROR, "a slot that does not exist");
+  zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_0", junk, sizeof(junk)), ZPLC_HAL_ERROR, "chunk 0 is the unnumbered key");
+  zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_x", junk, sizeof(junk)), ZPLC_HAL_ERROR, "a chunk number is decimal");
   zassert_equal(zplc_hal_persist_save("program_v1_slot_a_payload_9999", junk, sizeof(junk)), ZPLC_HAL_ERROR,
                 "and below the number of chunks of the largest artifact");
 }

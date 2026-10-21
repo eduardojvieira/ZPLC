@@ -15,7 +15,9 @@ describe('the SFC toolbox (LNG-012) on the component kit', () => {
   });
 
   it('has a named search box of the kit, and uses no title tooltip, focus override or text under 11px', () => {
-    expect(html).toMatch(/<input[^>]*type="search"[^>]*aria-label="Search the elements"|<input[^>]*aria-label="Search the elements"[^>]*type="search"/);
+    expect(html).toMatch(
+      /<input[^>]*type="search"[^>]*aria-label="Search the elements"|<input[^>]*aria-label="Search the elements"[^>]*type="search"/,
+    );
     expect(html).toMatch(/<input[^>]*class="[^"]*ui-input/);
     expect(html).not.toMatch(/ title=|focus:|focus-visible:|text-\[(?:9|10)px\]/);
   });

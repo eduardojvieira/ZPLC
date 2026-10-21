@@ -37,7 +37,12 @@ export function moveSeparator({ now, min, max, orientation, key, shiftKey }: Sep
 }
 
 /** The layout with the leading panel at `size` and the trailing one taking the difference; null when either panel is not in the layout. */
-export function withLeadingSize(layout: Record<string, number>, leading: string, trailing: string, size: number): Record<string, number> | null {
+export function withLeadingSize(
+  layout: Record<string, number>,
+  leading: string,
+  trailing: string,
+  size: number,
+): Record<string, number> | null {
   const before = layout[leading];
   const after = layout[trailing];
   if (before === undefined || after === undefined) return null;

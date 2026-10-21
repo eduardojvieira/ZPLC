@@ -9,11 +9,22 @@ export interface Timers {
   clear(handle: unknown): void;
 }
 
-const browserTimers: Timers = { set: (callback, milliseconds) => setTimeout(callback, milliseconds), clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>) };
+const browserTimers: Timers = {
+  set: (callback, milliseconds) => setTimeout(callback, milliseconds),
+  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+};
 
 /** Calls `onElapsed` once after `delayMs`; the returned function cancels it, and does nothing once it has fired. */
 export function startDelay(onElapsed: () => void, delayMs: number = LOADING_DELAY_MS, timers: Timers = browserTimers): () => void {
   let pending = true;
-  const handle = timers.set(() => { pending = false; onElapsed(); }, delayMs);
-  return () => { if (pending) { pending = false; timers.clear(handle); } };
+  const handle = timers.set(() => {
+    pending = false;
+    onElapsed();
+  }, delayMs);
+  return () => {
+    if (pending) {
+      pending = false;
+      timers.clear(handle);
+    }
+  };
 }

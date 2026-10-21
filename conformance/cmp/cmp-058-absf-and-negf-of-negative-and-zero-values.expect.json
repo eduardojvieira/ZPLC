@@ -7,13 +7,13 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "REAL", "value": 3.5},
-    {"at": "%QD1", "type": "REAL", "value": 2.5},
-    {"at": "%QD2", "type": "REAL", "value": 0.0},
-    {"at": "%QD3", "type": "REAL", "value": 1e+30},
-    {"at": "%QD4", "type": "REAL", "value": -2.5},
-    {"at": "%QD5", "type": "REAL", "value": 3.5},
-    {"at": "%QD6", "type": "REAL", "value": 0.0},
-    {"at": "%QD7", "type": "REAL", "value": 1e+30}
+    { "at": "%QD0", "type": "REAL", "value": 3.5 },
+    { "at": "%QD1", "type": "REAL", "value": 2.5 },
+    { "at": "%QD2", "type": "REAL", "value": 0.0 },
+    { "at": "%QD3", "type": "REAL", "value": 1e30 },
+    { "at": "%QD4", "type": "REAL", "value": -2.5 },
+    { "at": "%QD5", "type": "REAL", "value": 3.5 },
+    { "at": "%QD6", "type": "REAL", "value": 0.0 },
+    { "at": "%QD7", "type": "REAL", "value": 1e30 }
   ]
 }

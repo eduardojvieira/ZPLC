@@ -179,20 +179,13 @@
           "id": "p",
           "startCol": 1,
           "endCol": 3,
-          "rows": [
-            0,
-            1,
-            2
-          ]
+          "rows": [0, 1, 2]
         },
         {
           "id": "s",
           "startCol": 2,
           "endCol": 2,
-          "rows": [
-            0,
-            2
-          ],
+          "rows": [0, 2],
           "parentBranchId": "p"
         }
       ],

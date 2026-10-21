@@ -1,11 +1,23 @@
 /**
  * ZPLC - Electron Main Process
- * 
+ *
  * Handles window management, WebSerial permissions, and native integration.
  * This is the entry point for the Electron desktop application.
  */
 
-import { app, BrowserWindow, dialog, Menu, nativeTheme, session, ipcMain, safeStorage, utilityProcess, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  Menu,
+  nativeTheme,
+  session,
+  ipcMain,
+  safeStorage,
+  utilityProcess,
+  type IpcMainInvokeEvent,
+  type WebContents,
+} from 'electron';
 import { randomUUID } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -34,13 +46,7 @@ import { createIpcHandlers, type RendererOwner, type ToolApiModule } from './ipc
 import { spawnVector } from '../shared/spawnAllowList.js';
 import { createToolWorkerHost, type ToolWorkerProcess } from './toolWorkerHost.js';
 import { registerIpcHandlers } from './ipcRegistry.js';
-import {
-  CLOSE_GUARD_CHANNEL,
-  MENU_CHANNEL,
-  PORT_CHOICE_CHANNEL,
-  NATIVE_SIMULATION_CHANNEL,
-  PROJECT_FILES_EVENT,
-} from './ipcContract.js';
+import { CLOSE_GUARD_CHANNEL, MENU_CHANNEL, PORT_CHOICE_CHANNEL, NATIVE_SIMULATION_CHANNEL, PROJECT_FILES_EVENT } from './ipcContract.js';
 import { createProjectWatcher } from './projectWatcher.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
@@ -91,7 +97,12 @@ const projectWatcher = createProjectWatcher({
     if (target && !target.isDestroyed() && target.id === ownerId) target.send(PROJECT_FILES_EVENT.changed, change);
   },
 });
-const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });
+const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, {
+  dialog,
+  getWindow: () => mainWindow,
+  isPackaged: app.isPackaged,
+  env: process.env,
+});
 const toolApiUrl = pathToFileURL(path.join(__dirname, '..', 'toolApi.js')).href;
 /** The command registry's menu data, bundled from src/commands/menuEntry.ts by `electron:compile` (UX-014, UX-015). */
 const commandMenuUrl = pathToFileURL(path.join(__dirname, '..', 'commandMenu.js')).href;
@@ -117,11 +128,19 @@ function spawnToolWorker(): ToolWorkerProcess {
   }
   const child = utilityProcess.fork(command, args, { serviceName: 'zplc-tool-worker', env: environment, stdio: 'ignore' });
   return {
-    get pid() { return child.pid; },
+    get pid() {
+      return child.pid;
+    },
     postMessage: (message) => child.postMessage(message),
-    onMessage: (listener) => { child.on('message', listener); },
-    onExit: (listener) => { child.on('exit', (code) => listener(code)); },
-    kill: () => { child.kill(); },
+    onMessage: (listener) => {
+      child.on('message', listener);
+    },
+    onExit: (listener) => {
+      child.on('exit', (code) => listener(code));
+    },
+    kill: () => {
+      child.kill();
+    },
   };
 }
 const toolWorkerHost = createToolWorkerHost({ spawn: spawnToolWorker });
@@ -144,41 +163,36 @@ const rendererDevelopmentPort = developmentRendererPort();
 const appVersion = app.getVersion();
 
 function expectedRendererUrl(): string {
-  return isDev
-    ? trustedDevelopmentRendererUrl(rendererDevelopmentPort)
-    : pathToFileURL(path.join(__dirname, '../../dist/index.html')).href;
+  return isDev ? trustedDevelopmentRendererUrl(rendererDevelopmentPort) : pathToFileURL(path.join(__dirname, '../../dist/index.html')).href;
 }
 
 function rendererOwnerIsCurrent(owner: RendererOwner): boolean {
-  return activeRendererOwner?.ownerId === owner.ownerId
-    && activeRendererOwner.epoch === owner.epoch
-    && mainWindow?.webContents.id === owner.ownerId
-    && !mainWindow.webContents.isDestroyed()
-    && isExpectedRendererDocument(mainWindow.webContents.getURL(), expectedRendererUrl());
+  return (
+    activeRendererOwner?.ownerId === owner.ownerId &&
+    activeRendererOwner.epoch === owner.epoch &&
+    mainWindow?.webContents.id === owner.ownerId &&
+    !mainWindow.webContents.isDestroyed() &&
+    isExpectedRendererDocument(mainWindow.webContents.getURL(), expectedRendererUrl())
+  );
 }
 
 function serialRendererIsCurrent(webContents: WebContents): boolean {
   const owner = activeRendererOwner;
-  return owner !== null
-    && webContents === mainWindow?.webContents
-    && webContents.id === owner.ownerId
-    && rendererOwnerIsCurrent(owner);
+  return owner !== null && webContents === mainWindow?.webContents && webContents.id === owner.ownerId && rendererOwnerIsCurrent(owner);
 }
 
 function currentRendererOwner(event: IpcMainInvokeEvent): RendererOwner | null {
   const owner = activeRendererOwner;
-  return owner
-    && event.sender.id === owner.ownerId
-    && isTrustedRenderer(event, mainWindow, expectedRendererUrl())
-    && rendererOwnerIsCurrent(owner)
+  return owner &&
+    event.sender.id === owner.ownerId &&
+    isTrustedRenderer(event, mainWindow, expectedRendererUrl()) &&
+    rendererOwnerIsCurrent(owner)
     ? owner
     : null;
 }
 
 function nativeSimulationBelongsTo(owner: RendererOwner): boolean {
-  return nativeSimulationOwner?.ownerId === owner.ownerId
-    && nativeSimulationOwner.epoch === owner.epoch
-    && rendererOwnerIsCurrent(owner);
+  return nativeSimulationOwner?.ownerId === owner.ownerId && nativeSimulationOwner.epoch === owner.epoch && rendererOwnerIsCurrent(owner);
 }
 
 function revokeRendererOwner(ownerId: number): void {
@@ -215,7 +229,9 @@ function askRendererBeforeLosingWork(action: 'close' | 'reload'): void {
 
 const requestReload = createReloadRequest({
   guard: closeGuard,
-  reload: () => { mainWindow?.webContents.reload(); },
+  reload: () => {
+    mainWindow?.webContents.reload();
+  },
   ask: askRendererBeforeLosingWork,
 });
 
@@ -233,7 +249,7 @@ async function chooseProjectDirectory(ownerId: number): Promise<string | null> {
     if (answer !== undefined) return answer;
   }
   const result = await dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] });
-  return result.canceled ? null : result.filePaths[0] ?? null;
+  return result.canceled ? null : (result.filePaths[0] ?? null);
 }
 
 /** The canvas colour of the theme the renderer applied from its stored preference (light, dark, high contrast or system). */
@@ -244,7 +260,11 @@ function installApplicationMenu(): void {
   if (!commandMenu) return;
   const menu = commandMenu;
   const template = buildMenuTemplate(process.platform, menu.menuCommands, menu.menuTranslator(shellPreferences.get().language), {
-    isPackaged: app.isPackaged, appName: app.getName(), categories: menu.menuCategories, run: sendMenuCommand, requestReload,
+    isPackaged: app.isPackaged,
+    appName: app.getName(),
+    categories: menu.menuCategories,
+    run: sendMenuCommand,
+    requestReload,
   });
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   const registeredMenu = Menu.getApplicationMenu();
@@ -271,7 +291,8 @@ function applyShellPreferences(next: ShellPreferences): void {
   const before = shellPreferences.get();
   if (!shellPreferences.save(next)) return;
   if (before.language !== next.language) installApplicationMenu();
-  if (before.theme !== next.theme && mainWindow && !mainWindow.isDestroyed()) mainWindow.setBackgroundColor(windowSurface(next.theme, nativeTheme.shouldUseDarkColors));
+  if (before.theme !== next.theme && mainWindow && !mainWindow.isDestroyed())
+    mainWindow.setBackgroundColor(windowSurface(next.theme, nativeTheme.shouldUseDarkColors));
 }
 
 /**
@@ -303,17 +324,27 @@ function createWindow(): void {
   const win = mainWindow;
 
   // Show the window once the page has painted, in the canvas colour of the stored theme (UX-016).
-  // The colour is also corrected once from the page that painted; a theme switched later reaches the window through the report of shellPreferences.
-  const reveal = (): void => { if (!win.isDestroyed() && !win.isVisible()) win.show(); };
+  // The colour is also corrected once from the page that painted; a theme switched later reaches the window through the report of
+  // shellPreferences.
+  const reveal = (): void => {
+    if (!win.isDestroyed() && !win.isVisible()) win.show();
+  };
   win.once('ready-to-show', () => {
-    void webContents.executeJavaScript(RENDERER_SURFACE_SCRIPT).then(
-      (surface: unknown) => { if (typeof surface === 'string' && surface.startsWith('rgb(') && !win.isDestroyed()) win.setBackgroundColor(surface); },
-      () => undefined,
-    ).finally(() => {
-      const visibleBeforeReveal = win.isVisible();
-      reveal();
-      console.info(`[zplc] window title="${win.getTitle()}" background=${win.getBackgroundColor()} visibleBeforeReveal=${visibleBeforeReveal}`);
-    });
+    void webContents
+      .executeJavaScript(RENDERER_SURFACE_SCRIPT)
+      .then(
+        (surface: unknown) => {
+          if (typeof surface === 'string' && surface.startsWith('rgb(') && !win.isDestroyed()) win.setBackgroundColor(surface);
+        },
+        () => undefined,
+      )
+      .finally(() => {
+        const visibleBeforeReveal = win.isVisible();
+        reveal();
+        console.info(
+          `[zplc] window title="${win.getTitle()}" background=${win.getBackgroundColor()} visibleBeforeReveal=${visibleBeforeReveal}`,
+        );
+      });
   });
   // A page that cannot load must not leave an invisible app.
   webContents.once('did-fail-load', reveal);
@@ -345,7 +376,9 @@ function createWindow(): void {
     // In development, load from Vite dev server
     const rendererLoad = mainWindow.loadURL(expectedRendererUrl());
     // A failed load is also reported as did-fail-load; the rejection only has to be handled.
-    rendererLoad.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
+    rendererLoad.catch((error: unknown) => {
+      console.error('Unable to load the renderer', error);
+    });
     // Open DevTools in development
     if (!app.commandLine.hasSwitch('headless')) {
       mainWindow.webContents.openDevTools();
@@ -353,7 +386,9 @@ function createWindow(): void {
   } else {
     // In production, load the built index.html
     const rendererFile = mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
-    rendererFile.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
+    rendererFile.catch((error: unknown) => {
+      console.error('Unable to load the renderer', error);
+    });
   }
 
   // Closing with modified files asks first: save, discard or cancel (cancel keeps the window).
@@ -364,19 +399,18 @@ function createWindow(): void {
     revokeRendererOwner(ownerWebContentsId);
     mainWindow = null;
   });
-
 }
 
 /**
  * Setup WebSerial permissions and port selection
- * 
+ *
  * Electron doesn't show the native browser serial port picker,
  * so we need to handle the 'select-serial-port' event manually.
  */
 function setupWebSerial(): void {
-  session.defaultSession.setPermissionCheckHandler((webContents, permission) => (
-    permission === 'serial' && webContents !== null && serialRendererIsCurrent(webContents)
-  ));
+  session.defaultSession.setPermissionCheckHandler(
+    (webContents, permission) => permission === 'serial' && webContents !== null && serialRendererIsCurrent(webContents),
+  );
 
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
     callback(false);
@@ -449,7 +483,8 @@ function setupIPC(): void {
     isCurrent: rendererOwnerIsCurrent,
     closeGuard,
     // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
-    completeGuardedAction: (action) => completeGuardedAction(action, { reload: () => mainWindow?.webContents.reload(), destroy: () => mainWindow?.destroy() }),
+    completeGuardedAction: (action) =>
+      completeGuardedAction(action, { reload: () => mainWindow?.webContents.reload(), destroy: () => mainWindow?.destroy() }),
     projectFiles,
     recoveryStore: () => recoveryStore,
     sessionStore: () => sessionStore,
@@ -478,8 +513,12 @@ function setupIPC(): void {
         nativeSimulationUnsubscribe?.();
         nativeSimulationUnsubscribe = supervisor.onEvent((nativeEvent) => {
           if (!nativeSimulationBelongsTo(owner)) return;
-          if (!mainWindow || mainWindow.webContents.isDestroyed()
-            || !isExpectedRendererDocument(mainWindow.webContents.getURL(), expectedRendererUrl())) return;
+          if (
+            !mainWindow ||
+            mainWindow.webContents.isDestroyed() ||
+            !isExpectedRendererDocument(mainWindow.webContents.getURL(), expectedRendererUrl())
+          )
+            return;
           mainWindow.webContents.send(NATIVE_SIMULATION_CHANNEL.EVENT, nativeEvent);
         });
         const hello = await supervisor.startSession();
@@ -508,7 +547,7 @@ function setupIPC(): void {
       const ownerWindow = mainWindow;
       if (!ownerWindow) throw new Error('Request denied');
       const selection = await dialog.showOpenDialog(ownerWindow, { properties: ['openDirectory'] });
-      return selection.canceled || selection.filePaths.length !== 1 ? null : selection.filePaths[0] ?? null;
+      return selection.canceled || selection.filePaths.length !== 1 ? null : (selection.filePaths[0] ?? null);
     },
     confirmFirmwareBuild: async (ideId) => {
       const ownerWindow = mainWindow;
@@ -520,7 +559,9 @@ function setupIPC(): void {
         defaultId: 0,
         cancelId: 0,
         message: `Build runtime firmware for ${ideId}?`,
-        detail: 'This runs west/CMake/Kconfig/Python from the selected checkout on this computer. Only continue if you trust it. It creates and removes a temporary build directory. It does not flash, deploy, connect to hardware, or qualify hardware.',
+        detail:
+          'This runs west/CMake/Kconfig/Python from the selected checkout on this computer. Only continue if you trust it. It creates ' +
+          'and removes a temporary build directory. It does not flash, deploy, connect to hardware, or qualify hardware.',
       });
       return response.response === 1;
     },
@@ -536,37 +577,48 @@ function setupIPC(): void {
 }
 
 // App lifecycle handlers
-app.whenReady().then(async () => {
-  const toolApi = await import(toolApiUrl) as Pick<ToolApiModule, 'isToolExecutionEnvelope'>;
-  await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
-  aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
-  learnProgress = createLearnProgressStore(app.getPath('userData'));
-  recentProjects = createRecentProjects(app.getPath('userData'));
-  sessionStore = createSessionStore(app.getPath('userData'));
-  recoveryStore = createRecoveryStore(app.getPath('userData'));
-  // Sessions of projects that dropped off the recent list would otherwise stay for ever.
-  try { await sessionStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id))); } catch { /* a leftover file is harmless */ }
-  try { await recoveryStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id))); } catch { /* a leftover file is harmless */ }
-  setupContentSecurityPolicy();
-  setupWebSerial();
-  setupSerialPortSelection();
-  setupIPC();
-  await shellPreferences.load();
-  commandMenu = await import(commandMenuUrl) as CommandMenuModule;
-  installApplicationMenu();
-  createWindow();
-
-  // macOS: Re-create window when dock icon is clicked
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+app
+  .whenReady()
+  .then(async () => {
+    const toolApi = (await import(toolApiUrl)) as Pick<ToolApiModule, 'isToolExecutionEnvelope'>;
+    await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
+    aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
+    learnProgress = createLearnProgressStore(app.getPath('userData'));
+    recentProjects = createRecentProjects(app.getPath('userData'));
+    sessionStore = createSessionStore(app.getPath('userData'));
+    recoveryStore = createRecoveryStore(app.getPath('userData'));
+    // Sessions of projects that dropped off the recent list would otherwise stay for ever.
+    try {
+      await sessionStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id)));
+    } catch {
+      /* a leftover file is harmless */
     }
+    try {
+      await recoveryStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id)));
+    } catch {
+      /* a leftover file is harmless */
+    }
+    setupContentSecurityPolicy();
+    setupWebSerial();
+    setupSerialPortSelection();
+    setupIPC();
+    await shellPreferences.load();
+    commandMenu = (await import(commandMenuUrl)) as CommandMenuModule;
+    installApplicationMenu();
+    createWindow();
+
+    // macOS: Re-create window when dock icon is clicked
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  })
+  .catch((error: unknown) => {
+    // Without the audit log, the stores and the IPC handlers there is nothing safe to show: leave instead of idling without a window.
+    console.error('ZPLC failed to start', error);
+    app.exit(1);
   });
-}).catch((error: unknown) => {
-  // Without the audit log, the stores and the IPC handlers there is nothing safe to show: leave instead of idling without a window.
-  console.error('ZPLC failed to start', error);
-  app.exit(1);
-});
 
 // A worker that is still running when the application quits is killed with it, and the process leaves only once the
 // session that the closing window sent has been written (IDE-008).

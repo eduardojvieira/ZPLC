@@ -6,8 +6,17 @@ const entry = (path: string, content: string, savedAt = 1_700_000_000_000) => ({
 
 describe('the offer to restore modified files after a crash (IDE-006)', () => {
   it('offers each file whose kept content differs from the file on disk, by file name and in path order', () => {
-    const plan = offerRows([entry('src/Pump.st', 'new pump'), entry('lib/Motor.st', 'new motor')], new Map([['src/Pump.st', 'old pump'], ['lib/Motor.st', 'old motor']]));
-    expect(plan.rows.map((row) => [row.path, row.name, row.content])).toEqual([['lib/Motor.st', 'Motor.st', 'new motor'], ['src/Pump.st', 'Pump.st', 'new pump']]);
+    const plan = offerRows(
+      [entry('src/Pump.st', 'new pump'), entry('lib/Motor.st', 'new motor')],
+      new Map([
+        ['src/Pump.st', 'old pump'],
+        ['lib/Motor.st', 'old motor'],
+      ]),
+    );
+    expect(plan.rows.map((row) => [row.path, row.name, row.content])).toEqual([
+      ['lib/Motor.st', 'Motor.st', 'new motor'],
+      ['src/Pump.st', 'Pump.st', 'new pump'],
+    ]);
     expect(plan.drop).toEqual([]);
   });
 

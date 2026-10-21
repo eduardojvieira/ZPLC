@@ -1,19 +1,10 @@
 {
   "requirement": "CMP-005",
   "title": "a STRING argument is not passed to a numeric parameter",
-  "matrix": [
-    "data-types.string-string-n"
-  ],
+  "matrix": ["data-types.string-string-n"],
   "note": "CMP-005: a text and a number are different kinds of value; IEC 61131-3 converts neither to the other implicitly, so the build is refused at the value and names both types",
   "build": "fails",
-  "lines": [
-    13
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ],
-  "messageIncludes": [
-    "STRING",
-    "INT"
-  ]
+  "lines": [13],
+  "codes": ["TYPE_MISMATCH"],
+  "messageIncludes": ["STRING", "INT"]
 }

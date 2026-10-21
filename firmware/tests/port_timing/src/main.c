@@ -11,27 +11,25 @@
 
 #include "zplc_port_timing_suite.h"
 
-ZTEST(port_timing, test_the_clock_of_the_zephyr_port_passes_the_timing_self_test)
-{
-	char why[128] = "";
-	zplc_port_timing_report_t report = {0};
-	const zplc_port_clock_t clock = {zplc_hal_tick, zplc_hal_sleep};
-	const int code = zplc_port_timing_selftest(&clock, why, sizeof(why), &report);
+ZTEST(port_timing, test_the_clock_of_the_zephyr_port_passes_the_timing_self_test) {
+  char why[128] = "";
+  zplc_port_timing_report_t report = {0};
+  const zplc_port_clock_t clock = {zplc_hal_tick, zplc_hal_sleep};
+  const int code = zplc_port_timing_selftest(&clock, why, sizeof(why), &report);
 
-	TC_PRINT("tick resolution %u ms, a sleep of 50 ms took %u ms\n", report.resolution_ms, report.sleep_50_ms);
-	zassert_equal(code, ZPLC_PORT_TIMING_OK, "%s", why);
-	zassert_true(report.resolution_ms >= 1U, "a resolution of %u ms", report.resolution_ms);
-	zassert_true(report.sleep_50_ms >= 50U, "a sleep of 50 ms took %u ms", report.sleep_50_ms);
+  TC_PRINT("tick resolution %u ms, a sleep of 50 ms took %u ms\n", report.resolution_ms, report.sleep_50_ms);
+  zassert_equal(code, ZPLC_PORT_TIMING_OK, "%s", why);
+  zassert_true(report.resolution_ms >= 1U, "a resolution of %u ms", report.resolution_ms);
+  zassert_true(report.sleep_50_ms >= 50U, "a sleep of 50 ms took %u ms", report.sleep_50_ms);
 }
 
-ZTEST(port_timing, test_the_tick_is_a_wrap_safe_unsigned_count_of_milliseconds)
-{
-	/* the scheduler measures elapsed time as (uint32_t)(now - then): the difference of two reads that follow
+ZTEST(port_timing, test_the_tick_is_a_wrap_safe_unsigned_count_of_milliseconds) {
+  /* the scheduler measures elapsed time as (uint32_t)(now - then): the difference of two reads that follow
 	 * each other is small and non-negative whatever the absolute value of the tick is */
-	const uint32_t first = zplc_hal_tick();
-	const uint32_t second = zplc_hal_tick();
+  const uint32_t first = zplc_hal_tick();
+  const uint32_t second = zplc_hal_tick();
 
-	zassert_true((uint32_t)(second - first) < 1000U, "two reads differ by %u ms", (uint32_t)(second - first));
+  zassert_true((uint32_t)(second - first) < 1000U, "two reads differ by %u ms", (uint32_t)(second - first));
 }
 
 ZTEST_SUITE(port_timing, NULL, NULL, NULL, NULL, NULL);

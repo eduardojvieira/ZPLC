@@ -38,9 +38,7 @@ static int take(void) {
   if (exchange_lock == NULL) {
     return ZPLC_EXCHANGE_ERR_LOCK;
   }
-  return zplc_hal_mutex_lock(exchange_lock) == ZPLC_HAL_OK
-             ? 0
-             : ZPLC_EXCHANGE_ERR_LOCK;
+  return zplc_hal_mutex_lock(exchange_lock) == ZPLC_HAL_OK ? 0 : ZPLC_EXCHANGE_ERR_LOCK;
 }
 
 static void give(void) {
@@ -49,14 +47,11 @@ static void give(void) {
   }
 }
 
-static int scan_is_active(void) {
-  return hooks.scan_active != NULL && hooks.scan_active() != 0;
-}
+static int scan_is_active(void) { return hooks.scan_active != NULL && hooks.scan_active() != 0; }
 
 /* Where the extent lives in the snapshot; the extent is already known to be inside one region. */
 static size_t snapshot_position(int region, uint32_t offset) {
-  static const size_t starts[4] = {SNAPSHOT_IPI, SNAPSHOT_OPI, SNAPSHOT_WORK,
-                                   SNAPSHOT_RETAIN};
+  static const size_t starts[4] = {SNAPSHOT_IPI, SNAPSHOT_OPI, SNAPSHOT_WORK, SNAPSHOT_RETAIN};
 
   return starts[region] + (size_t)offset;
 }
@@ -66,19 +61,13 @@ static void put_u16(uint8_t *p, uint16_t value) {
   p[1] = (uint8_t)(value >> 8);
 }
 
-static uint16_t get_u16(const uint8_t *p) {
-  return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
-}
+static uint16_t get_u16(const uint8_t *p) { return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8)); }
 
 static void publish_locked(void) {
-  memcpy(snapshot + SNAPSHOT_IPI, zplc_mem_get_region(ZPLC_MEM_IPI_BASE),
-         ZPLC_MEM_IPI_SIZE);
-  memcpy(snapshot + SNAPSHOT_OPI, zplc_mem_get_region(ZPLC_MEM_OPI_BASE),
-         ZPLC_MEM_OPI_SIZE);
-  memcpy(snapshot + SNAPSHOT_WORK, zplc_mem_get_region(ZPLC_MEM_WORK_BASE),
-         ZPLC_MEM_WORK_SIZE);
-  memcpy(snapshot + SNAPSHOT_RETAIN, zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE),
-         ZPLC_MEM_RETAIN_SIZE);
+  memcpy(snapshot + SNAPSHOT_IPI, zplc_mem_get_region(ZPLC_MEM_IPI_BASE), ZPLC_MEM_IPI_SIZE);
+  memcpy(snapshot + SNAPSHOT_OPI, zplc_mem_get_region(ZPLC_MEM_OPI_BASE), ZPLC_MEM_OPI_SIZE);
+  memcpy(snapshot + SNAPSHOT_WORK, zplc_mem_get_region(ZPLC_MEM_WORK_BASE), ZPLC_MEM_WORK_SIZE);
+  memcpy(snapshot + SNAPSHOT_RETAIN, zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), ZPLC_MEM_RETAIN_SIZE);
   stats.publications++;
 }
 
@@ -108,9 +97,7 @@ int zplc_exchange_init(const zplc_exchange_hooks_t *new_hooks) {
  * ---------------------------------------------------------------------------
  */
 
-static int extent_ok(uint16_t addr, uint16_t size) {
-  return zplc_mem_extent_locate(addr, size, NULL) >= 0;
-}
+static int extent_ok(uint16_t addr, uint16_t size) { return zplc_mem_extent_locate(addr, size, NULL) >= 0; }
 
 static int enqueue_locked(uint16_t addr, const uint8_t *bytes, uint16_t size) {
   put_u16(queue + queue_used, addr);

@@ -44,18 +44,33 @@ export function canvasMenuItems(context: CanvasMenuContext): MenuItem[] {
     return [item('openPalette', t('editor.menu.insert'), unless(editing)), paste, item('fitView', t('editor.fit.button')), commands];
   }
   if (target === 'edge') {
-    return [item('deleteSelection', t('editor.menu.deleteWire'), { destructive: true, ...unless(editing ?? (selectedEdges > 0 ? undefined : t('editor.menu.nothingSelected'))) }), commands];
+    return [
+      item('deleteSelection', t('editor.menu.deleteWire'), {
+        destructive: true,
+        ...unless(editing ?? (selectedEdges > 0 ? undefined : t('editor.menu.nothingSelected'))),
+      }),
+      commands,
+    ];
   }
   return [
     item('bindVariable', editor === 'fbd' ? t('editor.menu.bind.fbd') : t('editor.menu.bind.sfc'), unless(one)),
     item('editComment', t('editor.menu.comment'), unless(one)),
-    ...(instanceMonitor ? [item('openInstanceMonitor', t('editor.menu.instanceMonitor'), { shortcut: undefined, onSelect: instanceMonitor })] : []),
+    ...(instanceMonitor
+      ? [item('openInstanceMonitor', t('editor.menu.instanceMonitor'), { shortcut: undefined, onSelect: instanceMonitor })]
+      : []),
     item('toggleBreakpoint', t('editor.menu.breakpoint'), unless(selectedNodes > 0 ? undefined : t('editor.menu.nothingSelected'))),
     item('copySelection', t('editor.menu.copy'), unless(selectedNodes > 0 ? undefined : t('editor.menu.nothingSelected'))),
     paste,
-    item('deleteSelection', t('editor.menu.delete'), { destructive: true, ...unless(editing ?? (selectedNodes + selectedEdges > 0 ? undefined : t('editor.menu.nothingSelected'))) }),
+    item('deleteSelection', t('editor.menu.delete'), {
+      destructive: true,
+      ...unless(editing ?? (selectedNodes + selectedEdges > 0 ? undefined : t('editor.menu.nothingSelected'))),
+    }),
     ...ARRANGE_COMMANDS.map((command: ArrangeCommand, index) =>
-      item(command, t(`editor.arrange.${command}`), { separatorBefore: index === 0, ...unless(editing ?? arrangeReason(selectedNodes, command)) })),
+      item(command, t(`editor.arrange.${command}`), {
+        separatorBefore: index === 0,
+        ...unless(editing ?? arrangeReason(selectedNodes, command)),
+      }),
+    ),
   ];
 }
 
@@ -71,7 +86,11 @@ export interface RungMenuContext {
 /** The menu of a rung of the ladder: the commands of the key table that act on the rung, and the fit. */
 export function rungMenuItems({ index, count, readOnly, canPaste, run }: RungMenuContext): MenuItem[] {
   const item = (id: string, label: string, over: Partial<MenuItem> = {}): MenuItem => ({
-    id, label, shortcut: actionsOf('ld').find((action) => action.id === id)?.keys[0], onSelect: () => run(id), ...over,
+    id,
+    label,
+    shortcut: actionsOf('ld').find((action) => action.id === id)?.keys[0],
+    onSelect: () => run(id),
+    ...over,
   });
   const unless = (reason: string | undefined): Partial<MenuItem> => (reason ? { disabled: true, disabledReason: reason } : {});
   const editing = readOnly ? t('editor.menu.readOnly') : undefined;

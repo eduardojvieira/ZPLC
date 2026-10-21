@@ -17,7 +17,8 @@ describe('LNG-012 the key table of the visual editors', () => {
 
   it('turns a chord of the table back into the event that produces it', () => {
     for (const action of KEYMAP) {
-      for (const chord of action.keys) expect([action.editor, action.id, chordOf(parseChord(chord))]).toEqual([action.editor, action.id, chord]);
+      for (const chord of action.keys)
+        expect([action.editor, action.id, chordOf(parseChord(chord))]).toEqual([action.editor, action.id, chord]);
     }
   });
 
@@ -39,9 +40,11 @@ describe('LNG-012 the key table of the visual editors', () => {
   it('offers every editing action of each editor: cursor, insert, bind, delete in all three, and connect in the two that wire', () => {
     for (const editor of VISUAL_EDITORS) {
       const groups = new Set(actionsOf(editor).map((action) => action.group));
-      for (const group of ['cursor', 'insert', 'bind', 'delete'] as const) expect([editor, group, groups.has(group)]).toEqual([editor, group, true]);
+      for (const group of ['cursor', 'insert', 'bind', 'delete'] as const)
+        expect([editor, group, groups.has(group)]).toEqual([editor, group, true]);
     }
-    for (const editor of ['fbd', 'sfc'] as const) expect([editor, actionsOf(editor).some((action) => action.group === 'connect')]).toEqual([editor, true]);
+    for (const editor of ['fbd', 'sfc'] as const)
+      expect([editor, actionsOf(editor).some((action) => action.group === 'connect')]).toEqual([editor, true]);
   });
 
   it('finds the action of a key event by editor, and nothing for a key that is not bound', () => {
@@ -52,7 +55,9 @@ describe('LNG-012 the key table of the visual editors', () => {
   });
 
   it('has in the ladder editor a command for every key of the table and a key for every command', () => {
-    const ids = actionsOf('ld').map((action) => action.id).sort();
+    const ids = actionsOf('ld')
+      .map((action) => action.id)
+      .sort();
     const commands = [...LD_MODEL_COMMANDS, ...LD_EDITOR_COMMANDS].filter((id) => id !== 'insertElement').sort();
     expect(ids).toEqual(commands);
   });

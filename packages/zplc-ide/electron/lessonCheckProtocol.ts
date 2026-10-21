@@ -9,14 +9,17 @@
  */
 import { isLessonId, parseGradeRecord, type GradeRecord } from '../shared/learnProgressModel.js';
 
-export interface LessonCheckRequest { workspaceId: string; rootId: string; lessonId: string }
+export interface LessonCheckRequest {
+  workspaceId: string;
+  rootId: string;
+  lessonId: string;
+}
 
 export const LESSON_CHECK_REASONS = ['unknown-lesson', 'index-tampered', 'not-graded'] as const;
-export type LessonCheckReason = typeof LESSON_CHECK_REASONS[number];
+export type LessonCheckReason = (typeof LESSON_CHECK_REASONS)[number];
 
 export type LessonCheckAnswer =
-  | { ok: true; record: GradeRecord; execution?: unknown }
-  | { ok: false; reason: LessonCheckReason; codes: string[]; execution?: unknown };
+  { ok: true; record: GradeRecord; execution?: unknown } | { ok: false; reason: LessonCheckReason; codes: string[]; execution?: unknown };
 
 const WORKSPACE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const CODE = /^[A-Z][A-Z0-9_]{1,63}$/;
@@ -24,11 +27,16 @@ const isPlain = (value: unknown): value is Record<string, unknown> => typeof val
 
 /** The exact request of the channel: the workspace token, the folder id of the window and a lesson id. */
 export function isLessonCheckRequest(value: unknown): value is LessonCheckRequest {
-  return isPlain(value)
-    && Object.keys(value).length === 3
-    && typeof value.workspaceId === 'string' && WORKSPACE_ID.test(value.workspaceId)
-    && typeof value.rootId === 'string' && value.rootId.length >= 1 && value.rootId.length <= 64
-    && isLessonId(value.lessonId);
+  return (
+    isPlain(value) &&
+    Object.keys(value).length === 3 &&
+    typeof value.workspaceId === 'string' &&
+    WORKSPACE_ID.test(value.workspaceId) &&
+    typeof value.rootId === 'string' &&
+    value.rootId.length >= 1 &&
+    value.rootId.length <= 64 &&
+    isLessonId(value.lessonId)
+  );
 }
 
 /** The codes of the diagnostics of a run, as strings of a fixed shape; anything else is dropped. */
@@ -68,6 +76,11 @@ export function parseLessonCheckAnswer(value: unknown): LessonCheckAnswer | unde
     return record ? { ok: true, record, ...(execution === undefined ? {} : { execution }) } : undefined;
   }
   const reason = LESSON_CHECK_REASONS.find((candidate) => candidate === rest.reason);
-  const codes = Array.isArray(rest.codes) && rest.codes.length <= 8 && rest.codes.every((code) => typeof code === 'string' && CODE.test(code)) ? rest.codes as string[] : undefined;
-  return rest.ok === false && keys === 'codes,ok,reason' && reason && codes ? { ok: false, reason, codes, ...(execution === undefined ? {} : { execution }) } : undefined;
+  const codes =
+    Array.isArray(rest.codes) && rest.codes.length <= 8 && rest.codes.every((code) => typeof code === 'string' && CODE.test(code))
+      ? (rest.codes as string[])
+      : undefined;
+  return rest.ok === false && keys === 'codes,ok,reason' && reason && codes
+    ? { ok: false, reason, codes, ...(execution === undefined ? {} : { execution }) }
+    : undefined;
 }

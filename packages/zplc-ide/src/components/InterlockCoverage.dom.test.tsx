@@ -6,9 +6,14 @@ import type { WorkspaceSafetyPresentation } from './workspaceSafetyPresentation'
 const dom = await setupDom();
 
 const pair = { outputs: ['Motor_Fwd', 'Motor_Rev'] as [string, string] };
-const report = (kind: 'covered' | 'uncovered'): WorkspaceSafetyPresentation => (
-  { kind, declared: [pair], covered: kind === 'covered' ? [pair] : [], uncovered: kind === 'uncovered' ? [pair] : [], diagnostics: [] } as unknown as WorkspaceSafetyPresentation
-);
+const report = (kind: 'covered' | 'uncovered'): WorkspaceSafetyPresentation =>
+  ({
+    kind,
+    declared: [pair],
+    covered: kind === 'covered' ? [pair] : [],
+    uncovered: kind === 'uncovered' ? [pair] : [],
+    diagnostics: [],
+  }) as unknown as WorkspaceSafetyPresentation;
 
 describe('Declared-interlock coverage check (IDE-032) in a DOM', () => {
   it('is a named region with a heading, a check button and the claim it does not make', async () => {
@@ -43,7 +48,9 @@ describe('Declared-interlock coverage check (IDE-032) in a DOM', () => {
   });
 
   it('presents the answer as a table of the declared pairs, naming the outputs', () => {
-    dom.render(<InterlockCoverage availability="ready" state={{ presentation: report('uncovered') }} busy={false} onCheck={() => undefined} />);
+    dom.render(
+      <InterlockCoverage availability="ready" state={{ presentation: report('uncovered') }} busy={false} onCheck={() => undefined} />,
+    );
     expect(dom.screen.getByRole('table', { name: dom.t('interlock.declaredOutputInterlockCoverag') })).toBeTruthy();
     expect(document.body.textContent).toContain('Motor_Fwd');
     expect(document.body.textContent).toContain('Motor_Rev');

@@ -40,7 +40,9 @@ const reads = (path: string, body: string) => productReads({ path, text: body },
 describe('test source guard: a test that reads a product source file (VF-006)', () => {
   it('flags a component source read next to the test', () => {
     const body = `import { join } from 'node:path';\n${read("join(import.meta.dir, 'Console.tsx')")}`;
-    expect(reads('packages/zplc-ide/src/components/Console.tabNavigation.test.ts', body)).toEqual(['packages/zplc-ide/src/components/Console.tsx']);
+    expect(reads('packages/zplc-ide/src/components/Console.tabNavigation.test.ts', body)).toEqual([
+      'packages/zplc-ide/src/components/Console.tsx',
+    ]);
   });
 
   it('flags a style sheet reached by a URL relative to the test', () => {
@@ -55,7 +57,7 @@ describe('test source guard: a test that reads a product source file (VF-006)', 
 
   it('follows a directory constant and a loop variable to the files that are read', () => {
     const body = [
-      "const electronDir = path.join(import.meta.dir);",
+      'const electronDir = path.join(import.meta.dir);',
       "for (const name of ['main.ts']) {",
       `  ${read('path.join(electronDir, name)')}`,
       '}',
@@ -75,28 +77,40 @@ describe('test source guard: a test that reads a product source file (VF-006)', 
 
   it('follows a helper parameter to the arguments of the helper calls, a rest parameter included', () => {
     const body = [
-      "const header = (path: string) => readFile" + "Sync(new URL(`../../../${path}`, import.meta.url), 'utf8');",
-      "const sourceOf = (...parts: string[]) => readFile" + "Sync(join(import.meta.dir, '..', ...parts), 'utf8');",
+      'const header = (path: string) => readFile' + "Sync(new URL(`../../../${path}`, import.meta.url), 'utf8');",
+      'const sourceOf = (...parts: string[]) => readFile' + "Sync(join(import.meta.dir, '..', ...parts), 'utf8');",
       "header('firmware/lib/zplc_core/include/zplc_isa.h');",
       "sourceOf('components', 'Console.tsx');",
     ].join('\n');
-    expect(reads('packages/zplc-ide/src/store/wiring.test.ts', body)).toEqual(['firmware/lib/zplc_core/include/zplc_isa.h', 'packages/zplc-ide/src/components/Console.tsx']);
+    expect(reads('packages/zplc-ide/src/store/wiring.test.ts', body)).toEqual([
+      'firmware/lib/zplc_core/include/zplc_isa.h',
+      'packages/zplc-ide/src/components/Console.tsx',
+    ]);
   });
 
   it('follows a callback parameter to the array it maps over', () => {
-    const body = "const text = ['Console.tsx'].map((name) => " + read('join(import.meta.dir, name)').replace('const text = ', '').replace(';', ')');
+    const body =
+      "const text = ['Console.tsx'].map((name) => " + read('join(import.meta.dir, name)').replace('const text = ', '').replace(';', ')');
     expect(reads('packages/zplc-ide/src/components/x.test.ts', body)).toEqual(['packages/zplc-ide/src/components/Console.tsx']);
   });
 
   it('follows a path constant that the test imports from a tracked module', () => {
-    const body = ["import { SOURCE } from './release-version';", "const root = join(import.meta.dir, '..');", read('join(root, SOURCE)')].join('\n');
-    const modules: Record<string, string> = { 'scripts/release-version.ts': "export const SOURCE = 'firmware/lib/zplc_core/src/core/vm.c';" };
-    expect(productReads({ path: 'scripts/release-version.test.ts', text: body }, tracked, (path) => modules[path])).toEqual(['firmware/lib/zplc_core/src/core/vm.c']);
+    const body = [
+      "import { SOURCE } from './release-version';",
+      "const root = join(import.meta.dir, '..');",
+      read('join(root, SOURCE)'),
+    ].join('\n');
+    const modules: Record<string, string> = {
+      'scripts/release-version.ts': "export const SOURCE = 'firmware/lib/zplc_core/src/core/vm.c';",
+    };
+    expect(productReads({ path: 'scripts/release-version.test.ts', text: body }, tracked, (path) => modules[path])).toEqual([
+      'firmware/lib/zplc_core/src/core/vm.c',
+    ]);
   });
 
   it('reports the directory when a listing of it feeds a read', () => {
     const body = [
-      'const files = readdir' + 'Sync(join(import.meta.dir, \'stdlib\')).map((name) => join(import.meta.dir, \'stdlib\', name));',
+      'const files = readdir' + "Sync(join(import.meta.dir, 'stdlib')).map((name) => join(import.meta.dir, 'stdlib', name));",
       'const offenders = files.filter((file) => ' + read('file').replace('const text = ', '').replace(';', ')') + ';',
     ].join('\n');
     expect(reads('packages/zplc-compiler/src/compiler/x.test.ts', body)).toEqual(['packages/zplc-compiler/src/compiler/stdlib/']);
@@ -104,13 +118,22 @@ describe('test source guard: a test that reads a product source file (VF-006)', 
 
   it('flags a Python test that loads the module under test and reads the file that module names', () => {
     const validator = 'RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"\n';
-    const body = 'MODULE_PATH = Path(__file__).with_name("validate_release_evidence.py")\ndef workflow():\n    return validator.RELEASE_WORKFLOW.read_text()\n';
+    const body =
+      'MODULE_PATH = Path(__file__).with_name("validate_release_evidence.py")\ndef workflow():\n    return ' +
+      'validator.RELEASE_WORKFLOW.read_text()\n';
     const modules: Record<string, string> = { 'tools/hil/validate_release_evidence.py': validator };
-    expect(productReads({ path: 'tools/hil/test_validate_release_evidence.py', text: body }, tracked, (path) => modules[path])).toEqual(['.github/workflows/release.yml']);
+    expect(productReads({ path: 'tools/hil/test_validate_release_evidence.py', text: body }, tracked, (path) => modules[path])).toEqual([
+      '.github/workflows/release.yml',
+    ]);
   });
 
   it('flags a Python helper that reads the path it is given, from the paths it is called with', () => {
-    const body = ['ROOT = Path(__file__).resolve().parents[2]', 'def defines(path):', '    return path.read_text()', 'defines(ROOT / "firmware/app/src/zplc_modbus.c")'].join('\n');
+    const body = [
+      'ROOT = Path(__file__).resolve().parents[2]',
+      'def defines(path):',
+      '    return path.read_text()',
+      'defines(ROOT / "firmware/app/src/zplc_modbus.c")',
+    ].join('\n');
     expect(reads('tools/contract/test_contract.py', body)).toEqual(['firmware/app/src/zplc_modbus.c']);
   });
 
@@ -120,7 +143,11 @@ describe('test source guard: a test that reads a product source file (VF-006)', 
   });
 
   it('flags a test outside the assembler that asserts on generated assembly text', () => {
-    const body = ['const result = compileToBinary(source);', 'expect(result.' + 'assembly).toContain("STORE16 0x2000");', 'expect(' + 'asm).not.toMatch(/PUSH/);'].join('\n');
+    const body = [
+      'const result = compileToBinary(source);',
+      'expect(result.' + 'assembly).toContain("STORE16 0x2000");',
+      'expect(' + 'asm).not.toMatch(/PUSH/);',
+    ].join('\n');
     expect(reads('packages/zplc-compiler/src/compiler/numeric.test.ts', body)).toEqual(['generated assembly text']);
   });
 
@@ -153,12 +180,21 @@ describe('test source guard: reads that are not product source (VF-006)', () => 
   });
 
   it('ignores repository-relative paths read from a temporary folder: only a chain anchored at the test is the repository', () => {
-    const body = ["const root = await makeTemporaryRepository();", "const before = ['firmware/app/CMakeLists.txt'].map((name) => " + read('join(root, name)').replace('const text = ', '').replace(';', ')') + ';'].join('\n');
+    const body = [
+      'const root = await makeTemporaryRepository();',
+      "const before = ['firmware/app/CMakeLists.txt'].map((name) => " +
+        read('join(root, name)').replace('const text = ', '').replace(';', ')') +
+        ';',
+    ].join('\n');
     expect(reads('packages/zplc-ide/src/cli/toolApi.test.ts', body)).toEqual([]);
   });
 
   it('ignores a read of a path that only the test knows, even when it names a product file elsewhere', () => {
-    const body = ["const cli = join(import.meta.dir, 'index.ts');", 'const out = ' + 'readFile' + 'Sync(artifact, \'utf8\');', 'Bun.spawn([cli]);'].join('\n');
+    const body = [
+      "const cli = join(import.meta.dir, 'index.ts');",
+      'const out = ' + 'readFile' + "Sync(artifact, 'utf8');",
+      'Bun.spawn([cli]);',
+    ].join('\n');
     expect(reads('packages/zplc-ide/src/cli/run.test.ts', body)).toEqual([]);
   });
 
@@ -177,7 +213,13 @@ describe('test source guard: reads that are not product source (VF-006)', () => 
   });
 
   it('does not take the bytes or the diagnostics of a build for assembly text', () => {
-    const body = ['expect(result.bytecode.length).toBeGreaterThan(0);', 'expect(result.diagnostics).toEqual([]);', 'expect(assembled).toBe(true);', 'expect(result.' + 'assembly).toEqual(expect.any(String));', "expect(label).toContain('assemble');"].join('\n');
+    const body = [
+      'expect(result.bytecode.length).toBeGreaterThan(0);',
+      'expect(result.diagnostics).toEqual([]);',
+      'expect(assembled).toBe(true);',
+      'expect(result.' + 'assembly).toEqual(expect.any(String));',
+      "expect(label).toContain('assemble');",
+    ].join('\n');
     expect(reads('packages/zplc-compiler/src/compiler/x.test.ts', body)).toEqual([]);
   });
 });
@@ -192,27 +234,41 @@ describe('test source guard: the list of known offenders (VF-006)', () => {
     reason: 'pins the tab markup as text; replaced by a render test once the DOM environment exists',
     ...overrides,
   });
-  const offenders = new Map([['packages/zplc-ide/src/components/Console.tabNavigation.test.ts', ['packages/zplc-ide/src/components/Console.tsx']]]);
+  const offenders = new Map([
+    ['packages/zplc-ide/src/components/Console.tabNavigation.test.ts', ['packages/zplc-ide/src/components/Console.tsx']],
+  ]);
 
   it('accepts a list that matches what the tests read', () => {
     expect(checkOffenders(offenders, [entry()])).toEqual([]);
   });
 
   it('fails on a test that reads product source and is not listed', () => {
-    expect(checkOffenders(offenders, [])).toEqual([expect.stringContaining('new offender: packages/zplc-ide/src/components/Console.tabNavigation.test.ts')]);
+    expect(checkOffenders(offenders, [])).toEqual([
+      expect.stringContaining('new offender: packages/zplc-ide/src/components/Console.tabNavigation.test.ts'),
+    ]);
   });
 
   it('fails on a listed test that no longer reads product source, so the list only shrinks', () => {
-    expect(checkOffenders(new Map(), [entry()])).toEqual([expect.stringContaining('stale entry: packages/zplc-ide/src/components/Console.tabNavigation.test.ts no longer reads product source')]);
+    expect(checkOffenders(new Map(), [entry()])).toEqual([
+      expect.stringContaining('stale entry: packages/zplc-ide/src/components/Console.tabNavigation.test.ts no longer reads product source'),
+    ]);
   });
 
   it('fails on a listed test that stops reading one of its files, and on one that starts reading another', () => {
-    expect(checkOffenders(offenders, [entry({ reads: ['packages/zplc-ide/src/components/Console.tsx', 'packages/zplc-ide/src/App.tsx'] })])).toEqual([expect.stringContaining('no longer reads packages/zplc-ide/src/App.tsx')]);
-    expect(checkOffenders(offenders, [entry({ reads: ['packages/zplc-ide/src/App.tsx'] })]).join('\n')).toContain('does not name: packages/zplc-ide/src/components/Console.tsx');
+    expect(
+      checkOffenders(offenders, [entry({ reads: ['packages/zplc-ide/src/components/Console.tsx', 'packages/zplc-ide/src/App.tsx'] })]),
+    ).toEqual([expect.stringContaining('no longer reads packages/zplc-ide/src/App.tsx')]);
+    expect(checkOffenders(offenders, [entry({ reads: ['packages/zplc-ide/src/App.tsx'] })]).join('\n')).toContain(
+      'does not name: packages/zplc-ide/src/components/Console.tsx',
+    );
   });
 
   it('rejects an entry that has no requirement, reason, replacement or date, or is listed twice', () => {
-    const errors = validatePinned([entry({ requirement: 'later', reason: ' ', replacement: 'someday', added: '10/10', reads: [] }), entry(), entry()]);
+    const errors = validatePinned([
+      entry({ requirement: 'later', reason: ' ', replacement: 'someday', added: '10/10', reads: [] }),
+      entry(),
+      entry(),
+    ]);
     expect(errors.join('\n')).toContain('requirement must look like VF-006');
     expect(errors.join('\n')).toContain('reason must say');
     expect(errors.join('\n')).toContain('replacement must be one of');

@@ -14,16 +14,7 @@ export type { ILToken, ILTokenTypeValue } from './lexer';
 
 // Re-export parser
 export { parseIL, ILParseError } from './parser';
-export type {
-    ILProgram,
-    ILInstruction,
-    ILVarBlock,
-    ILVarDecl,
-    ILOperand,
-    ILFBParam,
-    ILOperator,
-    ILOperatorCategory,
-} from './parser';
+export type { ILProgram, ILInstruction, ILVarBlock, ILVarDecl, ILOperand, ILFBParam, ILOperator, ILOperatorCategory } from './parser';
 
 // Re-export transpiler
 export { transpileILToST } from './ilToST';

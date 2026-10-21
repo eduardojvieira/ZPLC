@@ -495,11 +495,11 @@ END_PROGRAM
 6. Ejecutar `zplc start` y registrar la primera transición esperada
 
 | Placa    | Hash/tamaño | Restore detenido | Start explícito | PASS/FAIL |
-| -------- | ----------- | ---------------- | ---------------- | --------- |
-| Pico     | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
-| GIGA R1  | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
-| ESP32-S3 | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
-| Nucleo   | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
+| -------- | ----------- | ---------------- | --------------- | --------- |
+| Pico     | \_\_\_\_    | [ ] SI [ ] NO    | [ ] SI [ ] NO   | [ ]       |
+| GIGA R1  | \_\_\_\_    | [ ] SI [ ] NO    | [ ] SI [ ] NO   | [ ]       |
+| ESP32-S3 | \_\_\_\_    | [ ] SI [ ] NO    | [ ] SI [ ] NO   | [ ]       |
+| Nucleo   | \_\_\_\_    | [ ] SI [ ] NO    | [ ] SI [ ] NO   | [ ]       |
 
 ---
 

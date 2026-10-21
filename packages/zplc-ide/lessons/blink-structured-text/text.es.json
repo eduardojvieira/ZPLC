@@ -55,7 +55,5 @@
       "text": "Escriba Clock(IN := Enable, PT := T#300ms); IF Clock.Q THEN LampOn := NOT LampOn; Clock(IN := FALSE, PT := T#300ms); END_IF; Lamp := LampOn AND Enable;"
     }
   ],
-  "faultCases": [
-    "El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms."
-  ]
+  "faultCases": ["El programa inicial mantiene Lamp en OFF todo el tiempo, así que nunca pasa a ON a los {{t:550}} ms."]
 }

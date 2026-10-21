@@ -5,5 +5,9 @@
   "tags": ["arch-sensitive", "shifts"],
   "scans": 1,
   "scanMs": 10,
-  "expect": [{ "at": "%QD0", "type": "DWORD", "value": 0 }, { "at": "%QD4", "type": "DWORD", "value": 0 }, { "at": "%QD8", "type": "DWORD", "value": 0 }]
+  "expect": [
+    { "at": "%QD0", "type": "DWORD", "value": 0 },
+    { "at": "%QD4", "type": "DWORD", "value": 0 },
+    { "at": "%QD8", "type": "DWORD", "value": 0 }
+  ]
 }

@@ -7,9 +7,7 @@
         "src/BatchCount.st": "PROGRAM BatchCount\nVAR_INPUT PartSensor AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT BatchFull AT %Q0.0 : BOOL; END_VAR\nVAR Count : CTU; END_VAR\nCount(CU := PartSensor, R := Reset, PV := 3);\nBatchFull := Count.Q;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"batch_count_fbd_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"BatchCount.st\"]}]}"
       },
-      "remove": [
-        "src/BatchCount.fbd.json"
-      ]
+      "remove": ["src/BatchCount.fbd.json"]
     }
   ],
   "wrong": [

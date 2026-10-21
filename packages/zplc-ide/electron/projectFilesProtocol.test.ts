@@ -8,7 +8,11 @@ import {
   PROJECT_FILES_OPS,
   PROJECT_RECENT_OPS,
   parseProjectFilesRequest,
-  parseRecentRequest, PROJECT_WATCH_OPS, parseProjectChange, parseWatchRequest } from './projectFilesProtocol';
+  parseRecentRequest,
+  PROJECT_WATCH_OPS,
+  parseProjectChange,
+  parseWatchRequest,
+} from './projectFilesProtocol';
 
 const ROOT = { rootId: 'root-1' };
 const VALID: Record<string, unknown> = {
@@ -26,7 +30,9 @@ describe('project files message schema', () => {
     const channels = Object.values(PROJECT_FILES_CHANNEL);
     expect(new Set(channels).size).toBe(channels.length);
     expect(channels.every((channel) => channel.startsWith('project-files:'))).toBe(true);
-    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS].sort());
+    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(
+      ['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS].sort(),
+    );
   });
 
   it('accepts exactly one well-formed request object per operation', () => {
@@ -132,13 +138,25 @@ describe('recent project message schema (IDE-008)', () => {
 describe('watching the folder for changes made outside Studio (IDE-004)', () => {
   it('takes exactly the id of the window folder', () => {
     expect(parseWatchRequest([{ rootId: 'r' }])).toEqual({ rootId: 'r' });
-    for (const bad of [[], [{}], [{ rootId: '' }], [{ rootId: 'r', path: '.' }], ['r'], [{ rootId: 'r' }, 1]]) expect(parseWatchRequest(bad)).toBeNull();
+    for (const bad of [[], [{}], [{ rootId: '' }], [{ rootId: 'r', path: '.' }], ['r'], [{ rootId: 'r' }, 1]])
+      expect(parseWatchRequest(bad)).toBeNull();
   });
 
   it('accepts a change batch of relative paths, and nothing else', () => {
-    expect(parseProjectChange({ rootId: 'r', paths: ['src/Motor.st'], overflow: false })).toEqual({ rootId: 'r', paths: ['src/Motor.st'], overflow: false });
+    expect(parseProjectChange({ rootId: 'r', paths: ['src/Motor.st'], overflow: false })).toEqual({
+      rootId: 'r',
+      paths: ['src/Motor.st'],
+      overflow: false,
+    });
     expect(parseProjectChange({ rootId: 'r', paths: [], overflow: true })).not.toBeNull();
-    for (const bad of [null, {}, { rootId: 'r', paths: 'x', overflow: false }, { rootId: 'r', paths: [1], overflow: false }, { rootId: 'r', paths: [], overflow: false, extra: 1 }, { rootId: 'r', paths: Array.from({ length: 300 }, () => 'a'), overflow: false }]) {
+    for (const bad of [
+      null,
+      {},
+      { rootId: 'r', paths: 'x', overflow: false },
+      { rootId: 'r', paths: [1], overflow: false },
+      { rootId: 'r', paths: [], overflow: false, extra: 1 },
+      { rootId: 'r', paths: Array.from({ length: 300 }, () => 'a'), overflow: false },
+    ]) {
       expect(parseProjectChange(bad)).toBeNull();
     }
   });

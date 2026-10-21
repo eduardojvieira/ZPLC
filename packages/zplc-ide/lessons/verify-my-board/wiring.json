@@ -16,9 +16,7 @@
       "id": "onboard-led",
       "kind": "led",
       "channel": "DO4",
-      "boards": [
-        "rpi-pico-rp2040"
-      ],
+      "boards": ["rpi-pico-rp2040"],
       "label": {
         "en": "On-board LED",
         "es": "LED integrado"

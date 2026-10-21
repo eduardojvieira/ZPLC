@@ -1,35 +1,25 @@
 {
   "requirement": "CMP-042",
   "title": "the initial value of a global is applied once, before the first scan of whichever task runs first",
-  "matrix": [
-    "declarations.var-global",
-    "pous.shared-pous-and-libraries"
-  ],
+  "matrix": ["declarations.var-global", "pous.shared-pous-and-libraries"],
   "note": "CMP-042 and CMP-025: a global has one storage and one initial value; a second program that runs its first scan later does not apply it again over what the first one has done. After three scans of the bumping task the counter is 103",
   "scans": 3,
   "scanMs": 10,
-  "files": [
-    "cmp-042-global-initial-value-is-applied-once-bump.st",
-    "cmp-042-global-initial-value-is-applied-once-globals.st"
-  ],
+  "files": ["cmp-042-global-initial-value-is-applied-once-bump.st", "cmp-042-global-initial-value-is-applied-once-globals.st"],
   "tasks": [
     {
       "name": "BumpTask",
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 0,
-      "programs": [
-        "cmp-042-global-initial-value-is-applied-once-bump.st"
-      ]
+      "programs": ["cmp-042-global-initial-value-is-applied-once-bump.st"]
     },
     {
       "name": "ReadTask",
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "programs": [
-        "main.st"
-      ]
+      "programs": ["main.st"]
     }
   ],
   "expect": [

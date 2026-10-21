@@ -1,13 +1,13 @@
 /**
  * LDElement - SVG Ladder Diagram Element Rendering
- * 
+ *
  * Renders individual LD elements as SVG:
  * - Contacts (NO, NC, P, N) with proper IEC symbols
  * - Coils (Standard, Negated, Set, Reset)
  * - Function Blocks (TON, TOF, CTU, etc.)
- * 
+ *
  * All elements are designed to fit within an 80x60 cell grid.
- * 
+ *
  * Debug mode shows:
  * - Energized state (green wires, glow effects)
  * - Live values for contacts/coils (TRUE/FALSE or numeric)
@@ -65,10 +65,10 @@ const wireOf = (energized: boolean | undefined) => ({
 
 interface LDElementProps {
   element: LDElementType;
-  x: number;  // Grid column (0-based)
-  y: number;  // Grid row (0-based)
+  x: number; // Grid column (0-based)
+  y: number; // Grid row (0-based)
   selected?: boolean;
-  energized?: boolean;  // True when power flows through this element (debug mode)
+  energized?: boolean; // True when power flows through this element (debug mode)
   /** Debug values map for rich value display */
   debugValues?: DebugValuesMap;
   onClick?: () => void;
@@ -167,7 +167,7 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
   const isEdge = type === 'contact_p' || type === 'contact_n';
   const edgeLetter = type === 'contact_p' ? 'P' : type === 'contact_n' ? 'N' : '';
 
-  const strokeColor = selected ? COLORS.selected : (isNC ? COLORS.contactNC : COLORS.contact);
+  const strokeColor = selected ? COLORS.selected : isNC ? COLORS.contactNC : COLORS.contact;
   const wire = wireOf(energized);
   const boxWidth = 20;
   const boxHeight = 24;
@@ -176,44 +176,15 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
 
   return (
     <g>
-
       {/* Left wire segment */}
-      <line
-        x1={0}
-        y1={WIRE_Y}
-        x2={boxX}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={0} y1={WIRE_Y} x2={boxX} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* Right wire segment */}
-      <line
-        x1={boxX + boxWidth}
-        y1={WIRE_Y}
-        x2={CELL_WIDTH}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={boxX + boxWidth} y1={WIRE_Y} x2={CELL_WIDTH} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* Contact box (vertical lines) */}
-      <line
-        x1={boxX}
-        y1={boxY}
-        x2={boxX}
-        y2={boxY + boxHeight}
-        stroke={strokeColor}
-        strokeWidth={STROKE_WIDTH}
-      />
-      <line
-        x1={boxX + boxWidth}
-        y1={boxY}
-        x2={boxX + boxWidth}
-        y2={boxY + boxHeight}
-        stroke={strokeColor}
-        strokeWidth={STROKE_WIDTH}
-      />
+      <line x1={boxX} y1={boxY} x2={boxX} y2={boxY + boxHeight} stroke={strokeColor} strokeWidth={STROKE_WIDTH} />
+      <line x1={boxX + boxWidth} y1={boxY} x2={boxX + boxWidth} y2={boxY + boxHeight} stroke={strokeColor} strokeWidth={STROKE_WIDTH} />
 
       {/* NC diagonal line */}
       {isNC && (
@@ -246,14 +217,7 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
       {valueDisplay && <ValueBadge x={boxX + boxWidth + 2} y={boxY - 2} tone={valueTone ?? 'unknown'} text={valueDisplay} />}
 
       {/* Variable name below */}
-      <text
-        x={CELL_WIDTH / 2}
-        y={CELL_HEIGHT - 6}
-        fill={COLORS.textDim}
-        fontSize={9}
-        textAnchor="middle"
-        fontFamily="monospace"
-      >
+      <text x={CELL_WIDTH / 2} y={CELL_HEIGHT - 6} fill={COLORS.textDim} fontSize={9} textAnchor="middle" fontFamily="monospace">
         {variable?.substring(0, 10) || '???'}
       </text>
     </g>
@@ -312,49 +276,18 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueTo
 
   return (
     <g>
-
       {/* Left wire segment */}
-      <line
-        x1={0}
-        y1={WIRE_Y}
-        x2={centerX - radius}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={0} y1={WIRE_Y} x2={centerX - radius} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* Right wire segment */}
-      <line
-        x1={centerX + radius}
-        y1={WIRE_Y}
-        x2={CELL_WIDTH}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={centerX + radius} y1={WIRE_Y} x2={CELL_WIDTH} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* Coil circle (parentheses shape) */}
-      <ellipse
-        cx={centerX}
-        cy={centerY}
-        rx={radius}
-        ry={radius - 2}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth={STROKE_WIDTH}
-      />
+      <ellipse cx={centerX} cy={centerY} rx={radius} ry={radius - 2} fill="none" stroke={strokeColor} strokeWidth={STROKE_WIDTH} />
 
       {/* Inner symbol */}
       {innerText && (
-        <text
-          x={centerX}
-          y={centerY + 1}
-          fill={strokeColor}
-          fontSize={10}
-          fontWeight="bold"
-          textAnchor="middle"
-          dominantBaseline="middle"
-        >
+        <text x={centerX} y={centerY + 1} fill={strokeColor} fontSize={10} fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
           {innerText}
         </text>
       )}
@@ -363,14 +296,7 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueTo
       {valueDisplay && <ValueBadge x={centerX + radius + 2} y={centerY - radius - 2} tone={valueTone ?? 'unknown'} text={valueDisplay} />}
 
       {/* Variable name below */}
-      <text
-        x={CELL_WIDTH / 2}
-        y={CELL_HEIGHT - 6}
-        fill={COLORS.textDim}
-        fontSize={9}
-        textAnchor="middle"
-        fontFamily="monospace"
-      >
+      <text x={CELL_WIDTH / 2} y={CELL_HEIGHT - 6} fill={COLORS.textDim} fontSize={9} textAnchor="middle" fontFamily="monospace">
         {variable?.substring(0, 10) || '???'}
       </text>
     </g>
@@ -402,62 +328,62 @@ function getFBPorts(fbType: string): { inputs: string[]; outputs: Array<{ name: 
         inputs: ['IN', 'PT'],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'ET', type: 'TIME' }
-        ]
+          { name: 'ET', type: 'TIME' },
+        ],
       };
     case 'CTU':
       return {
         inputs: ['CU', 'R', 'PV'],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'CV', type: 'INT' }
-        ]
+          { name: 'CV', type: 'INT' },
+        ],
       };
     case 'CTD':
       return {
         inputs: ['CD', 'LD', 'PV'],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'CV', type: 'INT' }
-        ]
+          { name: 'CV', type: 'INT' },
+        ],
       };
     case 'R_TRIG':
     case 'F_TRIG':
       return {
         inputs: ['CLK'],
-        outputs: [{ name: 'Q', type: 'BOOL' }]
+        outputs: [{ name: 'Q', type: 'BOOL' }],
       };
     case 'COMM_PUBLISH':
       return {
         inputs: ['EN', 'IN'],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'DONE', type: 'BOOL' }
-        ]
+          { name: 'DONE', type: 'BOOL' },
+        ],
       };
     case 'COMM_SUBSCRIBE':
       return {
         inputs: ['EN'],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'VALID', type: 'BOOL' }
-        ]
+          { name: 'VALID', type: 'BOOL' },
+        ],
       };
     case 'COMM_MODBUS':
       return {
         inputs: ['EN', 'IN'],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'STATUS', type: 'BOOL' }
-        ]
+          { name: 'STATUS', type: 'BOOL' },
+        ],
       };
     case 'COMM_CONNECT':
       return {
         inputs: ['EN'],
         outputs: [
           { name: 'CONNECTED', type: 'BOOL' },
-          { name: 'ERROR', type: 'BOOL' }
-        ]
+          { name: 'ERROR', type: 'BOOL' },
+        ],
       };
     case 'MB_COIL':
     case 'MB_DISCRETE_INPUT':
@@ -467,19 +393,19 @@ function getFBPorts(fbType: string): { inputs: string[]; outputs: Array<{ name: 
         inputs: ['EN', 'IN', 'ADDR'],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'STATUS', type: 'BOOL' }
-        ]
+          { name: 'STATUS', type: 'BOOL' },
+        ],
       };
     default:
       return {
         inputs: ['IN'],
-        outputs: [{ name: 'Q', type: 'BOOL' }]
+        outputs: [{ name: 'Q', type: 'BOOL' }],
       };
   }
 }
 
 function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymbolProps) {
-  const boxWidth = 70;  // Wider to accommodate values
+  const boxWidth = 70; // Wider to accommodate values
   const boxHeight = 44;
   const boxX = (CELL_WIDTH - boxWidth) / 2;
   const boxY = (CELL_HEIGHT - boxHeight) / 2 - 2;
@@ -500,26 +426,11 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
 
   return (
     <g>
-
       {/* Left wire segment */}
-      <line
-        x1={0}
-        y1={WIRE_Y}
-        x2={boxX}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={0} y1={WIRE_Y} x2={boxX} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* Right wire segment */}
-      <line
-        x1={boxX + boxWidth}
-        y1={WIRE_Y}
-        x2={CELL_WIDTH}
-        y2={WIRE_Y}
-        stroke={wire.color}
-        strokeWidth={wire.width}
-      />
+      <line x1={boxX + boxWidth} y1={WIRE_Y} x2={CELL_WIDTH} y2={WIRE_Y} stroke={wire.color} strokeWidth={wire.width} />
 
       {/* FB box */}
       <rect
@@ -544,46 +455,46 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         fontFamily="sans-serif"
       >
         <title>{fbType || t('editors.ld.fb')}</title>
-        {typeLines.map((line, index) => <tspan key={`${line}-${index}`} x={CELL_WIDTH / 2} dy={index === 0 ? 0 : 7}>{line}</tspan>)}
+        {typeLines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={CELL_WIDTH / 2} dy={index === 0 ? 0 : 7}>
+            {line}
+          </tspan>
+        ))}
       </text>
 
       {/* Instance name remains inside the fixed IEC block. */}
       <title>{instance || fbType || t('editors.ld.fb')}</title>
       {instanceLines.map((line, index) => (
-        <text key={`${line}-${index}`} x={CELL_WIDTH / 2} y={boxY + 24 + index * 6} fill={COLORS.textDim} fontSize={6} textAnchor="middle" fontFamily="monospace">{line}</text>
+        <text
+          key={`${line}-${index}`}
+          x={CELL_WIDTH / 2}
+          y={boxY + 24 + index * 6}
+          fill={COLORS.textDim}
+          fontSize={6}
+          textAnchor="middle"
+          fontFamily="monospace"
+        >
+          {line}
+        </text>
       ))}
 
       {/* Output port values (shown inside the box at bottom) */}
       {showsOutputValues && (
         <g>
           {/* Divider line */}
-          <line
-            x1={boxX + 2}
-            y1={boxY + 28}
-            x2={boxX + boxWidth - 2}
-            y2={boxY + 28}
-            stroke={COLORS.wire}
-            strokeWidth={0.5}
-          />
+          <line x1={boxX + 2} y1={boxY + 28} x2={boxX + boxWidth - 2} y2={boxY + 28} stroke={COLORS.wire} strokeWidth={0.5} />
 
           {/* Output values row */}
           {ports.outputs.map((port, idx) => {
             const info = getPortDebug(port.name);
             const displayVal = formatValue(info);
             const tone = sampleTone(info);
-            const xPos = boxX + 8 + (idx * (boxWidth - 16) / Math.max(ports.outputs.length, 1));
+            const xPos = boxX + 8 + (idx * (boxWidth - 16)) / Math.max(ports.outputs.length, 1);
 
             return (
               <g key={port.name}>
                 {/* Port name */}
-                <text
-                  x={xPos + 12}
-                  y={boxY + 36}
-                  fill={COLORS.textDim}
-                  fontSize={6}
-                  textAnchor="middle"
-                  fontFamily="monospace"
-                >
+                <text x={xPos + 12} y={boxY + 36} fill={COLORS.textDim} fontSize={6} textAnchor="middle" fontFamily="monospace">
                   {port.name}
                 </text>
                 {/* Port value */}
@@ -622,23 +533,24 @@ interface WireProps {
 function Wire({ hasWire, energized }: WireProps) {
   if (!hasWire) return null;
 
-  return (
-    <line
-      x1={0}
-      y1={WIRE_Y}
-      x2={CELL_WIDTH}
-      y2={WIRE_Y}
-      stroke={wireOf(energized).color}
-      strokeWidth={wireOf(energized).width}
-    />
-  );
+  return <line x1={0} y1={WIRE_Y} x2={CELL_WIDTH} y2={WIRE_Y} stroke={wireOf(energized).color} strokeWidth={wireOf(energized).width} />;
 }
 
 // =============================================================================
 // Main Element Component
 // =============================================================================
 
-export default function LDElement({ element, x, y, selected, energized, debugValues, onClick, onDragStart, draggable = false }: LDElementProps) {
+export default function LDElement({
+  element,
+  x,
+  y,
+  selected,
+  energized,
+  debugValues,
+  onClick,
+  onDragStart,
+  draggable = false,
+}: LDElementProps) {
   const translateX = x * CELL_WIDTH;
   const translateY = y * CELL_HEIGHT;
   const selectable = Boolean(onClick);
@@ -661,8 +573,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
     const data = JSON.stringify({
       type: element.type,
       fbType: element.fbType,
-      category: element.type === 'function_block' ? 'function_block' :
-        element.type.startsWith('contact') ? 'contact' : 'coil',
+      category: element.type === 'function_block' ? 'function_block' : element.type.startsWith('contact') ? 'contact' : 'coil',
       isMove: true,
       elementId: element.id,
       fromRow: element.row,
@@ -721,13 +632,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
 
     if (isFunctionBlock(element.type)) {
       return (
-        <FBSymbol
-          fbType={element.fbType}
-          instance={element.instance}
-          selected={selected}
-          energized={energized}
-          debugValues={debugValues}
-        />
+        <FBSymbol fbType={element.fbType} instance={element.instance} selected={selected} energized={energized} debugValues={debugValues} />
       );
     }
 
@@ -768,7 +673,7 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
           style={{
             width: '100%',
             height: '100%',
-            cursor: draggable ? 'grab' : (onClick ? 'pointer' : 'default'),
+            cursor: draggable ? 'grab' : onClick ? 'pointer' : 'default',
             background: 'transparent',
           }}
           // Using namespace for React/SVG foreignObject compatibility

@@ -58,22 +58,22 @@ are evidence-gated; source presence alone is not a product qualification.
 
 ## Layout
 
-| Path | Contents |
-|---|---|
-| `firmware/lib/zplc_core/` | The VM, loader and HAL implementations (C99) |
-| `firmware/app/` | The Zephyr application and board overlays |
-| `firmware/apps/posix_host/` | The native runtime that Studio uses as its simulator |
-| `packages/zplc-compiler/` | Structured Text compiler and assembler |
-| `packages/zplc-ide/` | ZPLC Studio (Electron), the CLI, the MCP server and the example projects in `projects/` |
-| `packages/zplc-hil/`, `tools/hil/` | Hardware-in-the-loop tools; they need a bench |
-| `tools/contract/` | The generated binary contract |
-| `tools/firmware-test/` | The firmware test method on Linux |
-| `tools/docs/` | The reference generators and the documentation checks (names, samples, fragments, screenshots, capability claims) |
-| `conformance/` | Language conformance programs with expected results |
-| `examples/` | VM assembly fixtures used by the C tests; the PLC example projects are in `packages/zplc-ide/projects/` |
-| `docs/` | The documentation site, English and Spanish |
-| `specs/` | Specifications, release records and approved RFCs |
-| `.specify/` | The engineering constitution |
+| Path                               | Contents                                                                                                          |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `firmware/lib/zplc_core/`          | The VM, loader and HAL implementations (C99)                                                                      |
+| `firmware/app/`                    | The Zephyr application and board overlays                                                                         |
+| `firmware/apps/posix_host/`        | The native runtime that Studio uses as its simulator                                                              |
+| `packages/zplc-compiler/`          | Structured Text compiler and assembler                                                                            |
+| `packages/zplc-ide/`               | ZPLC Studio (Electron), the CLI, the MCP server and the example projects in `projects/`                           |
+| `packages/zplc-hil/`, `tools/hil/` | Hardware-in-the-loop tools; they need a bench                                                                     |
+| `tools/contract/`                  | The generated binary contract                                                                                     |
+| `tools/firmware-test/`             | The firmware test method on Linux                                                                                 |
+| `tools/docs/`                      | The reference generators and the documentation checks (names, samples, fragments, screenshots, capability claims) |
+| `conformance/`                     | Language conformance programs with expected results                                                               |
+| `examples/`                        | VM assembly fixtures used by the C tests; the PLC example projects are in `packages/zplc-ide/projects/`           |
+| `docs/`                            | The documentation site, English and Spanish                                                                       |
+| `specs/`                           | Specifications, release records and approved RFCs                                                                 |
+| `.specify/`                        | The engineering constitution                                                                                      |
 
 ## Roles
 

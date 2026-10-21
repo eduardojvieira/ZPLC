@@ -126,63 +126,63 @@ export const TokenType = {
     OR: 'OR',
     XOR: 'XOR',
     MOD: 'MOD',
-    
+
     // Symbols
-    ASSIGN: 'ASSIGN',           // :=
+    ASSIGN: 'ASSIGN', // :=
     OUTPUT_ASSIGN: 'OUTPUT_ASSIGN', // =>  (the binding of a function block output)
-    COLON: 'COLON',             // :
-    SEMICOLON: 'SEMICOLON',     // ;
-    DOT: 'DOT',                 // .
-    COMMA: 'COMMA',             // ,
-    LPAREN: 'LPAREN',           // (
-    RPAREN: 'RPAREN',           // )
-    LBRACKET: 'LBRACKET',       // [
-    RBRACKET: 'RBRACKET',       // ]
-    LCURLY: 'LCURLY',           // {
-    RCURLY: 'RCURLY',           // }
-    DOTDOT: 'DOTDOT',           // ..
-    AT: 'AT',                   // AT (for I/O mapping)
-    
+    COLON: 'COLON', // :
+    SEMICOLON: 'SEMICOLON', // ;
+    DOT: 'DOT', // .
+    COMMA: 'COMMA', // ,
+    LPAREN: 'LPAREN', // (
+    RPAREN: 'RPAREN', // )
+    LBRACKET: 'LBRACKET', // [
+    RBRACKET: 'RBRACKET', // ]
+    LCURLY: 'LCURLY', // {
+    RCURLY: 'RCURLY', // }
+    DOTDOT: 'DOTDOT', // ..
+    AT: 'AT', // AT (for I/O mapping)
+
     // Pointers
     REF_TO: 'REF_TO',
     REF: 'REF',
-    CARET: 'CARET',             // ^
+    CARET: 'CARET', // ^
 
     // Arithmetic operators
-    PLUS: 'PLUS',               // +
-    MINUS: 'MINUS',             // -
-    STAR: 'STAR',               // *
-    SLASH: 'SLASH',             // /
+    PLUS: 'PLUS', // +
+    MINUS: 'MINUS', // -
+    STAR: 'STAR', // *
+    SLASH: 'SLASH', // /
 
     // Comparison operators
-    EQ: 'EQ',                   // =
-    NE: 'NE',                   // <>
-    LT: 'LT',                   // <
-    LE: 'LE',                   // <=
-    GT: 'GT',                   // >
-    GE: 'GE',                   // >=
+    EQ: 'EQ', // =
+    NE: 'NE', // <>
+    LT: 'LT', // <
+    LE: 'LE', // <=
+    GT: 'GT', // >
+    GE: 'GE', // >=
 
-    POWER: 'POWER',             // ** (exponentiation; `&` is lexed as AND)
+    POWER: 'POWER', // ** (exponentiation; `&` is lexed as AND)
 
     // Literals and identifiers
     IDENTIFIER: 'IDENTIFIER',
     INTEGER: 'INTEGER',
-    REAL_LITERAL: 'REAL_LITERAL',  // 3.14, 0.5, 100.0
-    TIME_LITERAL: 'TIME_LITERAL',  // T#500ms, T#1s, etc.
-    DATE_LITERAL: 'DATE_LITERAL',  // D#1990-01-01
-    TOD_LITERAL: 'TOD_LITERAL',    // TOD#12:00:00
-    DT_LITERAL: 'DT_LITERAL',      // DT#1990-01-01-12:00:00
-    STRING_LITERAL: 'STRING_LITERAL',  // 'Hello World'
+    REAL_LITERAL: 'REAL_LITERAL', // 3.14, 0.5, 100.0
+    TIME_LITERAL: 'TIME_LITERAL', // T#500ms, T#1s, etc.
+    DATE_LITERAL: 'DATE_LITERAL', // D#1990-01-01
+    TOD_LITERAL: 'TOD_LITERAL', // TOD#12:00:00
+    DT_LITERAL: 'DT_LITERAL', // DT#1990-01-01-12:00:00
+    STRING_LITERAL: 'STRING_LITERAL', // 'Hello World'
     WSTRING_LITERAL: 'WSTRING_LITERAL', // "Hello World"
-    IO_ADDRESS: 'IO_ADDRESS',      // %Q0.0, %I0.0, etc.
+    IO_ADDRESS: 'IO_ADDRESS', // %Q0.0, %I0.0, etc.
     TYPED_LITERAL: 'TYPED_LITERAL', // INT#5, SINT#-3, WORD#16#FF, REAL#1.5, BOOL#1 (value is TYPE#text)
 
     // Special
-    ERROR: 'ERROR',             // text the lexer could not read; its error is in the list of errors
+    ERROR: 'ERROR', // text the lexer could not read; its error is in the list of errors
     EOF: 'EOF',
 } as const;
 
-export type TokenTypeValue = typeof TokenType[keyof typeof TokenType];
+export type TokenTypeValue = (typeof TokenType)[keyof typeof TokenType];
 
 /**
  * A token from the lexer.
@@ -246,94 +246,107 @@ export interface LexResult {
  * Keywords lookup table (case-insensitive).
  */
 const KEYWORDS: Record<string, TokenTypeValue> = {
-    'PROGRAM': TokenType.PROGRAM,
-    'END_PROGRAM': TokenType.END_PROGRAM,
-    'FUNCTION': TokenType.FUNCTION,
-    'END_FUNCTION': TokenType.END_FUNCTION,
-    'VAR': TokenType.VAR,
-    'END_VAR': TokenType.END_VAR,
-    'VAR_OUTPUT': TokenType.VAR_OUTPUT,
-    'VAR_INPUT': TokenType.VAR_INPUT,
-    'VAR_TEMP': TokenType.VAR_TEMP,
-    'VAR_GLOBAL': TokenType.VAR_GLOBAL,
-    'VAR_IN_OUT': TokenType.VAR_IN_OUT,
-    'VAR_EXTERNAL': TokenType.VAR_EXTERNAL,
-    'CONSTANT': TokenType.CONSTANT,
-    'FUNCTION_BLOCK': TokenType.FUNCTION_BLOCK,
-    'END_FUNCTION_BLOCK': TokenType.END_FUNCTION_BLOCK,
-    'TYPE': TokenType.TYPE,
-    'END_TYPE': TokenType.END_TYPE,
-    'STRUCT': TokenType.STRUCT,
-    'END_STRUCT': TokenType.END_STRUCT,
+    PROGRAM: TokenType.PROGRAM,
+    END_PROGRAM: TokenType.END_PROGRAM,
+    FUNCTION: TokenType.FUNCTION,
+    END_FUNCTION: TokenType.END_FUNCTION,
+    VAR: TokenType.VAR,
+    END_VAR: TokenType.END_VAR,
+    VAR_OUTPUT: TokenType.VAR_OUTPUT,
+    VAR_INPUT: TokenType.VAR_INPUT,
+    VAR_TEMP: TokenType.VAR_TEMP,
+    VAR_GLOBAL: TokenType.VAR_GLOBAL,
+    VAR_IN_OUT: TokenType.VAR_IN_OUT,
+    VAR_EXTERNAL: TokenType.VAR_EXTERNAL,
+    CONSTANT: TokenType.CONSTANT,
+    FUNCTION_BLOCK: TokenType.FUNCTION_BLOCK,
+    END_FUNCTION_BLOCK: TokenType.END_FUNCTION_BLOCK,
+    TYPE: TokenType.TYPE,
+    END_TYPE: TokenType.END_TYPE,
+    STRUCT: TokenType.STRUCT,
+    END_STRUCT: TokenType.END_STRUCT,
     // OOP Extensions
-    'METHOD': TokenType.METHOD,
-    'END_METHOD': TokenType.END_METHOD,
-    'INTERFACE': TokenType.INTERFACE,
-    'END_INTERFACE': TokenType.END_INTERFACE,
-    'IMPLEMENTS': TokenType.IMPLEMENTS,
-    'EXTENDS': TokenType.EXTENDS,
-    'THIS': TokenType.THIS,
-    'PUBLIC': TokenType.PUBLIC,
-    'PRIVATE': TokenType.PRIVATE,
-    'PROTECTED': TokenType.PROTECTED,
-    'FINAL': TokenType.FINAL,
-    'ABSTRACT': TokenType.ABSTRACT,
-    'OVERRIDE': TokenType.OVERRIDE,
-    'IF': TokenType.IF,
-    'THEN': TokenType.THEN,
-    'ELSE': TokenType.ELSE,
-    'ELSIF': TokenType.ELSIF,
-    'END_IF': TokenType.END_IF,
-    'WHILE': TokenType.WHILE,
-    'DO': TokenType.DO,
-    'END_WHILE': TokenType.END_WHILE,
-    'FOR': TokenType.FOR,
-    'TO': TokenType.TO,
-    'BY': TokenType.BY,
-    'END_FOR': TokenType.END_FOR,
-    'REPEAT': TokenType.REPEAT,
-    'UNTIL': TokenType.UNTIL,
-    'END_REPEAT': TokenType.END_REPEAT,
-    'CASE': TokenType.CASE,
-    'OF': TokenType.OF,
-    'END_CASE': TokenType.END_CASE,
-    'EXIT': TokenType.EXIT,
-    'CONTINUE': TokenType.CONTINUE,
-    'RETURN': TokenType.RETURN,
-    'BOOL': TokenType.BOOL,
-    'TIME': TokenType.TIME,
-    'SINT': TokenType.SINT,
-    'USINT': TokenType.USINT,
-    'INT': TokenType.INT,
-    'UINT': TokenType.UINT,
-    'DINT': TokenType.DINT,
-    'UDINT': TokenType.UDINT,
-    'LINT': TokenType.LINT,
-    'ULINT': TokenType.ULINT,
-    'REAL': TokenType.REAL,
-    'LREAL': TokenType.LREAL,
-    'STRING': TokenType.STRING,
-    'ARRAY': TokenType.ARRAY,
+    METHOD: TokenType.METHOD,
+    END_METHOD: TokenType.END_METHOD,
+    INTERFACE: TokenType.INTERFACE,
+    END_INTERFACE: TokenType.END_INTERFACE,
+    IMPLEMENTS: TokenType.IMPLEMENTS,
+    EXTENDS: TokenType.EXTENDS,
+    THIS: TokenType.THIS,
+    PUBLIC: TokenType.PUBLIC,
+    PRIVATE: TokenType.PRIVATE,
+    PROTECTED: TokenType.PROTECTED,
+    FINAL: TokenType.FINAL,
+    ABSTRACT: TokenType.ABSTRACT,
+    OVERRIDE: TokenType.OVERRIDE,
+    IF: TokenType.IF,
+    THEN: TokenType.THEN,
+    ELSE: TokenType.ELSE,
+    ELSIF: TokenType.ELSIF,
+    END_IF: TokenType.END_IF,
+    WHILE: TokenType.WHILE,
+    DO: TokenType.DO,
+    END_WHILE: TokenType.END_WHILE,
+    FOR: TokenType.FOR,
+    TO: TokenType.TO,
+    BY: TokenType.BY,
+    END_FOR: TokenType.END_FOR,
+    REPEAT: TokenType.REPEAT,
+    UNTIL: TokenType.UNTIL,
+    END_REPEAT: TokenType.END_REPEAT,
+    CASE: TokenType.CASE,
+    OF: TokenType.OF,
+    END_CASE: TokenType.END_CASE,
+    EXIT: TokenType.EXIT,
+    CONTINUE: TokenType.CONTINUE,
+    RETURN: TokenType.RETURN,
+    BOOL: TokenType.BOOL,
+    TIME: TokenType.TIME,
+    SINT: TokenType.SINT,
+    USINT: TokenType.USINT,
+    INT: TokenType.INT,
+    UINT: TokenType.UINT,
+    DINT: TokenType.DINT,
+    UDINT: TokenType.UDINT,
+    LINT: TokenType.LINT,
+    ULINT: TokenType.ULINT,
+    REAL: TokenType.REAL,
+    LREAL: TokenType.LREAL,
+    STRING: TokenType.STRING,
+    ARRAY: TokenType.ARRAY,
     // The library function blocks (TON, CTU, PULSE, ...) are not reserved words (CMP-033):
     // the parser takes them as type names by their position in a declaration.
-    'TRUE': TokenType.TRUE,
-    'FALSE': TokenType.FALSE,
-    'NOT': TokenType.NOT,
-    'AND': TokenType.AND,
-    'OR': TokenType.OR,
-    'XOR': TokenType.XOR,
-    'MOD': TokenType.MOD,
-    'AT': TokenType.AT,
-    'REF_TO': TokenType.REF_TO,
-    'REF': TokenType.REF,
+    TRUE: TokenType.TRUE,
+    FALSE: TokenType.FALSE,
+    NOT: TokenType.NOT,
+    AND: TokenType.AND,
+    OR: TokenType.OR,
+    XOR: TokenType.XOR,
+    MOD: TokenType.MOD,
+    AT: TokenType.AT,
+    REF_TO: TokenType.REF_TO,
+    REF: TokenType.REF,
 };
 
 /**
  * Elementary types that may prefix a numeric literal: `INT#5`, `WORD#16#FF`, `REAL#1.5`, `BOOL#1`.
  */
 const TYPED_NUMERIC_PREFIXES = new Set([
-    'BOOL', 'SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT', 'UDINT', 'ULINT',
-    'BYTE', 'WORD', 'DWORD', 'LWORD', 'REAL', 'LREAL',
+    'BOOL',
+    'SINT',
+    'INT',
+    'DINT',
+    'LINT',
+    'USINT',
+    'UINT',
+    'UDINT',
+    'ULINT',
+    'BYTE',
+    'WORD',
+    'DWORD',
+    'LWORD',
+    'REAL',
+    'LREAL',
 ]);
 
 /** The number bases IEC 61131-3 writes with a `#`, and the digits each takes. */
@@ -356,7 +369,7 @@ export function tokenizeWithErrors(source: string): LexResult {
     const errors: LexerError[] = [];
     const warnings: LexerWarning[] = [];
     // a UTF-8 byte order mark is not part of the program and takes no column
-    let pos = source.charCodeAt(0) === 0xFEFF ? 1 : 0;
+    let pos = source.charCodeAt(0) === 0xfeff ? 1 : 0;
     let line = 1;
     let column = 1;
 
@@ -407,7 +420,14 @@ export function tokenizeWithErrors(source: string): LexResult {
                 }
                 if (!closed) {
                     // CMP-009: reported where the comment opens, not where the file ends
-                    throw new LexerError('UNTERMINATED_COMMENT', 'Unterminated comment: the comment opened by (* is never closed with *)', openLine, openColumn, openLine, openColumn + 2);
+                    throw new LexerError(
+                        'UNTERMINATED_COMMENT',
+                        'Unterminated comment: the comment opened by (* is never closed with *)',
+                        openLine,
+                        openColumn,
+                        openLine,
+                        openColumn + 2,
+                    );
                 }
             } else if (ch === '/' && peek() === '*') {
                 // C-style block comment /* ... */
@@ -426,7 +446,14 @@ export function tokenizeWithErrors(source: string): LexResult {
                     advance();
                 }
                 if (!closed) {
-                    throw new LexerError('UNTERMINATED_COMMENT', 'Unterminated comment: the comment opened by /* is never closed with */', openLine, openColumn, openLine, openColumn + 2);
+                    throw new LexerError(
+                        'UNTERMINATED_COMMENT',
+                        'Unterminated comment: the comment opened by /* is never closed with */',
+                        openLine,
+                        openColumn,
+                        openLine,
+                        openColumn + 2,
+                    );
                 }
             } else if (ch === '/' && peek() === '/') {
                 // C-style line comment // ...
@@ -488,7 +515,10 @@ export function tokenizeWithErrors(source: string): LexResult {
             warnings.push({
                 code: 'NON_IEC_HEX_LITERAL',
                 message: `The hexadecimal literal 0x${digits} is not IEC 61131-3 syntax: write 16#${digits}`,
-                line: startLine, column: startColumn, endLine: line, endColumn: column,
+                line: startLine,
+                column: startColumn,
+                endLine: line,
+                endColumn: column,
             });
             return { value: `0x${digits}`, isReal: false };
         }
@@ -501,11 +531,21 @@ export function tokenizeWithErrors(source: string): LexResult {
             const base = BASED_DIGITS[whole];
             advance(); // #
             if (!base) {
-                throw error('INVALID_NUMBER_LITERAL', `The number base ${whole}# is not supported: use 2#, 8# or 16#`, startLine, startColumn);
+                throw error(
+                    'INVALID_NUMBER_LITERAL',
+                    `The number base ${whole}# is not supported: use 2#, 8# or 16#`,
+                    startLine,
+                    startColumn,
+                );
             }
             const digits = readDigits(base.valid, startLine, startColumn);
             if (digits === '') {
-                throw error('INVALID_NUMBER_LITERAL', `A base-${whole} literal needs at least one digit after ${whole}#`, startLine, startColumn);
+                throw error(
+                    'INVALID_NUMBER_LITERAL',
+                    `A base-${whole} literal needs at least one digit after ${whole}#`,
+                    startLine,
+                    startColumn,
+                );
             }
             if (isAlphaNumeric(current())) {
                 const bad = advance();
@@ -540,8 +580,13 @@ export function tokenizeWithErrors(source: string): LexResult {
                     const [mantissa, exponent] = result.split(/e/i) as [string, string];
                     warnings.push({
                         code: 'NON_IEC_REAL_LITERAL',
-                        message: `The real literal ${result} is not IEC 61131-3 syntax (a fraction is required before the exponent): write ${mantissa}.0e${exponent}`,
-                        line: startLine, column: startColumn, endLine: line, endColumn: column,
+                        message:
+                            `The real literal ${result} is not IEC 61131-3 syntax (a fraction is required before the exponent): ` +
+                            `write ${mantissa}.0e${exponent}`,
+                        line: startLine,
+                        column: startColumn,
+                        endLine: line,
+                        endColumn: column,
                     });
                 }
             }
@@ -599,7 +644,8 @@ export function tokenizeWithErrors(source: string): LexResult {
             if (current() === '"') {
                 if (peek() === '"') {
                     result += '"';
-                    advance(); advance();
+                    advance();
+                    advance();
                 } else {
                     break;
                 }
@@ -636,7 +682,10 @@ export function tokenizeWithErrors(source: string): LexResult {
 
     const readTypedLiteralValue = (): string => {
         let result = '';
-        while (!isAtEnd() && (isAlphaNumeric(current()) || current() === '_' || current() === '-' || current() === ':' || current() === '.')) {
+        while (
+            !isAtEnd() &&
+            (isAlphaNumeric(current()) || current() === '_' || current() === '-' || current() === ':' || current() === '.')
+        ) {
             result += advance();
         }
         return result;
@@ -841,7 +890,10 @@ export function tokenizeWithErrors(source: string): LexResult {
                 }
 
                 // INT#5, WORD#16#FF, REAL#1.5, BOOL#1
-                if (TYPED_NUMERIC_PREFIXES.has(upper) && (isDigit(current()) || current() === '-' || current() === '+' || (upper === 'BOOL' && isAlpha(current())))) {
+                if (
+                    TYPED_NUMERIC_PREFIXES.has(upper) &&
+                    (isDigit(current()) || current() === '-' || current() === '+' || (upper === 'BOOL' && isAlpha(current())))
+                ) {
                     const val = readTypedNumericValue(upper, startLine, startColumn);
                     addToken(TokenType.TYPED_LITERAL, `${upper}#${val}`, startLine, startColumn);
                     return;

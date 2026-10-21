@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "a call through an interface variable runs the method of the instance assigned to it, whichever block that is",
-  "matrix": [
-    "pous.interfaces-implements"
-  ],
+  "matrix": ["pous.interfaces-implements"],
   "note": "IEC 61131-3 ed. 3, interfaces: the method that runs is the one of the instance the interface variable refers to: the same call runs Square.Area, then Rectangle.Area, then Square.Area again on the same instance with its new state",
   "scans": 1,
   "scanMs": 10,

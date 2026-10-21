@@ -48,58 +48,53 @@ static uint32_t tick_override_ms = 0U;
 
 /* The logical clock of a scenario: the session sets it for the length of a scenario step and clears it after, as it
  * does on the POSIX port (zplc_hal_posix.h). */
-void zplc_hal_posix_set_tick_override(uint32_t tick_ms)
-{
-    tick_override_ms = tick_ms;
-    tick_override_active = 1;
+void zplc_hal_posix_set_tick_override(uint32_t tick_ms) {
+  tick_override_ms = tick_ms;
+  tick_override_active = 1;
 }
 
-void zplc_hal_posix_clear_tick_override(void)
-{
-    tick_override_active = 0;
-    tick_override_ms = 0U;
+void zplc_hal_posix_clear_tick_override(void) {
+  tick_override_active = 0;
+  tick_override_ms = 0U;
 }
 
-uint32_t zplc_hal_tick(void)
-{
-    if (tick_override_active != 0) {
-        return tick_override_ms;
-    }
-    /* One tick is portTICK_PERIOD_MS milliseconds (1 at 1 kHz); the count is 32 bits and wraps like the HAL's tick. */
-    return (uint32_t)(ZPLC_FREERTOS_TICK_EPOCH_MS + xTaskGetTickCount() * portTICK_PERIOD_MS);
+uint32_t zplc_hal_tick(void) {
+  if (tick_override_active != 0) {
+    return tick_override_ms;
+  }
+  /* One tick is portTICK_PERIOD_MS milliseconds (1 at 1 kHz); the count is 32 bits and wraps like the HAL's tick. */
+  return (uint32_t)(ZPLC_FREERTOS_TICK_EPOCH_MS + xTaskGetTickCount() * portTICK_PERIOD_MS);
 }
 
-void zplc_hal_sleep(uint32_t ms)
-{
-    /* Round up to whole ticks: a sleep is never shorter than it was asked to be, by the clock of the port. */
-    const uint64_t ticks = ((uint64_t)ms + portTICK_PERIOD_MS - 1U) / portTICK_PERIOD_MS;
+void zplc_hal_sleep(uint32_t ms) {
+  /* Round up to whole ticks: a sleep is never shorter than it was asked to be, by the clock of the port. */
+  const uint64_t ticks = ((uint64_t)ms + portTICK_PERIOD_MS - 1U) / portTICK_PERIOD_MS;
 
-    if (ticks == 0U) {
-        taskYIELD();
-        return;
+  if (ticks == 0U) {
+    taskYIELD();
+    return;
+  }
+  /* vTaskDelay takes a TickType_t: a longer sleep is taken in pieces. */
+  {
+    uint64_t left = ticks;
+
+    while (left != 0U) {
+      const TickType_t piece = left > 0x7FFFFFFFU ? (TickType_t)0x7FFFFFFFU : (TickType_t)left;
+
+      vTaskDelay(piece);
+      left -= piece;
     }
-    /* vTaskDelay takes a TickType_t: a longer sleep is taken in pieces. */
-    {
-        uint64_t left = ticks;
-
-        while (left != 0U) {
-            const TickType_t piece = left > 0x7FFFFFFFU ? (TickType_t)0x7FFFFFFFU : (TickType_t)left;
-
-            vTaskDelay(piece);
-            left -= piece;
-        }
-    }
+  }
 }
 
-uint64_t zplc_freertos_now_us(void)
-{
-    struct timespec ts;
+uint64_t zplc_freertos_now_us(void) {
+  struct timespec ts;
 
-    /* The simulator's stand-in for the cycle counter of a board. */
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
-        return (uint64_t)zplc_hal_tick() * 1000U;
-    }
-    return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)ts.tv_nsec / 1000ULL;
+  /* The simulator's stand-in for the cycle counter of a board. */
+  if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+    return (uint64_t)zplc_hal_tick() * 1000U;
+  }
+  return (uint64_t)ts.tv_sec * 1000000ULL + (uint64_t)ts.tv_nsec / 1000ULL;
 }
 
 /* ============================================================================
@@ -115,122 +110,102 @@ static volatile uint16_t sim_analog_in[ZPLC_FREERTOS_SIM_ANALOG_INPUTS];
 static volatile uint16_t sim_analog_out[ZPLC_FREERTOS_SIM_ANALOG_OUTPUTS];
 static volatile uint32_t sim_writes;
 
-void zplc_freertos_sim_set_input(uint8_t channel, uint8_t level)
-{
-    if (channel < ZPLC_FREERTOS_SIM_DIGITAL_INPUTS) {
-        sim_digital_in[channel] = level != 0U ? 1U : 0U;
-    }
+void zplc_freertos_sim_set_input(uint8_t channel, uint8_t level) {
+  if (channel < ZPLC_FREERTOS_SIM_DIGITAL_INPUTS) {
+    sim_digital_in[channel] = level != 0U ? 1U : 0U;
+  }
 }
 
-uint8_t zplc_freertos_sim_get_output(uint8_t channel)
-{
-    return channel < ZPLC_FREERTOS_SIM_DIGITAL_OUTPUTS ? sim_digital_out[channel] : 0U;
+uint8_t zplc_freertos_sim_get_output(uint8_t channel) {
+  return channel < ZPLC_FREERTOS_SIM_DIGITAL_OUTPUTS ? sim_digital_out[channel] : 0U;
 }
 
-void zplc_freertos_sim_set_adc(uint8_t channel, uint16_t value)
-{
-    if (channel < ZPLC_FREERTOS_SIM_ANALOG_INPUTS) {
-        sim_analog_in[channel] = value;
-    }
+void zplc_freertos_sim_set_adc(uint8_t channel, uint16_t value) {
+  if (channel < ZPLC_FREERTOS_SIM_ANALOG_INPUTS) {
+    sim_analog_in[channel] = value;
+  }
 }
 
-uint16_t zplc_freertos_sim_get_dac(uint8_t channel)
-{
-    return channel < ZPLC_FREERTOS_SIM_ANALOG_OUTPUTS ? sim_analog_out[channel] : 0U;
+uint16_t zplc_freertos_sim_get_dac(uint8_t channel) { return channel < ZPLC_FREERTOS_SIM_ANALOG_OUTPUTS ? sim_analog_out[channel] : 0U; }
+
+void zplc_freertos_sim_reset(void) {
+  (void)memset((void *)sim_digital_in, 0, sizeof(sim_digital_in));
+  (void)memset((void *)sim_digital_out, 0, sizeof(sim_digital_out));
+  (void)memset((void *)sim_analog_in, 0, sizeof(sim_analog_in));
+  (void)memset((void *)sim_analog_out, 0, sizeof(sim_analog_out));
+  sim_writes = 0U;
 }
 
-void zplc_freertos_sim_reset(void)
-{
-    (void)memset((void *)sim_digital_in, 0, sizeof(sim_digital_in));
-    (void)memset((void *)sim_digital_out, 0, sizeof(sim_digital_out));
-    (void)memset((void *)sim_analog_in, 0, sizeof(sim_analog_in));
-    (void)memset((void *)sim_analog_out, 0, sizeof(sim_analog_out));
-    sim_writes = 0U;
+uint32_t zplc_freertos_sim_write_count(void) { return sim_writes; }
+
+zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
+  if (value == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  *value = 0U;
+  if (channel >= ZPLC_FREERTOS_SIM_DIGITAL_INPUTS) {
+    return ZPLC_HAL_NOT_IMPL;
+  }
+  *value = sim_digital_in[channel];
+  return ZPLC_HAL_OK;
 }
 
-uint32_t zplc_freertos_sim_write_count(void)
-{
-    return sim_writes;
+zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
+  if (channel >= ZPLC_FREERTOS_SIM_DIGITAL_OUTPUTS) {
+    return ZPLC_HAL_NOT_IMPL;
+  }
+  sim_digital_out[channel] = value != 0U ? 1U : 0U;
+  sim_writes++;
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value)
-{
-    if (value == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    *value = 0U;
-    if (channel >= ZPLC_FREERTOS_SIM_DIGITAL_INPUTS) {
-        return ZPLC_HAL_NOT_IMPL;
-    }
-    *value = sim_digital_in[channel];
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
+  if (value == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  *value = 0U;
+  if (channel >= ZPLC_FREERTOS_SIM_ANALOG_INPUTS) {
+    return ZPLC_HAL_NOT_IMPL;
+  }
+  *value = sim_analog_in[channel];
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value)
-{
-    if (channel >= ZPLC_FREERTOS_SIM_DIGITAL_OUTPUTS) {
-        return ZPLC_HAL_NOT_IMPL;
-    }
-    sim_digital_out[channel] = value != 0U ? 1U : 0U;
-    sim_writes++;
-    return ZPLC_HAL_OK;
-}
-
-zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value)
-{
-    if (value == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    *value = 0U;
-    if (channel >= ZPLC_FREERTOS_SIM_ANALOG_INPUTS) {
-        return ZPLC_HAL_NOT_IMPL;
-    }
-    *value = sim_analog_in[channel];
-    return ZPLC_HAL_OK;
-}
-
-zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value)
-{
-    if (channel >= ZPLC_FREERTOS_SIM_ANALOG_OUTPUTS) {
-        return ZPLC_HAL_NOT_IMPL;
-    }
-    sim_analog_out[channel] = value;
-    sim_writes++;
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
+  if (channel >= ZPLC_FREERTOS_SIM_ANALOG_OUTPUTS) {
+    return ZPLC_HAL_NOT_IMPL;
+  }
+  sim_analog_out[channel] = value;
+  sim_writes++;
+  return ZPLC_HAL_OK;
 }
 
 /* ============================================================================
  * Synchronization
  * ============================================================================ */
 
-zplc_hal_mutex_t zplc_hal_mutex_create(void)
-{
-    return (zplc_hal_mutex_t)xSemaphoreCreateMutex();
+zplc_hal_mutex_t zplc_hal_mutex_create(void) { return (zplc_hal_mutex_t)xSemaphoreCreateMutex(); }
+
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
+  if (mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  return xSemaphoreTake((SemaphoreHandle_t)mutex, portMAX_DELAY) == pdTRUE ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
 }
 
-zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex)
-{
-    if (mutex == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    return xSemaphoreTake((SemaphoreHandle_t)mutex, portMAX_DELAY) == pdTRUE ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
+  if (mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  return xSemaphoreGive((SemaphoreHandle_t)mutex) == pdTRUE ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
 }
 
-zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex)
-{
-    if (mutex == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    return xSemaphoreGive((SemaphoreHandle_t)mutex) == pdTRUE ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
-}
-
-zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex)
-{
-    if (mutex == NULL) {
-        return ZPLC_HAL_ERROR;
-    }
-    vSemaphoreDelete((SemaphoreHandle_t)mutex);
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  if (mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  vSemaphoreDelete((SemaphoreHandle_t)mutex);
+  return ZPLC_HAL_OK;
 }
 
 /* ============================================================================
@@ -239,48 +214,41 @@ zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex)
  * The portable core does not call these; the applications that need a network bring their own transport.
  */
 
-zplc_hal_result_t zplc_hal_net_init(void)
-{
-    return ZPLC_HAL_NOT_IMPL;
-}
+zplc_hal_result_t zplc_hal_net_init(void) { return ZPLC_HAL_NOT_IMPL; }
 
-zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
-{
-    if (buf != NULL && len > 0U) {
-        buf[0] = '\0';
-    }
-    return ZPLC_HAL_NOT_IMPL;
+zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
+  if (buf != NULL && len > 0U) {
+    buf[0] = '\0';
+  }
+  return ZPLC_HAL_NOT_IMPL;
 }
 
 /* ============================================================================
  * Logging
  * ============================================================================ */
 
-void zplc_hal_log(const char *fmt, ...)
-{
-    va_list args;
+void zplc_hal_log(const char *fmt, ...) {
+  va_list args;
 
-    va_start(args, fmt);
-    (void)vfprintf(stderr, fmt, args); /* a log line that cannot be written has nowhere else to go */
-    va_end(args);
-    (void)fflush(stderr);
+  va_start(args, fmt);
+  (void)vfprintf(stderr, fmt, args); /* a log line that cannot be written has nowhere else to go */
+  va_end(args);
+  (void)fflush(stderr);
 }
 
 /* ============================================================================
  * Life cycle
  * ============================================================================ */
 
-zplc_hal_result_t zplc_hal_init(void)
-{
-    zplc_hal_posix_clear_tick_override();
-    zplc_freertos_sim_reset();
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_init(void) {
+  zplc_hal_posix_clear_tick_override();
+  zplc_freertos_sim_reset();
+  return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_shutdown(void)
-{
-    zplc_hal_posix_clear_tick_override();
-    return ZPLC_HAL_OK;
+zplc_hal_result_t zplc_hal_shutdown(void) {
+  zplc_hal_posix_clear_tick_override();
+  return ZPLC_HAL_OK;
 }
 
 /* ============================================================================
@@ -314,12 +282,8 @@ static const zplc_io_channel_t zplc_io_sim_channels[] = {
 
 /* The hash is a constant: this board has no description in boards.json for Studio to compare. */
 static const zplc_io_table_t zplc_io_sim_description = {
-    "freertos-sim", 0xF3EE0001U, 4U, 4U, (uint16_t)(sizeof(zplc_io_sim_channels) / sizeof(zplc_io_sim_channels[0])),
-    zplc_io_sim_channels};
+    "freertos-sim", 0xF3EE0001U, 4U, 4U, (uint16_t)(sizeof(zplc_io_sim_channels) / sizeof(zplc_io_sim_channels[0])), zplc_io_sim_channels};
 
-const zplc_io_table_t *zplc_io_table(void)
-{
-    return &zplc_io_sim_description;
-}
+const zplc_io_table_t *zplc_io_table(void) { return &zplc_io_sim_description; }
 
 #include "../common/zplc_io_common.inc"

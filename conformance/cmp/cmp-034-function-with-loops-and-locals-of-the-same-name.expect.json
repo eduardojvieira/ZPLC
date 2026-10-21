@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-034",
   "title": "two functions with a loop counter and a total of the same names, and a program with the same names, keep their own",
-  "matrix": [
-    "pous.function"
-  ],
+  "matrix": ["pous.function"],
   "scans": 2,
   "scanMs": 10,
   "expect": [

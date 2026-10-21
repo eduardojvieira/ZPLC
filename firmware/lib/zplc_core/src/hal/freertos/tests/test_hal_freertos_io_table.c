@@ -24,15 +24,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static const zplc_io_channel_t *find(const char *id) {
@@ -120,8 +120,7 @@ static void test_the_output_image_reaches_the_pins(void) {
   opi[3] = 0xABU;
   zplc_io_capture_outputs(&outputs);
   CHECK(zplc_io_write_outputs(&outputs, NULL) == ZPLC_HAL_OK, "the write succeeds");
-  CHECK(zplc_freertos_sim_get_output(0U) == 1U && zplc_freertos_sim_get_output(7U) == 1U &&
-            zplc_freertos_sim_get_output(3U) == 0U,
+  CHECK(zplc_freertos_sim_get_output(0U) == 1U && zplc_freertos_sim_get_output(7U) == 1U && zplc_freertos_sim_get_output(3U) == 0U,
         "DO0 and DO7 are high, the rest low");
   CHECK(zplc_freertos_sim_get_dac(0U) == 0xABCDU, "AO0 holds the word of bytes 2 and 3");
   CHECK(zplc_io_drive_safe(NULL) == ZPLC_HAL_OK, "the safe state is driven");

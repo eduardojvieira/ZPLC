@@ -7,7 +7,10 @@
 import { navigationTarget } from './keyboard';
 import { typeahead, type TypeaheadState } from './typeahead';
 
-export interface MenuItemSpec { label: string; disabled?: boolean }
+export interface MenuItemSpec {
+  label: string;
+  disabled?: boolean;
+}
 
 export interface MenuKeyResult {
   /** The active item after the key, or null when the key does not apply. */
@@ -16,11 +19,15 @@ export interface MenuKeyResult {
   typeahead: TypeaheadState;
 }
 
-const disabledOf = (items: readonly MenuItemSpec[]) => (index: number): boolean => items[index]?.disabled === true;
+const disabledOf =
+  (items: readonly MenuItemSpec[]) =>
+  (index: number): boolean =>
+    items[index]?.disabled === true;
 
 /** The item a key on the trigger opens the menu at, or null when the key does not open it. */
 export function menuOpenTarget(key: string, items: readonly MenuItemSpec[]): number | null {
-  if (key === 'Enter' || key === ' ' || key === 'ArrowDown') return navigationTarget('Home', -1, items.length, { orientation: 'vertical', isDisabled: disabledOf(items) });
+  if (key === 'Enter' || key === ' ' || key === 'ArrowDown')
+    return navigationTarget('Home', -1, items.length, { orientation: 'vertical', isDisabled: disabledOf(items) });
   if (key === 'ArrowUp') return navigationTarget('End', -1, items.length, { orientation: 'vertical', isDisabled: disabledOf(items) });
   return null;
 }
@@ -32,6 +39,13 @@ export function menuKey(key: string, active: number, items: readonly MenuItemSpe
   if (key === 'Enter' || key === ' ') return { active, action: isDisabled(active) || active < 0 ? 'none' : 'activate', typeahead: state };
   const moved = navigationTarget(key, active, items.length, { orientation: 'vertical', isDisabled });
   if (moved !== null) return { active: moved, action: 'none', typeahead: state };
-  const found = typeahead(state, key, now, items.map((item) => item.label), active, isDisabled);
+  const found = typeahead(
+    state,
+    key,
+    now,
+    items.map((item) => item.label),
+    active,
+    isDisabled,
+  );
   return { active: found.index ?? active, action: 'none', typeahead: found.state };
 }

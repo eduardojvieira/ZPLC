@@ -86,9 +86,8 @@ export function buildDebugWatchRows(
     }
 
     const liveValue = liveValues.get(path) ?? null;
-    const forceEntry = forcedValues.get(path)
-      ?? Array.from(forcedValues.values()).find((entry) => entry.address === variable.absoluteAddr)
-      ?? null;
+    const forceEntry =
+      forcedValues.get(path) ?? Array.from(forcedValues.values()).find((entry) => entry.address === variable.absoluteAddr) ?? null;
 
     return {
       path,
@@ -98,10 +97,7 @@ export function buildDebugWatchRows(
         address: variable.absoluteAddr,
         region: variable.varInfo.region,
         size: variable.varInfo.size,
-        maxLength:
-          variable.varInfo.type === 'STRING' && variable.varInfo.size
-            ? Math.max(0, variable.varInfo.size - 3)
-            : undefined,
+        maxLength: variable.varInfo.type === 'STRING' && variable.varInfo.size ? Math.max(0, variable.varInfo.size - 3) : undefined,
         loading: isPolling && liveValue === null,
         exists: true,
         error: null,

@@ -31,9 +31,7 @@ END_VAR
 
 END_PROGRAM`;
 
-    const tags: CommunicationTagConfig[] = [
-      { name: 'MotorSpeed', symbol: 'MotorSpeed', type: 'REAL', mode: 'subscribe' },
-    ];
+    const tags: CommunicationTagConfig[] = [{ name: 'MotorSpeed', symbol: 'MotorSpeed', type: 'REAL', mode: 'subscribe' }];
 
     const transformed = applyCommunicationTags(source, tags);
 
@@ -111,7 +109,14 @@ END_PROGRAM`;
     // ponytail: a line that ends in a comment cannot take text after it; the lines below it then move by one
     const source = 'PROGRAM Main\nVAR // locals\n    x : INT;\nEND_VAR\nEND_PROGRAM';
     const transformed = applyCommunicationTags(source, [{ name: 'Added', symbol: 'Added', type: 'BOOL', mode: 'publish' }]);
-    expect(transformed.split('\n')).toEqual(['PROGRAM Main', 'VAR // locals', '    Added : BOOL {publish};', '    x : INT;', 'END_VAR', 'END_PROGRAM']);
+    expect(transformed.split('\n')).toEqual([
+      'PROGRAM Main',
+      'VAR // locals',
+      '    Added : BOOL {publish};',
+      '    x : INT;',
+      'END_VAR',
+      'END_PROGRAM',
+    ]);
   });
 
   it('puts a declaration the project adds on the VAR line when that line has no comment', () => {
@@ -173,7 +178,12 @@ describe('where a Modbus tag is served (COM-011)', () => {
   });
 
   it('emits the area of each helper', () => {
-    for (const [helper, number] of [['MODBUS_COIL', 5], ['MODBUS_DISCRETE_INPUT', 10006], ['MODBUS_INPUT_REGISTER', 30006], ['MODBUS_HOLDING_REGISTER', 40006]] as const) {
+    for (const [helper, number] of [
+      ['MODBUS_COIL', 5],
+      ['MODBUS_DISCRETE_INPUT', 10006],
+      ['MODBUS_INPUT_REGISTER', 30006],
+      ['MODBUS_HOLDING_REGISTER', 40006],
+    ] as const) {
       expect(applyCommunicationTags(source('BOOL', `${helper}(V, 5);`), [])).toContain(`V : BOOL {modbus:${number}};`);
     }
   });

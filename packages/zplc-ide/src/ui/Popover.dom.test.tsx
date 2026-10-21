@@ -4,7 +4,14 @@ import { Button, Popover } from './index';
 
 const dom = await setupDom();
 
-const page = <><Popover label="Filter" trigger={<Button>Filter</Button>}><button type="button">Errors only</button></Popover><p>elsewhere</p></>;
+const page = (
+  <>
+    <Popover label="Filter" trigger={<Button>Filter</Button>}>
+      <button type="button">Errors only</button>
+    </Popover>
+    <p>elsewhere</p>
+  </>
+);
 
 describe('Popover (UX-001) in a DOM', () => {
   it('a trigger announces a dialog popup, collapsed, then expanded with the named dialog open and focus inside', async () => {

@@ -21,14 +21,47 @@ export interface AssistCompletion {
 }
 
 const KIND_OF_SYMBOL: Partial<Record<IndexedSymbol['kind'], AssistKind>> = {
-  program: 'type', function: 'function', functionBlock: 'functionBlock', interface: 'type', struct: 'type', enum: 'type',
-  alias: 'type', method: 'method', field: 'field', enumValue: 'enumMember',
-  input: 'variable', output: 'variable', inout: 'variable', variable: 'variable', global: 'variable', temp: 'variable', external: 'variable',
+  program: 'type',
+  function: 'function',
+  functionBlock: 'functionBlock',
+  interface: 'type',
+  struct: 'type',
+  enum: 'type',
+  alias: 'type',
+  method: 'method',
+  field: 'field',
+  enumValue: 'enumMember',
+  input: 'variable',
+  output: 'variable',
+  inout: 'variable',
+  variable: 'variable',
+  global: 'variable',
+  temp: 'variable',
+  external: 'variable',
 };
 
 const ELEMENTARY_TYPES = [
-  'BOOL', 'SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT', 'UDINT', 'ULINT', 'REAL', 'LREAL', 'TIME', 'DATE', 'TOD', 'DT',
-  'STRING', 'WSTRING', 'BYTE', 'WORD', 'DWORD', 'LWORD',
+  'BOOL',
+  'SINT',
+  'INT',
+  'DINT',
+  'LINT',
+  'USINT',
+  'UINT',
+  'UDINT',
+  'ULINT',
+  'REAL',
+  'LREAL',
+  'TIME',
+  'DATE',
+  'TOD',
+  'DT',
+  'STRING',
+  'WSTRING',
+  'BYTE',
+  'WORD',
+  'DWORD',
+  'LWORD',
 ];
 
 const isWordLike = (token: Token | undefined): boolean => token?.type === TokenType.IDENTIFIER;
@@ -46,12 +79,16 @@ export function hoverAt(index: ProjectIndex, file: string, line: number, column:
     if (builtin.kind === 'functionBlock') {
       const block = getFB(builtin.name);
       const members = (block?.members ?? []).filter((member) => !member.isInternal && (member.isInput || member.isOutput));
-      const list = members.length === 0 ? 'No public members' : members.map((member) => `- ${member.isInput ? 'Input' : 'Output'} \`${member.name}\``).join('\n');
+      const list =
+        members.length === 0
+          ? 'No public members'
+          : members.map((member) => `- ${member.isInput ? 'Input' : 'Output'} \`${member.name}\``).join('\n');
       return { value: `**${builtin.name}** — standard function block\n\n${list}` };
     }
     if (builtin.kind === 'function') {
       const fn = getFn(builtin.name);
-      const arguments_ = fn === undefined ? '' : `  \n${fn.variadic ? 'Variadic arguments' : `${fn.argCount} argument${fn.argCount === 1 ? '' : 's'}`}`;
+      const arguments_ =
+        fn === undefined ? '' : `  \n${fn.variadic ? 'Variadic arguments' : `${fn.argCount} argument${fn.argCount === 1 ? '' : 's'}`}`;
       return { value: `**${builtin.name}** — standard function${arguments_}` };
     }
     return { value: `**${builtin.name}** — member of ${builtin.owner ?? 'a standard block'}` };
@@ -77,7 +114,12 @@ const fromMember = (member: MemberEntry): AssistCompletion => {
 };
 
 function fromSymbol(symbol: IndexedSymbol, here: string, rank: number): AssistCompletion {
-  return { label: symbol.name, kind: KIND_OF_SYMBOL[symbol.kind] ?? 'variable', detail: `${symbol.detail}${symbol.file === here ? '' : `, ${symbol.file}`}`, rank };
+  return {
+    label: symbol.name,
+    kind: KIND_OF_SYMBOL[symbol.kind] ?? 'variable',
+    detail: `${symbol.detail}${symbol.file === here ? '' : `, ${symbol.file}`}`,
+    rank,
+  };
 }
 
 /** The tokens of `text` that end at or before the position, and whether the last one is a word that is being typed. */
@@ -110,10 +152,16 @@ function enclosingCall(tokens: Token[]): { callee: Token; open: number; argument
           const inner = tokens[cursor]!.type;
           if (inner === TokenType.LPAREN || inner === TokenType.LBRACKET) nested++;
           else if (inner === TokenType.RPAREN || inner === TokenType.RBRACKET) nested--;
-          else if (nested === 0 && inner === TokenType.COMMA) { argument++; label = undefined; }
-          else if (nested === 0 && inner === TokenType.IDENTIFIER
-            && (tokens[cursor + 1]?.type === TokenType.ASSIGN || tokens[cursor + 1]?.type === TokenType.OUTPUT_ASSIGN)
-            && (tokens[cursor - 1]?.type === TokenType.LPAREN || tokens[cursor - 1]?.type === TokenType.COMMA)) label = tokens[cursor]!.value;
+          else if (nested === 0 && inner === TokenType.COMMA) {
+            argument++;
+            label = undefined;
+          } else if (
+            nested === 0 &&
+            inner === TokenType.IDENTIFIER &&
+            (tokens[cursor + 1]?.type === TokenType.ASSIGN || tokens[cursor + 1]?.type === TokenType.OUTPUT_ASSIGN) &&
+            (tokens[cursor - 1]?.type === TokenType.LPAREN || tokens[cursor - 1]?.type === TokenType.COMMA)
+          )
+            label = tokens[cursor]!.value;
         }
         return { callee, open: at, argument, ...(label === undefined ? {} : { label }) };
       }
@@ -132,8 +180,13 @@ export function completionsAt(index: ProjectIndex, file: string, line: number, c
     if (!found.has(key)) found.set(key, completion);
   };
   const scope = index.scopeAt(file, line, column);
-  const sorted = (): AssistCompletion[] => [...found.values()]
-    .sort((left, right) => left.rank - right.rank || left.label.toUpperCase().localeCompare(right.label.toUpperCase()) || left.label.localeCompare(right.label));
+  const sorted = (): AssistCompletion[] =>
+    [...found.values()].sort(
+      (left, right) =>
+        left.rank - right.rank ||
+        left.label.toUpperCase().localeCompare(right.label.toUpperCase()) ||
+        left.label.localeCompare(right.label),
+    );
 
   // after a dot: the members of the type of what is before it
   if (last?.type === TokenType.DOT) {
@@ -144,9 +197,17 @@ export function completionsAt(index: ProjectIndex, file: string, line: number, c
   }
 
   // where a type goes
-  const typeContext = last?.type === TokenType.COLON || last?.type === TokenType.OF || last?.type === TokenType.REF_TO
-    || last?.type === TokenType.EXTENDS || last?.type === TokenType.IMPLEMENTS;
-  if (typeContext && last && (last.type === TokenType.EXTENDS || last.type === TokenType.IMPLEMENTS || !insideStatements(index, file, last))) {
+  const typeContext =
+    last?.type === TokenType.COLON ||
+    last?.type === TokenType.OF ||
+    last?.type === TokenType.REF_TO ||
+    last?.type === TokenType.EXTENDS ||
+    last?.type === TokenType.IMPLEMENTS;
+  if (
+    typeContext &&
+    last &&
+    (last.type === TokenType.EXTENDS || last.type === TokenType.IMPLEMENTS || !insideStatements(index, file, last))
+  ) {
     for (const symbol of index.topLevelSymbols()) {
       if (['functionBlock', 'struct', 'enum', 'interface', 'alias'].includes(symbol.kind)) add(fromSymbol(symbol, file, 2));
     }
@@ -174,34 +235,55 @@ export function completionsAt(index: ProjectIndex, file: string, line: number, c
 }
 
 const DECLARATION_OPENERS: ReadonlySet<string> = new Set([
-  TokenType.VAR, TokenType.VAR_INPUT, TokenType.VAR_OUTPUT, TokenType.VAR_IN_OUT, TokenType.VAR_TEMP, TokenType.VAR_GLOBAL,
-  TokenType.VAR_EXTERNAL, TokenType.STRUCT, TokenType.TYPE, TokenType.FUNCTION, TokenType.METHOD,
+  TokenType.VAR,
+  TokenType.VAR_INPUT,
+  TokenType.VAR_OUTPUT,
+  TokenType.VAR_IN_OUT,
+  TokenType.VAR_TEMP,
+  TokenType.VAR_GLOBAL,
+  TokenType.VAR_EXTERNAL,
+  TokenType.STRUCT,
+  TokenType.TYPE,
+  TokenType.FUNCTION,
+  TokenType.METHOD,
 ]);
 
 /** Whether `token` is in the statements of a body, where a colon is a CASE label and not the one of a declaration. */
 function insideStatements(index: ProjectIndex, file: string, token: Token): boolean {
   const tokens = index.tokensOf(file);
-  for (let cursor = tokens.findIndex((candidate) => candidate.line === token.line && candidate.column === token.column); cursor >= 0; cursor--) {
+  for (
+    let cursor = tokens.findIndex((candidate) => candidate.line === token.line && candidate.column === token.column);
+    cursor >= 0;
+    cursor--
+  ) {
     const type = tokens[cursor]!.type;
     if (DECLARATION_OPENERS.has(type)) return false;
-    if (type === TokenType.END_VAR || type === TokenType.PROGRAM || type === TokenType.FUNCTION_BLOCK || type === TokenType.END_METHOD) return true;
+    if (type === TokenType.END_VAR || type === TokenType.PROGRAM || type === TokenType.FUNCTION_BLOCK || type === TokenType.END_METHOD)
+      return true;
   }
   return false;
 }
 
-function parametersOfReference(index: ProjectIndex, reference: ReturnType<ProjectIndex['referenceAt']>): Array<{ name: string; detail: string }> {
+function parametersOfReference(
+  index: ProjectIndex,
+  reference: ReturnType<ProjectIndex['referenceAt']>,
+): Array<{ name: string; detail: string }> {
   if (!reference) return [];
   const symbol = index.symbol(reference.symbol);
   if (!symbol) {
     return reference.builtin?.kind === 'functionBlock'
-      ? index.membersOfType({ name: reference.builtin.name, array: false, pointer: false }).map((member) => ({ name: member.name, detail: member.builtin?.detail ?? member.name }))
+      ? index
+          .membersOfType({ name: reference.builtin.name, array: false, pointer: false })
+          .map((member) => ({ name: member.name, detail: member.builtin?.detail ?? member.name }))
       : [];
   }
-  if (symbol.kind === 'function' || symbol.kind === 'method') return index.parametersOf(symbol).map((parameter) => ({ name: parameter.name, detail: parameter.detail }));
+  if (symbol.kind === 'function' || symbol.kind === 'method')
+    return index.parametersOf(symbol).map((parameter) => ({ name: parameter.name, detail: parameter.detail }));
   if (symbol.type) {
     const type: TypeRef = { ...symbol.type, array: false };
-    return index.membersOfType(type)
-      .filter((member) => member.symbol ? ['input', 'output', 'inout'].includes(member.symbol.kind) : member.builtin !== undefined)
+    return index
+      .membersOfType(type)
+      .filter((member) => (member.symbol ? ['input', 'output', 'inout'].includes(member.symbol.kind) : member.builtin !== undefined))
       .map((member) => ({ name: member.name, detail: member.symbol?.detail ?? member.builtin?.detail ?? member.name }));
   }
   return [];
@@ -229,16 +311,25 @@ export function signatureAt(index: ProjectIndex, file: string, line: number, col
   let parameters: Array<{ name: string; type: string; direction: string }> = [];
   let result = '';
   if (symbol && (symbol.kind === 'function' || symbol.kind === 'method')) {
-    parameters = index.parametersOf(symbol).map((parameter) => ({ name: parameter.name, type: parameter.typeText ?? '', direction: parameter.kind }));
+    parameters = index
+      .parametersOf(symbol)
+      .map((parameter) => ({ name: parameter.name, type: parameter.typeText ?? '', direction: parameter.kind }));
     result = symbol.typeText ? ` : ${symbol.typeText}` : '';
   } else if (symbol?.type) {
     const members = index.membersOfType({ ...symbol.type, array: false });
     parameters = members
-      .filter((member) => member.symbol ? ['input', 'output', 'inout'].includes(member.symbol.kind) : member.builtin !== undefined)
-      .map((member) => ({ name: member.name, type: member.symbol?.typeText ?? member.type?.name ?? '', direction: member.symbol?.kind ?? (member.builtin?.detail.includes('output') ? 'output' : 'input') }));
+      .filter((member) => (member.symbol ? ['input', 'output', 'inout'].includes(member.symbol.kind) : member.builtin !== undefined))
+      .map((member) => ({
+        name: member.name,
+        type: member.symbol?.typeText ?? member.type?.name ?? '',
+        direction: member.symbol?.kind ?? (member.builtin?.detail.includes('output') ? 'output' : 'input'),
+      }));
   } else if (target.builtin?.kind === 'functionBlock') {
-    parameters = index.membersOfType({ name: target.builtin.name, array: false, pointer: false })
-      .map((member) => ({ name: member.name, type: member.type?.name ?? '', direction: member.builtin?.detail.includes('output') ? 'output' : 'input' }));
+    parameters = index.membersOfType({ name: target.builtin.name, array: false, pointer: false }).map((member) => ({
+      name: member.name,
+      type: member.type?.name ?? '',
+      direction: member.builtin?.detail.includes('output') ? 'output' : 'input',
+    }));
   } else {
     return null;
   }
@@ -279,11 +370,24 @@ export function outlineOf(index: ProjectIndex, file: string): OutlineEntry[] {
   const info = index.files.get(file);
   if (!info) return [];
   const entry = (symbol: IndexedSymbol): OutlineEntry => ({
-    name: symbol.name, kind: symbol.kind, detail: symbol.detail, line: symbol.line, column: symbol.column,
-    range: symbol.extent ?? { line: symbol.line, column: symbol.column, endLine: symbol.line, endColumn: symbol.column + symbol.name.length },
-    children: index.membersOfSymbol(symbol.id).filter((member) => member.file === file).map(entry),
+    name: symbol.name,
+    kind: symbol.kind,
+    detail: symbol.detail,
+    line: symbol.line,
+    column: symbol.column,
+    range: symbol.extent ?? {
+      line: symbol.line,
+      column: symbol.column,
+      endLine: symbol.line,
+      endColumn: symbol.column + symbol.name.length,
+    },
+    children: index
+      .membersOfSymbol(symbol.id)
+      .filter((member) => member.file === file)
+      .map(entry),
   });
-  return info.symbols.map((id) => index.symbol(id)!)
+  return info.symbols
+    .map((id) => index.symbol(id)!)
     .filter((symbol) => symbol.container < 0 && symbol.kind !== 'global' && symbol.kind !== 'external')
     .map(entry)
     .sort((left, right) => left.line - right.line || left.column - right.column);
@@ -293,4 +397,3 @@ export function outlineOf(index: ProjectIndex, file: string): OutlineEntry[] {
 export function projectOutline(index: ProjectIndex): Array<{ file: string; entries: OutlineEntry[] }> {
   return [...index.files.keys()].map((file) => ({ file, entries: outlineOf(index, file) })).filter((group) => group.entries.length > 0);
 }
-

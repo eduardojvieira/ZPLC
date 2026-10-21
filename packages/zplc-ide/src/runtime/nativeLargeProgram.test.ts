@@ -93,11 +93,18 @@ describe('NativeSimulationSupervisor with a program as large as the VM takes', (
     const supervisor = new NativeSimulationSupervisor({ clientName: 'test', clientVersion: '0', spawnProcess: () => child });
     const starting = supervisor.startSession();
     const hello = JSON.parse(await readLine()) as { id: string };
-    child.stdout.write(`${JSON.stringify({
-      id: hello.id,
-      type: 'response',
-      result: { protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '2', capability_profile: { profile_id: 'p', features: [] } },
-    })}\n`);
+    child.stdout.write(
+      `${JSON.stringify({
+        id: hello.id,
+        type: 'response',
+        result: {
+          protocol_version: '1.0',
+          runtime_kind: 'native-posix',
+          runtime_version: '2',
+          capability_profile: { profile_id: 'p', features: [] },
+        },
+      })}\n`,
+    );
     await starting;
 
     const request = {
@@ -112,11 +119,13 @@ describe('NativeSimulationSupervisor with a program as large as the VM takes', (
     expect(line).toBe(JSON.stringify(request));
     expect(line.length).toBeGreaterThan(NATIVE_PROGRAM_MAX_BYTES * 2);
 
-    child.stdout.write(`${JSON.stringify({
-      id: request.id,
-      type: 'response',
-      error: { code: 'PROGRAM_LOAD_FAILED', message: tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1) },
-    })}\n`);
+    child.stdout.write(
+      `${JSON.stringify({
+        id: request.id,
+        type: 'response',
+        error: { code: 'PROGRAM_LOAD_FAILED', message: tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1) },
+      })}\n`,
+    );
     await expect(pending).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
     child.stdin.end();
     child.stdout.end();
@@ -125,7 +134,9 @@ describe('NativeSimulationSupervisor with a program as large as the VM takes', (
 });
 
 describe('native simulation of a large program', () => {
-  async function withSession<T>(run: (session: { adapter: NativeAdapter; supervisor: NativeSimulationSupervisor }) => Promise<T>): Promise<T> {
+  async function withSession<T>(
+    run: (session: { adapter: NativeAdapter; supervisor: NativeSimulationSupervisor }) => Promise<T>,
+  ): Promise<T> {
     const persistRoot = await mkdtemp(join(tmpdir(), 'zplc-large-program-'));
     const supervisor = new NativeSimulationSupervisor({
       clientName: 'zplc-large-program-test',
@@ -151,93 +162,113 @@ describe('native simulation of a large program', () => {
     }
   }
 
-  itNative('loads, starts and runs a compiled program of about 12 KB', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'zplc-large-project-'));
-    try {
-      await mkdir(join(root, 'src'));
-      await writeFile(join(root, 'zplc.json'), JSON.stringify({
-        schemaVersion: 2, name: 'Big', version: '1.0.0', target: { board: 'posix' },
-        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Big.st'] }],
-      }));
-      await writeFile(join(root, 'src', 'Big.st'), bigStructuredText());
-      const compiled = await compilerCompile(root);
-      expect(compiled.ok).toBe(true);
-      const artifact = (compiled as unknown as { zplcFile: Uint8Array }).zplcFile;
-      // More than the 4 KB of bytecode the old 8 KiB request buffer could carry, well under the VM's limit.
-      expect(artifact.length).toBeGreaterThan(10_000);
-      expect(artifact.length).toBeLessThan(NATIVE_PROGRAM_MAX_BYTES);
+  itNative(
+    'loads, starts and runs a compiled program of about 12 KB',
+    async () => {
+      const root = await mkdtemp(join(tmpdir(), 'zplc-large-project-'));
+      try {
+        await mkdir(join(root, 'src'));
+        await writeFile(
+          join(root, 'zplc.json'),
+          JSON.stringify({
+            schemaVersion: 2,
+            name: 'Big',
+            version: '1.0.0',
+            target: { board: 'posix' },
+            tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Big.st'] }],
+          }),
+        );
+        await writeFile(join(root, 'src', 'Big.st'), bigStructuredText());
+        const compiled = await compilerCompile(root);
+        expect(compiled.ok).toBe(true);
+        const artifact = (compiled as unknown as { zplcFile: Uint8Array }).zplcFile;
+        // More than the 4 KB of bytecode the old 8 KiB request buffer could carry, well under the VM's limit.
+        expect(artifact.length).toBeGreaterThan(10_000);
+        expect(artifact.length).toBeLessThan(NATIVE_PROGRAM_MAX_BYTES);
 
-      await withSession(async ({ adapter }) => {
-        await adapter.loadProgram(artifact);
-        const before = bytesToHex(await adapter.peek(WORK_BASE, 4));
+        await withSession(async ({ adapter }) => {
+          await adapter.loadProgram(artifact);
+          const before = bytesToHex(await adapter.peek(WORK_BASE, 4));
+          await adapter.start();
+          await waitFor(async () => (bytesToHex(await adapter.peek(WORK_BASE, 4)) !== before ? true : undefined), 'X to change');
+          expect((await adapter.getInfo()).cycles).toBeGreaterThan(0);
+          await adapter.stop();
+        });
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+    60_000,
+  );
+
+  itNative(
+    'loads and runs the largest program, and refuses one byte more with its size and the limit',
+    async () => {
+      await withSession(async ({ adapter, supervisor }) => {
+        const largest = programOfSize(NATIVE_PROGRAM_MAX_BYTES);
+        await adapter.loadProgram(largest);
         await adapter.start();
-        await waitFor(async () => (bytesToHex(await adapter.peek(WORK_BASE, 4)) !== before ? true : undefined), 'X to change');
-        expect((await adapter.getInfo()).cycles).toBeGreaterThan(0);
+        await waitFor(async () => ((await adapter.peek(OPI_BASE, 1))[0] === 7 ? true : undefined), 'the output to be set');
+        await adapter.stop();
+
+        // The IDE refuses it first, in plain words, and nothing is sent.
+        const oneMore = programOfSize(NATIVE_PROGRAM_MAX_BYTES + 1);
+        await expect(adapter.loadProgram(oneMore)).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
+
+        // The runtime refuses it too, in the same words, when a client skips the IDE (a script, a CLI).
+        const direct = supervisor.request({
+          id: 'direct-oversize',
+          type: 'request',
+          method: 'program.load',
+          params: { bytecode_hex: bytesToHex(oneMore) },
+        });
+        await expect(direct).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
+        await expect(direct).rejects.not.toThrow('unable to parse request envelope');
+
+        // The refusal left the session as it was: the largest program is still loaded and runs again.
+        await adapter.start();
+        await waitFor(async () => ((await adapter.peek(OPI_BASE, 1))[0] === 7 ? true : undefined), 'the output to be set again');
         await adapter.stop();
       });
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-  }, 60_000);
+    },
+    60_000,
+  );
 
-  itNative('loads and runs the largest program, and refuses one byte more with its size and the limit', async () => {
-    await withSession(async ({ adapter, supervisor }) => {
-      const largest = programOfSize(NATIVE_PROGRAM_MAX_BYTES);
-      await adapter.loadProgram(largest);
-      await adapter.start();
-      await waitFor(async () => ((await adapter.peek(OPI_BASE, 1))[0] === 7 ? true : undefined), 'the output to be set');
-      await adapter.stop();
-
-      // The IDE refuses it first, in plain words, and nothing is sent.
-      const oneMore = programOfSize(NATIVE_PROGRAM_MAX_BYTES + 1);
-      await expect(adapter.loadProgram(oneMore)).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
-
-      // The runtime refuses it too, in the same words, when a client skips the IDE (a script, a CLI).
-      const direct = supervisor.request({
-        id: 'direct-oversize',
-        type: 'request',
-        method: 'program.load',
-        params: { bytecode_hex: bytesToHex(oneMore) },
+  itNative(
+    'answers a request line longer than the runtime reads once, then keeps serving',
+    async () => {
+      const child = spawn(nativeRuntimeBinary, [], {
+        env: { ...process.env, ZPLC_PERSIST_ROOT: await mkdtemp(join(tmpdir(), 'zplc-long-line-')) },
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
-      await expect(direct).rejects.toThrow(tooLarge(NATIVE_PROGRAM_MAX_BYTES + 1));
-      await expect(direct).rejects.not.toThrow('unable to parse request envelope');
+      const lines: string[] = [];
+      let partial = '';
+      child.stdout.on('data', (chunk: Buffer) => {
+        partial += chunk.toString();
+        for (let end = partial.indexOf('\n'); end >= 0; end = partial.indexOf('\n')) {
+          lines.push(partial.slice(0, end));
+          partial = partial.slice(end + 1);
+        }
+      });
+      const send = (id: string, method: string, params: Record<string, unknown>) =>
+        child.stdin.write(`${JSON.stringify({ id, type: 'request', method, params })}\n`);
+      try {
+        send('hello', 'session.hello', { client_name: 'test', client_version: '0', protocol_version: '1.0' });
+        await waitFor(() => lines.find((line) => line.includes('"id":"hello"')), 'the hello response');
+        send('too-long', 'program.load', { bytecode_hex: 'AB'.repeat(NATIVE_PROGRAM_MAX_BYTES * 3) });
+        send('after', 'status.get', {});
+        await waitFor(() => lines.find((line) => line.includes('"id":"after"')), 'the response after the long line');
 
-      // The refusal left the session as it was: the largest program is still loaded and runs again.
-      await adapter.start();
-      await waitFor(async () => ((await adapter.peek(OPI_BASE, 1))[0] === 7 ? true : undefined), 'the output to be set again');
-      await adapter.stop();
-    });
-  }, 60_000);
-
-  itNative('answers a request line longer than the runtime reads once, then keeps serving', async () => {
-    const child = spawn(nativeRuntimeBinary, [], {
-      env: { ...process.env, ZPLC_PERSIST_ROOT: await mkdtemp(join(tmpdir(), 'zplc-long-line-')) },
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    const lines: string[] = [];
-    let partial = '';
-    child.stdout.on('data', (chunk: Buffer) => {
-      partial += chunk.toString();
-      for (let end = partial.indexOf('\n'); end >= 0; end = partial.indexOf('\n')) {
-        lines.push(partial.slice(0, end));
-        partial = partial.slice(end + 1);
+        const answers = lines.filter(
+          (line) => line.includes('"type":"response"') && !line.includes('"id":"hello"') && !line.includes('"id":"after"'),
+        );
+        expect(answers).toHaveLength(1);
+        expect(answers[0]).toContain('request line is longer than');
+        expect(answers[0]).not.toContain('unable to parse request envelope');
+      } finally {
+        child.kill();
       }
-    });
-    const send = (id: string, method: string, params: Record<string, unknown>) =>
-      child.stdin.write(`${JSON.stringify({ id, type: 'request', method, params })}\n`);
-    try {
-      send('hello', 'session.hello', { client_name: 'test', client_version: '0', protocol_version: '1.0' });
-      await waitFor(() => lines.find((line) => line.includes('"id":"hello"')), 'the hello response');
-      send('too-long', 'program.load', { bytecode_hex: 'AB'.repeat(NATIVE_PROGRAM_MAX_BYTES * 3) });
-      send('after', 'status.get', {});
-      await waitFor(() => lines.find((line) => line.includes('"id":"after"')), 'the response after the long line');
-
-      const answers = lines.filter((line) => line.includes('"type":"response"') && !line.includes('"id":"hello"') && !line.includes('"id":"after"'));
-      expect(answers).toHaveLength(1);
-      expect(answers[0]).toContain('request line is longer than');
-      expect(answers[0]).not.toContain('unable to parse request envelope');
-    } finally {
-      child.kill();
-    }
-  }, 30_000);
+    },
+    30_000,
+  );
 });

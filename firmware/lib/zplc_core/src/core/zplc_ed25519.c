@@ -167,9 +167,7 @@ static void M(gf o, const gf a, const gf b) {
   car25519(o);
 }
 
-static void S(gf o, const gf a) {
-  M(o, a, a);
-}
+static void S(gf o, const gf a) { M(o, a, a); }
 
 static void pow2523(gf o, const gf i) {
   gf c;
@@ -373,9 +371,8 @@ static int scalar_is_canonical(const uint8_t s[32]) {
   return 0; /* equal to L */
 }
 
-int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES],
-                        const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES], const uint8_t *message,
-                        size_t length) {
+int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES], const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES],
+                        const uint8_t *message, size_t length) {
   uint8_t h[64];
   uint8_t t[32];
   gf p[4];

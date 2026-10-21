@@ -4,7 +4,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { ABI_VERSION, CONTAINER, CONTAINER_LAYOUT, DRAFT_COUNTER, MEMORY_LIMIT, MEMORY_REGION, SEGMENT_TYPE, TASK_TYPE_ID } from '../contract.generated';
+import {
+    ABI_VERSION,
+    CONTAINER,
+    CONTAINER_LAYOUT,
+    DRAFT_COUNTER,
+    MEMORY_LIMIT,
+    MEMORY_REGION,
+    SEGMENT_TYPE,
+    TASK_TYPE_ID,
+} from '../contract.generated';
 
 /**
  * A parsed token from source code.
@@ -152,7 +161,7 @@ export const TASK_TYPE = {
     INIT: TASK_TYPE_ID.INIT,
 } as const;
 
-export type TaskType = typeof TASK_TYPE[keyof typeof TASK_TYPE];
+export type TaskType = (typeof TASK_TYPE)[keyof typeof TASK_TYPE];
 
 /**
  * Task definition for multi-task programs.

@@ -9,23 +9,40 @@
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-export interface Needs { [job: string]: { result?: string } }
+export interface Needs {
+  [job: string]: { result?: string };
+}
 
 export function checkRunOutcome(needs: Needs): string[] {
   const problems: string[] = [];
   const result = (job: string) => needs[job]?.result ?? 'absent';
   for (const platform of ['macos', 'windows', 'linux']) {
     if (result(`upload-release-${platform}`) !== 'success') continue;
-    if (result(`build-${platform}`) !== 'success') problems.push(`upload-release-${platform} ran although build-${platform} was ${result(`build-${platform}`)}: files reached the draft that were not installed and launched`);
-    if (result(`prepare-release-evidence-${platform}`) !== 'success') problems.push(`upload-release-${platform} ran although prepare-release-evidence-${platform} was ${result(`prepare-release-evidence-${platform}`)}: files reached the draft that no check of the produced files had passed`);
+    if (result(`build-${platform}`) !== 'success')
+      problems.push(
+        `upload-release-${platform} ran although build-${platform} was ${result(`build-${platform}`)}: files reached the draft that were ` +
+          `not installed and launched`,
+      );
+    if (result(`prepare-release-evidence-${platform}`) !== 'success')
+      problems.push(
+        `upload-release-${platform} ran although prepare-release-evidence-${platform} was ${result(
+          `prepare-release-evidence-${platform}`,
+        )}: files reached the draft that no check of the produced files had passed`,
+      );
   }
   return problems;
 }
 
 if (import.meta.main) {
   const { positionals } = parseArgs({ args: Bun.argv.slice(2), allowPositionals: true });
-  if (!positionals[0]) { console.error('usage: run-outcome.ts <needs.json>'); process.exit(2); }
+  if (!positionals[0]) {
+    console.error('usage: run-outcome.ts <needs.json>');
+    process.exit(2);
+  }
   const problems = checkRunOutcome(JSON.parse(readFileSync(positionals[0], 'utf8')) as Needs);
-  if (problems.length > 0) { console.error(problems.map((problem) => `run-outcome: ${problem}`).join('\n')); process.exit(1); }
+  if (problems.length > 0) {
+    console.error(problems.map((problem) => `run-outcome: ${problem}`).join('\n'));
+    process.exit(1);
+  }
   console.log('run-outcome: every file that reached the draft release comes from a platform whose installers were launched and checked');
 }

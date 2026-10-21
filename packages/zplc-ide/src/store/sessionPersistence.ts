@@ -15,7 +15,10 @@ import { debugLog } from '../utils/debugLog';
 /** How long the changes must stop before the session is sent. */
 export const SESSION_SAVE_DELAY_MS = 400;
 
-export interface SessionSnapshot { rootId: string; state: SessionState }
+export interface SessionSnapshot {
+  rootId: string;
+  state: SessionState;
+}
 
 type Timer = ReturnType<typeof setTimeout>;
 export interface SessionSaverOptions {
@@ -27,10 +30,21 @@ export interface SessionSaverOptions {
 }
 
 /** A debounced sender. `queue` takes a function so that the snapshot reflects the moment of sending. */
-export function createSessionSaver({ send, delayMs = SESSION_SAVE_DELAY_MS, schedule = setTimeout, cancel = clearTimeout, onError = (error) => debugLog('[Session] save failed', error) }: SessionSaverOptions) {
+export function createSessionSaver({
+  send,
+  delayMs = SESSION_SAVE_DELAY_MS,
+  schedule = setTimeout,
+  cancel = clearTimeout,
+  onError = (error) => debugLog('[Session] save failed', error),
+}: SessionSaverOptions) {
   let snapshot: (() => SessionSnapshot | null) | null = null;
   let timer: Timer | null = null;
-  const stop = () => { if (timer !== null) { cancel(timer); timer = null; } };
+  const stop = () => {
+    if (timer !== null) {
+      cancel(timer);
+      timer = null;
+    }
+  };
   /** Sends what is queued now. The promise settles when the main process has answered (or the send failed): it never rejects. */
   const flush = (): Promise<void> => {
     stop();
@@ -39,7 +53,13 @@ export function createSessionSaver({ send, delayMs = SESSION_SAVE_DELAY_MS, sche
     if (!take) return Promise.resolve();
     try {
       const taken = take();
-      if (taken) return send(taken.rootId, taken.state).then(() => undefined, (error: unknown) => { onError(error); });
+      if (taken)
+        return send(taken.rootId, taken.state).then(
+          () => undefined,
+          (error: unknown) => {
+            onError(error);
+          },
+        );
     } catch (error) {
       onError(error);
     }
@@ -49,10 +69,15 @@ export function createSessionSaver({ send, delayMs = SESSION_SAVE_DELAY_MS, sche
     queue(take: () => SessionSnapshot | null): void {
       snapshot = take;
       stop();
-      timer = schedule(() => { void flush(); }, delayMs);
+      timer = schedule(() => {
+        void flush();
+      }, delayMs);
     },
     flush,
-    dispose(): void { stop(); snapshot = null; },
+    dispose(): void {
+      stop();
+      snapshot = null;
+    },
   };
 }
 
@@ -118,36 +143,55 @@ export interface SessionWiring {
  * Starts saving the session of whatever project the store has open. Returns a function that stops it. Only the desktop
  * app has a session bridge; elsewhere nothing is queued and nothing is sent.
  */
-export function startSessionPersistence<S extends SessionStoreState & { directoryHandle?: unknown; loadedFiles?: ReadonlyMap<string, { path: string }> }>(
-  store: SessionStoreLike<S>,
-  wiring: SessionWiring = {},
-): () => void {
+export function startSessionPersistence<
+  S extends SessionStoreState & { directoryHandle?: unknown; loadedFiles?: ReadonlyMap<string, { path: string }> },
+>(store: SessionStoreLike<S>, wiring: SessionWiring = {}): () => void {
   const bridge = () => (typeof window === 'undefined' ? undefined : window.electronAPI?.session);
-  const snapshot = wiring.snapshot ?? ((): SessionSnapshot | null => {
-    const state = store.getState();
-    const rootId = projectRootId(state.directoryHandle);
-    if (!state.isProjectOpen || rootId === null || !state.loadedFiles) return null;
-    return {
-      rootId,
-      state: captureSession({
-        openTabs: state.openTabs, activeFileId: state.activeFileId, files: state.loadedFiles, viewStates,
-        layout: state.sessionLayout as WorkspaceLayout | null, consoleCollapsed: state.isConsoleCollapsed,
-      }),
-    };
-  });
+  const snapshot =
+    wiring.snapshot ??
+    ((): SessionSnapshot | null => {
+      const state = store.getState();
+      const rootId = projectRootId(state.directoryHandle);
+      if (!state.isProjectOpen || rootId === null || !state.loadedFiles) return null;
+      return {
+        rootId,
+        state: captureSession({
+          openTabs: state.openTabs,
+          activeFileId: state.activeFileId,
+          files: state.loadedFiles,
+          viewStates,
+          layout: state.sessionLayout as WorkspaceLayout | null,
+          consoleCollapsed: state.isConsoleCollapsed,
+        }),
+      };
+    });
   const saver = createSessionSaver({
-    send: wiring.send ?? (async (rootId, state) => { const current = bridge(); if (current) await saveSession(current, rootId, state); }),
+    send:
+      wiring.send ??
+      (async (rootId, state) => {
+        const current = bridge();
+        if (current) await saveSession(current, rootId, state);
+      }),
     schedule: wiring.schedule,
     cancel: wiring.cancel,
   });
-  const queue = () => { if (wiring.snapshot || bridge()) saver.queue(snapshot); };
+  const queue = () => {
+    if (wiring.snapshot || bridge()) saver.queue(snapshot);
+  };
   const unsubscribe = store.subscribe((state, previous) => {
-    if (state.openTabs !== previous.openTabs || state.activeFileId !== previous.activeFileId
-      || state.sessionLayout !== previous.sessionLayout || state.isConsoleCollapsed !== previous.isConsoleCollapsed) queue();
+    if (
+      state.openTabs !== previous.openTabs ||
+      state.activeFileId !== previous.activeFileId ||
+      state.sessionLayout !== previous.sessionLayout ||
+      state.isConsoleCollapsed !== previous.isConsoleCollapsed
+    )
+      queue();
   });
   const flush = () => saver.flush();
   // The window going away: the renderer is unloaded, and what is still queued goes out now.
-  const onPageHide = () => { void flush(); };
+  const onPageHide = () => {
+    void flush();
+  };
   if (typeof window !== 'undefined') window.addEventListener('pagehide', onPageHide);
   const handle = { queue, flush };
   active = handle;

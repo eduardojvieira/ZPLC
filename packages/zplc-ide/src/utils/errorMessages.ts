@@ -12,7 +12,8 @@ function firstLine(value: unknown): string {
 /** Why a folder could not be opened, created or copied into, from the error the browser raised. */
 export function folderErrorReason(error: unknown): string {
   const name = error instanceof Error ? error.name : '';
-  if (name === 'NotAllowedError' || name === 'SecurityError') return 'Access to the folder was denied. Allow access to the folder and try again.';
+  if (name === 'NotAllowedError' || name === 'SecurityError')
+    return 'Access to the folder was denied. Allow access to the folder and try again.';
   if (name === 'NotFoundError') return 'The folder, or a file in it, was not found.';
   if (name === 'NoModificationAllowedError' || name === 'InvalidStateError') return 'The folder is read-only or in use by another program.';
   return firstLine(error) || 'Unknown error.';

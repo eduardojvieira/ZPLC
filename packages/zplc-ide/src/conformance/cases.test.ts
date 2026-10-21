@@ -8,30 +8,56 @@ import { cellLocation, loadCases, parseExpectation } from './cases';
 
 const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.meta.url));
 
-const runtime = (overrides: Record<string, unknown> = {}) => JSON.stringify({
-  requirement: 'CMP-011',
-  title: 'INT division of a negative operand',
-  scans: 1,
-  scanMs: 10,
-  expect: [{ at: '%QW0', type: 'INT', value: -4 }],
-  ...overrides,
-});
+const runtime = (overrides: Record<string, unknown> = {}) =>
+  JSON.stringify({
+    requirement: 'CMP-011',
+    title: 'INT division of a negative operand',
+    scans: 1,
+    scanMs: 10,
+    expect: [{ at: '%QW0', type: 'INT', value: -4 }],
+    ...overrides,
+  });
 const rejects = (text: string, message: string) => expect(() => parseExpectation(text, 'case.expect.json')).toThrow(message);
 
 describe('parseExpectation', () => {
   it('accepts a case that runs the program and a case that must not build', () => {
-    expect(parseExpectation(runtime(), 'x')).toMatchObject({ build: 'succeeds', scans: 1, scanMs: 10, fault: false, inputs: [], files: [] });
+    expect(parseExpectation(runtime(), 'x')).toMatchObject({
+      build: 'succeeds',
+      scans: 1,
+      scanMs: 10,
+      fault: false,
+      inputs: [],
+      files: [],
+    });
     expect(parseExpectation(runtime(), 'x')).toMatchObject({ expect: [{ at: '%QW0', type: 'INT', value: -4, afterScan: 1 }] });
-    expect(parseExpectation(JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6] }), 'x'))
-      .toEqual({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6], messageIncludes: [], matrix: [], tags: [], files: [], tasks: [] });
+    expect(parseExpectation(JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6] }), 'x')).toEqual({
+      requirement: 'CMP-001',
+      title: 'x',
+      build: 'fails',
+      lines: [6],
+      messageIncludes: [],
+      matrix: [],
+      tags: [],
+      files: [],
+      tasks: [],
+    });
   });
 
   it('defaults a check to the last scan and an input to the first', () => {
-    const parsed = parseExpectation(runtime({
-      scans: 3,
-      inputs: [{ at: '%IX0.0', type: 'BOOL', value: true }, { at: '%IX0.1', type: 'BOOL', value: true, beforeScan: 2 }],
-      expect: [{ var: 'total', type: 'REAL', value: 1.5 }, { at: '%QX0.0', type: 'BOOL', value: false, afterScan: 2 }],
-    }), 'x');
+    const parsed = parseExpectation(
+      runtime({
+        scans: 3,
+        inputs: [
+          { at: '%IX0.0', type: 'BOOL', value: true },
+          { at: '%IX0.1', type: 'BOOL', value: true, beforeScan: 2 },
+        ],
+        expect: [
+          { var: 'total', type: 'REAL', value: 1.5 },
+          { at: '%QX0.0', type: 'BOOL', value: false, afterScan: 2 },
+        ],
+      }),
+      'x',
+    );
     if (parsed.build !== 'succeeds') throw new Error('expected a case that builds');
     expect(parsed.inputs.map((input) => input.beforeScan)).toEqual([1, 2]);
     expect(parsed.expect.map((check) => check.afterScan)).toEqual([3, 2]);
@@ -42,7 +68,9 @@ describe('parseExpectation', () => {
   });
 
   it('accepts the exact list of the warnings of a build that passes, and rejects one that is not a warning', () => {
-    expect(parseExpectation(runtime({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }] }), 'x')).toMatchObject({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }] });
+    expect(parseExpectation(runtime({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }] }), 'x')).toMatchObject({
+      warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }],
+    });
     expect(parseExpectation(runtime({ warnings: [] }), 'x')).toMatchObject({ warnings: [] });
     expect(parseExpectation(runtime(), 'x')).not.toHaveProperty('warnings');
     rejects(runtime({ warnings: [{ code: 'narrowing', line: 7 }] }), 'code must be a diagnostic code');
@@ -132,7 +160,8 @@ describe('parseExpectation', () => {
   });
 
   it('rejects bad lines, messages and files', () => {
-    const negative = (overrides: Record<string, unknown>) => JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', ...overrides });
+    const negative = (overrides: Record<string, unknown>) =>
+      JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', ...overrides });
     rejects(negative({ lines: [0] }), 'lines');
     rejects(negative({ lines: 'six' }), 'lines');
     rejects(negative({ messageIncludes: [''] }), 'messageIncludes');
@@ -143,17 +172,27 @@ describe('parseExpectation', () => {
 });
 
 describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)', () => {
-  const negative = (overrides: Record<string, unknown>) => JSON.stringify({ requirement: 'CMP-003', title: 'x', build: 'fails', ...overrides });
+  const negative = (overrides: Record<string, unknown>) =>
+    JSON.stringify({ requirement: 'CMP-003', title: 'x', build: 'fails', ...overrides });
 
   it('carries the matrix rows, the tags and the note of a case that runs and of one that must not build', () => {
-    expect(parseExpectation(runtime({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' }), 'x'))
-      .toMatchObject({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' });
-    expect(parseExpectation(negative({ matrix: ['data-types.char-wchar'] }), 'x')).toMatchObject({ build: 'fails', matrix: ['data-types.char-wchar'], tags: [] });
+    expect(
+      parseExpectation(
+        runtime({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' }),
+        'x',
+      ),
+    ).toMatchObject({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' });
+    expect(parseExpectation(negative({ matrix: ['data-types.char-wchar'] }), 'x')).toMatchObject({
+      build: 'fails',
+      matrix: ['data-types.char-wchar'],
+      tags: [],
+    });
   });
 
   it('asserts diagnostic codes and columns of a rejected program, one for each line', () => {
-    expect(parseExpectation(negative({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] }), 'x'))
-      .toMatchObject({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] });
+    expect(
+      parseExpectation(negative({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] }), 'x'),
+    ).toMatchObject({ lines: [4, 7], columns: [3, 9], codes: ['UNKNOWN_IDENTIFIER', 'UNKNOWN_IDENTIFIER'] });
     rejects(negative({ columns: [3] }), 'columns needs "lines"');
     rejects(negative({ lines: [4], columns: [3, 9] }), 'one column for each line');
     rejects(negative({ lines: [4], columns: [0] }), 'columns');
@@ -162,9 +201,24 @@ describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, V
   });
 
   it('LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic', () => {
-    const elements = ['line:7', 'rung:rung1/cell:0,1', 'rung:rung1/element:c1', 'rung:#3', 'block:and1', 'connection:w2', 'step:s_a', 'step:s_b/enter', 'transition:t1', 'transition:t1/fire', 'action:mark'];
+    const elements = [
+      'line:7',
+      'rung:rung1/cell:0,1',
+      'rung:rung1/element:c1',
+      'rung:#3',
+      'block:and1',
+      'connection:w2',
+      'step:s_a',
+      'step:s_b/enter',
+      'transition:t1',
+      'transition:t1/fire',
+      'action:mark',
+    ];
     expect(parseExpectation(negative({ elements }), 'x')).toMatchObject({ build: 'fails', elements });
-    expect(parseExpectation(negative({ lines: [7, 9], elements: ['line:7', 'line:9'] }), 'x')).toMatchObject({ lines: [7, 9], elements: ['line:7', 'line:9'] });
+    expect(parseExpectation(negative({ lines: [7, 9], elements: ['line:7', 'line:9'] }), 'x')).toMatchObject({
+      lines: [7, 9],
+      elements: ['line:7', 'line:9'],
+    });
     expect(parseExpectation(negative({}), 'x')).toMatchObject({ elements: undefined });
     rejects(negative({ lines: [7], elements: ['line:7', 'line:9'] }), 'same length');
     rejects(negative({ elements: ['rung 1'] }), 'elements');
@@ -184,12 +238,24 @@ describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, V
   });
 
   it('describes the tasks of a project, with defaults, and refuses a task that is not well formed', () => {
-    const parsed = parseExpectation(runtime({ scanMs: 20, files: ['other.st'], tasks: [{ name: 'Fast', programs: ['main.st'] }, { name: 'Slow', trigger: 'cyclic', interval_ms: 100, priority: 7, programs: ['other.st'] }] }), 'x');
+    const parsed = parseExpectation(
+      runtime({
+        scanMs: 20,
+        files: ['other.st'],
+        tasks: [
+          { name: 'Fast', programs: ['main.st'] },
+          { name: 'Slow', trigger: 'cyclic', interval_ms: 100, priority: 7, programs: ['other.st'] },
+        ],
+      }),
+      'x',
+    );
     expect(parsed.tasks).toEqual([
       { name: 'Fast', trigger: 'cyclic', interval_ms: 20, priority: 1, programs: ['main.st'] },
       { name: 'Slow', trigger: 'cyclic', interval_ms: 100, priority: 7, programs: ['other.st'] },
     ]);
-    expect(parseExpectation(negative({ files: ['other.st'], tasks: [{ name: 'Ev', trigger: 'event', programs: ['other.st'] }] }), 'x')).toMatchObject({ build: 'fails', files: ['other.st'], tasks: [{ trigger: 'event' }] });
+    expect(
+      parseExpectation(negative({ files: ['other.st'], tasks: [{ name: 'Ev', trigger: 'event', programs: ['other.st'] }] }), 'x'),
+    ).toMatchObject({ build: 'fails', files: ['other.st'], tasks: [{ trigger: 'event' }] });
     rejects(runtime({ tasks: [{ name: 'Bad name', programs: ['main.st'] }] }), 'name');
     rejects(runtime({ tasks: [{ name: 'T', trigger: 'sometimes', programs: ['main.st'] }] }), 'trigger');
     rejects(runtime({ tasks: [{ name: 'T', programs: [] }] }), 'programs');
@@ -270,7 +336,11 @@ describe('loadCases', () => {
   });
 
   it('lets a case that must not build bring further files, as a case that runs does', () => {
-    const [found] = load({ 'p.st': 'x', 'lib.st': 'x', 'p.expect.json': JSON.stringify({ requirement: 'CMP-035', title: 'x', build: 'fails', files: ['lib.st'] }) });
+    const [found] = load({
+      'p.st': 'x',
+      'lib.st': 'x',
+      'p.expect.json': JSON.stringify({ requirement: 'CMP-035', title: 'x', build: 'fails', files: ['lib.st'] }),
+    });
     expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
   });
 
@@ -282,7 +352,9 @@ describe('loadCases', () => {
   it('refuses a matrix row that the matrix of the same root does not have, and accepts one it has', () => {
     const matrix = JSON.stringify({ schemaVersion: 1, rows: [{ id: 'data-types.dint' }] });
     expect(load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dint'] }), 'matrix.json': matrix })).toHaveLength(1);
-    expect(() => load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dnit'] }), 'matrix.json': matrix })).toThrow('data-types.dnit');
+    expect(() => load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dnit'] }), 'matrix.json': matrix })).toThrow(
+      'data-types.dnit',
+    );
   });
 
   it('reads a malformed expectation as a failure that names the file', () => {

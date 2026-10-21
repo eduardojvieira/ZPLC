@@ -20,7 +20,10 @@ import { translatorFor } from '../i18n';
 
 export interface DomHarness {
   /** Renders `ui` into the current document with a `userEvent` bound to it. `locale` defaults to English. */
-  render: (ui: ReactElement, options?: RenderOptions & { locale?: Locale }) => ReturnType<typeof import('@testing-library/react').render> & {
+  render: (
+    ui: ReactElement,
+    options?: RenderOptions & { locale?: Locale },
+  ) => ReturnType<typeof import('@testing-library/react').render> & {
     user: ReturnType<typeof import('@testing-library/user-event').default.setup>;
   };
   /** The catalog translator, so a test finds an element by the text a person sees and survives a rename. */
@@ -44,12 +47,23 @@ export interface DomHarness {
  * reaches the store calls this first and then imports the store and its components with `await import(...)`.
  */
 export const stubProjectLoader = async (): Promise<void> => {
-  await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null, getFileContent: () => null }));
+  await mock.module('../utils/projectLoader', () => ({
+    getAvailableProjects: () => [],
+    loadProject: () => null,
+    loadProjectAssets: () => null,
+    getFileContent: () => null,
+  }));
 };
 
-/** Monaco cannot start without a browser engine and a worker; a panel that only links to it gets an empty editor. The code editors stay on the VF-007 remaining list. */
+/**
+ * Monaco cannot start without a browser engine and a worker; a panel that only links to it gets an empty editor. The code editors stay on
+ * the VF-007 remaining list.
+ */
 export const stubMonaco = async (): Promise<void> => {
-  await mock.module('../components/monacoRuntime', () => ({ DiffEditor: () => null, monacoEditor: { setTheme: () => undefined, getModels: () => [], defineTheme: () => undefined } }));
+  await mock.module('../components/monacoRuntime', () => ({
+    DiffEditor: () => null,
+    monacoEditor: { setTheme: () => undefined, getModels: () => [], defineTheme: () => undefined },
+  }));
 };
 
 /** True when `element` holds the focus. A boolean keeps a failing assertion short: a happy-dom element prints thousands of lines. */
@@ -71,7 +85,9 @@ export async function setupDom(): Promise<DomHarness> {
   afterAll(async () => {
     rtl.cleanup();
     // React's scheduler still holds tasks that read `window`; let them run while it exists.
-    await rtl.act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    await rtl.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
     await GlobalRegistrator.unregister();
   });
 
@@ -84,13 +100,18 @@ export async function setupDom(): Promise<DomHarness> {
     },
     t: translatorFor('en').t,
     tFor: (locale) => translatorFor(locale).t,
-    get screen() { return rtl.within(document.body); },
+    get screen() {
+      return rtl.within(document.body);
+    },
     act: rtl.act,
     // The default of one second is not load-proof on a busy build machine; a timer-driven wait gets five.
     waitFor: (callback, options) => rtl.waitFor(callback, { timeout: 5000, ...options }),
     fireEvent: rtl.fireEvent,
     within: rtl.within,
-    settle: () => rtl.act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); }),
+    settle: () =>
+      rtl.act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }),
     patchStore: (store, partial) => {
       const before = Object.fromEntries(Object.keys(partial).map((key) => [key, (store.getState() as Record<string, unknown>)[key]]));
       store.setState(partial);

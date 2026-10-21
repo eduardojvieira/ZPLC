@@ -1,6 +1,6 @@
 /**
  * Transpiler Module Exports
- * 
+ *
  * Visual Language → Structured Text transpilers
  */
 

@@ -21,8 +21,14 @@ export interface ShellState {
   secondaryVisible: boolean;
 }
 
-// The secondary sidebar starts hidden: the editor keeps the width a diagram or a long line needs, and the command bar has the button for it.
-export const DEFAULT_SHELL_STATE: ShellState = { activityView: 'project', navigatorMode: 'objects', primaryVisible: true, secondaryVisible: false };
+// The secondary sidebar starts hidden: the editor keeps the width a diagram or a long line needs, and the command bar has the button for
+// it.
+export const DEFAULT_SHELL_STATE: ShellState = {
+  activityView: 'project',
+  navigatorMode: 'objects',
+  primaryVisible: true,
+  secondaryVisible: false,
+};
 
 const oneOf = <T extends string>(choices: readonly T[], value: unknown, fallback: T): T =>
   typeof value === 'string' && (choices as readonly string[]).includes(value) ? (value as T) : fallback;
@@ -46,19 +52,30 @@ export function parseShellState(raw: string | null | undefined): ShellState {
   }
 }
 
-export const serializeShellState = (state: ShellState): string => JSON.stringify({
-  version: SHELL_STATE_VERSION,
-  activityView: state.activityView,
-  navigatorMode: state.navigatorMode,
-  primaryVisible: state.primaryVisible,
-  secondaryVisible: state.secondaryVisible,
-});
+export const serializeShellState = (state: ShellState): string =>
+  JSON.stringify({
+    version: SHELL_STATE_VERSION,
+    activityView: state.activityView,
+    navigatorMode: state.navigatorMode,
+    primaryVisible: state.primaryVisible,
+    secondaryVisible: state.secondaryVisible,
+  });
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
-const storage = (): StorageLike | undefined => { try { return globalThis.localStorage; } catch { return undefined; } };
+const storage = (): StorageLike | undefined => {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return undefined;
+  }
+};
 
 function read(): ShellState {
-  try { return parseShellState(storage()?.getItem(SHELL_STATE_KEY)); } catch { return DEFAULT_SHELL_STATE; }
+  try {
+    return parseShellState(storage()?.getItem(SHELL_STATE_KEY));
+  } catch {
+    return DEFAULT_SHELL_STATE;
+  }
 }
 
 interface ShellActions {
@@ -83,5 +100,9 @@ export const useShellLayout = create<ShellState & ShellActions>((set) => ({
 
 // Saved as it changes; a window that cannot store (a private window, a full quota) keeps the choice for the session.
 useShellLayout.subscribe((state) => {
-  try { storage()?.setItem(SHELL_STATE_KEY, serializeShellState(state)); } catch { /* not remembered */ }
+  try {
+    storage()?.setItem(SHELL_STATE_KEY, serializeShellState(state));
+  } catch {
+    /* not remembered */
+  }
 });

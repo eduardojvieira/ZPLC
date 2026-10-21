@@ -45,40 +45,59 @@ async function fixture(files: Record<string, string>): Promise<string> {
   return root;
 }
 
-const expectation = (title: string, value: number, extra: object = {}) => JSON.stringify({
-  requirement: 'VF-002', title, scans: 1, scanMs: 10, expect: [{ at: '%QW0', type: 'INT', value }], ...extra,
-});
+const expectation = (title: string, value: number, extra: object = {}) =>
+  JSON.stringify({
+    requirement: 'VF-002',
+    title,
+    scans: 1,
+    scanMs: 10,
+    expect: [{ at: '%QW0', type: 'INT', value }],
+    ...extra,
+  });
 
 describe('adding a conformance case (VF-002)', () => {
-  itNative('VF-002 a source file and an expected-values file are a new case: the runner runs it, passes it, and fails a wrong one', async () => {
-    const root = await fixture({
-      'added/right.st': program(3),
-      'added/right.expect.json': expectation('the value is right', 5),
-      'added/wrong.st': program(3),
-      'added/wrong.expect.json': expectation('the value is wrong', 6),
-      'added/rejected.st': 'PROGRAM Broken\nVAR END_VAR\n  Undeclared := 1;\nEND_PROGRAM\n',
-      'added/rejected.expect.json': JSON.stringify({ requirement: 'VF-002', title: 'a program that must not build', build: 'fails', lines: [3] }),
-    });
-    try {
-      const { exitCode, outcome } = await run(root, {});
-      expect(outcome('VF-002 the value is right')).toBe('pass');
-      expect(outcome('VF-002 a program that must not build')).toBe('pass');
-      expect(outcome('VF-002 the value is wrong')).toBe('fail');
-      expect(exitCode).not.toBe(0);
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-  }, 60_000);
+  itNative(
+    'VF-002 a source file and an expected-values file are a new case: the runner runs it, passes it, and fails a wrong one',
+    async () => {
+      const root = await fixture({
+        'added/right.st': program(3),
+        'added/right.expect.json': expectation('the value is right', 5),
+        'added/wrong.st': program(3),
+        'added/wrong.expect.json': expectation('the value is wrong', 6),
+        'added/rejected.st': 'PROGRAM Broken\nVAR END_VAR\n  Undeclared := 1;\nEND_PROGRAM\n',
+        'added/rejected.expect.json': JSON.stringify({
+          requirement: 'VF-002',
+          title: 'a program that must not build',
+          build: 'fails',
+          lines: [3],
+        }),
+      });
+      try {
+        const { exitCode, outcome } = await run(root, {});
+        expect(outcome('VF-002 the value is right')).toBe('pass');
+        expect(outcome('VF-002 a program that must not build')).toBe('pass');
+        expect(outcome('VF-002 the value is wrong')).toBe('fail');
+        expect(exitCode).not.toBe(0);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+    60_000,
+  );
 
-  it('VF-002 a source file without its expected values is refused loudly, so a half-written case cannot assert less than it says', async () => {
-    const root = await fixture({ 'added/orphan.st': program(1) });
-    try {
-      const { exitCode, stderr } = await run(root, {});
-      expect(exitCode).not.toBe(0);
-      expect(stderr).toContain('orphan.st');
-      expect(stderr).toContain('asserts nothing');
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-  }, 60_000);
+  it(
+    'VF-002 a source file without its expected values is refused loudly, so a half-written case cannot assert less than it ' + 'says',
+    async () => {
+      const root = await fixture({ 'added/orphan.st': program(1) });
+      try {
+        const { exitCode, stderr } = await run(root, {});
+        expect(exitCode).not.toBe(0);
+        expect(stderr).toContain('orphan.st');
+        expect(stderr).toContain('asserts nothing');
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    },
+    60_000,
+  );
 });

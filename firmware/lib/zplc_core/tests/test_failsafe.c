@@ -14,15 +14,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static void test_the_record_of_a_fault_is_whole_or_nothing(void) {
@@ -73,8 +73,7 @@ static void test_reset_cause_decision(void) {
         "a power-on also sets the pin flag: it is a power-on");
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_WATCHDOG | ZPLC_RESET_BIT_PIN, &none) == ZPLC_RESET_WATCHDOG,
         "a watchdog reset drives the reset line: it is a watchdog reset");
-  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_SOFTWARE | ZPLC_RESET_BIT_PIN, &none) == ZPLC_RESET_SOFTWARE,
-        "so does a software reset");
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_SOFTWARE | ZPLC_RESET_BIT_PIN, &none) == ZPLC_RESET_SOFTWARE, "so does a software reset");
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_POWER_ON, &none) == ZPLC_RESET_POWER_ON,
         "power-on is read first");
 
@@ -82,8 +81,7 @@ static void test_reset_cause_decision(void) {
    * register is cleared by that same power-on: when both are set the watchdog reset is the later one. */
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
         "a stale power-on flag does not hide a watchdog reset");
-  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_PIN | ZPLC_RESET_BIT_WATCHDOG, &none) ==
-            ZPLC_RESET_WATCHDOG,
+  CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_POWER_ON | ZPLC_RESET_BIT_PIN | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
         "nor do the stale power-on and pin flags together");
   CHECK(zplc_reset_cause_decide(ZPLC_RESET_BIT_BROWN_OUT | ZPLC_RESET_BIT_WATCHDOG, &none) == ZPLC_RESET_WATCHDOG,
         "nor a stale brown-out flag");

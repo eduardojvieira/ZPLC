@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 const render = (props: Partial<Parameters<typeof UnsavedChangesDialog>[0]> = {}) =>
-  renderToStaticMarkup(<UnsavedChangesDialog title="Unsaved changes" items={['Motor.st', 'main.ld.json']} onChoice={() => undefined} {...props} />);
+  renderToStaticMarkup(
+    <UnsavedChangesDialog title="Unsaved changes" items={['Motor.st', 'main.ld.json']} onChoice={() => undefined} {...props} />,
+  );
 
 describe('unsaved changes dialog', () => {
   it('UX-020 names the title and every modified item in an alert dialog', () => {

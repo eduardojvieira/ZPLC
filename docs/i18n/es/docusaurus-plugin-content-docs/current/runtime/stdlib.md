@@ -20,7 +20,9 @@ Esta página describe las funciones cubiertas hoy por la referencia. Valide el p
 `PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
 
 ### TON (Temporizador On-Delay)
+
 Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `IN` haya sido TRUE durante la duración de `PT`.
+
 - **Entradas:**
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a esperar).
@@ -30,7 +32,9 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
 - **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo ciclo (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Temporizador Off-Delay)
+
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
+
 - **Entradas:**
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a mantener en alto).
@@ -39,7 +43,9 @@ Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` s
   - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto (`cmp-057-tof-elapsed-stops-at-preset`).
 
 ### TP (Temporizador de pulso)
+
 Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta la entrada.
+
 - **Entradas:**
   - `IN` (BOOL): Condición de disparo (el flanco de subida inicia el pulso).
   - `PT` (TIME): Tiempo de pulso.
@@ -60,7 +66,9 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
 - **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
 
 ### CTU (Contador Ascendente)
+
 Suma 1 en cada flanco de subida de `CU`.
+
 - **Entradas:**
   - `CU` (BOOL): Entrada de cuenta ascendente.
   - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
@@ -70,7 +78,9 @@ Suma 1 en cada flanco de subida de `CU`.
   - `CV` (INT): Valor actual. Se detiene en 32767: un flanco ahí no se cuenta y `CV` no pasa a -32768.
 
 ### CTD (Contador Descendente)
+
 Resta 1 en cada flanco de subida de `CD`.
+
 - **Entradas:**
   - `CD` (BOOL): Entrada de cuenta descendente.
   - `LD` (BOOL): Load; mientras es TRUE, `CV` vale `PV`.
@@ -80,7 +90,9 @@ Resta 1 en cada flanco de subida de `CD`.
   - `CV` (INT): Valor actual. Cuenta por debajo de 0 y se detiene en -32768: un flanco ahí no se cuenta y `CV` no pasa a 32767 (`cmp-058-ctd-counts-below-zero`, `cmp-058-ctd-stops-at-the-int-minimum`).
 
 ### CTUD (Contador Ascendente/Descendente)
+
 Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
+
 - **Entradas:**
   - `CU` (BOOL): Entrada de cuenta ascendente.
   - `CD` (BOOL): Entrada de cuenta descendente.
@@ -103,25 +115,29 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 ## 3. Elementos biestables (flip-flops)
 
 ### RS (Flip-Flop Dominante Reset)
+
 - **Entradas:** `S` (BOOL, Set), `R1` (BOOL, Reset).
 - **Salidas:** `Q1` (BOOL).
-- **Comportamiento:** Enclava `Q1` a TRUE cuando `S` es TRUE. Reinicia `Q1` a FALSE cuando `R1` es TRUE. *Si tanto `S` como `R1` son TRUE, la salida es FALSE (gana el Reset).*
+- **Comportamiento:** Enclava `Q1` a TRUE cuando `S` es TRUE. Reinicia `Q1` a FALSE cuando `R1` es TRUE. _Si tanto `S` como `R1` son TRUE, la salida es FALSE (gana el Reset)._
 
 ### SR (Flip-Flop Dominante Set)
+
 - **Entradas:** `S1` (BOOL, Set), `R` (BOOL, Reset).
 - **Salidas:** `Q1` (BOOL).
-- **Comportamiento:** Enclava `Q1` a TRUE cuando `S1` es TRUE. Reinicia `Q1` a FALSE cuando `R` es TRUE. *Si tanto `S1` como `R` son TRUE, la salida es TRUE (gana el Set).*
+- **Comportamiento:** Enclava `Q1` a TRUE cuando `S1` es TRUE. Reinicia `Q1` a FALSE cuando `R` es TRUE. _Si tanto `S1` como `R` son TRUE, la salida es TRUE (gana el Set)._
 
 ---
 
 ## 4. Detección de flancos
 
 ### R_TRIG (Detector de Flanco de Subida)
+
 - **Entradas:** `CLK` (BOOL).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** `Q` es TRUE durante un solo ciclo de ejecución cuando `CLK` transiciona de FALSE a TRUE.
 
 ### F_TRIG (Detector de Flanco de Bajada)
+
 - **Entradas:** `CLK` (BOOL).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** `Q` es TRUE durante un solo ciclo de ejecución cuando `CLK` transiciona de TRUE a FALSE.
@@ -131,6 +147,7 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 ## 5. Funciones matemáticas
 
 ### Operadores aritméticos
+
 - **`+`, `-`, `*`, `/`**: suma, resta, multiplicación y división de los tipos numéricos. La división entera trunca hacia cero.
 - **`a MOD b`**: el residuo entero, con el signo de `a`. Es un operador: la forma `MOD(a, b)` no se analiza.
 - Las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV` no existen; la compilación las rechaza y nombra la función (`cmp-006-operator-function-form-is-rejected`).
@@ -138,54 +155,66 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) de Structured Text.
 
 ### Matemática avanzada
+
 ### ABS
+
 - **Entradas:** `IN` (ANY_NUM).
 - **Salidas:** (ANY_NUM) Valor absoluto de IN. El `DINT` y el `LINT` más negativos quedan como están; un `LREAL` tiene su bit de signo borrado (`ABS(-0.0)` es 0.0).
 
 ### SQRT
+
 - **Entradas:** `IN` (REAL o LREAL).
 - **Salidas:** (el tipo de IN) Raíz cuadrada de IN; 0.0 si `IN` es 0.0 o menor. Para un `LREAL` es el doble correctamente redondeado (`SQRTD`).
 
 ### SIN / COS / TAN
+
 - **Entradas:** `IN` (REAL, o LREAL: el argumento se redondea a REAL, la función calcula en REAL y el resultado se amplía de nuevo, así que un resultado LREAL tiene la precisión de un REAL, unas siete cifras significativas).
 - **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
 - **Dominio:** todo `IN` finito. Un NaN o un infinito da NaN (`cmp-058-sine-of-infinity-and-not-a-number`). Un ángulo de 100000 o más se reduce módulo 2 pi antes de tomar el seno, con 2 pi en 36 bits repartidos en tres partes que se multiplican sin error y una corrección aplicada una vez, de modo que el resultado es el seno del REAL mismo: tan preciso como para un ángulo pequeño hasta 2^40, y con un error que crece como `IN` por 1e-19 por encima (1e-4 en 2^48). Un REAL de 2 pi por 2^48 (1.8e15) o más tiene una separación mayor que 2^25 radianes: el ángulo no lleva información, la reducción no lo contiene y la función da el valor de un ángulo de 0.0, finito y sin error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
 ### EXP / LN / LOG
+
 El exponencial natural, el logaritmo natural y el logaritmo en base 10.
+
 - **Entradas:** `IN` (REAL; un entero se convierte; un LREAL se redondea a REAL y el resultado se amplía de nuevo, con la precisión de un REAL).
 - **Salidas:** (REAL) `e ** IN`, `ln(IN)` o `log10(IN)`.
 - **Rango:** `EXP` da +infinito por encima de 88.72284 y 0.0 por debajo de -103.28. `LN` y `LOG` dan -infinito para 0.0 y NaN para un número negativo.
 
 ### ASIN / ACOS / ATAN / ATAN2
+
 Funciones trigonométricas inversas, en radianes.
+
 - **Entradas:** `IN` (REAL) para `ASIN`, `ACOS` y `ATAN`; `ATAN2(Y, X)` toma dos valores REAL.
 - **Salidas:** (REAL) `ASIN` en [-pi/2, pi/2] y `ACOS` en [0, pi] para un `IN` de -1.0 a 1.0, NaN fuera de ese rango; `ATAN` en (-pi/2, pi/2) para cualquier `IN`; `ATAN2` en (-pi, pi], el ángulo del punto (`X`, `Y`) medido desde el eje X positivo, y 0.0 para (0.0, 0.0).
 
 ### NORM_X / SCALE_X
+
 Convierten un valor entre un rango y 0.0 a 1.0.
+
 - **NORM_X(MIN, X, MAX)**: `(X - MIN) / (MAX - MIN)`, un REAL; 0.0 cuando `MAX` es igual a `MIN`. Un valor fuera del rango no se limita (`NORM_X(0.0, 30.0, 20.0)` es 1.5).
 - **SCALE_X(MIN, X, MAX)**: `MIN + X * (MAX - MIN)`, un REAL. Los límites pueden ser negativos; los argumentos enteros se convierten.
 
 ### EXPT
+
 `EXPT(BASE, EXP)` eleva `BASE` a `EXP`; es el operador `**` en forma de función. Los dos argumentos se convierten a REAL y el resultado es REAL. Un exponente entero, negativo y 0 incluidos, se calcula por cuadrados sucesivos (`EXPT(2.0, -2.0)` es 0.25 y `EXPT(x, 0.0)` es 1.0); cualquier otro exponente como `2 ** (EXP * log2(BASE))`, NaN para una base negativa.
 
 ### Precisión de las funciones REAL
+
 Las funciones anteriores son subrutinas en aritmética de precisión simple, medidas contra `Math.*` sobre grillas densas en la suite de tests del compilador (`stdlib/mathlib.test.ts`). El error nunca supera:
 
-| Función | Rango | Error |
-|---|---|---|
-| `SQRT` | todo REAL positivo, subnormales incluidos | relativo 1.3e-7 |
-| `EXP` | -87 a 88 | relativo 1.3e-7 |
-| `LN`, `LOG` | todo REAL positivo, subnormales incluidos | relativo 3e-7 |
-| `SIN`, `COS` | magnitud hasta 1000 | absoluto 2e-7 |
-| `SIN`, `COS` | magnitud menor que 2^40 (1.1e12) | absoluto 2e-6 |
-| `SIN`, `COS` | magnitud de 2^40 a 2^48 (2.8e14) | absoluto 1e-4 |
-| `TAN` | magnitud hasta 1000 | relativo 3e-7 |
-| `TAN` | magnitud hasta 2^40 | el error del ángulo por `1 + TAN(x)^2`, más 5e-7 del resultado |
-| `ATAN` | todo REAL | absoluto 2e-7 |
-| `ASIN`, `ACOS` | -1.0 a 1.0 | absoluto 4e-7 |
-| `ATAN2` | todo par de REAL | absoluto 4e-7 |
+| Función        | Rango                                     | Error                                                          |
+| -------------- | ----------------------------------------- | -------------------------------------------------------------- |
+| `SQRT`         | todo REAL positivo, subnormales incluidos | relativo 1.3e-7                                                |
+| `EXP`          | -87 a 88                                  | relativo 1.3e-7                                                |
+| `LN`, `LOG`    | todo REAL positivo, subnormales incluidos | relativo 3e-7                                                  |
+| `SIN`, `COS`   | magnitud hasta 1000                       | absoluto 2e-7                                                  |
+| `SIN`, `COS`   | magnitud menor que 2^40 (1.1e12)          | absoluto 2e-6                                                  |
+| `SIN`, `COS`   | magnitud de 2^40 a 2^48 (2.8e14)          | absoluto 1e-4                                                  |
+| `TAN`          | magnitud hasta 1000                       | relativo 3e-7                                                  |
+| `TAN`          | magnitud hasta 2^40                       | el error del ángulo por `1 + TAN(x)^2`, más 5e-7 del resultado |
+| `ATAN`         | todo REAL                                 | absoluto 2e-7                                                  |
+| `ASIN`, `ACOS` | -1.0 a 1.0                                | absoluto 4e-7                                                  |
+| `ATAN2`        | todo par de REAL                          | absoluto 4e-7                                                  |
 
 Ninguna hace fallar la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da NaN.
 
@@ -196,22 +225,27 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 ## 6. Funciones de selección
 
 ### MAX
+
 - **Entradas:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
 - **Salidas:** (ANY_NUM) El mayor de los dos.
 
 ### MIN
+
 - **Entradas:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
 - **Salidas:** (ANY_NUM) El menor de los dos.
 
 ### LIMIT
+
 - **Entradas:** `MN` (ANY_NUM, mínimo), `IN` (ANY_NUM, entrada), `MX` (ANY_NUM, máximo).
 - **Salidas:** (ANY_NUM) Retorna `MN` si `IN < MN`, retorna `MX` si `IN > MX`, en otro caso retorna `IN`.
 
 ### SEL
+
 - **Entradas:** `G` (BOOL, condición), `IN0` (ANY, retorna si G es FALSE), `IN1` (ANY, retorna si G es TRUE).
 - **Salidas:** (ANY) `IN0` o `IN1`.
 
 ### MUX
+
 - **Entradas:** `K` (INT, selector), `IN0`, `IN1`, `...` (ANY).
 - **Salidas:** (ANY) Retorna `INk`.
 
@@ -220,24 +254,30 @@ Costo: ningún lazo depende del argumento, de modo que la cantidad de instruccio
 ## 7. Funciones de bits
 
 ### Operadores lógicos
+
 - **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
 - **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: la negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
 - **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Rotación y desplazamiento
+
 ### SHL
+
 - **Entradas:** `IN` (ANY_BIT), `N` (INT, número de bits).
 - **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`), y un `BYTE` o un `WORD` descarta los bits desplazados más allá de su ancho (`cmp-014-shl-byte-keeps-8-bits`).
 
 ### SHR
+
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
 - **Salidas:** (ANY_BIT) `IN` desplazado a la derecha. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0.
 
 ### ROL
+
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
 - **Salidas:** (ANY_BIT) Valor rotado a la izquierda.
 
 ### ROR
+
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
 - **Salidas:** (ANY_BIT) Valor rotado a la derecha.
 
@@ -270,19 +310,19 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, `LINT_TO_LREAL`, `LREAL_TO_ULINT`, etc. (240 funciones). `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
 
-| Conversión | Resultado |
-|---|---|
-| Entero a un entero más ancho o del mismo ancho | El mismo valor. |
-| Entero a un entero más angosto, o al otro signo | Los bits bajos del valor en el ancho del destino (módulo, complemento a dos): `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535, `DINT_TO_UDINT(-1)` es 4294967295. |
-| Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
-| `BOOL` a un número | 0 o 1. |
-| Entero a `REAL` | El `REAL` más cercano, con un solo redondeo (también para un entero de 64 bits); un valor mayor que 2^24 puede perder sus bits más bajos. |
-| Entero a `LREAL` | El `LREAL` más cercano; exacto hasta 2^53, un solo redondeo por encima. |
-| `REAL` a `LREAL`, `LREAL` a `REAL` | Ampliación exacta; al reducir, el `REAL` más cercano (un desbordamiento es un infinito). |
-| `REAL` a un entero | El entero más cercano; una mitad exacta va al entero par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4, `REAL_TO_INT(-2.5)` es -2). Un valor fuera del rango del destino da su límite más cercano (`REAL_TO_INT(40000.0)` es 32767, `REAL_TO_USINT(-5.0)` es 0, el infinito da el límite de su signo) y un NaN da 0. |
-| `LREAL` a un entero | Igual que `REAL`: el entero más cercano, una mitad exacta al entero par, el límite más cercano del destino fuera de su rango (`LREAL_TO_LINT(1.0E30)` es 9223372036854775807, `LREAL_TO_ULINT(-2.5)` es 0), 0 para un NaN. |
-| `REAL` o `LREAL` a `BOOL` | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor, un NaN incluido. |
-| `TIME` | Su cantidad de milisegundos como entero sin signo de 32 bits: `TIME_TO_DINT(T#2s)` es 2000. |
+| Conversión                                      | Resultado                                                                                                                                                                                                                                                                                                                |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Entero a un entero más ancho o del mismo ancho  | El mismo valor.                                                                                                                                                                                                                                                                                                          |
+| Entero a un entero más angosto, o al otro signo | Los bits bajos del valor en el ancho del destino (módulo, complemento a dos): `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535, `DINT_TO_UDINT(-1)` es 4294967295.                                                                                                                                                   |
+| Entero o `TIME` a `BOOL`                        | FALSE para 0, TRUE para cualquier otro valor.                                                                                                                                                                                                                                                                            |
+| `BOOL` a un número                              | 0 o 1.                                                                                                                                                                                                                                                                                                                   |
+| Entero a `REAL`                                 | El `REAL` más cercano, con un solo redondeo (también para un entero de 64 bits); un valor mayor que 2^24 puede perder sus bits más bajos.                                                                                                                                                                                |
+| Entero a `LREAL`                                | El `LREAL` más cercano; exacto hasta 2^53, un solo redondeo por encima.                                                                                                                                                                                                                                                  |
+| `REAL` a `LREAL`, `LREAL` a `REAL`              | Ampliación exacta; al reducir, el `REAL` más cercano (un desbordamiento es un infinito).                                                                                                                                                                                                                                 |
+| `REAL` a un entero                              | El entero más cercano; una mitad exacta va al entero par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4, `REAL_TO_INT(-2.5)` es -2). Un valor fuera del rango del destino da su límite más cercano (`REAL_TO_INT(40000.0)` es 32767, `REAL_TO_USINT(-5.0)` es 0, el infinito da el límite de su signo) y un NaN da 0. |
+| `LREAL` a un entero                             | Igual que `REAL`: el entero más cercano, una mitad exacta al entero par, el límite más cercano del destino fuera de su rango (`LREAL_TO_LINT(1.0E30)` es 9223372036854775807, `LREAL_TO_ULINT(-2.5)` es 0), 0 para un NaN.                                                                                               |
+| `REAL` o `LREAL` a `BOOL`                       | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor, un NaN incluido.                                                                                                                                                                                                                                                  |
+| `TIME`                                          | Su cantidad de milisegundos como entero sin signo de 32 bits: `TIME_TO_DINT(T#2s)` es 2000.                                                                                                                                                                                                                              |
 
 - **TRUNC(IN)**: Quita la parte fraccionaria de un `REAL` hacia cero y devuelve un `REAL` (`TRUNC(-3.7)` es -3.0). Una magnitud de 2^23 o más no tiene fracción y se devuelve igual. Para el entero, use `REAL_TO_DINT(TRUNC(x))`. Para un `LREAL` el resultado es un `LREAL`, exacto, con el límite en 2^63 (`TRUNC(-0.4)` es +0.0).
 - **ROUND(IN)**: No es una función IEC. El número entero más cercano como `REAL`, una mitad exacta se aleja de cero (`ROUND(2.5)` es 3.0, `ROUND(-2.5)` es -3.0). Para un `LREAL` el resultado es un `LREAL` y es exacto donde sumar 0.5 no lo sería (`ROUND(0.49999999999999994)` es 0.0).
@@ -292,15 +332,19 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 ## 10. Funciones del sistema
 
 ### UPTIME
+
 - **Entradas:** Ninguna.
 - **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos (`cmp-058-uptime-follows-the-clock`).
 
 ### CYCLE_TIME
+
 - **Entradas:** Ninguna.
 - **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
+
 Stub de compatibilidad. Compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software: ningún opcode lo hace, y el runtime alimenta el watchdog de hardware por sí mismo después de cada ciclo completado (`rt-034-watchdog-reset-is-reported-and-changes-nothing`).
+
 - **Entradas:** Ninguna.
 - **Salidas:** Ninguna.
 
@@ -325,7 +369,9 @@ Un bloque o una función que no está en la tabla no se sabe que difiera. Cada f
 Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 
 ### BLINK (generador de pulsos asimétrico)
+
 Genera un tren de pulsos con tiempos de ON y OFF separados.
+
 - **Entradas:**
   - `ENABLE` (BOOL): Hace correr el generador mientras es TRUE.
   - `T_ON` (TIME): Tiempo en que `Q` es TRUE en cada ciclo.
@@ -341,53 +387,65 @@ Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
 ```
 
 ### PWM (modulación por ancho de pulso)
+
 - **Entradas:** `ENABLE` (BOOL), `PERIOD` (TIME), `DUTY` (REAL, 0.0 a 1.0).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** Mientras `ENABLE` es TRUE, `Q` es TRUE durante `PERIOD * DUTY` al comienzo de cada `PERIOD`. Un `DUTY` de 0.0 mantiene `Q` en FALSE y 1.0 lo mantiene en TRUE. `ENABLE` en FALSE pone `Q` en FALSE, y el próximo `ENABLE` inicia un período nuevo.
 
 ### PULSE (generador de pulso único)
+
 - **Entradas:** `TRIG` (BOOL), `PT` (TIME).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** Un flanco de subida de `TRIG` inicia un pulso de `PT`. Un flanco de subida durante el pulso se ignora, y un nivel que sigue en TRUE después no inicia nada.
 
 ### HYSTERESIS
+
 - **Entradas:** `IN`, `HIGH`, `LOW` (REAL).
 - **Salidas:** `Q` (BOOL).
 - **Comportamiento:** `Q` pasa a TRUE cuando `IN` está por encima de `HIGH` y a FALSE cuando está por debajo de `LOW`; entre ambos conserva su valor. Los umbrales negativos funcionan como cualquier otro.
 
 ### DEADBAND
+
 - **Entradas:** `IN`, `WIDTH` (REAL).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** `OUT` toma el valor de `IN` cuando `IN` difiere del último valor de `OUT` en más de `WIDTH`, y en caso contrario conserva su valor.
 
 ### LAG_FILTER
+
 - **Entradas:** `IN` (REAL), `GAIN` (REAL, 0.0 a 1.0).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** `OUT := OUT + GAIN * (IN - OUT)` en cada llamada: `GAIN` 1.0 sigue a `IN`, 0.0 nunca se mueve.
 
 ### RAMP_REAL
+
 - **Entradas:** `IN` (REAL), `RATE` (REAL, el mayor cambio por llamada).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** `OUT` se mueve hacia `IN` como máximo `RATE` en cada llamada, hacia arriba o hacia abajo, y vale `IN` cuando está a menos de `RATE` de él.
 
 ### INTEGRAL
+
 - **Entradas:** `IN` (REAL), `DT` (REAL, segundos), `RESET` (BOOL).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** `OUT := OUT + IN * DT` en cada llamada; `RESET` en TRUE pone `OUT` en 0.0. Un `IN` negativo resta.
 
 ### DERIVATIVE
+
 - **Entradas:** `IN` (REAL), `DT` (REAL, segundos).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** `OUT := (IN - IN anterior) / DT`; 0.0 cuando `DT` es 0.0. La primera llamada compara con un `IN` de 0.0.
 
 ### PID_Compact
+
 Un controlador PID discreto.
+
 - **Entradas:** `SP` (consigna), `PV` (valor de proceso), `KP`, `KI`, `KD` (ganancias), `DT` (tiempo de muestreo en segundos), `OUT_MIN`, `OUT_MAX` (REAL).
 - **Salidas:** `OUT` (REAL).
 - **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
 
 ### FIFO (búfer primero en entrar, primero en salir)
+
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
+
 - **Entradas:**
   - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
   - `POP` (BOOL): Un flanco de subida mueve el valor más antiguo a `DATA_OUT`.
@@ -402,4 +460,5 @@ Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
 - **Comportamiento:** Un push en un búfer lleno y un pop de uno vacío no hacen nada.
 
 ### LIFO (búfer último en entrar, primero en salir)
+
 Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.

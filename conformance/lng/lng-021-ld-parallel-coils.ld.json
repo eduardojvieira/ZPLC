@@ -96,10 +96,7 @@
           "id": "br",
           "startCol": 1,
           "endCol": 2,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ],
       "verticalLinks": []

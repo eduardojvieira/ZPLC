@@ -12,20 +12,40 @@ import type { ProgressBridge } from './progressClient';
 
 const HASH = 'b'.repeat(64);
 const grade = (lessonId: string, time: string): GradeRecord => ({
-  schemaVersion: 1, lessonId, lessonVersion: 1, track: 'simulation', scenarioId: 'Scenario', scenarioSha256: HASH, programSha256: HASH,
-  runtimeVersion: '1.0.0', time, result: 'passed', assertions: { total: 2, passed: 2 }, failedAssertions: [],
+  schemaVersion: 1,
+  lessonId,
+  lessonVersion: 1,
+  track: 'simulation',
+  scenarioId: 'Scenario',
+  scenarioSha256: HASH,
+  programSha256: HASH,
+  runtimeVersion: '1.0.0',
+  time,
+  result: 'passed',
+  assertions: { total: 2, passed: 2 },
+  failedAssertions: [],
 });
 
 const directories: string[] = [];
-afterEach(async () => { for (const directory of directories.splice(0)) await rm(directory, { recursive: true, force: true }); });
-const userData = async (): Promise<string> => { const directory = await mkdtemp(join(tmpdir(), 'zplc-progress-')); directories.push(directory); return directory; };
+afterEach(async () => {
+  for (const directory of directories.splice(0)) await rm(directory, { recursive: true, force: true });
+});
+const userData = async (): Promise<string> => {
+  const directory = await mkdtemp(join(tmpdir(), 'zplc-progress-'));
+  directories.push(directory);
+  return directory;
+};
 
 /** The typed operations of the preload, answered by the store of the main process over a directory. */
 const bridgeOver = (directory: string): ProgressBridge => {
   const store = createLearnProgressStore(directory);
   return {
-    read: async () => [...await store.read()], merge: async (ids: string[]) => [...await store.merge(ids)], readProgress: () => store.readProgress(),
-    recordGrade: (record: unknown) => store.recordGrade(record), noteLesson: (note: never) => store.noteLesson(note), exportProgress: () => store.exportProgress(),
+    read: async () => [...(await store.read())],
+    merge: async (ids: string[]) => [...(await store.merge(ids))],
+    readProgress: () => store.readProgress(),
+    recordGrade: (record: unknown) => store.recordGrade(record),
+    noteLesson: (note: never) => store.noteLesson(note),
+    exportProgress: () => store.exportProgress(),
     importProgress: (text: string) => store.importProgress(text),
   } as unknown as ProgressBridge;
 };
@@ -33,7 +53,14 @@ const stateOver = (directory: string) => createProgressState(() => bridgeOver(di
 
 describe('the progress state', () => {
   it('is not loaded before it is read, and an unreadable store is a failure that keeps an empty document', async () => {
-    const state = createProgressState(() => ({ readProgress: async () => { throw new Error('denied'); } }) as unknown as ProgressBridge);
+    const state = createProgressState(
+      () =>
+        ({
+          readProgress: async () => {
+            throw new Error('denied');
+          },
+        }) as unknown as ProgressBridge,
+    );
     expect(state.getState().loaded).toBe(false);
     await state.getState().load();
     expect(state.getState()).toMatchObject({ loaded: true, failed: true, document: { lessons: {}, last: null } });
@@ -49,7 +76,11 @@ describe('the progress state', () => {
     await first.getState().note({ lessonId: 'scan-cycle-one-scan-memory', solution: true });
     const restarted = stateOver(directory);
     await restarted.getState().load();
-    expect(restarted.getState().document?.lessons['scan-cycle-one-scan-memory']).toMatchObject({ state: 'in-progress', hintsShown: [1, 2], solutionShown: true });
+    expect(restarted.getState().document?.lessons['scan-cycle-one-scan-memory']).toMatchObject({
+      state: 'in-progress',
+      hintsShown: [1, 2],
+      solutionShown: true,
+    });
     expect(restarted.getState().document?.last?.lessonId).toBe('scan-cycle-one-scan-memory');
   });
 
@@ -66,7 +97,10 @@ describe('the progress state', () => {
 
   it('migrates the progress file of the first release on its first read, and a corrupt one loses nothing and does not crash', async () => {
     const directory = await userData();
-    await writeFile(join(directory, LEARN_PROGRESS_LEGACY_FILENAME), '{"schemaVersion":1,"mastered":["motor-start-stop-safe","tank-level-fault-reset"]}');
+    await writeFile(
+      join(directory, LEARN_PROGRESS_LEGACY_FILENAME),
+      '{"schemaVersion":1,"mastered":["motor-start-stop-safe","tank-level-fault-reset"]}',
+    );
     const migrated = stateOver(directory);
     await migrated.getState().load();
     expect(Object.keys(migrated.getState().document!.lessons).sort()).toEqual(['motor-start-stop-safe', 'tank-level-fault-reset']);
@@ -117,7 +151,12 @@ describe('the progress state', () => {
 describe('the progress state without the desktop store (a browser)', () => {
   it('starts empty, keeps the notes in memory, and passes a lesson through the injected local record', async () => {
     const remembered: string[] = [];
-    const state = createProgressState(() => undefined, { read: () => new Set(['motor-start-stop-safe']), remember: (id) => { remembered.push(id); } });
+    const state = createProgressState(() => undefined, {
+      read: () => new Set(['motor-start-stop-safe']),
+      remember: (id) => {
+        remembered.push(id);
+      },
+    });
     await state.getState().load();
     expect(state.getState().document?.lessons['motor-start-stop-safe']?.state).toBe('passed');
     await state.getState().note({ lessonId: 'blinky-ladder-timer-feedback', hint: 1 });

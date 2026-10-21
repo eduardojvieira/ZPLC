@@ -22,7 +22,8 @@ describe('the udev rule (REL-013)', () => {
     const text = renderUdevRules(ids, boards);
     const rules = text.split('\n').filter((line) => line.startsWith('SUBSYSTEM=='));
     expect(rules).toEqual([
-      'SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000a", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"',
+      'SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e8a", ATTRS{idProduct}=="000a", TAG+="uaccess", ' +
+        'ENV{ID_MM_DEVICE_IGNORE}="1"',
     ]);
   });
 
@@ -37,7 +38,10 @@ describe('the udev rule (REL-013)', () => {
       a: { ids: [{ vid: '2e8a', pid: '000a', source: 's' }] },
       b: { ids: [{ vid: '2E8A', pid: '000A', source: 's' }] },
     };
-    const text = renderUdevRules(shared, [{ ide_id: 'a', display_name: 'Board A' }, { ide_id: 'b', display_name: 'Board B' }]);
+    const text = renderUdevRules(shared, [
+      { ide_id: 'a', display_name: 'Board A' },
+      { ide_id: 'b', display_name: 'Board B' },
+    ]);
     expect(text.split('\n').filter((line) => line.startsWith('SUBSYSTEM=='))).toHaveLength(1);
     expect(text).toContain('Board A (a)');
     expect(text).toContain('Board B (b)');

@@ -21,9 +21,9 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"ADD",.*"tos":30\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"ADD",.*"tos":30\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.arithmetic.sub',
@@ -44,9 +44,9 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"SUB",.*"tos":60\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"SUB",.*"tos":60\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.arithmetic.div_zero',
@@ -67,9 +67,9 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'error',
-        code: 3 // DIV_BY_ZERO
-      }
-    ]
+        code: 3, // DIV_BY_ZERO
+      },
+    ],
   },
   {
     id: 'opcodes.arithmetic.mul',
@@ -90,9 +90,9 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"MUL",.*"tos":42\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"MUL",.*"tos":42\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.arithmetic.mod',
@@ -113,9 +113,9 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"MOD",.*"tos":2\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"MOD",.*"tos":2\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.arithmetic.neg',
@@ -135,10 +135,10 @@ export const arithmeticTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"NEG",.*"tos":-42\}/
-      }
-    ]
-  }
+        pattern: /\{"t":"opcode","op":"NEG",.*"tos":-42\}/,
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: arithmetic opcodes (HIL-001)', arithmeticTests);

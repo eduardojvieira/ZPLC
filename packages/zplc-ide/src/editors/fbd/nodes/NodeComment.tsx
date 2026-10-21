@@ -1,6 +1,6 @@
 /**
  * NodeComment - Editable comment display for FBD nodes
- * 
+ *
  * Shows a comment label below a node that can be edited inline.
  * Used by all node types to provide consistent comment editing UX.
  */
@@ -47,27 +47,34 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
     setIsEditing(false);
   }, [comment]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCancel();
-    }
-    // Stop propagation to prevent ReactFlow from handling these keys
-    e.stopPropagation();
-  }, [handleSave, handleCancel]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancel();
+      }
+      // Stop propagation to prevent ReactFlow from handling these keys
+      e.stopPropagation();
+    },
+    [handleSave, handleCancel],
+  );
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!readOnly) setIsEditing(true);
-  }, [readOnly]);
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!readOnly) setIsEditing(true);
+    },
+    [readOnly],
+  );
 
   if (isEditing) {
     return (
       <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1" onClick={(e) => e.stopPropagation()}>
-        <TextField bare
+        <TextField
+          bare
           aria-label={t('a11y.fbd.comment')}
           ref={inputRef}
           type="text"
@@ -90,9 +97,11 @@ const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeC
         className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1 cursor-pointer"
         onDoubleClick={handleDoubleClick}
       >
-        <div className={`text-[length:var(--font-size-caption)] italic text-center truncate max-w-[120px] ${
-          comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-        }`}>
+        <div
+          className={`text-[length:var(--font-size-caption)] italic text-center truncate max-w-[120px] ${
+            comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+          }`}
+        >
           {comment || t('editors.fbd.commentEmpty')}
         </div>
       </div>

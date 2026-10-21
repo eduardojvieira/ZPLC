@@ -17,27 +17,57 @@ const VARIABLES: WatchVariable[] = [
 function fakeTrace(samples: DeviceTraceSample[], options: { available?: boolean; ringFirst?: number } = {}) {
   const calls: string[] = [];
   let armed = false;
-  const status = (): DeviceTraceStatus => ({ available: options.available ?? true, armed, capacity: 200, inBytes: 1, outBytes: 1, written: samples.length, first: options.ringFirst ?? 0, maxIoBytes: 32 });
+  const status = (): DeviceTraceStatus => ({
+    available: options.available ?? true,
+    armed,
+    capacity: 200,
+    inBytes: 1,
+    outBytes: 1,
+    written: samples.length,
+    first: options.ringFirst ?? 0,
+    maxIoBytes: 32,
+  });
   const trace: DeviceTrace = {
-    status: async () => { calls.push('status'); return status(); },
-    arm: async (capacity, inBytes, outBytes) => { calls.push(`arm ${capacity} ${inBytes} ${outBytes}`); armed = true; return status(); },
+    status: async () => {
+      calls.push('status');
+      return status();
+    },
+    arm: async (capacity, inBytes, outBytes) => {
+      calls.push(`arm ${capacity} ${inBytes} ${outBytes}`);
+      armed = true;
+      return status();
+    },
     read: async (from, count) => {
       calls.push('read');
       const start = Math.max(from, options.ringFirst ?? 0);
       const chunk = samples.slice(start, start + count);
       return { from: start, next: start + chunk.length, samples: chunk };
     },
-    clear: async () => { calls.push('clear'); armed = false; return status(); },
+    clear: async () => {
+      calls.push('clear');
+      armed = false;
+      return status();
+    },
   };
   return { trace, calls };
 }
 
-const sample = (seq: number, tUs: number, batch: number, button: boolean, led: boolean): DeviceTraceSample =>
-  ({ seq, tUs, batch, inputs: Uint8Array.of(button ? 1 : 0), outputs: Uint8Array.of(led ? 0x11 : 0) });
+const sample = (seq: number, tUs: number, batch: number, button: boolean, led: boolean): DeviceTraceSample => ({
+  seq,
+  tUs,
+  batch,
+  inputs: Uint8Array.of(button ? 1 : 0),
+  outputs: Uint8Array.of(led ? 0x11 : 0),
+});
 
 function clock() {
   let now = 0;
-  return { now: () => now, wait: async (ms: number) => { now += ms; } };
+  return {
+    now: () => now,
+    wait: async (ms: number) => {
+      now += ms;
+    },
+  };
 }
 
 const session = (state: VMState) => ({ connected: true, state });
@@ -64,7 +94,12 @@ describe('the device-trace recorder (LRN-024, LRN-015)', () => {
       sample(2, 60_000, 2, false, false),
       sample(3, 70_000, 3, true, true),
     ]);
-    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, { awaitRun: true, durationMs: 300, intervalMs: 100, ...clock() });
+    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, {
+      awaitRun: true,
+      durationMs: 300,
+      intervalMs: 100,
+      ...clock(),
+    });
     expect(recording).toMatchObject({ ok: true, anchored: true });
     expect(recording!.trace).toEqual([
       { atMs: 0, values: { Button: false, Led: false, OnBoardLed: false } },
@@ -87,20 +122,34 @@ describe('the device-trace recorder (LRN-024, LRN-015)', () => {
 
   it('LRN-024 without the start makes the first sample read time 0, like the polling recorder', async () => {
     const { trace } = fakeTrace([sample(0, 120_000, 40, false, false), sample(1, 130_000, 41, false, true)]);
-    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, { awaitRun: false, durationMs: 100, intervalMs: 100, ...clock() });
+    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, {
+      awaitRun: false,
+      durationMs: 100,
+      intervalMs: 100,
+      ...clock(),
+    });
     expect(recording).toMatchObject({ ok: true, anchored: false });
     expect(recording!.trace.map((entry) => entry.atMs)).toEqual([0, 10]);
   });
 
   it('LRN-024 gives the check back to polling when the device keeps no trace', async () => {
     const { trace, calls } = fakeTrace([], { available: false });
-    expect(await recordDeviceTrace(session('running'), trace, VARIABLES, { awaitRun: false, durationMs: 100, intervalMs: 100, ...clock() })).toBeNull();
+    expect(
+      await recordDeviceTrace(session('running'), trace, VARIABLES, { awaitRun: false, durationMs: 100, intervalMs: 100, ...clock() }),
+    ).toBeNull();
     expect(calls).toEqual(['status']);
   });
 
   it('LRN-024 refuses a run with a hole: samples the ring overwrote before they were read', async () => {
-    const { trace } = fakeTrace([sample(0, 0, 1, false, false), sample(1, 10_000, 2, false, false), sample(2, 20_000, 3, false, false)], { ringFirst: 2 });
-    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, { awaitRun: false, durationMs: 100, intervalMs: 100, ...clock() });
+    const { trace } = fakeTrace([sample(0, 0, 1, false, false), sample(1, 10_000, 2, false, false), sample(2, 20_000, 3, false, false)], {
+      ringFirst: 2,
+    });
+    const recording = await recordDeviceTrace(session('running'), trace, VARIABLES, {
+      awaitRun: false,
+      durationMs: 100,
+      intervalMs: 100,
+      ...clock(),
+    });
     expect(recording).toMatchObject({ ok: false, reason: 'read-failed' });
   });
 
@@ -108,7 +157,10 @@ describe('the device-trace recorder (LRN-024, LRN-015)', () => {
     const { trace, calls } = fakeTrace([sample(0, 0, 1, false, false)]);
     const touched: string[] = [];
     const watched = new Proxy({ connected: true, state: 'running' } as Record<string, unknown>, {
-      get: (target, key) => { touched.push(String(key)); return target[key as string]; },
+      get: (target, key) => {
+        touched.push(String(key));
+        return target[key as string];
+      },
     }) as unknown as { connected: boolean; state: VMState };
     await recordDeviceTrace(watched, trace, VARIABLES, { awaitRun: true, durationMs: 100, intervalMs: 100, ...clock() });
     expect(new Set(touched)).toEqual(new Set(['connected', 'state']));

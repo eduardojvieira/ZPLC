@@ -43,7 +43,12 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
   const types = useMemo(() => new Map(ioMap.inputs.map((input) => [input.path, input.type])), [ioMap]);
 
   const setPhase = useCallback((path: string, phase: InputPhase) => {
-    setPhases((current) => { const next = new Map(current); if (phase === 'idle') next.delete(path); else next.set(path, phase); return next; });
+    setPhases((current) => {
+      const next = new Map(current);
+      if (phase === 'idle') next.delete(path);
+      else next.set(path, phase);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -62,11 +67,18 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
             const name = ioMap.inputs.find((input) => input.path === path)?.name ?? path;
             const held = read.get(path);
             announce(t('faceplate.announceApplied', { name, value: typeof held === 'boolean' ? (held ? 'TRUE' : 'FALSE') : String(held) }));
-            setTimeout(() => { if (!pending.current.has(path)) setPhase(path, 'idle'); }, APPLIED_MS);
+            setTimeout(() => {
+              if (!pending.current.has(path)) setPhase(path, 'idle');
+            }, APPLIED_MS);
           }
         }
-      } catch { /* the next refresh asks again; a lost connection ends this effect */ }
-      if (!cancelled) timer = setTimeout(() => { void refresh(); }, REFRESH_MS);
+      } catch {
+        /* the next refresh asks again; a lost connection ends this effect */
+      }
+      if (!cancelled)
+        timer = setTimeout(() => {
+          void refresh();
+        }, REFRESH_MS);
     };
     void refresh();
     return () => {
@@ -83,14 +95,14 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
 
   const inputRows: FaceplateInputRow[] = ioMap.inputs.map((input) => ({
     input,
-    value: connected && simulated ? values.get(input.path) ?? null : null,
+    value: connected && simulated ? (values.get(input.path) ?? null) : null,
     phase: phases.get(input.path) ?? 'idle',
     forced: forcedValues.get(input.path)?.state === 'forced',
     forceable: FORCE_TYPES.has(input.type),
   }));
   const outputRows: FaceplateOutputRow[] = ioMap.outputs.map((output) => ({
     output,
-    value: connected && simulated ? values.get(output.path) ?? null : null,
+    value: connected && simulated ? (values.get(output.path) ?? null) : null,
     forced: forcedValues.get(output.path)?.state === 'forced',
   }));
 
@@ -105,14 +117,20 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
 
   const run = async (action: () => Promise<void>) => {
     setMessage(undefined);
-    try { await action(); } catch (error) { setMessage(error instanceof Error ? error.message : t('faceplate.failed')); }
+    try {
+      await action();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t('faceplate.failed'));
+    }
   };
 
   /** One change at a time per input, and of those that arrive meanwhile only the last (a slider dragged across its range). */
   const sendFor = (input: DeclaredInput) => {
     let send = senders.current.get(input.path);
     if (!send) {
-      send = latestWins(async (value) => { await setDeclaredInput(input, value); });
+      send = latestWins(async (value) => {
+        await setDeclaredInput(input, value);
+      });
       senders.current.set(input.path, send);
     }
     return send;
@@ -121,10 +139,19 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
   const set = (input: DeclaredInput, value: boolean | number) => {
     void run(async () => {
       if (!controller) return;
-      if (forcedValues.get(input.path)?.state === 'forced') { await forceAt(input, value); return; }
+      if (forcedValues.get(input.path)?.state === 'forced') {
+        await forceAt(input, value);
+        return;
+      }
       pending.current.set(input.path, value);
       setPhase(input.path, 'pending');
-      try { await sendFor(input)(value); } catch (error) { pending.current.delete(input.path); setPhase(input.path, 'idle'); throw error; }
+      try {
+        await sendFor(input)(value);
+      } catch (error) {
+        pending.current.delete(input.path);
+        setPhase(input.path, 'idle');
+        throw error;
+      }
     });
   };
 
@@ -136,12 +163,21 @@ export function FaceplatePanel({ controller }: { controller: DebugController | u
       message={message}
       onSet={set}
       onHold={(input, down) => set(input, down)}
-      onForce={(input, force) => { void run(async () => {
-        if (!controller) return;
-        const present = values.get(input.path);
-        if (!force) await controller.toggleForceValue(input.path, input.address, null, input.bitOffset !== undefined ? 'BYTE' : input.type as WatchVariable['type'], false);
-        else if (present !== undefined) await forceAt(input, present);
-      }); }}
+      onForce={(input, force) => {
+        void run(async () => {
+          if (!controller) return;
+          const present = values.get(input.path);
+          if (!force)
+            await controller.toggleForceValue(
+              input.path,
+              input.address,
+              null,
+              input.bitOffset !== undefined ? 'BYTE' : (input.type as WatchVariable['type']),
+              false,
+            );
+          else if (present !== undefined) await forceAt(input, present);
+        });
+      }}
     />
   );
 }

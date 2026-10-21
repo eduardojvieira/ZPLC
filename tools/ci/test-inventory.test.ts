@@ -19,13 +19,25 @@ const files = ['tools/ci/a.test.ts', 'tools/hil/test_a.py', 'tools/hil/test_devi
 
 describe('TEST_FILE', () => {
   it.each([
-    'a.test.ts', 'src/a.test.tsx', 'scripts/a.test.mjs', 'tools/hil/test_x.py', 'tools/x_test.py', 'test_top.py',
-    'firmware/lib/zplc_core/tests/test_isa.c', 'firmware/tests/azure_sas/src/main.c', 'firmware/app/tests/test_x.c',
+    'a.test.ts',
+    'src/a.test.tsx',
+    'scripts/a.test.mjs',
+    'tools/hil/test_x.py',
+    'tools/x_test.py',
+    'test_top.py',
+    'firmware/lib/zplc_core/tests/test_isa.c',
+    'firmware/tests/azure_sas/src/main.c',
+    'firmware/app/tests/test_x.c',
   ])('recognises %s as a test file', (file) => expect(TEST_FILE.test(file)).toBe(true));
 
   it.each([
-    'README.md', 'src/a.ts', 'tools/hil/latest_data.py', 'tools/hil/run_all_hil_tests.py', 'a.test.json',
-    'firmware/lib/zplc_core/tests/fixtures/data.h', 'firmware/lib/zplc_core/src/core/vm.c',
+    'README.md',
+    'src/a.ts',
+    'tools/hil/latest_data.py',
+    'tools/hil/run_all_hil_tests.py',
+    'a.test.json',
+    'firmware/lib/zplc_core/tests/fixtures/data.h',
+    'firmware/lib/zplc_core/src/core/vm.c',
   ])('does not take %s for a test file', (file) => expect(TEST_FILE.test(file)).toBe(false));
 });
 
@@ -40,13 +52,19 @@ describe('checkInventory (VF-022)', () => {
 
   it('prefers the rule that runs a file over the rule that lists it as not run', () => {
     const errors = checkInventory(['tools/hil/test_a.py'], inventory, workflow);
-    expect(errors).toEqual([expect.stringContaining('tools/ci/**/*.test.ts" matches no test file'), expect.stringContaining('tools/hil/test_*.py" matches no test file')]);
+    expect(errors).toEqual([
+      expect.stringContaining('tools/ci/**/*.test.ts" matches no test file'),
+      expect.stringContaining('tools/hil/test_*.py" matches no test file'),
+    ]);
   });
 
   it('rejects a rule whose job is missing or whose job never runs the command', () => {
     const missingJob = { ...inventory, runs: [{ pattern: 'tools/ci/**/*.test.ts', job: 'nope', command: 'x' }] };
     expect(checkInventory(files, missingJob, workflow).join('\n')).toContain('has no job "nope"');
-    const missingCommand = { ...inventory, runs: [{ pattern: 'tools/ci/**/*.test.ts', job: 'typescript', command: 'bun test ./elsewhere' }] };
+    const missingCommand = {
+      ...inventory,
+      runs: [{ pattern: 'tools/ci/**/*.test.ts', job: 'typescript', command: 'bun test ./elsewhere' }],
+    };
     expect(checkInventory(files, missingCommand, workflow).join('\n')).toContain('no step of job "typescript" runs "bun test ./elsewhere"');
   });
 
@@ -58,7 +76,10 @@ describe('checkInventory (VF-022)', () => {
   });
 
   it('rejects a rule that no test file uses, so the data cannot go stale', () => {
-    const stale = { ...inventory, notRunInCi: [...inventory.notRunInCi, { pattern: 'tools/gone/*.py', requirement: 'HIL-004', reason: 'removed' }] };
+    const stale = {
+      ...inventory,
+      notRunInCi: [...inventory.notRunInCi, { pattern: 'tools/gone/*.py', requirement: 'HIL-004', reason: 'removed' }],
+    };
     expect(checkInventory(files, stale, workflow)).toEqual(['rule "tools/gone/*.py" matches no test file, remove it']);
   });
 });

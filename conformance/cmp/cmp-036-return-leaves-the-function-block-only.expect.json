@@ -4,5 +4,8 @@
   "matrix": ["pous.function-block-with-state-and-several-instances", "statements.return"],
   "scans": 1,
   "scanMs": 10,
-  "expect": [{ "at": "%QW0", "type": "INT", "value": 5 }, { "at": "%QX2.0", "type": "BOOL", "value": true }]
+  "expect": [
+    { "at": "%QW0", "type": "INT", "value": 5 },
+    { "at": "%QX2.0", "type": "BOOL", "value": true }
+  ]
 }

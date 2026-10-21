@@ -35,16 +35,38 @@ const LIST_PATH = new URL('./i18n-offenders.json', import.meta.url);
 
 export const RULES = ['hard-coded-text', 'hard-coded-attribute', 'hard-coded-message'] as const;
 export type Rule = (typeof RULES)[number];
-export const REQUIREMENT: Record<Rule, string> = { 'hard-coded-text': 'UX-029', 'hard-coded-attribute': 'UX-029', 'hard-coded-message': 'UX-029' };
+export const REQUIREMENT: Record<Rule, string> = {
+  'hard-coded-text': 'UX-029',
+  'hard-coded-attribute': 'UX-029',
+  'hard-coded-message': 'UX-029',
+};
 
-export interface SourceFile { path: string; text: string }
-export interface Violation { file: string; rule: Rule; line: number; snippet: string }
-export interface Offender { file: string; rule: Rule; count: number; requirement: string; added: string; reason: string }
+export interface SourceFile {
+  path: string;
+  text: string;
+}
+export interface Violation {
+  file: string;
+  rule: Rule;
+  line: number;
+  snippet: string;
+}
+export interface Offender {
+  file: string;
+  rule: Rule;
+  count: number;
+  requirement: string;
+  added: string;
+  reason: string;
+}
 
 /** A component the guard reads: a .tsx source of the application that is not a test, the i18n module or the gallery. */
 export const isGuarded = (path: string): boolean =>
-  path.startsWith(`${IDE_SRC}/`) && path.endsWith('.tsx') && !path.endsWith('.test.tsx')
-  && !path.startsWith(`${IDE_SRC}/i18n/`) && !path.startsWith(`${IDE_SRC}/ui/gallery/`);
+  path.startsWith(`${IDE_SRC}/`) &&
+  path.endsWith('.tsx') &&
+  !path.endsWith('.test.tsx') &&
+  !path.startsWith(`${IDE_SRC}/i18n/`) &&
+  !path.startsWith(`${IDE_SRC}/ui/gallery/`);
 
 /**
  * A plain .ts module of the application that shows text to the person: a presentation, a keyboard or a flow module. Not a
@@ -52,15 +74,41 @@ export const isGuarded = (path: string): boolean =>
  * language service speak to programs and keep the compiler's own English).
  */
 export const isGuardedModule = (path: string): boolean =>
-  path.startsWith(`${IDE_SRC}/`) && path.endsWith('.ts') && !path.endsWith('.d.ts') && !/\.(?:test|spec)\.ts$/.test(path)
-  && !path.startsWith(`${IDE_SRC}/i18n/`) && !path.startsWith(`${IDE_SRC}/ui/gallery/`)
-  && !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance)\//.test(path)
-  && ![`${IDE_SRC}/ui/audit.ts`, `${IDE_SRC}/ui/registry.ts`, `${IDE_SRC}/theme/tokens.ts`, `${IDE_SRC}/theme/tokensCss.ts`, `${IDE_SRC}/theme/designDoc.ts`].includes(path);
+  path.startsWith(`${IDE_SRC}/`) &&
+  path.endsWith('.ts') &&
+  !path.endsWith('.d.ts') &&
+  !/\.(?:test|spec)\.ts$/.test(path) &&
+  !path.startsWith(`${IDE_SRC}/i18n/`) &&
+  !path.startsWith(`${IDE_SRC}/ui/gallery/`) &&
+  !/^packages\/zplc-ide\/src\/(?:mcp|cli|compiler|transpiler|langsvc|conformance)\//.test(path) &&
+  ![
+    `${IDE_SRC}/ui/audit.ts`,
+    `${IDE_SRC}/ui/registry.ts`,
+    `${IDE_SRC}/theme/tokens.ts`,
+    `${IDE_SRC}/theme/tokensCss.ts`,
+    `${IDE_SRC}/theme/designDoc.ts`,
+  ].includes(path);
 /** Properties of a presentation object that the interface shows, and the helpers whose first argument is shown. */
-const MESSAGE_PROPERTIES = new Set(['say', 'title', 'label', 'detail', 'message', 'description', 'hint', 'heading', 'summary', 'placeholder', 'tooltip', 'ariaLabel']);
+const MESSAGE_PROPERTIES = new Set([
+  'say',
+  'title',
+  'label',
+  'detail',
+  'message',
+  'description',
+  'hint',
+  'heading',
+  'summary',
+  'placeholder',
+  'tooltip',
+  'ariaLabel',
+]);
 const MESSAGE_CALLS = new Set(['announce']);
-/** `declarationKindLabel`, `libraryProblem`, `stateText`, `KIND_LABEL`, `ERROR_MESSAGES`: a name that says it holds words for the person. */
-const MESSAGE_NAME = /(?:^|[a-z0-9])(?:Problem|Label|Message|Text|Title|Hint|Description|Summary)s?$|(?:^|_)(?:LABEL|TITLE|TEXT|MESSAGE|HINT|PROBLEM)S?$/;
+/**
+ * `declarationKindLabel`, `libraryProblem`, `stateText`, `KIND_LABEL`, `ERROR_MESSAGES`: a name that says it holds words for the person.
+ */
+const MESSAGE_NAME =
+  /(?:^|[a-z0-9])(?:Problem|Label|Message|Text|Title|Hint|Description|Summary)s?$|(?:^|_)(?:LABEL|TITLE|TEXT|MESSAGE|HINT|PROBLEM)S?$/;
 
 const USER_ATTRIBUTES = new Set(['aria-label', 'placeholder', 'alt', 'label', 'tooltip', 'title', 'description']);
 const LITERAL_TAGS = new Set(['code', 'kbd', 'pre', 'samp', 'var', 'style', 'script']);
@@ -72,7 +120,15 @@ function literalsIn(expression: ts.Expression): ts.Node[] {
   if (ts.isTemplateExpression(expression)) return [expression.head, ...expression.templateSpans.map((span) => span.literal)];
   if (ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression)) return literalsIn(expression.expression);
   if (ts.isConditionalExpression(expression)) return [...literalsIn(expression.whenTrue), ...literalsIn(expression.whenFalse)];
-  if (ts.isBinaryExpression(expression) && [ts.SyntaxKind.AmpersandAmpersandToken, ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.PlusToken].includes(expression.operatorToken.kind)) {
+  if (
+    ts.isBinaryExpression(expression) &&
+    [
+      ts.SyntaxKind.AmpersandAmpersandToken,
+      ts.SyntaxKind.BarBarToken,
+      ts.SyntaxKind.QuestionQuestionToken,
+      ts.SyntaxKind.PlusToken,
+    ].includes(expression.operatorToken.kind)
+  ) {
     return [...literalsIn(expression.left), ...literalsIn(expression.right)];
   }
   return [];
@@ -81,11 +137,22 @@ function literalsIn(expression: ts.Expression): ts.Node[] {
 const textOf = (node: ts.Node): string => (ts.isStringLiteralLike(node) || ts.isTemplateLiteralToken(node) ? node.text : '');
 
 export function violationsOf(file: SourceFile): Violation[] {
-  const source = ts.createSourceFile(file.path, file.text, ts.ScriptTarget.Latest, true, file.path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const source = ts.createSourceFile(
+    file.path,
+    file.text,
+    ts.ScriptTarget.Latest,
+    true,
+    file.path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
   if (file.path.endsWith('.ts')) return messageViolations(source, file.path);
   const found: Violation[] = [];
   const add = (node: ts.Node, rule: Rule): void => {
-    found.push({ file: file.path, rule, line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1, snippet: node.getText().replace(/\s+/g, ' ').slice(0, 80) });
+    found.push({
+      file: file.path,
+      rule,
+      line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+      snippet: node.getText().replace(/\s+/g, ' ').slice(0, 80),
+    });
   };
   const visit = (node: ts.Node, literal: boolean): void => {
     let inLiteralTag = literal;
@@ -95,7 +162,11 @@ export function violationsOf(file: SourceFile): Violation[] {
       if (literalsIn(node.expression).some((item) => hasLetters(textOf(item)))) add(node, 'hard-coded-text');
     }
     if (ts.isJsxAttribute(node) && USER_ATTRIBUTES.has(node.name.getText()) && node.initializer) {
-      const shown = ts.isJsxExpression(node.initializer) ? (node.initializer.expression ? literalsIn(node.initializer.expression) : []) : [node.initializer];
+      const shown = ts.isJsxExpression(node.initializer)
+        ? node.initializer.expression
+          ? literalsIn(node.initializer.expression)
+          : []
+        : [node.initializer];
       if (shown.some((item) => hasLetters(textOf(item)))) add(node, 'hard-coded-attribute');
     }
     ts.forEachChild(node, (child) => visit(child, inLiteralTag));
@@ -135,55 +206,104 @@ function messageViolations(source: ts.SourceFile, path: string): Violation[] {
         const parts = new Set<ts.Node>();
         const joined = shown
           .map((piece) => {
-            const template = ts.isTemplateSpan(piece.parent) ? piece.parent.parent : ts.isTemplateExpression(piece.parent) ? piece.parent : undefined;
+            const template = ts.isTemplateSpan(piece.parent)
+              ? piece.parent.parent
+              : ts.isTemplateExpression(piece.parent)
+                ? piece.parent
+                : undefined;
             if (!template) return textOf(piece);
             if (parts.has(template)) return '';
             parts.add(template);
-            return ts.isTemplateExpression(template) ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ') : '';
+            return ts.isTemplateExpression(template)
+              ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ')
+              : '';
           })
           .join('');
-        if (reads(joined)) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(root.getStart()).line + 1, snippet: root.getText().replace(/\s+/g, ' ').slice(0, 80) });
+        if (reads(joined))
+          found.push({
+            file: path,
+            rule: 'hard-coded-message',
+            line: source.getLineAndCharacterOfPosition(root.getStart()).line + 1,
+            snippet: root.getText().replace(/\s+/g, ' ').slice(0, 80),
+          });
         continue;
       }
       const template = owner === item ? undefined : owner;
-      if (template) { templates.add(template); continue; }
-      if (reads(textOf(item))) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1, snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80) });
+      if (template) {
+        templates.add(template);
+        continue;
+      }
+      if (reads(textOf(item)))
+        found.push({
+          file: path,
+          rule: 'hard-coded-message',
+          line: source.getLineAndCharacterOfPosition(item.getStart()).line + 1,
+          snippet: item.getText().replace(/\s+/g, ' ').slice(0, 80),
+        });
     }
     for (const template of templates) {
-      const pieces = ts.isTemplateExpression(template) ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ') : '';
-      if (reads(pieces)) found.push({ file: path, rule: 'hard-coded-message', line: source.getLineAndCharacterOfPosition(template.getStart()).line + 1, snippet: template.getText().replace(/\s+/g, ' ').slice(0, 80) });
+      const pieces = ts.isTemplateExpression(template)
+        ? [template.head.text, ...template.templateSpans.map((span) => span.literal.text)].join(' ')
+        : '';
+      if (reads(pieces))
+        found.push({
+          file: path,
+          rule: 'hard-coded-message',
+          line: source.getLineAndCharacterOfPosition(template.getStart()).line + 1,
+          snippet: template.getText().replace(/\s+/g, ' ').slice(0, 80),
+        });
     }
   };
   /** What a message-named function returns (its `return` statements or its expression body) or a table holds (its values). */
   const shown = (node: ts.Node, into: ts.Expression[]): void => {
     if (ts.isReturnStatement(node) && node.expression) into.push(node.expression);
-    ts.forEachChild(node, (child) => { if (!ts.isFunctionLike(child)) shown(child, into); });
+    ts.forEachChild(node, (child) => {
+      if (!ts.isFunctionLike(child)) shown(child, into);
+    });
   };
   const visit = (node: ts.Node): void => {
-    if (ts.isFunctionDeclaration(node) && node.name && node.body && MESSAGE_NAME.test(node.name.text)) { const out: ts.Expression[] = []; shown(node.body, out); out.forEach(check); }
+    if (ts.isFunctionDeclaration(node) && node.name && node.body && MESSAGE_NAME.test(node.name.text)) {
+      const out: ts.Expression[] = [];
+      shown(node.body, out);
+      out.forEach(check);
+    }
     if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer && MESSAGE_NAME.test(node.name.text)) {
       const init = node.initializer;
       const out: ts.Expression[] = [];
-      if (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) { if (ts.isBlock(init.body)) shown(init.body, out); else out.push(init.body); }
-      else if (ts.isObjectLiteralExpression(init)) init.properties.forEach((property) => { if (ts.isPropertyAssignment(property)) out.push(property.initializer); });
+      if (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) {
+        if (ts.isBlock(init.body)) shown(init.body, out);
+        else out.push(init.body);
+      } else if (ts.isObjectLiteralExpression(init))
+        init.properties.forEach((property) => {
+          if (ts.isPropertyAssignment(property)) out.push(property.initializer);
+        });
       else out.push(init);
       out.forEach(check);
     }
-    if (ts.isPropertyAssignment(node) && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) && MESSAGE_PROPERTIES.has(node.name.text)) check(node.initializer);
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MESSAGE_CALLS.has(node.expression.text) && node.arguments[0]) check(node.arguments[0]);
+    if (
+      ts.isPropertyAssignment(node) &&
+      (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
+      MESSAGE_PROPERTIES.has(node.name.text)
+    )
+      check(node.initializer);
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && MESSAGE_CALLS.has(node.expression.text) && node.arguments[0])
+      check(node.arguments[0]);
     ts.forEachChild(node, visit);
   };
   visit(source);
   return found;
 }
 
-export interface GuardOptions { offenders: Offender[] }
+export interface GuardOptions {
+  offenders: Offender[];
+}
 const key = (file: string, rule: string): string => `${file}\u0000${rule}`;
 
 function countsOf(files: readonly SourceFile[]): Map<string, number> {
   const counts = new Map<string, number>();
   for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path))) {
-    for (const violation of violationsOf(file)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
+    for (const violation of violationsOf(file))
+      counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
   }
   return counts;
 }
@@ -197,12 +317,27 @@ export function checkSources(files: readonly SourceFile[], options: GuardOptions
     const entry = listed.get(id);
     const requirement = REQUIREMENT[rule];
     const plural = count === 1 ? '' : 's';
-    if (!entry) problems.push(`${requirement}: ${file} has ${count} ${rule} string${plural}; write them in src/i18n/en.ts and es.ts and use t(); the list of offenders can only shrink`);
-    else if (count > entry.count) problems.push(`${requirement}: ${file} grew from ${entry.count} to ${count} ${rule} strings; a file on tools/ci/i18n-offenders.json can only shrink`);
-    else if (count < entry.count) problems.push(`${requirement}: ${file} now has ${count} ${rule} strings, recorded ${entry.count}; lower the entry (bun tools/ci/i18n-guard.ts --write)`);
+    if (!entry)
+      problems.push(
+        `${requirement}: ${file} has ${count} ${rule} string${plural}; write them in src/i18n/en.ts and es.ts and use t(); the list of ` +
+          `offenders can only shrink`,
+      );
+    else if (count > entry.count)
+      problems.push(
+        `${requirement}: ${file} grew from ${entry.count} to ${count} ${rule} strings; a file on tools/ci/i18n-offenders.json can only ` +
+          `shrink`,
+      );
+    else if (count < entry.count)
+      problems.push(
+        `${requirement}: ${file} now has ${count} ${rule} strings, recorded ${entry.count}; lower the entry (bun tools/ci/i18n-guard.ts ` +
+          `--write)`,
+      );
   }
   for (const entry of options.offenders) {
-    if (!counts.has(key(entry.file, entry.rule))) problems.push(`${entry.requirement}: ${entry.file} has no ${entry.rule} string any more; remove the entry (bun tools/ci/i18n-guard.ts --write)`);
+    if (!counts.has(key(entry.file, entry.rule)))
+      problems.push(
+        `${entry.requirement}: ${entry.file} has no ${entry.rule} string any more; remove the entry (bun tools/ci/i18n-guard.ts --write)`,
+      );
   }
   return problems;
 }
@@ -220,30 +355,174 @@ export function ratchetOffenders(files: readonly SourceFile[], offenders: readon
 
 /** Names and technical words that keep their capital inside a sentence, in both languages. */
 export const PROPER_NOUNS: ReadonlySet<string> = new Set([
-  'ZPLC', 'Studio', 'Learn', 'Tests', 'English', 'Español', 'GitHub', 'Modbus', 'MQTT', 'Zephyr', 'Windows', 'macOS', 'Linux',
-  'Electron', 'Raspberry', 'Pi', 'Pico', 'Arduino', 'Espressif', 'Waveshare', 'Docusaurus', 'AppImage', 'Setup', 'Portable', 'DevKitC', 'Opta', 'WiFi',
-  'WebSocket', 'Sparkplug', 'SharedAccessKey', 'CloudEvent', 'QoS', 'Ethernet', 'Azure', 'MHz', 'MiB', 'Ninja', 'Pascal', 'Xtensa', 'Celsius', 'CMake', 'Kconfig', 'Python', 'Settings', 'Force', 'Del', 'Supr',
+  'ZPLC',
+  'Studio',
+  'Learn',
+  'Tests',
+  'English',
+  'Español',
+  'GitHub',
+  'Modbus',
+  'MQTT',
+  'Zephyr',
+  'Windows',
+  'macOS',
+  'Linux',
+  'Electron',
+  'Raspberry',
+  'Pi',
+  'Pico',
+  'Arduino',
+  'Espressif',
+  'Waveshare',
+  'Docusaurus',
+  'AppImage',
+  'Setup',
+  'Portable',
+  'DevKitC',
+  'Opta',
+  'WiFi',
+  'WebSocket',
+  'Sparkplug',
+  'SharedAccessKey',
+  'CloudEvent',
+  'QoS',
+  'Ethernet',
+  'Azure',
+  'MHz',
+  'MiB',
+  'Ninja',
+  'Pascal',
+  'Xtensa',
+  'Celsius',
+  'CMake',
+  'Kconfig',
+  'Python',
+  'Settings',
+  'Force',
+  'Del',
+  'Supr',
 ]);
 /** Names of services and of their features that are written with capitals in a sentence, as the vendors write them. */
 export const PROPER_PHRASES: readonly string[] = [
-  'AWS IoT Core', 'Azure IoT Hub', 'Azure Event Grid MQTT', 'Event Grid', 'Device Twins', 'Direct Methods', 'C2D Messaging', 'Device Shadows', 'IoT Jobs', 'Fleet Provisioning', 'Sparkplug B', 'Structured Text', 'Function Block Diagram', 'Ladder Diagram', 'Sequential Function Chart',
+  'AWS IoT Core',
+  'Azure IoT Hub',
+  'Azure Event Grid MQTT',
+  'Event Grid',
+  'Device Twins',
+  'Direct Methods',
+  'C2D Messaging',
+  'Device Shadows',
+  'IoT Jobs',
+  'Fleet Provisioning',
+  'Sparkplug B',
+  'Structured Text',
+  'Function Block Diagram',
+  'Ladder Diagram',
+  'Sequential Function Chart',
 ];
 /**
  * Rioplatense voseo, which decision D-10 leaves out of the interface (UX-030): the pronoun "vos", the present forms of
  * "vos" (tenés, podés) and the imperatives with the stress on the last syllable (abrí, guardá, elegí). A list of the verbs
  * an interface asks for, not a rule on accents, because "está", "así" or "aquí" are ordinary Spanish.
  */
-export const VOSEO_MARKERS: RegExp = new RegExp(`(?<![\\p{L}])(?:vos|sos|${[
-  'tenés', 'podés', 'querés', 'sabés', 'hacés', 'decís', 'andás', 'ponés', 'venís', 'salís', 'elegís', 'abrís', 'ves', 'necesitás', 'usás', 'creés', 'pensás', 'empezás', 'seguís', 'buscás',
-  'abrí', 'cerrá', 'elegí', 'seleccioná', 'guardá', 'cargá', 'ejecutá', 'corregí', 'revisá', 'presioná', 'restaurá', 'probá', 'usá', 'mirá', 'escribí', 'pasá', 'poné', 'decí', 'andá', 'mostrá', 'borrá',
-  'volvé', 'esperá', 'intentá', 'copiá', 'pegá', 'agregá', 'tocá', 'buscá', 'completá', 'confirmá', 'ingresá', 'descargá', 'activá', 'desactivá', 'habilitá', 'deshabilitá', 'conectá', 'desconectá', 'reiniciá',
-  'detené', 'iniciá', 'compilá', 'verificá', 'hacé', 'tené', 'fijate', 'acordate', 'asegurate', 'asegurá', 'chequeá', 'cambiá', 'quitá', 'eliminá', 'creá', 'importá', 'exportá', 'seguí', 'arrastrá', 'soltá', 'pulsá', 'clickeá', 'ubicá', 'indicá',
-].join('|')})(?![\\p{L}])`, 'iu');
+export const VOSEO_MARKERS: RegExp = new RegExp(
+  `(?<![\\p{L}])(?:vos|sos|${[
+    'tenés',
+    'podés',
+    'querés',
+    'sabés',
+    'hacés',
+    'decís',
+    'andás',
+    'ponés',
+    'venís',
+    'salís',
+    'elegís',
+    'abrís',
+    'ves',
+    'necesitás',
+    'usás',
+    'creés',
+    'pensás',
+    'empezás',
+    'seguís',
+    'buscás',
+    'abrí',
+    'cerrá',
+    'elegí',
+    'seleccioná',
+    'guardá',
+    'cargá',
+    'ejecutá',
+    'corregí',
+    'revisá',
+    'presioná',
+    'restaurá',
+    'probá',
+    'usá',
+    'mirá',
+    'escribí',
+    'pasá',
+    'poné',
+    'decí',
+    'andá',
+    'mostrá',
+    'borrá',
+    'volvé',
+    'esperá',
+    'intentá',
+    'copiá',
+    'pegá',
+    'agregá',
+    'tocá',
+    'buscá',
+    'completá',
+    'confirmá',
+    'ingresá',
+    'descargá',
+    'activá',
+    'desactivá',
+    'habilitá',
+    'deshabilitá',
+    'conectá',
+    'desconectá',
+    'reiniciá',
+    'detené',
+    'iniciá',
+    'compilá',
+    'verificá',
+    'hacé',
+    'tené',
+    'fijate',
+    'acordate',
+    'asegurate',
+    'asegurá',
+    'chequeá',
+    'cambiá',
+    'quitá',
+    'eliminá',
+    'creá',
+    'importá',
+    'exportá',
+    'seguí',
+    'arrastrá',
+    'soltá',
+    'pulsá',
+    'clickeá',
+    'ubicá',
+    'indicá',
+  ].join('|')})(?![\\p{L}])`,
+  'iu',
+);
 export const INTERNAL_TERMS: readonly string[] = ['candidate', 'link zplc.json', 'stopgap', 'candidato', 'vincular zplc.json'];
 
 /** The capital letters of a text that open a word in the middle of a sentence, apart from the acronyms, code tokens and names. */
 export function midSentenceCapitals(text: string): string[] {
-  const words = PROPER_PHRASES.reduce((rest, phrase) => rest.split(phrase).join('x'), text).replace(/\{\w+\}/g, '0').split(/\s+/).filter(Boolean);
+  const words = PROPER_PHRASES.reduce((rest, phrase) => rest.split(phrase).join('x'), text)
+    .replace(/\{\w+\}/g, '0')
+    .split(/\s+/)
+    .filter(Boolean);
   const found: string[] = [];
   words.forEach((word, index) => {
     if (index === 0) return;
@@ -252,7 +531,8 @@ export function midSentenceCapitals(text: string): string[] {
     if (/^["“«`]/.test(word)) return; // the label of a control or a file, quoted
     const bare = word.replace(/^[("'`¿¡]+|[)"'`.,;:?!…]+$/g, '');
     if (!/^\p{Lu}/u.test(bare)) return;
-    if (/^\p{Lu}+$/u.test(bare) || /[\d./_\\+-]/.test(bare)) return; // an acronym (ST, USB), a code token (zplc.json, I/O) or a key combination (Ctrl+S)
+    // an acronym (ST, USB), a code token (zplc.json, I/O) or a key combination (Ctrl+S)
+    if (/^\p{Lu}+$/u.test(bare) || /[\d./_\\+-]/.test(bare)) return;
     if (PROPER_NOUNS.has(bare)) return;
     found.push(bare);
   });
@@ -265,10 +545,15 @@ export function checkCatalogs(english: Readonly<Record<string, string>> = en, sp
   const problems: string[] = [];
   for (const id of Object.keys(english)) {
     if (!(id in spanish)) problems.push(`UX-029: "${id}" is in the English catalog and not in the Spanish one (missing-key)`);
-    else if (placeholdersOf(english[id]!).join() !== placeholdersOf(spanish[id]!).join()) problems.push(`UX-029: "${id}" has other {placeholders} in Spanish than in English (placeholder-mismatch)`);
+    else if (placeholdersOf(english[id]!).join() !== placeholdersOf(spanish[id]!).join())
+      problems.push(`UX-029: "${id}" has other {placeholders} in Spanish than in English (placeholder-mismatch)`);
   }
-  for (const id of Object.keys(spanish)) if (!(id in english)) problems.push(`UX-029: "${id}" is in the Spanish catalog and not in the English one (extra-key)`);
-  for (const [language, catalog] of [['English', english], ['Spanish', spanish]] as const) {
+  for (const id of Object.keys(spanish))
+    if (!(id in english)) problems.push(`UX-029: "${id}" is in the Spanish catalog and not in the English one (extra-key)`);
+  for (const [language, catalog] of [
+    ['English', english],
+    ['Spanish', spanish],
+  ] as const) {
     for (const [id, text] of Object.entries(catalog)) {
       if (/[!¡]/.test(text)) problems.push(`UX-031: ${language} "${id}" has an exclamation mark (exclamation)`);
       const voseo = language === 'Spanish' ? VOSEO_MARKERS.exec(text)?.[0] : undefined;
@@ -276,7 +561,10 @@ export function checkCatalogs(english: Readonly<Record<string, string>> = en, sp
       const internal = INTERNAL_TERMS.find((term) => text.toLowerCase().includes(term));
       if (internal) problems.push(`UX-031: ${language} "${id}" uses the internal term "${internal}" (internal-term)`);
       const capitals = midSentenceCapitals(text);
-      if (capitals.length > 0) problems.push(`UX-031: ${language} "${id}" is not in sentence case: ${capitals.map((word) => `"${word}"`).join(', ')} (sentence-case)`);
+      if (capitals.length > 0)
+        problems.push(
+          `UX-031: ${language} "${id}" is not in sentence case: ${capitals.map((word) => `"${word}"`).join(', ')} (sentence-case)`,
+        );
     }
   }
   return problems;
@@ -295,7 +583,7 @@ export function readSources(root: string): SourceFile[] {
 }
 
 export function readOffenders(): Offender[] {
-  return existsSync(LIST_PATH) ? JSON.parse(readFileSync(LIST_PATH, 'utf8')) as Offender[] : [];
+  return existsSync(LIST_PATH) ? (JSON.parse(readFileSync(LIST_PATH, 'utf8')) as Offender[]) : [];
 }
 
 export function checkRepository(root = resolve(dirname(new URL(import.meta.url).pathname), '../..')): string[] {
@@ -306,14 +594,27 @@ if (import.meta.main) {
   const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
   const files = readSources(root);
   if (process.argv.includes('--list')) {
-    for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path))) for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
+    for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path)))
+      for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
   }
   if (process.argv.includes('--seed')) {
-    if (readOffenders().length > 0) { console.error('i18n-guard: the list exists; it only shrinks (--write)'); process.exit(1); }
-    const seeded: Offender[] = [...countsOf(files)].sort(([left], [right]) => left.localeCompare(right)).map(([id, count]) => {
-      const [file, rule] = id.split('\u0000') as [string, Rule];
-      return { file, rule, count, requirement: REQUIREMENT[rule], added: new Date().toISOString().slice(0, 10), reason: 'Not yet moved to the catalogs of src/i18n; the surface\'s own work package moves it.' };
-    });
+    if (readOffenders().length > 0) {
+      console.error('i18n-guard: the list exists; it only shrinks (--write)');
+      process.exit(1);
+    }
+    const seeded: Offender[] = [...countsOf(files)]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([id, count]) => {
+        const [file, rule] = id.split('\u0000') as [string, Rule];
+        return {
+          file,
+          rule,
+          count,
+          requirement: REQUIREMENT[rule],
+          added: new Date().toISOString().slice(0, 10),
+          reason: "Not yet moved to the catalogs of src/i18n; the surface's own work package moves it.",
+        };
+      });
     writeFileSync(LIST_PATH, `${JSON.stringify(seeded, null, 2)}\n`);
   } else if (process.argv.includes('--write')) {
     writeFileSync(LIST_PATH, `${JSON.stringify(ratchetOffenders(files, readOffenders()), null, 2)}\n`);
@@ -324,5 +625,7 @@ if (import.meta.main) {
     process.exit(1);
   }
   const keys = Object.keys(en).length;
-  console.log(`i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(root, LIST_PATH.pathname)})`);
+  console.log(
+    `i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(root, LIST_PATH.pathname)})`,
+  );
 }

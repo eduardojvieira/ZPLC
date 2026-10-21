@@ -24,12 +24,41 @@ export function CommandEmptyState({ title, description, actions }: CommandEmptyS
     <EmptyState
       title={title}
       description={description}
-      action={<Button variant="primary" size="sm" disabled={!isCommandEnabled(command, state)} onClick={() => runCommand(id, { respectEnabled: true })}>{t(command.titleKey)}</Button>}
+      action={
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={!isCommandEnabled(command, state)}
+          onClick={() => runCommand(id, { respectEnabled: true })}
+        >
+          {t(command.titleKey)}
+        </Button>
+      }
     />
   );
 }
 
 /** An empty state whose next action belongs to the panel itself (a form it opens, a tab it shows). */
-export function PanelEmptyState({ title, description, actionLabel, onAction }: { title: string; description: string; actionLabel: string; onAction: () => void }) {
-  return <EmptyState title={title} description={description} action={<Button variant="primary" size="sm" onClick={onAction}>{actionLabel}</Button>} />;
+export function PanelEmptyState({
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <EmptyState
+      title={title}
+      description={description}
+      action={
+        <Button variant="primary" size="sm" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      }
+    />
+  );
 }

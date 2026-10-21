@@ -132,23 +132,19 @@ static void load_program(const uint8_t *code, size_t code_size) {
 
 /* OPI[0] := IPI[0]; HALT: the output follows the input the scan latched. */
 static const uint8_t follow_code[] = {
-    OP_LOAD8, (uint8_t)(ZPLC_MEM_IPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_IPI_BASE >> 8),
+    OP_LOAD8,  (uint8_t)(ZPLC_MEM_IPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_IPI_BASE >> 8),
     OP_STORE8, (uint8_t)(ZPLC_MEM_OPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_OPI_BASE >> 8),
     OP_HALT,
 };
 
 /* OPI[0] := 1; HALT */
 static const uint8_t set_code[] = {
-    OP_PUSH8, 1U,
-    OP_STORE8, (uint8_t)(ZPLC_MEM_OPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_OPI_BASE >> 8),
-    OP_HALT,
+    OP_PUSH8, 1U, OP_STORE8, (uint8_t)(ZPLC_MEM_OPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_OPI_BASE >> 8), OP_HALT,
 };
 
 /* The task of the golden scenario: PUSH8 0x44; STORE8 OPI[0]; HALT. */
 static const uint8_t trace_code[] = {
-    OP_PUSH8, ZPLC_TRACE_ONE_OUTPUT,
-    OP_STORE8, (uint8_t)(ZPLC_MEM_OPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_OPI_BASE >> 8),
-    OP_HALT,
+    OP_PUSH8, ZPLC_TRACE_ONE_OUTPUT, OP_STORE8, (uint8_t)(ZPLC_MEM_OPI_BASE & 0xFFU), (uint8_t)(ZPLC_MEM_OPI_BASE >> 8), OP_HALT,
 };
 
 /* A loop that never ends: the instruction budget of the scan is a VM fault (the loader refuses a certain stack
@@ -256,8 +252,8 @@ ZTEST(zplc_single_task, test_the_one_task_decides_the_golden_trace) {
   }
   zassert_equal(log.count, ZPLC_TRACE_ONE_GOLDEN_COUNT, "as many decisions as the one-task golden trace");
   for (line = 0U; line < log.count && line < ZPLC_TRACE_ONE_GOLDEN_COUNT; line++) {
-    zassert_true(strcmp(log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
-                 log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]);
+    zassert_true(strcmp(log.line[line], ZPLC_TRACE_ONE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line, log.line[line],
+                 ZPLC_TRACE_ONE_GOLDEN[line]);
   }
 }
 

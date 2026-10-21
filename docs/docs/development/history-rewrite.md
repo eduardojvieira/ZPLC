@@ -25,11 +25,11 @@ when it is done.
 The list lives in `tools/history/removed-paths.txt`, one path per line with its
 reason. Only two kinds of content are removed.
 
-| Path | Kind | Size in history | Why |
-|---|---|---|---|
-| `Screenshots/mb1940-n657x0q-c02-schematic.pdf` | Third-party schematic | 34 MB | The file is not ours to redistribute. |
+| Path                                                                                                                     | Kind                                              | Size in history                 | Why                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                           | Third-party schematic                             | 34 MB                           | The file is not ours to redistribute.                                                                    |
 | Four Zephyr build directories under `firmware/app`: `build_esp32s3`, `build_verify_esp32s3`, `build_disco`, `build_giga` | Zephyr build trees (ELF, map, libraries, objects) | about 390 MB before compression | Build outputs are never source. They were committed once and remain in the history of the `v1.5.0` tags. |
-| The `build_tests` directory under `firmware/app` | CMake configure output | 8 KB | A build directory; it is still tracked on some branches. |
+| The `build_tests` directory under `firmware/app`                                                                         | CMake configure output                            | 8 KB                            | A build directory; it is still tracked on some branches.                                                 |
 
 Everything else stays, including the documentation images, the fixtures that
 tests read, the `Screenshots/` captures and the generated site on the

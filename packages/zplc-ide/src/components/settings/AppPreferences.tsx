@@ -10,17 +10,37 @@ import { useT, type MessageKey } from '../../i18n';
 import { ThemeControl } from '../ThemeControl';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useEditorView } from '../../store/editorViewSettings';
-import { AUTOSAVE_CHOICES, DENSITY_CHOICES, LANGUAGE_CHOICES, TAB_SIZE_CHOICES, type AppSettings, type Density, type Language } from '../../utils/appSettings';
+import {
+  AUTOSAVE_CHOICES,
+  DENSITY_CHOICES,
+  LANGUAGE_CHOICES,
+  TAB_SIZE_CHOICES,
+  type AppSettings,
+  type Density,
+  type Language,
+} from '../../utils/appSettings';
 import { describeUpdateCheck, runUpdateCheck } from '../../ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from '../../version';
 import type { UpdateCheckResult } from '../../../electron/updateCheckProtocol';
 import { useUpdateNotice } from '../../store/updateNotice';
 
 const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32] as const;
-const LANGUAGE_NAMES = { auto: 'preferences.language.auto', en: 'preferences.language.en', es: 'preferences.language.es' } as const satisfies Record<Language, MessageKey>;
-const DENSITY_NAMES = { comfortable: 'preferences.density.comfortable', compact: 'preferences.density.compact' } as const satisfies Record<Density, MessageKey>;
+const LANGUAGE_NAMES = {
+  auto: 'preferences.language.auto',
+  en: 'preferences.language.en',
+  es: 'preferences.language.es',
+} as const satisfies Record<Language, MessageKey>;
+const DENSITY_NAMES = { comfortable: 'preferences.density.comfortable', compact: 'preferences.density.compact' } as const satisfies Record<
+  Density,
+  MessageKey
+>;
 
-function Choice<K extends keyof AppSettings>({ label, field, options, name }: {
+function Choice<K extends keyof AppSettings>({
+  label,
+  field,
+  options,
+  name,
+}: {
   label: string;
   field: K;
   options: readonly AppSettings[K][];
@@ -35,7 +55,11 @@ function Choice<K extends keyof AppSettings>({ label, field, options, name }: {
       onChange={(event) => update({ [field]: options.find((option) => String(option) === event.target.value) } as Partial<AppSettings>)}
       data-setting={field}
     >
-      {options.map((option) => <option key={String(option)} value={String(option)}>{name(option)}</option>)}
+      {options.map((option) => (
+        <option key={String(option)} value={String(option)}>
+          {name(option)}
+        </option>
+      ))}
     </Select>
   );
 }
@@ -61,24 +85,64 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
   };
 
   return (
-    <section aria-labelledby="app-preferences-heading" data-app-preferences className="mb-6 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4">
-      <h2 id="app-preferences-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">{t('preferences.heading')}</h2>
+    <section
+      aria-labelledby="app-preferences-heading"
+      data-app-preferences
+      className="mb-6 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4"
+    >
+      <h2 id="app-preferences-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
+        {t('preferences.heading')}
+      </h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">{t('preferences.intro')}</p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {includeTheme && <ThemeControl />}
-        <Choice label={t('preferences.fontSize')} field="editorFontSize" options={FONT_SIZES} name={(size) => t('preferences.fontSizeOption', { size })} />
-        <Choice label={t('preferences.tabSize')} field="editorTabSize" options={TAB_SIZE_CHOICES} name={(size) => tn('preferences.tabSizeOption', size)} />
+        <Choice
+          label={t('preferences.fontSize')}
+          field="editorFontSize"
+          options={FONT_SIZES}
+          name={(size) => t('preferences.fontSizeOption', { size })}
+        />
+        <Choice
+          label={t('preferences.tabSize')}
+          field="editorTabSize"
+          options={TAB_SIZE_CHOICES}
+          name={(size) => tn('preferences.tabSizeOption', size)}
+        />
         <Choice label={t('preferences.density')} field="density" options={DENSITY_CHOICES} name={(density) => t(DENSITY_NAMES[density])} />
-        <Choice label={t('preferences.language')} field="language" options={LANGUAGE_CHOICES} name={(language) => t(LANGUAGE_NAMES[language])} />
-        <Choice label={t('preferences.autosave')} field="autosaveSeconds" options={AUTOSAVE_CHOICES} name={(seconds) => (seconds === 0 ? t('preferences.autosave.off') : tn('preferences.autosave.after', seconds))} />
+        <Choice
+          label={t('preferences.language')}
+          field="language"
+          options={LANGUAGE_CHOICES}
+          name={(language) => t(LANGUAGE_NAMES[language])}
+        />
+        <Choice
+          label={t('preferences.autosave')}
+          field="autosaveSeconds"
+          options={AUTOSAVE_CHOICES}
+          name={(seconds) => (seconds === 0 ? t('preferences.autosave.off') : tn('preferences.autosave.after', seconds))}
+        />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-surface-600)] pt-3">
-        <Checkbox label={t('preferences.minimap')} checked={minimap} onChange={(event) => setMinimap(event.target.checked)} data-setting="editorMinimap" />
-        <Checkbox label={t('preferences.updates.check')} checked={checkForUpdates} onChange={(event) => update({ checkForUpdates: event.target.checked })} data-setting="checkForUpdates" />
+        <Checkbox
+          label={t('preferences.minimap')}
+          checked={minimap}
+          onChange={(event) => setMinimap(event.target.checked)}
+          data-setting="editorMinimap"
+        />
+        <Checkbox
+          label={t('preferences.updates.check')}
+          checked={checkForUpdates}
+          onChange={(event) => update({ checkForUpdates: event.target.checked })}
+          data-setting="checkForUpdates"
+        />
         <Button onClick={checkNow} disabled={checking}>
           {checking ? t('preferences.updates.checking') : t('preferences.updates.now')}
         </Button>
-        {result && <p role="status" className="text-xs text-[var(--text-secondary)]">{describeUpdateCheck(result, t)}</p>}
+        {result && (
+          <p role="status" className="text-xs text-[var(--text-secondary)]">
+            {describeUpdateCheck(result, t)}
+          </p>
+        )}
       </div>
       <p className="mt-2 text-xs text-[var(--text-tertiary)]">{t('preferences.updates.note')}</p>
     </section>

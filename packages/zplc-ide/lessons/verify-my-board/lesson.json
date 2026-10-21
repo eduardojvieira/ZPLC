@@ -5,15 +5,9 @@
   "order": 33,
   "module": 0,
   "level": "foundation",
-  "prerequisites": [
-    "first-blink-simulation"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "hardware"
-  ],
+  "prerequisites": ["first-blink-simulation"],
+  "languages": ["ST"],
+  "tracks": ["hardware"],
   "unsupported": {
     "simulation": {
       "reason": {

@@ -17,7 +17,11 @@ function Harness({ activation = 'automatic' }: { activation?: 'automatic' | 'man
   return (
     <>
       <TabList label="Console" tabs={TABS} value={value} onValueChange={setValue} idPrefix="c" activation={activation} />
-      {TABS.map((tab) => <TabPanel key={tab.id} id={tab.id} idPrefix="c" selected={value === tab.id}>{tab.label} panel</TabPanel>)}
+      {TABS.map((tab) => (
+        <TabPanel key={tab.id} id={tab.id} idPrefix="c" selected={value === tab.id}>
+          {tab.label} panel
+        </TabPanel>
+      ))}
     </>
   );
 }

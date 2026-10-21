@@ -5,16 +5,9 @@
   "order": 34,
   "module": 10,
   "level": "advanced",
-  "prerequisites": [
-    "modbus-register-round-trip",
-    "counter-batch-fbd"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["modbus-register-round-trip", "counter-batch-fbd"],
+  "languages": ["FBD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

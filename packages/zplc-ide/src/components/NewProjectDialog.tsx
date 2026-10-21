@@ -44,23 +44,82 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
     if (made) onClose();
   };
   return (
-    <form className="flex flex-col gap-3" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
-      <TextField data-new-project="name" label={t('project.new.name')} value={name} onChange={(event) => { setName(event.target.value); setNameEdited(true); }}
-        error={nameEdited && problem ? t(`project.new.name.${problem}`) : undefined} />
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void submit();
+      }}
+    >
+      <TextField
+        data-new-project="name"
+        label={t('project.new.name')}
+        value={name}
+        onChange={(event) => {
+          setName(event.target.value);
+          setNameEdited(true);
+        }}
+        error={nameEdited && problem ? t(`project.new.name.${problem}`) : undefined}
+      />
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm" data-testid="new-project-folder">{inBrowser ? t('web.store.keep') : folder ? folder.name : t('project.new.noFolder')}</span>
-        {'showDirectoryPicker' in window || !browserStore ? <Button type="button" variant="secondary" size="sm" onClick={() => { void choose(); }}><FolderOpen size={14} aria-hidden="true" />{t('project.new.chooseFolder')}</Button> : null}
-        {browserStore ? <Button type="button" variant="secondary" size="sm" data-new-project="keep-in-browser" tooltip={t('web.store.keepHint')} onClick={() => { setInBrowser(true); setFolder(null); }}>{t('web.store.keep')}</Button> : null}
+        <span className="min-w-0 flex-1 truncate text-sm" data-testid="new-project-folder">
+          {inBrowser ? t('web.store.keep') : folder ? folder.name : t('project.new.noFolder')}
+        </span>
+        {'showDirectoryPicker' in window || !browserStore ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              void choose();
+            }}
+          >
+            <FolderOpen size={14} aria-hidden="true" />
+            {t('project.new.chooseFolder')}
+          </Button>
+        ) : null}
+        {browserStore ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            data-new-project="keep-in-browser"
+            tooltip={t('web.store.keepHint')}
+            onClick={() => {
+              setInBrowser(true);
+              setFolder(null);
+            }}
+          >
+            {t('web.store.keep')}
+          </Button>
+        ) : null}
       </div>
       <Select data-new-project="target" label={t('project.new.target')} value={target} onChange={(event) => setTarget(event.target.value)}>
-        {newProjectTargets().map((entry) => <option key={entry.value} value={entry.value}>{entry.value === SIMULATION_TARGET ? t('project.new.simulation') : entry.label}</option>)}
+        {newProjectTargets().map((entry) => (
+          <option key={entry.value} value={entry.value}>
+            {entry.value === SIMULATION_TARGET ? t('project.new.simulation') : entry.label}
+          </option>
+        ))}
       </Select>
-      <Select data-new-project="language" label={t('project.new.language')} value={language} onChange={(event) => setLanguage(event.target.value as PLCLanguage)}>
-        {NEW_PROJECT_LANGUAGES.map((entry) => <option key={entry} value={entry}>{PLC_LANGUAGES[entry].fullName}</option>)}
+      <Select
+        data-new-project="language"
+        label={t('project.new.language')}
+        value={language}
+        onChange={(event) => setLanguage(event.target.value as PLCLanguage)}
+      >
+        {NEW_PROJECT_LANGUAGES.map((entry) => (
+          <option key={entry} value={entry}>
+            {PLC_LANGUAGES[entry].fullName}
+          </option>
+        ))}
       </Select>
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button type="submit" variant="primary" disabled={(!folder && !inBrowser) || problem !== null || busy}>{t('project.new.create')}</Button>
+        <Button type="button" variant="ghost" onClick={onClose}>
+          {t('common.cancel')}
+        </Button>
+        <Button type="submit" variant="primary" disabled={(!folder && !inBrowser) || problem !== null || busy}>
+          {t('project.new.create')}
+        </Button>
       </div>
     </form>
   );

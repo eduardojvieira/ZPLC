@@ -29,13 +29,13 @@ Eso describe la **versión del contrato binario/ISA**, no la versión comercial 
 
 La ISA reserva cinco regiones lógicas con bases públicas y tamaños definidos por contrato:
 
-| Región | Base | Tamaño | Fuente canónica |
-|---|---:|---:|---|
-| IPI (Input Process Image) | `0x0000` | `0x1000` (4 KiB) | `ZPLC_MEM_IPI_BASE`, `ZPLC_MEM_IPI_SIZE` |
-| OPI (Output Process Image) | `0x1000` | `0x1000` (4 KiB) | `ZPLC_MEM_OPI_BASE`, `ZPLC_MEM_OPI_SIZE` |
-| WORK | `0x2000` | configurable, por defecto `0x2000` | `ZPLC_MEM_WORK_BASE`, `ZPLC_MEM_WORK_SIZE` |
-| RETAIN | `0x4000` | configurable, por defecto `0x1000` | `ZPLC_MEM_RETAIN_BASE`, `ZPLC_MEM_RETAIN_SIZE` |
-| CODE | `0x5000` | configurable, por defecto `0xB000` | `ZPLC_MEM_CODE_BASE`, `ZPLC_MEM_CODE_SIZE` |
+| Región                     |     Base |                             Tamaño | Fuente canónica                                |
+| -------------------------- | -------: | ---------------------------------: | ---------------------------------------------- |
+| IPI (Input Process Image)  | `0x0000` |                   `0x1000` (4 KiB) | `ZPLC_MEM_IPI_BASE`, `ZPLC_MEM_IPI_SIZE`       |
+| OPI (Output Process Image) | `0x1000` |                   `0x1000` (4 KiB) | `ZPLC_MEM_OPI_BASE`, `ZPLC_MEM_OPI_SIZE`       |
+| WORK                       | `0x2000` | configurable, por defecto `0x2000` | `ZPLC_MEM_WORK_BASE`, `ZPLC_MEM_WORK_SIZE`     |
+| RETAIN                     | `0x4000` | configurable, por defecto `0x1000` | `ZPLC_MEM_RETAIN_BASE`, `ZPLC_MEM_RETAIN_SIZE` |
+| CODE                       | `0x5000` | configurable, por defecto `0xB000` | `ZPLC_MEM_CODE_BASE`, `ZPLC_MEM_CODE_SIZE`     |
 
 ```mermaid
 flowchart LR
@@ -53,12 +53,12 @@ flowchart LR
 
 Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del planificador/runtime:
 
-| Registro | Dirección | Propósito |
-|---|---:|---|
-| `ZPLC_SYS_CYCLE_TIME` | `0x0FF0` | tiempo del último ciclo en microsegundos |
-| `ZPLC_SYS_UPTIME` | `0x0FF4` | tiempo de actividad del sistema en milisegundos |
-| `ZPLC_SYS_TASK_ID` | `0x0FF8` | identificador de la tarea actual |
-| `ZPLC_SYS_FLAGS` | `0x0FF9` | indicadores de estado del runtime |
+| Registro              | Dirección | Propósito                                       |
+| --------------------- | --------: | ----------------------------------------------- |
+| `ZPLC_SYS_CYCLE_TIME` |  `0x0FF0` | tiempo del último ciclo en microsegundos        |
+| `ZPLC_SYS_UPTIME`     |  `0x0FF4` | tiempo de actividad del sistema en milisegundos |
+| `ZPLC_SYS_TASK_ID`    |  `0x0FF8` | identificador de la tarea actual                |
+| `ZPLC_SYS_FLAGS`      |  `0x0FF9` | indicadores de estado del runtime               |
 
 Indicadores públicos definidos hoy:
 
@@ -74,21 +74,21 @@ límite lógico de ejecución separado.
 
 La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias claras:
 
-| Familia | Ejemplos | Rol |
-|---|---|---|
-| Sistema | `OP_NOP`, `OP_HALT`, `OP_BREAK`, `OP_GET_TICKS` | control básico y depuración |
-| Pila | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT` | manipulación de la pila |
-| Acceso indirecto | `OP_LOADI8`, `OP_LOADI16`, `OP_LOADI32`, `OP_STOREI8`, `OP_STOREI16`, `OP_STOREI32` | direccionamiento calculado |
-| Cadenas | `OP_STRLEN`, `OP_STRCPY`, `OP_STRCAT`, `OP_STRCMP`, `OP_STRCLR` | operaciones seguras sobre `STRING` |
-| Aritmética | `OP_ADD`, `OP_SUB`, `OP_MUL`, `OP_DIV`, `OP_MOD` | entero y punto flotante |
-| Entero de 64 bits | `OP_MUL64`, `OP_DIVS64`, `OP_DIVU64`, `OP_MODS64`, `OP_MODU64`, `OP_NEG64`, `OP_ABS64`, `OP_SHL64`, `OP_SHR64`, `OP_SAR64` | operaciones de `LINT`, `ULINT` y `LWORD` que no tienen forma de 32 bits |
-| Doble precisión | `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD`, `OP_NEGD`, `OP_ABSD`, `OP_SQRTD`, `OP_RNDD` | aritmética de `LREAL` |
-| Lógico y bit a bit | `OP_AND`, `OP_OR`, `OP_XOR`, `OP_NOT`, `OP_SHL`, `OP_SHR`, `OP_SAR` | booleanos y bits |
-| Comparación | `OP_EQ`, `OP_NE`, `OP_LT`, `OP_LE`, `OP_GT`, `OP_GE`, `OP_LTU`, `OP_GTU` | decisiones de control |
-| Comparación de doble precisión | `OP_EQD`, `OP_NED`, `OP_LTD`, `OP_LED`, `OP_GTD`, `OP_GED` | decisiones de control sobre `LREAL` |
-| Saltos y llamadas | `OP_JMP`, `OP_JZ`, `OP_JNZ`, `OP_CALL`, `OP_RET`, `OP_JR`, `OP_JRZ`, `OP_JRNZ` | flujo de ejecución |
-| Conversión | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16`, `OP_F2D`, `OP_D2F`, `OP_I2D`, `OP_D2I`, `OP_L2D`, `OP_D2L`, `OP_U2D`, `OP_D2U`, `OP_L2F`, `OP_U2F` | adaptación de tipos, incluidos `LREAL` y los enteros de 64 bits |
-| Comunicación | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET` | ejecución de bloques de función de comunicación |
+| Familia                        | Ejemplos                                                                                                                                                                         | Rol                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Sistema                        | `OP_NOP`, `OP_HALT`, `OP_BREAK`, `OP_GET_TICKS`                                                                                                                                  | control básico y depuración                                             |
+| Pila                           | `OP_DUP`, `OP_DROP`, `OP_SWAP`, `OP_OVER`, `OP_ROT`                                                                                                                              | manipulación de la pila                                                 |
+| Acceso indirecto               | `OP_LOADI8`, `OP_LOADI16`, `OP_LOADI32`, `OP_STOREI8`, `OP_STOREI16`, `OP_STOREI32`                                                                                              | direccionamiento calculado                                              |
+| Cadenas                        | `OP_STRLEN`, `OP_STRCPY`, `OP_STRCAT`, `OP_STRCMP`, `OP_STRCLR`                                                                                                                  | operaciones seguras sobre `STRING`                                      |
+| Aritmética                     | `OP_ADD`, `OP_SUB`, `OP_MUL`, `OP_DIV`, `OP_MOD`                                                                                                                                 | entero y punto flotante                                                 |
+| Entero de 64 bits              | `OP_MUL64`, `OP_DIVS64`, `OP_DIVU64`, `OP_MODS64`, `OP_MODU64`, `OP_NEG64`, `OP_ABS64`, `OP_SHL64`, `OP_SHR64`, `OP_SAR64`                                                       | operaciones de `LINT`, `ULINT` y `LWORD` que no tienen forma de 32 bits |
+| Doble precisión                | `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD`, `OP_NEGD`, `OP_ABSD`, `OP_SQRTD`, `OP_RNDD`                                                                                          | aritmética de `LREAL`                                                   |
+| Lógico y bit a bit             | `OP_AND`, `OP_OR`, `OP_XOR`, `OP_NOT`, `OP_SHL`, `OP_SHR`, `OP_SAR`                                                                                                              | booleanos y bits                                                        |
+| Comparación                    | `OP_EQ`, `OP_NE`, `OP_LT`, `OP_LE`, `OP_GT`, `OP_GE`, `OP_LTU`, `OP_GTU`                                                                                                         | decisiones de control                                                   |
+| Comparación de doble precisión | `OP_EQD`, `OP_NED`, `OP_LTD`, `OP_LED`, `OP_GTD`, `OP_GED`                                                                                                                       | decisiones de control sobre `LREAL`                                     |
+| Saltos y llamadas              | `OP_JMP`, `OP_JZ`, `OP_JNZ`, `OP_CALL`, `OP_RET`, `OP_JR`, `OP_JRZ`, `OP_JRNZ`                                                                                                   | flujo de ejecución                                                      |
+| Conversión                     | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16`, `OP_F2D`, `OP_D2F`, `OP_I2D`, `OP_D2I`, `OP_L2D`, `OP_D2L`, `OP_U2D`, `OP_D2U`, `OP_L2F`, `OP_U2F` | adaptación de tipos, incluidos `LREAL` y los enteros de 64 bits         |
+| Comunicación                   | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET`                                                                                                                                | ejecución de bloques de función de comunicación                         |
 
 Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos
 contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el ciclo con
@@ -126,37 +126,37 @@ depende de la biblioteca de C, del punto flotante de hardware ni de la precisió
 x87, y es el mismo patrón de bits en el host de 64 bits, en una compilación de 32 bits y en
 todos los destinos. Los resultados que define la VM:
 
-| Operación | Operandos | Resultado |
-|---|---|---|
-| `OP_MUL64` | cualquiera | los 64 bits bajos del producto (da la vuelta) |
-| `OP_DIVS64` | divisor `0` | falla `ZPLC_VM_DIV_BY_ZERO` |
-| | `INT64_MIN / -1` | `INT64_MIN` |
-| | en otro caso | el cociente truncado hacia cero |
-| `OP_MODS64` | divisor `0` | falla `ZPLC_VM_DIV_BY_ZERO` |
-| | divisor `-1` | `0` |
-| | en otro caso | el resto, con el signo del dividendo |
-| `OP_DIVU64`, `OP_MODU64` | divisor `0` | falla `ZPLC_VM_DIV_BY_ZERO` |
-| | en otro caso | el cociente o el resto sin signo |
-| `OP_NEG64`, `OP_ABS64` | `INT64_MIN` | `INT64_MIN` |
-| `OP_SHL64`, `OP_SHR64` | cuenta de 64 o más | `0` |
-| `OP_SAR64` | cuenta de 64 o más | `-1` para un valor negativo, `0` en otro caso |
-| `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD` | cualquiera | el resultado IEEE 754 binary64, al par más cercano; el desbordamiento es un infinito y el subdesbordamiento es gradual |
-| `OP_DIVD` | divisor `0.0` o `-0.0` | falla `ZPLC_VM_DIV_BY_ZERO`, sea cual sea el dividendo (como `OP_DIVF`) |
-| `OP_NEGD`, `OP_ABSD` | cualquiera | el bit de signo invertido o borrado; un NaN conserva su carga |
-| `OP_SQRTD` | `0.0`, `-0.0` o menor | `0.0` (la regla de `SQRT` sobre un `REAL`) |
-| | `+Inf` | `+Inf` |
-| | en otro caso | la raíz cuadrada correctamente redondeada |
-| `OP_RNDD` | cualquiera | el valor entero más cercano, una mitad exacta al par; `-0.4` es `-0.0` |
-| `OP_EQD`, `OP_LTD`, `OP_LED`, `OP_GTD`, `OP_GED` | un operando NaN | falso; `-0.0` es igual a `+0.0` |
-| `OP_NED` | un operando NaN | verdadero |
-| `OP_F2D`, `OP_D2F` | cualquiera | ensanchamiento exacto; estrechamiento al par más cercano, el desbordamiento es un infinito |
-| `OP_D2I`, `OP_D2L` | NaN | `0` |
-| | fuera de rango, un infinito | el límite más cercano de `INT32` o `INT64` |
-| | en otro caso | truncado hacia cero |
-| `OP_D2U` | NaN, o menor que `1.0` | `0` |
-| | `2^64` o más | `UINT64_MAX` |
-| | en otro caso | truncado hacia cero |
-| `OP_I2D`, `OP_L2D`, `OP_U2D`, `OP_L2F`, `OP_U2F` | cualquiera | un solo redondeo, al par más cercano |
+| Operación                                        | Operandos                   | Resultado                                                                                                              |
+| ------------------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `OP_MUL64`                                       | cualquiera                  | los 64 bits bajos del producto (da la vuelta)                                                                          |
+| `OP_DIVS64`                                      | divisor `0`                 | falla `ZPLC_VM_DIV_BY_ZERO`                                                                                            |
+|                                                  | `INT64_MIN / -1`            | `INT64_MIN`                                                                                                            |
+|                                                  | en otro caso                | el cociente truncado hacia cero                                                                                        |
+| `OP_MODS64`                                      | divisor `0`                 | falla `ZPLC_VM_DIV_BY_ZERO`                                                                                            |
+|                                                  | divisor `-1`                | `0`                                                                                                                    |
+|                                                  | en otro caso                | el resto, con el signo del dividendo                                                                                   |
+| `OP_DIVU64`, `OP_MODU64`                         | divisor `0`                 | falla `ZPLC_VM_DIV_BY_ZERO`                                                                                            |
+|                                                  | en otro caso                | el cociente o el resto sin signo                                                                                       |
+| `OP_NEG64`, `OP_ABS64`                           | `INT64_MIN`                 | `INT64_MIN`                                                                                                            |
+| `OP_SHL64`, `OP_SHR64`                           | cuenta de 64 o más          | `0`                                                                                                                    |
+| `OP_SAR64`                                       | cuenta de 64 o más          | `-1` para un valor negativo, `0` en otro caso                                                                          |
+| `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD`       | cualquiera                  | el resultado IEEE 754 binary64, al par más cercano; el desbordamiento es un infinito y el subdesbordamiento es gradual |
+| `OP_DIVD`                                        | divisor `0.0` o `-0.0`      | falla `ZPLC_VM_DIV_BY_ZERO`, sea cual sea el dividendo (como `OP_DIVF`)                                                |
+| `OP_NEGD`, `OP_ABSD`                             | cualquiera                  | el bit de signo invertido o borrado; un NaN conserva su carga                                                          |
+| `OP_SQRTD`                                       | `0.0`, `-0.0` o menor       | `0.0` (la regla de `SQRT` sobre un `REAL`)                                                                             |
+|                                                  | `+Inf`                      | `+Inf`                                                                                                                 |
+|                                                  | en otro caso                | la raíz cuadrada correctamente redondeada                                                                              |
+| `OP_RNDD`                                        | cualquiera                  | el valor entero más cercano, una mitad exacta al par; `-0.4` es `-0.0`                                                 |
+| `OP_EQD`, `OP_LTD`, `OP_LED`, `OP_GTD`, `OP_GED` | un operando NaN             | falso; `-0.0` es igual a `+0.0`                                                                                        |
+| `OP_NED`                                         | un operando NaN             | verdadero                                                                                                              |
+| `OP_F2D`, `OP_D2F`                               | cualquiera                  | ensanchamiento exacto; estrechamiento al par más cercano, el desbordamiento es un infinito                             |
+| `OP_D2I`, `OP_D2L`                               | NaN                         | `0`                                                                                                                    |
+|                                                  | fuera de rango, un infinito | el límite más cercano de `INT32` o `INT64`                                                                             |
+|                                                  | en otro caso                | truncado hacia cero                                                                                                    |
+| `OP_D2U`                                         | NaN, o menor que `1.0`      | `0`                                                                                                                    |
+|                                                  | `2^64` o más                | `UINT64_MAX`                                                                                                           |
+|                                                  | en otro caso                | truncado hacia cero                                                                                                    |
+| `OP_I2D`, `OP_L2D`, `OP_U2D`, `OP_L2F`, `OP_U2F` | cualquiera                  | un solo redondeo, al par más cercano                                                                                   |
 
 Todo NaN que produce una operación de doble precisión es el NaN silencioso
 `0x7FF8000000000000` (`0x7FC00000` como `REAL`), así que dos plataformas nunca difieren en la

@@ -2,14 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import { compileMultiTaskProject } from '@zplc/compiler';
 import type { DebugMap } from '../compiler';
-import {
-  INPUT_TAG,
-  decodeInput,
-  inputReadPlan,
-  inputWrite,
-  listDeclaredInputs,
-  type DeclaredInput,
-} from './declaredInputs';
+import { INPUT_TAG, decodeInput, inputReadPlan, inputWrite, listDeclaredInputs, type DeclaredInput } from './declaredInputs';
 
 const SOURCE = `PROGRAM Plant
 VAR_INPUT
@@ -32,8 +25,13 @@ END_PROGRAM
 
 /** A debug map from the real compiler, so that the listing is exercised on what Studio really receives. */
 function compiled(source = SOURCE): DebugMap {
-  const project = { name: 't', version: '1', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant'] }] } as never;
-  return compileMultiTaskProject(project, [{ name: 'Plant', content: source, language: 'ST', sourceRef: 'src/Plant.st' } as never]).debugMap as unknown as DebugMap;
+  const project = {
+    name: 't',
+    version: '1',
+    tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant'] }],
+  } as never;
+  return compileMultiTaskProject(project, [{ name: 'Plant', content: source, language: 'ST', sourceRef: 'src/Plant.st' } as never])
+    .debugMap as unknown as DebugMap;
 }
 
 const named = (inputs: DeclaredInput[]) => inputs.map((input) => input.name).sort();
@@ -75,7 +73,17 @@ describe('the declared inputs of a program (IDE-024)', () => {
   });
 });
 
-const input = (patch: Partial<DeclaredInput>): DeclaredInput => ({ path: 'P.X', pou: 'P', name: 'X', type: 'BOOL', region: 'IPI', address: 0, size: 1, origin: 'mapped', ...patch });
+const input = (patch: Partial<DeclaredInput>): DeclaredInput => ({
+  path: 'P.X',
+  pou: 'P',
+  name: 'X',
+  type: 'BOOL',
+  region: 'IPI',
+  address: 0,
+  size: 1,
+  origin: 'mapped',
+  ...patch,
+});
 
 describe('writing a declared input (IDE-024)', () => {
   it('changes only the bit of a bit-addressed BOOL, keeping the other bits of the byte as they are', () => {
@@ -117,10 +125,16 @@ describe('reading declared inputs back (IDE-024)', () => {
       input({ path: 'd', type: 'BYTE', size: 1, address: 0x2000 + 4 }),
     ];
     const plan = inputReadPlan(inputs);
-    expect(plan).toEqual([{ address: 0, length: 6 }, { address: 0x2000, length: 5 }]);
+    expect(plan).toEqual([
+      { address: 0, length: 6 },
+      { address: 0x2000, length: 5 },
+    ]);
     const memory = new Uint8Array(0x3000);
-    memory[0] = 0b0000_1000; memory[4] = 0x34; memory[5] = 0x12;
-    new DataView(memory.buffer).setFloat32(0x2000, 2.5, true); memory[0x2004] = 9;
+    memory[0] = 0b0000_1000;
+    memory[4] = 0x34;
+    memory[5] = 0x12;
+    new DataView(memory.buffer).setFloat32(0x2000, 2.5, true);
+    memory[0x2004] = 9;
     const at = (address: number, length: number) => memory.slice(address, address + length);
     expect(decodeInput(inputs[0]!, at)).toBe(true);
     expect(decodeInput(inputs[1]!, at)).toBe(0x1234);

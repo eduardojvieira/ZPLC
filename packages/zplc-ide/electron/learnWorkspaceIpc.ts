@@ -18,7 +18,9 @@ export interface LearnWorkspaceDeps {
   adopt(ownerId: number, directory: string): Promise<{ rootId: string; name: string }>;
 }
 
-export function createLearnWorkspaceHandlers<Owner extends { ownerId: number }>(deps: LearnWorkspaceDeps): Record<string, IpcHandler<Owner>> {
+export function createLearnWorkspaceHandlers<Owner extends { ownerId: number }>(
+  deps: LearnWorkspaceDeps,
+): Record<string, IpcHandler<Owner>> {
   return {
     [LEARN_WORKSPACE_CHANNEL.OPEN]: {
       accepts: (args) => args.length === 1 && isLessonId(args[0]),

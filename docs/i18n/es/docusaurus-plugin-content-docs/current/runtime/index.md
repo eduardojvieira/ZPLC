@@ -14,6 +14,7 @@ El runtime interno de ZPLC es el núcleo de ejecución de la plataforma. Está d
 ## Responsabilidades principales
 
 El runtime de ZPLC ofrece un entorno virtual completo para ejecutar las tareas de IEC 61131-3. Sus responsabilidades son:
+
 - Cargar los programas compilados `.zplc` y sus metadatos.
 - Crear máquinas virtuales (VM) con contextos de ejecución aislados.
 - Hacer cumplir los límites de memoria (imágenes de proceso, memoria de trabajo interna y datos retenidos).
@@ -39,6 +40,7 @@ flowchart TD
 ## Modelo de memoria compartida
 
 Para garantizar seguridad y rendimiento en circuitos integrados con pocos recursos, el contrato de memoria del runtime de ZPLC define límites estrictos para sus elementos:
+
 - **IPI** (imagen de proceso de entradas): búfer aislado y asignado en memoria para leer las entradas físicas con seguridad.
 - **OPI** (imagen de proceso de salidas): búfer que traslada los resultados lógicos a las salidas de hardware.
 - **Memoria de trabajo:** pila de ejecución volátil y dinámica que se asigna mientras el runtime ejecuta.
@@ -47,5 +49,6 @@ Para garantizar seguridad y rendimiento en circuitos integrados con pocos recurs
 ## Portabilidad a otros destinos
 
 Como el runtime delega los asuntos de bajo nivel en una HAL estrictamente definida, ZPLC se ejecuta con facilidad en varias arquitecturas:
+
 - **Zephyr RTOS:** la plataforma de ejecución principal para los controladores de hardware en el borde. Ejecuta la aplicación de firmware de forma nativa sobre el hardware.
 - **Simulación nativa en el equipo anfitrión:** ofrece una simulación de SoftPLC de escritorio, al adaptar las primitivas de la HAL a los sistemas de archivos y procesos de Windows, macOS o Linux.

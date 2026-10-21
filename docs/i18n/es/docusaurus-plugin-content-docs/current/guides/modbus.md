@@ -3,7 +3,7 @@ slug: /guides/modbus
 id: modbus
 title: Usar Modbus RTU y TCP
 sidebar_label: Modbus RTU y TCP
-description: "Haga que un controlador responda a un maestro Modbus y lea o escriba otro dispositivo Modbus desde el programa, con el contrato que existe hoy."
+description: 'Haga que un controlador responda a un maestro Modbus y lea o escriba otro dispositivo Modbus desde el programa, con el contrato que existe hoy.'
 tags: [how-to, modbus, communication]
 ---
 
@@ -61,13 +61,13 @@ Una variable de 32 bits (`REAL`, `DINT`, `UDINT`, `DWORD`) ocupa dos registros
 consecutivos; las demás ocupan uno. El número de la etiqueta indica el área, en la
 notación del mundo Modbus:
 
-| `N` | Área | Dirección en el cable | Un maestro puede |
-| --- | --- | --- | --- |
-| 10001 a 19999 | Entrada discreta | `N - 10001` | leerla (función 2) |
-| 30001 a 39999 | Registro de entrada | `N - 30001` | leerlo (función 4) |
-| 40001 a 49999 | Registro de retención | `N - 40001` | leerlo (función 3) y escribirlo (6, 16) |
-| cualquier otro número, un `BOOL` | Bobina | `N` | leerla (función 1) y escribirla (5, 15) |
-| cualquier otro número, otro tipo | Registro de retención | `N` | leerlo (función 3) y escribirlo (6, 16) |
+| `N`                              | Área                  | Dirección en el cable | Un maestro puede                        |
+| -------------------------------- | --------------------- | --------------------- | --------------------------------------- |
+| 10001 a 19999                    | Entrada discreta      | `N - 10001`           | leerla (función 2)                      |
+| 30001 a 39999                    | Registro de entrada   | `N - 30001`           | leerlo (función 4)                      |
+| 40001 a 49999                    | Registro de retención | `N - 40001`           | leerlo (función 3) y escribirlo (6, 16) |
+| cualquier otro número, un `BOOL` | Bobina                | `N`                   | leerla (función 1) y escribirla (5, 15) |
+| cualquier otro número, otro tipo | Registro de retención | `N`                   | leerlo (función 3) y escribirlo (6, 16) |
 
 En el ejemplo, `Pressure` es el registro de retención de la dirección 0 y `PumpRun` es la
 bobina de la dirección 1. Mantenga separados los rangos de dos variables de la misma área.
@@ -194,17 +194,17 @@ los extremos.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Entramado y asignación del servidor de cada código de función, longitudes erróneas, rangos sin asignar | Pruebas que ponen tramas frente al servidor | Host y `native_sim` |
-| Una escritura de un maestro no puede cambiar el estado de ejecución, los forzados ni el programa cargado | Comprobación a nivel de enlace y una prueba de autoridad | Host y `native_sim` |
-| Una variable forzada conserva su valor ante una escritura de un maestro | Una prueba con un intercambio que registra | Host y `native_sim` |
-| Las cuatro áreas son cuatro espacios de direcciones, y se sirve todo WORK y RETAIN | Una prueba de firmware que carga un programa con las etiquetas de las cuatro áreas, los bordes de WORK y RETAIN y la dirección 65535, y las lee y escribe por las costuras en que terminan ambos servidores | `native_sim` |
-| Manejadores de los bloques de función: pines, handshake, códigos de estado, reinicio con una solicitud en curso | Pruebas con un cliente sustituto | Host y `native_sim` |
-| El cliente Modbus TCP: éxito, una respuesta en fragmentos, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con la solicitud en curso | Su código de transacción es un solo archivo compilado en el controlador y en el runtime de simulación, y se ejecuta contra un servidor escrito para la prueba en loopback en ambos | `native_sim` y host |
-| El cliente Modbus RTU | Solo se comprueban sus parámetros de interfaz (el tiempo de espera va en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | `native_sim` |
-| Un intercambio con un dispositivo real, un cable serie, un maestro de terceros | No probado | Ninguno |
-| Tiempos de una solicitud en una línea real, comportamiento ante errores de línea | No probado | Ninguno |
+| Parte                                                                                                                                                         | Verificado                                                                                                                                                                                                  | Nivel               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Entramado y asignación del servidor de cada código de función, longitudes erróneas, rangos sin asignar                                                        | Pruebas que ponen tramas frente al servidor                                                                                                                                                                 | Host y `native_sim` |
+| Una escritura de un maestro no puede cambiar el estado de ejecución, los forzados ni el programa cargado                                                      | Comprobación a nivel de enlace y una prueba de autoridad                                                                                                                                                    | Host y `native_sim` |
+| Una variable forzada conserva su valor ante una escritura de un maestro                                                                                       | Una prueba con un intercambio que registra                                                                                                                                                                  | Host y `native_sim` |
+| Las cuatro áreas son cuatro espacios de direcciones, y se sirve todo WORK y RETAIN                                                                            | Una prueba de firmware que carga un programa con las etiquetas de las cuatro áreas, los bordes de WORK y RETAIN y la dirección 65535, y las lee y escribe por las costuras en que terminan ambos servidores | `native_sim`        |
+| Manejadores de los bloques de función: pines, handshake, códigos de estado, reinicio con una solicitud en curso                                               | Pruebas con un cliente sustituto                                                                                                                                                                            | Host y `native_sim` |
+| El cliente Modbus TCP: éxito, una respuesta en fragmentos, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con la solicitud en curso | Su código de transacción es un solo archivo compilado en el controlador y en el runtime de simulación, y se ejecuta contra un servidor escrito para la prueba en loopback en ambos                          | `native_sim` y host |
+| El cliente Modbus RTU                                                                                                                                         | Solo se comprueban sus parámetros de interfaz (el tiempo de espera va en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie                                                 | `native_sim`        |
+| Un intercambio con un dispositivo real, un cable serie, un maestro de terceros                                                                                | No probado                                                                                                                                                                                                  | Ninguno             |
+| Tiempos de una solicitud en una línea real, comportamiento ante errores de línea                                                                              | No probado                                                                                                                                                                                                  | Ninguno             |
 
 ## Vea también
 

@@ -5,9 +5,23 @@ import { CONTRAST_PAIRS, THEME_IDS, contrastResults } from '../theme/tokens';
 import { SIGNAL_TONES } from '../theme/signalTone';
 
 const files = [
-  'fbd/FBDEditor.tsx', 'fbd/FBDToolbox.tsx', 'fbd/InstanceMonitor.tsx', 'fbd/edges/DebugEdge.tsx',
-  'fbd/nodes/VariableNode.tsx', 'fbd/nodes/LogicGateNode.tsx', 'fbd/nodes/ConstantNode.tsx', 'fbd/nodes/ComparisonNode.tsx', 'fbd/nodes/MathNode.tsx', 'fbd/nodes/FunctionBlockNode.tsx', 'fbd/nodes/NodeComment.tsx',
-  'ld/LDEditor.tsx', 'ld/LDElement.tsx', 'sfc/SFCEditor.tsx', 'sfc/SFCToolbox.tsx', 'sfc/nodes/SFCStepNode.tsx', 'sfc/nodes/SFCTransitionNode.tsx',
+  'fbd/FBDEditor.tsx',
+  'fbd/FBDToolbox.tsx',
+  'fbd/InstanceMonitor.tsx',
+  'fbd/edges/DebugEdge.tsx',
+  'fbd/nodes/VariableNode.tsx',
+  'fbd/nodes/LogicGateNode.tsx',
+  'fbd/nodes/ConstantNode.tsx',
+  'fbd/nodes/ComparisonNode.tsx',
+  'fbd/nodes/MathNode.tsx',
+  'fbd/nodes/FunctionBlockNode.tsx',
+  'fbd/nodes/NodeComment.tsx',
+  'ld/LDEditor.tsx',
+  'ld/LDElement.tsx',
+  'sfc/SFCEditor.tsx',
+  'sfc/SFCToolbox.tsx',
+  'sfc/nodes/SFCStepNode.tsx',
+  'sfc/nodes/SFCTransitionNode.tsx',
 ];
 
 describe('visual editor theme contract', () => {
@@ -46,7 +60,10 @@ describe('visual editors in every theme (UX-027)', () => {
   }
 
   it('UX-027 keeps no stock colour, literal colour, glow or focus override in a visual editor source', () => {
-    const listed = JSON.parse(readFileSync(join(import.meta.dir, '../../../../tools/ci/ui-kit-offenders.json'), 'utf8')) as Array<{ file: string; rule: string }>;
+    const listed = JSON.parse(readFileSync(join(import.meta.dir, '../../../../tools/ci/ui-kit-offenders.json'), 'utf8')) as Array<{
+      file: string;
+      rule: string;
+    }>;
     const rules = ['stock-palette', 'literal-colour', 'editor-effect', 'focus-override'];
     expect(listed.filter(({ file, rule }) => file.includes('/src/editors/') && rules.includes(rule))).toEqual([]);
   });

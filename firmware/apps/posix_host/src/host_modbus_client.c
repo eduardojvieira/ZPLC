@@ -57,8 +57,7 @@ static __thread int t_direct;
 
 void zplc_host_modbus_redirect(uint16_t port) { s_redirect_port = port; }
 
-static int host_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints,
-                            struct addrinfo **res) {
+static int host_getaddrinfo(const char *node, const char *service, const struct addrinfo *hints, struct addrinfo **res) {
   char port[8];
 
   if (s_redirect_port != 0U && t_direct == 0) {
@@ -90,8 +89,7 @@ int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg, uint16
   return -ENOTSUP;
 }
 
-int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg, uint16_t count,
-                                          const uint16_t *values) {
+int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg, uint16_t count, const uint16_t *values) {
   (void)slave_id;
   (void)start_reg;
   (void)count;
@@ -99,8 +97,7 @@ int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg, 
   return -ENOTSUP;
 }
 
-int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr, uint16_t count,
-                                      uint8_t *out_bits) {
+int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr, uint16_t count, uint8_t *out_bits) {
   (void)slave_id;
   (void)start_addr;
   (void)count;

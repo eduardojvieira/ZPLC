@@ -32,7 +32,14 @@ export interface CommandState {
 }
 
 export const INITIAL_COMMAND_STATE: CommandState = {
-  projectOpen: false, hasActiveFile: false, visualFile: false, mode: 'simulate', connected: false, vmState: 'idle', compiled: false, busy: false,
+  projectOpen: false,
+  hasActiveFile: false,
+  visualFile: false,
+  mode: 'simulate',
+  connected: false,
+  vmState: 'idle',
+  compiled: false,
+  busy: false,
 };
 
 export interface CommandDefinition {
@@ -59,8 +66,20 @@ export const COMMANDS = [
   { id: 'file.export', titleKey: 'command.file.export', category: 'file', enabled: open },
 
   { id: 'view.commandPalette', titleKey: 'command.view.commandPalette', category: 'view', shortcut: 'Mod+Shift+P' },
-  { id: 'view.togglePrimarySidebar', titleKey: 'command.view.togglePrimarySidebar', category: 'view', shortcut: 'Mod+Alt+B', enabled: open },
-  { id: 'view.toggleSecondarySidebar', titleKey: 'command.view.toggleSecondarySidebar', category: 'view', shortcut: 'Mod+Alt+I', enabled: open },
+  {
+    id: 'view.togglePrimarySidebar',
+    titleKey: 'command.view.togglePrimarySidebar',
+    category: 'view',
+    shortcut: 'Mod+Alt+B',
+    enabled: open,
+  },
+  {
+    id: 'view.toggleSecondarySidebar',
+    titleKey: 'command.view.toggleSecondarySidebar',
+    category: 'view',
+    shortcut: 'Mod+Alt+I',
+    enabled: open,
+  },
   { id: 'view.toggleConsole', titleKey: 'command.view.toggleConsole', category: 'view', shortcut: 'Mod+Alt+J', enabled: open },
   { id: 'view.showProject', titleKey: 'command.view.showProject', category: 'view', shortcut: 'Mod+Shift+E', enabled: open },
   { id: 'view.showSearch', titleKey: 'command.view.showSearch', category: 'view', shortcut: 'Mod+Shift+F', enabled: open },
@@ -83,15 +102,47 @@ export const COMMANDS = [
   { id: 'build.viewAssembly', titleKey: 'command.build.viewAssembly', category: 'build', enabled: (s) => s.compiled },
 
   { id: 'online.simulation', titleKey: 'command.online.simulation', category: 'online', enabled: (s) => idle(s) && s.mode !== 'simulate' },
-  { id: 'online.hardware', titleKey: 'command.online.hardware', category: 'online', enabled: (s) => idle(s) && s.mode !== 'hardware' && !isWebBuild() },
+  {
+    id: 'online.hardware',
+    titleKey: 'command.online.hardware',
+    category: 'online',
+    enabled: (s) => idle(s) && s.mode !== 'hardware' && !isWebBuild(),
+  },
   { id: 'online.connect', titleKey: 'command.online.connect', category: 'online', physical: true, enabled: (s) => idle(s) && !s.connected },
   { id: 'online.disconnect', titleKey: 'command.online.disconnect', category: 'online', physical: true, enabled: online },
-  { id: 'online.deploy', titleKey: 'command.online.deploy', category: 'online', physical: true, enabled: (s) => online(s) && s.mode === 'hardware' && s.compiled },
+  {
+    id: 'online.deploy',
+    titleKey: 'command.online.deploy',
+    category: 'online',
+    physical: true,
+    enabled: (s) => online(s) && s.mode === 'hardware' && s.compiled,
+  },
 
-  { id: 'debug.run', titleKey: 'command.debug.run', category: 'debug', shortcut: 'F5', physical: true, enabled: (s) => online(s) && s.vmState !== 'running' },
-  { id: 'debug.pause', titleKey: 'command.debug.pause', category: 'debug', shortcut: 'F6', physical: true, enabled: (s) => online(s) && s.vmState === 'running' },
+  {
+    id: 'debug.run',
+    titleKey: 'command.debug.run',
+    category: 'debug',
+    shortcut: 'F5',
+    physical: true,
+    enabled: (s) => online(s) && s.vmState !== 'running',
+  },
+  {
+    id: 'debug.pause',
+    titleKey: 'command.debug.pause',
+    category: 'debug',
+    shortcut: 'F6',
+    physical: true,
+    enabled: (s) => online(s) && s.vmState === 'running',
+  },
   { id: 'debug.stop', titleKey: 'command.debug.stop', category: 'debug', shortcut: 'Shift+F5', physical: true, enabled: stoppable },
-  { id: 'debug.step', titleKey: 'command.debug.step', category: 'debug', shortcut: 'F10', physical: true, enabled: (s) => online(s) && (s.vmState === 'paused' || s.vmState === 'idle') },
+  {
+    id: 'debug.step',
+    titleKey: 'command.debug.step',
+    category: 'debug',
+    shortcut: 'F10',
+    physical: true,
+    enabled: (s) => online(s) && (s.vmState === 'paused' || s.vmState === 'idle'),
+  },
   { id: 'debug.reset', titleKey: 'command.debug.reset', category: 'debug', shortcut: 'F8', physical: true, enabled: online },
   { id: 'debug.liveValues', titleKey: 'command.debug.liveValues', category: 'debug', enabled: online },
 
@@ -125,5 +176,12 @@ export function commandsIn(category: CommandCategory): readonly CommandDefinitio
 }
 
 export const MENU_TITLE_KEYS: Record<CommandCategory, MessageKey> = {
-  file: 'menu.file', edit: 'menu.edit', view: 'menu.view', project: 'menu.project', build: 'menu.build', online: 'menu.online', debug: 'menu.debug', help: 'menu.help',
+  file: 'menu.file',
+  edit: 'menu.edit',
+  view: 'menu.view',
+  project: 'menu.project',
+  build: 'menu.build',
+  online: 'menu.online',
+  debug: 'menu.debug',
+  help: 'menu.help',
 };

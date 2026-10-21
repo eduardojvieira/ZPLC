@@ -154,21 +154,36 @@ export function parse(source: string): CompilationUnit {
 
 /** Tokens at which a statement list ends: the end of the enclosing program organisation unit, or the start of the next one. */
 const BLOCK_END_TOKENS = new Set<TokenTypeValue>([
-    TokenType.END_PROGRAM, TokenType.END_FUNCTION, TokenType.END_FUNCTION_BLOCK, TokenType.END_METHOD,
-    TokenType.END_INTERFACE, TokenType.END_TYPE, TokenType.END_STRUCT,
-    TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.TYPE,
+    TokenType.END_PROGRAM,
+    TokenType.END_FUNCTION,
+    TokenType.END_FUNCTION_BLOCK,
+    TokenType.END_METHOD,
+    TokenType.END_INTERFACE,
+    TokenType.END_TYPE,
+    TokenType.END_STRUCT,
+    TokenType.PROGRAM,
+    TokenType.FUNCTION,
+    TokenType.FUNCTION_BLOCK,
+    TokenType.INTERFACE,
+    TokenType.TYPE,
     TokenType.VAR_GLOBAL,
 ]);
 /** Tokens that start a program organisation unit or a global declaration. */
 const TOP_LEVEL_TOKENS = new Set<TokenTypeValue>([
-    TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.TYPE,
+    TokenType.PROGRAM,
+    TokenType.FUNCTION,
+    TokenType.FUNCTION_BLOCK,
+    TokenType.INTERFACE,
+    TokenType.TYPE,
     TokenType.VAR_GLOBAL,
 ]);
-const STATEMENT_OPENERS = new Set<TokenTypeValue>([
-    TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.REPEAT, TokenType.CASE,
-]);
+const STATEMENT_OPENERS = new Set<TokenTypeValue>([TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.REPEAT, TokenType.CASE]);
 const STATEMENT_CLOSERS = new Set<TokenTypeValue>([
-    TokenType.END_IF, TokenType.END_WHILE, TokenType.END_FOR, TokenType.END_REPEAT, TokenType.END_CASE,
+    TokenType.END_IF,
+    TokenType.END_WHILE,
+    TokenType.END_FOR,
+    TokenType.END_REPEAT,
+    TokenType.END_CASE,
 ]);
 /** Words in the middle of a compound statement: they belong to the statement that is open. */
 const STATEMENT_MIDDLES = new Set<TokenTypeValue>([TokenType.ELSE, TokenType.ELSIF, TokenType.UNTIL]);
@@ -181,8 +196,13 @@ const STATEMENT_CLOSER_OF: Record<string, string> = {
     [TokenType.CASE]: 'END_CASE',
 };
 const VAR_BLOCK_STARTS = new Set<TokenTypeValue>([
-    TokenType.VAR, TokenType.VAR_INPUT, TokenType.VAR_OUTPUT, TokenType.VAR_IN_OUT, TokenType.VAR_TEMP,
-    TokenType.VAR_GLOBAL, TokenType.VAR_EXTERNAL,
+    TokenType.VAR,
+    TokenType.VAR_INPUT,
+    TokenType.VAR_OUTPUT,
+    TokenType.VAR_IN_OUT,
+    TokenType.VAR_TEMP,
+    TokenType.VAR_GLOBAL,
+    TokenType.VAR_EXTERNAL,
 ]);
 /** After this many errors the parser gives up: the rest would only bury the first ones. */
 const MAX_SYNTAX_ERRORS = 100;
@@ -310,7 +330,10 @@ class Parser {
                 } else if (this.check(TokenType.INTERFACE)) {
                     interfaces.push(this.parseInterfaceDecl());
                 } else {
-                    this.error('UNEXPECTED_TOKEN', `Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
+                    this.error(
+                        'UNEXPECTED_TOKEN',
+                        `Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`,
+                    );
                 }
             } catch (caught) {
                 if (!(caught instanceof ParseError)) throw caught;
@@ -484,7 +507,7 @@ class Parser {
      */
     private parseTypeDecl(blockStart?: Token): TypeDefinition | AliasDecl {
         const start = blockStart ?? this.current();
-        const nameToken = this.expect(TokenType.IDENTIFIER, "Expected type name");
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected type name');
 
         // Handle optional colon (TYPE MotorData : STRUCT)
         if (this.match(TokenType.COLON)) {
@@ -496,9 +519,9 @@ class Parser {
             const members: VarDecl[] = [];
             while (!this.check(TokenType.END_STRUCT) && !this.isAtEnd()) {
                 const memberNames: string[] = [];
-                memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+                memberNames.push(this.expect(TokenType.IDENTIFIER, 'Expected member name').value);
                 while (this.match(TokenType.COMMA)) {
-                    memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+                    memberNames.push(this.expect(TokenType.IDENTIFIER, 'Expected member name').value);
                 }
 
                 this.expect(TokenType.COLON, "Expected ':' after member name");
@@ -519,7 +542,7 @@ class Parser {
                         dataType,
                         initialValue,
                         ioAddress: null,
-                        section: 'VAR', 
+                        section: 'VAR',
                         tags: {},
                         ...(typeAt ? { typeAt } : {}),
                         line: start.line,
@@ -529,7 +552,8 @@ class Parser {
             }
 
             this.expect(TokenType.END_STRUCT, "Expected 'END_STRUCT'");
-            if (this.match(TokenType.SEMICOLON)) { }
+            if (this.match(TokenType.SEMICOLON)) {
+            }
 
             return {
                 kind: 'StructDecl',
@@ -543,34 +567,35 @@ class Parser {
             this.advance(); // consume (
             const values: EnumValue[] = [];
             let nextVal = 0;
-            
+
             do {
-                const enumName = this.expect(TokenType.IDENTIFIER, "Expected enum value name").value;
+                const enumName = this.expect(TokenType.IDENTIFIER, 'Expected enum value name').value;
                 let val = nextVal;
-                
+
                 if (this.match(TokenType.ASSIGN)) {
-                    const lit = this.parseExpression(); 
+                    const lit = this.parseExpression();
                     if (lit.kind === 'IntLiteral') {
                         val = lit.value;
                     } else {
-                        this.error('INVALID_ENUMERATION', "Enum value must be an integer literal");
+                        this.error('INVALID_ENUMERATION', 'Enum value must be an integer literal');
                     }
                 }
-                
+
                 values.push({ name: enumName, value: val });
                 nextVal = val + 1;
             } while (this.match(TokenType.COMMA));
-            
+
             this.expect(TokenType.RPAREN, "Expected ')' after enum values");
-            if (this.match(TokenType.SEMICOLON)) { }
-            
+            if (this.match(TokenType.SEMICOLON)) {
+            }
+
             return {
                 kind: 'EnumDecl',
                 name: nameToken.value,
                 baseType: 'INT',
                 values,
                 line: start.line,
-                column: start.column
+                column: start.column,
             };
         } else {
             // Type alias: TYPE Speed : INT; END_TYPE (CMP-030)
@@ -632,9 +657,9 @@ class Parser {
     /**
      * method_decl := METHOD [access] [FINAL|ABSTRACT|OVERRIDE] name [: return_type]
      *                var_block* statement* END_METHOD
-     * 
+     *
      * Note: IEC 61131-3 syntax has METHOD before the access specifier
-     * 
+     *
      * @param forceAbstract - If true (for interfaces), method has no body
      */
     private parseMethodDecl(forceAbstract: boolean = false): MethodDecl {
@@ -869,7 +894,16 @@ class Parser {
             if (word === 'PERSISTENT') {
                 // VAR PERSISTENT is left to 2.x (decision D-04); RETAIN keeps a value across a restart.
                 // The block is read as an ordinary one, so the errors after it are found too.
-                this.record(new ParseError('UNSUPPORTED_CONSTRUCT', `'PERSISTENT' is not supported in this release: declare the variables RETAIN`, token.line, token.column, token.endLine, token.endColumn));
+                this.record(
+                    new ParseError(
+                        'UNSUPPORTED_CONSTRUCT',
+                        `'PERSISTENT' is not supported in this release: declare the variables RETAIN`,
+                        token.line,
+                        token.column,
+                        token.endLine,
+                        token.endColumn,
+                    ),
+                );
                 this.advance();
             } else if ((word === 'RETAIN' || word === 'NON_RETAIN') && retain === undefined) {
                 this.advance();
@@ -899,7 +933,14 @@ class Parser {
             try {
                 ioAddress = parseIOAddress(addrToken.value);
             } catch (e) {
-                throw new ParseError('INVALID_DIRECT_ADDRESS', (e as Error).message, addrToken.line, addrToken.column, addrToken.endLine, addrToken.endColumn);
+                throw new ParseError(
+                    'INVALID_DIRECT_ADDRESS',
+                    (e as Error).message,
+                    addrToken.line,
+                    addrToken.column,
+                    addrToken.endLine,
+                    addrToken.endColumn,
+                );
             }
         }
 
@@ -962,7 +1003,7 @@ class Parser {
             const baseType = this.parseTypeName();
             return {
                 kind: 'PointerType',
-                baseType
+                baseType,
             };
         }
 
@@ -1050,7 +1091,10 @@ class Parser {
 
         // Nested arrays not supported - use multi-dimensional
         if (typeof elementType === 'object' && 'kind' in elementType) {
-            this.error('UNSUPPORTED_CONSTRUCT', 'Nested arrays not supported, use multi-dimensional array syntax: ARRAY[a..b, c..d] OF TYPE');
+            this.error(
+                'UNSUPPORTED_CONSTRUCT',
+                'Nested arrays not supported, use multi-dimensional array syntax: ARRAY[a..b, c..d] OF TYPE',
+            );
         }
 
         return {
@@ -1083,7 +1127,12 @@ class Parser {
         const expr = this.parseAdditiveExpr();
         const value = this.foldInteger(expr);
         if (value === undefined) {
-            throw new ParseError('INVALID_ARRAY_DECLARATION', `The ${which} bound of an array must be an integer constant expression`, at.line, at.column);
+            throw new ParseError(
+                'INVALID_ARRAY_DECLARATION',
+                `The ${which} bound of an array must be an integer constant expression`,
+                at.line,
+                at.column,
+            );
         }
         return value;
     }
@@ -1104,12 +1153,18 @@ class Parser {
                 const right = this.foldInteger(expr.right);
                 if (left === undefined || right === undefined) return undefined;
                 switch (expr.operator) {
-                    case 'ADD': return left + right;
-                    case 'SUB': return left - right;
-                    case 'MUL': return left * right;
-                    case 'DIV': return right === 0 ? undefined : Math.trunc(left / right);
-                    case 'MOD': return right === 0 ? undefined : left % right;
-                    default: return undefined;
+                    case 'ADD':
+                        return left + right;
+                    case 'SUB':
+                        return left - right;
+                    case 'MUL':
+                        return left * right;
+                    case 'DIV':
+                        return right === 0 ? undefined : Math.trunc(left / right);
+                    case 'MOD':
+                        return right === 0 ? undefined : left % right;
+                    default:
+                        return undefined;
                 }
             }
             default:
@@ -1124,10 +1179,18 @@ class Parser {
         this.advance();
         const at = this.current();
         const capacity = this.foldInteger(this.parseAdditiveExpr());
-        if (capacity === undefined || capacity < 1 || capacity > 0xFFFF) {
-            throw new ParseError('INVALID_STRING_CAPACITY', `The capacity of ${base} must be an integer constant of 1 or more`, at.line, at.column);
+        if (capacity === undefined || capacity < 1 || capacity > 0xffff) {
+            throw new ParseError(
+                'INVALID_STRING_CAPACITY',
+                `The capacity of ${base} must be an integer constant of 1 or more`,
+                at.line,
+                at.column,
+            );
         }
-        this.expect(open === TokenType.LBRACKET ? TokenType.RBRACKET : TokenType.RPAREN, `Expected ${open === TokenType.LBRACKET ? ']' : ')'} after the string capacity`);
+        this.expect(
+            open === TokenType.LBRACKET ? TokenType.RBRACKET : TokenType.RPAREN,
+            `Expected ${open === TokenType.LBRACKET ? ']' : ')'} after the string capacity`,
+        );
         return `${base.toUpperCase()}[${capacity}]`;
     }
 
@@ -1150,7 +1213,7 @@ class Parser {
         const fields: StructInitializer['fields'] = [];
         do {
             const name = this.expect(TokenType.IDENTIFIER, 'Expected field name');
-            this.expect(TokenType.ASSIGN, "Expected := after the field name");
+            this.expect(TokenType.ASSIGN, 'Expected := after the field name');
             fields.push({ name: name.value, value: this.parseInitialValue(), line: name.line, column: name.column });
         } while (this.match(TokenType.COMMA));
         this.expect(TokenType.RPAREN, 'Expected ) after the initialiser');
@@ -1240,8 +1303,12 @@ class Parser {
         }
 
         // SUPER^( ): the body of the base function block runs here (CMP-041)
-        if (this.check(TokenType.IDENTIFIER) && this.current().value.toUpperCase() === 'SUPER'
-            && this.peek().type === TokenType.CARET && this.peek(2).type === TokenType.LPAREN) {
+        if (
+            this.check(TokenType.IDENTIFIER) &&
+            this.current().value.toUpperCase() === 'SUPER' &&
+            this.peek().type === TokenType.CARET &&
+            this.peek(2).type === TokenType.LPAREN
+        ) {
             const ident = this.advance();
             this.advance(); // ^
             return this.parseFBCallStatement({ ...ident, value: 'SUPER^' }, startToken);
@@ -1603,10 +1670,30 @@ class Parser {
             this.advance();
             const target = this.current();
             const value = this.parseExpression();
-            if (value.kind !== 'Identifier' && value.kind !== 'MemberAccess' && value.kind !== 'ArrayAccess' && value.kind !== 'DereferenceExpr') {
-                throw new ParseError('INVALID_OUTPUT_BINDING', `An output binding names the variable that receives '${first.value}'`, target.line, target.column, target.endLine, target.endColumn);
+            if (
+                value.kind !== 'Identifier' &&
+                value.kind !== 'MemberAccess' &&
+                value.kind !== 'ArrayAccess' &&
+                value.kind !== 'DereferenceExpr'
+            ) {
+                throw new ParseError(
+                    'INVALID_OUTPUT_BINDING',
+                    `An output binding names the variable that receives '${first.value}'`,
+                    target.line,
+                    target.column,
+                    target.endLine,
+                    target.endColumn,
+                );
             }
-            return { name: first.value, value, output: true, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
+            return {
+                name: first.value,
+                value,
+                output: true,
+                line: first.line,
+                column: first.column,
+                endLine: first.endLine,
+                endColumn: first.endColumn,
+            };
         }
         // A positional argument: a function takes it; a function block call is formal only (decision D-04)
         const value = this.parseExpression();
@@ -1703,10 +1790,14 @@ class Parser {
         let left = this.parseAdditiveExpr();
 
         // Comparison operators (non-associative, only one allowed)
-        if (this.check(TokenType.EQ) || this.check(TokenType.NE) ||
-            this.check(TokenType.LT) || this.check(TokenType.LE) ||
-            this.check(TokenType.GT) || this.check(TokenType.GE)) {
-
+        if (
+            this.check(TokenType.EQ) ||
+            this.check(TokenType.NE) ||
+            this.check(TokenType.LT) ||
+            this.check(TokenType.LE) ||
+            this.check(TokenType.GT) ||
+            this.check(TokenType.GE)
+        ) {
             const opToken = this.advance();
             const right = this.parseAdditiveExpr();
 
@@ -1850,7 +1941,15 @@ class Parser {
         if (this.match(TokenType.MINUS)) {
             const startToken = this.previous();
             const operand = this.parsePrimaryExpr();
-            return { kind: 'UnaryExpr', operator: 'NEG', operand, line: startToken.line, column: startToken.column, endLine: operand.endLine, endColumn: operand.endColumn } as UnaryExpr;
+            return {
+                kind: 'UnaryExpr',
+                operator: 'NEG',
+                operand,
+                line: startToken.line,
+                column: startToken.column,
+                endLine: operand.endLine,
+                endColumn: operand.endColumn,
+            } as UnaryExpr;
         }
         this.match(TokenType.PLUS);
         return this.parsePrimaryExpr();
@@ -2045,7 +2144,14 @@ class Parser {
                     this.advance(); // .
                     const bitToken = this.advance();
                     if (!/^\d+$/.test(bitToken.value) || Number(bitToken.value) > 63) {
-                        throw new ParseError('INVALID_BIT_ACCESS', `A bit number is a decimal number from 0 to 63, got '${bitToken.value}'`, bitToken.line, bitToken.column, bitToken.endLine, bitToken.endColumn);
+                        throw new ParseError(
+                            'INVALID_BIT_ACCESS',
+                            `A bit number is a decimal number from 0 to 63, got '${bitToken.value}'`,
+                            bitToken.line,
+                            bitToken.column,
+                            bitToken.endLine,
+                            bitToken.endColumn,
+                        );
                     }
                     expr = {
                         kind: 'BitAccess',
@@ -2058,12 +2164,12 @@ class Parser {
                     } as BitAccess;
                 } else if (this.match(TokenType.DOT)) {
                     const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
-                    
+
                     // Check if this is a method call: instance.Method(args)
                     if (this.check(TokenType.LPAREN)) {
                         this.advance(); // consume (
                         const args: (Expression | NamedArgument)[] = [];
-                        
+
                         // Parse comma-separated arguments
                         if (!this.check(TokenType.RPAREN)) {
                             do {
@@ -2083,9 +2189,9 @@ class Parser {
                                 }
                             } while (this.match(TokenType.COMMA));
                         }
-                        
+
                         this.expect(TokenType.RPAREN, 'Expected ) after method arguments');
-                        
+
                         expr = {
                             kind: 'MethodCall',
                             object: expr,
@@ -2130,7 +2236,7 @@ class Parser {
                         kind: 'DereferenceExpr',
                         operand: expr,
                         line: startToken.line,
-                        column: startToken.column
+                        column: startToken.column,
                     } as DereferenceExpr;
                 } else {
                     break;
@@ -2146,7 +2252,7 @@ class Parser {
                 line: curr.line,
                 column: curr.column,
             } as ThisExpr;
-            
+
             // THIS can have suffixes: THIS.member, THIS.Method(); THIS^ is the instance itself
             while (true) {
                 if (this.match(TokenType.CARET)) {
@@ -2154,21 +2260,21 @@ class Parser {
                 }
                 if (this.match(TokenType.DOT)) {
                     const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after THIS.');
-                    
+
                     // Check if this is a method call: THIS.Method(args)
                     if (this.check(TokenType.LPAREN)) {
                         this.advance(); // consume (
                         const args: Expression[] = [];
-                        
+
                         if (!this.check(TokenType.RPAREN)) {
                             args.push(this.parseExpression());
                             while (this.match(TokenType.COMMA)) {
                                 args.push(this.parseExpression());
                             }
                         }
-                        
+
                         this.expect(TokenType.RPAREN, 'Expected ) after method arguments');
-                        
+
                         expr = {
                             kind: 'MethodCall',
                             object: expr,
@@ -2206,13 +2312,13 @@ class Parser {
             this.expect(TokenType.LPAREN, 'Expected ( after REF');
             const operand = this.parseExpression();
             this.expect(TokenType.RPAREN, 'Expected ) after REF operand');
-            
+
             return {
                 kind: 'ReferenceExpr',
                 // whether the operand is a variable is decided by the semantic pass, which names it
                 operand: operand as ReferenceExpr['operand'],
                 line: startToken.line,
-                column: startToken.column
+                column: startToken.column,
             } as ReferenceExpr;
         }
 
@@ -2234,7 +2340,14 @@ class Parser {
 
         if (typeName === 'BOOL') {
             if (digits !== '0' && digits !== '1') {
-                throw new ParseError('INVALID_TYPED_LITERAL', `BOOL# takes 0, 1, TRUE or FALSE, got ${text}`, at.line, at.column, at.endLine, at.endColumn);
+                throw new ParseError(
+                    'INVALID_TYPED_LITERAL',
+                    `BOOL# takes 0, 1, TRUE or FALSE, got ${text}`,
+                    at.line,
+                    at.column,
+                    at.endLine,
+                    at.endColumn,
+                );
             }
             return { kind: 'BoolLiteral', value: digits === '1' && !negative, literalType: undefined, ...at } as BoolLiteral;
         }
@@ -2245,12 +2358,26 @@ class Parser {
         }
 
         if (/[.eE]/.test(digits) && !/^0x/.test(digits)) {
-            throw new ParseError('INVALID_TYPED_LITERAL', `${typeName}#${text}: an integer literal has no fraction or exponent`, at.line, at.column, at.endLine, at.endColumn);
+            throw new ParseError(
+                'INVALID_TYPED_LITERAL',
+                `${typeName}#${text}: an integer literal has no fraction or exponent`,
+                at.line,
+                at.column,
+                at.endLine,
+                at.endColumn,
+            );
         }
         const exact = negative ? -BigInt(digits) : BigInt(digits);
         const [low, high] = INTEGER_TYPE_RANGES[typeName]!;
         if (exact < low || exact > high) {
-            throw new ParseError('INVALID_TYPED_LITERAL', `The literal ${typeName}#${text} is out of range: ${typeName} holds ${low} to ${high}`, at.line, at.column, at.endLine, at.endColumn);
+            throw new ParseError(
+                'INVALID_TYPED_LITERAL',
+                `The literal ${typeName}#${text} is out of range: ${typeName} holds ${low} to ${high}`,
+                at.line,
+                at.column,
+                at.endLine,
+                at.endColumn,
+            );
         }
         const value = Number(exact);
         return {
@@ -2457,10 +2584,14 @@ class Parser {
 /** Text that stands for an instance expression, for messages and annotations. */
 function describeInstance(expr: Expression): string {
     switch (expr.kind) {
-        case 'Identifier': return expr.name;
-        case 'MemberAccess': return `${describeInstance(expr.object)}.${expr.member}`;
-        case 'ArrayAccess': return `${describeInstance(expr.array)}[...]`;
-        default: return '<instance>';
+        case 'Identifier':
+            return expr.name;
+        case 'MemberAccess':
+            return `${describeInstance(expr.object)}.${expr.member}`;
+        case 'ArrayAccess':
+            return `${describeInstance(expr.array)}[...]`;
+        default:
+            return '<instance>';
     }
 }
 

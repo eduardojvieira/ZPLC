@@ -16,15 +16,15 @@ takes, and how to send the result.
 
 ## What you need
 
-| Tool | Version | Needed for |
-|---|---|---|
-| [Bun](https://bun.sh) | 1.3.14 (the version CI uses) | Everything TypeScript, and the task runner |
-| CMake and a C99 compiler (gcc or clang) | CMake 3.20 or newer | The C core and the native runtime |
-| clang-format | 23.1.3 exactly (`pipx install clang-format==23.1.3`) | `bun run format` and `format:check`, for the C files only |
-| Python | 3.10 or newer | The generators, validators and the firmware method |
-| Node.js | 20 | The documentation site build and `bun run release:rehearsal` |
-| Zephyr SDK | 1.0.1 | The firmware layer only; `tools/firmware-test/setup.sh` creates the workspace and `west` and tells you when the SDK is missing |
-| A display | X11 or Wayland | The Studio journeys only |
+| Tool                                    | Version                                              | Needed for                                                                                                                     |
+| --------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [Bun](https://bun.sh)                   | 1.3.14 (the version CI uses)                         | Everything TypeScript, and the task runner                                                                                     |
+| CMake and a C99 compiler (gcc or clang) | CMake 3.20 or newer                                  | The C core and the native runtime                                                                                              |
+| clang-format                            | 23.1.3 exactly (`pipx install clang-format==23.1.3`) | `bun run format` and `format:check`, for the C files only                                                                      |
+| Python                                  | 3.10 or newer                                        | The generators, validators and the firmware method                                                                             |
+| Node.js                                 | 20                                                   | The documentation site build and `bun run release:rehearsal`                                                                   |
+| Zephyr SDK                              | 1.0.1                                                | The firmware layer only; `tools/firmware-test/setup.sh` creates the workspace and `west` and tells you when the SDK is missing |
+| A display                               | X11 or Wayland                                       | The Studio journeys only                                                                                                       |
 
 The commands below are written for Linux and macOS shells. Windows contributors
 should use WSL 2 for the firmware layer.
@@ -47,29 +47,29 @@ The entry point is `bun run <recipe>` at the repository root; `package.json`
 holds the recipes, and CI calls the same ones. The `justfile` only forwards to
 them.
 
-| Recipe | What it does |
-|---|---|
-| `setup` | Install dependencies, build the compiler, build the native runtime |
-| `build:runtime` | Build the native runtime into `firmware/lib/zplc_core/build/zplc_runtime` |
-| `build:compiler`, `build:ide` | Build the compiler package, or typecheck and bundle Studio |
-| `lint`, `typecheck` | ESLint with the type-aware promise rules, and the strict type-check of every TypeScript program (needs `build:compiler` first) |
-| `test:core` | C suites under the address and undefined-behaviour sanitizers |
-| `test:compiler:ci`, `test:ide:ci`, `test:ci` | TypeScript suites, judged against the list of expected failures |
-| `test:journeys` | Studio end-to-end journeys on the real application |
-| `setup:firmware`, `test:firmware` | Firmware suites on Linux (Zephyr) |
-| `contract:check` | The generated binary contract is in step with its source |
-| `format`, `format:check` | Prettier (TypeScript, JavaScript, CSS, JSON, Markdown) and clang-format (C): write the layout, or check it and the line limit (needs `clang-format` 23.1.3) |
-| `check:line-length` | No hand-written source line is over 140 columns (the last step of `format:check`) |
-| `lint:c` | `clang-tidy` over the core, the POSIX HAL and the host application, every finding an error (needs `clang-tidy`) |
-| `check:test-sources` | No test reads the text of product source or matches generated assembly, except the files listed for replacement |
-| `simulate <project>` | Run a project's scenario tests on the native runtime |
-| `dev` | Run Studio in development mode against the native runtime |
-| `docs:start`, `check:docs` | Serve the site, or generate, check and build it |
-| `check:docs-samples` | Compile every documentation sample marked runnable, and run those that state a result (needs the compiler and the native runtime built) |
-| `check:docs-config` | Build every configuration fragment of a page (`json zplc-fragment`), run every scenario of a page (`json zplc-scenario`) and validate every board entry of a page (`json zplc-board`) |
-| `check:doc-claims`, `check:capability-claims` | Every name a page mentions exists in the source; no sentence of the public text states a capability that nothing executed backs |
-| `docs:screenshots` | Capture the screenshots of the tutorial in the real application (needs a display) and write their manifest |
-| `release:rehearsal` | The checks the release workflow runs before it builds anything |
+| Recipe                                        | What it does                                                                                                                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setup`                                       | Install dependencies, build the compiler, build the native runtime                                                                                                                    |
+| `build:runtime`                               | Build the native runtime into `firmware/lib/zplc_core/build/zplc_runtime`                                                                                                             |
+| `build:compiler`, `build:ide`                 | Build the compiler package, or typecheck and bundle Studio                                                                                                                            |
+| `lint`, `typecheck`                           | ESLint with the type-aware promise rules, and the strict type-check of every TypeScript program (needs `build:compiler` first)                                                        |
+| `test:core`                                   | C suites under the address and undefined-behaviour sanitizers                                                                                                                         |
+| `test:compiler:ci`, `test:ide:ci`, `test:ci`  | TypeScript suites, judged against the list of expected failures                                                                                                                       |
+| `test:journeys`                               | Studio end-to-end journeys on the real application                                                                                                                                    |
+| `setup:firmware`, `test:firmware`             | Firmware suites on Linux (Zephyr)                                                                                                                                                     |
+| `contract:check`                              | The generated binary contract is in step with its source                                                                                                                              |
+| `format`, `format:check`                      | Prettier (TypeScript, JavaScript, CSS, JSON, Markdown) and clang-format (C): write the layout, or check it and the line limit (needs `clang-format` 23.1.3)                           |
+| `check:line-length`                           | No hand-written source line is over 140 columns (the last step of `format:check`)                                                                                                     |
+| `lint:c`                                      | `clang-tidy` over the core, the POSIX HAL and the host application, every finding an error (needs `clang-tidy`)                                                                       |
+| `check:test-sources`                          | No test reads the text of product source or matches generated assembly, except the files listed for replacement                                                                       |
+| `simulate <project>`                          | Run a project's scenario tests on the native runtime                                                                                                                                  |
+| `dev`                                         | Run Studio in development mode against the native runtime                                                                                                                             |
+| `docs:start`, `check:docs`                    | Serve the site, or generate, check and build it                                                                                                                                       |
+| `check:docs-samples`                          | Compile every documentation sample marked runnable, and run those that state a result (needs the compiler and the native runtime built)                                               |
+| `check:docs-config`                           | Build every configuration fragment of a page (`json zplc-fragment`), run every scenario of a page (`json zplc-scenario`) and validate every board entry of a page (`json zplc-board`) |
+| `check:doc-claims`, `check:capability-claims` | Every name a page mentions exists in the source; no sentence of the public text states a capability that nothing executed backs                                                       |
+| `docs:screenshots`                            | Capture the screenshots of the tutorial in the real application (needs a display) and write their manifest                                                                            |
+| `release:rehearsal`                           | The checks the release workflow runs before it builds anything                                                                                                                        |
 
 ## Build
 
@@ -96,15 +96,15 @@ Run the command of every layer you touched before you open a pull request. The
 times were measured on 2026-10-10 on a Linux x86-64 desktop with warm caches while
 other jobs were running, so read them as an order of magnitude.
 
-| Layer | Command | Typical time | What a pass shows | What it does not show |
-|---|---|---|---|---|
-| C core, loader, host runtime | `bun run test:core` | about 1 min, the first run included | The C suites pass with the address and undefined-behaviour sanitizers on a 64-bit host | Behaviour on a 32-bit target or a board |
-| Compiler and assembler | `bun run test:compiler:ci` | about 6 s | The compiler tests pass and every failure is a listed one | Behaviour of the generated code in the VM |
-| Studio, CLI, MCP, conformance | `bun run test:ide:ci` | about 1 min | Compiled programs run in the real VM and give the expected memory; Studio logic and the Tool API behave | A rendered screen in the real application |
-| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks with the strict flags; and Studio builds | Behaviour |
-| Binary contract | `bun run contract:check` | about 1 s | Generated C, TypeScript, Python and docs files match `contract.json`, and the golden numbers hold | Anything outside the contract |
-| Studio on the real application | `bun run test:journeys` | 70 to 90 s | The end-to-end journeys pass in Electron: open, edit, build, simulate, watch, break, force, save | A physical board |
-| Firmware on Linux | `bun run test:firmware` (after `bun run setup:firmware`) | about 4 min; set-up about 6 min once | The Zephyr suites pass on `native_sim` (64 and 32 bit) and QEMU Cortex-M3 and M0, and every image is inside its flash and RAM budget | Timing, interrupts and drivers of a real board |
+| Layer                          | Command                                                     | Typical time                         | What a pass shows                                                                                                                                                                 | What it does not show                          |
+| ------------------------------ | ----------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| C core, loader, host runtime   | `bun run test:core`                                         | about 1 min, the first run included  | The C suites pass with the address and undefined-behaviour sanitizers on a 64-bit host                                                                                            | Behaviour on a 32-bit target or a board        |
+| Compiler and assembler         | `bun run test:compiler:ci`                                  | about 6 s                            | The compiler tests pass and every failure is a listed one                                                                                                                         | Behaviour of the generated code in the VM      |
+| Studio, CLI, MCP, conformance  | `bun run test:ide:ci`                                       | about 1 min                          | Compiled programs run in the real VM and give the expected memory; Studio logic and the Tool API behave                                                                           | A rendered screen in the real application      |
+| Lint and types                 | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s      | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks with the strict flags; and Studio builds | Behaviour                                      |
+| Binary contract                | `bun run contract:check`                                    | about 1 s                            | Generated C, TypeScript, Python and docs files match `contract.json`, and the golden numbers hold                                                                                 | Anything outside the contract                  |
+| Studio on the real application | `bun run test:journeys`                                     | 70 to 90 s                           | The end-to-end journeys pass in Electron: open, edit, build, simulate, watch, break, force, save                                                                                  | A physical board                               |
+| Firmware on Linux              | `bun run test:firmware` (after `bun run setup:firmware`)    | about 4 min; set-up about 6 min once | The Zephyr suites pass on `native_sim` (64 and 32 bit) and QEMU Cortex-M3 and M0, and every image is inside its flash and RAM budget                                              | Timing, interrupts and drivers of a real board |
 
 Notes that save time:
 
@@ -116,7 +116,7 @@ Notes that save time:
   and on a listed case that now passes (remove its entry then).
 - **One file or one case.** `bun test <path>` inside `packages/zplc-ide` or
   `packages/zplc-compiler` runs one file. `ZPLC_JOURNEY_ONLY=<text> bun run
-  test:journeys` runs the journeys whose name contains the text.
+test:journeys` runs the journeys whose name contains the text.
 - **Journeys** use `packages/zplc-ide/node_modules/electron/dist`. If it is
   missing, run `node packages/zplc-ide/node_modules/electron/install.js`, then
   `bun run --cwd packages/zplc-ide build`, `build:assets` and `electron:compile`.
@@ -272,11 +272,11 @@ phase delivers, is [Roadmap](docs/docs/contributing/roadmap.md).
 
 ## Where things are
 
-| You are looking for | It is in |
-|---|---|
-| PLC example projects to open in Studio | [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) |
-| VM assembly fixtures used by the C tests | [`examples/`](examples/README.md) |
-| Language conformance programs | [`conformance/`](conformance/) |
-| The documentation site, English and Spanish | `docs/docs/` and `docs/i18n/es/` |
-| Versioning rules | [VERSIONING.md](VERSIONING.md) |
-| What changed | [CHANGELOG.md](CHANGELOG.md) |
+| You are looking for                         | It is in                                                     |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| PLC example projects to open in Studio      | [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) |
+| VM assembly fixtures used by the C tests    | [`examples/`](examples/README.md)                            |
+| Language conformance programs               | [`conformance/`](conformance/)                               |
+| The documentation site, English and Spanish | `docs/docs/` and `docs/i18n/es/`                             |
+| Versioning rules                            | [VERSIONING.md](VERSIONING.md)                               |
+| What changed                                | [CHANGELOG.md](CHANGELOG.md)                                 |

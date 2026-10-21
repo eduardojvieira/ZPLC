@@ -6,7 +6,7 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "DINT", "value": 0},
-    {"at": "%QX4.0", "type": "BOOL", "value": true}
+    { "at": "%QD0", "type": "DINT", "value": 0 },
+    { "at": "%QX4.0", "type": "BOOL", "value": true }
   ]
 }

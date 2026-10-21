@@ -2,10 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  getDebugCapabilitiesForAdapter,
-  getDebugFeatureActionability,
-} from './debugCapabilityActions';
+import { getDebugCapabilitiesForAdapter, getDebugFeatureActionability } from './debugCapabilityActions';
 import { resolveExecutionLocation } from './debugExecutionLocation';
 import { DEBUG_CAPABILITY_STATUS } from '../runtime/debugCapabilities';
 import type { DebugMap } from '../compiler';
@@ -66,7 +63,15 @@ describe('resolveExecutionLocation', () => {
   it('prefers the range that starts at the program counter', () => {
     const map: DebugMap = {
       ...DEBUG_MAP,
-      pou: { Main: { ...DEBUG_MAP.pou.Main!, sourceMap: [{ pc: 16, line: 4, length: 8 }, { pc: 20, line: 5, length: 2 }] } },
+      pou: {
+        Main: {
+          ...DEBUG_MAP.pou.Main!,
+          sourceMap: [
+            { pc: 16, line: 4, length: 8 },
+            { pc: 20, line: 5, length: 2 },
+          ],
+        },
+      },
     };
     expect(resolveExecutionLocation(map, 20).line).toBe(5);
     expect(resolveExecutionLocation(map, 21).line).toBe(4);
@@ -148,7 +153,10 @@ describe('getDebugCapabilitiesForAdapter', () => {
 describe('native simulation input controller boundary', () => {
   it('uses the native staged input contract, refreshes status, and never writes memory', () => {
     const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
-    const action = source.slice(source.indexOf('const setSimulationInput ='), source.indexOf('// =========================================================================\n  // Polling for Live Values'));
+    const action = source.slice(
+      source.indexOf('const setSimulationInput ='),
+      source.indexOf('// =========================================================================\n  // Polling for Live Values'),
+    );
 
     expect(action).toContain('owner instanceof NativeAdapter');
     expect(action).toContain('await owner.setSimulationInput(inputId, active);');
@@ -215,7 +223,9 @@ describe('breakpoint teardown boundary', () => {
     expect(source).not.toContain('.setBreakpoint(');
     expect(source).not.toContain('.clearBreakpoints(');
     // program.load and execution.reset empty the runtime table, so both must invalidate what the syncer knows.
-    expect(source.slice(source.indexOf('const loadProgram ='), source.indexOf('const start ='))).toContain('breakpointSyncer.invalidate();');
+    expect(source.slice(source.indexOf('const loadProgram ='), source.indexOf('const start ='))).toContain(
+      'breakpointSyncer.invalidate();',
+    );
     expect(source.slice(source.indexOf('const reset ='), source.indexOf('// Memory Access'))).toContain('breakpointSyncer.invalidate();');
   });
 });
@@ -268,8 +278,6 @@ describe('getDebugFeatureActionability', () => {
     );
 
     expect(result.allowed).toBe(true);
-    expect(result.message).toBe(
-      'Step is degraded: single-cycle stepping only. Use hardware session for task-aware stepping',
-    );
+    expect(result.message).toBe('Step is degraded: single-cycle stepping only. Use hardware session for task-aware stepping');
   });
 });

@@ -21,13 +21,13 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    }                                                         \
   } while (0)
 
 /* What a decoder delivered, as the names of the vector frames, to compare with the expected list. */
@@ -44,9 +44,8 @@ static void on_frame(void *context, const zplc_proto_frame_t *frame) {
   for (i = 0U; i < ZPLC_PROTO_VECTOR_FRAME_COUNT; i++) {
     const zplc_proto_vector_frame_t *vf = &zplc_proto_vector_frames[i];
 
-    if (vf->kind == frame->kind && vf->message == frame->message && vf->sequence == frame->sequence &&
-        vf->auth == frame->authenticated && vf->payload_len == frame->length &&
-        memcmp(vf->payload, frame->payload, frame->length) == 0) {
+    if (vf->kind == frame->kind && vf->message == frame->message && vf->sequence == frame->sequence && vf->auth == frame->authenticated &&
+        vf->payload_len == frame->length && memcmp(vf->payload, frame->payload, frame->length) == 0) {
       if (delivered->names[0] != '\0') {
         (void)strncat(delivered->names, " ", sizeof(delivered->names) - strlen(delivered->names) - 1U);
       }
@@ -73,19 +72,15 @@ static void test_every_frame_is_encoded_to_the_generated_bytes(void) {
     size_t total;
 
     CHECK(zplc_proto_parse(vf->wire, vf->wire_len, ZPLC_PROTO_VECTOR_PAYLOAD_MAX, &frame) == 0, vf->name);
-    CHECK(frame.kind == vf->kind && frame.message == vf->message && frame.sequence == vf->sequence &&
-              frame.authenticated == vf->auth && frame.length == vf->payload_len &&
-              memcmp(frame.payload, vf->payload, vf->payload_len) == 0,
+    CHECK(frame.kind == vf->kind && frame.message == vf->message && frame.sequence == vf->sequence && frame.authenticated == vf->auth &&
+              frame.length == vf->payload_len && memcmp(frame.payload, vf->payload, vf->payload_len) == 0,
           "a parsed frame has the fields of the vector");
-    used = zplc_proto_begin(out, sizeof(out), vf->kind, vf->message, vf->sequence, vf->payload,
-                            (uint16_t)vf->payload_len, vf->auth);
+    used = zplc_proto_begin(out, sizeof(out), vf->kind, vf->message, vf->sequence, vf->payload, (uint16_t)vf->payload_len, vf->auth);
     CHECK(used == (size_t)ZPLC_PROTO_HEADER_BYTES + vf->payload_len, "the header and the payload are written");
     total = zplc_proto_finish(out, used, frame.mac);
-    CHECK(total == vf->wire_len && memcmp(out, vf->wire, total) == 0,
-          "the encoder writes the bytes of the generated frame");
+    CHECK(total == vf->wire_len && memcmp(out, vf->wire, total) == 0, "the encoder writes the bytes of the generated frame");
     if (vf->auth == 0U) {
-      total = zplc_proto_encode(out, sizeof(out), vf->kind, vf->message, vf->sequence, vf->payload,
-                                (uint16_t)vf->payload_len);
+      total = zplc_proto_encode(out, sizeof(out), vf->kind, vf->message, vf->sequence, vf->payload, (uint16_t)vf->payload_len);
       CHECK(total == vf->wire_len && memcmp(out, vf->wire, total) == 0, "zplc_proto_encode agrees");
     }
   }
@@ -109,8 +104,7 @@ static void test_streams_give_the_generated_result(void) {
       CHECK(strcmp(delivered.names, vs->delivered) == 0, vs->name);
     }
     CHECK(decoder.stats.crc_errors == vs->crc_errors && decoder.stats.version_errors == vs->version_errors &&
-              decoder.stats.malformed == vs->malformed && decoder.stats.oversize == vs->oversize &&
-              decoder.stats.resyncs == vs->resyncs,
+              decoder.stats.malformed == vs->malformed && decoder.stats.oversize == vs->oversize && decoder.stats.resyncs == vs->resyncs,
           "the counters of the stream are the generated ones");
 
     /* one byte at a time */
@@ -121,8 +115,7 @@ static void test_streams_give_the_generated_result(void) {
     }
     CHECK(strcmp(delivered.names, vs->delivered) == 0 || strncmp(vs->delivered, "stream:", 7) == 0,
           "one byte at a time gives the same frames");
-    CHECK(decoder.stats.crc_errors == vs->crc_errors && decoder.stats.resyncs == vs->resyncs,
-          "and the same counters");
+    CHECK(decoder.stats.crc_errors == vs->crc_errors && decoder.stats.resyncs == vs->resyncs, "and the same counters");
   }
 }
 
@@ -132,10 +125,8 @@ static void test_parse_names_why_a_buffer_is_not_a_frame(void) {
   zplc_proto_frame_t frame;
 
   memcpy(copy, vf->wire, vf->wire_len);
-  CHECK(zplc_proto_parse(copy, vf->wire_len - 1U, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_SHORT,
-        "a truncated frame is short");
-  CHECK(zplc_proto_parse(copy, 3U, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_SHORT,
-        "so is the start of one");
+  CHECK(zplc_proto_parse(copy, vf->wire_len - 1U, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_SHORT, "a truncated frame is short");
+  CHECK(zplc_proto_parse(copy, 3U, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_SHORT, "so is the start of one");
   copy[vf->wire_len] = 0U;
   CHECK(zplc_proto_parse(copy, vf->wire_len + 1U, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_LENGTH,
         "a byte more than the frame is refused");
@@ -143,37 +134,28 @@ static void test_parse_names_why_a_buffer_is_not_a_frame(void) {
   CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_SYNC, "bad sync");
   copy[0] ^= 0xFFU;
   copy[ZPLC_PROTO_OFFSET_VERSION] = 2U;
-  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_VERSION,
-        "another version");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_VERSION, "another version");
   copy[ZPLC_PROTO_OFFSET_VERSION] = (uint8_t)ZPLC_PROTO_VERSION;
   copy[ZPLC_PROTO_OFFSET_FLAGS] |= 0x08U;
-  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_MALFORMED,
-        "a reserved flag bit");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_MALFORMED, "a reserved flag bit");
   copy[ZPLC_PROTO_OFFSET_FLAGS] = 0x03U;
-  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_MALFORMED,
-        "kind 3");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_MALFORMED, "kind 3");
   memcpy(copy, vf->wire, vf->wire_len);
-  CHECK(zplc_proto_parse(copy, vf->wire_len, 2U, &frame) == ZPLC_PROTO_PARSE_OVERSIZE,
-        "a payload above the limit of the link");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, 2U, &frame) == ZPLC_PROTO_PARSE_OVERSIZE, "a payload above the limit of the link");
   copy[vf->wire_len - 1U] ^= 0x01U;
-  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_CRC,
-        "a flipped bit of the checksum");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_CRC, "a flipped bit of the checksum");
   memcpy(copy, vf->wire, vf->wire_len);
   copy[ZPLC_PROTO_HEADER_BYTES] ^= 0x01U;
-  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_CRC,
-        "a flipped bit of the payload");
+  CHECK(zplc_proto_parse(copy, vf->wire_len, ZPLC_PROTO_PAYLOAD_MAX, &frame) == ZPLC_PROTO_PARSE_CRC, "a flipped bit of the payload");
 }
 
 static void test_the_encoder_refuses_what_does_not_fit(void) {
   uint8_t out[ZPLC_PROTO_HEADER_BYTES + 4U];
   const uint8_t payload[8] = {1, 2, 3, 4, 5, 6, 7, 8};
 
-  CHECK(zplc_proto_encode(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 8U) == 0U,
-        "a buffer too small for the frame");
-  CHECK(zplc_proto_begin(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 0U, 1) == 0U,
-        "a buffer too small for the code");
-  CHECK(zplc_proto_encode(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 0U) ==
-            zplc_proto_frame_size(0U, 0),
+  CHECK(zplc_proto_encode(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 8U) == 0U, "a buffer too small for the frame");
+  CHECK(zplc_proto_begin(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 0U, 1) == 0U, "a buffer too small for the code");
+  CHECK(zplc_proto_encode(out, sizeof(out), ZPLC_PROTO_KIND_REQUEST, 1U, 1U, payload, 0U) == zplc_proto_frame_size(0U, 0),
         "an empty payload fits");
 }
 
@@ -205,8 +187,7 @@ static void test_the_decoder_is_bounded_under_hostile_input(void) {
   CHECK(delivered.count == 0U, "random bytes are not frames");
   CHECK(decoder.fill < ZPLC_PROTO_FRAME_MAX, "the buffer of the decoder never overruns");
   zplc_proto_decoder_reset(&decoder);
-  zplc_proto_decoder_feed(&decoder, zplc_proto_vector_frames[0].wire, zplc_proto_vector_frames[0].wire_len, on_frame,
-                          &delivered);
+  zplc_proto_decoder_feed(&decoder, zplc_proto_vector_frames[0].wire, zplc_proto_vector_frames[0].wire_len, on_frame, &delivered);
   CHECK(delivered.count == 1U, "a frame is found after the garbage");
 }
 

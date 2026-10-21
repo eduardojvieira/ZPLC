@@ -50,8 +50,7 @@ function safeLabel(value: unknown): string | undefined {
 }
 
 function safeStatus(value: OperationalStatusInput['status']): OperationalStatusPresentation['status'] {
-  return typeof value?.text === 'string' && value.text.length <= 96 && SAFE_STATUS.test(value.text)
-    && TONES.has(value.tone)
+  return typeof value?.text === 'string' && value.text.length <= 96 && SAFE_STATUS.test(value.text) && TONES.has(value.tone)
     ? value
     : { text: 'Status unavailable', tone: 'neutral' };
 }
@@ -94,7 +93,11 @@ function reportedOverruns({ adapterType, connected, nativeTrace, controllerStatu
 /** The limits of the browser runtime, from the same profile its handshake reports, so that this text cannot claim more. */
 function browserRuntimeLimits(): string {
   const features = wasmCapabilityProfile().features;
-  const named = (status: string) => features.filter((feature) => feature.status === status).map((feature) => feature.name).join(', ');
+  const named = (status: string) =>
+    features
+      .filter((feature) => feature.status === status)
+      .map((feature) => feature.name)
+      .join(', ');
   return `Browser runtime. Not available: ${named('unavailable')}. Degraded: ${named('degraded')}. Timing follows the browser clock.`;
 }
 
@@ -112,39 +115,39 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
   const runtime = runtimeMismatch
     ? 'No compatible runtime session'
     : nativeConnected
-    ? 'Native POSIX'
-    : serialConnected
-      ? `Serial runtime${version ? ` · ${version}` : ''}`
-      : wasmConnected
-        ? 'WASM fallback · degraded'
-        : 'No runtime session';
-  const target = nativeConnected && mode === 'SIMULATION'
-    ? 'Local POSIX'
-    : reportedBoard
-      ? reportedBoard
-      : mode === 'HARDWARE' && configuredBoard
-        ? `${configuredBoard} (configured)`
-        : undefined;
+      ? 'Native POSIX'
+      : serialConnected
+        ? `Serial runtime${version ? ` · ${version}` : ''}`
+        : wasmConnected
+          ? 'WASM fallback · degraded'
+          : 'No runtime session';
+  const target =
+    nativeConnected && mode === 'SIMULATION'
+      ? 'Local POSIX'
+      : reportedBoard
+        ? reportedBoard
+        : mode === 'HARDWARE' && configuredBoard
+          ? `${configuredBoard} (configured)`
+          : undefined;
   const cycleCount = compatibleSession ? cycles(input.vmInfo) : undefined;
   const overruns = compatibleSession ? reportedOverruns(input) : undefined;
   const forceCount = safeNonnegativeInteger(input.forcedValuesCount);
-  const force = input.forcesUnconfirmed === true
-    || (forceCount !== undefined && forceCount > 0 && !compatibleSession)
-    || (forceCount !== undefined && forceCount > 8)
-    ? { kind: 'unconfirmed' as const, text: 'Force state unconfirmed — verify and reconnect before operating.' }
-    : (() => {
-        return forceCount && forceCount <= 8
-          ? { kind: 'active' as const, text: `${forceCount} active force${forceCount === 1 ? '' : 's'}` }
-          : undefined;
-      })();
+  const force =
+    input.forcesUnconfirmed === true ||
+    (forceCount !== undefined && forceCount > 0 && !compatibleSession) ||
+    (forceCount !== undefined && forceCount > 8)
+      ? { kind: 'unconfirmed' as const, text: 'Force state unconfirmed — verify and reconnect before operating.' }
+      : (() => {
+          return forceCount && forceCount <= 8
+            ? { kind: 'active' as const, text: `${forceCount} active force${forceCount === 1 ? '' : 's'}` }
+            : undefined;
+        })();
 
   return {
     mode,
     runtime,
     ...(target ? { target } : {}),
-    status: runtimeMismatch
-      ? { text: 'Runtime mode mismatch · reconnect required', tone: 'danger' }
-      : safeStatus(input.status),
+    status: runtimeMismatch ? { text: 'Runtime mode mismatch · reconnect required', tone: 'danger' } : safeStatus(input.status),
     ...(cycleCount !== undefined ? { cycles: cycleCount } : {}),
     ...taskMetrics(input.projectTasks),
     ...(overruns !== undefined ? { overruns } : {}),

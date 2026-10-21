@@ -23,7 +23,11 @@ const BOARD_WORDS: Record<string, RegExp> = {
   nucleo_h743zi: /nucleo|h743/i,
 };
 
-interface IoRow { name: string; address: string; description?: string }
+interface IoRow {
+  name: string;
+  address: string;
+  description?: string;
+}
 interface Manifest {
   name?: string;
   description?: string;
@@ -42,10 +46,20 @@ async function problemsOf(directory: string, name: string): Promise<string[]> {
     return problems;
   }
 
-  const text = [name, manifest.name ?? '', manifest.description ?? '',
-    ...[...(manifest.io?.inputs ?? []), ...(manifest.io?.outputs ?? []), ...(manifest.io?.analog?.adc ?? []), ...(manifest.io?.analog?.dac ?? [])]
-      .map((row) => row.description ?? '')].join('\n');
-  const mentioned = Object.entries(BOARD_WORDS).filter(([, pattern]) => pattern.test(text)).map(([id]) => id);
+  const text = [
+    name,
+    manifest.name ?? '',
+    manifest.description ?? '',
+    ...[
+      ...(manifest.io?.inputs ?? []),
+      ...(manifest.io?.outputs ?? []),
+      ...(manifest.io?.analog?.adc ?? []),
+      ...(manifest.io?.analog?.dac ?? []),
+    ].map((row) => row.description ?? ''),
+  ].join('\n');
+  const mentioned = Object.entries(BOARD_WORDS)
+    .filter(([, pattern]) => pattern.test(text))
+    .map(([id]) => id);
   if (mentioned.length > 0 && (mentioned.length !== 1 || mentioned[0] !== board)) {
     problems.push(`${name}: its name or text states ${mentioned.join(', ')} but it targets ${board}`);
   }
@@ -78,7 +92,10 @@ async function problemsOf(directory: string, name: string): Promise<string[]> {
 
 describe('example projects (IO-017)', () => {
   test('every bundled example targets its board, uses channels the board has, and builds', async () => {
-    const names = (await readdir(PROJECTS, { withFileTypes: true })).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+    const names = (await readdir(PROJECTS, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
     expect(names.length).toBeGreaterThan(20);
     const problems: string[] = [];
     for (const name of names) problems.push(...(await problemsOf(join(PROJECTS, name), name)));
@@ -95,7 +112,9 @@ describe('example projects (IO-017)', () => {
       await writeFile(path, JSON.stringify(manifest));
       const problems = await problemsOf(directory, 'pico_blinky');
       expect(problems.join('\n')).toContain('states rpi_pico but it targets esp32s3_devkitc');
-    } finally { await rm(directory, { recursive: true, force: true }); }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 
   test('the check finds an example whose I/O is not on the board', async () => {
@@ -108,6 +127,8 @@ describe('example projects (IO-017)', () => {
       await writeFile(path, JSON.stringify(manifest));
       const problems = await problemsOf(directory, 'pico_blinky');
       expect(problems.join('\n')).toContain('has no output channel at %QX0.7');
-    } finally { await rm(directory, { recursive: true, force: true }); }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 });

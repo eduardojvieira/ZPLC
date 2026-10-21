@@ -20,7 +20,8 @@ export function searchConfigProblems(config: Record<string, unknown>): string[] 
   const options = (Array.isArray(entry) ? entry[1] : {}) as { language?: string[] };
   for (const locale of ['en', 'es']) if (!options.language?.includes(locale)) found.push(`the search theme does not index "${locale}"`);
   const themeConfig = (config.themeConfig ?? {}) as Record<string, unknown>;
-  if (themeConfig.algolia !== undefined) found.push('themeConfig.algolia is set: the search must stay local, a hosted search sends the queries to a service');
+  if (themeConfig.algolia !== undefined)
+    found.push('themeConfig.algolia is set: the search must stay local, a hosted search sends the queries to a service');
   return found;
 }
 
@@ -29,7 +30,10 @@ export function searchBuildProblems(buildDir: string, locales: string[]): string
   for (const locale of locales) {
     const dir = locale === DEFAULT_LOCALE ? buildDir : join(buildDir, locale);
     const file = existsSync(dir) ? readdirSync(dir).find((name) => /^search-index(?:-[0-9a-f]+)?\.json$/.test(name)) : undefined;
-    if (file === undefined) { found.push(`${locale}: no search index in ${dir}`); continue; }
+    if (file === undefined) {
+      found.push(`${locale}: no search index in ${dir}`);
+      continue;
+    }
     const parts = JSON.parse(readFileSync(join(dir, file), 'utf8')) as { documents?: unknown[] }[];
     if (!parts.some((part) => (part.documents?.length ?? 0) > 0)) found.push(`${locale}: the search index has no document (${file})`);
   }
@@ -37,7 +41,7 @@ export function searchBuildProblems(buildDir: string, locales: string[]): string
 }
 
 if (import.meta.main) {
-  const { default: config } = await import(join(ROOT, 'docs/docusaurus.config.js')) as { default: Record<string, unknown> };
+  const { default: config } = (await import(join(ROOT, 'docs/docusaurus.config.js'))) as { default: Record<string, unknown> };
   const found = [...searchConfigProblems(config), ...searchBuildProblems(BUILD, ['en', 'es'])];
   if (found.length > 0) {
     console.error(found.map((message) => `docs search: ${message}`).join('\n'));

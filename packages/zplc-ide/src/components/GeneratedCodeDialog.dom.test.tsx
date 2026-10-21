@@ -8,7 +8,9 @@ const CODE = 'PROGRAM Main\nVAR x : INT; END_VAR\nx := 1;\nEND_PROGRAM';
 
 describe('Generated code and assembly view (CMP-060) in a DOM', () => {
   it('renders nothing while closed', () => {
-    const { container } = dom.render(<GeneratedCodeDialog isOpen={false} onClose={() => undefined} sourceLanguage="FBD" generatedCode={CODE} />);
+    const { container } = dom.render(
+      <GeneratedCodeDialog isOpen={false} onClose={() => undefined} sourceLanguage="FBD" generatedCode={CODE} />,
+    );
     expect(container.textContent).toBe('');
     expect(dom.screen.queryByRole('dialog')).toBeNull();
   });
@@ -21,7 +23,9 @@ describe('Generated code and assembly view (CMP-060) in a DOM', () => {
   });
 
   it('the assembly view has its own title and no create-file action', () => {
-    dom.render(<GeneratedCodeDialog isOpen onClose={() => undefined} sourceLanguage="ASM" generatedCode="PUSH 1" onCreateFile={undefined} />);
+    dom.render(
+      <GeneratedCodeDialog isOpen onClose={() => undefined} sourceLanguage="ASM" generatedCode="PUSH 1" onCreateFile={undefined} />,
+    );
     expect(dom.screen.getByRole('dialog', { name: dom.t('workbench.generated.titleAssembly') })).toBeTruthy();
     expect(dom.screen.queryByRole('button', { name: dom.t('workbench.generated.createFile', { extension: '.asm' }) })).toBeNull();
   });
@@ -36,7 +40,9 @@ describe('Generated code and assembly view (CMP-060) in a DOM', () => {
   it('Create file hands the code over and closes', async () => {
     const onCreateFile = mock<(code: string) => unknown>(() => undefined);
     const onClose = mock(() => undefined);
-    const { user } = dom.render(<GeneratedCodeDialog isOpen onClose={onClose} sourceLanguage="LD" generatedCode={CODE} onCreateFile={onCreateFile} />);
+    const { user } = dom.render(
+      <GeneratedCodeDialog isOpen onClose={onClose} sourceLanguage="LD" generatedCode={CODE} onCreateFile={onCreateFile} />,
+    );
     await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.generated.createFile', { extension: '.st' }) }));
     expect(onCreateFile).toHaveBeenCalledWith(CODE);
     expect(onClose).toHaveBeenCalledTimes(1);

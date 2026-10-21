@@ -19,8 +19,12 @@ describe('the web build states what it lacks (REL-037)', () => {
   });
 
   test('REL-037: the list names the device link, the native simulation and the firmware builds, and the Spanish uses usted', () => {
-    expect(WEB_MISSING_FEATURES).toEqual(expect.arrayContaining(['deviceLink', 'nativeSimulation', 'firmwareBuilds', 'mcpCli', 'updateCheck', 'profileStore']));
-    const spanish = webMissingFeatures(translatorFor('es')).map((entry) => `${entry.title} ${entry.reason}`).join(' ');
+    expect(WEB_MISSING_FEATURES).toEqual(
+      expect.arrayContaining(['deviceLink', 'nativeSimulation', 'firmwareBuilds', 'mcpCli', 'updateCheck', 'profileStore']),
+    );
+    const spanish = webMissingFeatures(translatorFor('es'))
+      .map((entry) => `${entry.title} ${entry.reason}`)
+      .join(' ');
     expect(spanish).not.toMatch(/\b(usá|tenés|podés|elegí|vos)\b/i);
   });
 
@@ -46,11 +50,24 @@ describe('the web build states what it lacks (REL-037)', () => {
     const flags = globalThis as { __ZPLC_WEB_BUILD__?: boolean };
     const nav = globalThis as unknown as { navigator?: unknown };
     const original = nav.navigator;
-    afterEach(() => { delete flags.__ZPLC_WEB_BUILD__; Object.defineProperty(globalThis, 'navigator', { value: original, configurable: true }); });
+    afterEach(() => {
+      delete flags.__ZPLC_WEB_BUILD__;
+      Object.defineProperty(globalThis, 'navigator', { value: original, configurable: true });
+    });
 
     test('REL-037: the serial port chooser is never asked for in the web build, even when the browser has Web Serial', async () => {
       let asked = 0;
-      Object.defineProperty(globalThis, 'navigator', { value: { serial: { requestPort: async () => { asked += 1; return {}; } } }, configurable: true });
+      Object.defineProperty(globalThis, 'navigator', {
+        value: {
+          serial: {
+            requestPort: async () => {
+              asked += 1;
+              return {};
+            },
+          },
+        },
+        configurable: true,
+      });
       flags.__ZPLC_WEB_BUILD__ = true;
       expect(isWebBuild()).toBe(true);
       await expect(requestPort()).rejects.toThrow('desktop app');

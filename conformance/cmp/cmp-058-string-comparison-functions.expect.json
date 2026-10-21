@@ -6,16 +6,16 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QB0", "type": "SINT", "value": -1},
-    {"at": "%QB1", "type": "SINT", "value": 1},
-    {"at": "%QB2", "type": "SINT", "value": 0},
-    {"at": "%QB3", "type": "SINT", "value": -1},
-    {"at": "%QB4", "type": "SINT", "value": 0},
-    {"at": "%QX8.0", "type": "BOOL", "value": true},
-    {"at": "%QX8.1", "type": "BOOL", "value": false},
-    {"at": "%QX8.2", "type": "BOOL", "value": true},
-    {"at": "%QX8.3", "type": "BOOL", "value": true},
-    {"at": "%QX8.4", "type": "BOOL", "value": false},
-    {"at": "%QX8.5", "type": "BOOL", "value": true}
+    { "at": "%QB0", "type": "SINT", "value": -1 },
+    { "at": "%QB1", "type": "SINT", "value": 1 },
+    { "at": "%QB2", "type": "SINT", "value": 0 },
+    { "at": "%QB3", "type": "SINT", "value": -1 },
+    { "at": "%QB4", "type": "SINT", "value": 0 },
+    { "at": "%QX8.0", "type": "BOOL", "value": true },
+    { "at": "%QX8.1", "type": "BOOL", "value": false },
+    { "at": "%QX8.2", "type": "BOOL", "value": true },
+    { "at": "%QX8.3", "type": "BOOL", "value": true },
+    { "at": "%QX8.4", "type": "BOOL", "value": false },
+    { "at": "%QX8.5", "type": "BOOL", "value": true }
   ]
 }

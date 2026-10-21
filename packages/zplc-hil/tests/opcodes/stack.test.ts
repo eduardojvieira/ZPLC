@@ -20,9 +20,9 @@ export const stackTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"DUP",.*\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"DUP",.*\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.stack.swap',
@@ -44,10 +44,10 @@ export const stackTests: HILTestCase[] = [
     assertions: [
       // Swap is often used in expression evaluation
       {
-        type: 'no_error'
-      }
-    ]
-  }
+        type: 'no_error',
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: stack opcodes (HIL-001)', stackTests);

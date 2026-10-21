@@ -3,7 +3,7 @@ slug: /safety-and-limitations
 id: safety-and-limitations
 title: Safety and limitations
 sidebar_label: Safety and limitations
-description: "What ZPLC is not, where each part has been checked, and the hard limits of the current release."
+description: 'What ZPLC is not, where each part has been checked, and the hard limits of the current release.'
 tags: [safety, limits, evidence]
 ---
 
@@ -37,14 +37,14 @@ repeating it.
 A check at one level never proves a higher one. The names of the levels are the
 ones of [Hardware support](./reference/capabilities-evidence.md#the-levels).
 
-| Part | Checked on | Not checked |
-| --- | --- | --- |
-| Compiler and virtual machine | The host, with the address and undefined-behaviour sanitizers, by the conformance suite and the C suites | A board |
-| Scheduler, process image, retentive memory, communication handlers | `native_sim` and the QEMU Cortex-M3 and Cortex-M0 targets, which emulate a processor and no board | Timing, interrupts, drivers, flash behaviour and electrical state of a real board |
-| Firmware of each board | Built for the board and held to its flash and RAM budget | Booting, flashing, running a program, any output |
-| The ZPLC application and the simulator | The development host on Linux, by the end-to-end journeys; installers are launched on their own system in the release run | A physical board; a clean machine of each system, by a person (the recorded runs of `RELEASING.md` hold one first run of the installers simulated on Linux by owner decision, not on a real Mac or Windows machine; the rows of the real machines are empty) |
-| Modbus, MQTT, Sparkplug B and the cloud blocks | The handlers against stand-ins, the Modbus TCP client and the simulation runtime's MQTT client against servers written for the test on a loopback socket, hostile input through the product's own client, and the Modbus server framing and areas | A live broker, a cloud service or a device on a wire; the controller's MQTT client against a broker; Modbus RTU on a wire |
-| Outputs when the program pauses, stops or faults | The host and `native_sim`, which has a GPIO emulator | The physical level of a pin on a board |
+| Part                                                               | Checked on                                                                                                                                                                                                                                        | Not checked                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Compiler and virtual machine                                       | The host, with the address and undefined-behaviour sanitizers, by the conformance suite and the C suites                                                                                                                                          | A board                                                                                                                                                                                                                                                      |
+| Scheduler, process image, retentive memory, communication handlers | `native_sim` and the QEMU Cortex-M3 and Cortex-M0 targets, which emulate a processor and no board                                                                                                                                                 | Timing, interrupts, drivers, flash behaviour and electrical state of a real board                                                                                                                                                                            |
+| Firmware of each board                                             | Built for the board and held to its flash and RAM budget                                                                                                                                                                                          | Booting, flashing, running a program, any output                                                                                                                                                                                                             |
+| The ZPLC application and the simulator                             | The development host on Linux, by the end-to-end journeys; installers are launched on their own system in the release run                                                                                                                         | A physical board; a clean machine of each system, by a person (the recorded runs of `RELEASING.md` hold one first run of the installers simulated on Linux by owner decision, not on a real Mac or Windows machine; the rows of the real machines are empty) |
+| Modbus, MQTT, Sparkplug B and the cloud blocks                     | The handlers against stand-ins, the Modbus TCP client and the simulation runtime's MQTT client against servers written for the test on a loopback socket, hostile input through the product's own client, and the Modbus server framing and areas | A live broker, a cloud service or a device on a wire; the controller's MQTT client against a broker; Modbus RTU on a wire                                                                                                                                    |
+| Outputs when the program pauses, stops or faults                   | The host and `native_sim`, which has a GPIO emulator                                                                                                                                                                                              | The physical level of a pin on a board                                                                                                                                                                                                                       |
 
 The detail, with the commands that produce each result, is in
 [Firmware testing](./development/firmware-testing.md) and
@@ -55,15 +55,15 @@ The detail, with the commands that produce each result, is in
 These limits are in the release you have. They are read from the source, not
 estimated; each row names where the number comes from.
 
-| Limit | Value | Where it is defined |
-| --- | --- | --- |
-| Tasks in one program | 16 | The schema of [`zplc.json`](./reference/project-file.md) |
-| Interval of a task | 1 to 3 600 000 ms | [Scheduler](./runtime/scheduler.md) |
-| Kinds of task | Cyclic only: an event or interrupt task is a build error | [Scheduler](./runtime/scheduler.md) |
-| Size of a compiled program | 45 056 bytes in the native runtime and by default; each board sets its own | `CONFIG_ZPLC_CODE_SIZE_MAX` in the [Kconfig reference](./reference/kconfig.md) and the footprint table of [Supported boards](./reference/boards.md) |
-| Working and retentive memory | 8 192 and 4 096 bytes by default; each board sets its own | [Kconfig reference](./reference/kconfig.md) and the footprint table of [Supported boards](./reference/boards.md) |
-| Scenario | 256 events, 256 expectations, 64 signals, 10 000 samples | [Scenario file format](./reference/scenario-file.md) |
-| Retentive values | Lost when the program is rebuilt; not proven to survive a power cut on any board | [Persistence and retained memory](./runtime/persistence.md) |
+| Limit                        | Value                                                                            | Where it is defined                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tasks in one program         | 16                                                                               | The schema of [`zplc.json`](./reference/project-file.md)                                                                                            |
+| Interval of a task           | 1 to 3 600 000 ms                                                                | [Scheduler](./runtime/scheduler.md)                                                                                                                 |
+| Kinds of task                | Cyclic only: an event or interrupt task is a build error                         | [Scheduler](./runtime/scheduler.md)                                                                                                                 |
+| Size of a compiled program   | 45 056 bytes in the native runtime and by default; each board sets its own       | `CONFIG_ZPLC_CODE_SIZE_MAX` in the [Kconfig reference](./reference/kconfig.md) and the footprint table of [Supported boards](./reference/boards.md) |
+| Working and retentive memory | 8 192 and 4 096 bytes by default; each board sets its own                        | [Kconfig reference](./reference/kconfig.md) and the footprint table of [Supported boards](./reference/boards.md)                                    |
+| Scenario                     | 256 events, 256 expectations, 64 signals, 10 000 samples                         | [Scenario file format](./reference/scenario-file.md)                                                                                                |
+| Retentive values             | Lost when the program is rebuilt; not proven to survive a power cut on any board | [Persistence and retained memory](./runtime/persistence.md)                                                                                         |
 
 Language features that do not work yet are listed, with the cases that fail, in
 the [Structured Text page](./languages/st.md) and the

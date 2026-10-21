@@ -65,23 +65,23 @@ El compilador y la stdlib muestran uso de ST con:
 
 El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallas esperadas de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
 
-| Tipo | Bits | Rango | Se ordena como | Caso de conformidad |
-|---|---|---|---|---|
-| `BOOL` | 8 | `FALSE`, `TRUE` | sin orden | `harness/vf-001-bool-output-toggles` |
-| `SINT` | 8 | -128 a 127 | con signo | `cmp-011-sint-limits` |
-| `USINT` | 8 | 0 a 255 | sin signo | `cmp-012-usint-holds-0-to-255` |
-| `BYTE` | 8 | cadena de bits, 0 a 255 | sin signo | `cmp-014-not-byte` |
-| `INT` | 16 | -32768 a 32767 | con signo | `cmp-011-int-limits` |
-| `UINT` | 16 | 0 a 65535 | sin signo | `cmp-012-uint-65535` |
-| `WORD` | 16 | cadena de bits, 0 a 65535 | sin signo | `cmp-014-not-word` |
-| `DINT` | 32 | -2147483648 a 2147483647 | con signo | `cmp-011-dint-limits` |
-| `UDINT` | 32 | 0 a 4294967295 | sin signo | `cmp-012-udint-max` |
-| `DWORD` | 32 | cadena de bits, 0 a 4294967295 | sin signo | `cmp-014-not-dword` |
-| `LINT` | 64 | -9223372036854775808 a 9223372036854775807 | con signo | `cmp-015-lint-extreme-values` |
-| `ULINT` | 64 | 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
-| `LWORD` | 64 | cadena de bits, 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
-| `REAL` | 32 | IEEE 754 de precisión simple | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered` |
-| `LREAL` | 64 | IEEE 754 de precisión doble | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan` |
+| Tipo    | Bits | Rango                                      | Se ordena como            | Caso de conformidad                  |
+| ------- | ---- | ------------------------------------------ | ------------------------- | ------------------------------------ |
+| `BOOL`  | 8    | `FALSE`, `TRUE`                            | sin orden                 | `harness/vf-001-bool-output-toggles` |
+| `SINT`  | 8    | -128 a 127                                 | con signo                 | `cmp-011-sint-limits`                |
+| `USINT` | 8    | 0 a 255                                    | sin signo                 | `cmp-012-usint-holds-0-to-255`       |
+| `BYTE`  | 8    | cadena de bits, 0 a 255                    | sin signo                 | `cmp-014-not-byte`                   |
+| `INT`   | 16   | -32768 a 32767                             | con signo                 | `cmp-011-int-limits`                 |
+| `UINT`  | 16   | 0 a 65535                                  | sin signo                 | `cmp-012-uint-65535`                 |
+| `WORD`  | 16   | cadena de bits, 0 a 65535                  | sin signo                 | `cmp-014-not-word`                   |
+| `DINT`  | 32   | -2147483648 a 2147483647                   | con signo                 | `cmp-011-dint-limits`                |
+| `UDINT` | 32   | 0 a 4294967295                             | sin signo                 | `cmp-012-udint-max`                  |
+| `DWORD` | 32   | cadena de bits, 0 a 4294967295             | sin signo                 | `cmp-014-not-dword`                  |
+| `LINT`  | 64   | -9223372036854775808 a 9223372036854775807 | con signo                 | `cmp-015-lint-extreme-values`        |
+| `ULINT` | 64   | 0 a 18446744073709551615                   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `LWORD` | 64   | cadena de bits, 0 a 18446744073709551615   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `REAL`  | 32   | IEEE 754 de precisión simple               | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered`      |
+| `LREAL` | 64   | IEEE 754 de precisión doble                | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan`  |
 
 ### Aritmética, desbordamiento y división
 
@@ -118,30 +118,30 @@ El caso que figura junto a una fila o una regla es un programa de conformidad de
 
 `LINT`, `ULINT`, `LWORD` y `LREAL` ocupan dos celdas de la pila de evaluación, con la palabra baja más abajo. Cada operación de abajo es una instrucción de la VM (o una secuencia corta y fija), igual en toda plataforma: los opcodes de doble precisión se calculan con aritmética entera, así que un resultado es el mismo patrón de bits en un host de 64 bits, en uno de 32 bits y en un destino. Los resultados que define la VM están en la [ISA del runtime](../runtime/isa.md#valores-de-dos-palabras-enteros-de-64-bits-y-lreal).
 
-| Sobre `LINT`, `ULINT`, `LWORD` o `LREAL` | Resultado | Caso de conformidad |
-|---|---|---|
-| `+`, `-`, comparación, `AND`, `OR`, `XOR`, `NOT`, negación de los enteros | Funciona | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned` |
-| `*`, `/`, `MOD` de `LINT`, `ULINT` y `LWORD` | Funciona: los 64 bits bajos del producto; división que trunca, `MOD` con el signo del dividendo; sin signo para `ULINT` y `LWORD`; un divisor cero es una falla de la VM | `cmp-015-lint-multiplication-wraps-at-64-bits`, `cmp-015-lint-division-truncates-toward-zero`, `cmp-015-ulint-division-above-2-63` |
-| `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y negación de los enteros | Funciona con 64 bits | `cmp-015-lword-shifts-and-rotates-use-64-bits`, `cmp-015-lint-abs-and-negate` |
-| un contador de `FOR`, un selector de `CASE` con etiquetas y rangos de 64 bits | Funciona | `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-ulint-for-counter-up-to-the-top`, `cmp-015-lint-case-selector-and-labels`, `cmp-015-ulint-case-label-above-2-63` |
-| literales de todo el rango, en cualquier base, con tipo (`LINT#-9`) o sin él | Funciona | `cmp-015-lint-literals-over-the-full-range` |
-| `LREAL` `+`, `-`, `*`, `/`, negación, comparación | Funciona: IEEE 754 binary64, al par más cercano, el desbordamiento es un infinito, un NaN se propaga | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
-| literales `LREAL`, formas con exponente y valores iniciales | Funciona | `cmp-015-lreal-literals-with-exponent`, `cmp-015-lreal-double-precision` |
-| `LREAL` y `LINT` en arreglos, estructuras, parámetros y resultados de función, `RETAIN` | Funciona | `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`, `cmp-015-lreal-keeps-its-value-between-scans` |
-| `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND` | Funciona; exacto para un `LREAL` (`SQRT` está correctamente redondeada, 0.0 en 0.0 o menos) | `cmp-015-lreal-abs-sqrt-limit-select`, `cmp-015-lreal-trunc-and-round` |
-| `SIN`, `COS`, `TAN`, `EXP`, `LN`, `LOG`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `EXPT`, `**` de un `LREAL` | Funciona, en precisión simple: el argumento se redondea a `REAL`, la función calcula en `REAL` y el resultado se amplía de nuevo, así que tiene unas siete cifras significativas | `cmp-015-lreal-transcendental-functions-compute-in-real` |
-| funciones de conversión, y la conversión implícita de un entero o de un `REAL` a `LREAL` | Funciona | `cmp-015-lreal-conversion-functions`, `cmp-015-integer-width-conversion-functions`, `cmp-015-lreal-mixed-with-integers-and-real` |
+| Sobre `LINT`, `ULINT`, `LWORD` o `LREAL`                                                             | Resultado                                                                                                                                                                        | Caso de conformidad                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `+`, `-`, comparación, `AND`, `OR`, `XOR`, `NOT`, negación de los enteros                            | Funciona                                                                                                                                                                         | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned`                                                                         |
+| `*`, `/`, `MOD` de `LINT`, `ULINT` y `LWORD`                                                         | Funciona: los 64 bits bajos del producto; división que trunca, `MOD` con el signo del dividendo; sin signo para `ULINT` y `LWORD`; un divisor cero es una falla de la VM         | `cmp-015-lint-multiplication-wraps-at-64-bits`, `cmp-015-lint-division-truncates-toward-zero`, `cmp-015-ulint-division-above-2-63`                                              |
+| `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y negación de los enteros                                          | Funciona con 64 bits                                                                                                                                                             | `cmp-015-lword-shifts-and-rotates-use-64-bits`, `cmp-015-lint-abs-and-negate`                                                                                                   |
+| un contador de `FOR`, un selector de `CASE` con etiquetas y rangos de 64 bits                        | Funciona                                                                                                                                                                         | `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-ulint-for-counter-up-to-the-top`, `cmp-015-lint-case-selector-and-labels`, `cmp-015-ulint-case-label-above-2-63`           |
+| literales de todo el rango, en cualquier base, con tipo (`LINT#-9`) o sin él                         | Funciona                                                                                                                                                                         | `cmp-015-lint-literals-over-the-full-range`                                                                                                                                     |
+| `LREAL` `+`, `-`, `*`, `/`, negación, comparación                                                    | Funciona: IEEE 754 binary64, al par más cercano, el desbordamiento es un infinito, un NaN se propaga                                                                             | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
+| literales `LREAL`, formas con exponente y valores iniciales                                          | Funciona                                                                                                                                                                         | `cmp-015-lreal-literals-with-exponent`, `cmp-015-lreal-double-precision`                                                                                                        |
+| `LREAL` y `LINT` en arreglos, estructuras, parámetros y resultados de función, `RETAIN`              | Funciona                                                                                                                                                                         | `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`, `cmp-015-lreal-keeps-its-value-between-scans`                                                                          |
+| `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`                          | Funciona; exacto para un `LREAL` (`SQRT` está correctamente redondeada, 0.0 en 0.0 o menos)                                                                                      | `cmp-015-lreal-abs-sqrt-limit-select`, `cmp-015-lreal-trunc-and-round`                                                                                                          |
+| `SIN`, `COS`, `TAN`, `EXP`, `LN`, `LOG`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `EXPT`, `**` de un `LREAL` | Funciona, en precisión simple: el argumento se redondea a `REAL`, la función calcula en `REAL` y el resultado se amplía de nuevo, así que tiene unas siete cifras significativas | `cmp-015-lreal-transcendental-functions-compute-in-real`                                                                                                                        |
+| funciones de conversión, y la conversión implícita de un entero o de un `REAL` a `LREAL`             | Funciona                                                                                                                                                                         | `cmp-015-lreal-conversion-functions`, `cmp-015-integer-width-conversion-functions`, `cmp-015-lreal-mixed-with-integers-and-real`                                                |
 
 Lo que todavía se rechaza, con un mensaje que dice por qué: un argumento de 64 bits o `LREAL` en las funciones de cadena, en `AND_WORD` y sus parientes y en los bloques de comunicación; un valor de 64 bits como índice de arreglo (conviértalo con `LINT_TO_DINT`); un `LREAL` como contador de `FOR` o selector de `CASE`; `AND`, `OR`, `XOR`, `NOT` y `MOD` sobre un `LREAL`. `TRUNC` de un `LREAL` devuelve +0.0 cuando el resultado es cero (el signo de un cero no se conserva), y `ROUND` de un valor entre -0.5 y 0 es +0.0.
 
 ## Tipos de tiempo y fecha
 
-| Tipo | Ancho | Qué contiene | Literal |
-|---|---|---|---|
-| `TIME` | 32 bits, sin signo | Una duración en milisegundos, de 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
-| `DATE` | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas | `D#2024-01-01` |
-| `TOD` (`TIME_OF_DAY`) | 32 bits, sin signo | Milisegundos desde la medianoche | `TOD#12:30:00` |
-| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00 | `DT#2024-01-01-12:00:00` |
+| Tipo                   | Ancho              | Qué contiene                                                           | Literal                           |
+| ---------------------- | ------------------ | ---------------------------------------------------------------------- | --------------------------------- |
+| `TIME`                 | 32 bits, sin signo | Una duración en milisegundos, de 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
+| `DATE`                 | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas         | `D#2024-01-01`                    |
+| `TOD` (`TIME_OF_DAY`)  | 32 bits, sin signo | Milisegundos desde la medianoche                                       | `TOD#12:30:00`                    |
+| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00                                 | `DT#2024-01-01-12:00:00`          |
 
 ### TIME
 

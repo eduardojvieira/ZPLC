@@ -1,18 +1,10 @@
 {
   "requirement": "CMP-034",
   "title": "a function does not see the variables of a program",
-  "matrix": [
-    "pous.function"
-  ],
+  "matrix": ["pous.function"],
   "note": "IEC 61131-3: a function sees its own variables and the VAR_GLOBAL ones, not those of the program that calls it",
   "build": "fails",
-  "lines": [
-    3
-  ],
-  "codes": [
-    "UNKNOWN_IDENTIFIER"
-  ],
-  "messageIncludes": [
-    "hidden"
-  ]
+  "lines": [3],
+  "codes": ["UNKNOWN_IDENTIFIER"],
+  "messageIncludes": ["hidden"]
 }

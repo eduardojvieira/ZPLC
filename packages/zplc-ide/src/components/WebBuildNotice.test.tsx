@@ -5,7 +5,9 @@ import { WEB_MISSING_FEATURES } from '../platform/webCapabilities';
 import { WebBuildNotice, WebBuildNoticeView } from './WebBuildNotice';
 
 describe('the notice of the web build (REL-037)', () => {
-  afterEach(() => { delete (globalThis as { __ZPLC_WEB_BUILD__?: boolean }).__ZPLC_WEB_BUILD__; });
+  afterEach(() => {
+    delete (globalThis as { __ZPLC_WEB_BUILD__?: boolean }).__ZPLC_WEB_BUILD__;
+  });
 
   it('REL-037: lists every missing feature from the table and links to the install page', () => {
     const html = renderToStaticMarkup(<WebBuildNoticeView onDismiss={() => undefined} />);

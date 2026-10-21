@@ -27,7 +27,9 @@ describe('type-aware promise rules (VF-011)', () => {
   }, 30_000);
 
   test('a promise-returning function where a void callback is expected is an error', async () => {
-    const messages = await lint('async function load(): Promise<void> {}\nconst onClick: () => void = async () => { await load(); };\nvoid onClick;\n');
+    const messages = await lint(
+      'async function load(): Promise<void> {}\nconst onClick: () => void = async () => { await load(); };\nvoid onClick;\n',
+    );
     expect(messages).toEqual([{ rule: '@typescript-eslint/no-misused-promises', severity: 2, line: 2 }]);
   }, 30_000);
 

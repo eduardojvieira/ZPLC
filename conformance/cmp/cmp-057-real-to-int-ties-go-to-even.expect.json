@@ -7,14 +7,14 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 0},
-    {"at": "%QW1", "type": "INT", "value": 2},
-    {"at": "%QW2", "type": "INT", "value": 2},
-    {"at": "%QW3", "type": "INT", "value": 4},
-    {"at": "%QW4", "type": "INT", "value": 0},
-    {"at": "%QW5", "type": "INT", "value": -2},
-    {"at": "%QW6", "type": "INT", "value": -2},
-    {"at": "%QW7", "type": "INT", "value": 0},
-    {"at": "%QD4", "type": "DINT", "value": 8388608}
+    { "at": "%QW0", "type": "INT", "value": 0 },
+    { "at": "%QW1", "type": "INT", "value": 2 },
+    { "at": "%QW2", "type": "INT", "value": 2 },
+    { "at": "%QW3", "type": "INT", "value": 4 },
+    { "at": "%QW4", "type": "INT", "value": 0 },
+    { "at": "%QW5", "type": "INT", "value": -2 },
+    { "at": "%QW6", "type": "INT", "value": -2 },
+    { "at": "%QW7", "type": "INT", "value": 0 },
+    { "at": "%QD4", "type": "DINT", "value": 8388608 }
   ]
 }

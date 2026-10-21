@@ -89,7 +89,10 @@ export function checkChangelog({ text, tags, productVersion, untagged }: Changel
 }
 
 function main(argv: string[]): number {
-  if (!argv.includes('--check')) { console.error('usage: changelog.ts --check'); return 2; }
+  if (!argv.includes('--check')) {
+    console.error('usage: changelog.ts --check');
+    return 2;
+  }
   const root = resolve(import.meta.dir, '..', '..');
   const tags = spawnSync('git', ['tag', '--list', 'v*'], { cwd: root, encoding: 'utf8' }).stdout.split('\n').filter(Boolean);
   const problems = checkChangelog({
@@ -99,7 +102,14 @@ function main(argv: string[]): number {
     untagged: JSON.parse(readFileSync(join(root, 'scripts/release/changelog-untagged.json'), 'utf8')) as Record<string, string>,
   });
   for (const problem of problems) console.error(`changelog: ${problem}`);
-  if (problems.length === 0) console.log(`changelog: ${tags.length === 0 ? 'headings and order checked; this clone has no tags, so the tag rules were skipped' : `${tags.length} tags checked`}`);
+  if (problems.length === 0)
+    console.log(
+      `changelog: ${
+        tags.length === 0
+          ? 'headings and order checked; this clone has no tags, so the tag rules were ' + 'skipped'
+          : `${tags.length} tags checked`
+      }`,
+    );
   return problems.length === 0 ? 0 : 1;
 }
 

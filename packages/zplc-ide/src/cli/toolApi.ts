@@ -5,12 +5,31 @@ import { isAbsolute, join, win32 } from 'node:path';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { markProgramInputs } from './programInputs';
 import { collectUnboundedLoopDiagnostics, safetyDiagnostic } from './safetyDiagnostics';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo } from '../compiler';
+import {
+  CompilerError,
+  assertTaskProgramCardinality,
+  compileMultiTaskProject,
+  compilerErrorsOf,
+  parse,
+  selectWarnings,
+  transpileFailure,
+  transpileToST,
+  type CompilerWarning,
+  type DebugMap,
+  type DebugVarInfo,
+} from '../compiler';
 import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { elementAtLine } from '../models/sourceElements';
-import { compileScenario, findSignalVariable, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
+import {
+  compileScenario,
+  findSignalVariable,
+  runScenario,
+  type CompiledScenario,
+  type ScenarioKind,
+  type ScenarioRunResult,
+} from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 export * from './toolEvidence';
 export * from './toolApiToolchain';
@@ -40,7 +59,12 @@ export interface SafetyCheckSummary {
   uncovered: Array<{ outputs: [string, string] }>;
 }
 export type SafetyCheckResult = ToolResult<SafetyCheckSummary> | { ok: false; summary: SafetyCheckSummary; evidence: ToolEvidence };
-export type ProjectMigrationExportResult = ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }> & {
+export type ProjectMigrationExportResult = ToolResult<{
+  sourceSchemaVersion: 1 | 2;
+  targetSchemaVersion: 2;
+  changed: boolean;
+  changes: ProjectMigrationChange[];
+}> & {
   /** Internal CLI export payload; intentionally non-enumerable. */ manifest?: Uint8Array;
 };
 export type CompilerCompileResult = CompilerCheckResult & {
@@ -58,7 +82,11 @@ export interface TestSummary {
   mode: 'logical-cyclic-task-set-scan';
   scenarios: Array<{ id: string; path: string; passed: boolean; traceSha256: string; traceByteLength: number }>;
 }
-export interface SavedTestInputIdentity { schemaVersion: 1; sha256: string; fileCount: number; }
+export interface SavedTestInputIdentity {
+  schemaVersion: 1;
+  sha256: string;
+  fileCount: number;
+}
 export interface TestRunPreview {
   schemaVersion: 1;
   backend: 'native-posix';
@@ -66,9 +94,31 @@ export interface TestRunPreview {
   traceEvidenceSha256: string;
   totalScenarioCount: number;
   scenarios: Array<{
-    id: string; path: string; passed: boolean; totalSamples: number; totalSignals: number; totalAssertions: number; truncated: boolean;
+    id: string;
+    path: string;
+    passed: boolean;
+    totalSamples: number;
+    totalSignals: number;
+    totalAssertions: number;
+    truncated: boolean;
     assertions: Array<{ kind: ScenarioKind; passed: boolean; atMs?: number }>;
-    samples: Array<{ atMs: number; outputs: Record<string, boolean>; plant?: { kind: 'motor-v1'; atSpeedInput: boolean; speedPermilleAfterTick: number } | { kind: 'conveyor-v1'; seed: 0; partAtClassifierInput: boolean; metalDetectedInput: boolean; partAtDiverterInput: boolean; jamDetectedInput: boolean; classifiedCountAfterTick: number } | { kind: 'tank-v1'; levelLowInput: boolean; levelHighInput: boolean; levelPermilleAfterTick: number } | { kind: 'pedestrian-v1'; requestInput: boolean; phaseAfterTick: 'approaching' | 'waiting' | 'crossing' | 'cleared' } }>;
+    samples: Array<{
+      atMs: number;
+      outputs: Record<string, boolean>;
+      plant?:
+        | { kind: 'motor-v1'; atSpeedInput: boolean; speedPermilleAfterTick: number }
+        | {
+            kind: 'conveyor-v1';
+            seed: 0;
+            partAtClassifierInput: boolean;
+            metalDetectedInput: boolean;
+            partAtDiverterInput: boolean;
+            jamDetectedInput: boolean;
+            classifiedCountAfterTick: number;
+          }
+        | { kind: 'tank-v1'; levelLowInput: boolean; levelHighInput: boolean; levelPermilleAfterTick: number }
+        | { kind: 'pedestrian-v1'; requestInput: boolean; phaseAfterTick: 'approaching' | 'waiting' | 'crossing' | 'cleared' };
+    }>;
   }>;
 }
 export type TestRunResult = (
@@ -84,16 +134,24 @@ function programSources(workspace: WorkspaceProject): WorkspaceProject['sources'
 }
 function unresolvedPrograms(workspace: WorkspaceProject): ToolDiagnostic[] {
   const diagnostics: ToolDiagnostic[] = [];
-  workspace.project.tasks.forEach((task, taskIndex) => task.programs.forEach((program, programIndex) => {
-    if (!resolveProgramSource(program, programSources(workspace))) diagnostics.push({ code: 'PROGRAM_NOT_FOUND', message: 'Task program could not be resolved from src', path: `tasks[${taskIndex}].programs[${programIndex}]` });
-  }));
+  workspace.project.tasks.forEach((task, taskIndex) =>
+    task.programs.forEach((program, programIndex) => {
+      if (!resolveProgramSource(program, programSources(workspace)))
+        diagnostics.push({
+          code: 'PROGRAM_NOT_FOUND',
+          message: 'Task program could not be resolved from src',
+          path: `tasks[${taskIndex}].programs[${programIndex}]`,
+        });
+    }),
+  );
   return diagnostics;
 }
 function compilationSources(workspace: WorkspaceProject) {
   const sourceByProgram = new Map<string, ReturnType<typeof resolveProgramSource>>();
-  for (const task of workspace.project.tasks) for (const program of task.programs) {
-    if (!sourceByProgram.has(program)) sourceByProgram.set(program, resolveProgramSource(program, programSources(workspace)));
-  }
+  for (const task of workspace.project.tasks)
+    for (const program of task.programs) {
+      if (!sourceByProgram.has(program)) sourceByProgram.set(program, resolveProgramSource(program, programSources(workspace)));
+    }
   const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
   // A resolved source always comes from workspace.sources, so its sourceRef is a workspace path that has bytes.
   const programs = [...sourceByProgram].flatMap(([name, source]) => {
@@ -106,24 +164,40 @@ function compilationSources(workspace: WorkspaceProject) {
   const run = new Set(programs.map((source) => source.sourceRef));
   const libraries = workspace.sources
     .filter((source) => source.language === 'ST' && !run.has(source.path))
-    .map((source) => ({ name: source.path, content: source.content, language: source.language, sourceRef: source.path, bytes: source.bytes, ...(source.library === undefined ? {} : { library: source.library }) }));
+    .map((source) => ({
+      name: source.path,
+      content: source.content,
+      language: source.language,
+      sourceRef: source.path,
+      bytes: source.bytes,
+      ...(source.library === undefined ? {} : { library: source.library }),
+    }));
   return [...programs, ...libraries];
 }
-function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ sourceRef: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
+function createSavedTestInputIdentity(
+  workspace: WorkspaceProject,
+  sources: Array<{ sourceRef: string; bytes: Uint8Array }>,
+  scenarios: WorkspaceScenario[],
+): SavedTestInputIdentity {
   const inputs = [
     { path: 'zplc.json', bytes: workspace.manifestBytes },
     ...[...new Map(sources.map((source) => [source.sourceRef, { path: source.sourceRef, bytes: source.bytes }])).values()],
     ...scenarios,
-  ].map(({ path, bytes }) => ({ path, sha256: createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.byteLength }))
-    .sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+  ]
+    .map(({ path, bytes }) => ({ path, sha256: createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.byteLength }))
+    .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
   return {
     schemaVersion: 1,
-    sha256: createHash('sha256').update(JSON.stringify({ schemaVersion: 1, inputs })).digest('hex'),
+    sha256: createHash('sha256')
+      .update(JSON.stringify({ schemaVersion: 1, inputs }))
+      .digest('hex'),
     fileCount: inputs.length,
   };
 }
 type TestOperation = 'test' | 'scenario-run';
-function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
+function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult {
+  return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) };
+}
 function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
   return {
     code: error.code,
@@ -166,45 +240,120 @@ function selectIndexes(length: number, cap: number, required: number[] = []): nu
   return [...selected].sort((left, right) => left - right);
 }
 
-function previewScenario(scenario: { id: string; path: string; passed: boolean; trace: ScenarioRunResult['trace']; assertions: ScenarioRunResult['assertions'] }) {
+function previewScenario(scenario: {
+  id: string;
+  path: string;
+  passed: boolean;
+  trace: ScenarioRunResult['trace'];
+  assertions: ScenarioRunResult['assertions'];
+}) {
   const signals = [...new Set(scenario.trace.flatMap((sample) => Object.keys(sample.outputs)))].sort();
   const selectedSignals = signals.slice(0, 8);
-  const assertionIndexes = selectIndexes(scenario.assertions.length, 32, scenario.assertions.flatMap((assertion, index) => assertion.passed ? [] : [index]));
-  const assertions = assertionIndexes.map((index) => scenario.assertions[index]!).map(({ kind, passed, atMs }) => ({ kind, passed, ...(atMs === undefined ? {} : { atMs }) }));
-  const failureTimes = scenario.assertions.flatMap((assertion) => !assertion.passed && assertion.atMs !== undefined ? [scenario.trace.findIndex((sample) => sample.atMs === assertion.atMs)] : []);
+  const assertionIndexes = selectIndexes(
+    scenario.assertions.length,
+    32,
+    scenario.assertions.flatMap((assertion, index) => (assertion.passed ? [] : [index])),
+  );
+  const assertions = assertionIndexes
+    .map((index) => scenario.assertions[index]!)
+    .map(({ kind, passed, atMs }) => ({ kind, passed, ...(atMs === undefined ? {} : { atMs }) }));
+  const failureTimes = scenario.assertions.flatMap((assertion) =>
+    !assertion.passed && assertion.atMs !== undefined ? [scenario.trace.findIndex((sample) => sample.atMs === assertion.atMs)] : [],
+  );
   const sampleIndexes = selectIndexes(scenario.trace.length, 24, failureTimes);
-  const samples = sampleIndexes.map((index) => scenario.trace[index]!).map((sample) => {
-    if (selectedSignals.some((signal) => typeof sample.outputs[signal] !== 'boolean')) throw new Error('Scenario trace is incomplete');
-    return {
-      atMs: sample.atMs,
-      outputs: Object.fromEntries(selectedSignals.map((signal) => [signal, sample.outputs[signal]!])),
-      ...(sample.plant ? { plant: sample.plant } : {}),
-    };
-  });
+  const samples = sampleIndexes
+    .map((index) => scenario.trace[index]!)
+    .map((sample) => {
+      if (selectedSignals.some((signal) => typeof sample.outputs[signal] !== 'boolean')) throw new Error('Scenario trace is incomplete');
+      return {
+        atMs: sample.atMs,
+        outputs: Object.fromEntries(selectedSignals.map((signal) => [signal, sample.outputs[signal]!])),
+        ...(sample.plant ? { plant: sample.plant } : {}),
+      };
+    });
   return {
-    id: scenario.id, path: scenario.path, passed: scenario.passed,
-    totalSamples: scenario.trace.length, totalSignals: signals.length, totalAssertions: scenario.assertions.length,
-    truncated: signals.length > selectedSignals.length || scenario.assertions.length > assertions.length || scenario.trace.length > samples.length,
-    assertions, samples,
+    id: scenario.id,
+    path: scenario.path,
+    passed: scenario.passed,
+    totalSamples: scenario.trace.length,
+    totalSignals: signals.length,
+    totalAssertions: scenario.assertions.length,
+    truncated:
+      signals.length > selectedSignals.length || scenario.assertions.length > assertions.length || scenario.trace.length > samples.length,
+    assertions,
+    samples,
   };
 }
 
-function testPreview(completed: Array<{ id: string; path: string; passed: boolean; trace: ScenarioRunResult['trace']; assertions: ScenarioRunResult['assertions'] }>, traceEvidenceSha256: string): TestRunPreview {
+function testPreview(
+  completed: Array<{
+    id: string;
+    path: string;
+    passed: boolean;
+    trace: ScenarioRunResult['trace'];
+    assertions: ScenarioRunResult['assertions'];
+  }>,
+  traceEvidenceSha256: string,
+): TestRunPreview {
   const selected = [...completed.filter((scenario) => !scenario.passed), ...completed.filter((scenario) => scenario.passed)].slice(0, 8);
   const scenarios = completed.filter((scenario) => selected.includes(scenario)).map(previewScenario);
-  return { schemaVersion: 1, backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', traceEvidenceSha256, totalScenarioCount: completed.length, scenarios };
+  return {
+    schemaVersion: 1,
+    backend: 'native-posix',
+    mode: 'logical-cyclic-task-set-scan',
+    traceEvidenceSha256,
+    totalScenarioCount: completed.length,
+    scenarios,
+  };
 }
 
-export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string; library?: string }>; target?: { board: string } }>> {
-  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('inspect', loaded.diagnostics);
+export async function projectInspect(root: string): Promise<
+  ToolResult<{
+    schemaVersion: 2;
+    sourceSchemaVersion: 1 | 2;
+    migrated: boolean;
+    name: string;
+    version: string;
+    taskCount: number;
+    sources: Array<{ name: string; language: string; library?: string }>;
+    target?: { board: string };
+  }>
+> {
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return failed('inspect', loaded.diagnostics);
   const { workspace } = loaded;
   const board = workspace.project.target?.board;
-  return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language, library }) => ({ name, language, ...(library === undefined ? {} : { library }) })), ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}) }, evidence: evidence('inspect', 'passed') };
+  return {
+    ok: true,
+    summary: {
+      schemaVersion: 2,
+      sourceSchemaVersion: workspace.sourceSchemaVersion,
+      migrated: workspace.migrated,
+      name: workspace.project.name,
+      version: workspace.project.version,
+      taskCount: workspace.project.tasks.length,
+      sources: workspace.sources.map(({ name, language, library }) => ({ name, language, ...(library === undefined ? {} : { library }) })),
+      ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}),
+    },
+    evidence: evidence('inspect', 'passed'),
+  };
 }
-export async function projectMigrationPreview(root: string): Promise<ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>> {
-  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('migrate-preview', loaded.diagnostics);
+export async function projectMigrationPreview(
+  root: string,
+): Promise<ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>> {
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return failed('migrate-preview', loaded.diagnostics);
   const { workspace } = loaded;
-  return { ok: true, summary: { sourceSchemaVersion: workspace.sourceSchemaVersion, targetSchemaVersion: 2, changed: workspace.migrated, changes: workspace.migrationChanges }, evidence: evidence('migrate-preview', 'passed') };
+  return {
+    ok: true,
+    summary: {
+      sourceSchemaVersion: workspace.sourceSchemaVersion,
+      targetSchemaVersion: 2,
+      changed: workspace.migrated,
+      changes: workspace.migrationChanges,
+    },
+    evidence: evidence('migrate-preview', 'passed'),
+  };
 }
 export async function projectMigrationExport(root: string): Promise<ProjectMigrationExportResult> {
   const loaded = await readWorkspace(root);
@@ -213,18 +362,32 @@ export async function projectMigrationExport(root: string): Promise<ProjectMigra
   const manifest = Buffer.from(`${JSON.stringify(workspace.project, null, 2)}\n`, 'utf8');
   const result: ProjectMigrationExportResult = {
     ok: true,
-    summary: { sourceSchemaVersion: workspace.sourceSchemaVersion, targetSchemaVersion: 2, changed: workspace.migrated, changes: workspace.migrationChanges },
+    summary: {
+      sourceSchemaVersion: workspace.sourceSchemaVersion,
+      targetSchemaVersion: 2,
+      changed: workspace.migrated,
+      changes: workspace.migrationChanges,
+    },
     evidence: evidence('migrate', 'passed', [], [artifactEvidence('project-manifest', manifest)]),
   };
   Object.defineProperty(result, 'manifest', { value: new Uint8Array(manifest), enumerable: false });
   return result;
 }
 export async function projectValidate(root: string): Promise<ToolResult<{ name: string; taskCount: number }>> {
-  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('validate', loaded.diagnostics);
-  try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed('validate', safeCompilerDiagnostics(error)); }
-  const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed('validate', diagnostics);
-  return { ok: true, summary: { name: loaded.workspace.project.name, taskCount: loaded.workspace.project.tasks.length }, evidence: evidence('validate', 'passed') };
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return failed('validate', loaded.diagnostics);
+  try {
+    assertTaskProgramCardinality(loaded.workspace.project);
+  } catch (error) {
+    return failed('validate', safeCompilerDiagnostics(error));
+  }
+  const diagnostics = unresolvedPrograms(loaded.workspace);
+  if (diagnostics.length) return failed('validate', diagnostics);
+  return {
+    ok: true,
+    summary: { name: loaded.workspace.project.name, taskCount: loaded.workspace.project.tasks.length },
+    evidence: evidence('validate', 'passed'),
+  };
 }
 type CompileOperation = 'check' | 'compile' | 'symbols-list';
 type CompileResult<Operation extends CompileOperation> = Operation extends 'symbols-list' ? SymbolsListResult : CompilerCompileResult;
@@ -232,70 +395,135 @@ type CompileResult<Operation extends CompileOperation> = Operation extends 'symb
 function symbolSummary(debugMap: DebugMap, workspace: WorkspaceProject): SymbolSummary {
   const sourceRefs = new Set(workspace.sources.map((source) => source.path));
   return {
-    symbols: Object.entries(debugMap.pou).flatMap(([pou, info]) => Object.entries(info.vars).map(([name, variable]) => ({
-      pou,
-      name,
-      type: variable.type,
-      region: variable.region,
-      address: variable.addr,
-      size: variable.size,
-      ...(info.sourceRef && sourceRefs.has(info.sourceRef) ? { sourceRef: info.sourceRef } : {}),
-      ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }),
-      ...(variable.declarationLine === undefined ? {} : { declarationLine: variable.declarationLine }),
-    }))).sort((left, right) => left.pou === right.pou ? (left.name < right.name ? -1 : left.name > right.name ? 1 : 0) : (left.pou < right.pou ? -1 : 1)),
+    symbols: Object.entries(debugMap.pou)
+      .flatMap(([pou, info]) =>
+        Object.entries(info.vars).map(([name, variable]) => ({
+          pou,
+          name,
+          type: variable.type,
+          region: variable.region,
+          address: variable.addr,
+          size: variable.size,
+          ...(info.sourceRef && sourceRefs.has(info.sourceRef) ? { sourceRef: info.sourceRef } : {}),
+          ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }),
+          ...(variable.declarationLine === undefined ? {} : { declarationLine: variable.declarationLine }),
+        })),
+      )
+      .sort((left, right) =>
+        left.pou === right.pou ? (left.name < right.name ? -1 : left.name > right.name ? 1 : 0) : left.pou < right.pou ? -1 : 1,
+      ),
   };
 }
 
 async function compile<Operation extends CompileOperation>(root: string, operation: Operation): Promise<CompileResult<Operation>> {
-  const loaded = await readWorkspace(root); if (!loaded.ok) return failed(operation, loaded.diagnostics) as CompileResult<Operation>;
-  try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>; }
-  const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return failed(operation, loaded.diagnostics) as CompileResult<Operation>;
+  try {
+    assertTaskProgramCardinality(loaded.workspace.project);
+  } catch (error) {
+    return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>;
+  }
+  const diagnostics = unresolvedPrograms(loaded.workspace);
+  if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
   try {
     const result = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
-    if (operation === 'symbols-list') return { ok: true, summary: symbolSummary(result.debugMap, loaded.workspace), evidence: evidence('symbols-list', 'passed') } as CompileResult<Operation>;
+    if (operation === 'symbols-list')
+      return {
+        ok: true,
+        summary: symbolSummary(result.debugMap, loaded.workspace),
+        evidence: evidence('symbols-list', 'passed'),
+      } as CompileResult<Operation>;
     const bytes = result.zplcFile;
     const artifact = artifactEvidence('zplc', bytes);
     // What the build accepted that the language reference does not define: it passed, and says so (CMP-031).
     // The files of the project folder that no build reads are reported with the rest (CMP-046).
     const options = buildOptionsOf(loaded.workspace.project);
-    const notCompiled = selectWarnings(loaded.workspace.unlistedSources.map((path): CompilerWarning => ({
-      code: 'SOURCE_NOT_COMPILED',
-      message: `'${path}' is not compiled: it is neither in src nor in a folder listed in libraries of zplc.json`,
-      line: 0, column: 0, sourceRef: path,
-    })), options.reportWarnings);
+    const notCompiled = selectWarnings(
+      loaded.workspace.unlistedSources.map((path): CompilerWarning => ({
+        code: 'SOURCE_NOT_COMPILED',
+        message: `'${path}' is not compiled: it is neither in src nor in a folder listed in libraries of zplc.json`,
+        line: 0,
+        column: 0,
+        sourceRef: path,
+      })),
+      options.reportWarnings,
+    );
     const warnings = [...notCompiled, ...result.warnings].map((warning) => compilerWarningDiagnostics([warning])[0]!);
-    const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]) };
+    const response: CompilerCompileResult = {
+      ok: true,
+      summary: {
+        name: loaded.workspace.project.name,
+        version: loaded.workspace.project.version,
+        taskCount: loaded.workspace.project.tasks.length,
+        codeSize: result.codeSize,
+        draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER,
+      },
+      evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]),
+    };
     if (operation === 'compile') {
       markProgramInputs(result.debugMap, compilationSources(loaded.workspace));
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
         zplcFile: { value: result.zplcFile, enumerable: false },
         bytecode: { value: result.bytecode, enumerable: false },
-        assembly: { value: result.programDetails.map((program) => `; === ${program.name} ===\n${program.assembly}`).join('\n\n'), enumerable: false },
+        assembly: {
+          value: result.programDetails.map((program) => `; === ${program.name} ===\n${program.assembly}`).join('\n\n'),
+          enumerable: false,
+        },
         debugMap: { value: result.debugMap, enumerable: false },
         writeDebugMap: { value: options.generateDebugInfo, enumerable: false },
       });
     }
     return response as CompileResult<Operation>;
-  } catch (error) { return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>; }
+  } catch (error) {
+    return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>;
+  }
 }
-export async function compilerCheck(root: string): Promise<CompilerCheckResult> { return compile(root, 'check'); }
-export function compilerCompile(root: string): Promise<CompilerCompileResult> { return compile(root, 'compile'); }
-export function symbolsList(root: string): Promise<SymbolsListResult> { return compile(root, 'symbols-list'); }
+export async function compilerCheck(root: string): Promise<CompilerCheckResult> {
+  return compile(root, 'check');
+}
+export function compilerCompile(root: string): Promise<CompilerCompileResult> {
+  return compile(root, 'compile');
+}
+export function symbolsList(root: string): Promise<SymbolsListResult> {
+  return compile(root, 'symbols-list');
+}
 
 type SafetyOutput = { signal: string; address: number; bitOffset: number };
-function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string { return `${output.address}:${output.bitOffset}`; }
+function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string {
+  return `${output.address}:${output.bitOffset}`;
+}
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   // a global that another file declares is the variable of every program (CMP-042)
   const variable: DebugVarInfo | undefined = findSignalVariable(debugMap, signal)?.variable;
   const bitOffset = variable?.bitOffset;
-  if (!variable || variable.type !== 'BOOL' || variable.region !== 'OPI' || !Number.isInteger(variable.addr) || bitOffset === undefined || !Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7 || !Number.isInteger(variable.size) || variable.size < 1) return undefined;
+  if (
+    !variable ||
+    variable.type !== 'BOOL' ||
+    variable.region !== 'OPI' ||
+    !Number.isInteger(variable.addr) ||
+    bitOffset === undefined ||
+    !Number.isInteger(bitOffset) ||
+    bitOffset < 0 ||
+    bitOffset > 7 ||
+    !Number.isInteger(variable.size) ||
+    variable.size < 1
+  )
+    return undefined;
   const { opiBase, opiSize } = debugMap.memoryLayout;
-  if (!Number.isInteger(opiBase) || !Number.isInteger(opiSize) || opiSize < 1 || variable.addr < opiBase || variable.addr + variable.size > opiBase + opiSize) return undefined;
+  if (
+    !Number.isInteger(opiBase) ||
+    !Number.isInteger(opiSize) ||
+    opiSize < 1 ||
+    variable.addr < opiBase ||
+    variable.addr + variable.size > opiBase + opiSize
+  )
+    return undefined;
   return { signal, address: variable.addr, bitOffset };
 }
-function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
+function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string {
+  return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000');
+}
 
 /**
  * Parses authored/transpiled ST before compiler-only communication-tag insertion so ST source
@@ -310,7 +538,10 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
     const path = source.sourceRef;
     if (!path || seenSourcePaths.has(path) || source.language === 'IL') continue;
     seenSourcePaths.add(path);
-    const transpiled = source.language === 'ST' ? { success: true, source: source.content, errors: [] as string[], line: undefined } : transpileToST(source.content, source.language);
+    const transpiled =
+      source.language === 'ST'
+        ? { success: true, source: source.content, errors: [] as string[], line: undefined }
+        : transpileToST(source.content, source.language);
     // The same message as Build gives for the same source (CMP-010): it names the element that cannot be translated
     if (!transpiled.success) throw transpileFailure(transpiled, path);
     let unit: ReturnType<typeof parse>;
@@ -332,46 +563,64 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
       for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics, elementOf);
     }
   }
-  return diagnostics.sort((left, right) => left.path === right.path
-    ? (left.line ?? 0) - (right.line ?? 0) || left.code.localeCompare(right.code)
-    : (left.path ?? '').localeCompare(right.path ?? ''));
+  return diagnostics.sort((left, right) =>
+    left.path === right.path
+      ? (left.line ?? 0) - (right.line ?? 0) || left.code.localeCompare(right.code)
+      : (left.path ?? '').localeCompare(right.path ?? ''),
+  );
 }
 
 /** Checks declared logical output interlocks against compiled scenario assertions; it never starts a runtime. */
 export async function safetyCheck(root: string): Promise<SafetyCheckResult> {
-  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('safety-check', loaded.diagnostics);
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return failed('safety-check', loaded.diagnostics);
   try {
     const loopDiagnostics = safetyLoopDiagnostics(loaded.workspace);
     if (loopDiagnostics.length) return failed('safety-check', loopDiagnostics);
-  } catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
+  } catch (error) {
+    return failed('safety-check', safeCompilerDiagnostics(error));
+  }
   const declarations = loaded.workspace.project.safety?.incompatibleOutputs;
   if (!declarations) {
     const summary: SafetyCheckSummary = { configured: false, declared: [], covered: [], uncovered: [] };
     return { ok: true, summary, evidence: evidence('safety-check', 'passed') };
   }
-  try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
-  const unresolved = unresolvedPrograms(loaded.workspace); if (unresolved.length) return failed('safety-check', unresolved);
+  try {
+    assertTaskProgramCardinality(loaded.workspace.project);
+  } catch (error) {
+    return failed('safety-check', safeCompilerDiagnostics(error));
+  }
+  const unresolved = unresolvedPrograms(loaded.workspace);
+  if (unresolved.length) return failed('safety-check', unresolved);
   let debugMap: DebugMap;
-  try { debugMap = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace)).debugMap; }
-  catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
+  try {
+    debugMap = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace)).debugMap;
+  } catch (error) {
+    return failed('safety-check', safeCompilerDiagnostics(error));
+  }
   const declared: Array<{ outputs: [string, string]; left: SafetyOutput; right: SafetyOutput }> = [];
   const pairs = new Set<string>();
   for (const outputs of declarations) {
     const [leftName, rightName] = outputs;
-    const left = safetyOutput(debugMap, leftName); const right = safetyOutput(debugMap, rightName);
-    if (!left || !right || safetyLocation(left) === safetyLocation(right)) return failed('safety-check', [safetyDiagnostic('SAFETY_OUTPUT_INVALID')]);
+    const left = safetyOutput(debugMap, leftName);
+    const right = safetyOutput(debugMap, rightName);
+    if (!left || !right || safetyLocation(left) === safetyLocation(right))
+      return failed('safety-check', [safetyDiagnostic('SAFETY_OUTPUT_INVALID')]);
     const key = safetyPairKey(left, right);
     if (pairs.has(key)) return failed('safety-check', [safetyDiagnostic('SAFETY_OUTPUT_DUPLICATE')]);
-    pairs.add(key); declared.push({ outputs: [leftName, rightName], left, right });
+    pairs.add(key);
+    declared.push({ outputs: [leftName, rightName], left, right });
   }
   const scenariosRead = await readWorkspaceScenarios(loaded.workspace.root);
   if (!scenariosRead.ok) return failed('safety-check', [safetyDiagnostic('SAFETY_SCENARIOS_UNAVAILABLE')]);
   const coveredKeys = new Set<string>();
   for (const source of scenariosRead.scenarios) {
     let scenario: CompiledScenario;
-    try { scenario = compileScenario(source.input, debugMap); }
-    catch { return failed('safety-check', [safetyDiagnostic('SAFETY_SCENARIO_INVALID', source.path)]); }
+    try {
+      scenario = compileScenario(source.input, debugMap);
+    } catch {
+      return failed('safety-check', [safetyDiagnostic('SAFETY_SCENARIO_INVALID', source.path)]);
+    }
     for (const assertion of scenario.expectations) {
       if (assertion.kind !== 'NEVER' || assertion.reads.length !== 2 || assertion.reads.some((read) => !read.value)) continue;
       coveredKeys.add(safetyPairKey(assertion.reads[0]!, assertion.reads[1]!));
@@ -406,14 +655,20 @@ export interface TestsRunOptions {
   now?: () => number;
 }
 
-export interface CandidateChangeSetEdit { path: string; content: string; }
+export interface CandidateChangeSetEdit {
+  path: string;
+  content: string;
+}
 export interface CandidateChangeSetChange {
   path: string;
   kind: 'modify';
   before: { sha256: string; byteLength: number };
   after: { sha256: string; byteLength: number };
 }
-type CandidateChangeSetDiagnostic = { code: 'CHANGESET_INVALID' | 'CHANGESET_BASE_INVALID' | 'CHANGESET_MATERIALIZATION_FAILED' | 'CHANGESET_CLEANUP_FAILED'; message: string };
+type CandidateChangeSetDiagnostic = {
+  code: 'CHANGESET_INVALID' | 'CHANGESET_BASE_INVALID' | 'CHANGESET_MATERIALIZATION_FAILED' | 'CHANGESET_CLEANUP_FAILED';
+  message: string;
+};
 export interface CandidateChangeSetResult {
   schemaVersion: 1;
   accepted: boolean;
@@ -424,9 +679,17 @@ export interface CandidateChangeSetResult {
   preview?: TestRunPreview;
   savedTestInputIdentity?: SavedTestInputIdentity;
 }
-interface CandidateSnapshot { workspace: WorkspaceProject; scenarios: WorkspaceScenario[]; identity: { sha256: string; fileCount: number }; }
+interface CandidateSnapshot {
+  workspace: WorkspaceProject;
+  scenarios: WorkspaceScenario[];
+  identity: { sha256: string; fileCount: number };
+}
 /** @internal Test-only seams. Neither root nor source text is returned to callers. */
-export const __changeSetTestHooks: { afterInitialSnapshot?: (root: string) => void | Promise<void>; afterMaterialize?: (root: string) => void | Promise<void>; afterCleanupAttempt?: (root: string) => void | Promise<void> } = {};
+export const __changeSetTestHooks: {
+  afterInitialSnapshot?: (root: string) => void | Promise<void>;
+  afterMaterialize?: (root: string) => void | Promise<void>;
+  afterCleanupAttempt?: (root: string) => void | Promise<void>;
+} = {};
 const CHANGESET_MANIFEST_MAX_BYTES = 128 * 1024;
 const CHANGESET_SOURCE_MAX_BYTES = 256 * 1024;
 const CHANGESET_PATH_MAX_LENGTH = 512;
@@ -456,8 +719,7 @@ export function createTestDeadline(options: TestsRunOptions): {
   if (options.signal?.aborted) {
     cause = 'cancelled';
     controller.abort();
-  }
-  else options.signal?.addEventListener('abort', cancel, { once: true });
+  } else options.signal?.addEventListener('abort', cancel, { once: true });
   const timer = delay <= 0 ? undefined : setTimeout(timeout, delay);
   timer?.unref?.();
   if (delay <= 0 && !cause) timeout();
@@ -467,7 +729,10 @@ export function createTestDeadline(options: TestsRunOptions): {
       if (!cause && now() >= cutoff) timeout();
       return cause;
     },
-    dispose: () => { if (timer) clearTimeout(timer); options.signal?.removeEventListener('abort', cancel); },
+    dispose: () => {
+      if (timer) clearTimeout(timer);
+      options.signal?.removeEventListener('abort', cancel);
+    },
   };
 }
 
@@ -486,7 +751,8 @@ function cyclicTaskStepMs(workspace: WorkspaceProject): number | undefined {
   let step = 0;
   for (const task of tasks) {
     const interval = task.interval_ms;
-    if (task.trigger !== 'cyclic' || task.programs.length !== 1 || !Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000) return undefined;
+    if (task.trigger !== 'cyclic' || task.programs.length !== 1 || !Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000)
+      return undefined;
     step = greatestCommonDivisor(step, interval!);
   }
   return step;
@@ -498,21 +764,53 @@ function traceBytes(trace: ScenarioRunResult['trace']): Uint8Array {
 
 function runtimeOperationCost(scenario: CompiledScenario): number {
   const samples = scenario.durationMs / scenario.tickMs + 1;
-  const outputs = new Set([...scenario.expectations.flatMap((expectation) => expectation.reads.map((read) => read.signal)), ...(scenario.plant?.kind === 'motor-v1' ? [scenario.plant.command.signal] : scenario.plant?.kind === 'conveyor-v1' ? [scenario.plant.beltCommand.signal, scenario.plant.diverterCommand.signal] : scenario.plant?.kind === 'tank-v1' ? [scenario.plant.pump.signal] : scenario.plant?.kind === 'pedestrian-v1' ? [scenario.plant.pedWalk.signal] : [])]);
+  const outputs = new Set([
+    ...scenario.expectations.flatMap((expectation) => expectation.reads.map((read) => read.signal)),
+    ...(scenario.plant?.kind === 'motor-v1'
+      ? [scenario.plant.command.signal]
+      : scenario.plant?.kind === 'conveyor-v1'
+        ? [scenario.plant.beltCommand.signal, scenario.plant.diverterCommand.signal]
+        : scenario.plant?.kind === 'tank-v1'
+          ? [scenario.plant.pump.signal]
+          : scenario.plant?.kind === 'pedestrian-v1'
+            ? [scenario.plant.pedWalk.signal]
+            : []),
+  ]);
   const writes = scenario.events.reduce((total, event) => total + event.writes.length, 0);
-  return 3 + samples + samples * outputs.size + 2 * writes + (scenario.plant?.kind === 'motor-v1' ? samples : scenario.plant?.kind === 'conveyor-v1' ? 4 * samples : scenario.plant?.kind === 'tank-v1' ? 2 * samples : scenario.plant?.kind === 'pedestrian-v1' ? samples : 0);
+  return (
+    3 +
+    samples +
+    samples * outputs.size +
+    2 * writes +
+    (scenario.plant?.kind === 'motor-v1'
+      ? samples
+      : scenario.plant?.kind === 'conveyor-v1'
+        ? 4 * samples
+        : scenario.plant?.kind === 'tank-v1'
+          ? 2 * samples
+          : scenario.plant?.kind === 'pedestrian-v1'
+            ? samples
+            : 0)
+  );
 }
 
-async function runWorkspaceScenarios(root: string, operation: TestOperation, scenarioId: string | undefined, options: TestsRunOptions): Promise<TestRunResult> {
+async function runWorkspaceScenarios(
+  root: string,
+  operation: TestOperation,
+  scenarioId: string | undefined,
+  options: TestsRunOptions,
+): Promise<TestRunResult> {
   const deadline = createTestDeadline(options);
   const interrupted = (artifacts: ToolArtifact[] = []): TestRunResult | undefined => {
     const kind = deadline.kind();
     return kind ? testAbort(operation, kind, artifacts) : undefined;
   };
   try {
-    const beforeLoad = interrupted(); if (beforeLoad) return beforeLoad;
+    const beforeLoad = interrupted();
+    if (beforeLoad) return beforeLoad;
     const loaded = await readWorkspace(root);
-    const afterLoad = interrupted(); if (afterLoad) return afterLoad;
+    const afterLoad = interrupted();
+    if (afterLoad) return afterLoad;
     if (!loaded.ok) {
       const loadingFailure = failed<TestSummary>(operation, loaded.diagnostics);
       return testFailed(operation, loadingFailure.evidence.diagnostics, loadingFailure.evidence.artifacts);
@@ -529,100 +827,139 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     if (unresolved.length) return testFailed(operation, unresolved);
 
     const scenariosRead = await readWorkspaceScenarios(workspace.root);
-    const afterScenariosRead = interrupted(); if (afterScenariosRead) return afterScenariosRead;
+    const afterScenariosRead = interrupted();
+    if (afterScenariosRead) return afterScenariosRead;
     if (!scenariosRead.ok) return testFailed(operation, scenariosRead.diagnostics);
 
-  const sources = compilationSources(workspace);
-  let compiled: ReturnType<typeof compileMultiTaskProject>;
-  try {
-    compiled = compileMultiTaskProject(workspace.project, sources);
-  } catch (error) {
-    const afterCompile = interrupted(); if (afterCompile) return afterCompile;
-    return testFailed(operation, safeCompilerDiagnostics(error));
-  }
-  const zplcArtifact = artifactEvidence('zplc', compiled.zplcFile);
-  if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
-  const scenarios: Array<{ id: string; path: string; compiled: CompiledScenario; source: WorkspaceScenario }> = [];
-  for (const source of scenariosRead.scenarios) {
-    if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
+    const sources = compilationSources(workspace);
+    let compiled: ReturnType<typeof compileMultiTaskProject>;
     try {
-      const scenario = compileScenario(source.input, compiled.debugMap);
-      scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
-    } catch {
-      return testFailed(operation, [testDiagnostic('TEST_SCENARIO_INVALID', source.path)]);
+      compiled = compileMultiTaskProject(workspace.project, sources);
+    } catch (error) {
+      const afterCompile = interrupted();
+      if (afterCompile) return afterCompile;
+      return testFailed(operation, safeCompilerDiagnostics(error));
     }
-  }
-  const ids = new Set<string>();
-  for (const scenario of scenarios) {
+    const zplcArtifact = artifactEvidence('zplc', compiled.zplcFile);
     if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
-    const key = scenario.id.toLowerCase();
-    if (ids.has(key)) return testFailed(operation, [testDiagnostic('TEST_DUPLICATE_SCENARIO', scenario.path)]);
-    ids.add(key);
-    if (scenario.compiled.tickMs !== intervalMs) return testFailed(operation, [testDiagnostic('SCENARIO_TICK_MISMATCH', scenario.path)]);
-  }
-  const selected = scenarioId === undefined ? scenarios : scenarios.filter((scenario) => scenario.id.toLowerCase() === scenarioId.toLowerCase());
-  if (selected.length === 0) return testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]);
-  if (selected.reduce((total, scenario) => total + runtimeOperationCost(scenario.compiled), 0) > MAX_SCENARIO_RUNTIME_OPERATIONS) {
-    return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
-  }
-
-  const completed: Array<{ id: string; path: string; passed: boolean; trace: ScenarioRunResult['trace']; assertions: ScenarioRunResult['assertions']; traceArtifact: ToolArtifact }> = [];
-  const assertionFailures: ToolDiagnostic[] = [];
-  for (const scenario of selected) {
-    if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
-    let session: Awaited<ReturnType<typeof createNativeScenarioSession>>;
-    try {
-      session = await createNativeScenarioSession(process.env, { signal: deadline.signal });
-    } catch {
+    const scenarios: Array<{ id: string; path: string; compiled: CompiledScenario; source: WorkspaceScenario }> = [];
+    for (const source of scenariosRead.scenarios) {
       if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
-      return testFailed(operation, [testDiagnostic('SIMULATOR_UNAVAILABLE', scenario.path)], [zplcArtifact]);
-    }
-    let result: ScenarioRunResult | undefined;
-    let runtimeFailed = false;
-    const closeOnAbort = () => { void session.close().catch(() => undefined); };
-    deadline.signal.addEventListener('abort', closeOnAbort, { once: true });
-    try {
-      result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime);
-    } catch {
-      runtimeFailed = true;
-    } finally {
-      deadline.signal.removeEventListener('abort', closeOnAbort);
       try {
-        await session.close();
+        const scenario = compileScenario(source.input, compiled.debugMap);
+        scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
       } catch {
-        runtimeFailed = true;
+        return testFailed(operation, [testDiagnostic('TEST_SCENARIO_INVALID', source.path)]);
       }
     }
-    if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
-    if (runtimeFailed || !result) return testFailed(operation, [testDiagnostic('RUNTIME_FAILED', scenario.path)], [zplcArtifact]);
-    const bytes = traceBytes(result.trace);
-    completed.push({ id: scenario.id, path: scenario.path, passed: result.passed, trace: result.trace, assertions: result.assertions, traceArtifact: artifactEvidence('trace', bytes) });
-    if (!result.passed) assertionFailures.push(testDiagnostic('SCENARIO_ASSERTION_FAILED', scenario.path));
-  }
+    const ids = new Set<string>();
+    for (const scenario of scenarios) {
+      if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
+      const key = scenario.id.toLowerCase();
+      if (ids.has(key)) return testFailed(operation, [testDiagnostic('TEST_DUPLICATE_SCENARIO', scenario.path)]);
+      ids.add(key);
+      if (scenario.compiled.tickMs !== intervalMs) return testFailed(operation, [testDiagnostic('SCENARIO_TICK_MISMATCH', scenario.path)]);
+    }
+    const selected =
+      scenarioId === undefined ? scenarios : scenarios.filter((scenario) => scenario.id.toLowerCase() === scenarioId.toLowerCase());
+    if (selected.length === 0) return testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]);
+    if (selected.reduce((total, scenario) => total + runtimeOperationCost(scenario.compiled), 0) > MAX_SCENARIO_RUNTIME_OPERATIONS) {
+      return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
+    }
 
-  const beforePublish = interrupted(); if (beforePublish) return beforePublish;
-  const aggregateTrace = new TextEncoder().encode(JSON.stringify({
-    schemaVersion: 1,
-    backend: 'native-posix',
-    mode: 'logical-cyclic-task-set-scan',
-    scenarios: completed.map(({ id, path, passed, trace, assertions }) => ({ id, path, passed, trace, assertions })),
-  }));
-  const artifacts = [zplcArtifact, artifactEvidence('trace', aggregateTrace)];
-  const preview = testPreview(completed, artifacts[1]!.sha256);
-  const savedTestInputIdentity = createSavedTestInputIdentity(workspace, sources, selected.map((scenario) => scenario.source));
-  const response: TestRunResult = assertionFailures.length ? {
-    ok: false, evidence: evidence(operation, 'failed', assertionFailures, artifacts), preview, savedTestInputIdentity,
-  } : {
-    ok: true,
-    summary: {
-      backend: 'native-posix',
-      mode: 'logical-cyclic-task-set-scan',
-      scenarios: completed.map(({ id, path, passed, traceArtifact }) => ({ id, path, passed, traceSha256: traceArtifact.sha256, traceByteLength: traceArtifact.byteLength })),
-    },
-    evidence: evidence(operation, 'passed', [], artifacts), preview, savedTestInputIdentity,
-  };
-  Object.defineProperty(response, 'traceFile', { value: aggregateTrace });
-  return response;
+    const completed: Array<{
+      id: string;
+      path: string;
+      passed: boolean;
+      trace: ScenarioRunResult['trace'];
+      assertions: ScenarioRunResult['assertions'];
+      traceArtifact: ToolArtifact;
+    }> = [];
+    const assertionFailures: ToolDiagnostic[] = [];
+    for (const scenario of selected) {
+      if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
+      let session: Awaited<ReturnType<typeof createNativeScenarioSession>>;
+      try {
+        session = await createNativeScenarioSession(process.env, { signal: deadline.signal });
+      } catch {
+        if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
+        return testFailed(operation, [testDiagnostic('SIMULATOR_UNAVAILABLE', scenario.path)], [zplcArtifact]);
+      }
+      let result: ScenarioRunResult | undefined;
+      let runtimeFailed = false;
+      const closeOnAbort = () => {
+        void session.close().catch(() => undefined);
+      };
+      deadline.signal.addEventListener('abort', closeOnAbort, { once: true });
+      try {
+        result = await runScenario(scenario.compiled, compiled.zplcFile, session.runtime);
+      } catch {
+        runtimeFailed = true;
+      } finally {
+        deadline.signal.removeEventListener('abort', closeOnAbort);
+        try {
+          await session.close();
+        } catch {
+          runtimeFailed = true;
+        }
+      }
+      if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
+      if (runtimeFailed || !result) return testFailed(operation, [testDiagnostic('RUNTIME_FAILED', scenario.path)], [zplcArtifact]);
+      const bytes = traceBytes(result.trace);
+      completed.push({
+        id: scenario.id,
+        path: scenario.path,
+        passed: result.passed,
+        trace: result.trace,
+        assertions: result.assertions,
+        traceArtifact: artifactEvidence('trace', bytes),
+      });
+      if (!result.passed) assertionFailures.push(testDiagnostic('SCENARIO_ASSERTION_FAILED', scenario.path));
+    }
+
+    const beforePublish = interrupted();
+    if (beforePublish) return beforePublish;
+    const aggregateTrace = new TextEncoder().encode(
+      JSON.stringify({
+        schemaVersion: 1,
+        backend: 'native-posix',
+        mode: 'logical-cyclic-task-set-scan',
+        scenarios: completed.map(({ id, path, passed, trace, assertions }) => ({ id, path, passed, trace, assertions })),
+      }),
+    );
+    const artifacts = [zplcArtifact, artifactEvidence('trace', aggregateTrace)];
+    const preview = testPreview(completed, artifacts[1]!.sha256);
+    const savedTestInputIdentity = createSavedTestInputIdentity(
+      workspace,
+      sources,
+      selected.map((scenario) => scenario.source),
+    );
+    const response: TestRunResult = assertionFailures.length
+      ? {
+          ok: false,
+          evidence: evidence(operation, 'failed', assertionFailures, artifacts),
+          preview,
+          savedTestInputIdentity,
+        }
+      : {
+          ok: true,
+          summary: {
+            backend: 'native-posix',
+            mode: 'logical-cyclic-task-set-scan',
+            scenarios: completed.map(({ id, path, passed, traceArtifact }) => ({
+              id,
+              path,
+              passed,
+              traceSha256: traceArtifact.sha256,
+              traceByteLength: traceArtifact.byteLength,
+            })),
+          },
+          evidence: evidence(operation, 'passed', [], artifacts),
+          preview,
+          savedTestInputIdentity,
+        };
+    Object.defineProperty(response, 'traceFile', { value: aggregateTrace });
+    return response;
   } finally {
     deadline.dispose();
   }
@@ -640,14 +977,43 @@ function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
   return left.byteLength === right.byteLength && left.every((byte, index) => byte === right[index]);
 }
 function changeSetRejected(code: CandidateChangeSetDiagnostic['code']): CandidateChangeSetResult {
-  return { schemaVersion: 1, accepted: false, evidenceScope: 'native-posix-host', diagnostics: [{ code, message: code === 'CHANGESET_INVALID' ? 'Candidate change set is invalid' : code === 'CHANGESET_BASE_INVALID' ? 'Candidate base is unavailable' : code === 'CHANGESET_CLEANUP_FAILED' ? 'Candidate cleanup failed' : 'Candidate materialization failed' }] };
+  return {
+    schemaVersion: 1,
+    accepted: false,
+    evidenceScope: 'native-posix-host',
+    diagnostics: [
+      {
+        code,
+        message:
+          code === 'CHANGESET_INVALID'
+            ? 'Candidate change set is invalid'
+            : code === 'CHANGESET_BASE_INVALID'
+              ? 'Candidate base is unavailable'
+              : code === 'CHANGESET_CLEANUP_FAILED'
+                ? 'Candidate cleanup failed'
+                : 'Candidate materialization failed',
+      },
+    ],
+  };
 }
 function invalidChangeSetPath(path: string): boolean {
-  return path.length === 0 || path.includes('\0') || path.includes('\\') || isAbsolute(path) || win32.isAbsolute(path) || path.split('/').some((part) => part === '' || part === '.' || part === '..');
+  return (
+    path.length === 0 ||
+    path.includes('\0') ||
+    path.includes('\\') ||
+    isAbsolute(path) ||
+    win32.isAbsolute(path) ||
+    path.split('/').some((part) => part === '' || part === '.' || part === '..')
+  );
 }
 function decodeChangeSetEdits(value: unknown, limit: number): CandidateChangeSetEdit[] | undefined {
   try {
-    if (!Array.isArray(value) || (Object.getPrototypeOf(value) !== Array.prototype && Object.getPrototypeOf(value) !== null) || Object.getOwnPropertySymbols(value).length !== 0) return undefined;
+    if (
+      !Array.isArray(value) ||
+      (Object.getPrototypeOf(value) !== Array.prototype && Object.getPrototypeOf(value) !== null) ||
+      Object.getOwnPropertySymbols(value).length !== 0
+    )
+      return undefined;
     const length = Object.getOwnPropertyDescriptor(value, 'length');
     if (!length || !('value' in length) || typeof length.value !== 'number' || length.value < 1 || length.value > limit) return undefined;
     const names = Object.getOwnPropertyNames(value);
@@ -658,15 +1024,30 @@ function decodeChangeSetEdits(value: unknown, limit: number): CandidateChangeSet
       const item = Object.getOwnPropertyDescriptor(value, String(index));
       if (!item || !('value' in item) || typeof item.value !== 'object' || item.value === null) return undefined;
       const edit = item.value;
-      if ((Object.getPrototypeOf(edit) !== Object.prototype && Object.getPrototypeOf(edit) !== null) || Object.getOwnPropertySymbols(edit).length !== 0) return undefined;
+      if (
+        (Object.getPrototypeOf(edit) !== Object.prototype && Object.getPrototypeOf(edit) !== null) ||
+        Object.getOwnPropertySymbols(edit).length !== 0
+      )
+        return undefined;
       const keys = Object.getOwnPropertyNames(edit);
       if (keys.length !== 2 || !keys.includes('path') || !keys.includes('content')) return undefined;
-      const path = Object.getOwnPropertyDescriptor(edit, 'path'); const content = Object.getOwnPropertyDescriptor(edit, 'content');
-      if (!path || !content || !('value' in path) || !('value' in content) || typeof path.value !== 'string' || typeof content.value !== 'string') return undefined;
+      const path = Object.getOwnPropertyDescriptor(edit, 'path');
+      const content = Object.getOwnPropertyDescriptor(edit, 'content');
+      if (
+        !path ||
+        !content ||
+        !('value' in path) ||
+        !('value' in content) ||
+        typeof path.value !== 'string' ||
+        typeof content.value !== 'string'
+      )
+        return undefined;
       edits.push({ path: path.value, content: content.value });
     }
     return edits;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }
 async function readCandidateSnapshot(root: string): Promise<CandidateSnapshot | undefined> {
   const loaded = await readWorkspace(root);
@@ -677,28 +1058,57 @@ async function readCandidateSnapshot(root: string): Promise<CandidateSnapshot | 
     { path: 'zplc.json', bytes: loaded.workspace.manifestBytes },
     ...loaded.workspace.sources.map((source) => ({ path: source.path, bytes: source.bytes })),
     ...scenarios.scenarios.map((scenario) => ({ path: scenario.path, bytes: scenario.bytes })),
-  ].map(({ path, bytes }) => ({ path, ...changeSetDigest(bytes) })).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
-  return { workspace: loaded.workspace, scenarios: scenarios.scenarios, identity: { sha256: createHash('sha256').update(JSON.stringify({ schemaVersion: 1, inputs })).digest('hex'), fileCount: inputs.length } };
+  ]
+    .map(({ path, bytes }) => ({ path, ...changeSetDigest(bytes) }))
+    .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+  return {
+    workspace: loaded.workspace,
+    scenarios: scenarios.scenarios,
+    identity: {
+      sha256: createHash('sha256')
+        .update(JSON.stringify({ schemaVersion: 1, inputs }))
+        .digest('hex'),
+      fileCount: inputs.length,
+    },
+  };
 }
 async function removeCandidateDirectory(root: string): Promise<boolean> {
   let failed = false;
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    try { await rm(root, { recursive: true, force: true }); } catch { failed = true; }
-    try { await lstat(root); }
-    catch (error) {
+    try {
+      await rm(root, { recursive: true, force: true });
+    } catch {
+      failed = true;
+    }
+    try {
+      await lstat(root);
+    } catch (error) {
       if (!(typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')) failed = true;
-      try { await __changeSetTestHooks.afterCleanupAttempt?.(root); } catch { failed = true; }
+      try {
+        await __changeSetTestHooks.afterCleanupAttempt?.(root);
+      } catch {
+        failed = true;
+      }
       return !failed;
     }
   }
   return false;
 }
 function acceptsCandidateResult(result: TestRunResult): boolean {
-  return result.ok && result.savedTestInputIdentity !== undefined && result.evidence.artifacts.some((artifact) => artifact.kind === 'zplc') && result.evidence.artifacts.some((artifact) => artifact.kind === 'trace');
+  return (
+    result.ok &&
+    result.savedTestInputIdentity !== undefined &&
+    result.evidence.artifacts.some((artifact) => artifact.kind === 'zplc') &&
+    result.evidence.artifacts.some((artifact) => artifact.kind === 'trace')
+  );
 }
 
 /** Validates source replacements in a fresh native-POSIX-only workspace without applying them to the base. */
-export async function createCandidateChangeSet(root: string, input: unknown, options: TestsRunOptions = {}): Promise<CandidateChangeSetResult> {
+export async function createCandidateChangeSet(
+  root: string,
+  input: unknown,
+  options: TestsRunOptions = {},
+): Promise<CandidateChangeSetResult> {
   if (typeof root !== 'string' || root.length === 0 || root.includes('\0')) return changeSetRejected('CHANGESET_INVALID');
   let candidateRoot: string | undefined;
   let response: CandidateChangeSetResult;
@@ -707,8 +1117,12 @@ export async function createCandidateChangeSet(root: string, input: unknown, opt
     if (!initial) return changeSetRejected('CHANGESET_BASE_INVALID');
     await __changeSetTestHooks.afterInitialSnapshot?.(initial.workspace.root);
     const stable = await readCandidateSnapshot(initial.workspace.root);
-    if (!stable || stable.identity.sha256 !== initial.identity.sha256 || stable.identity.fileCount !== initial.identity.fileCount) return changeSetRejected('CHANGESET_BASE_INVALID');
-    const files = new Map<string, Uint8Array>([['zplc.json', stable.workspace.manifestBytes] as const, ...stable.workspace.sources.map((source): readonly [string, Uint8Array] => [source.path, source.bytes])]);
+    if (!stable || stable.identity.sha256 !== initial.identity.sha256 || stable.identity.fileCount !== initial.identity.fileCount)
+      return changeSetRejected('CHANGESET_BASE_INVALID');
+    const files = new Map<string, Uint8Array>([
+      ['zplc.json', stable.workspace.manifestBytes] as const,
+      ...stable.workspace.sources.map((source): readonly [string, Uint8Array] => [source.path, source.bytes]),
+    ]);
     const edits = decodeChangeSetEdits(input, files.size);
     if (!edits) return changeSetRejected('CHANGESET_INVALID');
     const allowedByCase = new Map([...files.keys()].map((path) => [path.toLowerCase(), path]));
@@ -723,22 +1137,42 @@ export async function createCandidateChangeSet(root: string, input: unknown, opt
       if (bytes.byteLength > limit || sameBytes(files.get(path)!, bytes)) return changeSetRejected('CHANGESET_INVALID');
       replacements.set(path, bytes);
     }
-    const changes = [...replacements].map(([path, after]) => ({ path, kind: 'modify' as const, before: changeSetDigest(files.get(path)!), after: changeSetDigest(after) })).sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
-    const changeSet = { sha256: createHash('sha256').update(JSON.stringify({ schemaVersion: 1, changes })).digest('hex'), changes };
+    const changes = [...replacements]
+      .map(([path, after]) => ({ path, kind: 'modify' as const, before: changeSetDigest(files.get(path)!), after: changeSetDigest(after) }))
+      .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+    const changeSet = {
+      sha256: createHash('sha256')
+        .update(JSON.stringify({ schemaVersion: 1, changes }))
+        .digest('hex'),
+      changes,
+    };
     candidateRoot = await mkdtemp(join(tmpdir(), 'zplc-change-set-'));
-    await mkdir(join(candidateRoot, 'src'), { mode: 0o700 }); await mkdir(join(candidateRoot, 'tests'), { mode: 0o700 });
+    await mkdir(join(candidateRoot, 'src'), { mode: 0o700 });
+    await mkdir(join(candidateRoot, 'tests'), { mode: 0o700 });
     await writeFile(join(candidateRoot, 'zplc.json'), replacements.get('zplc.json') ?? files.get('zplc.json')!, { mode: 0o600 });
-    for (const source of stable.workspace.sources) await writeFile(join(candidateRoot, source.path), replacements.get(source.path) ?? source.bytes, { mode: 0o600 });
+    for (const source of stable.workspace.sources)
+      await writeFile(join(candidateRoot, source.path), replacements.get(source.path) ?? source.bytes, { mode: 0o600 });
     for (const scenario of stable.scenarios) await writeFile(join(candidateRoot, scenario.path), scenario.bytes, { mode: 0o600 });
     await __changeSetTestHooks.afterMaterialize?.(candidateRoot);
     const result = await testsRun(candidateRoot, options);
-    response = { schemaVersion: 1, accepted: acceptsCandidateResult(result), evidenceScope: 'native-posix-host', changeSet, evidence: result.evidence, ...(result.preview ? { preview: result.preview } : {}), ...(result.savedTestInputIdentity ? { savedTestInputIdentity: result.savedTestInputIdentity } : {}) };
-  } catch { response = changeSetRejected('CHANGESET_MATERIALIZATION_FAILED'); }
+    response = {
+      schemaVersion: 1,
+      accepted: acceptsCandidateResult(result),
+      evidenceScope: 'native-posix-host',
+      changeSet,
+      evidence: result.evidence,
+      ...(result.preview ? { preview: result.preview } : {}),
+      ...(result.savedTestInputIdentity ? { savedTestInputIdentity: result.savedTestInputIdentity } : {}),
+    };
+  } catch {
+    response = changeSetRejected('CHANGESET_MATERIALIZATION_FAILED');
+  }
   if (candidateRoot && !(await removeCandidateDirectory(candidateRoot))) return changeSetRejected('CHANGESET_CLEANUP_FAILED');
   return response!;
 }
 
 export function scenarioRun(root: string, scenarioId: string, options: TestsRunOptions = {}): Promise<TestRunResult> {
-  if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || scenarioId.includes('\0')) return Promise.resolve(testFailed('scenario-run', [testDiagnostic('TEST_SCENARIO_INVALID', 'tests')]));
+  if (typeof scenarioId !== 'string' || scenarioId.length === 0 || scenarioId.length > 128 || scenarioId.includes('\0'))
+    return Promise.resolve(testFailed('scenario-run', [testDiagnostic('TEST_SCENARIO_INVALID', 'tests')]));
   return runWorkspaceScenarios(root, 'scenario-run', scenarioId, options);
 }

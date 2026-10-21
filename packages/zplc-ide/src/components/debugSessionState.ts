@@ -25,26 +25,15 @@ export interface LastCompileResult {
   compilerRunId: number;
 }
 
-export function isCompileResultCurrent(
-  compileResultRunId: number | null,
-  compilerRunId: number,
-): boolean {
+export function isCompileResultCurrent(compileResultRunId: number | null, compilerRunId: number): boolean {
   return compileResultRunId === compilerRunId;
 }
 
-export function shouldAutoLoadBeforeStart(
-  executionMode: ExecutionMode,
-  vmState: VMState,
-  programLoadState: ProgramLoadState,
-): boolean {
+export function shouldAutoLoadBeforeStart(executionMode: ExecutionMode, vmState: VMState, programLoadState: ProgramLoadState): boolean {
   return executionMode === 'simulate' && vmState === 'idle' && programLoadState === PROGRAM_LOAD_STATE.EMPTY;
 }
 
-export function canRunCurrentProgram(
-  executionMode: ExecutionMode,
-  hasCompileResult: boolean,
-  programLoadState: ProgramLoadState,
-): boolean {
+export function canRunCurrentProgram(executionMode: ExecutionMode, hasCompileResult: boolean, programLoadState: ProgramLoadState): boolean {
   return hasCompileResult && (executionMode === 'simulate' || programLoadState === PROGRAM_LOAD_STATE.LOADED);
 }
 
@@ -62,8 +51,7 @@ export function nextProgramLoadStateAfterDeploy(
   deployedCompilerRunId: number,
   currentCompilerRunId: number,
 ): ProgramLoadState {
-  return deployedRevision === currentRevision
-    && isCompileResultCurrent(deployedCompilerRunId, currentCompilerRunId)
+  return deployedRevision === currentRevision && isCompileResultCurrent(deployedCompilerRunId, currentCompilerRunId)
     ? PROGRAM_LOAD_STATE.LOADED
     : PROGRAM_LOAD_STATE.EMPTY;
 }

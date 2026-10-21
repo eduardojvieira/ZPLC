@@ -8,9 +8,7 @@
     "board": "posix"
   },
   "safety": {
-    "incompatibleOutputs": [
-      ["Motor.Forward", "Motor.Reverse"]
-    ]
+    "incompatibleOutputs": [["Motor.Forward", "Motor.Reverse"]]
   },
   "tasks": [
     {
@@ -18,9 +16,7 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "programs": [
-        "Motor.st"
-      ]
+      "programs": ["Motor.st"]
     }
   ]
 }

@@ -32,7 +32,9 @@ export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
         if (current) setProblem('zplc.json could not be read to show the difference.');
       }
     })();
-    return () => { current = false; };
+    return () => {
+      current = false;
+    };
   }, [directoryHandle, projectConfig]);
 
   const apply = async () => {
@@ -45,17 +47,39 @@ export function MigrationPreviewDialog({ onClose }: { onClose: () => void }) {
     <Modal isOpen onClose={() => !applying && onClose()} title={t('workbench.migration.title')} widthClass="max-w-3xl">
       <div className="space-y-3 p-4" data-migration-preview>
         <p className="text-sm text-[var(--color-surface-200)]">
-          {t('workbench.migration.intro', { version: preview?.sourceSchemaVersion ?? 1 })}{' '}
-          {t('workbench.migration.onlyBefore')}<code className="font-mono">zplc.json</code>{t('workbench.migration.onlyAfter')}
+          {t('workbench.migration.intro', { version: preview?.sourceSchemaVersion ?? 1 })} {t('workbench.migration.onlyBefore')}
+          <code className="font-mono">zplc.json</code>
+          {t('workbench.migration.onlyAfter')}
         </p>
-        {problem && <p role="alert" className="text-sm text-[var(--color-accent-yellow)]">{problem}</p>}
-        {!difference && !problem && <p role="status" className="text-sm text-[var(--color-surface-300)]">{t('workbench.migration.reading')}</p>}
-        {difference && (difference.changed
-          ? <MigrationDifferenceView difference={difference} />
-          : <p role="status" className="text-sm text-[var(--color-surface-300)]">{t('workbench.migration.nothing')}</p>)}
+        {problem && (
+          <p role="alert" className="text-sm text-[var(--color-accent-yellow)]">
+            {problem}
+          </p>
+        )}
+        {!difference && !problem && (
+          <p role="status" className="text-sm text-[var(--color-surface-300)]">
+            {t('workbench.migration.reading')}
+          </p>
+        )}
+        {difference &&
+          (difference.changed ? (
+            <MigrationDifferenceView difference={difference} />
+          ) : (
+            <p role="status" className="text-sm text-[var(--color-surface-300)]">
+              {t('workbench.migration.nothing')}
+            </p>
+          ))}
         <div className="flex justify-end gap-2">
-          <Button disabled={applying} onClick={onClose}>{t('workbench.migration.close')}</Button>
-          <Button variant="primary" disabled={applying || !difference} onClick={() => { void apply(); }}>
+          <Button disabled={applying} onClick={onClose}>
+            {t('workbench.migration.close')}
+          </Button>
+          <Button
+            variant="primary"
+            disabled={applying || !difference}
+            onClick={() => {
+              void apply();
+            }}
+          >
             {applying ? t('workbench.migration.applying') : t('workbench.migration.apply')}
           </Button>
         </div>

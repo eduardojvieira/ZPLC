@@ -3,7 +3,7 @@ slug: /learn/faceplate
 id: faceplate
 title: Panel de E/S en vivo
 sidebar_label: Panel de E/S en vivo
-description: "El panel E/S en vivo de una simulación: qué enumera, cómo se operan las entradas del programa en ejecución y cuándo llega un cambio al programa."
+description: 'El panel E/S en vivo de una simulación: qué enumera, cómo se operan las entradas del programa en ejecución y cuándo llega un cambio al programa.'
 tags: [learn, simulation, faceplate]
 unlisted: true
 ---
@@ -37,12 +37,12 @@ de su lección; vea [Plantas de las lecciones](./plants.md).
 
 ## Cómo se opera una entrada
 
-| Tipo de la entrada | Control | Con el teclado |
-|---|---|---|
-| `BOOL` | Un interruptor cuyo texto dice qué hace al pulsarlo, **Poner TRUE** o **Poner FALSE**; un lector de pantalla lee su nombre y su valor, por ejemplo `Gate: FALSE`. | Llegue a él con Tab y pulse Espacio. |
-| `BOOL` | Un botón **Mantener**: `TRUE` mientras se mantiene pulsado, `FALSE` al soltarlo. | Mantenga pulsado Espacio o Intro. |
-| Un número de 8 o 16 bits (`SINT`, `INT`, `BYTE`, `WORD` ...) | Un control deslizante sobre el rango del tipo y un cuadro numérico con **Aplicar**. | Las flechas avanzan de uno en uno, Inicio y Fin van a los extremos del rango; escriba un valor en el cuadro y pulse Intro. |
-| Un número más ancho (`DINT`, `REAL` ...) | Un cuadro numérico con **Aplicar**. Su tipo no da un rango para deslizar. | Escriba un valor y pulse Intro. |
+| Tipo de la entrada                                           | Control                                                                                                                                                           | Con el teclado                                                                                                             |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `BOOL`                                                       | Un interruptor cuyo texto dice qué hace al pulsarlo, **Poner TRUE** o **Poner FALSE**; un lector de pantalla lee su nombre y su valor, por ejemplo `Gate: FALSE`. | Llegue a él con Tab y pulse Espacio.                                                                                       |
+| `BOOL`                                                       | Un botón **Mantener**: `TRUE` mientras se mantiene pulsado, `FALSE` al soltarlo.                                                                                  | Mantenga pulsado Espacio o Intro.                                                                                          |
+| Un número de 8 o 16 bits (`SINT`, `INT`, `BYTE`, `WORD` ...) | Un control deslizante sobre el rango del tipo y un cuadro numérico con **Aplicar**.                                                                               | Las flechas avanzan de uno en uno, Inicio y Fin van a los extremos del rango; escriba un valor en el cuadro y pulse Intro. |
+| Un número más ancho (`DINT`, `REAL` ...)                     | Un cuadro numérico con **Aplicar**. Su tipo no da un rango para deslizar.                                                                                         | Escriba un valor y pulse Intro.                                                                                            |
 
 **Forzar** mantiene una entrada en su valor hasta que usted la libere. Un forzado
 admite hasta 32 bits, así que una entrada más ancha se puede asignar pero no

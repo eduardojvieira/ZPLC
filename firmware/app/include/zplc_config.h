@@ -179,45 +179,27 @@ void zplc_config_set_modbus_tcp_client_poll_ms(uint32_t ms);
 uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void);
 void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms);
 
-int zplc_modbus_rtu_client_read_holding(uint8_t slave_id, uint16_t start_reg,
-                                        uint16_t count, uint16_t *out);
-int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg,
-                                          uint16_t value);
-int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg,
-                                          uint16_t count,
-                                          const uint16_t *values);
-int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr,
-                                      uint16_t count, uint8_t *out_bits);
-int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr,
-                                      bool state);
+int zplc_modbus_rtu_client_read_holding(uint8_t slave_id, uint16_t start_reg, uint16_t count, uint16_t *out);
+int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg, uint16_t value);
+int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg, uint16_t count, const uint16_t *values);
+int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr, uint16_t count, uint8_t *out_bits);
+int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr, bool state);
 
-int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
-                                        uint8_t unit_id, uint16_t start_reg,
-                                        uint16_t count, uint16_t *out);
-int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port,
-                                          uint8_t unit_id, uint16_t reg,
-                                          uint16_t value);
-int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
-                                          uint8_t unit_id, uint16_t start_reg,
-                                          uint16_t count,
+int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port, uint8_t unit_id, uint16_t start_reg, uint16_t count,
+                                        uint16_t *out);
+int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port, uint8_t unit_id, uint16_t reg, uint16_t value);
+int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port, uint8_t unit_id, uint16_t start_reg, uint16_t count,
                                           const uint16_t *values);
-int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
-                                      uint8_t unit_id, uint16_t start_addr,
-                                      uint16_t count, uint8_t *out_bits);
-int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
-                                      uint8_t unit_id, uint16_t addr,
-                                      bool state);
+int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port, uint8_t unit_id, uint16_t start_addr, uint16_t count,
+                                      uint8_t *out_bits);
+int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port, uint8_t unit_id, uint16_t addr, bool state);
 
 /**
  * Modbus server mapping overrides. These never change the compiled remote
  * address consumed by Modbus polling clients.
  */
-bool zplc_config_get_modbus_tag_override(uint16_t index,
-                                         uint16_t register_count,
-                                         uint32_t *address);
-int zplc_config_set_modbus_tag_override(uint16_t index,
-                                         uint32_t address,
-                                         uint16_t register_count);
+bool zplc_config_get_modbus_tag_override(uint16_t index, uint16_t register_count, uint32_t *address);
+int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address, uint16_t register_count);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
 
 /* Priority of the application threads that talk to the outside (RT-013): CONFIG_ZPLC_COMM_THREAD_PRIORITY

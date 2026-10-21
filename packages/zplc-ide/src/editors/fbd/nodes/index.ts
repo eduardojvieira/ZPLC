@@ -1,6 +1,6 @@
 /**
  * FBD Custom Node Types Registry
- * 
+ *
  * Exports all custom node components and the nodeTypes mapping
  * for ReactFlow.
  */
@@ -13,14 +13,7 @@ import ComparisonNode from './ComparisonNode';
 import MathNode from './MathNode';
 
 // Export individual components
-export {
-  FunctionBlockNode,
-  LogicGateNode,
-  ConstantNode,
-  VariableNode,
-  ComparisonNode,
-  MathNode,
-};
+export { FunctionBlockNode, LogicGateNode, ConstantNode, VariableNode, ComparisonNode, MathNode };
 
 // ReactFlow nodeTypes mapping
 export const nodeTypes = {

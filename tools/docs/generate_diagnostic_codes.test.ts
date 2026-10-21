@@ -26,7 +26,8 @@ describe('CMP-006 diagnostic code reference: generated from the registry of the 
   it('states the over-size failures, which name the bytes required, the bytes available and the largest consumers (CMP-043)', () => {
     for (const lang of LANGS) {
       const body = diagnosticCodesBody(lang);
-      for (const name of ['WORK_MEMORY_EXCEEDED', 'RETAIN_MEMORY_EXCEEDED', 'CODE_MEMORY_EXCEEDED']) expect(body).toContain(`- \`${name}\``);
+      for (const name of ['WORK_MEMORY_EXCEEDED', 'RETAIN_MEMORY_EXCEEDED', 'CODE_MEMORY_EXCEEDED'])
+        expect(body).toContain(`- \`${name}\``);
     }
     expect(diagnosticCodesBody('en')).toContain('bytes required');
   });

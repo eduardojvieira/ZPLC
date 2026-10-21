@@ -37,7 +37,12 @@ export function updateSteps(platform: string, t: Translator['t'] = translateNow)
  * The notice for an answer, or null: only a release that is newer than this one and has not been dismissed. A
  * dismissal is of one version, so a still newer release shows again.
  */
-export function updateNotice(result: UpdateCheckResult | null, platform: string, dismissedVersion: string | null, t: Translator['t'] = translateNow): UpdateNotice | null {
+export function updateNotice(
+  result: UpdateCheckResult | null,
+  platform: string,
+  dismissedVersion: string | null,
+  t: Translator['t'] = translateNow,
+): UpdateNotice | null {
   if (result === null || result.status !== 'available') return null;
   if (dismissedVersion === result.latest) return null;
   return { current: result.current, latest: result.latest, releaseUrl: result.url, steps: updateSteps(platform, t) };
@@ -61,5 +66,9 @@ export function readDismissed(storage: NoticeStorage | undefined): string | null
 }
 
 export function writeDismissed(storage: NoticeStorage | undefined, version: string): void {
-  try { storage?.setItem(DISMISSED_STORAGE_KEY, version); } catch { /* the notice comes back at the next start: nothing is lost */ }
+  try {
+    storage?.setItem(DISMISSED_STORAGE_KEY, version);
+  } catch {
+    /* the notice comes back at the next start: nothing is lost */
+  }
 }

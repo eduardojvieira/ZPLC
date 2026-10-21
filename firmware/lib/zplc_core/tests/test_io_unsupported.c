@@ -21,15 +21,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 /* DO0 works; AO0 (analog output) and AI0 (analog input) have no converter on this board; DI0 works. */

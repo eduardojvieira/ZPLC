@@ -29,7 +29,17 @@ function createMacIcon(sourceIcon, buildDir) {
     );
     run(
       'sips',
-      ['-s', 'format', 'png', '-z', String(size * 2), String(size * 2), sourceIcon, '--out', path.join(iconsetDir, `icon_${size}x${size}@2x.png`)],
+      [
+        '-s',
+        'format',
+        'png',
+        '-z',
+        String(size * 2),
+        String(size * 2),
+        sourceIcon,
+        '--out',
+        path.join(iconsetDir, `icon_${size}x${size}@2x.png`),
+      ],
       buildDir,
     );
   }

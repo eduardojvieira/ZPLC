@@ -5,16 +5,9 @@
   "order": 4,
   "module": 8,
   "level": "advanced",
-  "prerequisites": [
-    "motor-plant-feedback",
-    "tank-level-fault-reset"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["motor-plant-feedback", "tank-level-fault-reset"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

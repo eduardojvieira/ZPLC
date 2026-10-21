@@ -26,7 +26,12 @@ export function ComboBox({ label, options, value, onChange, placeholder, disable
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const shown = filterOptions(options, query ?? '');
-  const choose = (option: ComboOption): void => { onChange(option.value); setQuery(null); setOpen(false); setActive(-1); };
+  const choose = (option: ComboOption): void => {
+    onChange(option.value);
+    setQuery(null);
+    setOpen(false);
+    setActive(-1);
+  };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     const next = comboKey(event.key, { open, active, count: shown.length });
     if (next.open === open && next.active === active && next.action === 'none') return;
@@ -39,17 +44,45 @@ export function ComboBox({ label, options, value, onChange, placeholder, disable
     <Field label={label} controlId={id} className={className} disabled={disabled}>
       <div className="ui-combobox">
         <input
-          id={id} type="text" role="combobox" className="ui-input" autoComplete="off" disabled={disabled} placeholder={placeholder}
-          aria-expanded={open} aria-controls={listId} aria-autocomplete="list" aria-activedescendant={open && active >= 0 ? `${id}-o${active}` : undefined}
+          id={id}
+          type="text"
+          role="combobox"
+          className="ui-input"
+          autoComplete="off"
+          disabled={disabled}
+          placeholder={placeholder}
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && active >= 0 ? `${id}-o${active}` : undefined}
           value={query ?? selected?.label ?? ''}
-          onChange={(event) => { setQuery(event.target.value); setOpen(true); setActive(0); }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+            setActive(0);
+          }}
           onKeyDown={onKeyDown}
-          onBlur={() => { setOpen(false); setQuery(null); }}
+          onBlur={() => {
+            setOpen(false);
+            setQuery(null);
+          }}
         />
         <ul id={listId} role="listbox" aria-label={label} className={cx('ui-listbox')} hidden={!open}>
           {shown.map((option, index) => (
-            <li key={option.value} id={`${id}-o${index}`} role="option" aria-selected={option.value === value} aria-disabled={option.disabled || undefined} data-active={index === active || undefined}
-              onMouseDown={(event) => { event.preventDefault(); if (!option.disabled) choose(option); }}>{option.label}</li>
+            <li
+              key={option.value}
+              id={`${id}-o${index}`}
+              role="option"
+              aria-selected={option.value === value}
+              aria-disabled={option.disabled || undefined}
+              data-active={index === active || undefined}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                if (!option.disabled) choose(option);
+              }}
+            >
+              {option.label}
+            </li>
           ))}
         </ul>
       </div>

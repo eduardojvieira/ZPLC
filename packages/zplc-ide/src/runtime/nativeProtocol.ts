@@ -12,8 +12,7 @@ export const NATIVE_CAPABILITY_STATUS = {
   UNAVAILABLE: 'unavailable',
 } as const;
 
-export type NativeCapabilityStatus =
-  (typeof NATIVE_CAPABILITY_STATUS)[keyof typeof NATIVE_CAPABILITY_STATUS];
+export type NativeCapabilityStatus = (typeof NATIVE_CAPABILITY_STATUS)[keyof typeof NATIVE_CAPABILITY_STATUS];
 
 export interface NativeCapabilityEntry {
   name: string;

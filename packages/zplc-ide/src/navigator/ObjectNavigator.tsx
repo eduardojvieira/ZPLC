@@ -1,4 +1,7 @@
-/** The project navigator organised by PLC objects (UX-012): groups that open, each object opens its file at its line or its configuration editor. */
+/**
+ * The project navigator organised by PLC objects (UX-012): groups that open, each object opens its file at its line or its configuration
+ * editor.
+ */
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useT } from '../i18n';
@@ -37,13 +40,19 @@ export function ObjectNavigatorView({ groups, collapsed, onToggle, onOpen }: Obj
               <span className="font-medium">{title}</span>
               <span className="ml-auto text-[var(--color-surface-300)] tabular-nums">{group.items.length}</span>
             </Button>
-            {open && (group.items.length === 0
-              ? <p className="px-8 py-1 text-[var(--color-surface-400)]">{t('navigator.empty')}</p>
-              : (
+            {open &&
+              (group.items.length === 0 ? (
+                <p className="px-8 py-1 text-[var(--color-surface-400)]">{t('navigator.empty')}</p>
+              ) : (
                 <ul>
                   {group.items.map((item) => (
                     <li key={item.key}>
-                      <Button variant="ghost" size="sm" onClick={() => onOpen(item.target)} className="h-auto w-full justify-start gap-2 py-1 pl-8 pr-2 text-left whitespace-normal">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpen(item.target)}
+                        className="h-auto w-full justify-start gap-2 py-1 pl-8 pr-2 text-left whitespace-normal"
+                      >
                         <span className="truncate">{item.label}</span>
                         {item.detail && <span className="ml-auto truncate text-[var(--color-surface-400)]">{item.detail}</span>}
                       </Button>
@@ -71,11 +80,12 @@ export function ObjectNavigator() {
     () => buildNavigatorGroups({ declarations, globals, fileTree, config }, navigatorWords(translator)),
     [declarations, globals, fileTree, config, translator],
   );
-  const toggle = (id: NavigatorGroupId): void => setCollapsed((current) => {
-    const next = new Set(current);
-    if (!next.delete(id)) next.add(id);
-    return next;
-  });
+  const toggle = (id: NavigatorGroupId): void =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
   const onOpen = (target: NavigatorTarget): void => {
     if (target.kind === 'source') void open(target.path, target.line, target.column);
     else openConfigEditorFromNavigator(target.editor);

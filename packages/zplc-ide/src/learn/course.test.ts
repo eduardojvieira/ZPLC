@@ -51,9 +51,15 @@ describe('the course view', () => {
 
   it('keeps the modules that have no lesson yet, empty and with no minutes, and invents no lesson for them', () => {
     const empty = view.modules.filter((module) => module.lessons.length === 0).map((module) => module.id);
-    expect(empty).toEqual(LESSON_INDEX.course.modules.map((module) => module.id).filter((id) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === id)));
+    expect(empty).toEqual(
+      LESSON_INDEX.course.modules.map((module) => module.id).filter((id) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === id)),
+    );
     // every module may have a lesson by now, so the behaviour is also checked on an index with module 10 taken out
-    const gap = buildCourseView({ ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) }, emptyProgress(), { locale: 'en', unlockAll: false });
+    const gap = buildCourseView(
+      { ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) },
+      emptyProgress(),
+      { locale: 'en', unlockAll: false },
+    );
     const hollow = gap.modules.find((module) => module.id === 10)!;
     expect(hollow.lessons).toEqual([]);
     expect(hollow.estimatedMinutes).toBe(0);
@@ -70,7 +76,11 @@ describe('the course view', () => {
 
   it('states the objectives of a module from the lessons placed in it', () => {
     expect(view.modules[1]!.objectives.length).toBeGreaterThan(0);
-    const gap = buildCourseView({ ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) }, emptyProgress(), { locale: 'en', unlockAll: false });
+    const gap = buildCourseView(
+      { ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => lesson.module !== 10) },
+      emptyProgress(),
+      { locale: 'en', unlockAll: false },
+    );
     expect(gap.modules.find((module) => module.lessons.length === 0)!.objectives).toEqual([]);
   });
 
@@ -80,7 +90,10 @@ describe('the course view', () => {
   });
 
   it('counts the passed lessons', () => {
-    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({ passed: 1, total: LESSON_INDEX.lessons.length });
+    expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({
+      passed: 1,
+      total: LESSON_INDEX.lessons.length,
+    });
   });
 });
 
@@ -143,8 +156,18 @@ describe('the tracks a lesson supports (LRN-011)', () => {
 
 describe('a lesson with only the hardware track is passed by its hardware check (LRN-013, LRN-024)', () => {
   const hardwareGrade = (lessonId: string): GradeRecord => ({
-    schemaVersion: 1, lessonId, lessonVersion: 1, track: 'hardware', scenarioId: 'S', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
-    runtimeVersion: '2.0.0', time: '2026-10-20T10:00:00.000Z', result: 'passed', assertions: { total: 1, passed: 1 }, failedAssertions: [],
+    schemaVersion: 1,
+    lessonId,
+    lessonVersion: 1,
+    track: 'hardware',
+    scenarioId: 'S',
+    scenarioSha256: 'a'.repeat(64),
+    programSha256: 'b'.repeat(64),
+    runtimeVersion: '2.0.0',
+    time: '2026-10-20T10:00:00.000Z',
+    result: 'passed',
+    assertions: { total: 1, passed: 1 },
+    failedAssertions: [],
   });
   const BOARD = 'verify-my-board';
   const SIMULATED = 'scan-cycle-one-scan-memory';

@@ -23,7 +23,9 @@ interface Pending<M> {
   model: M;
 }
 
-export function useGestureCommit<M>(onChange: ((model: M, gesture?: VisualGesture) => void) | undefined): (model: M, step: GestureStep) => void {
+export function useGestureCommit<M>(
+  onChange: ((model: M, gesture?: VisualGesture) => void) | undefined,
+): (model: M, step: GestureStep) => void {
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;

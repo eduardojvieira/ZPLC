@@ -24,8 +24,18 @@ export function pickState<K extends keyof IDEState>(...keys: readonly K[]): (sta
 
 /** The tab bar and the editor of the active file. The files of the open tabs are selected apart: see `selectOpenFiles`. */
 export const selectEditorAreaState = pickState(
-  'activeFileId', 'openTabs', 'setActiveFile', 'closeTab', 'discardFile', 'saveFile', 'updateFileContent',
-  'showSettings', 'toggleSettings', 'getActiveFile', 'getFile', 'projectSession',
+  'activeFileId',
+  'openTabs',
+  'setActiveFile',
+  'closeTab',
+  'discardFile',
+  'saveFile',
+  'updateFileContent',
+  'showSettings',
+  'toggleSettings',
+  'getActiveFile',
+  'getFile',
+  'projectSession',
 );
 
 /** The files of the open tabs: the tab bar and the visual editors render again when one of them changes. */
@@ -38,26 +48,70 @@ export const selectActiveFileInfo = (state: IDEState) => {
 };
 
 export const selectToolbarState = pickState(
-  'addConsoleEntry', 'addCompilerMessage', 'clearCompilerMessages', 'markCompilerMessagesChecked', 'toggleSettings',
-  'saveFile', 'getActiveFile', 'activeFileId', 'projectSession', 'workspaceScenarioLink', 'hasUnsavedChanges',
+  'addConsoleEntry',
+  'addCompilerMessage',
+  'clearCompilerMessages',
+  'markCompilerMessagesChecked',
+  'toggleSettings',
+  'saveFile',
+  'getActiveFile',
+  'activeFileId',
+  'projectSession',
+  'workspaceScenarioLink',
+  'hasUnsavedChanges',
 );
 
 export const selectConsoleState = pickState(
-  'consoleEntries', 'activeConsoleTab', 'compilerMessages', 'compilerMessagesChecked', 'stBufferDiagnostics',
-  'activeFileId', 'loadedFiles', 'isConsoleCollapsed', 'toggleConsole', 'setActiveConsoleTab', 'clearConsole', 'clearCompilerMessages',
-  'clearNativeTrace', 'fileTree', 'navigateToCompilerDiagnostic', 'isProjectOpen', 'projectSession', 'compilerRunId',
-  'workspaceScenarioLink', 'canonicalWorkspaceBuildEvidence', 'linkWorkspaceScenarios', 'hasUnsavedChanges',
-  'saveAllFiles', 'saveProjectConfig', 'saveFile', 'updateFileContent',
+  'consoleEntries',
+  'activeConsoleTab',
+  'compilerMessages',
+  'compilerMessagesChecked',
+  'stBufferDiagnostics',
+  'activeFileId',
+  'loadedFiles',
+  'isConsoleCollapsed',
+  'toggleConsole',
+  'setActiveConsoleTab',
+  'clearConsole',
+  'clearCompilerMessages',
+  'clearNativeTrace',
+  'fileTree',
+  'navigateToCompilerDiagnostic',
+  'isProjectOpen',
+  'projectSession',
+  'compilerRunId',
+  'workspaceScenarioLink',
+  'canonicalWorkspaceBuildEvidence',
+  'linkWorkspaceScenarios',
+  'hasUnsavedChanges',
+  'saveAllFiles',
+  'saveProjectConfig',
+  'saveFile',
+  'updateFileContent',
 );
 
 export const selectSidebarState = pickState(
-  'projectName', 'projectMigrationPreview', 'fileTree', 'activeFileId', 'toggleDirectory', 'openFile', 'deleteFile',
+  'projectName',
+  'projectMigrationPreview',
+  'fileTree',
+  'activeFileId',
+  'toggleDirectory',
+  'openFile',
+  'deleteFile',
   'refreshFileTree',
 );
 
 export const selectWelcomeState = pickState(
-  'openProjectFromFolder', 'createNewProjectInFolder', 'copyExampleProjectToFolder', 'startLearning', 'getExampleProjects',
-  'projectOpenError', 'recentProjects', 'refreshRecentProjects', 'openRecentProject', 'forgetRecentProject',
+  'openProjectFromFolder',
+  'createNewProjectInFolder',
+  'copyExampleProjectToFolder',
+  'startLearning',
+  'getExampleProjects',
+  'projectOpenError',
+  'recentProjects',
+  'refreshRecentProjects',
+  'openRecentProject',
+  'forgetRecentProject',
 );
 
 export const selectThemeState = pickState('theme', 'setTheme');

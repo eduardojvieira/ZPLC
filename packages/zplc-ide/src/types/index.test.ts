@@ -31,21 +31,15 @@ describe('DEFAULT_ZPLC_CONFIG connectivity v1.5.2', () => {
 describe('release claim consistency', () => {
   it('keeps release claims aligned with declared evidence gates', () => {
     const root = join(fileURLToPath(new URL('.', import.meta.url)), '../../../../');
-    const matrix = readFileSync(
-      join(root, 'specs/008-release-foundation/artifacts/release-evidence-matrix.md'),
-      'utf8'
-    );
-    const claims = readFileSync(
-      join(root, 'specs/008-release-foundation/artifacts/release-claims.md'),
-      'utf8'
-    );
+    const matrix = readFileSync(join(root, 'specs/008-release-foundation/artifacts/release-evidence-matrix.md'), 'utf8');
+    const claims = readFileSync(join(root, 'specs/008-release-foundation/artifacts/release-claims.md'), 'utf8');
 
     const gateIds = new Set(
       matrix
         .split('\n')
         .filter((line) => line.startsWith('| REL-'))
         .map((line) => line.split('|')[1]?.trim())
-        .filter((value): value is string => Boolean(value))
+        .filter((value): value is string => Boolean(value)),
     );
 
     const claimGateIds = claims
@@ -56,7 +50,7 @@ describe('release claim consistency', () => {
           .split('|')[4]
           .split(',')
           .map((value) => value.trim())
-          .filter(Boolean)
+          .filter(Boolean),
       );
 
     expect(claimGateIds.length).toBeGreaterThan(0);

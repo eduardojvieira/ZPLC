@@ -13,7 +13,8 @@ const built = entries.filter((entry): entry is [string, string] => entry[1] !== 
 describe('the component gallery (UX-004)', () => {
   it('lists only components the kit exports, and the kit has every component UX-001 asks for', () => {
     for (const [, exportName] of built) expect({ exportName, exported: exportName in kit }).toEqual({ exportName, exported: true });
-    for (const exportName of SUPPORTING_COMPONENTS) expect({ exportName, exported: exportName in kit }).toEqual({ exportName, exported: true });
+    for (const exportName of SUPPORTING_COMPONENTS)
+      expect({ exportName, exported: exportName in kit }).toEqual({ exportName, exported: true });
     const missing = entries.filter(([, exportName]) => exportName === null).map(([name]) => name);
     expect(missing).toEqual([]);
   });
@@ -21,10 +22,31 @@ describe('the component gallery (UX-004)', () => {
   it('has a specimen for every component of the registry', () => {
     const specimens = [...markup.matchAll(/data-specimen="([^"]+)"/g)].map((match) => match[1].toLowerCase());
     const expected: Record<string, string> = {
-      button: 'button', 'icon button': 'icon button', 'toggle group': 'toggle group', field: 'field', 'text field': 'text field', 'number field': 'number field',
-      select: 'select', checkbox: 'checkbox', switch: 'switch', tabs: 'tabs', menu: 'menu', 'context menu': 'context menu', dialog: 'dialog',
-      'alert dialog': 'alert dialog', popover: 'popover', tooltip: 'tooltip', toolbar: 'toolbar', badge: 'badge', 'status dot': 'status dot',
-      'empty state': 'empty state', 'property list': 'property list', 'combo box': 'combo box', toast: 'toast', tree: 'tree', 'data grid': 'data grid',
+      button: 'button',
+      'icon button': 'icon button',
+      'toggle group': 'toggle group',
+      field: 'field',
+      'text field': 'text field',
+      'number field': 'number field',
+      select: 'select',
+      checkbox: 'checkbox',
+      switch: 'switch',
+      tabs: 'tabs',
+      menu: 'menu',
+      'context menu': 'context menu',
+      dialog: 'dialog',
+      'alert dialog': 'alert dialog',
+      popover: 'popover',
+      tooltip: 'tooltip',
+      toolbar: 'toolbar',
+      badge: 'badge',
+      'status dot': 'status dot',
+      'empty state': 'empty state',
+      'property list': 'property list',
+      'combo box': 'combo box',
+      toast: 'toast',
+      tree: 'tree',
+      'data grid': 'data grid',
     };
     for (const [name] of built) expect({ name, shown: specimens.includes(expected[name]) }).toEqual({ name, shown: true });
     for (const extra of ['textarea', 'range', 'signal chip', 'spinner', 'loading state', 'error state']) expect(specimens).toContain(extra);

@@ -24,20 +24,12 @@ import type { DebugMap } from '../compiler';
 import { judgeDebugMapAttachment } from '../compiler';
 import { reconcileElementBreakpoints } from '../editors/elementBreakpoints';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
-import {
-  resolveExecutionLocation,
-  type ResolvedExecutionLocation,
-} from './debugExecutionLocation';
+import { resolveExecutionLocation, type ResolvedExecutionLocation } from './debugExecutionLocation';
 import { debugLog } from '../utils/debugLog';
 import { createBreakpointSyncer, reportBreakpointSync, type BreakpointSyncOutcome } from './useDebugControllerBreakpoints';
 import { deriveHardwareDebugState } from '../runtime/debugStatus';
-import {
-  type DebugCapabilities,
-} from '../runtime/debugCapabilities';
-import {
-  getDebugCapabilitiesForAdapter,
-  getDebugFeatureActionability,
-} from './debugCapabilityActions';
+import { type DebugCapabilities } from '../runtime/debugCapabilities';
+import { getDebugCapabilitiesForAdapter, getDebugFeatureActionability } from './debugCapabilityActions';
 import { isCurrentSerialAdapter, usesConnectionManager } from './forceReconciliation';
 import {
   appendNativeTrace as appendNativeTraceSample,
@@ -51,11 +43,18 @@ import {
  * (onBreakpointHit(pc)), so the line is the one the debug map gives for the pc, the same line the editor highlights.
  * The prefix "Breakpoint hit at PC=0x" is matched by the real-app journeys.
  */
-export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, line?: number): { resolved: ResolvedExecutionLocation; message: string } {
+export function describeBreakpointHit(
+  debugMap: DebugMap | null,
+  pc: number,
+  line?: number,
+): { resolved: ResolvedExecutionLocation; message: string } {
   const resolved = resolveExecutionLocation(debugMap, pc, line);
   return {
     resolved,
-    message: t('debugger.breakpointHit', { pc: pc.toString(16).toUpperCase(), line: resolved.line ? t('debugger.atLine', { line: resolved.line }) : '' }),
+    message: t('debugger.breakpointHit', {
+      pc: pc.toString(16).toUpperCase(),
+      line: resolved.line ? t('debugger.atLine', { line: resolved.line }) : '',
+    }),
   };
 }
 
@@ -139,13 +138,16 @@ export function useDebugController(): DebugController {
 
   const { enqueueDeviceLog, flushDeviceLogs } = useDeviceLogQueue(addConsoleEntries);
 
-  const logUploadTrace = useCallback((event: UploadTraceEvent) => {
-    addConsoleEntry({
-      type: event.kind === 'command' ? 'command' : 'info',
-      message: event.message,
-      source: 'runtime',
-    });
-  }, [addConsoleEntry]);
+  const logUploadTrace = useCallback(
+    (event: UploadTraceEvent) => {
+      addConsoleEntry({
+        type: event.kind === 'command' ? 'command' : 'info',
+        message: event.message,
+        source: 'runtime',
+      });
+    },
+    [addConsoleEntry],
+  );
 
   useEffect(() => {
     adapterRef.current = adapter;
@@ -155,100 +157,111 @@ export function useDebugController(): DebugController {
   // Event Handlers
   // =========================================================================
 
-  const createEventHandlers = useCallback((owner: IDebugAdapter, traceContext: { compilerRunId: number; epoch: number }): DebugAdapterEvents => {
-    const isCurrentOwner = () => adapterRef.current === owner;
-    return {
-    onStateChange: (state: VMState) => {
-      if (!isCurrentOwner()) return;
-      setVmState(state);
-    },
-    onInfoUpdate: (info: VMInfo) => {
-      if (!isCurrentOwner()) return;
-      publishVmInfo(info);
-    },
-    onError: (message: string) => {
-      if (!isCurrentOwner()) return;
-      setLastError(message);
-      addConsoleEntry({
-        type: 'error',
-        message: t('debugger.error', { message }),
-        source: 'debugger',
-      });
-    },
-    onBreakpointHit: (pc: number, line?: number) => {
-      if (!isCurrentOwner()) return;
-      const { resolved, message } = describeBreakpointHit(debugMap, pc, line);
-      debugLog('[Execution] Breakpoint hit resolved', {
-        pc,
-        requestedLine: line ?? null,
-        resolved,
-      });
-      setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
+  const createEventHandlers = useCallback(
+    (owner: IDebugAdapter, traceContext: { compilerRunId: number; epoch: number }): DebugAdapterEvents => {
+      const isCurrentOwner = () => adapterRef.current === owner;
+      return {
+        onStateChange: (state: VMState) => {
+          if (!isCurrentOwner()) return;
+          setVmState(state);
+        },
+        onInfoUpdate: (info: VMInfo) => {
+          if (!isCurrentOwner()) return;
+          publishVmInfo(info);
+        },
+        onError: (message: string) => {
+          if (!isCurrentOwner()) return;
+          setLastError(message);
+          addConsoleEntry({
+            type: 'error',
+            message: t('debugger.error', { message }),
+            source: 'debugger',
+          });
+        },
+        onBreakpointHit: (pc: number, line?: number) => {
+          if (!isCurrentOwner()) return;
+          const { resolved, message } = describeBreakpointHit(debugMap, pc, line);
+          debugLog('[Execution] Breakpoint hit resolved', {
+            pc,
+            requestedLine: line ?? null,
+            resolved,
+          });
+          setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
 
-      addConsoleEntry({
-        type: 'info',
-        message,
-        source: 'debugger',
-      });
+          addConsoleEntry({
+            type: 'info',
+            message,
+            source: 'debugger',
+          });
+        },
+        onStepComplete: (pc: number) => {
+          if (!isCurrentOwner()) return;
+          const resolved = resolveExecutionLocation(debugMap, pc);
+          debugLog('[Execution] Step complete resolved', { pc, resolved });
+          setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
+        },
+        onGpioChange: (_channel: number, value: number) => {
+          if (!isCurrentOwner()) return;
+          // Update OPI-based watch variables
+          // The GPIO values are at OPI base addresses
+          updateLiveValues(new Map([[`GPIO_OUT`, value]]));
+        },
+        onSerialData: (line: string) => {
+          if (!isCurrentOwner()) return;
+          enqueueDeviceLog(line);
+        },
+        onRuntimeSnapshot: (snapshot) => {
+          const currentState = useIDEStore.getState();
+          if (
+            !traceCaptureEnabledRef.current ||
+            !canCaptureNativeTrace({
+              activeAdapter: adapterRef.current,
+              owner,
+              snapshot,
+              capturedCompilerRunId: traceContext.compilerRunId,
+              currentCompilerRunId: currentState.compilerRunId,
+              capturedTraceEpoch: traceContext.epoch,
+              currentTraceEpoch: traceEpochRef.current,
+            })
+          ) {
+            return;
+          }
+          const trace = appendNativeTraceSample(currentState.debug.nativeTrace, adapterRef.current, owner, snapshot, {
+            compilerRunId: traceContext.compilerRunId,
+            receivedAtMs: Date.now(),
+          });
+          if (trace !== currentState.debug.nativeTrace) {
+            appendNativeTrace(trace.at(-1)!);
+          }
+        },
+        onCapabilitiesChange: () => {
+          if (isCurrentOwner()) {
+            setCapabilityRevision((revision) => revision + 1);
+          }
+        },
+      };
     },
-    onStepComplete: (pc: number) => {
-      if (!isCurrentOwner()) return;
-      const resolved = resolveExecutionLocation(debugMap, pc);
-      debugLog('[Execution] Step complete resolved', { pc, resolved });
-      setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
-    },
-    onGpioChange: (_channel: number, value: number) => {
-      if (!isCurrentOwner()) return;
-      // Update OPI-based watch variables
-      // The GPIO values are at OPI base addresses
-      updateLiveValues(new Map([[`GPIO_OUT`, value]]));
-    },
-    onSerialData: (line: string) => {
-      if (!isCurrentOwner()) return;
-      enqueueDeviceLog(line);
-    },
-    onRuntimeSnapshot: (snapshot) => {
-      const currentState = useIDEStore.getState();
-      if (!traceCaptureEnabledRef.current || !canCaptureNativeTrace({
-        activeAdapter: adapterRef.current,
-        owner,
-        snapshot,
-        capturedCompilerRunId: traceContext.compilerRunId,
-        currentCompilerRunId: currentState.compilerRunId,
-        capturedTraceEpoch: traceContext.epoch,
-        currentTraceEpoch: traceEpochRef.current,
-      })) {
+    [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues, appendNativeTrace],
+  );
+
+  const bindAdapterEventHandlers = useCallback(
+    (owner: IDebugAdapter, enableTrace: boolean) => {
+      if (adapterRef.current !== owner) {
         return;
       }
-      const trace = appendNativeTraceSample(currentState.debug.nativeTrace, adapterRef.current, owner, snapshot, {
-        compilerRunId: traceContext.compilerRunId,
-        receivedAtMs: Date.now(),
-      });
-      if (trace !== currentState.debug.nativeTrace) {
-        appendNativeTrace(trace.at(-1)!);
+      traceCaptureEnabledRef.current = enableTrace;
+      if (enableTrace) {
+        traceBoundCompilerRunIdRef.current = useIDEStore.getState().compilerRunId;
       }
+      owner.setEventHandlers(
+        createEventHandlers(owner, {
+          compilerRunId: useIDEStore.getState().compilerRunId,
+          epoch: traceEpochRef.current,
+        }),
+      );
     },
-    onCapabilitiesChange: () => {
-      if (isCurrentOwner()) {
-        setCapabilityRevision((revision) => revision + 1);
-      }
-    },
-  };
-  }, [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues, appendNativeTrace]);
-
-  const bindAdapterEventHandlers = useCallback((owner: IDebugAdapter, enableTrace: boolean) => {
-    if (adapterRef.current !== owner) {
-      return;
-    }
-    traceCaptureEnabledRef.current = enableTrace;
-    if (enableTrace) {
-      traceBoundCompilerRunIdRef.current = useIDEStore.getState().compilerRunId;
-    }
-    owner.setEventHandlers(createEventHandlers(owner, {
-      compilerRunId: useIDEStore.getState().compilerRunId,
-      epoch: traceEpochRef.current,
-    }));
-  }, [createEventHandlers]);
+    [createEventHandlers],
+  );
 
   useEffect(() => {
     if (!adapter) {
@@ -311,20 +324,23 @@ export function useDebugController(): DebugController {
   // Adapter Lifecycle
   // =========================================================================
 
-  const pushBreakpoints = useCallback(async (target: IDebugAdapter): Promise<BreakpointSyncOutcome | null> => {
-    try {
-      const outcome = await breakpointSyncer.sync(
-        target,
-        () => useIDEStore.getState().getAllBreakpointPCs(),
-        () => adapterRef.current === target && target.connected,
-      );
-      reportBreakpointSync(outcome, { addConsoleEntry, setBreakpointsInactiveReason });
-      return outcome;
-    } catch (err) {
-      console.error('Failed to sync breakpoints:', err);
-      return null;
-    }
-  }, [addConsoleEntry, breakpointSyncer, setBreakpointsInactiveReason]);
+  const pushBreakpoints = useCallback(
+    async (target: IDebugAdapter): Promise<BreakpointSyncOutcome | null> => {
+      try {
+        const outcome = await breakpointSyncer.sync(
+          target,
+          () => useIDEStore.getState().getAllBreakpointPCs(),
+          () => adapterRef.current === target && target.connected,
+        );
+        reportBreakpointSync(outcome, { addConsoleEntry, setBreakpointsInactiveReason });
+        return outcome;
+      } catch (err) {
+        console.error('Failed to sync breakpoints:', err);
+        return null;
+      }
+    },
+    [addConsoleEntry, breakpointSyncer, setBreakpointsInactiveReason],
+  );
 
   const resetConnectionState = useCallback(() => {
     breakpointSyncer.invalidate();
@@ -342,7 +358,15 @@ export function useDebugController(): DebugController {
     setPolling(false);
     setCurrentExecution(null, null, null);
     setDebugMode('none');
-  }, [breakpointSyncer, clearLiveValues, invalidateNativeTrace, setBreakpointsInactiveReason, setCurrentExecution, setDebugMode, setPolling]);
+  }, [
+    breakpointSyncer,
+    clearLiveValues,
+    invalidateNativeTrace,
+    setBreakpointsInactiveReason,
+    setCurrentExecution,
+    setDebugMode,
+    setPolling,
+  ]);
 
   useEffect(() => {
     const currentAdapter = adapter;
@@ -443,7 +467,10 @@ export function useDebugController(): DebugController {
       }
 
       invalidateNativeTrace();
-      const simulationAdapter = await connectSimulationAdapter({ directory: useIDEStore.getState().directoryHandle, report: addConsoleEntry });
+      const simulationAdapter = await connectSimulationAdapter({
+        directory: useIDEStore.getState().directoryHandle,
+        report: addConsoleEntry,
+      });
 
       adapterRef.current = simulationAdapter;
       setAdapter(simulationAdapter);
@@ -500,94 +527,108 @@ export function useDebugController(): DebugController {
   // Program Loading
   // =========================================================================
 
-  const loadProgram = useCallback(async (bytecode: Uint8Array, newDebugMap?: DebugMap, projectBoard?: string) => {
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter) {
-      throw new Error('No adapter connected');
-    }
-
-    // For hardware mode, pause polling during entire load operation
-    // (upload + breakpoint sync) to avoid serial conflicts
-    const isHardware = debugMode === 'hardware';
-    const loadedCompilerRunId = useIDEStore.getState().compilerRunId;
-    // a debug map of another build must not be attached to this program (CMP-056)
-    if (newDebugMap) {
-      const attachment = judgeDebugMapAttachment(newDebugMap, bytecode);
-      if (attachment.action === 'refuse') {
-        throw new Error(attachment.message);
-      }
-      if (attachment.action === 'warn') {
-        addConsoleEntry({ type: 'warning', message: attachment.message ?? t('debugger.mapNotTied'), source: 'debugger' });
-      }
-    }
-    invalidateNativeTrace();
-    if (isHardware) {
-      connectionManager.pausePolling();
-    }
-
-    try {
-      // Upload bytecode
-      if (isHardware) {
-        await connectionManager.deployProgram(bytecode, projectBoard, { trace: logUploadTrace });
-      } else {
-        await currentAdapter.loadProgram(bytecode);
+  const loadProgram = useCallback(
+    async (bytecode: Uint8Array, newDebugMap?: DebugMap, projectBoard?: string) => {
+      const currentAdapter = adapterRef.current;
+      if (!currentAdapter) {
+        throw new Error('No adapter connected');
       }
 
-      // program.load (and a hardware deploy) emptied the runtime's breakpoint table.
-      breakpointSyncer.invalidate();
-
-      const ownerIsCurrent = adapterRef.current === currentAdapter;
-      if (!canCommitNativeLoad(ownerIsCurrent, loadedCompilerRunId, useIDEStore.getState().compilerRunId)) {
-        throw new Error('Program load became stale; compile again before running.');
-      }
-
+      // For hardware mode, pause polling during entire load operation
+      // (upload + breakpoint sync) to avoid serial conflicts
+      const isHardware = debugMode === 'hardware';
+      const loadedCompilerRunId = useIDEStore.getState().compilerRunId;
+      // a debug map of another build must not be attached to this program (CMP-056)
       if (newDebugMap) {
-        setDebugMap(newDebugMap);
-      }
-
-      bindAdapterEventHandlers(currentAdapter, true);
-
-      // Sync breakpoints to adapter (skip for hardware if not supported). The sync effect reacts to the
-      // debug map stored above; the syncer makes it wait for this round instead of racing it.
-      let breakpointsSet = 0;
-      if (getAllBreakpointPCs().length > 0) {
-        const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
-        if (!capability.allowed) {
-          addConsoleEntry({
-            type: 'warning',
-            message: capability.message ?? t('debugger.breakpointSyncUnavailable'),
-            source: 'debugger',
-          });
-        } else {
-          if (capability.message) {
-            addConsoleEntry({
-              type: 'warning',
-              message: capability.message,
-              source: 'debugger',
-            });
-          }
-
-          const outcome = await pushBreakpoints(currentAdapter);
-          breakpointsSet = outcome && !outcome.error ? outcome.pcs.length : 0;
+        const attachment = judgeDebugMapAttachment(newDebugMap, bytecode);
+        if (attachment.action === 'refuse') {
+          throw new Error(attachment.message);
+        }
+        if (attachment.action === 'warn') {
+          addConsoleEntry({ type: 'warning', message: attachment.message ?? t('debugger.mapNotTied'), source: 'debugger' });
         }
       }
-
-      addConsoleEntry({
-        type: 'success',
-        message: isHardware
-          ? t('debugger.deployedStopped', { bytes: bytecode.length, count: breakpointsSet })
-          : t('debugger.loaded', { bytes: bytecode.length, count: breakpointsSet }),
-        source: 'debugger',
-      });
-    } finally {
-      // Resume polling after all operations complete
-      // Add small delay to let serial buffer settle
+      invalidateNativeTrace();
       if (isHardware) {
-        await new Promise(r => setTimeout(r, 200));
-        connectionManager.resumePolling();
+        connectionManager.pausePolling();
       }
-    }
-  }, [bindAdapterEventHandlers, breakpointSyncer, invalidateNativeTrace, debugCapabilities, debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace, pushBreakpoints]);
+
+      try {
+        // Upload bytecode
+        if (isHardware) {
+          await connectionManager.deployProgram(bytecode, projectBoard, { trace: logUploadTrace });
+        } else {
+          await currentAdapter.loadProgram(bytecode);
+        }
+
+        // program.load (and a hardware deploy) emptied the runtime's breakpoint table.
+        breakpointSyncer.invalidate();
+
+        const ownerIsCurrent = adapterRef.current === currentAdapter;
+        if (!canCommitNativeLoad(ownerIsCurrent, loadedCompilerRunId, useIDEStore.getState().compilerRunId)) {
+          throw new Error('Program load became stale; compile again before running.');
+        }
+
+        if (newDebugMap) {
+          setDebugMap(newDebugMap);
+        }
+
+        bindAdapterEventHandlers(currentAdapter, true);
+
+        // Sync breakpoints to adapter (skip for hardware if not supported). The sync effect reacts to the
+        // debug map stored above; the syncer makes it wait for this round instead of racing it.
+        let breakpointsSet = 0;
+        if (getAllBreakpointPCs().length > 0) {
+          const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
+          if (!capability.allowed) {
+            addConsoleEntry({
+              type: 'warning',
+              message: capability.message ?? t('debugger.breakpointSyncUnavailable'),
+              source: 'debugger',
+            });
+          } else {
+            if (capability.message) {
+              addConsoleEntry({
+                type: 'warning',
+                message: capability.message,
+                source: 'debugger',
+              });
+            }
+
+            const outcome = await pushBreakpoints(currentAdapter);
+            breakpointsSet = outcome && !outcome.error ? outcome.pcs.length : 0;
+          }
+        }
+
+        addConsoleEntry({
+          type: 'success',
+          message: isHardware
+            ? t('debugger.deployedStopped', { bytes: bytecode.length, count: breakpointsSet })
+            : t('debugger.loaded', { bytes: bytecode.length, count: breakpointsSet }),
+          source: 'debugger',
+        });
+      } finally {
+        // Resume polling after all operations complete
+        // Add small delay to let serial buffer settle
+        if (isHardware) {
+          await new Promise((r) => setTimeout(r, 200));
+          connectionManager.resumePolling();
+        }
+      }
+    },
+    [
+      bindAdapterEventHandlers,
+      breakpointSyncer,
+      invalidateNativeTrace,
+      debugCapabilities,
+      debugMode,
+      setDebugMap,
+      getAllBreakpointPCs,
+      addConsoleEntry,
+      logUploadTrace,
+      pushBreakpoints,
+    ],
+  );
 
   // =========================================================================
   // Execution Control
@@ -647,11 +688,7 @@ export function useDebugController(): DebugController {
     const currentAdapter = adapterRef.current;
     if (!currentAdapter) return;
     const currentCompilerRunId = useIDEStore.getState().compilerRunId;
-    const reenableTrace = canReenableNativeTrace(
-      traceCaptureEnabledRef.current,
-      traceBoundCompilerRunIdRef.current,
-      currentCompilerRunId,
-    );
+    const reenableTrace = canReenableNativeTrace(traceCaptureEnabledRef.current, traceBoundCompilerRunIdRef.current, currentCompilerRunId);
     invalidateNativeTrace();
     try {
       await currentAdapter.reset();
@@ -673,13 +710,27 @@ export function useDebugController(): DebugController {
       setCurrentExecution(null, null, null);
       throw err;
     }
-  }, [bindAdapterEventHandlers, breakpointSyncer, clearLiveValues, debugCapabilities, invalidateNativeTrace, pushBreakpoints, setCurrentExecution]);
+  }, [
+    bindAdapterEventHandlers,
+    breakpointSyncer,
+    clearLiveValues,
+    debugCapabilities,
+    invalidateNativeTrace,
+    pushBreakpoints,
+    setCurrentExecution,
+  ]);
 
   // =========================================================================
   // Memory Access
   // =========================================================================
 
-  const { setValue, toggleForceValue, clearAllForcedValues } = useDebugControllerForces({ adapter, adapterRef, forcesUnconfirmed, watchVariables, debugMap });
+  const { setValue, toggleForceValue, clearAllForcedValues } = useDebugControllerForces({
+    adapter,
+    adapterRef,
+    forcesUnconfirmed,
+    watchVariables,
+    debugMap,
+  });
 
   const setVirtualInput = useCallback(async (channel: number, value: number) => {
     if (!adapterRef.current) return;
@@ -691,10 +742,7 @@ export function useDebugController(): DebugController {
     return await adapterRef.current.getVirtualOutput(channel);
   }, []);
 
-  const setSimulationInput = useCallback(async (
-    inputId: 'motor.start' | 'motor.stop' | 'motor.estop',
-    active: boolean,
-  ) => {
+  const setSimulationInput = useCallback(async (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => {
     const owner = adapterRef.current;
     if (!(owner instanceof NativeAdapter) || !owner.connected || !owner.supportsSimulationInput) {
       throw new Error('Native simulation input controls are unavailable');
@@ -715,7 +763,17 @@ export function useDebugController(): DebugController {
   // Polling for Live Values
   // =========================================================================
 
-  useDebugControllerPolling({ adapter, adapterRef, vmState, watchVariables, pollingInterval, debugMap, mpeekEnabled, monitored, pollingIntervalRef });
+  useDebugControllerPolling({
+    adapter,
+    adapterRef,
+    vmState,
+    watchVariables,
+    pollingInterval,
+    debugMap,
+    mpeekEnabled,
+    monitored,
+    pollingIntervalRef,
+  });
 
   // =========================================================================
   // Breakpoints on the elements of a diagram
@@ -797,4 +855,3 @@ export function useDebugController(): DebugController {
 }
 
 export default useDebugController;
-

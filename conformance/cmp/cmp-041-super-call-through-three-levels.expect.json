@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "SUPER^ in a method of each of three levels calls the level above it",
-  "matrix": [
-    "pous.extends-override-final-super"
-  ],
+  "matrix": ["pous.extends-override-final-super"],
   "note": "SUPER^ is the base of the block that declares the method being run, not of the instance: Top calls Middle, which calls Base, so the value is 1 + 10 + 100",
   "scans": 1,
   "scanMs": 10,

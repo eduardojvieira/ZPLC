@@ -18,12 +18,32 @@ function artifact(): Uint8Array<ArrayBuffer> {
 }
 
 const systemInfo = {
-  board: 'stm32f746g_disco', board_profile: 'stm32f746g_disco/stm32f746xx', zplc_version: '1.0.0', zephyr_version: '4.0.0', uptime_ms: 0, cpu_freq_mhz: 216,
-  device_protocol_version: 1, bytecode_abi_major: 1, bytecode_abi_minor: 0, draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
-  capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 }, memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
+  board: 'stm32f746g_disco',
+  board_profile: 'stm32f746g_disco/stm32f746xx',
+  zplc_version: '1.0.0',
+  zephyr_version: '4.0.0',
+  uptime_ms: 0,
+  cpu_freq_mhz: 216,
+  device_protocol_version: 1,
+  bytecode_abi_major: 1,
+  bytecode_abi_minor: 0,
+  draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
+  capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
+  memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
 };
 
-const result = { bytecode: artifact(), zplcFile: artifact(), assembly: '', fileName: 'main.zplc', codeSize: 0, hasTaskSegment: true, taskCount: 1, debugMap: {}, revision: 3, compilerRunId: 9 } as unknown as LastCompileResult;
+const result = {
+  bytecode: artifact(),
+  zplcFile: artifact(),
+  assembly: '',
+  fileName: 'main.zplc',
+  codeSize: 0,
+  hasTaskSegment: true,
+  taskCount: 1,
+  debugMap: {},
+  revision: 3,
+  compilerRunId: 9,
+} as unknown as LastCompileResult;
 
 function harness(overrides: Partial<DeployDeps> = {}) {
   const calls: string[] = [];
@@ -38,12 +58,26 @@ function harness(overrides: Partial<DeployDeps> = {}) {
     compilerRunId: () => 9,
     compileRevision: () => 3,
     systemInfo: () => systemInfo,
-    loadProgram: async () => { calls.push('load'); },
-    setProgramLoadState: (state) => { states.push(state); },
-    log: (entry) => { logs.push(`${entry.type}: ${entry.message}`); },
+    loadProgram: async () => {
+      calls.push('load');
+    },
+    setProgramLoadState: (state) => {
+      states.push(state);
+    },
+    log: (entry) => {
+      logs.push(`${entry.type}: ${entry.message}`);
+    },
     ...overrides,
   };
-  return { deps, calls, logs, states, changeSession: () => { session = 'session-2'; } };
+  return {
+    deps,
+    calls,
+    logs,
+    states,
+    changeSession: () => {
+      session = 'session-2';
+    },
+  };
 }
 
 /** Waits for the dialog to open, lets the test look at it, and answers. */
@@ -57,15 +91,23 @@ async function answerWhenAsked(answer: boolean, inspect?: (request: NonNullable<
 
 let unmount: (() => void) | null = null;
 // The notification store is shared by every test file of the run, so what these tests report must not stay in it.
-afterEach(() => { unmount?.(); unmount = null; useNotifications.setState(useNotifications.getInitialState(), true); });
-const open = () => { unmount = mountConfirmHost(); };
+afterEach(() => {
+  unmount?.();
+  unmount = null;
+  useNotifications.setState(useNotifications.getInitialState(), true);
+});
+const open = () => {
+  unmount = mountConfirmHost();
+};
 
 describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else', () => {
   it('UX-019 sends nothing when the person cancels, and says so', async () => {
     open();
     const { deps, calls, logs } = harness();
     const flow = performHardwareDeploy(deps);
-    await answerWhenAsked(false, (request) => expect(request).toMatchObject({ title: 'Deploy to the device?', actionLabel: 'Deploy', cancelLabel: 'Cancel' }));
+    await answerWhenAsked(false, (request) =>
+      expect(request).toMatchObject({ title: 'Deploy to the device?', actionLabel: 'Deploy', cancelLabel: 'Cancel' }),
+    );
     await flow;
     expect(calls).toEqual([]);
     expect(logs).toEqual(['info: Hardware deploy cancelled; no program was sent.']);
@@ -75,7 +117,11 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
   it('COM-028 writes the confirmed program only after the person chose the action, and leaves it deployed and stopped', async () => {
     open();
     const calls: string[] = [];
-    const { deps, logs, states } = harness({ loadProgram: async (data) => { calls.push(`load:${data.byteLength}:${currentConfirmation() === null ? 'after-dialog' : 'during-dialog'}`); } });
+    const { deps, logs, states } = harness({
+      loadProgram: async (data) => {
+        calls.push(`load:${data.byteLength}:${currentConfirmation() === null ? 'after-dialog' : 'during-dialog'}`);
+      },
+    });
     const flow = performHardwareDeploy(deps);
     await answerWhenAsked(true);
     await flow;
@@ -84,7 +130,8 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
     expect(logs.at(-1)).toBe('success: Program deployed and stopped.');
     // LRN-023: the hardware grade's program hash is the SHA-256 of the artifact that was sent
     const sent = new Uint8Array(await crypto.subtle.digest('SHA-256', artifact()));
-    for (let turns = 0; turns < 50 && useDeployedProgram.getState().sha256 === null; turns += 1) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (let turns = 0; turns < 50 && useDeployedProgram.getState().sha256 === null; turns += 1)
+      await new Promise((resolve) => setTimeout(resolve, 1));
     expect(useDeployedProgram.getState().sha256).toBe([...sent].map((byte) => byte.toString(16).padStart(2, '0')).join(''));
   });
 
@@ -122,7 +169,11 @@ describe('COM-028 and UX-019 the deploy goes through the dialog and nowhere else
 
   it('COM-028 reports an unconfirmed device state when the transfer fails after it started', async () => {
     open();
-    const { deps, logs } = harness({ loadProgram: async () => { throw new Error('link lost'); } });
+    const { deps, logs } = harness({
+      loadProgram: async () => {
+        throw new Error('link lost');
+      },
+    });
     const flow = performHardwareDeploy(deps);
     await answerWhenAsked(true);
     await flow;

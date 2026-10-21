@@ -25,7 +25,8 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
   // A radio group the way a native one behaves: one tab stop (the chosen port, else the first), and the arrow keys move
   // the choice and the focus together.
   const onRowKey = (event: KeyboardEvent<HTMLElement>, index: number) => {
-    const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+    const step =
+      event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
     if (step === 0) return;
     event.preventDefault();
     const target = (index + step + rows.length) % rows.length;
@@ -35,11 +36,13 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
   return (
     <Modal isOpen onClose={onCancel} title={t('serialPort.title')} widthClass="max-w-xl" showCloseButton={false}>
       <div className="p-4" data-serial-port-dialog>
-        <p className="mb-3 text-sm text-[var(--color-surface-200)]">
-          {t('serialPort.intro')}
-        </p>
+        <p className="mb-3 text-sm text-[var(--color-surface-200)]">{t('serialPort.intro')}</p>
         {rows.length === 0 ? (
-          <p role="status" className="mb-4 rounded border border-[var(--border-color)] p-3 text-sm text-[var(--color-surface-100)]" data-serial-port-empty>
+          <p
+            role="status"
+            className="mb-4 rounded border border-[var(--border-color)] p-3 text-sm text-[var(--color-surface-100)]"
+            data-serial-port-empty
+          >
             {t('serialPort.empty')}
           </p>
         ) : (
@@ -56,16 +59,33 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
                   data-serial-port-row={row.kind}
                   onClick={() => onSelect(row.portId)}
                   onKeyDown={(event) => onRowKey(event, index)}
-                  className={`items-start justify-start gap-3 whitespace-normal p-3 text-left text-sm ${checked ? 'border-[var(--color-accent-blue)] bg-[var(--color-surface-700)]' : ''}`}
+                  className={
+                    `items-start justify-start gap-3 whitespace-normal p-3 text-left ` +
+                    `text-sm ${checked ? 'border-[var(--color-accent-blue)] bg-[var(--color-surface-700)]' : ''}`
+                  }
                 >
-                  <span aria-hidden="true" className={`mt-1 h-3.5 w-3.5 shrink-0 rounded-full border border-[var(--color-accent-blue)] ${checked ? 'bg-[var(--color-accent-blue)]' : ''}`} />
+                  <span
+                    aria-hidden="true"
+                    className={
+                      `mt-1 h-3.5 w-3.5 shrink-0 rounded-full border ` +
+                      `border-[var(--color-accent-blue)] ${checked ? 'bg-[var(--color-accent-blue)]' : ''}`
+                    }
+                  />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="break-words font-medium text-[var(--color-surface-100)]">{row.name}</span>
                     <span className="text-xs font-normal text-[var(--color-surface-200)]">
                       {row.usbId === null ? t('serialPort.noUsbId') : t('serialPort.usb', { id: row.usbId })}
                       {row.serialNumber === null ? '' : ` · ${t('serialPort.serialNumber', { serial: row.serialNumber })}`}
                     </span>
-                    {note === null ? null : <span className={`text-xs font-normal ${row.kind === 'known-board' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-200)]'}`}>{note}</span>}
+                    {note === null ? null : (
+                      <span
+                        className={`text-xs font-normal ${
+                          row.kind === 'known-board' ? 'text-[var(--color-accent-green)]' : 'text-[var(--color-surface-200)]'
+                        }`}
+                      >
+                        {note}
+                      </span>
+                    )}
                   </span>
                 </Button>
               );
@@ -78,7 +98,9 @@ export function SerialPortDialog({ rows, selectedPortId, refreshing, onSelect, o
           </Button>
           <div className="flex gap-2">
             <Button onClick={onCancel}>{t('common.cancel')}</Button>
-            <Button variant="primary" disabled={selectedPortId === null || refreshing} onClick={onChoose}>{t('serialPort.use')}</Button>
+            <Button variant="primary" disabled={selectedPortId === null || refreshing} onClick={onChoose}>
+              {t('serialPort.use')}
+            </Button>
           </div>
         </div>
       </div>

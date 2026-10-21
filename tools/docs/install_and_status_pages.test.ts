@@ -14,7 +14,10 @@ const ROOT = new URL('../../', import.meta.url).pathname;
 const EN = 'docs/docs';
 const ES = 'docs/i18n/es/docusaurus-plugin-content-docs/current';
 const text = (path: string) => readFileSync(join(ROOT, path), 'utf8');
-const both = (page: string): Array<[string, string]> => [[`${EN}/${page}`, text(`${EN}/${page}`)], [`${ES}/${page}`, text(`${ES}/${page}`)]];
+const both = (page: string): Array<[string, string]> => [
+  [`${EN}/${page}`, text(`${EN}/${page}`)],
+  [`${ES}/${page}`, text(`${ES}/${page}`)],
+];
 
 /** Headings of a page, outside code blocks, as `level text`. */
 function headings(page: string): string[] {
@@ -22,8 +25,14 @@ function headings(page: string): string[] {
   const found: string[] = [];
   for (const line of page.split('\n')) {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line);
-    if (fence) { if (marker && marker[1]![0] === fence[0]) fence = ''; continue; }
-    if (marker) { fence = marker[1]!; continue; }
+    if (fence) {
+      if (marker && marker[1]![0] === fence[0]) fence = '';
+      continue;
+    }
+    if (marker) {
+      fence = marker[1]!;
+      continue;
+    }
     const heading = /^(#{1,6})\s+(.+)$/.exec(line);
     if (heading) found.push(`${heading[1]!.length} ${heading[2]!.trim()}`);
   }
@@ -36,10 +45,21 @@ function headings(page: string): string[] {
 
 describe('install page: built from the channels and installers that exist today (DOC-005)', () => {
   const builder = Bun.YAML.parse(text('packages/zplc-ide/electron-builder.yml')) as {
-    win: { target: string[] }; mac: { target: string[] }; linux: { target: string[] };
-    nsis: { artifactName: string }; portable: { artifactName: string };
+    win: { target: string[] };
+    mac: { target: string[] };
+    linux: { target: string[] };
+    nsis: { artifactName: string };
+    portable: { artifactName: string };
   };
-  const extensionOf: Record<string, string[]> = { nsis: ['.exe'], portable: ['.exe'], dmg: ['.dmg'], zip: ['.zip'], AppImage: ['.AppImage'], deb: ['.deb'], rpm: ['.rpm'] };
+  const extensionOf: Record<string, string[]> = {
+    nsis: ['.exe'],
+    portable: ['.exe'],
+    dmg: ['.dmg'],
+    zip: ['.zip'],
+    AppImage: ['.AppImage'],
+    deb: ['.deb'],
+    rpm: ['.rpm'],
+  };
   const built = [...builder.win.target, ...builder.mac.target, ...builder.linux.target];
   const page = both('getting-started/install.md');
 
@@ -49,7 +69,8 @@ describe('install page: built from the channels and installers that exist today 
     for (const [path, content] of page) {
       const named = new Set(content.match(/\.(?:exe|dmg|zip|AppImage|deb|rpm|msi|msix|pkg|snap|flatpak)\b/g));
       // the .zip of the macOS app is mentioned only in the pipeline-name paragraph, as an asset of the release
-      for (const extension of ['.exe', '.dmg', '.AppImage', '.deb', '.rpm']) expect({ path, extension, named: named.has(extension) }).toEqual({ path, extension, named: true });
+      for (const extension of ['.exe', '.dmg', '.AppImage', '.deb', '.rpm'])
+        expect({ path, extension, named: named.has(extension) }).toEqual({ path, extension, named: true });
       expect({ path, unbuilt: [...named].filter((extension) => !expected.has(extension)) }).toEqual({ path, unbuilt: [] });
     }
   });
@@ -58,7 +79,11 @@ describe('install page: built from the channels and installers that exist today 
     expect(builder.nsis.artifactName).toContain('unsigned');
     expect(builder.portable.artifactName).toContain('unsigned');
     for (const [path, content] of page) {
-      expect({ path, setup: content.includes('setup-unsigned'), portable: content.includes('portable-unsigned') }).toEqual({ path, setup: true, portable: true });
+      expect({ path, setup: content.includes('setup-unsigned'), portable: content.includes('portable-unsigned') }).toEqual({
+        path,
+        setup: true,
+        portable: true,
+      });
     }
   });
 
@@ -72,22 +97,41 @@ describe('install page: built from the channels and installers that exist today 
     const [english, spanish] = page.map(([, content]) => headings(content));
     expect(english!.length).toBe(spanish!.length);
     expect(english!.map((heading) => heading.split(' ')[0])).toEqual(spanish!.map((heading) => heading.split(' ')[0]));
-    for (const wanted of ['2 Download', '2 Channels', '2 Files of a release', '2 Verify the download', '2 First launch', '3 Windows', '3 macOS', '3 Linux', '2 Linux: serial port access', '2 Troubleshooting']) {
+    for (const wanted of [
+      '2 Download',
+      '2 Channels',
+      '2 Files of a release',
+      '2 Verify the download',
+      '2 First launch',
+      '3 Windows',
+      '3 macOS',
+      '3 Linux',
+      '2 Linux: serial port access',
+      '2 Troubleshooting',
+    ]) {
       expect(english).toContain(wanted);
     }
     for (const [path, content] of page) {
-      for (const command of ['sha256sum --ignore-missing -c SHA256SUMS', 'shasum -a 256 -c SHA256SUMS', 'Get-FileHash', 'gh attestation verify']) {
+      for (const command of [
+        'sha256sum --ignore-missing -c SHA256SUMS',
+        'shasum -a 256 -c SHA256SUMS',
+        'Get-FileHash',
+        'gh attestation verify',
+      ]) {
         expect({ path, command, present: content.includes(command) }).toEqual({ path, command, present: true });
       }
     }
   });
 
   it('names the udev rule the packages install, the boards it covers and how to apply it without a reboot (REL-013)', () => {
-    const covered = Object.entries(readUsbIds()).filter(([, entry]) => entry.ids.length > 0).flatMap(([, entry]) => entry.ids.map((id) => `${id.vid.toLowerCase()}:${id.pid.toLowerCase()}`));
+    const covered = Object.entries(readUsbIds())
+      .filter(([, entry]) => entry.ids.length > 0)
+      .flatMap(([, entry]) => entry.ids.map((id) => `${id.vid.toLowerCase()}:${id.pid.toLowerCase()}`));
     expect(covered.length).toBeGreaterThan(0);
     for (const [path, content] of page) {
       expect({ path, rule: content.includes(RULE_TARGET) }).toEqual({ path, rule: true });
-      for (const identifier of new Set(covered)) expect({ path, identifier, named: content.includes(identifier) }).toEqual({ path, identifier, named: true });
+      for (const identifier of new Set(covered))
+        expect({ path, identifier, named: content.includes(identifier) }).toEqual({ path, identifier, named: true });
       for (const command of ['udevadm control --reload-rules', 'udevadm trigger', 'usermod -aG dialout']) {
         expect({ path, command, present: content.includes(command) }).toEqual({ path, command, present: true });
       }
@@ -99,8 +143,15 @@ describe('install page: built from the channels and installers that exist today 
       const start = content.indexOf('### Linux');
       const linux = content.slice(start, content.indexOf('\n## ', start));
       const first = (extension: string) => linux.indexOf(extension);
-      expect({ path, packagesFirst: first('.deb') > -1 && first('.rpm') > -1 && first('.deb') < first('AppImage') && first('.rpm') < first('AppImage') }).toEqual({ path, packagesFirst: true });
-      expect({ path, fuse: linux.includes('libfuse2'), extract: linux.includes('--appimage-extract-and-run') }).toEqual({ path, fuse: true, extract: true });
+      expect({
+        path,
+        packagesFirst: first('.deb') > -1 && first('.rpm') > -1 && first('.deb') < first('AppImage') && first('.rpm') < first('AppImage'),
+      }).toEqual({ path, packagesFirst: true });
+      expect({ path, fuse: linux.includes('libfuse2'), extract: linux.includes('--appimage-extract-and-run') }).toEqual({
+        path,
+        fuse: true,
+        extract: true,
+      });
     }
   });
 
@@ -122,7 +173,10 @@ describe('install page: built from the channels and installers that exist today 
     ];
     for (const [path, content, systems] of documents) {
       const first = sections(content)[0]!;
-      expect({ path, heading: first.split('\n')[0] }).toEqual({ path, heading: path === 'README.md' || path.startsWith(EN) ? '## Download' : '## Descarga' });
+      expect({ path, heading: first.split('\n')[0] }).toEqual({
+        path,
+        heading: path === 'README.md' || path.startsWith(EN) ? '## Download' : '## Descarga',
+      });
       const lines = download(content);
       expect({ path, systems: lines.map((line) => /^- \*\*(\w+):\*\*/.exec(line)?.[1]) }).toEqual({ path, systems });
       // each line says what the system asks the first time: unsigned, or not notarized, with the step
@@ -140,7 +194,10 @@ describe('install page: built from the channels and installers that exist today 
     for (const [path, content] of page) {
       const mac = content.slice(content.indexOf('### macOS'), content.indexOf('### Linux'));
       const order = ['Done', 'System Settings', 'Privacy & Security', 'Open Anyway'].map((step) => mac.indexOf(step));
-      expect({ path, order: order.every((position, index) => position > -1 && (index === 0 || position > order[index - 1]!)) }).toEqual({ path, order: true });
+      expect({ path, order: order.every((position, index) => position > -1 && (index === 0 || position > order[index - 1]!)) }).toEqual({
+        path,
+        order: true,
+      });
       expect({ path, why: /paid/i.test(mac) || /de pago/i.test(mac) }).toEqual({ path, why: true });
       expect({ path, notarized: /not notarized|no está notarizada/i.test(mac) }).toEqual({ path, notarized: true });
     }
@@ -155,11 +212,19 @@ describe('install page: built from the channels and installers that exist today 
 });
 
 describe('no curl | sh installer is recommended or offered (REL-006)', () => {
-  const PIPE = new RegExp(String.raw`\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:iwr|irm|` + String.raw`Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*iex\b`, 'i');
+  const PIPE = new RegExp(
+    String.raw`\b(?:curl|wget|iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:iwr|irm|` +
+      String.raw`Invoke-WebRequest|Invoke-RestMethod)\b[^\n]*\|\s*iex\b`,
+    'i',
+  );
 
   it('is not in the README, the checklist or any page of the documentation, in either language', () => {
     const files = ['README.md', 'RELEASING.md', 'CHANGELOG.md', ...markdownFiles(ROOT, EN), ...markdownFiles(ROOT, ES)];
-    const found = files.filter((file) => text(file).split('\n').some((line) => PIPE.test(line)));
+    const found = files.filter((file) =>
+      text(file)
+        .split('\n')
+        .some((line) => PIPE.test(line)),
+    );
     expect(found).toEqual([]);
   });
 
@@ -186,7 +251,11 @@ print(json.dumps([{"name": b["display_name"], "ide": b["ide_id"], "level": libra
 `;
 
 describe('hardware support page: one table, derived from the manifest and its records (DOC-010)', () => {
-  const boards = JSON.parse(Bun.spawnSync(['python3', '-B', '-c', BOARDS_SCRIPT, ROOT], { stdout: 'pipe' }).stdout.toString()) as Array<{ name: string; ide: string; level: string }>;
+  const boards = JSON.parse(Bun.spawnSync(['python3', '-B', '-c', BOARDS_SCRIPT, ROOT], { stdout: 'pipe' }).stdout.toString()) as Array<{
+    name: string;
+    ide: string;
+    level: string;
+  }>;
   const support = both('reference/capabilities-evidence.md');
 
   it('lists every board of the manifest once, with the level its records give it', () => {
@@ -203,7 +272,11 @@ describe('hardware support page: one table, derived from the manifest and its re
   });
 
   it('is fresh: the generator that writes the table finds nothing to change', () => {
-    const result = Bun.spawnSync(['python3', '-B', 'tools/docs/generate_board_reference.py', '--check'], { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' });
+    const result = Bun.spawnSync(['python3', '-B', 'tools/docs/generate_board_reference.py', '--check'], {
+      cwd: ROOT,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
     expect({ code: result.exitCode, output: result.stdout.toString() + result.stderr.toString() }).toMatchObject({ code: 0 });
   });
 
@@ -214,15 +287,29 @@ describe('hardware support page: one table, derived from the manifest and its re
     const pages = [...markdownFiles(ROOT, EN), ...markdownFiles(ROOT, ES)];
     const holders: string[] = [];
     for (const page of pages) {
-      const rows = text(page).split('\n').filter((line) => line.startsWith('|') && boards.some((board) => line.includes(board.name)) && /\b(?:cross-build|human-hil)\b/.test(line));
+      const rows = text(page)
+        .split('\n')
+        .filter(
+          (line) => line.startsWith('|') && boards.some((board) => line.includes(board.name)) && /\b(?:cross-build|human-hil)\b/.test(line),
+        );
       if (rows.length > 0) holders.push(page.split('/').slice(-2).join('/'));
     }
     // the support page, and the generated board matrix of the boards reference, which reads the same function
-    expect(holders.sort()).toEqual(['reference/boards.md', 'reference/boards.md', 'reference/capabilities-evidence.md', 'reference/capabilities-evidence.md']);
+    expect(holders.sort()).toEqual([
+      'reference/boards.md',
+      'reference/boards.md',
+      'reference/capabilities-evidence.md',
+      'reference/capabilities-evidence.md',
+    ]);
   });
 
   it('is linked from the pages that talk about boards, in both languages', () => {
-    const linking = (language: string) => markdownFiles(ROOT, language).filter((page) => /\]\((?:\.\.?\/)+(?:reference\/)?capabilities-evidence\.md/.test(text(page)) || /\]\(\.\/capabilities-evidence\.md/.test(text(page)));
+    const linking = (language: string) =>
+      markdownFiles(ROOT, language).filter(
+        (page) =>
+          /\]\((?:\.\.?\/)+(?:reference\/)?capabilities-evidence\.md/.test(text(page)) ||
+          /\]\(\.\/capabilities-evidence\.md/.test(text(page)),
+      );
     expect(linking(EN).length).toBeGreaterThanOrEqual(8);
     expect(linking(ES).length).toBeGreaterThanOrEqual(8);
   });
@@ -240,20 +327,40 @@ describe('safety page: what ZPLC is not, and limits that the source says (DOC-01
   it('states the hard limits that the schema, the Kconfig reference and the scenario reference define', () => {
     const schema = JSON.parse(text('packages/zplc-ide/zplc.schema.json')) as { properties: { tasks: { maxItems: number } } };
     const kconfig = (symbol: string) => {
-      const line = text(`${EN}/reference/kconfig.md`).split('\n').find((candidate) => candidate.includes(`\`CONFIG_${symbol}\``));
+      const line = text(`${EN}/reference/kconfig.md`)
+        .split('\n')
+        .find((candidate) => candidate.includes(`\`CONFIG_${symbol}\``));
       if (!line) throw new Error(`CONFIG_${symbol} is not in the Kconfig reference`);
       return Number(/`(\d+)`/.exec(line.split('|')[3] ?? '')?.[1]);
     };
-    const scenario = (name: string) => Number(/`(\d+)`/.exec(text(`${EN}/reference/scenario-file.md`).split('\n').find((line) => line.startsWith(`| ${name}`)) ?? '')?.[1]);
+    const scenario = (name: string) =>
+      Number(
+        /`(\d+)`/.exec(
+          text(`${EN}/reference/scenario-file.md`)
+            .split('\n')
+            .find((line) => line.startsWith(`| ${name}`)) ?? '',
+        )?.[1],
+      );
     const english = safety[0]![1];
     const spanish = safety[1]![1];
     expect(numbers(row(english, 'Tasks in one program').split('|')[2]!)).toEqual([schema.properties.tasks.maxItems]);
     expect(numbers(row(spanish, 'Tareas en un programa').split('|')[2]!)).toEqual([schema.properties.tasks.maxItems]);
     expect(numbers(row(english, 'Size of a compiled program').split('|')[2]!)[0]).toBe(kconfig('ZPLC_CODE_SIZE_MAX'));
     expect(numbers(row(spanish, 'Tamaño de un programa compilado').split('|')[2]!)[0]).toBe(kconfig('ZPLC_CODE_SIZE_MAX'));
-    expect(numbers(row(english, 'Working and retentive memory').split('|')[2]!).slice(0, 2)).toEqual([kconfig('ZPLC_WORK_MEMORY_SIZE'), kconfig('ZPLC_RETAIN_MEMORY_SIZE')]);
-    expect(numbers(row(spanish, 'Memoria de trabajo y retentiva').split('|')[2]!).slice(0, 2)).toEqual([kconfig('ZPLC_WORK_MEMORY_SIZE'), kconfig('ZPLC_RETAIN_MEMORY_SIZE')]);
-    const expectedScenario = [scenario('Events in one scenario'), scenario('Expectations in one scenario'), scenario('Distinct signals in one scenario'), scenario('Samples of one scenario')];
+    expect(numbers(row(english, 'Working and retentive memory').split('|')[2]!).slice(0, 2)).toEqual([
+      kconfig('ZPLC_WORK_MEMORY_SIZE'),
+      kconfig('ZPLC_RETAIN_MEMORY_SIZE'),
+    ]);
+    expect(numbers(row(spanish, 'Memoria de trabajo y retentiva').split('|')[2]!).slice(0, 2)).toEqual([
+      kconfig('ZPLC_WORK_MEMORY_SIZE'),
+      kconfig('ZPLC_RETAIN_MEMORY_SIZE'),
+    ]);
+    const expectedScenario = [
+      scenario('Events in one scenario'),
+      scenario('Expectations in one scenario'),
+      scenario('Distinct signals in one scenario'),
+      scenario('Samples of one scenario'),
+    ];
     expect(numbers(row(english, 'Scenario').split('|')[2]!)).toEqual(expectedScenario);
     expect(numbers(row(spanish, 'Escenario').split('|')[2]!)).toEqual(expectedScenario);
   });
@@ -263,8 +370,14 @@ describe('safety page: what ZPLC is not, and limits that the source says (DOC-01
     expect(english!.map((heading) => heading.split(' ')[0])).toEqual(spanish!.map((heading) => heading.split(' ')[0]));
     expect(english).toContain('2 What ZPLC is not');
     expect(english).toContain('2 Hard limits');
-    for (const page of ['getting-started/index.md', 'getting-started/install.md', 'reference/capabilities-evidence.md', 'release-notes/index.md']) {
-      for (const [path, content] of both(page)) expect({ path, linked: content.includes('safety-and-limitations.md') }).toEqual({ path, linked: true });
+    for (const page of [
+      'getting-started/index.md',
+      'getting-started/install.md',
+      'reference/capabilities-evidence.md',
+      'release-notes/index.md',
+    ]) {
+      for (const [path, content] of both(page))
+        expect({ path, linked: content.includes('safety-and-limitations.md') }).toEqual({ path, linked: true });
     }
   });
 
@@ -281,46 +394,72 @@ describe('safety page: what ZPLC is not, and limits that the source says (DOC-01
 // DOC-004
 // ---------------------------------------------------------------------------------------------------------------------
 
-describe('first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)', () => {
-  const manifest = JSON.parse(text('firmware/app/boards/boards.json')) as Array<{
-    ide_id: string; zephyr_board: string; build_command: string; io: { channels: Array<{ id: string; address: string; pin: string }> };
-  }>;
-  const levels = JSON.parse(Bun.spawnSync(['python3', '-B', '-c', BOARDS_SCRIPT, ROOT], { stdout: 'pipe' }).stdout.toString()) as Array<{ ide: string; level: string }>;
-  const page = both('tutorials/first-board.md');
-  const boards = ['rpi_pico', 'esp32s3_devkitc'].map((ide) => manifest.find((entry) => entry.ide_id === ide)!);
+describe(
+  'first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been ' +
+    'executed on a board)',
+  () => {
+    const manifest = JSON.parse(text('firmware/app/boards/boards.json')) as Array<{
+      ide_id: string;
+      zephyr_board: string;
+      build_command: string;
+      io: { channels: Array<{ id: string; address: string; pin: string }> };
+    }>;
+    const levels = JSON.parse(Bun.spawnSync(['python3', '-B', '-c', BOARDS_SCRIPT, ROOT], { stdout: 'pipe' }).stdout.toString()) as Array<{
+      ide: string;
+      level: string;
+    }>;
+    const page = both('tutorials/first-board.md');
+    const boards = ['rpi_pico', 'esp32s3_devkitc'].map((ide) => manifest.find((entry) => entry.ide_id === ide)!);
 
-  it('names the build target, the build command, the first output and its pin of each board as the manifest has them', () => {
-    for (const [path, content] of page) {
-      for (const board of boards) {
-        const output = board.io.channels.find((channel) => channel.id === 'DO0')!;
-        expect({ path, board: board.ide_id, target: content.includes(`\`${board.zephyr_board}\``) }).toEqual({ path, board: board.ide_id, target: true });
-        expect({ path, board: board.ide_id, ide: content.includes(`\`${board.ide_id}\``) }).toEqual({ path, board: board.ide_id, ide: true });
-        expect({ path, board: board.ide_id, output: content.includes(`\`${output.address}\``) && content.includes(output.pin.split(' ')[0]!) }).toEqual({ path, board: board.ide_id, output: true });
+    it('names the build target, the build command, the first output and its pin of each board as the manifest has them', () => {
+      for (const [path, content] of page) {
+        for (const board of boards) {
+          const output = board.io.channels.find((channel) => channel.id === 'DO0')!;
+          expect({ path, board: board.ide_id, target: content.includes(`\`${board.zephyr_board}\``) }).toEqual({
+            path,
+            board: board.ide_id,
+            target: true,
+          });
+          expect({ path, board: board.ide_id, ide: content.includes(`\`${board.ide_id}\``) }).toEqual({
+            path,
+            board: board.ide_id,
+            ide: true,
+          });
+          expect({
+            path,
+            board: board.ide_id,
+            output: content.includes(`\`${output.address}\``) && content.includes(output.pin.split(' ')[0]!),
+          }).toEqual({ path, board: board.ide_id, output: true });
+        }
+        expect(content).toContain(boards[0]!.build_command.replace(' --pristine', '').replace('west build ', 'west build '));
       }
-      expect(content).toContain(boards[0]!.build_command.replace(' --pristine', '').replace('west build ', 'west build '));
-    }
-  });
+    });
 
-  it('uses example projects that exist and target the board they are given for', () => {
-    for (const [ide, example] of [['rpi_pico', 'pico_blinky'], ['esp32s3_devkitc', 'esp32s3_blinky']] as const) {
-      const project = JSON.parse(text(`packages/zplc-ide/projects/${example}/zplc.json`)) as { target: { board: string } };
-      expect({ example, board: project.target.board }).toEqual({ example, board: ide });
-      for (const [path, content] of page) expect({ path, example, named: content.includes(`\`${example}\``) }).toEqual({ path, example, named: true });
-    }
-  });
+    it('uses example projects that exist and target the board they are given for', () => {
+      for (const [ide, example] of [
+        ['rpi_pico', 'pico_blinky'],
+        ['esp32s3_devkitc', 'esp32s3_blinky'],
+      ] as const) {
+        const project = JSON.parse(text(`packages/zplc-ide/projects/${example}/zplc.json`)) as { target: { board: string } };
+        expect({ example, board: project.target.board }).toEqual({ example, board: ide });
+        for (const [path, content] of page)
+          expect({ path, example, named: content.includes(`\`${example}\``) }).toEqual({ path, example, named: true });
+      }
+    });
 
-  it('says in a banner that the steps were not executed, for as long as both boards have no hardware record', () => {
-    const levelOf = (ide: string) => levels.find((entry) => entry.ide === ide)!.level;
-    expect([levelOf('rpi_pico'), levelOf('esp32s3_devkitc')]).toEqual(['cross-build', 'cross-build']);
-    const [english, spanish] = page.map(([, content]) => content);
-    expect(english).toMatch(/:::danger Not executed on a board/);
-    expect(spanish).toMatch(/:::danger No ejecutado en una placa/);
-    for (const [path, content] of page) {
-      // no sentence of the page says that a flash or a run worked
-      expect({ path, claims: /\b(?:successfully|successful|exitosamente|con éxito)\b/i.test(content) }).toEqual({ path, claims: false });
-    }
-  });
-});
+    it('says in a banner that the steps were not executed, for as long as both boards have no hardware record', () => {
+      const levelOf = (ide: string) => levels.find((entry) => entry.ide === ide)!.level;
+      expect([levelOf('rpi_pico'), levelOf('esp32s3_devkitc')]).toEqual(['cross-build', 'cross-build']);
+      const [english, spanish] = page.map(([, content]) => content);
+      expect(english).toMatch(/:::danger Not executed on a board/);
+      expect(spanish).toMatch(/:::danger No ejecutado en una placa/);
+      for (const [path, content] of page) {
+        // no sentence of the page says that a flash or a run worked
+        expect({ path, claims: /\b(?:successfully|successful|exitosamente|con éxito)\b/i.test(content) }).toEqual({ path, claims: false });
+      }
+    });
+  },
+);
 
 describe('the Homebrew cask and the AUR package are prepared and say so', () => {
   const page = both('getting-started/install.md');
@@ -328,14 +467,19 @@ describe('the Homebrew cask and the AUR package are prepared and say so', () => 
   it('says the Homebrew cask, the quarantine flag and the single install command', () => {
     for (const [path, content] of page) {
       expect({ path, command: /brew install --cask eduardojvieira\/zplc\/zplc(?![\w-])/.test(content) }).toEqual({ path, command: true });
-      expect({ path, quarantine: content.includes('com.apple.quarantine') || /cuarentena/.test(content) }).toEqual({ path, quarantine: true });
+      expect({ path, quarantine: content.includes('com.apple.quarantine') || /cuarentena/.test(content) }).toEqual({
+        path,
+        quarantine: true,
+      });
       expect({ path, d01: content.includes('D-01') }).toEqual({ path, d01: true });
     }
   });
 
   it('does not present either channel as live, on the page or in its first section', () => {
     for (const [path, content] of page) {
-      const section = content.slice(content.indexOf('(not live yet)') === -1 ? content.indexOf('(todavía no están activos)') : content.indexOf('(not live yet)'));
+      const section = content.slice(
+        content.indexOf('(not live yet)') === -1 ? content.indexOf('(todavía no están activos)') : content.indexOf('(not live yet)'),
+      );
       expect({ path, says: /not live|no están activos|no existen|do not exist/.test(section) }).toEqual({ path, says: true });
       expect({ path, aur: content.includes('`zplc-bin`') }).toEqual({ path, aur: true });
     }

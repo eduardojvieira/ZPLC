@@ -22,17 +22,7 @@ import {
   type RequestOf,
   type ResponseOf,
 } from './messages';
-import {
-  CAPABILITY,
-  ENUMS,
-  ERROR,
-  KIND,
-  LIMITS,
-  MESSAGES,
-  PROTOCOL_VERSION,
-  type EventName,
-  type MessageName,
-} from './protocol.generated';
+import { CAPABILITY, ENUMS, ERROR, KIND, LIMITS, MESSAGES, PROTOCOL_VERSION, type EventName, type MessageName } from './protocol.generated';
 
 /** A byte transport. A transport that frames its own lines hands over one whole frame per `onData` call. */
 export interface LinkTransport {
@@ -149,8 +139,17 @@ const EVENT_QUEUE_LIMIT = 256;
 
 export class DeviceLink {
   readonly counters: LinkCounters = {
-    frames: 0, crcErrors: 0, versionErrors: 0, malformed: 0, oversize: 0, resyncs: 0,
-    framesOut: 0, authDrops: 0, sequenceDrops: 0, eventsLost: 0, eventsDropped: 0,
+    frames: 0,
+    crcErrors: 0,
+    versionErrors: 0,
+    malformed: 0,
+    oversize: 0,
+    resyncs: 0,
+    framesOut: 0,
+    authDrops: 0,
+    sequenceDrops: 0,
+    eventsLost: 0,
+    eventsDropped: 0,
   };
 
   private readonly transport: LinkTransport;
@@ -247,15 +246,23 @@ export class DeviceLink {
       signWith = options.key;
     }
     try {
-      const response = await this.request('SESSION_OPEN', {
-        flags: options.takeover === true ? 1 : 0,
-        client_nonce: clientNonce,
-        device_nonce: deviceNonce,
-        name: (options.name ?? 'studio').slice(0, LIMITS.sessionNameBytes),
-      }, { signWith });
+      const response = await this.request(
+        'SESSION_OPEN',
+        {
+          flags: options.takeover === true ? 1 : 0,
+          client_nonce: clientNonce,
+          device_nonce: deviceNonce,
+          name: (options.name ?? 'studio').slice(0, LIMITS.sessionNameBytes),
+        },
+        { signWith },
+      );
       this.sessionKey = this.pendingSessionKey;
       this.lastEventSequence = 0;
-      this._session = { sessionId: response.session_id, idleTimeoutS: response.idle_timeout_s, authenticated: response.authenticated === 1 };
+      this._session = {
+        sessionId: response.session_id,
+        idleTimeoutS: response.idle_timeout_s,
+        authenticated: response.authenticated === 1,
+      };
       return this._session;
     } finally {
       this.pendingSessionKey = null;
@@ -304,8 +311,12 @@ export class DeviceLink {
         if (decoded.status === ERROR.NO_SESSION || decoded.status === ERROR.AUTH_REQUIRED) {
           if (this._session !== null && name !== 'SESSION_OPEN') this.forgetSession();
         }
-        throw new LinkError(`${name} was refused: ${decoded.error}${decoded.range ? ` (${describeRange(decoded.range)})` : ''}`,
-          decoded.status, decoded.error, decoded.range);
+        throw new LinkError(
+          `${name} was refused: ${decoded.error}${decoded.range ? ` (${describeRange(decoded.range)})` : ''}`,
+          decoded.status,
+          decoded.error,
+          decoded.range,
+        );
       }
       return decoded.values;
     };
@@ -418,4 +429,3 @@ export function describeRange(range: RangeDetail): string {
   const region = range.regionStart === 0xffff ? 'outside PLC memory' : `region ${hex(range.regionStart)} to ${hex(range.regionEnd - 1)}`;
   return `address ${hex(range.address)}, ${range.length} byte${range.length === 1 ? '' : 's'}, ${region}`;
 }
-

@@ -5,17 +5,9 @@
   "order": 31,
   "module": 6,
   "level": "intermediate",
-  "prerequisites": [
-    "interlock-guard-permissive",
-    "seal-in-ladder"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["interlock-guard-permissive", "seal-in-ladder"],
+  "languages": ["LD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

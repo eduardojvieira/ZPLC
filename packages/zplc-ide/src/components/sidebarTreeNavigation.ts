@@ -10,13 +10,18 @@ export interface VisibleTreeNode {
 export function flattenVisibleTree(nodes: FileTreeNode[], depth = 1, parentId: string | null = null): VisibleTreeNode[] {
   return nodes.flatMap((node) => [
     { id: node.id, node, depth, parentId },
-    ...(node.type === 'directory' && node.isExpanded && node.children
-      ? flattenVisibleTree(node.children, depth + 1, node.id)
-      : []),
+    ...(node.type === 'directory' && node.isExpanded && node.children ? flattenVisibleTree(node.children, depth + 1, node.id) : []),
   ]);
 }
 
-export interface TreeNavigation { previous: string | null; next: string | null; first: string | null; last: string | null; parent: string | null; firstChild: string | null }
+export interface TreeNavigation {
+  previous: string | null;
+  next: string | null;
+  first: string | null;
+  last: string | null;
+  parent: string | null;
+  firstChild: string | null;
+}
 
 export function treeNavigation(visible: VisibleTreeNode[], id: string): TreeNavigation {
   const index = visible.findIndex((entry) => entry.id === id);
@@ -27,7 +32,7 @@ export function treeNavigation(visible: VisibleTreeNode[], id: string): TreeNavi
     first: visible[0]?.id ?? null,
     last: visible.at(-1)?.id ?? null,
     parent: entry?.parentId ?? null,
-    firstChild: entry ? visible.find((candidate) => candidate.parentId === entry.id)?.id ?? null : null,
+    firstChild: entry ? (visible.find((candidate) => candidate.parentId === entry.id)?.id ?? null) : null,
   };
 }
 

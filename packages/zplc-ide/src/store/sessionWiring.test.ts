@@ -15,7 +15,9 @@ describe('the editor reports and applies the session (IDE-008)', () => {
     expect(editor).toContain('editor.onDidChangeCursorPosition(() => reportViewState(editor));');
     expect(editor).toContain('editor.onDidScrollChange((change) => { if (change.scrollTopChanged) reportViewState(editor); });');
     expect(editor).toContain('projectPathFromModelPath(model.uri.path)');
-    expect(editor).toContain('recordViewState(path, { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() })');
+    expect(editor).toContain(
+      'recordViewState(path, { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() })',
+    );
   });
 
   it('puts a restored cursor and scroll back once, when the editor first shows the file, within what the file holds', () => {
@@ -25,7 +27,9 @@ describe('the editor reports and applies the session (IDE-008)', () => {
     expect(editor).toContain('editor.setPosition({ lineNumber, column })');
     expect(editor).toContain('editor.setScrollTop(view.scrollTop)');
     // The check of the shown model comes before the position is taken, so a model that is not the file's yet loses nothing.
-    expect(editor.indexOf('projectPathFromModelPath(model.uri.path) !== filePath')).toBeLessThan(editor.indexOf('takePendingViewState(filePath)'));
+    expect(editor.indexOf('projectPathFromModelPath(model.uri.path) !== filePath')).toBeLessThan(
+      editor.indexOf('takePendingViewState(filePath)'),
+    );
   });
 });
 

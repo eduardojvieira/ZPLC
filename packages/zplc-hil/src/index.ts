@@ -44,7 +44,11 @@ export async function run(test: HILTestCase, link: DeviceLink, options: RunnerOp
   return new TestRunner(link, options).runTest(test);
 }
 
-export async function runSuite(suite: TestSuite, link: DeviceLink, options: RunnerOptions & { failFast?: boolean } = {}): Promise<TestResult[]> {
+export async function runSuite(
+  suite: TestSuite,
+  link: DeviceLink,
+  options: RunnerOptions & { failFast?: boolean } = {},
+): Promise<TestResult[]> {
   const runner = new TestRunner(link, options);
   const results: TestResult[] = [];
   for (const test of suite.tests) {

@@ -8,7 +8,7 @@
  */
 
 export const TOOL_WORKER_OPERATIONS = ['compile', 'safety-check', 'test', 'scenario-run', 'change-set-review', 'lesson-check'] as const;
-export type ToolWorkerOperation = typeof TOOL_WORKER_OPERATIONS[number];
+export type ToolWorkerOperation = (typeof TOOL_WORKER_OPERATIONS)[number];
 
 export type ToolWorkerRequest =
   | { operation: 'compile'; root: string }
@@ -25,28 +25,54 @@ export type ToolWorkerCommand = ({ type: 'run'; id: string } & ToolWorkerRequest
 /** Worker to main: the answer to a `run`, once. */
 export type ToolWorkerReply = { type: 'result'; id: string; value: unknown } | { type: 'error'; id: string };
 
-const isPlain = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+const isPlain = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /** The command if it is exactly one of the commands above, else null: the worker runs nothing it was not told by name. */
 export function parseToolWorkerCommand(value: unknown): ToolWorkerCommand | null {
   if (!isPlain(value)) return null;
   if (value.type === 'cancel') return Object.keys(value).length === 1 ? { type: 'cancel' } : null;
-  if (value.type !== 'run' || typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 64
-    || typeof value.root !== 'string' || value.root.length === 0 || value.root.includes('\0')) return null;
+  if (
+    value.type !== 'run' ||
+    typeof value.id !== 'string' ||
+    value.id.length === 0 ||
+    value.id.length > 64 ||
+    typeof value.root !== 'string' ||
+    value.root.length === 0 ||
+    value.root.includes('\0')
+  )
+    return null;
   const { id, root } = value;
   switch (value.operation) {
-    case 'compile': case 'safety-check': case 'test':
+    case 'compile':
+    case 'safety-check':
+    case 'test':
       return Object.keys(value).length === 4 ? { type: 'run', id, operation: value.operation, root } : null;
     case 'scenario-run':
-      return Object.keys(value).length === 5 && typeof value.scenarioId === 'string' ? { type: 'run', id, operation: 'scenario-run', root, scenarioId: value.scenarioId } : null;
+      return Object.keys(value).length === 5 && typeof value.scenarioId === 'string'
+        ? { type: 'run', id, operation: 'scenario-run', root, scenarioId: value.scenarioId }
+        : null;
     case 'lesson-check':
-      return Object.keys(value).length === 5 && typeof value.lessonId === 'string' && /^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(value.lessonId) ? { type: 'run', id, operation: 'lesson-check', root, lessonId: value.lessonId } : null;
+      return Object.keys(value).length === 5 &&
+        typeof value.lessonId === 'string' &&
+        /^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(value.lessonId)
+        ? { type: 'run', id, operation: 'lesson-check', root, lessonId: value.lessonId }
+        : null;
     case 'change-set-review': {
       const { edits } = value;
       if (Object.keys(value).length !== 5 || !Array.isArray(edits) || edits.length < 1 || edits.length > 8) return null;
-      if (!edits.every((edit) => isPlain(edit) && Object.keys(edit).length === 2 && typeof edit.path === 'string' && typeof edit.content === 'string')) return null;
-      return { type: 'run', id, operation: 'change-set-review', root, edits: edits.map((edit: { path: string; content: string }) => ({ path: edit.path, content: edit.content })) };
+      if (
+        !edits.every(
+          (edit) => isPlain(edit) && Object.keys(edit).length === 2 && typeof edit.path === 'string' && typeof edit.content === 'string',
+        )
+      )
+        return null;
+      return {
+        type: 'run',
+        id,
+        operation: 'change-set-review',
+        root,
+        edits: edits.map((edit: { path: string; content: string }) => ({ path: edit.path, content: edit.content })),
+      };
     }
     default:
       return null;

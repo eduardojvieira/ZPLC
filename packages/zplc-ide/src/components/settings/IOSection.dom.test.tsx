@@ -20,7 +20,15 @@ describe('I/O mapping (UX-013, IO-003) in a DOM', () => {
 
   it('adds a digital input, names its row for assistive technology, and renames it', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={IOSection} initial={withBoard} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={IOSection}
+        initial={withBoard}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     await user.click(dom.screen.getAllByRole('button', { name: dom.t('io.digital') })[0]!);
     expect(last?.io?.inputs).toHaveLength(1);
     const name = dom.screen.getByRole('textbox', { name: dom.t('a11y.io.name', { row: 1 }) }) as HTMLInputElement;
@@ -31,7 +39,15 @@ describe('I/O mapping (UX-013, IO-003) in a DOM', () => {
 
   it('removes a row with its named button', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={IOSection} initial={withBoard} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={IOSection}
+        initial={withBoard}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     await user.click(dom.screen.getAllByRole('button', { name: dom.t('io.digital') })[0]!);
     await user.click(dom.screen.getByRole('button', { name: dom.t('io.remove') }));
     expect(last?.io?.inputs ?? []).toHaveLength(0);
@@ -40,7 +56,15 @@ describe('I/O mapping (UX-013, IO-003) in a DOM', () => {
 
   it('adds an output in its own section', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={IOSection} initial={withBoard} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={IOSection}
+        initial={withBoard}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     const digital = dom.screen.getAllByRole('button', { name: dom.t('io.digital') });
     await user.click(digital[1]!);
     expect(last?.io?.outputs).toHaveLength(1);

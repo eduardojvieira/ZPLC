@@ -3,7 +3,14 @@ import { describe, expect, it } from 'bun:test';
 import { compileProject } from '../compiler';
 import { getExtensionForLanguage } from '../types';
 import { resolveProgramSource } from '../utils/programSourceResolution';
-import { NEW_PROJECT_LANGUAGES, SIMULATION_TARGET, newProjectConfig, newProjectProgram, newProjectTargets, validateProjectName } from './newProject';
+import {
+  NEW_PROJECT_LANGUAGES,
+  SIMULATION_TARGET,
+  newProjectConfig,
+  newProjectProgram,
+  newProjectTargets,
+  validateProjectName,
+} from './newProject';
 
 describe('the first program of a new project (IDE-009)', () => {
   for (const language of NEW_PROJECT_LANGUAGES) {

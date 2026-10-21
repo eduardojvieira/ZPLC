@@ -4,11 +4,19 @@ import { useEffect, useRef, type RefObject } from 'react';
  * Calls `onDismiss` when the user presses Escape or presses outside every one of `regions`, while `open`. For a popup
  * that is not modal: a menu, a popover, a context menu.
  */
-export function useDismiss(open: boolean, regions: ReadonlyArray<RefObject<HTMLElement | null>>, onDismiss: (reason: 'escape' | 'outside') => void): void {
+export function useDismiss(
+  open: boolean,
+  regions: ReadonlyArray<RefObject<HTMLElement | null>>,
+  onDismiss: (reason: 'escape' | 'outside') => void,
+): void {
   const latest = useRef(onDismiss);
-  useEffect(() => { latest.current = onDismiss; }, [onDismiss]);
+  useEffect(() => {
+    latest.current = onDismiss;
+  }, [onDismiss]);
   const targets = useRef(regions);
-  useEffect(() => { targets.current = regions; }, [regions]);
+  useEffect(() => {
+    targets.current = regions;
+  }, [regions]);
 
   useEffect(() => {
     if (!open) return undefined;

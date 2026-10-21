@@ -51,15 +51,15 @@ command runs.
 
 ## Later
 
-| Phase | What it delivers |
-|---|---|
-| New shell and five languages | A rebuilt view layer of the application, and Instruction List, Ladder, FBD and SFC that compile correctly, debug and monitor. |
-| Learn in simulation | A course that opens from the Welcome screen and grades honestly, in English and Spanish, with no hardware. |
-| Runtime trust and the first board | The same scheduler semantics on the simulator and the target, safe outputs on a fault, retentive memory that survives a power cycle, and the first bench record on the Raspberry Pi Pico. |
-| Communications and the second board | Modbus, MQTT, Sparkplug B and the cloud blocks repaired, and bench evidence on the ESP32-S3. |
-| Complete language and complete course | The conformance matrix closed and the course finished on both tracks. |
-| Distribution, documentation and accessibility | Every installer channel delivered or submitted, the documentation finished in two languages, and accessibility closed. |
-| General availability | The release gates met on the tagged commit. |
+| Phase                                         | What it delivers                                                                                                                                                                          |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New shell and five languages                  | A rebuilt view layer of the application, and Instruction List, Ladder, FBD and SFC that compile correctly, debug and monitor.                                                             |
+| Learn in simulation                           | A course that opens from the Welcome screen and grades honestly, in English and Spanish, with no hardware.                                                                                |
+| Runtime trust and the first board             | The same scheduler semantics on the simulator and the target, safe outputs on a fault, retentive memory that survives a power cycle, and the first bench record on the Raspberry Pi Pico. |
+| Communications and the second board           | Modbus, MQTT, Sparkplug B and the cloud blocks repaired, and bench evidence on the ESP32-S3.                                                                                              |
+| Complete language and complete course         | The conformance matrix closed and the course finished on both tracks.                                                                                                                     |
+| Distribution, documentation and accessibility | Every installer channel delivered or submitted, the documentation finished in two languages, and accessibility closed.                                                                    |
+| General availability                          | The release gates met on the tagged commit.                                                                                                                                               |
 
 ## When you can use it
 

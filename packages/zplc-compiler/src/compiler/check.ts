@@ -61,8 +61,10 @@ export interface CheckOptions {
     reportWarnings?: WarningSelection;
 }
 
-const bySource = (order: ReadonlyMap<string, number>) => (first: CheckDiagnostic, second: CheckDiagnostic): number =>
-    (order.get(first.ref) ?? 0) - (order.get(second.ref) ?? 0) || first.line - second.line || first.column - second.column;
+const bySource =
+    (order: ReadonlyMap<string, number>) =>
+    (first: CheckDiagnostic, second: CheckDiagnostic): number =>
+        (order.get(first.ref) ?? 0) - (order.get(second.ref) ?? 0) || first.line - second.line || first.column - second.column;
 
 /**
  * Every diagnostic of the project, in the order of the files and of the lines. Never throws for a fault of the
@@ -82,8 +84,13 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
         for (const issue of outcome.errors) {
             withSyntaxErrors.add(source.ref);
             found.push({
-                ref: source.ref, severity: 'error', phase: issue.name === 'LexerError' ? 'lexer' : 'parser', code: issue.code, message: issue.detail,
-                line: issue.line, column: issue.column,
+                ref: source.ref,
+                severity: 'error',
+                phase: issue.name === 'LexerError' ? 'lexer' : 'parser',
+                code: issue.code,
+                message: issue.detail,
+                line: issue.line,
+                column: issue.column,
                 ...(issue.endLine === undefined ? {} : { endLine: issue.endLine, endColumn: issue.endColumn }),
             });
         }
@@ -103,9 +110,13 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
             if (earlier === undefined) declaredIn.set(key, ref);
             else {
                 duplicates.push({
-                    ref, severity: 'error', phase: 'codegen', code: 'DUPLICATE_DECLARATION',
+                    ref,
+                    severity: 'error',
+                    phase: 'codegen',
+                    code: 'DUPLICATE_DECLARATION',
                     message: `Duplicate PROGRAM name '${each.name}' (already declared by '${earlier}')`,
-                    line: each.line, column: each.column,
+                    line: each.line,
+                    column: each.column,
                     ...(each.endLine === undefined ? {} : { endLine: each.endLine, endColumn: each.endColumn }),
                 });
             }
@@ -116,8 +127,13 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
     const merged = mergeUnits(parsed);
     for (const error of merged.errors) {
         found.push({
-            ref: error.sourceRef ?? sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', code: error.code, message: error.message,
-            line: error.line, column: error.column,
+            ref: error.sourceRef ?? sources[0]?.ref ?? '',
+            severity: 'error',
+            phase: 'codegen',
+            code: error.code,
+            message: error.message,
+            line: error.line,
+            column: error.column,
             ...(error.endLine === undefined ? {} : { endLine: error.endLine, endColumn: error.endColumn }),
         });
     }
@@ -129,7 +145,11 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
         merged.unit.programs.push(program);
     }
 
-    if (merged.errors.length === 0 && duplicates.length === 0 && merged.unit.programs.length + merged.unit.functions.length + merged.unit.functionBlocks.length > 0) {
+    if (
+        merged.errors.length === 0 &&
+        duplicates.length === 0 &&
+        merged.unit.programs.length + merged.unit.functions.length + merged.unit.functionBlocks.length > 0
+    ) {
         const generated: CodegenWarning[] = [];
         try {
             generateProject(merged.unit, {
@@ -143,32 +163,52 @@ export function checkProject(sources: readonly CheckSource[], options: CheckOpti
                 const fallback = sources[0]?.ref ?? '';
                 for (const error of orderedUniqueErrors(caught.errors)) {
                     found.push({
-                        ref: error.sourceRef ?? fallback, severity: 'error', phase: 'codegen', code: error.code, message: error.message,
-                        line: error.line, column: error.column,
+                        ref: error.sourceRef ?? fallback,
+                        severity: 'error',
+                        phase: 'codegen',
+                        code: error.code,
+                        message: error.message,
+                        line: error.line,
+                        column: error.column,
                         ...(error.endLine === undefined ? {} : { endLine: error.endLine, endColumn: error.endColumn }),
                     });
                 }
             } else if (withSyntaxErrors.size === 0) {
                 // a fault of the compiler, not of the sources: say so where the author can see it
                 const message = caught instanceof Error ? caught.message : String(caught);
-                found.push({ ref: sources[0]?.ref ?? '', severity: 'error', phase: 'codegen', code: 'INTERNAL_COMPILER_ERROR', message: `The compiler could not check the project: ${message}`, line: 1, column: 1 });
+                found.push({
+                    ref: sources[0]?.ref ?? '',
+                    severity: 'error',
+                    phase: 'codegen',
+                    code: 'INTERNAL_COMPILER_ERROR',
+                    message: `The compiler could not check the project: ${message}`,
+                    line: 1,
+                    column: 1,
+                });
             }
         }
         if (!found.some((diagnostic) => diagnostic.severity === 'error')) {
-            for (const warning of [...generated, ...analyzeUnit(merged.unit)]) warnings.push({ ...warning, sourceRef: warning.sourceRef ?? sources[0]?.ref ?? '' });
+            for (const warning of [...generated, ...analyzeUnit(merged.unit)])
+                warnings.push({ ...warning, sourceRef: warning.sourceRef ?? sources[0]?.ref ?? '' });
         }
     }
 
     // a file that does not parse shows its syntax errors: what the generator makes of a half-read tree is no help
-    const errors = found.filter((diagnostic) => diagnostic.severity === 'error'
-        && (!withSyntaxErrors.has(diagnostic.ref) || diagnostic.phase !== 'codegen'));
+    const errors = found.filter(
+        (diagnostic) => diagnostic.severity === 'error' && (!withSyntaxErrors.has(diagnostic.ref) || diagnostic.phase !== 'codegen'),
+    );
     const hasErrors = errors.length > 0;
     const reported = hasErrors ? [] : selectWarnings(warnings, options.reportWarnings);
     const shown: CheckDiagnostic[] = [
         ...errors,
         ...reported.map((warning): CheckDiagnostic => ({
-            ref: warning.sourceRef, severity: 'warning', phase: 'codegen', code: warning.code, message: warning.message,
-            line: warning.line, column: warning.column,
+            ref: warning.sourceRef,
+            severity: 'warning',
+            phase: 'codegen',
+            code: warning.code,
+            message: warning.message,
+            line: warning.line,
+            column: warning.column,
             ...(warning.endLine === undefined ? {} : { endLine: warning.endLine, endColumn: warning.endColumn }),
         })),
     ];

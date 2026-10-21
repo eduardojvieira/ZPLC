@@ -23,7 +23,7 @@ END_PROGRAM`;
         const ast = parse(source);
         const symbols = buildSymbolTable(ast);
         const code = generate(ast);
-        
+
         console.log(code);
         console.log(symbols.dump());
     });

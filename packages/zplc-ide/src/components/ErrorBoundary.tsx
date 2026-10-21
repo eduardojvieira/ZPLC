@@ -24,7 +24,13 @@ interface ErrorBoundaryState {
   resetKey: unknown;
 }
 
-export function RegionError({ region, error, onRetry, recovery, fullWindow = false }: {
+export function RegionError({
+  region,
+  error,
+  onRetry,
+  recovery,
+  fullWindow = false,
+}: {
   region: string;
   error: Error;
   onRetry: () => void;
@@ -36,14 +42,28 @@ export function RegionError({ region, error, onRetry, recovery, fullWindow = fal
     <div
       role="alert"
       data-region-error={region}
-      className={`${fullWindow ? 'h-screen w-screen' : 'h-full w-full'} flex items-center justify-center overflow-auto bg-[var(--color-surface-900)] p-6 text-center`}
+      className={
+        `${fullWindow ? 'h-screen w-screen' : 'h-full w-full'} flex items-center justify-center overflow-auto ` +
+        `bg-[var(--color-surface-900)] p-6 text-center`
+      }
     >
       <div className="max-w-md">
         <p className="text-lg font-medium text-[var(--color-accent-red)]">{t('errorBoundary.stopped', { region })}</p>
         <p className="mt-2 break-words text-sm text-[var(--color-surface-300)]">{describeRenderError(error)}</p>
         <div className="mt-4 flex justify-center gap-2">
-          <Button variant="primary" onClick={onRetry}>{t('common.retry')}</Button>
-          {recovery && <Button onClick={() => { recovery.run(); onRetry(); }}>{recovery.label}</Button>}
+          <Button variant="primary" onClick={onRetry}>
+            {t('common.retry')}
+          </Button>
+          {recovery && (
+            <Button
+              onClick={() => {
+                recovery.run();
+                onRetry();
+              }}
+            >
+              {recovery.label}
+            </Button>
+          )}
         </div>
       </div>
     </div>

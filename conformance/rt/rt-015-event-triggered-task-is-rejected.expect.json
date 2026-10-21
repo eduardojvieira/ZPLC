@@ -6,7 +6,5 @@
   "build": "fails",
   "codes": ["INVALID_TASK_CONFIGURATION"],
   "messageIncludes": [],
-  "tasks": [
-    {"name": "EventTask", "trigger": "event", "interval_ms": 10, "priority": 1, "programs": ["main.st"]}
-  ]
+  "tasks": [{ "name": "EventTask", "trigger": "event", "interval_ms": 10, "priority": 1, "programs": ["main.st"] }]
 }

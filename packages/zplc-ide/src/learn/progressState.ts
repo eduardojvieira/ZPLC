@@ -9,8 +9,15 @@
  */
 import { create } from 'zustand';
 import {
-  emptyProgress, exportProgress as exportDocument, mergeProgress, parseImport, withNote, withPassedIds,
-  type GradeRecord, type LearnProgress, type LessonNote,
+  emptyProgress,
+  exportProgress as exportDocument,
+  mergeProgress,
+  parseImport,
+  withNote,
+  withPassedIds,
+  type GradeRecord,
+  type LearnProgress,
+  type LessonNote,
 } from '../../shared/learnProgressModel';
 import { diagnoseProgressFile, type ProgressFileProblem } from './progressFile';
 import { exportProgress, importProgress, noteLesson, readProgress, recordGrade, type ProgressBridge } from './progressClient';
@@ -19,7 +26,10 @@ import { readLearnMastery, recordLearnMastery } from '../components/learnLesson'
 export type TransferStatus = 'idle' | 'exported' | 'imported' | { error: ProgressFileProblem | 'failed'; version: number | null };
 
 /** Where the passed lessons are kept when there is no desktop store. */
-export interface LocalMastery { read(): ReadonlySet<string>; remember(id: string): void }
+export interface LocalMastery {
+  read(): ReadonlySet<string>;
+  remember(id: string): void;
+}
 
 export interface ProgressState {
   /** The document, or null until the first read ends. */
@@ -51,7 +61,10 @@ export function createProgressState(getBridge: () => ProgressBridge | undefined,
 
     async load() {
       const bridge = getBridge();
-      if (!bridge) { set({ document: withPassedIds(emptyProgress(), [...local.read()]), loaded: true, failed: false }); return; }
+      if (!bridge) {
+        set({ document: withPassedIds(emptyProgress(), [...local.read()]), loaded: true, failed: false });
+        return;
+      }
       const document = await readProgress(bridge);
       set({ document: document ?? emptyProgress(), loaded: true, failed: document === undefined });
     },
@@ -68,7 +81,10 @@ export function createProgressState(getBridge: () => ProgressBridge | undefined,
     async recordGrade(record) {
       const bridge = getBridge();
       const saved = bridge ? await recordGrade(bridge, record) : undefined;
-      if (!saved) { set({ failed: true }); return false; }
+      if (!saved) {
+        set({ failed: true });
+        return false;
+      }
       set({ document: saved, failed: false });
       return true;
     },
@@ -80,9 +96,17 @@ export function createProgressState(getBridge: () => ProgressBridge | undefined,
         set((state) => ({ document: withPassedIds(state.document ?? emptyProgress(), [id]) }));
         return true;
       }
-      try { await bridge.merge([id]); } catch { set({ failed: true }); return false; }
+      try {
+        await bridge.merge([id]);
+      } catch {
+        set({ failed: true });
+        return false;
+      }
       const document = await readProgress(bridge);
-      if (!document) { set({ failed: true }); return false; }
+      if (!document) {
+        set({ failed: true });
+        return false;
+      }
       set({ document, failed: false });
       return true;
     },
@@ -96,11 +120,17 @@ export function createProgressState(getBridge: () => ProgressBridge | undefined,
 
     async importText(text) {
       const diagnosis = diagnoseProgressFile(text);
-      if (!diagnosis.ok) { set({ transfer: { error: diagnosis.problem, version: diagnosis.version } }); return false; }
+      if (!diagnosis.ok) {
+        set({ transfer: { error: diagnosis.problem, version: diagnosis.version } });
+        return false;
+      }
       const bridge = getBridge();
       if (bridge) {
         const merged = await importProgress(bridge, text);
-        if (!merged) { set({ transfer: { error: 'failed', version: null } }); return false; }
+        if (!merged) {
+          set({ transfer: { error: 'failed', version: null } });
+          return false;
+        }
         set({ document: merged.progress, transfer: 'imported', failed: false });
         return true;
       }
@@ -108,17 +138,22 @@ export function createProgressState(getBridge: () => ProgressBridge | undefined,
       if (!parsed.ok) return false;
       const before = get().document ?? emptyProgress();
       const merged = mergeProgress(before, parsed.progress);
-      for (const [id, lesson] of Object.entries(merged.lessons)) if (lesson.state === 'passed' && before.lessons[id]?.state !== 'passed') local.remember(id);
+      for (const [id, lesson] of Object.entries(merged.lessons))
+        if (lesson.state === 'passed' && before.lessons[id]?.state !== 'passed') local.remember(id);
       set({ document: merged, transfer: 'imported' });
       return true;
     },
 
-    setTransfer(status) { set({ transfer: status }); },
+    setTransfer(status) {
+      set({ transfer: status });
+    },
   }));
 }
 
 /** The progress of this window: the typed bridge of the preload when there is one, else the local record of passed lessons. */
-export const useLearnProgress = createProgressState(
-  () => (typeof window === 'undefined' ? undefined : window.electronAPI?.learnProgress),
-  { read: () => readLearnMastery(), remember: (id) => { recordLearnMastery(id as never, { kind: 'passed', assertions: 0 }, readLearnMastery()); } },
-);
+export const useLearnProgress = createProgressState(() => (typeof window === 'undefined' ? undefined : window.electronAPI?.learnProgress), {
+  read: () => readLearnMastery(),
+  remember: (id) => {
+    recordLearnMastery(id as never, { kind: 'passed', assertions: 0 }, readLearnMastery());
+  },
+});

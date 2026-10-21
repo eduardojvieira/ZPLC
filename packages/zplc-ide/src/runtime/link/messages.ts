@@ -80,7 +80,10 @@ export function encodeFields(fields: readonly FieldSpec[], values: Loose): Uint8
   return out;
 }
 
-/** Decode the fields at `start`; a payload that is shorter than the fixed fields, or has bytes after them when there is no tail, is an error. */
+/**
+ * Decode the fields at `start`; a payload that is shorter than the fixed fields, or has bytes after them when there is no tail, is an
+ * error.
+ */
 export function decodeFields(fields: readonly FieldSpec[], payload: Uint8Array, start = 0): Loose {
   const out: Loose = {};
   let offset = start;
@@ -124,8 +127,7 @@ export interface RangeDetail {
 }
 
 export type Decoded<N extends MessageName> =
-  | { ok: true; status: 0; values: ResponseOf<N> }
-  | { ok: false; status: number; error: string; range: RangeDetail | null };
+  { ok: true; status: 0; values: ResponseOf<N> } | { ok: false; status: number; error: string; range: RangeDetail | null };
 
 const ERROR_NAMES: Record<number, string> = Object.fromEntries(Object.entries(ERROR).map(([name, value]) => [value, name]));
 

@@ -72,7 +72,8 @@ export function frameSize(length: number, authenticated: boolean): number {
  * already, because the flag is covered too.
  */
 export function beginFrame(kind: number, message: number, sequence: number, payload: Uint8Array, authenticated = false): Uint8Array {
-  if (payload.length > LIMITS.payloadMaxHard) throw new RangeError(`payload of ${payload.length} bytes is above the limit of ${LIMITS.payloadMaxHard}`);
+  if (payload.length > LIMITS.payloadMaxHard)
+    throw new RangeError(`payload of ${payload.length} bytes is above the limit of ${LIMITS.payloadMaxHard}`);
   if (!Number.isInteger(sequence) || sequence < 0 || sequence > 0xffffffff) throw new RangeError('sequence is not a 32-bit number');
   const out = new Uint8Array(HEADER + payload.length);
   const view = new DataView(out.buffer);
@@ -90,7 +91,8 @@ export function beginFrame(kind: number, message: number, sequence: number, payl
 /** The whole frame: the covered bytes, the code (when the frame was begun authenticated) and the checksum. */
 export function finishFrame(covered: Uint8Array, mac?: Uint8Array): Uint8Array {
   const authenticated = (covered[FRAME.offset.flags]! & FRAME.flagAuth) !== 0;
-  if (authenticated && (mac === undefined || mac.length !== MAC)) throw new RangeError(`an authenticated frame needs a code of ${MAC} bytes`);
+  if (authenticated && (mac === undefined || mac.length !== MAC))
+    throw new RangeError(`an authenticated frame needs a code of ${MAC} bytes`);
   const body = new Uint8Array(covered.length + (authenticated ? MAC : 0));
   body.set(covered, 0);
   if (authenticated) body.set(mac!, covered.length);

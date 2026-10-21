@@ -13,7 +13,14 @@ const firstBoard = BOARD_OPTIONS.find((option) => option.value && option.value !
 describe('Target selection (UX-013, IO-012) in a DOM', () => {
   it('names the board choice and lists the boards of the manifest, then reports the chosen one', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={TargetSection} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={TargetSection}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     const board = dom.screen.getByRole('combobox', { name: dom.t('settings.target.board') });
     expect(dom.screen.getAllByRole('option').length).toBe(BOARD_OPTIONS.length);
     await user.selectOptions(board, firstBoard);
@@ -35,7 +42,9 @@ describe('Target selection (UX-013, IO-012) in a DOM', () => {
   });
 
   it('the CPU and clock fields are named and keep what is typed', async () => {
-    const { user } = dom.render(<SectionHost Section={TargetSection} initial={{ target: { board: firstBoard } as ZPLCProjectConfig['target'] }} />);
+    const { user } = dom.render(
+      <SectionHost Section={TargetSection} initial={{ target: { board: firstBoard } as ZPLCProjectConfig['target'] }} />,
+    );
     const cpu = dom.screen.getByRole('textbox', { name: dom.t('settings.target.cpu') });
     await user.type(cpu, 'Cortex-M7');
     expect((cpu as HTMLInputElement).value).toBe('Cortex-M7');

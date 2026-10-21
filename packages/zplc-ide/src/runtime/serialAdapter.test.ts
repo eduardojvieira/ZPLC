@@ -19,8 +19,15 @@ describe('SerialAdapter program control', () => {
     const adapter = new SerialAdapter();
     const internals = adapter as unknown as { sendJsonCommand: () => Promise<unknown>; systemInfoCache: unknown };
     internals.sendJsonCommand = async () => ({
-      board: 'rpi_pico', board_profile: 'rpi_pico/rp2040', zplc_version: '1.0.0', zephyr_version: '4.0.0',
-      uptime_ms: 0, cpu_freq_mhz: 1, device_protocol_version: 1, bytecode_abi_major: 1, bytecode_abi_minor: 0,
+      board: 'rpi_pico',
+      board_profile: 'rpi_pico/rp2040',
+      zplc_version: '1.0.0',
+      zephyr_version: '4.0.0',
+      uptime_ms: 0,
+      cpu_freq_mhz: 1,
+      device_protocol_version: 1,
+      bytecode_abi_major: 1,
+      bytecode_abi_minor: 0,
       draft_counter: 1,
       capabilities: { fpu: false, mpu: false, scheduler: true, max_tasks: 4 },
       memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
@@ -88,7 +95,11 @@ describe('SerialAdapter program control', () => {
       _readerTask: null,
       _dataListeners: new Set(),
       writer: { releaseLock: () => undefined },
-      port: { close: async () => { closeCalls += 1; } },
+      port: {
+        close: async () => {
+          closeCalls += 1;
+        },
+      },
     } as unknown as SerialConnection;
     const adapter = new SerialAdapter();
     const internals = adapter as unknown as {
@@ -170,7 +181,11 @@ describe('SerialAdapter program control', () => {
   it('rejects a status whose I/O report is not a pair of counts (IO-007)', async () => {
     const adapter = new SerialAdapter();
     (adapter as unknown as { sendJsonCommand: () => Promise<unknown> }).sendJsonCommand = async () => ({
-      state: 'running', uptime_ms: 1, stats: { cycles: 1 }, opi: [0], io_unsupported: { inputs: -1, outputs: 0 },
+      state: 'running',
+      uptime_ms: 1,
+      stats: { cycles: 1 },
+      opi: [0],
+      io_unsupported: { inputs: -1, outputs: 0 },
     });
     await expect(adapter.getStatus()).rejects.toThrow('Invalid ZPLC status response');
   });
@@ -183,9 +198,16 @@ describe('SerialAdapter program control', () => {
     await expect(adapter.listForcedValues()).resolves.toEqual([]);
 
     internals.sendJsonCommand = async () => ({ count: 1, items: [{ addr: 16, size: 2, bytes: '0aFF' }] });
-    await expect(adapter.listForcedValues()).resolves.toEqual([{
-      path: '0x0010', address: 16, size: 2, type: 'WORD', bytesHex: '0aFF', state: WATCH_FORCE_STATE.FORCED,
-    }]);
+    await expect(adapter.listForcedValues()).resolves.toEqual([
+      {
+        path: '0x0010',
+        address: 16,
+        size: 2,
+        type: 'WORD',
+        bytesHex: '0aFF',
+        state: WATCH_FORCE_STATE.FORCED,
+      },
+    ]);
   });
 
   it('rejects malformed force-list responses without exposing their payload', async () => {
@@ -208,7 +230,13 @@ describe('SerialAdapter program control', () => {
       { count: 1, items: [{ addr: 0x10000, size: 1, bytes: '00' }] },
       { count: 1, items: [{ addr: 0, size: 261, bytes: '00'.repeat(261) }] },
       { count: 1, items: [{ addr: 0x0fff, size: 2, bytes: '0000' }] },
-      { count: 2, items: [{ addr: 0, size: 2, bytes: '0000' }, { addr: 1, size: 1, bytes: '00' }] },
+      {
+        count: 2,
+        items: [
+          { addr: 0, size: 2, bytes: '0000' },
+          { addr: 1, size: 1, bytes: '00' },
+        ],
+      },
     ]) {
       internals.sendJsonCommand = async () => response;
       await expect(adapter.listForcedValues()).rejects.toThrow('Invalid force list response');
@@ -233,7 +261,9 @@ describe('SerialAdapter program control', () => {
       await expect(adapter.forceValue(16, new Uint8Array([1]))).rejects.not.toThrow('secret-payload');
     }
 
-    internals.sendDebugCommand = async () => { throw new Error('transport secret-payload'); };
+    internals.sendDebugCommand = async () => {
+      throw new Error('transport secret-payload');
+    };
     await expect(adapter.clearForcedValue(16)).rejects.toThrow('Force command confirmation failed');
     await expect(adapter.clearForcedValue(16)).rejects.not.toThrow('secret-payload');
   });
@@ -242,12 +272,22 @@ describe('SerialAdapter program control', () => {
     const terminations: string[] = [];
     const adapter = new SerialAdapter((_adapter, message) => terminations.push(message));
     const oldConnection = {
-      _rxBuffer: '', isConnected: false, _reader: null, _readerTask: null, _dataListeners: new Set(),
-      writer: { releaseLock: () => undefined }, port: { close: async () => undefined },
+      _rxBuffer: '',
+      isConnected: false,
+      _reader: null,
+      _readerTask: null,
+      _dataListeners: new Set(),
+      writer: { releaseLock: () => undefined },
+      port: { close: async () => undefined },
     } as unknown as SerialConnection;
     const replacement = {
-      _rxBuffer: '', isConnected: true, _reader: null, _readerTask: null, _dataListeners: new Set(),
-      writer: { releaseLock: () => undefined }, port: { close: async () => undefined },
+      _rxBuffer: '',
+      isConnected: true,
+      _reader: null,
+      _readerTask: null,
+      _dataListeners: new Set(),
+      writer: { releaseLock: () => undefined },
+      port: { close: async () => undefined },
     } as unknown as SerialConnection;
     const internals = adapter as unknown as {
       connection: SerialConnection;

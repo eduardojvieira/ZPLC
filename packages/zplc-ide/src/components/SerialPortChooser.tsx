@@ -22,18 +22,25 @@ export function SerialPortChooser() {
     setSelected((current) => (current !== null && next.ports.some((port) => port.portId === current) ? current : null));
   }, []);
 
-  useEffect(() => bridge?.onRequested((value) => {
-    const parsed = parseSerialPortOffer(value);
-    if (parsed) show(parsed);
-  }), [bridge, show]);
+  useEffect(
+    () =>
+      bridge?.onRequested((value) => {
+        const parsed = parseSerialPortOffer(value);
+        if (parsed) show(parsed);
+      }),
+    [bridge, show],
+  );
 
   const rows = useMemo(() => describePorts(offer?.ports ?? [], SERIAL_BOARD_CATALOG), [offer]);
-  const answer = useCallback((portId: string | null) => {
-    if (!bridge || !offer) return;
-    setOffer(null);
-    setSelected(null);
-    void bridge.choose({ requestId: offer.requestId, portId }).catch(() => undefined);
-  }, [bridge, offer]);
+  const answer = useCallback(
+    (portId: string | null) => {
+      if (!bridge || !offer) return;
+      setOffer(null);
+      setSelected(null);
+      void bridge.choose({ requestId: offer.requestId, portId }).catch(() => undefined);
+    },
+    [bridge, offer],
+  );
 
   const refresh = useCallback(async () => {
     if (!bridge || !offer) return;

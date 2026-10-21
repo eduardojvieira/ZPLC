@@ -18,7 +18,14 @@ interface ModalProps {
 }
 
 const SIZE_OF: Record<string, DialogSize> = {
-  'max-w-xs': 'sm', 'max-w-sm': 'sm', 'max-w-md': 'sm', 'max-w-lg': 'md', 'max-w-xl': 'md', 'max-w-2xl': 'lg', 'max-w-3xl': 'xl', 'max-w-4xl': 'xl',
+  'max-w-xs': 'sm',
+  'max-w-sm': 'sm',
+  'max-w-md': 'sm',
+  'max-w-lg': 'md',
+  'max-w-xl': 'md',
+  'max-w-2xl': 'lg',
+  'max-w-3xl': 'xl',
+  'max-w-4xl': 'xl',
 };
 
 export function Modal({ isOpen, onClose, title, children, widthClass = 'max-w-2xl', showCloseButton = true }: ModalProps) {

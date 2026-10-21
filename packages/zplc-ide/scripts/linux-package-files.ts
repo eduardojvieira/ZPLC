@@ -51,13 +51,17 @@ export function fileOfPackage(packagePath: string, path: string): Buffer | null 
 export function udevRuleProblems(packagePath: string, expected: string): string[] {
   const held = fileOfPackage(packagePath, RULE_TARGET);
   if (held === null) return [`${packagePath} does not hold ${RULE_TARGET}`];
-  return held.toString('utf8') === expected ? [] : [`${packagePath} holds ${RULE_TARGET}, but not the rule that scripts/release/udev-rules.ts generates from tools/hil/usb-ids.json`];
+  return held.toString('utf8') === expected
+    ? []
+    : [`${packagePath} holds ${RULE_TARGET}, but not the rule that scripts/release/udev-rules.ts generates from tools/hil/usb-ids.json`];
 }
 
 function main(argv: string[]): number {
   const root = resolve(import.meta.dir, '..', '..', '..');
   const folder = resolve(argv[0] ?? join(import.meta.dir, '..', 'dist-electron'));
-  const packages = readdirSync(folder).filter((name) => /\.(?:deb|rpm)$/.test(name)).sort();
+  const packages = readdirSync(folder)
+    .filter((name) => /\.(?:deb|rpm)$/.test(name))
+    .sort();
   if (packages.length === 0) {
     console.error(`Linux package check: no .deb or .rpm in ${folder}`);
     return 1;

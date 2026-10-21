@@ -12,19 +12,14 @@
 #define FC_WRITE_MULTIPLE_COILS 0x0FU
 #define FC_WRITE_MULTIPLE_REGISTERS 0x10U
 
-static uint16_t be16(const uint8_t *bytes)
-{
-  return ((uint16_t)bytes[0] << 8) | bytes[1];
-}
+static uint16_t be16(const uint8_t *bytes) { return ((uint16_t)bytes[0] << 8) | bytes[1]; }
 
-static void put_be16(uint8_t *bytes, uint16_t value)
-{
+static void put_be16(uint8_t *bytes, uint16_t value) {
   bytes[0] = (uint8_t)(value >> 8);
   bytes[1] = (uint8_t)value;
 }
 
-static zplc_modbus_area_t area_for_fc(uint8_t function)
-{
+static zplc_modbus_area_t area_for_fc(uint8_t function) {
   switch (function) {
   case FC_READ_COILS:
   case FC_WRITE_SINGLE_COIL:
@@ -39,15 +34,10 @@ static zplc_modbus_area_t area_for_fc(uint8_t function)
   }
 }
 
-static bool range_is_valid(uint16_t start, uint16_t count)
-{
-  return (uint32_t)start + (uint32_t)count <= UINT16_MAX + 1U;
-}
+static bool range_is_valid(uint16_t start, uint16_t count) { return (uint32_t)start + (uint32_t)count <= UINT16_MAX + 1U; }
 
-static int exception_response(const uint8_t *request, uint8_t *response,
-                              size_t response_capacity, size_t *response_length,
-                              uint8_t exception)
-{
+static int exception_response(const uint8_t *request, uint8_t *response, size_t response_capacity, size_t *response_length,
+                              uint8_t exception) {
   if (response_capacity < 9U) {
     return -ENOSPC;
   }
@@ -60,17 +50,14 @@ static int exception_response(const uint8_t *request, uint8_t *response,
   return 0;
 }
 
-void zplc_modbus_tcp_stream_reset(zplc_modbus_tcp_stream_t *stream)
-{
+void zplc_modbus_tcp_stream_reset(zplc_modbus_tcp_stream_t *stream) {
   if (stream != NULL) {
     stream->used = 0U;
   }
 }
 
-int zplc_modbus_tcp_stream_feed(zplc_modbus_tcp_stream_t *stream,
-                                const uint8_t *data, size_t data_length,
-                                zplc_modbus_tcp_adu_cb_t callback, void *context)
-{
+int zplc_modbus_tcp_stream_feed(zplc_modbus_tcp_stream_t *stream, const uint8_t *data, size_t data_length,
+                                zplc_modbus_tcp_adu_cb_t callback, void *context) {
   if (stream == NULL || (data == NULL && data_length != 0U) || callback == NULL) {
     return -EINVAL;
   }
@@ -119,11 +106,8 @@ int zplc_modbus_tcp_stream_feed(zplc_modbus_tcp_stream_t *stream,
   } while (true);
 }
 
-int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
-                                uint8_t *response, size_t response_capacity,
-                                size_t *response_length,
-                                const zplc_modbus_tcp_ops_t *ops)
-{
+int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length, uint8_t *response, size_t response_capacity,
+                                size_t *response_length, const zplc_modbus_tcp_ops_t *ops) {
   const uint8_t *pdu;
   size_t pdu_length;
   uint8_t function;
@@ -136,8 +120,7 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     return -EINVAL;
   }
   *response_length = 0U;
-  if (request == NULL || response == NULL || ops == NULL || request_length < 8U ||
-      be16(&request[2]) != 0U || be16(&request[4]) < 2U ||
+  if (request == NULL || response == NULL || ops == NULL || request_length < 8U || be16(&request[2]) != 0U || be16(&request[4]) < 2U ||
       be16(&request[4]) > 254U || request_length != 6U + be16(&request[4]) ||
       (request[6] != ops->unit_id && request[6] != 0U && request[6] != 255U)) {
     return ZPLC_MODBUS_TCP_DROP;
@@ -171,8 +154,7 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     }
     response[7] = function;
     response[8] = 0U;
-    rc = ops->read(start, count, &response[9], response_capacity - 9U, bits,
-                   area_for_fc(function), ops->context);
+    rc = ops->read(start, count, &response[9], response_capacity - 9U, bits, area_for_fc(function), ops->context);
     if (rc < 0) {
       return exception_response(request, response, response_capacity, response_length, 0x02U);
     }
@@ -190,19 +172,16 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     if (pdu_length != 5U) {
       return exception_response(request, response, response_capacity, response_length, 0x03U);
     }
-    if (function == FC_WRITE_SINGLE_COIL &&
-        !((pdu[3] == 0xFFU && pdu[4] == 0U) || (pdu[3] == 0U && pdu[4] == 0U))) {
+    if (function == FC_WRITE_SINGLE_COIL && !((pdu[3] == 0xFFU && pdu[4] == 0U) || (pdu[3] == 0U && pdu[4] == 0U))) {
       return exception_response(request, response, response_capacity, response_length, 0x03U);
     }
     if (response_capacity < 12U || ops->write == NULL) {
       return -ENOSPC;
     }
-    rc = ops->write(be16(&pdu[1]), 1U, &pdu[3], function == FC_WRITE_SINGLE_COIL,
-                    false, area_for_fc(function), ops->context);
+    rc = ops->write(be16(&pdu[1]), 1U, &pdu[3], function == FC_WRITE_SINGLE_COIL, false, area_for_fc(function), ops->context);
     if (rc < 0) {
       /* -EBUSY: the write queue of the scan is full (RT-010). The address is valid and the client may retry. */
-      return exception_response(request, response, response_capacity, response_length,
-                                rc == -EBUSY ? 0x06U : 0x02U);
+      return exception_response(request, response, response_capacity, response_length, rc == -EBUSY ? 0x06U : 0x02U);
     }
     memcpy(response, request, 12U);
     put_be16(&response[4], 6U);
@@ -235,8 +214,7 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     rc = ops->write(start, count, &pdu[6], bits, true, area_for_fc(function), ops->context);
     if (rc < 0) {
       /* -EBUSY: the write queue of the scan is full (RT-010). The address is valid and the client may retry. */
-      return exception_response(request, response, response_capacity, response_length,
-                                rc == -EBUSY ? 0x06U : 0x02U);
+      return exception_response(request, response, response_capacity, response_length, rc == -EBUSY ? 0x06U : 0x02U);
     }
     memcpy(response, request, 12U);
     put_be16(&response[4], 6U);
@@ -253,9 +231,8 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
  * ============================================================================
  */
 
-size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t transaction,
-                                     uint8_t unit_id, const uint8_t *pdu, size_t pdu_length)
-{
+size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t transaction, uint8_t unit_id, const uint8_t *pdu,
+                                     size_t pdu_length) {
   if (adu == NULL || pdu == NULL || pdu_length == 0U || pdu_length > ZPLC_MODBUS_PDU_MAX ||
       capacity < ZPLC_MODBUS_TCP_MBAP_LEN + pdu_length) {
     return 0U;
@@ -268,15 +245,14 @@ size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t tra
   return ZPLC_MODBUS_TCP_MBAP_LEN + pdu_length;
 }
 
-int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t transaction,
-                                 uint8_t unit_id, const uint8_t **pdu, size_t *pdu_length)
-{
+int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t transaction, uint8_t unit_id, const uint8_t **pdu,
+                                 size_t *pdu_length) {
   if (adu == NULL || pdu == NULL || pdu_length == NULL) {
     return -EINVAL;
   }
   /* MBAP header and a function code at least */
-  if (length < ZPLC_MODBUS_TCP_MBAP_LEN + 1U || be16(&adu[2]) != 0U ||
-      (size_t)be16(&adu[4]) + 6U != length || be16(&adu[0]) != transaction || adu[6] != unit_id) {
+  if (length < ZPLC_MODBUS_TCP_MBAP_LEN + 1U || be16(&adu[2]) != 0U || (size_t)be16(&adu[4]) + 6U != length ||
+      be16(&adu[0]) != transaction || adu[6] != unit_id) {
     return -EPROTO;
   }
   *pdu = &adu[ZPLC_MODBUS_TCP_MBAP_LEN];
@@ -284,16 +260,14 @@ int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t tra
   return 0;
 }
 
-size_t zplc_modbus_pdu_read(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t count)
-{
+size_t zplc_modbus_pdu_read(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t count) {
   pdu[0] = function;
   put_be16(&pdu[1], address);
   put_be16(&pdu[3], count);
   return 5U;
 }
 
-size_t zplc_modbus_pdu_write_single(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t value)
-{
+size_t zplc_modbus_pdu_write_single(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t value) {
   pdu[0] = function;
   put_be16(&pdu[1], address);
   if (function == ZPLC_MODBUS_FC_WRITE_SINGLE_COIL) {
@@ -305,8 +279,7 @@ size_t zplc_modbus_pdu_write_single(uint8_t *pdu, uint8_t function, uint16_t add
 }
 
 /* The function of a response, or -EBADMSG for an exception response, -EPROTO for what is not one. */
-static int response_function(const uint8_t *pdu, size_t length, uint8_t function)
-{
+static int response_function(const uint8_t *pdu, size_t length, uint8_t function) {
   if (pdu == NULL || length < 2U) {
     return -EPROTO;
   }
@@ -316,17 +289,14 @@ static int response_function(const uint8_t *pdu, size_t length, uint8_t function
   return pdu[0] == function ? 0 : -EPROTO;
 }
 
-int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, uint16_t count,
-                                            uint16_t *registers)
-{
+int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, uint16_t count, uint16_t *registers) {
   int rc = response_function(pdu, length, ZPLC_MODBUS_FC_READ_HOLDING_REGISTERS);
   uint16_t i;
 
   if (rc != 0) {
     return rc;
   }
-  if (registers == NULL || pdu[1] != (uint8_t)(count * 2U) || (size_t)count * 2U > 250U ||
-      length != 2U + (size_t)count * 2U) {
+  if (registers == NULL || pdu[1] != (uint8_t)(count * 2U) || (size_t)count * 2U > 250U || length != 2U + (size_t)count * 2U) {
     return -EPROTO;
   }
   for (i = 0U; i < count; i++) {
@@ -335,9 +305,7 @@ int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, u
   return 0;
 }
 
-int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint16_t count,
-                                        uint8_t *bits, size_t bits_capacity)
-{
+int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint16_t count, uint8_t *bits, size_t bits_capacity) {
   int rc = response_function(pdu, length, ZPLC_MODBUS_FC_READ_COILS);
   const size_t bytes = ((size_t)count + 7U) / 8U;
 
@@ -351,9 +319,7 @@ int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint1
   return 0;
 }
 
-int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uint8_t function,
-                                          uint16_t address, uint16_t value)
-{
+int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uint8_t function, uint16_t address, uint16_t value) {
   int rc;
   uint8_t expected[5];
 

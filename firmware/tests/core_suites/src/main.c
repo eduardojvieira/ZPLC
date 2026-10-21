@@ -15,10 +15,8 @@
 
 extern int zplc_core_suite_main(void);
 
-ZTEST(zplc_core_suite, test_suite_reports_no_failure)
-{
-  zassert_equal(zplc_core_suite_main(), 0,
-                "core suite '" ZPLC_CORE_SUITE_NAME "' reported failures");
+ZTEST(zplc_core_suite, test_suite_reports_no_failure) {
+  zassert_equal(zplc_core_suite_main(), 0, "core suite '" ZPLC_CORE_SUITE_NAME "' reported failures");
 }
 
 ZTEST_SUITE(zplc_core_suite, NULL, NULL, NULL, NULL, NULL);
@@ -30,8 +28,7 @@ ZTEST_SUITE(zplc_core_suite, NULL, NULL, NULL, NULL, NULL);
 
 extern int zplc_core_suite_main(void);
 
-int main(void)
-{
+int main(void) {
   int failures = zplc_core_suite_main();
 
   if (failures != 0) {

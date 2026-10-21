@@ -7,15 +7,31 @@ import { createProjectWatcher, relevantChange } from './projectWatcher';
 import type { ProjectChange } from './projectFilesProtocol';
 
 const directories: string[] = [];
-afterEach(async () => { await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });
-async function fixture(): Promise<string> { const directory = await mkdtemp(join(tmpdir(), 'zplc-watch-')); directories.push(directory); return directory; }
+afterEach(async () => {
+  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
+async function fixture(): Promise<string> {
+  const directory = await mkdtemp(join(tmpdir(), 'zplc-watch-'));
+  directories.push(directory);
+  return directory;
+}
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('which changes are worth telling the window about (IDE-004)', () => {
   test('keeps a project path and drops what Studio and the tools write for themselves', () => {
     expect(relevantChange('src/Motor.st')).toBe('src/Motor.st');
     expect(relevantChange('src\\lib\\Pump.st')).toBe('src/lib/Pump.st');
-    for (const noise of ['.git/index', 'node_modules/x/y.js', 'build/out.bin', '.vscode/settings.json', 'src/.Motor.st.0a1b2c3d4e5f.tmp', '', '..\\x', '../x', '/abs']) {
+    for (const noise of [
+      '.git/index',
+      'node_modules/x/y.js',
+      'build/out.bin',
+      '.vscode/settings.json',
+      'src/.Motor.st.0a1b2c3d4e5f.tmp',
+      '',
+      '..\\x',
+      '../x',
+      '/abs',
+    ]) {
       expect(relevantChange(noise)).toBeNull();
     }
   });
@@ -45,10 +61,14 @@ describe('project watcher (IDE-004)', () => {
     const watcher = createProjectWatcher({
       send: (_ownerId, change) => events.push(change),
       debounceMs: 20,
-      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => { listener = callback; return fake; }) as never,
+      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => {
+        listener = callback;
+        return fake;
+      }) as never,
     });
     watcher.start(1, 'r', '/anywhere');
-    for (const name of ['src/Motor.st', 'src/Motor.st', 'src/Pump.st', 'src/.Motor.st.0a1b2c3d4e5f.tmp', '.git/index', 'node_modules/x.js']) listener!('change', name);
+    for (const name of ['src/Motor.st', 'src/Motor.st', 'src/Pump.st', 'src/.Motor.st.0a1b2c3d4e5f.tmp', '.git/index', 'node_modules/x.js'])
+      listener!('change', name);
     listener!('rename', null);
     await wait(120);
     expect(events).toEqual([{ rootId: 'r', paths: ['src/Motor.st', 'src/Pump.st'], overflow: false }]);
@@ -59,13 +79,21 @@ describe('project watcher (IDE-004)', () => {
     // A fake watch that the test drives, so that "a burst" does not depend on when the operating system delivers events.
     let listener: ((event: string, filename: string | null) => void) | undefined;
     let closed = false;
-    const fake = { on: () => fake, close: () => { closed = true; } };
+    const fake = {
+      on: () => fake,
+      close: () => {
+        closed = true;
+      },
+    };
     const events: ProjectChange[] = [];
     const watcher = createProjectWatcher({
       send: (_ownerId, change) => events.push(change),
       debounceMs: 20,
       maxPaths: 3,
-      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => { listener = callback; return fake; }) as never,
+      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => {
+        listener = callback;
+        return fake;
+      }) as never,
     });
     watcher.start(1, 'r', '/anywhere');
     for (let index = 0; index < 10; index++) listener!('change', `F${index}.st`);

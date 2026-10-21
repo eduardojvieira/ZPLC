@@ -47,17 +47,28 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
   const typing = useRef<TypeaheadState>({ buffer: '', at: 0 });
 
   // Focus follows the active item, so the keyboard and a screen reader are where the highlight is.
-  useEffect(() => { itemRefs.current[active]?.focus(); }, [active]);
+  useEffect(() => {
+    itemRefs.current[active]?.focus();
+  }, [active]);
 
-  const place = useCallback((node: HTMLDivElement | null) => {
-    menuRef.current = node;
-    if (!node) return;
-    const size = node.getBoundingClientRect();
-    const placed = placeOverlay({ anchor, overlay: { width: size.width, height: size.height }, viewport: { width: window.innerWidth, height: window.innerHeight }, placement, gap: 2 });
-    node.style.left = `${placed.left}px`;
-    node.style.top = `${placed.top}px`;
-    node.style.visibility = 'visible';
-  }, [anchor, placement, menuRef]);
+  const place = useCallback(
+    (node: HTMLDivElement | null) => {
+      menuRef.current = node;
+      if (!node) return;
+      const size = node.getBoundingClientRect();
+      const placed = placeOverlay({
+        anchor,
+        overlay: { width: size.width, height: size.height },
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        placement,
+        gap: 2,
+      });
+      node.style.left = `${placed.left}px`;
+      node.style.top = `${placed.top}px`;
+      node.style.visibility = 'visible';
+    },
+    [anchor, placement, menuRef],
+  );
 
   const choose = (index: number): void => {
     const item = items[index];
@@ -69,21 +80,41 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const result = menuKey(event.key, active, items, Date.now(), typing.current);
     typing.current = result.typeahead;
-    if (result.action === 'close') { onClose(false); return; }
-    if (result.action === 'close-and-restore') { event.preventDefault(); onClose(true); return; }
-    if (event.key.length === 1 || event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End' || event.key === 'Enter') event.preventDefault();
-    if (result.action === 'activate') { choose(active); return; }
+    if (result.action === 'close') {
+      onClose(false);
+      return;
+    }
+    if (result.action === 'close-and-restore') {
+      event.preventDefault();
+      onClose(true);
+      return;
+    }
+    if (event.key.length === 1 || event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End' || event.key === 'Enter')
+      event.preventDefault();
+    if (result.action === 'activate') {
+      choose(active);
+      return;
+    }
     if (result.active !== null && result.active !== active) setActive(result.active);
   };
 
   return (
     <Portal>
-      <div ref={place} role="menu" aria-label={label} className="ui-menu" style={{ position: 'fixed', left: 0, top: 0, visibility: 'hidden' }} onKeyDown={onKeyDown}>
+      <div
+        ref={place}
+        role="menu"
+        aria-label={label}
+        className="ui-menu"
+        style={{ position: 'fixed', left: 0, top: 0, visibility: 'hidden' }}
+        onKeyDown={onKeyDown}
+      >
         {items.map((item, index) => (
           <div key={item.id} role="none">
             {item.separatorBefore && <div role="separator" className="ui-menu-separator" />}
             <button
-              ref={(node) => { itemRefs.current[index] = node; }}
+              ref={(node) => {
+                itemRefs.current[index] = node;
+              }}
               type="button"
               role="menuitem"
               aria-disabled={item.disabled || undefined}
@@ -92,10 +123,15 @@ function MenuSurface({ label, items, anchor, placement, initialActive, onClose, 
               data-active={index === active || undefined}
               data-destructive={item.destructive || undefined}
               className="ui-menu-item"
-              onPointerMove={() => { if (!item.disabled && index !== active) setActive(index); }}
+              onPointerMove={() => {
+                if (!item.disabled && index !== active) setActive(index);
+              }}
               onClick={() => choose(index)}
             >
-              <span>{item.label}{item.disabled && item.disabledReason && <span className="ui-menu-reason">{item.disabledReason}</span>}</span>
+              <span>
+                {item.label}
+                {item.disabled && item.disabledReason && <span className="ui-menu-reason">{item.disabledReason}</span>}
+              </span>
               {item.shortcut && <kbd className="ui-menu-shortcut">{item.shortcut}</kbd>}
             </button>
           </div>
@@ -117,7 +153,15 @@ export interface MenuButtonProps {
   className?: string;
 }
 
-export function MenuButton({ label, items, children, variant = 'secondary', size = 'md', placement = 'bottom-start', className }: MenuButtonProps) {
+export function MenuButton({
+  label,
+  items,
+  children,
+  variant = 'secondary',
+  size = 'md',
+  placement = 'bottom-start',
+  className,
+}: MenuButtonProps) {
   const menuId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -141,7 +185,11 @@ export function MenuButton({ label, items, children, variant = 'secondary', size
         aria-expanded={open !== null}
         aria-controls={open !== null ? menuId : undefined}
         aria-label={children === undefined ? undefined : label}
-        onClick={(event) => setOpen(open === null ? { initial: menuOpenTarget('Enter', specs) ?? 0, anchor: event.currentTarget.getBoundingClientRect() } : null)}
+        onClick={(event) =>
+          setOpen(
+            open === null ? { initial: menuOpenTarget('Enter', specs) ?? 0, anchor: event.currentTarget.getBoundingClientRect() } : null,
+          )
+        }
         onKeyDown={(event) => {
           const target = menuOpenTarget(event.key, specs);
           if (target === null || event.key === 'Enter' || event.key === ' ') return;
@@ -153,7 +201,15 @@ export function MenuButton({ label, items, children, variant = 'secondary', size
         <ChevronDown size={ICON_SIZES.sm} aria-hidden="true" />
       </Button>
       {open !== null && (
-        <MenuSurface label={label} items={items} anchor={open.anchor} placement={placement} initialActive={open.initial} onClose={close} menuRef={menu} />
+        <MenuSurface
+          label={label}
+          items={items}
+          anchor={open.anchor}
+          placement={placement}
+          initialActive={open.initial}
+          onClose={close}
+          menuRef={menu}
+        />
       )}
     </>
   );
@@ -174,7 +230,17 @@ export function PointMenu({ label, items, x, y, onClose }: PointMenuProps) {
   const specs = items.map((item) => ({ label: item.label, disabled: item.disabled }));
   useDismiss(true, [menu], () => onClose());
   const anchor = { left: x, top: y, width: 0, height: 0 };
-  return <MenuSurface label={label} items={items} anchor={anchor} placement="bottom-start" initialActive={menuOpenTarget('Enter', specs) ?? 0} onClose={() => onClose()} menuRef={menu} />;
+  return (
+    <MenuSurface
+      label={label}
+      items={items}
+      anchor={anchor}
+      placement="bottom-start"
+      initialActive={menuOpenTarget('Enter', specs) ?? 0}
+      onClose={() => onClose()}
+      menuRef={menu}
+    />
+  );
 }
 
 export interface ContextMenuProps {

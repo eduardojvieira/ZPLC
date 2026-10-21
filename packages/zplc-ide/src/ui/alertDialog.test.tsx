@@ -31,8 +31,23 @@ describe('UX-020 alert dialog', () => {
 
   it('UX-020 shows only Cancel when the dialog has nothing to confirm, and renders its body and wider size', () => {
     const out = html(
-      <AlertDialog open title="Deploy blocked" description="The device does not match." cancelLabel="Close" actionLabel={null} size="lg" onAction={noop} onCancel={noop}>
-        <table><tbody><tr><td>Board</td></tr></tbody></table>
+      <AlertDialog
+        open
+        title="Deploy blocked"
+        description="The device does not match."
+        cancelLabel="Close"
+        actionLabel={null}
+        size="lg"
+        onAction={noop}
+        onCancel={noop}
+      >
+        <table>
+          <tbody>
+            <tr>
+              <td>Board</td>
+            </tr>
+          </tbody>
+        </table>
       </AlertDialog>,
     );
     expect(buttons(out)).toEqual(['Close']);
@@ -42,7 +57,18 @@ describe('UX-020 alert dialog', () => {
 
   it('UX-020 keeps every control disabled while the action runs, so a second click cannot repeat it', () => {
     const out = html(
-      <AlertDialog open busy title="Delete file" description="x" cancelLabel="Cancel" secondary={{ label: 'Other', onSelect: noop }} actionLabel="Delete file" onAction={noop} onCancel={noop} destructive />,
+      <AlertDialog
+        open
+        busy
+        title="Delete file"
+        description="x"
+        cancelLabel="Cancel"
+        secondary={{ label: 'Other', onSelect: noop }}
+        actionLabel="Delete file"
+        onAction={noop}
+        onCancel={noop}
+        destructive
+      />,
     );
     const disabled = Array.from(out.matchAll(/<button[^>]*disabled=""[^>]*>/g));
     expect(disabled.length).toBe(3);

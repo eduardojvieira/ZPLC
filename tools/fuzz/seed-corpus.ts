@@ -19,7 +19,12 @@ const repository = fileURLToPath(new URL('../../', import.meta.url));
 const projectsRoot = join(repository, 'packages/zplc-ide/projects');
 const conformanceRoot = join(repository, 'conformance');
 
-const slug = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+const slug = (text: string): string =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
 
 async function compileDirectory(root: string): Promise<Uint8Array | undefined> {
   // The compile step may write beside the project: work on a copy.
@@ -37,7 +42,9 @@ export async function generate(): Promise<Map<string, Uint8Array>> {
   const seeds = new Map<string, Uint8Array>();
   const skipped: string[] = [];
 
-  for (const entry of readdirSync(projectsRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const entry of readdirSync(projectsRoot, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .sort((a, b) => a.name.localeCompare(b.name))) {
     const bytes = await compileDirectory(join(projectsRoot, entry.name));
     if (bytes) seeds.set(`example-${slug(entry.name)}.zplc`, bytes);
     else skipped.push(`example ${entry.name}`);
@@ -52,10 +59,16 @@ export async function generate(): Promise<Map<string, Uint8Array>> {
       const program = `main${found.extension}`;
       copyFileSync(found.source, join(root, 'src', program));
       for (const extra of found.extras) copyFileSync(extra, join(root, 'src', basename(extra)));
-      writeFileSync(join(root, 'zplc.json'), JSON.stringify({
-        schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' },
-        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }],
-      }));
+      writeFileSync(
+        join(root, 'zplc.json'),
+        JSON.stringify({
+          schemaVersion: 2,
+          name: 'conformance',
+          version: '1.0.0',
+          target: { board: 'posix' },
+          tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }],
+        }),
+      );
       const result = await compilerCompile(root);
       if (result.ok && result.zplcFile) seeds.set(`conformance-${slug(found.name)}.zplc`, result.zplcFile);
       else skipped.push(`conformance ${found.name}`);
@@ -67,24 +80,39 @@ export async function generate(): Promise<Map<string, Uint8Array>> {
   const safe = mkdtempSync(join(tmpdir(), 'zplc-seed-safe-'));
   try {
     mkdirSync(join(safe, 'src'));
-    writeFileSync(join(safe, 'src', 'main.st'),
-      'PROGRAM Main\nVAR\n  relay AT %QX0.0 : BOOL;\n  valve AT %QX0.5 : BOOL;\n  lamp AT %QX1.7 : BOOL;\nEND_VAR\n  relay := TRUE;\n  valve := FALSE;\n  lamp := relay;\nEND_PROGRAM\n');
-    writeFileSync(join(safe, 'zplc.json'), JSON.stringify({
-      schemaVersion: 2, name: 'safe-declared', version: '1.0.0', target: { board: 'posix' },
-      io: { outputs: [
-        { name: 'relay', address: '%QX0.0', type: 'BOOL', safe: true },
-        { name: 'valve', address: '%QX0.5', type: 'BOOL', safe: false },
-        { name: 'lamp', address: '%QX1.7', type: 'BOOL', safe: true },
-      ] },
-      tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
-    }));
+    writeFileSync(
+      join(safe, 'src', 'main.st'),
+      'PROGRAM Main\nVAR\n  relay AT %QX0.0 : BOOL;\n  valve AT %QX0.5 : BOOL;\n  lamp AT %QX1.7 : BOOL;\nEND_VAR\n  relay := TRUE;\n ' +
+        ' valve := FALSE;\n  lamp := relay;\nEND_PROGRAM\n',
+    );
+    writeFileSync(
+      join(safe, 'zplc.json'),
+      JSON.stringify({
+        schemaVersion: 2,
+        name: 'safe-declared',
+        version: '1.0.0',
+        target: { board: 'posix' },
+        io: {
+          outputs: [
+            { name: 'relay', address: '%QX0.0', type: 'BOOL', safe: true },
+            { name: 'valve', address: '%QX0.5', type: 'BOOL', safe: false },
+            { name: 'lamp', address: '%QX1.7', type: 'BOOL', safe: true },
+          ],
+        },
+        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+      }),
+    );
     const result = await compilerCompile(safe);
     if (result.ok && result.zplcFile) seeds.set('safe-declared-outputs.zplc', result.zplcFile);
     else skipped.push('safe-declared-outputs');
   } finally {
     rmSync(safe, { recursive: true, force: true });
   }
-  if (skipped.length > 0) console.error(`seed-corpus: ${skipped.length} sources produced no artifact (templates, or sources the compiler rejects):\n  ${skipped.join('\n  ')}`);
+  if (skipped.length > 0)
+    console.error(
+      `seed-corpus: ${skipped.length} sources produced no artifact (templates, or sources the compiler rejects):\n ` +
+        ` ${skipped.join('\n  ')}`,
+    );
   return seeds;
 }
 

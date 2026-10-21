@@ -41,7 +41,10 @@ export function parseKconfig(text: string): KconfigSymbol[] {
     const indent = raw.length - raw.trimStart().length;
     const line = raw.trim();
     if (inHelp) {
-      if (line === '') { if (current && current.help !== '') current.help += '\n'; continue; }
+      if (line === '') {
+        if (current && current.help !== '') current.help += '\n';
+        continue;
+      }
       if (helpIndent === undefined) helpIndent = indent;
       if (indent >= helpIndent && current) {
         current.help += `${current.help === '' || current.help.endsWith('\n') ? '' : ' '}${line}`;
@@ -61,7 +64,14 @@ export function parseKconfig(text: string): KconfigSymbol[] {
     } else if (keyword === 'endif') {
       conditions.pop();
       current = undefined;
-    } else if (keyword === 'menu' || keyword === 'endmenu' || keyword === 'source' || keyword === 'comment' || keyword === 'choice' || keyword === 'endchoice') {
+    } else if (
+      keyword === 'menu' ||
+      keyword === 'endmenu' ||
+      keyword === 'source' ||
+      keyword === 'comment' ||
+      keyword === 'choice' ||
+      keyword === 'endchoice'
+    ) {
       current = undefined;
     } else if (current) {
       if ((KCONFIG_TYPES as readonly string[]).includes(keyword)) {
@@ -73,8 +83,10 @@ export function parseKconfig(text: string): KconfigSymbol[] {
         const [low, high] = argument.split(/\s+/);
         if (low !== undefined && high !== undefined) current.range = [low, high];
       } else if (keyword === 'depends') current.depends.push(argument.replace(/^on\s+/, ''));
-      else if (keyword === 'help') { inHelp = true; helpIndent = undefined; }
-      else if (keyword === 'prompt') current.prompt = argument.replace(/^"|"$/g, '');
+      else if (keyword === 'help') {
+        inHelp = true;
+        helpIndent = undefined;
+      } else if (keyword === 'prompt') current.prompt = argument.replace(/^"|"$/g, '');
     }
   }
   return symbols;
@@ -96,9 +108,17 @@ export interface ShellCommand {
   when: string[];
 }
 
-interface ShellEntry { name: string; set: string | undefined; help: string; required?: number; optional?: number; when: string[] }
+interface ShellEntry {
+  name: string;
+  set: string | undefined;
+  help: string;
+  required?: number;
+  optional?: number;
+  when: string[];
+}
 
-const SHELL_ENTRY = /^\s*SHELL_CMD(_ARG)?\(\s*(\w+)\s*,\s*(&?\w+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\w+)\s*(?:,\s*(\d+)\s*,\s*(\d+)\s*)?\)\s*,?\s*$/;
+const SHELL_ENTRY =
+  /^\s*SHELL_CMD(_ARG)?\(\s*(\w+)\s*,\s*(&?\w+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\w+)\s*(?:,\s*(\d+)\s*,\s*(\d+)\s*)?\)\s*,?\s*$/;
 
 export function parseShellCommands(text: string): ShellCommand[] {
   const sets = new Map<string, ShellEntry[]>();
@@ -109,11 +129,24 @@ export function parseShellCommands(text: string): ShellCommand[] {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
     const ifdef = /^\s*#\s*ifdef\s+(\w+)/.exec(line);
-    if (ifdef) { guards.push(ifdef[1]!.replace(/^CONFIG_/, '')); continue; }
-    if (/^\s*#\s*(ifndef|if)\b/.test(line)) { guards.push(''); continue; }
-    if (/^\s*#\s*endif/.test(line)) { guards.pop(); continue; }
-    if (/^\s*#\s*else\b/.test(line)) { guards[guards.length - 1] = ''; continue; }
-    const start = /^\s*SHELL_STATIC_SUBCMD_SET_CREATE\(\s*$/.test(line) || /^\s*SHELL_STATIC_SUBCMD_SET_CREATE\(\s*(\w+)\s*,\s*$/.test(line);
+    if (ifdef) {
+      guards.push(ifdef[1]!.replace(/^CONFIG_/, ''));
+      continue;
+    }
+    if (/^\s*#\s*(ifndef|if)\b/.test(line)) {
+      guards.push('');
+      continue;
+    }
+    if (/^\s*#\s*endif/.test(line)) {
+      guards.pop();
+      continue;
+    }
+    if (/^\s*#\s*else\b/.test(line)) {
+      guards[guards.length - 1] = '';
+      continue;
+    }
+    const start =
+      /^\s*SHELL_STATIC_SUBCMD_SET_CREATE\(\s*$/.test(line) || /^\s*SHELL_STATIC_SUBCMD_SET_CREATE\(\s*(\w+)\s*,\s*$/.test(line);
     if (start) {
       const inline = /\(\s*(\w+)\s*,\s*$/.exec(line);
       const nameLine = inline ? inline[1]! : (lines[++index] ?? '').trim().replace(/,$/, '');
@@ -121,9 +154,15 @@ export function parseShellCommands(text: string): ShellCommand[] {
       sets.set(nameLine, open);
       continue;
     }
-    if (/SHELL_SUBCMD_SET_END/.test(line)) { open = undefined; continue; }
+    if (/SHELL_SUBCMD_SET_END/.test(line)) {
+      open = undefined;
+      continue;
+    }
     const registered = /SHELL_CMD_REGISTER\(\s*(\w+)\s*,\s*&(\w+)\s*,\s*"((?:[^"\\]|\\.)*)"/.exec(line);
-    if (registered) { root = { name: registered[1]!, set: registered[2]!, help: registered[3]! }; continue; }
+    if (registered) {
+      root = { name: registered[1]!, set: registered[2]!, help: registered[3]! };
+      continue;
+    }
     if (open) {
       const entry = SHELL_ENTRY.exec(line);
       if (entry) {
@@ -166,9 +205,20 @@ export function parseShellCommands(text: string): ShellCommand[] {
 // The command line
 // ---------------------------------------------------------------------------
 
-export interface CliCommand { name: string; usage: string }
-export interface CliOption { flags: string; description: string }
-export interface Cli { commands: CliCommand[]; options: CliOption[]; exitCodes: Array<{ code: number; meaning: string }>; footnote: string }
+export interface CliCommand {
+  name: string;
+  usage: string;
+}
+export interface CliOption {
+  flags: string;
+  description: string;
+}
+export interface Cli {
+  commands: CliCommand[];
+  options: CliOption[];
+  exitCodes: Array<{ code: number; meaning: string }>;
+  footnote: string;
+}
 
 export function parseCli(source: string): Cli {
   const text = flattenConcatenations(source);
@@ -181,8 +231,14 @@ export function parseCli(source: string): Cli {
   const footnote: string[] = [];
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, '');
-    if (/^Usage:$/.test(line)) { section = 'usage'; continue; }
-    if (/^Options:$/.test(line)) { section = 'options'; continue; }
+    if (/^Usage:$/.test(line)) {
+      section = 'usage';
+      continue;
+    }
+    if (/^Options:$/.test(line)) {
+      section = 'options';
+      continue;
+    }
     if (line.trim() === '') continue;
     if (section === 'usage' && /^\s+zplc-cli\s/.test(line)) {
       const usage = line.trim();
@@ -197,16 +253,24 @@ export function parseCli(source: string): Cli {
   const names = accepted ? [...accepted[1]!.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]!) : [];
   const listed = [...new Set(commands.map((command) => command.name))];
   if (names.length === 0 || names.slice().sort().join() !== listed.slice().sort().join()) {
-    throw new Error(`cli/index.ts: the commands of the usage text (${listed.join(', ')}) are not the commands main accepts (${names.join(', ')})`);
+    throw new Error(
+      `cli/index.ts: the commands of the usage text (${listed.join(', ')}) are not the commands main accepts (${names.join(', ')})`,
+    );
   }
   const reasons = new Map<number, string[]>();
   for (const match of text.matchAll(/code === '(\w+)' \? (\d+) : code === '(\w+)' \? (\d+) : 1/g)) {
     const [, cancelled, cancelledCode, timeout, timeoutCode] = match;
-    for (const [reason, code, meaning] of [[cancelled!, cancelledCode!, 'cancelled'], [timeout!, timeoutCode!, 'timed out']] as const) {
+    for (const [reason, code, meaning] of [
+      [cancelled!, cancelledCode!, 'cancelled'],
+      [timeout!, timeoutCode!, 'timed out'],
+    ] as const) {
       reasons.set(Number(code), [...(reasons.get(Number(code)) ?? []), `${meaning}: ${reason}`]);
     }
   }
-  const exitCodes: Cli['exitCodes'] = [{ code: 0, meaning: 'success' }, { code: 1, meaning: 'the command failed, or its arguments were invalid' }];
+  const exitCodes: Cli['exitCodes'] = [
+    { code: 0, meaning: 'success' },
+    { code: 1, meaning: 'the command failed, or its arguments were invalid' },
+  ];
   for (const [code, list] of reasons) {
     const meaning = list[0]!.split(': ')[0]!;
     exitCodes.push({ code, meaning: `${meaning} (${list.map((entry) => entry.split(': ')[1]).join(', ')})` });
@@ -218,15 +282,30 @@ export function parseCli(source: string): Cli {
 // MCP
 // ---------------------------------------------------------------------------
 
-export interface McpTool { name: string; title: string; description: string; inputs: string[]; readOnly: boolean }
-export interface McpResource { uri: string; template: boolean }
-export interface Mcp { tools: McpTool[]; resources: McpResource[] }
+export interface McpTool {
+  name: string;
+  title: string;
+  description: string;
+  inputs: string[];
+  readOnly: boolean;
+}
+export interface McpResource {
+  uri: string;
+  template: boolean;
+}
+export interface Mcp {
+  tools: McpTool[];
+  resources: McpResource[];
+}
 
 export function parseMcp(source: string): Mcp {
   const text = flattenConcatenations(source);
   const inputs = new Map<string, string[]>();
   for (const match of text.matchAll(/^const (\w+_INPUT) = z\s*\.object\(\{([\s\S]*?)\}\)\s*\.strict\(\);/gm)) {
-    inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\s*\./g)].map((field) => field[1]!));
+    inputs.set(
+      match[1]!,
+      [...match[2]!.matchAll(/(\w+):\s*z\s*\./g)].map((field) => field[1]!),
+    );
   }
   const annotations = new Map<string, boolean>();
   for (const match of text.matchAll(/^const (\w+) = \{\s*readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
@@ -238,12 +317,18 @@ export function parseMcp(source: string): Mcp {
   const tools: McpTool[] = [...text.matchAll(registered)].map((match) => {
     const fields = inputs.get(match[6]!);
     const readOnly = annotations.get(match[7]!);
-    if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[6]} or ${match[7]}, which the reader does not know`);
+    if (fields === undefined || readOnly === undefined)
+      throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[6]} or ${match[7]}, which the reader does not know`);
     return { name: match[1]!, title: match[3]!, description: match[5]!, inputs: fields, readOnly };
   });
   const declared = /export const MCP_TOOL_NAMES = \[([^\]]*)\]/.exec(text);
   const declaredNames = declared ? [...declared[1]!.matchAll(/'(\w+)'/g)].map((match) => match[1]!) : [];
-  if (declaredNames.join() !== tools.map((tool) => tool.name).join()) throw new Error(`mcp/server.ts: MCP_TOOL_NAMES (${declaredNames.join(', ')}) and the registered tools (${tools.map((tool) => tool.name).join(', ')}) differ`);
+  if (declaredNames.join() !== tools.map((tool) => tool.name).join())
+    throw new Error(
+      `mcp/server.ts: MCP_TOOL_NAMES (${declaredNames.join(', ')}) and the registered tools (${tools
+        .map((tool) => tool.name)
+        .join(', ')}) differ`,
+    );
   const uris = /export const MCP_RESOURCE_URIS = \[([^\]]*)\]/.exec(text);
   const uriList = uris ? [...uris[1]!.matchAll(/'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!) : [];
   const templates = [...text.matchAll(/template\(\s*'[\w-]+',\s*'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
@@ -255,7 +340,10 @@ export function parseMcp(source: string): Mcp {
   for (const topic of text.matchAll(topics)) {
     for (const name of topic[1]!.matchAll(/'(\w+)'/g)) fixed.push(`${topic[2]}/${name[1]}`);
   }
-  if (uriList.slice().sort().join() !== fixed.slice().sort().join()) throw new Error(`mcp/server.ts: MCP_RESOURCE_URIS and the registered resources differ (${uriList.join(', ')} against ${fixed.join(', ')})`);
+  if (uriList.slice().sort().join() !== fixed.slice().sort().join())
+    throw new Error(
+      `mcp/server.ts: MCP_RESOURCE_URIS and the registered resources differ (${uriList.join(', ')} against ${fixed.join(', ')})`,
+    );
   return { tools, resources: [...uriList.map((uri) => ({ uri, template: false })), ...templates.map((uri) => ({ uri, template: true }))] };
 }
 
@@ -300,7 +388,11 @@ export function parseScenarioFormat(engine: string, workspace: string): Scenario
   const duration = /integer\(source\.durationMs, 'durationMs', ([\d_]+)\)/.exec(engine);
   const idLength = /source\.id\.length > (\d+)/.exec(engine);
   if (!tick || !duration || !idLength) throw new Error('test-engine/index.ts: the range of tickMs, durationMs or id was not found');
-  limits.push({ name: 'tickMs', value: tick[1]!.replace(/_/g, '') }, { name: 'durationMs', value: duration[1]!.replace(/_/g, '') }, { name: 'id length', value: idLength[1]! });
+  limits.push(
+    { name: 'tickMs', value: tick[1]!.replace(/_/g, '') },
+    { name: 'durationMs', value: duration[1]!.replace(/_/g, '') },
+    { name: 'id length', value: idLength[1]! },
+  );
   for (const name of ['SCENARIO_MAX_BYTES', 'SCENARIOS_MAX_COUNT', 'SCENARIOS_MAX_BYTES']) {
     const match = new RegExp(`const ${name} = ([\\d* ]+);`).exec(workspace);
     if (!match) throw new Error(`cli/workspace.ts: ${name} was not found`);
@@ -321,8 +413,14 @@ export function parseScenarioFormat(engine: string, workspace: string): Scenario
 // The runtime session protocol
 // ---------------------------------------------------------------------------
 
-export interface ProtocolMethod { method: string; params: string[] }
-export interface Protocol { version: string; methods: ProtocolMethod[] }
+export interface ProtocolMethod {
+  method: string;
+  params: string[];
+}
+export interface Protocol {
+  version: string;
+  methods: ProtocolMethod[];
+}
 
 export function parseProtocol(text: string): Protocol {
   const version = /#define ZPLC_NATIVE_PROTOCOL_VERSION "([^"]+)"/.exec(text)?.[1];

@@ -4,7 +4,11 @@
  * `build` lists the Build menu); matches that start words and run together rank higher. Pure, so it is tested without
  * the dialog.
  */
-export interface PaletteEntry { id: string; title: string; category: string }
+export interface PaletteEntry {
+  id: string;
+  title: string;
+  category: string;
+}
 
 /** The score of a query against a text, or -1 when the query is not a subsequence of it. Higher is better. */
 export function fuzzyScore(query: string, text: string): number {

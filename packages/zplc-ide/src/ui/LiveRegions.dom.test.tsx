@@ -10,7 +10,10 @@ describe('Live regions (UX-026) in a DOM', () => {
     resetAnnouncements();
     dom.render(<LiveRegions />);
     expect(dom.screen.getByRole('status').getAttribute('aria-live')).toBe('polite');
-    dom.act(() => { announce('Build succeeded'); announce('Connection lost', 'assertive'); });
+    dom.act(() => {
+      announce('Build succeeded');
+      announce('Connection lost', 'assertive');
+    });
     expect(dom.screen.getByRole('status').textContent).toBe('Build succeeded');
     expect(document.querySelector('[data-live-region="assertive"]')?.textContent).toBe('Connection lost');
   });

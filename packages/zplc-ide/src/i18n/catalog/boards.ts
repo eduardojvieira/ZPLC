@@ -2,26 +2,33 @@ import { PRODUCT_NAME } from '../../productName';
 /** What ZPLC shows about the firmware image of a board and the steps a person follows to flash it (REL-025, UX-029). Keys `boards.firmware.*`. */
 export const boardsEn = {
   'boards.firmware.notice': `The ${PRODUCT_NAME} application does not flash a board. You follow these steps yourself, on your computer.`,
-  'boards.firmware.level.crossBuild': 'cross-build: the firmware builds for this board and fits its flash and RAM budget. It has not been flashed or run on the board.',
-  'boards.firmware.level.humanHil': 'human-hil: a person ran a recorded procedure on this board. The record names the firmware version and image it covers; check that it names this one.',
-  'boards.firmware.location.changed': 'The copy in this installation ({path}) is not the file the manifest describes. Do not use it: download {file} from {url}.',
+  'boards.firmware.level.crossBuild':
+    'cross-build: the firmware builds for this board and fits its flash and RAM budget. It has not been flashed or run on the board.',
+  'boards.firmware.level.humanHil':
+    'human-hil: a person ran a recorded procedure on this board. The record names the firmware version and image it covers; check that it names this one.',
+  'boards.firmware.location.changed':
+    'The copy in this installation ({path}) is not the file the manifest describes. Do not use it: download {file} from {url}.',
   'boards.firmware.location.missing': 'Not inside this installation. Download {file} from {url}.',
   'boards.firmware.step.openFolder': 'Open a terminal in the folder that holds {file}.',
   'boards.firmware.step.download': 'Download {file} from the release into a folder, and open a terminal there.',
   'boards.firmware.step.checksum': 'Check the file: `{command}` must print {sha256}.',
-  'boards.firmware.step.uf2.bootMode': 'Unplug the board. Hold its BOOTSEL button (BOOT on the Waveshare RP2040-Zero), plug the USB cable in and release the button: a drive named {drive} appears.',
+  'boards.firmware.step.uf2.bootMode':
+    'Unplug the board. Hold its BOOTSEL button (BOOT on the Waveshare RP2040-Zero), plug the USB cable in and release the button: a drive named {drive} appears.',
   'boards.firmware.step.uf2.copy': 'Copy {file} onto that drive with your file manager.',
   'boards.firmware.step.uf2.restart': 'The board restarts by itself and the drive disappears.',
   'boards.firmware.step.esp32.install': `Install esptool from Espressif (\`pip install esptool\`); the ${PRODUCT_NAME} application does not include it.`,
   'boards.firmware.step.esp32.port': `Plug the USB cable into the port marked USB, the ESP32-S3's own port, not the one marked UART: the ZPLC console and the ${PRODUCT_NAME} application use that port.`,
   'boards.firmware.step.esp32.downloadMode': 'Hold BOOT, press and release RST, and release BOOT: the board is in download mode.',
-  'boards.firmware.step.esp32.write': 'Write the image at {address}: `esptool --chip esp32s3 --port <port> write-flash {address} {file}` (esptool before version 5 spells it `esptool.py` and `write_flash`).',
+  'boards.firmware.step.esp32.write':
+    'Write the image at {address}: `esptool --chip esp32s3 --port <port> write-flash {address} {file}` (esptool before version 5 spells it `esptool.py` and `write_flash`).',
   'boards.firmware.step.esp32.reset': 'Press RST to leave the download mode and start the firmware.',
   'boards.firmware.step.dfu.bootMode': 'Put the board in its bootloader: double-tap the reset button.',
   'boards.firmware.step.dfu.write': 'Write the image at {address}: `dfu-util -d {device} -a {alt} -s {address}:leave -D {file}`.',
   'boards.firmware.step.stlink.connect': 'Connect the ST-LINK USB port of the board.',
-  'boards.firmware.step.stlink.write': 'Write the image at {address} with STM32CubeProgrammer: `STM32_Programmer_CLI -c port=SWD -w {file} {address} -v -rst`.',
-  'boards.firmware.step.other.write': 'Write the image at {address} with your programmer (the build of this image names the `{runner}` runner).',
+  'boards.firmware.step.stlink.write':
+    'Write the image at {address} with STM32CubeProgrammer: `STM32_Programmer_CLI -c port=SWD -w {file} {address} -v -rst`.',
+  'boards.firmware.step.other.write':
+    'Write the image at {address} with your programmer (the build of this image names the `{runner}` runner).',
   'boards.firmware.step.other.address': 'the address of the board',
   'boards.firmware.step.connect': `Then connect the ${PRODUCT_NAME} application to the board over its serial port.`,
   'boards.firmware.unavailable.app': 'The firmware images are not available in this application.',
@@ -33,26 +40,33 @@ export const boardsEn = {
 
 export const boardsEs: Record<keyof typeof boardsEn, string> = {
   'boards.firmware.notice': `La aplicación ${PRODUCT_NAME} no graba ninguna placa. Usted sigue estos pasos en su computadora.`,
-  'boards.firmware.level.crossBuild': 'cross-build: el firmware compila para esta placa y cabe en su presupuesto de flash y RAM. No se ha grabado ni ejecutado en la placa.',
-  'boards.firmware.level.humanHil': 'human-hil: una persona ejecutó un procedimiento registrado en esta placa. El registro nombra la versión del firmware y la imagen que cubre; compruebe que nombra esta.',
-  'boards.firmware.location.changed': 'La copia de esta instalación ({path}) no es el archivo que describe el manifiesto. No la use: descargue {file} desde {url}.',
+  'boards.firmware.level.crossBuild':
+    'cross-build: el firmware compila para esta placa y cabe en su presupuesto de flash y RAM. No se ha grabado ni ejecutado en la placa.',
+  'boards.firmware.level.humanHil':
+    'human-hil: una persona ejecutó un procedimiento registrado en esta placa. El registro nombra la versión del firmware y la imagen que cubre; compruebe que nombra esta.',
+  'boards.firmware.location.changed':
+    'La copia de esta instalación ({path}) no es el archivo que describe el manifiesto. No la use: descargue {file} desde {url}.',
   'boards.firmware.location.missing': 'No está en esta instalación. Descargue {file} desde {url}.',
   'boards.firmware.step.openFolder': 'Abra una terminal en la carpeta que contiene {file}.',
   'boards.firmware.step.download': 'Descargue {file} de la versión publicada en una carpeta y abra una terminal allí.',
   'boards.firmware.step.checksum': 'Compruebe el archivo: `{command}` debe imprimir {sha256}.',
-  'boards.firmware.step.uf2.bootMode': 'Desconecte la placa. Mantenga pulsado su botón BOOTSEL (BOOT en la Waveshare RP2040-Zero), conecte el cable USB y suelte el botón: aparece una unidad llamada {drive}.',
+  'boards.firmware.step.uf2.bootMode':
+    'Desconecte la placa. Mantenga pulsado su botón BOOTSEL (BOOT en la Waveshare RP2040-Zero), conecte el cable USB y suelte el botón: aparece una unidad llamada {drive}.',
   'boards.firmware.step.uf2.copy': 'Copie {file} en esa unidad con su explorador de archivos.',
   'boards.firmware.step.uf2.restart': 'La placa se reinicia sola y la unidad desaparece.',
   'boards.firmware.step.esp32.install': `Instale esptool de Espressif (\`pip install esptool\`); la aplicación ${PRODUCT_NAME} no lo incluye.`,
   'boards.firmware.step.esp32.port': `Conecte el cable USB al puerto marcado USB, el puerto propio del ESP32-S3, no al marcado UART: la consola de ZPLC y la aplicación ${PRODUCT_NAME} usan ese puerto.`,
   'boards.firmware.step.esp32.downloadMode': 'Mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT: la placa está en modo de descarga.',
-  'boards.firmware.step.esp32.write': 'Escriba la imagen en {address}: `esptool --chip esp32s3 --port <puerto> write-flash {address} {file}` (las versiones de esptool anteriores a la 5 lo escriben `esptool.py` y `write_flash`).',
+  'boards.firmware.step.esp32.write':
+    'Escriba la imagen en {address}: `esptool --chip esp32s3 --port <puerto> write-flash {address} {file}` (las versiones de esptool anteriores a la 5 lo escriben `esptool.py` y `write_flash`).',
   'boards.firmware.step.esp32.reset': 'Pulse RST para salir del modo de descarga y arrancar el firmware.',
   'boards.firmware.step.dfu.bootMode': 'Ponga la placa en su cargador de arranque: pulse dos veces seguidas el botón de reinicio.',
   'boards.firmware.step.dfu.write': 'Escriba la imagen en {address}: `dfu-util -d {device} -a {alt} -s {address}:leave -D {file}`.',
   'boards.firmware.step.stlink.connect': 'Conecte el puerto USB ST-LINK de la placa.',
-  'boards.firmware.step.stlink.write': 'Escriba la imagen en {address} con STM32CubeProgrammer: `STM32_Programmer_CLI -c port=SWD -w {file} {address} -v -rst`.',
-  'boards.firmware.step.other.write': 'Escriba la imagen en {address} con su programador (la compilación de esta imagen nombra el ejecutor `{runner}`).',
+  'boards.firmware.step.stlink.write':
+    'Escriba la imagen en {address} con STM32CubeProgrammer: `STM32_Programmer_CLI -c port=SWD -w {file} {address} -v -rst`.',
+  'boards.firmware.step.other.write':
+    'Escriba la imagen en {address} con su programador (la compilación de esta imagen nombra el ejecutor `{runner}`).',
   'boards.firmware.step.other.address': 'la dirección de la placa',
   'boards.firmware.step.connect': `Después conecte la aplicación ${PRODUCT_NAME} a la placa por su puerto serie.`,
   'boards.firmware.unavailable.app': 'Las imágenes de firmware no están disponibles en esta aplicación.',

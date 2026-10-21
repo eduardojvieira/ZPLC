@@ -3,7 +3,7 @@ slug: /guides/ai-and-mcp
 id: ai-and-mcp
 title: Use an AI assistant and MCP safely
 sidebar_label: AI and MCP
-description: "Give an AI assistant read access to one project through the local MCP server, what it can ask for, what it can never do, and how to review what it proposes."
+description: 'Give an AI assistant read access to one project through the local MCP server, what it can ask for, what it can never do, and how to review what it proposes.'
 tags: [how-to, ai, mcp, safety]
 ---
 
@@ -75,19 +75,32 @@ as how the server is and not as a promise. A client has no `initialize` step: it
 revision and its capabilities in the `_meta` of every request.
 
 ```json
-{ "jsonrpc": "2.0", "id": 1, "method": "tools/list",
-  "params": { "_meta": {
-    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-    "io.modelcontextprotocol/clientCapabilities": {} } } }
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {
+    "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": {}
+    }
+  }
+}
 ```
 
 A client that opens with `initialize` of an older revision gets this answer, and the
 connection stays open for a request of the supported revision:
 
 ```json
-{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32022,
-  "message": "Unsupported protocol version: 2025-06-18",
-  "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" } } }
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32022,
+    "message": "Unsupported protocol version: 2025-06-18",
+    "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" }
+  }
+}
 ```
 
 A request that names no revision gets the same code and the message
@@ -101,13 +114,13 @@ to update; the server does not change.
 
 Ask for what a tool returns, so that every claim of the assistant has a result behind it:
 
-| Ask for | Tool | What comes back |
-| --- | --- | --- |
-| "Is this project file valid?" | `project_validate` | `ok` and the diagnostics |
-| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list` | The size of the program, the diagnostics, the public symbols |
-| "Do its scenarios pass?" | `tests_run`, `scenario_run` | One result per scenario, with the digest of its trace |
-| "What happened at scan 40?" | `trace_get`, `runtime_snapshot` | A bounded, sanitised trace of a recorded run |
-| "Which boards are described?" | `boards_list` | The boards of the manifest and their level, with no probe of hardware |
+| Ask for                                   | Tool                             | What comes back                                                       |
+| ----------------------------------------- | -------------------------------- | --------------------------------------------------------------------- |
+| "Is this project file valid?"             | `project_validate`               | `ok` and the diagnostics                                              |
+| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list` | The size of the program, the diagnostics, the public symbols          |
+| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`      | One result per scenario, with the digest of its trace                 |
+| "What happened at scan 40?"               | `trace_get`, `runtime_snapshot`  | A bounded, sanitised trace of a recorded run                          |
+| "Which boards are described?"             | `boards_list`                    | The boards of the manifest and their level, with no probe of hardware |
 
 [The MCP reference](../reference/mcp.md) lists all 15 tools and 13 resources. A
 scenario runs on the simulator of your computer, so its result is evidence of a
@@ -130,13 +143,13 @@ AI inside ZPLC follows the same boundary and has its own data rules:
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18, and a request with no revision, are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host |
-| The built executable starts and lists its tools the way a 2026-07-28 client asks | The release build starts the executable and counts the tools | Host |
-| No tool reaches a device, a socket or a serial port | A test lists the registered tools and resources of the live server and traps every socket and serial entry point | Host |
-| A named assistant product works with the entry above | Not verified: no client product was run for this page | None |
-| An assistant's change is correct | Never implied: only the build and the scenarios say so | None |
+| Part                                                                                                                                                                                                                                                                                                                   | Verified                                                                                                                                                                                      | Level |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18, and a request with no revision, are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
+| The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                                                                                                       | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
+| No tool reaches a device, a socket or a serial port                                                                                                                                                                                                                                                                    | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
+| A named assistant product works with the entry above                                                                                                                                                                                                                                                                   | Not verified: no client product was run for this page                                                                                                                                         | None  |
+| An assistant's change is correct                                                                                                                                                                                                                                                                                       | Never implied: only the build and the scenarios say so                                                                                                                                        | None  |
 
 ## See also
 

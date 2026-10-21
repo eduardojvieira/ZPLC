@@ -54,7 +54,12 @@ export interface Registry {
   schemaVersion: 1;
   rules: Rule[];
   /** Nouns that a number counts, and the truth that the number is held to. */
-  counts: Array<{ id: string; noun: string; truth: 'boards' | 'examples' | 'lessons' | 'functions' | 'function-blocks' | 'languages'; requires?: string }>;
+  counts: Array<{
+    id: string;
+    noun: string;
+    truth: 'boards' | 'examples' | 'lessons' | 'functions' | 'function-blocks' | 'languages';
+    requires?: string;
+  }>;
 }
 
 export interface Truth {
@@ -68,11 +73,25 @@ export interface Truth {
 }
 
 /** A sentence that mentions a capability and is not a claim of ZPLC: a plan, or what another project says. It can only shrink. */
-export interface Allowed { file: string; startsWith: string; reason: string }
+export interface Allowed {
+  file: string;
+  startsWith: string;
+  reason: string;
+}
 
 export type Kind = 'readme' | 'package' | 'release' | 'page' | 'metadata' | 'site';
-export interface Surface { file: string; kind: Kind; text: string }
-export interface Finding { file: string; line: number; rule: string; message: string; sentence: string }
+export interface Surface {
+  file: string;
+  kind: Kind;
+  text: string;
+}
+export interface Finding {
+  file: string;
+  line: number;
+  rule: string;
+  message: string;
+  sentence: string;
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Sentences
@@ -80,7 +99,12 @@ export interface Finding { file: string; line: number; rule: string; message: st
 
 /** Words that make a sentence a limitation (English and Spanish) rather than a capability. */
 const LIMITS = new RegExp(
-  '\\b(?:not|no|never|cannot|can\'t|won\'t|doesn\'t|don\'t|isn\'t|aren\'t|without|nor|neither|none|zero|unavailable|disabled|unsupported|unverified|missing|broken|partial|partially|partly|ignored|refuse[sd]?|reject(?:s|ed)?|fails?|failed|failing|limits?|limited|limitations?|yet|until|only|future|planned|later|stopgap|instead|undefined|wrong|incorrect|except|unless|rather than|assum\\w+|nunca|sin|ni|tampoco|todav[ií]a|a[uú]n|solo|s[oó]lo|[uú]nicamente|futuro|l[ií]mite|l[ií]mites|falla|fallan|rechaza|rechazan|rechazado|parcial|parcialmente|ignora|desactivad[oa]|salvo|excepto|hasta que|cross-build|cross-builds)\\b|\\bnot yet\\b|\\bno se\\b|\\bno est[aá]\\b',
+  "\\b(?:not|no|never|cannot|can't|won't|doesn't|don't|isn't|aren't|without|nor|neither|none|zero|unavailable|disabled|unsupported|unveri" +
+    'fied|missing|broken|partial|partially|partly|ignored|refuse[sd]?|reject(?:s|ed)?|fails?|failed|failing|limits?|limited|limitations?|' +
+    'yet|until|only|future|planned|later|stopgap|instead|undefined|wrong|incorrect|except|unless|rather ' +
+    'than|assum\\w+|nunca|sin|ni|tampoco|todav[ií]a|a[uú]n|solo|s[oó]lo|[uú]nicamente|futuro|l[ií]mite|l[ií]mites|falla|fallan|rechaz' +
+    'a|rechazan|rechazado|parcial|parcialmente|ignora|desactivad[oa]|salvo|excepto|hasta que|cross-build|cross-builds)\\b|\\bnot ' +
+    'yet\\b|\\bno se\\b|\\bno est[aá]\\b',
   'i',
 );
 
@@ -93,8 +117,8 @@ export function sentencesOf(text: string): Array<{ line: number; sentence: strin
     // the targets of the links of the block: what a sentence cites, which the words of a link do not say
     const cites = [...raw.matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]!);
     const prose = raw
-      .replace(/`[^`]*`/g, ' ')                       // code is a name, not a claim
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')      // a link keeps its words
+      .replace(/`[^`]*`/g, ' ') // code is a name, not a claim
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // a link keeps its words
       .replace(/https?:\/\/\S+/g, ' ')
       .replace(/[*_>#]+/g, ' ');
     // a table row is one statement; any other block is cut at the end of a sentence
@@ -110,31 +134,71 @@ export function sentencesOf(text: string): Array<{ line: number; sentence: strin
   let block: { line: number; text: string } | undefined;
   let previousRow = '';
   let tableHeader = '';
-  const flush = () => { if (block) emit(block.line, block.text); block = undefined; };
+  const flush = () => {
+    if (block) emit(block.line, block.text);
+    block = undefined;
+  };
   const lines = text.split('\n');
   lines.forEach((raw, index) => {
     const line = index + 1;
-    if (index === 0 && raw.trim() === '---') { inFront = true; return; }
-    if (inFront) { if (raw.trim() === '---') inFront = false; return; }
-    if (/\{\/\* >>> GENERATED/.test(raw)) { flush(); generated = true; return; }
-    if (/\{\/\* <<< END GENERATED/.test(raw)) { generated = false; return; }
+    if (index === 0 && raw.trim() === '---') {
+      inFront = true;
+      return;
+    }
+    if (inFront) {
+      if (raw.trim() === '---') inFront = false;
+      return;
+    }
+    if (/\{\/\* >>> GENERATED/.test(raw)) {
+      flush();
+      generated = true;
+      return;
+    }
+    if (/\{\/\* <<< END GENERATED/.test(raw)) {
+      generated = false;
+      return;
+    }
     if (generated) return;
     const marker = /^\s*(`{3,}|~{3,})/.exec(raw);
-    if (fence) { if (marker && marker[1]![0] === fence[0]) fence = ''; return; }
-    if (marker) { flush(); fence = marker[1]!; return; }
-    if (raw.trim() === '' || /^\s*(?:import |export |<|\{\/\*|:::|---+$)/.test(raw)) { flush(); return; }
+    if (fence) {
+      if (marker && marker[1]![0] === fence[0]) fence = '';
+      return;
+    }
+    if (marker) {
+      flush();
+      fence = marker[1]!;
+      return;
+    }
+    if (raw.trim() === '' || /^\s*(?:import |export |<|\{\/\*|:::|---+$)/.test(raw)) {
+      flush();
+      return;
+    }
     if (raw.trimStart().startsWith('|')) {
       flush();
       // the header row of a table says what its columns are ("What it does not establish"): it governs the rows below it
-      if (/^\s*\|[\s:|-]+\|\s*$/.test(raw)) { tableHeader = previousRow; return; }
+      if (/^\s*\|[\s:|-]+\|\s*$/.test(raw)) {
+        tableHeader = previousRow;
+        return;
+      }
       const next = lines[index + 1] ?? '';
-      if (/^\s*\|[\s:|-]+\|\s*$/.test(next)) { previousRow = raw; return; }
+      if (/^\s*\|[\s:|-]+\|\s*$/.test(next)) {
+        previousRow = raw;
+        return;
+      }
       emit(line, `${tableHeader} ${raw}`);
       return;
     }
-    if (/^#{1,6}\s/.test(raw)) { flush(); emit(line, raw.replace(/^#+\s*/, '')); return; }
+    if (/^#{1,6}\s/.test(raw)) {
+      flush();
+      emit(line, raw.replace(/^#+\s*/, ''));
+      return;
+    }
     const item = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/.exec(raw);
-    if (item) { flush(); block = { line, text: item[1]! }; return; }
+    if (item) {
+      flush();
+      block = { line, text: item[1]! };
+      return;
+    }
     if (block) block.text += ` ${raw.trim()}`;
     else block = { line, text: raw.trim() };
   });
@@ -159,10 +223,46 @@ function metadataOf(text: string): Array<{ line: number; sentence: string; cites
 // ---------------------------------------------------------------------------------------------------------------------
 
 const NUMBER_WORDS: Record<string, number> = {
-  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
-  fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
-  uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
-  dieciséis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19, veinte: 20,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
+  twenty: 20,
+  uno: 1,
+  dos: 2,
+  tres: 3,
+  cuatro: 4,
+  cinco: 5,
+  seis: 6,
+  siete: 7,
+  ocho: 8,
+  nueve: 9,
+  diez: 10,
+  once: 11,
+  doce: 12,
+  trece: 13,
+  catorce: 14,
+  quince: 15,
+  dieciséis: 16,
+  diecisiete: 17,
+  dieciocho: 18,
+  diecinueve: 19,
+  veinte: 20,
 };
 
 export function numberOf(word: string): number | undefined {
@@ -181,19 +281,39 @@ function holds(evidence: Evidence, truth: Truth, cites: string[]): { ok: boolean
   if ('wasm' in evidence) return { ok: truth.wasmAvailable, why: 'the browser simulator is unavailable in its capability profile' };
   if ('record' in evidence) {
     const cited = cites.some((target) => truth.recordRefs.some((ref) => target.endsWith(ref)));
-    return { ok: cited, why: truth.recordRefs.length === 0 ? 'no board has a hardware record to cite' : 'the sentence links no hardware record that the board manifest lists' };
+    return {
+      ok: cited,
+      why:
+        truth.recordRefs.length === 0
+          ? 'no board has a hardware record to cite'
+          : 'the sentence links no hardware record that the board manifest lists',
+    };
   }
   return { ok: false, why: evidence.none };
 }
 
-export function checkSentence(file: string, line: number, sentence: string, registry: Registry, truth: Truth, cites: string[] = []): Finding[] {
+export function checkSentence(
+  file: string,
+  line: number,
+  sentence: string,
+  registry: Registry,
+  truth: Truth,
+  cites: string[] = [],
+): Finding[] {
   const findings: Finding[] = [];
   const limited = LIMITS.test(sentence);
   if (!limited) {
     for (const rule of registry.rules) {
       if (!new RegExp(rule.pattern, rule.caseSensitive ? '' : 'i').test(sentence)) continue;
       const verdict = holds(rule.evidence, truth, cites);
-      if (!verdict.ok) findings.push({ file, line, rule: rule.id, sentence, message: `states a capability that the evidence does not back (${verdict.why})` });
+      if (!verdict.ok)
+        findings.push({
+          file,
+          line,
+          rule: rule.id,
+          sentence,
+          message: `states a capability that the evidence does not back (${verdict.why})`,
+        });
     }
   }
   if (!HISTORICAL.test(sentence)) {
@@ -206,7 +326,14 @@ export function checkSentence(file: string, line: number, sentence: string, regi
         const stated = numberOf(match[1]!);
         if (stated === undefined || stated < 2) continue;
         const actual = truth.counts[count.truth];
-        if (stated !== actual) findings.push({ file, line, rule: `count-${count.id}`, sentence, message: `says ${stated} (${match[0]}), the repository has ${actual}` });
+        if (stated !== actual)
+          findings.push({
+            file,
+            line,
+            rule: `count-${count.id}`,
+            sentence,
+            message: `says ${stated} (${match[0]}), the repository has ${actual}`,
+          });
       }
     }
   }
@@ -232,8 +359,14 @@ export function registryErrors(registry: Registry, rowIds: Set<string>): string[
   for (const rule of registry.rules) {
     if (seen.has(rule.id)) errors.push(`${REGISTRY}: the rule ${rule.id} is listed twice`);
     seen.add(rule.id);
-    try { new RegExp(rule.pattern); } catch { errors.push(`${REGISTRY}: the pattern of ${rule.id} is not a regular expression`); }
-    if ('rows' in rule.evidence) for (const id of rule.evidence.rows) if (!rowIds.has(id)) errors.push(`${REGISTRY}: ${rule.id} names the matrix row ${id}, which does not exist`);
+    try {
+      new RegExp(rule.pattern);
+    } catch {
+      errors.push(`${REGISTRY}: the pattern of ${rule.id} is not a regular expression`);
+    }
+    if ('rows' in rule.evidence)
+      for (const id of rule.evidence.rows)
+        if (!rowIds.has(id)) errors.push(`${REGISTRY}: ${rule.id} names the matrix row ${id}, which does not exist`);
   }
   return errors;
 }
@@ -253,7 +386,10 @@ export function welcomeExamples(root = ROOT): number {
 export function loadTruth(root = ROOT): Truth {
   const inputs = loadInputs(root);
   const rows = new Map(inputs.facts.map((fact: RowFacts) => [fact.row.id, fact.state]));
-  const boards = JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ board_id: string; ide_id: string }>;
+  const boards = JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{
+    board_id: string;
+    ide_id: string;
+  }>;
   const script = `
 import importlib.util, json, sys
 from pathlib import Path
@@ -265,11 +401,15 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
 `;
   const run = Bun.spawnSync(['python3', '-B', '-c', script, root], { stdout: 'pipe', stderr: 'pipe' });
   if (run.exitCode !== 0) throw new Error(`the board levels could not be read: ${run.stderr.toString()}`);
-  const lessons = (JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as { lessons: unknown[] }).lessons.length;
+  const lessons = (
+    JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as { lessons: unknown[] }
+  ).lessons.length;
   const wasm = getWasmCapabilities();
   return {
     rows,
-    recordRefs: (JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ evidence_refs: string[] }>).flatMap((board) => board.evidence_refs),
+    recordRefs: (
+      JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ evidence_refs: string[] }>
+    ).flatMap((board) => board.evidence_refs),
     hilBoards: JSON.parse(run.stdout.toString()) as string[],
     boardCount: boards.length,
     wasmAvailable: Object.values(wasm.features).some((feature) => feature.status !== 'unavailable'),
@@ -286,7 +426,9 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
 
 export function surfaces(root = ROOT): Surface[] {
   const found: Surface[] = [];
-  const add = (file: string, kind: Kind) => { if (existsSync(join(root, file))) found.push({ file, kind, text: readFileSync(join(root, file), 'utf8') }); };
+  const add = (file: string, kind: Kind) => {
+    if (existsSync(join(root, file))) found.push({ file, kind, text: readFileSync(join(root, file), 'utf8') });
+  };
   add('README.md', 'readme');
   for (const file of ['packages/zplc-compiler/README.md', 'packages/zplc-ide/README.md']) add(file, 'package');
   add('CHANGELOG.md', 'release');
@@ -314,7 +456,9 @@ export function applyAllowlist(findings: Finding[], allowlist: Allowed[]): { kep
   });
   const errors = allowlist.flatMap((entry) => [
     ...(entry.reason.trim().length < 10 ? [`${ALLOWLIST}: the entry for ${entry.file} must say why the sentence is not a claim`] : []),
-    ...(used.has(entry) ? [] : [`${ALLOWLIST}: the entry for ${entry.file} ("${entry.startsWith.slice(0, 40)}") matches no finding: remove it`]),
+    ...(used.has(entry)
+      ? []
+      : [`${ALLOWLIST}: the entry for ${entry.file} ("${entry.startsWith.slice(0, 40)}") matches no finding: remove it`]),
   ]);
   return { kept, errors };
 }
@@ -349,7 +493,13 @@ if (import.meta.main) {
     for (const surface of read) byKind.set(surface.kind, (byKind.get(surface.kind) ?? 0) + 1);
     console.log(`capability claims: read ${[...byKind].map(([kind, count]) => `${count} ${kind}`).join(', ')}`);
   }
-  for (const finding of findings) errors.push(`${relative(ROOT, join(ROOT, finding.file))}:${finding.line}: ${finding.rule}: ${finding.message}: "${finding.sentence.slice(0, 160)}"`);
+  for (const finding of findings)
+    errors.push(
+      `${relative(
+        ROOT,
+        join(ROOT, finding.file),
+      )}:${finding.line}: ${finding.rule}: ${finding.message}: "${finding.sentence.slice(0, 160)}"`,
+    );
   if (errors.length > 0) {
     console.error(errors.map((message) => `capability-claims: ${message}`).join('\n'));
     process.exit(1);

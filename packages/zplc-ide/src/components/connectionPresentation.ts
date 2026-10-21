@@ -6,7 +6,8 @@
  */
 import type { Translator } from '../i18n';
 
-export type ConnectionState = 'disconnected' | 'simulation-native' | 'simulation-wasm' | 'hardware-connecting' | 'hardware-connected' | 'hardware-faulted';
+export type ConnectionState =
+  'disconnected' | 'simulation-native' | 'simulation-wasm' | 'hardware-connecting' | 'hardware-connected' | 'hardware-faulted';
 export type ConnectionIcon = 'unplug' | 'monitor' | 'globe' | 'loader' | 'cpu' | 'alert';
 export type ConnectionTone = 'neutral' | 'info' | 'warning' | 'danger';
 
@@ -31,14 +32,20 @@ export interface ConnectionIndicatorView {
 
 export function presentConnection(input: ConnectionIndicatorInput, t: Translator['t']): ConnectionIndicatorView {
   if (input.connected && input.adapterType === 'serial') {
-    const detail = [input.board, input.link === undefined ? undefined : t(input.link === 'framed' ? 'connection.link.framed' : 'connection.link.shell')];
+    const detail = [
+      input.board,
+      input.link === undefined ? undefined : t(input.link === 'framed' ? 'connection.link.framed' : 'connection.link.shell'),
+    ];
     const label = (head: string) => [head, ...detail.filter((part): part is string => part !== undefined)].join(' · ');
     return input.faulted
       ? { state: 'hardware-faulted', label: label(t('connection.hardware.faulted')), icon: 'alert', tone: 'danger' }
       : { state: 'hardware-connected', label: label(t('connection.hardware.connected')), icon: 'cpu', tone: 'warning' };
   }
-  if (input.connected && input.adapterType === 'native') return { state: 'simulation-native', label: t('connection.simulation.native'), icon: 'monitor', tone: 'info' };
-  if (input.connected && input.adapterType === 'wasm') return { state: 'simulation-wasm', label: t('connection.simulation.wasm'), icon: 'globe', tone: 'info' };
-  if (input.mode === 'hardware' && input.connecting) return { state: 'hardware-connecting', label: t('connection.hardware.connecting'), icon: 'loader', tone: 'warning' };
+  if (input.connected && input.adapterType === 'native')
+    return { state: 'simulation-native', label: t('connection.simulation.native'), icon: 'monitor', tone: 'info' };
+  if (input.connected && input.adapterType === 'wasm')
+    return { state: 'simulation-wasm', label: t('connection.simulation.wasm'), icon: 'globe', tone: 'info' };
+  if (input.mode === 'hardware' && input.connecting)
+    return { state: 'hardware-connecting', label: t('connection.hardware.connecting'), icon: 'loader', tone: 'warning' };
   return { state: 'disconnected', label: t('connection.disconnected'), icon: 'unplug', tone: 'neutral' };
 }

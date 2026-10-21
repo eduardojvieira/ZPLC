@@ -10,15 +10,20 @@ afterAll(closeBrowserApp);
 const t = translatorFor('en').t;
 
 const BLINKY = readFileSync(join(import.meta.dir, '..', '..', '..', 'projects', 'blinky_fbd', 'src', 'main.fbd.json'), 'utf8');
-interface Diagram { blocks: Array<{ id: string; type: string; variableName?: string; position: { x: number; y: number } }>; connections: Array<{ from: { block: string; port: string }; to: { block: string; port: string } }> }
+interface Diagram {
+  blocks: Array<{ id: string; type: string; variableName?: string; position: { x: number; y: number } }>;
+  connections: Array<{ from: { block: string; port: string }; to: { block: string; port: string } }>;
+}
 
-const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') => app.open({ name: 'main.fbd.json', language: 'FBD', content: BLINKY }, locale);
+const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') =>
+  app.open({ name: 'main.fbd.json', language: 'FBD', content: BLINKY }, locale);
 const select = async (app: BrowserApp, id: string) => {
   const at = await nodeCentre(app, id);
   await app.clickAt(at.x, at.y);
   await app.until(`${id} selected`, `document.querySelector('.react-flow__node[data-id="${id}"]')?.classList.contains('selected')`);
 };
-const selected = (app: BrowserApp): Promise<string[]> => app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((n) => n.getAttribute('data-id'))`);
+const selected = (app: BrowserApp): Promise<string[]> =>
+  app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((n) => n.getAttribute('data-id'))`);
 const label = (kind: string, name: string) => t('a11y.fbd.node', { kind, name });
 
 describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
@@ -27,7 +32,15 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await openBlinky(app);
     await app.axNode('region', t('editors.fbd.canvas'));
     await app.axNode('toolbar', t('workbench.editor.history'));
-    for (const [kind, name] of [['variable', 'LED_Output'], ['NOT', 'not_led'], ['TON', 'OffTimer'], ['TON', 'OnTimer'], ['OR', 'or_set_or_hold'], ['output', 'LED_Output']] as const) await app.axNode('group', label(kind, name));
+    for (const [kind, name] of [
+      ['variable', 'LED_Output'],
+      ['NOT', 'not_led'],
+      ['TON', 'OffTimer'],
+      ['TON', 'OnTimer'],
+      ['OR', 'or_set_or_hold'],
+      ['output', 'LED_Output'],
+    ] as const)
+      await app.axNode('group', label(kind, name));
     expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(9);
     await select(app, 'ton_off');
     expect(await selected(app)).toEqual(['ton_off']);
@@ -40,7 +53,10 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     const before = (await openDocument<Diagram>(app)).blocks.map((block) => block.position);
     await select(app, 'var_led_read');
     await app.press('Alt+ArrowRight');
-    await app.until('the next block selected', `document.querySelector('.react-flow__node[data-id="not_led"]')?.classList.contains('selected')`);
+    await app.until(
+      'the next block selected',
+      `document.querySelector('.react-flow__node[data-id="not_led"]')?.classList.contains('selected')`,
+    );
     expect(await selected(app)).toEqual(['not_led']);
     expect(await app.liveText()).toContain(t('keyboard.selected', { name: 'NOT' }));
     // the arrow keys of the table are the editor's: React Flow must not also nudge the selected block
@@ -56,7 +72,11 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     expect(box.focused).toBe(true);
     await app.axNode('option', /^LED_Output/);
     await app.press('Enter');
-    await app.until('the block in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).blocks.length === 10; })`);
+    await app.until(
+      'the block in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).blocks.length === 10; })`,
+    );
     const diagram = await openDocument<Diagram>(app);
     expect(diagram.blocks.filter((block) => block.type === 'variable' && block.variableName === 'LED_Output')).toHaveLength(2);
     expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(10);
@@ -71,7 +91,11 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await app.type('NAND');
     await app.axNode('option', /^NAND\b/);
     await app.press('Enter');
-    await app.until('the block in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).blocks.some((b) => b.type === 'NAND'); })`);
+    await app.until(
+      'the block in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).blocks.some((b) => b.type === 'NAND'); })`,
+    );
     expect(await app.liveText()).toContain(t('fbd.inserted', { type: 'NAND', instance: '' }));
   });
 
@@ -83,15 +107,27 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await app.axNode('combobox', /^Draw a wire of OffTimer/);
     await app.axNode('option', /^OffTimer\.Q → LED_Output\.IN/);
     await app.press('Enter');
-    await app.until('the wire in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.length === 12; })`);
-    expect((await openDocument<Diagram>(app)).connections.some((wire) => wire.from.block === 'ton_off' && wire.from.port === 'Q' && wire.to.block === 'var_led_read')).toBe(true);
+    await app.until(
+      'the wire in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.length === 12; })`,
+    );
+    expect(
+      (await openDocument<Diagram>(app)).connections.some(
+        (wire) => wire.from.block === 'ton_off' && wire.from.port === 'Q' && wire.to.block === 'var_led_read',
+      ),
+    ).toBe(true);
     await select(app, 'ton_off');
     await app.press('Shift+C');
     await app.axNode('combobox', /^Remove a wire of OffTimer/);
     await app.axNode('option', /^constant\.OUT → OffTimer\.PT/);
     await app.type('constant');
     await app.press('Enter');
-    await app.until('the wire gone', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.length === 11; })`);
+    await app.until(
+      'the wire gone',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.length === 11; })`,
+    );
   });
 
   test('dragging from an output handle to an input handle with the pointer draws a wire', async () => {
@@ -106,9 +142,19 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await app.until('the diagram fitted', `document.body.textContent.includes(${JSON.stringify(t('editor.fit.diagram'))})`);
     await Bun.sleep(1_200); // the fit-view animation
     const blocks = await app.eval<string[]>(`[...document.querySelectorAll('.react-flow__node')].map((n) => n.getAttribute('data-id'))`);
-    const added = blocks.find((id) => !['var_led_read', 'not_led', 'const_500ms', 'ton_off', 'ton_on', 'not_on_done', 'or_set_or_hold', 'and_run', 'output_led'].includes(id))!;
+    const added = blocks.find(
+      (id) =>
+        !['var_led_read', 'not_led', 'const_500ms', 'ton_off', 'ton_on', 'not_on_done', 'or_set_or_hold', 'and_run', 'output_led'].includes(
+          id,
+        ),
+    )!;
     await app.drag(await handleCentre(app, 'ton_on', 'Q'), await handleCentre(app, added, 'IN1'));
-    await app.until('the wire in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.some((w) => w.from.block === 'ton_on' && w.from.port === 'Q' && w.to.port === 'IN1' && w.to.block !== 'not_on_done'); })`);
+    await app.until(
+      'the wire in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.some((w) => w.from.block === 'ton_on' && w.from.port === 'Q' ` +
+        `&& w.to.port === 'IN1' && w.to.block !== 'not_on_done'); })`,
+    );
     expect(await app.eval<number>('document.querySelectorAll(".react-flow__edge").length')).toBe(12);
   });
 

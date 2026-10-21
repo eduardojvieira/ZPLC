@@ -117,9 +117,16 @@ describe('the index of a project resolves names by scope (LNG-015)', () => {
 
   it('finds a global of another file, and the type of a variable declared as an enumeration', () => {
     const use = at('src/main.st', 'Shared');
-    expect(index.symbol(index.referenceAt('src/main.st', use.line, use.column)!.symbol)).toMatchObject({ name: 'Shared', kind: 'global', file: 'src/types.st' });
+    expect(index.symbol(index.referenceAt('src/main.st', use.line, use.column)!.symbol)).toMatchObject({
+      name: 'Shared',
+      kind: 'global',
+      file: 'src/types.st',
+    });
     const value = at('src/main.st', 'Red');
-    expect(index.symbol(index.referenceAt('src/main.st', value.line, value.column)!.symbol)).toMatchObject({ name: 'Red', kind: 'enumValue' });
+    expect(index.symbol(index.referenceAt('src/main.st', value.line, value.column)!.symbol)).toMatchObject({
+      name: 'Red',
+      kind: 'enumValue',
+    });
   });
 
   it('resolves a member by the type of what is before the dot, through the base block', () => {
@@ -127,14 +134,25 @@ describe('the index of a project resolves names by scope (LNG-015)', () => {
     const member = index.referenceAt('src/main.st', running.line, running.column + 2)!;
     expect(index.symbol(member.symbol)).toMatchObject({ name: 'Running', kind: 'output', file: 'src/lib/blocks.st', line: 13 });
     const method = at('src/main.st', 'P.Reset');
-    expect(index.symbol(index.referenceAt('src/main.st', method.line, method.column + 2)!.symbol)).toMatchObject({ name: 'Reset', kind: 'method' });
+    expect(index.symbol(index.referenceAt('src/main.st', method.line, method.column + 2)!.symbol)).toMatchObject({
+      name: 'Reset',
+      kind: 'method',
+    });
   });
 
   it('resolves a field of a structure and of an element of an array of structures', () => {
     const field = at('src/main.st', 'Pr.A');
-    expect(index.symbol(index.referenceAt('src/main.st', field.line, field.column + 3)!.symbol)).toMatchObject({ name: 'A', kind: 'field', file: 'src/types.st', line: 3 });
+    expect(index.symbol(index.referenceAt('src/main.st', field.line, field.column + 3)!.symbol)).toMatchObject({
+      name: 'A',
+      kind: 'field',
+      file: 'src/types.st',
+      line: 3,
+    });
     const element = at('src/main.st', 'Pairs[1].B');
-    expect(index.symbol(index.referenceAt('src/main.st', element.line, element.column + 9)!.symbol)).toMatchObject({ name: 'B', kind: 'field' });
+    expect(index.symbol(index.referenceAt('src/main.st', element.line, element.column + 9)!.symbol)).toMatchObject({
+      name: 'B',
+      kind: 'field',
+    });
   });
 
   it('resolves the name of an argument to the parameter of the callee', () => {
@@ -143,7 +161,10 @@ describe('the index of a project resolves names by scope (LNG-015)', () => {
     expect(reference.label).toBe(true);
     expect(index.symbol(reference.symbol)).toMatchObject({ name: 'Boost', kind: 'input', container: index.declaration('Pump')!.id });
     const twice = at('src/main.st', 'X := Shared');
-    expect(index.symbol(index.referenceAt('src/main.st', twice.line, twice.column)!.symbol)).toMatchObject({ name: 'X', file: 'src/lib/blocks.st' });
+    expect(index.symbol(index.referenceAt('src/main.st', twice.line, twice.column)!.symbol)).toMatchObject({
+      name: 'X',
+      file: 'src/lib/blocks.st',
+    });
   });
 
   it('resolves a member of a standard block to the library, and has no symbol of the project for it', () => {
@@ -176,14 +197,19 @@ describe('the index of a project resolves names by scope (LNG-015)', () => {
     const twice = index.declaration('Twice')!;
     const all = index.referencesTo(twice.id);
     expect(all.map((reference) => `${reference.file}:${reference.line}:${reference.declaration ? 'decl' : 'use'}`)).toEqual([
-      'src/lib/blocks.st:1:decl', 'src/lib/blocks.st:5:use', 'src/main.st:13:use',
+      'src/lib/blocks.st:1:decl',
+      'src/lib/blocks.st:5:use',
+      'src/main.st:13:use',
     ]);
     expect(index.referencesTo(twice.id, false)).toHaveLength(2);
   });
 
   it('says which program, function, block or method a position is in', () => {
     const inMethod = at('src/lib/blocks.st', 'Reset := Force');
-    expect(index.symbol(index.scopeAt('src/lib/blocks.st', inMethod.line, inMethod.column))).toMatchObject({ name: 'Reset', kind: 'method' });
+    expect(index.symbol(index.scopeAt('src/lib/blocks.st', inMethod.line, inMethod.column))).toMatchObject({
+      name: 'Reset',
+      kind: 'method',
+    });
     const inBlock = at('src/lib/blocks.st', 'Running := Start AND');
     expect(index.symbol(index.scopeAt('src/lib/blocks.st', inBlock.line, inBlock.column))).toMatchObject({ name: 'Pump' });
   });
@@ -191,11 +217,18 @@ describe('the index of a project resolves names by scope (LNG-015)', () => {
 
 describe('a file that does not parse is listed, and what its tokens declare is still there', () => {
   it('lists it as broken, and keeps its declarations for the files that use them', () => {
-    const index = buildProjectIndex([project[0]!, { path: 'src/lib/blocks.st', content: LIB.replace('Running := Start;', 'Running := ;') }, project[2]!]);
+    const index = buildProjectIndex([
+      project[0]!,
+      { path: 'src/lib/blocks.st', content: LIB.replace('Running := Start;', 'Running := ;') },
+      project[2]!,
+    ]);
     expect(index.broken).toEqual(['src/lib/blocks.st']);
     expect(index.files.get('src/lib/blocks.st')!.ok).toBe(false);
     const use = at('src/main.st', 'Motor;');
-    expect(index.symbol(index.referenceAt('src/main.st', use.line, use.column)!.symbol)).toMatchObject({ name: 'Motor', kind: 'functionBlock' });
+    expect(index.symbol(index.referenceAt('src/main.st', use.line, use.column)!.symbol)).toMatchObject({
+      name: 'Motor',
+      kind: 'functionBlock',
+    });
   });
 
   it('does not take a statement of an unfinished declaration block for a declaration', () => {

@@ -3,7 +3,7 @@ slug: /guides/port-to-a-board
 id: port-to-a-board
 title: Portar ZPLC a una placa nueva
 sidebar_label: Portar a una placa
-description: "Agregar una placa de Zephyr a la lista de placas compatibles: los archivos de placa, la entrada del manifiesto, la compilación cruzada y el presupuesto de tamaño, y qué queda sin probar hasta que una placa lo ejecute."
+description: 'Agregar una placa de Zephyr a la lista de placas compatibles: los archivos de placa, la entrada del manifiesto, la compilación cruzada y el presupuesto de tamaño, y qué queda sin probar hasta que una placa lo ejecute.'
 tags: [how-to, boards, firmware]
 ---
 
@@ -66,10 +66,7 @@ existe:
   "zephyr_board": "example_board/example_soc",
   "variant": "example_soc",
   "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 24576 },
-  "support_assets": [
-    "firmware/app/boards/example_board_example_soc.conf",
-    "firmware/app/boards/example_board_example_soc.overlay"
-  ],
+  "support_assets": ["firmware/app/boards/example_board_example_soc.conf", "firmware/app/boards/example_board_example_soc.overlay"],
   "build_command": "west build -b example_board/example_soc firmware/app --pristine",
   "network_class": "serial-focused",
   "network_interface": "none",
@@ -78,23 +75,37 @@ existe:
   "watchdog": {
     "enabled": false,
     "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
-    "timeout_ms": 1000, "max_timeout_ms": 8000,
-    "stop": "disarm", "pause": "feed", "fault": "expire"
+    "timeout_ms": 1000,
+    "max_timeout_ms": 8000,
+    "stop": "disarm",
+    "pause": "feed",
+    "fault": "expire"
   },
   "io": {
     "schema_version": 1,
     "channels": [
       {
-        "id": "DO0", "direction": "output", "kind": "digital", "address": "%QX0.0",
-        "pin": "PA5 (LED)", "dt": { "alias": "led0", "controller": "gpioa", "pin": 5 },
-        "safe": 0, "electrical": "On-board LED; not a field output.",
-        "pin_status": "devicetree", "source": "firmware/app/boards/example_board_example_soc.overlay"
+        "id": "DO0",
+        "direction": "output",
+        "kind": "digital",
+        "address": "%QX0.0",
+        "pin": "PA5 (LED)",
+        "dt": { "alias": "led0", "controller": "gpioa", "pin": 5 },
+        "safe": 0,
+        "electrical": "On-board LED; not a field output.",
+        "pin_status": "devicetree",
+        "source": "firmware/app/boards/example_board_example_soc.overlay"
       },
       {
-        "id": "DI0", "direction": "input", "kind": "digital", "address": "%IX0.0",
-        "pin": "PA0 (button)", "dt": { "alias": "sw0", "controller": "gpioa", "pin": 0 },
+        "id": "DI0",
+        "direction": "input",
+        "kind": "digital",
+        "address": "%IX0.0",
+        "pin": "PA0 (button)",
+        "dt": { "alias": "sw0", "controller": "gpioa", "pin": 0 },
         "electrical": "On-board user button.",
-        "pin_status": "devicetree", "source": "firmware/app/boards/example_board_example_soc.overlay"
+        "pin_status": "devicetree",
+        "source": "firmware/app/boards/example_board_example_soc.overlay"
       }
     ],
     "unmapped": []
@@ -104,15 +115,15 @@ existe:
 
 Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 
-| Clave | Qué escribir | Qué se comprueba |
-| --- | --- | --- |
-| `board_id`, `ide_id`, `zephyr_board` | Tres nombres de la misma placa: el del firmware, el que un archivo de proyecto usa en `target.board` y el destino de Zephyr | Ninguno repite un nombre que ya tiene otra placa |
-| `memory` | Los tres tamaños del paso 1 | La compilación se detiene cuando difieren del `.conf` |
-| `network_class`, `network_interface` | `serial-focused`, `network-capable` u `other`; `none`, `wifi` o `ethernet` | Solo se aceptan estas palabras |
-| `evidence_refs` | Una lista vacía | Una ruta debe ser un registro de hardware que exista; el nivel se deriva de los registros y nunca se escribe a mano |
-| `watchdog` | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el tiempo de espera con el que se registró su tiempo de reset, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenido (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un tiempo de espera dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware |
-| `io.channels` | Una entrada por pin al que un programa puede llegar, como máximo 64 | Cada canal tiene una dirección de la dirección y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, su controlador y su pin |
-| `io.unmapped` | Los terminales que existen y que ZPLC no usa, cada uno con un motivo | Una entrada tiene un terminal y un motivo |
+| Clave                                | Qué escribir                                                                                                                                                                                                                                                                                                                    | Qué se comprueba                                                                                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `board_id`, `ide_id`, `zephyr_board` | Tres nombres de la misma placa: el del firmware, el que un archivo de proyecto usa en `target.board` y el destino de Zephyr                                                                                                                                                                                                     | Ninguno repite un nombre que ya tiene otra placa                                                                                                                                                                 |
+| `memory`                             | Los tres tamaños del paso 1                                                                                                                                                                                                                                                                                                     | La compilación se detiene cuando difieren del `.conf`                                                                                                                                                            |
+| `network_class`, `network_interface` | `serial-focused`, `network-capable` u `other`; `none`, `wifi` o `ethernet`                                                                                                                                                                                                                                                      | Solo se aceptan estas palabras                                                                                                                                                                                   |
+| `evidence_refs`                      | Una lista vacía                                                                                                                                                                                                                                                                                                                 | Una ruta debe ser un registro de hardware que exista; el nivel se deriva de los registros y nunca se escribe a mano                                                                                              |
+| `watchdog`                           | Si el watchdog de hardware está activado en este perfil (`false` hasta que exista un registro de hardware), el tiempo de espera con el que se registró su tiempo de reset, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenido (`disarm` o `feed`; `disarm` o `expire`) | Una razón cuando está apagado, un tiempo de espera dentro de lo que acepta el componente y las palabras de las tres políticas; nunca se activa sin un registro de hardware                                       |
+| `io.channels`                        | Una entrada por pin al que un programa puede llegar, como máximo 64                                                                                                                                                                                                                                                             | Cada canal tiene una dirección de la dirección y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, su controlador y su pin |
+| `io.unmapped`                        | Los terminales que existen y que ZPLC no usa, cada uno con un motivo                                                                                                                                                                                                                                                            | Una entrada tiene un terminal y un motivo                                                                                                                                                                        |
 
 Ningún puerto admite una salida analógica, así que déjela fuera de la descripción. Las
 direcciones de los canales son las que un proyecto asigna con `AT %I0.0`
@@ -179,12 +190,12 @@ hasta que la lista y el manifiesto coinciden.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| La entrada del manifiesto de arriba cumple cada regla del manifiesto y no repite un nombre de otra placa | `bun tools/docs/check-docs-config.ts` la pasa por el validador del manifiesto, junto con el manifiesto de este repositorio | Host |
-| El orden de los pasos y los comandos | Leídos de los archivos de compilación del firmware, de la herramienta de tamaño y del validador de este repositorio | Host |
-| Un puerto real | No ejecutado: no se portó ninguna placa nueva mientras se escribía esta página | Ninguno |
-| La placa ejecuta un programa | No verificado: necesita un registro de hardware | Ninguno |
+| Parte                                                                                                    | Verificado                                                                                                                 | Nivel   |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------- |
+| La entrada del manifiesto de arriba cumple cada regla del manifiesto y no repite un nombre de otra placa | `bun tools/docs/check-docs-config.ts` la pasa por el validador del manifiesto, junto con el manifiesto de este repositorio | Host    |
+| El orden de los pasos y los comandos                                                                     | Leídos de los archivos de compilación del firmware, de la herramienta de tamaño y del validador de este repositorio        | Host    |
+| Un puerto real                                                                                           | No ejecutado: no se portó ninguna placa nueva mientras se escribía esta página                                             | Ninguno |
+| La placa ejecuta un programa                                                                             | No verificado: necesita un registro de hardware                                                                            | Ninguno |
 
 ## Vea también
 

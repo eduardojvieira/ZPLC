@@ -39,7 +39,11 @@ function main(): number {
   const wanted = renderMirror();
   if (process.argv.includes('--check')) {
     let current = '';
-    try { current = readFileSync(MIRROR_FILE, 'utf8'); } catch { /* missing */ }
+    try {
+      current = readFileSync(MIRROR_FILE, 'utf8');
+    } catch {
+      /* missing */
+    }
     if (current === wanted) return 0;
     console.error(`${MIRROR_FILE} is not what the registry of error codes produces: run bun tools/ci/generate-error-codes.ts`);
     return 1;

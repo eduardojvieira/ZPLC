@@ -5,15 +5,9 @@
   "order": 28,
   "module": 10,
   "level": "advanced",
-  "prerequisites": [
-    "modbus-register-round-trip"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["modbus-register-round-trip"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

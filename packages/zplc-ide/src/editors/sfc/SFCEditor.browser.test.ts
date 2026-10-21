@@ -10,16 +10,27 @@ afterAll(closeBrowserApp);
 const t = translatorFor('en').t;
 
 const BLINKY = readFileSync(join(import.meta.dir, '..', '..', '..', 'projects', 'blinky_sfc', 'src', 'main.sfc.json'), 'utf8');
-interface Chart { steps: Array<{ id: string; name: string; isInitial?: boolean; position: { x: number; y: number } }>; transitions: Array<{ id: string; fromStep: string; toStep: string; condition: string }> }
+interface Chart {
+  steps: Array<{ id: string; name: string; isInitial?: boolean; position: { x: number; y: number } }>;
+  transitions: Array<{ id: string; fromStep: string; toStep: string; condition: string }>;
+}
 
-const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') => app.open({ name: 'main.sfc.json', language: 'SFC', content: BLINKY }, locale);
+const openBlinky = (app: BrowserApp, locale: 'en' | 'es' = 'en') =>
+  app.open({ name: 'main.sfc.json', language: 'SFC', content: BLINKY }, locale);
 const select = async (app: BrowserApp, id: string) => {
   const at = await nodeCentre(app, id);
   await app.clickAt(at.x, at.y);
   await app.until(`${id} selected`, `document.querySelector('.react-flow__node[data-id="${id}"]')?.classList.contains('selected')`);
 };
-const selected = (app: BrowserApp): Promise<string[]> => app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((n) => n.getAttribute('data-id'))`);
-const chartSize = (app: BrowserApp, steps: number, transitions: number) => app.until('the chart in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); const c = JSON.parse(s.loadedFiles.get(s.activeFileId).content); return c.steps.length === ${steps} && c.transitions.length === ${transitions}; })`);
+const selected = (app: BrowserApp): Promise<string[]> =>
+  app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((n) => n.getAttribute('data-id'))`);
+const chartSize = (app: BrowserApp, steps: number, transitions: number) =>
+  app.until(
+    'the chart in the file',
+    `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); const c = ` +
+      `JSON.parse(s.loadedFiles.get(s.activeFileId).content); return c.steps.length ` +
+      `=== ${steps} && c.transitions.length === ${transitions}; })`,
+  );
 
 describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () => {
   test('is a named region and every step and transition of the file is a named group that a pointer click selects', async () => {
@@ -42,7 +53,10 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     const before = (await openDocument<Chart>(app)).steps.map((step) => step.position);
     await select(app, 'step_led_on');
     await app.press('Alt+ArrowDown');
-    await app.until('the transition selected', `document.querySelector('.react-flow__node[data-id="trans_on_to_off"]')?.classList.contains('selected')`);
+    await app.until(
+      'the transition selected',
+      `document.querySelector('.react-flow__node[data-id="trans_on_to_off"]')?.classList.contains('selected')`,
+    );
     expect(await selected(app)).toEqual(['trans_on_to_off']);
     expect(await app.liveText()).toContain(t('keyboard.selected', { name: 'transition T(step_led_on.T >= T#500ms)' }));
     // the arrow keys of the table are the editor's: React Flow must not also nudge the selected node
@@ -74,7 +88,11 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     await app.press('ctrl+a'.replace('ctrl', 'Ctrl').replace('+a', '+a'));
     await app.type('LED_IDLE');
     await app.press('Enter');
-    await app.until('the name in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).steps.some((step) => step.name === 'LED_IDLE'); })`);
+    await app.until(
+      'the name in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).steps.some((step) => step.name === 'LED_IDLE'); })`,
+    );
     await app.axNode('group', t('a11y.sfc.step', { name: 'LED_IDLE' }));
   });
 

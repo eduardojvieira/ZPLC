@@ -3,7 +3,7 @@ slug: /guides/retained-variables
 id: retained-variables
 title: Conservar valores entre reinicios
 sidebar_label: Variables retentivas
-description: "Declare variables que conservan su valor cuando el programa se detiene o el runtime se reinicia, y vea qué se guarda, cuándo y qué lo descarta."
+description: 'Declare variables que conservan su valor cuando el programa se detiene o el runtime se reinicia, y vea qué se guarda, cuándo y qué lo descarta.'
 tags: [how-to, retain, persistence]
 ---
 
@@ -60,13 +60,13 @@ detención y un apagado siguen guardando.
 
 ## 3. Qué descarta los valores
 
-| Evento | Valores retentivos |
-| --- | --- |
-| Detener y volver a ejecutar, o un reinicio, del mismo programa | Se restauran |
-| Una recompilación del programa, incluso una que solo mueve código | Se descartan: el programa tiene otra identidad |
-| Un comando de reinicio | Se descartan: es un reinicio en frío |
-| Se carga otro programa | Se descartan: el registro guardado pertenece al otro programa |
-| Una falla | La detención de un runtime con falla no guarda nada |
+| Evento                                                            | Valores retentivos                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------------------- |
+| Detener y volver a ejecutar, o un reinicio, del mismo programa    | Se restauran                                                  |
+| Una recompilación del programa, incluso una que solo mueve código | Se descartan: el programa tiene otra identidad                |
+| Un comando de reinicio                                            | Se descartan: es un reinicio en frío                          |
+| Se carga otro programa                                            | Se descartan: el registro guardado pertenece al otro programa |
+| Una falla                                                         | La detención de un runtime con falla no guarda nada           |
 
 El estado del runtime nativo indica cuál de estos ocurrió, con un `reason` como
 `restored`, `none`, `identity_mismatch` o `layout_mismatch`: el campo `retain` del
@@ -93,12 +93,12 @@ se inicializa en cada arranque y el estado dice `io_error`.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
+| Parte                                                                        | Verificado                                 | Nivel               |
+| ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------- |
 | El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallas inyectadas en cada paso | Host y `native_sim` |
-| Los valores sobreviven a una detención y a un arranque del runtime nativo | Prueba de la sesión nativa | Host |
-| Un corte de energía en una placa | No probado | Ninguno |
-| Cuánto retrasa una escritura en flash a un ciclo | No medido | Ninguno |
+| Los valores sobreviven a una detención y a un arranque del runtime nativo    | Prueba de la sesión nativa                 | Host                |
+| Un corte de energía en una placa                                             | No probado                                 | Ninguno             |
+| Cuánto retrasa una escritura en flash a un ciclo                             | No medido                                  | Ninguno             |
 
 ## Vea también
 

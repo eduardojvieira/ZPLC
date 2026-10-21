@@ -42,16 +42,34 @@
 /* IPI[0..2] are copied to WORK[0..2]; OPI[0] and OPI[1] are set to the values
  * patched at VALUE_0_INDEX and VALUE_1_INDEX. */
 static const uint8_t program_code[] = {
-    OP_LOAD8, ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 0U), ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 0U),
-    OP_STORE8, ADDRESS_LOW(WORK_COPY + 0U), ADDRESS_HIGH(WORK_COPY + 0U),
-    OP_LOAD8, ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 1U), ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 1U),
-    OP_STORE8, ADDRESS_LOW(WORK_COPY + 1U), ADDRESS_HIGH(WORK_COPY + 1U),
-    OP_LOAD8, ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 2U), ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 2U),
-    OP_STORE8, ADDRESS_LOW(WORK_COPY + 2U), ADDRESS_HIGH(WORK_COPY + 2U),
-    OP_PUSH8, 0U, /* VALUE_0_INDEX */
-    OP_STORE8, ADDRESS_LOW(ZPLC_MEM_OPI_BASE + 0U), ADDRESS_HIGH(ZPLC_MEM_OPI_BASE + 0U),
-    OP_PUSH8, 0U, /* VALUE_1_INDEX */
-    OP_STORE8, ADDRESS_LOW(ZPLC_MEM_OPI_BASE + 1U), ADDRESS_HIGH(ZPLC_MEM_OPI_BASE + 1U),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 0U),
+    ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 0U),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_COPY + 0U),
+    ADDRESS_HIGH(WORK_COPY + 0U),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 1U),
+    ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 1U),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_COPY + 1U),
+    ADDRESS_HIGH(WORK_COPY + 1U),
+    OP_LOAD8,
+    ADDRESS_LOW(ZPLC_MEM_IPI_BASE + 2U),
+    ADDRESS_HIGH(ZPLC_MEM_IPI_BASE + 2U),
+    OP_STORE8,
+    ADDRESS_LOW(WORK_COPY + 2U),
+    ADDRESS_HIGH(WORK_COPY + 2U),
+    OP_PUSH8,
+    0U, /* VALUE_0_INDEX */
+    OP_STORE8,
+    ADDRESS_LOW(ZPLC_MEM_OPI_BASE + 0U),
+    ADDRESS_HIGH(ZPLC_MEM_OPI_BASE + 0U),
+    OP_PUSH8,
+    0U, /* VALUE_1_INDEX */
+    OP_STORE8,
+    ADDRESS_LOW(ZPLC_MEM_OPI_BASE + 1U),
+    ADDRESS_HIGH(ZPLC_MEM_OPI_BASE + 1U),
     OP_HALT,
 };
 #define VALUE_0_INDEX 19U
@@ -232,8 +250,7 @@ ZTEST(zplc_io_table, test_the_table_is_the_description_of_the_build) {
     for (size_t index = 0U; index < table->channel_count; index++) {
       const zplc_io_channel_t *channel = zplc_io_channel_at(index);
 
-      zassert_equal(channel->hal_channel, (uint8_t)index,
-                    "HAL gpio channel is the position in the table");
+      zassert_equal(channel->hal_channel, (uint8_t)index, "HAL gpio channel is the position in the table");
       if (channel->direction == ZPLC_IO_DIR_INPUT) {
         seen_input = true;
       } else {
@@ -250,8 +267,7 @@ ZTEST(zplc_io_table, test_described_outputs_reach_their_pins_and_nothing_else) {
   drive_all_inputs(0);
   run_scan(0xFFU, 0xFFU, input_copy);
   for (pin = 0U; pin < OUTPUT_PIN_COUNT; pin++) {
-    zassert_equal(gpio_emul_output_get(GPIO_CONTROLLER, pin),
-                  output_pin_is_described(pin) ? 1 : 0,
+    zassert_equal(gpio_emul_output_get(GPIO_CONTROLLER, pin), output_pin_is_described(pin) ? 1 : 0,
                   "a described output follows the image; an undescribed pin is untouched");
   }
   run_scan(0x00U, 0x00U, input_copy);
@@ -272,8 +288,7 @@ ZTEST(zplc_io_table, test_described_inputs_land_in_the_image_at_their_address) {
     const zplc_io_channel_t *channel = zplc_io_channel_at(index);
 
     if (channel->direction == ZPLC_IO_DIR_INPUT) {
-      zassert_equal(zplc_io_image_get(input_copy, sizeof(input_copy), channel), 1U,
-                    "a described input is high at its address");
+      zassert_equal(zplc_io_image_get(input_copy, sizeof(input_copy), channel), 1U, "a described input is high at its address");
       described_inputs++;
     }
   }
@@ -285,14 +300,12 @@ ZTEST(zplc_io_table, test_described_inputs_land_in_the_image_at_their_address) {
     for (index = 0U; index < zplc_io_channel_count(); index++) {
       const zplc_io_channel_t *channel = zplc_io_channel_at(index);
 
-      if (channel->direction == ZPLC_IO_DIR_INPUT &&
-          (size_t)channel->image_offset * 8U + channel->bit == pin) {
+      if (channel->direction == ZPLC_IO_DIR_INPUT && (size_t)channel->image_offset * 8U + channel->bit == pin) {
         described = true;
       }
     }
     if (!described) {
-      zassert_equal((input_copy[pin / 8U] >> (pin % 8U)) & 1U, 0U,
-                    "an image bit without a channel stays zero");
+      zassert_equal((input_copy[pin / 8U] >> (pin % 8U)) & 1U, 0U, "an image bit without a channel stays zero");
     }
   }
 

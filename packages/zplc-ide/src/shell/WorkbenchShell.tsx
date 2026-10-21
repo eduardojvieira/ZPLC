@@ -55,9 +55,12 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const [primaryPanel, setPrimaryPanel] = usePanelCallbackRef();
   const [secondaryPanel, setSecondaryPanel] = usePanelCallbackRef();
 
-  // The Welcome screen closes with the button that opened the project, so the focus would fall to the page body (UX-025, UX-028): it goes to the editor region.
+  // The Welcome screen closes with the button that opened the project, so the focus would fall to the page body (UX-025, UX-028): it goes
+  // to the editor region.
   const editorRegion = useRef<HTMLElement>(null);
-  useEffect(() => { claimLostFocus(editorRegion.current, document.activeElement, document.body); }, []);
+  useEffect(() => {
+    claimLostFocus(editorRegion.current, document.activeElement, document.body);
+  }, []);
 
   // A request for the lessons, the explorer or the inspector, made by name as a console tab, shows that view.
   useEffect(() => startShellRouting(useIDEStore, () => useShellLayout.getState()), []);
@@ -88,10 +91,12 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
     if (density === 'compact') useShellLayout.getState().setSecondaryVisible(false);
   }, [density]);
 
-  const follow = (visible: boolean, set: (visible: boolean) => void) => (size: PanelSize): void => {
-    const shown = size.inPixels > 0;
-    if (shown !== visible) set(shown);
-  };
+  const follow =
+    (visible: boolean, set: (visible: boolean) => void) =>
+    (size: PanelSize): void => {
+      const shown = size.inPixels > 0;
+      if (shown !== visible) set(shown);
+    };
 
   return (
     <div className="flex min-h-0 flex-1 ledger-workspace">
@@ -99,8 +104,11 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         active={activityView}
         density={density}
         onSelect={(view) => {
-          if (view === 'tests') { showActivity('tests'); useIDEStore.getState().setActiveConsoleTab('tests'); if (useIDEStore.getState().isConsoleCollapsed) useIDEStore.getState().toggleConsole(); }
-          else if (view === 'learn') openLearnHome();
+          if (view === 'tests') {
+            showActivity('tests');
+            useIDEStore.getState().setActiveConsoleTab('tests');
+            if (useIDEStore.getState().isConsoleCollapsed) useIDEStore.getState().toggleConsole();
+          } else if (view === 'learn') openLearnHome();
           else showActivity(view);
         }}
       />
@@ -111,7 +119,17 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
         groupRef={setShellGroup}
         onLayoutChanged={shellSizes.onLayoutChanged}
       >
-        <Panel id="primary" panelRef={setPrimaryPanel} defaultSize="280px" minSize="200px" maxSize="520px" collapsible collapsedSize={0} onResize={follow(primaryVisible, setPrimaryVisible)} className="overflow-hidden">
+        <Panel
+          id="primary"
+          panelRef={setPrimaryPanel}
+          defaultSize="280px"
+          minSize="200px"
+          maxSize="520px"
+          collapsible
+          collapsedSize={0}
+          onResize={follow(primaryVisible, setPrimaryVisible)}
+          className="overflow-hidden"
+        >
           {primaryVisible && <PrimarySidebar />}
         </Panel>
         <PanelSeparator id="primary-separator" label={t('shell.resize.primary')} group={shellGroup} leading="primary" trailing="center" />
@@ -136,19 +154,50 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
                 </ErrorBoundary>
                 {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were
                     when it closes. */}
-                {learnHomeOpen && <div className="absolute inset-0 z-20"><ErrorBoundary region="Editor"><LearnHome /></ErrorBoundary></div>}
+                {learnHomeOpen && (
+                  <div className="absolute inset-0 z-20">
+                    <ErrorBoundary region="Editor">
+                      <LearnHome />
+                    </ErrorBoundary>
+                  </div>
+                )}
               </main>
             </Panel>
             <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
-            <Panel id="console" panelRef={setConsolePanel} defaultSize="28%" minSize="5%" maxSize="65%" collapsible collapsedSize={32} className="overflow-hidden">
+            <Panel
+              id="console"
+              panelRef={setConsolePanel}
+              defaultSize="28%"
+              minSize="5%"
+              maxSize="65%"
+              collapsible
+              collapsedSize={32}
+              className="overflow-hidden"
+            >
               <ErrorBoundary region="Panel">
                 <Console debugController={debugController} />
               </ErrorBoundary>
             </Panel>
           </Group>
         </Panel>
-        <PanelSeparator id="secondary-separator" label={t('shell.resize.secondary')} group={shellGroup} leading="center" trailing="secondary" />
-        <Panel id="secondary" panelRef={setSecondaryPanel} defaultSize="280px" minSize="200px" maxSize="520px" collapsible collapsedSize={0} onResize={follow(secondaryVisible, setSecondaryVisible)} className="overflow-hidden">
+        <PanelSeparator
+          id="secondary-separator"
+          label={t('shell.resize.secondary')}
+          group={shellGroup}
+          leading="center"
+          trailing="secondary"
+        />
+        <Panel
+          id="secondary"
+          panelRef={setSecondaryPanel}
+          defaultSize="280px"
+          minSize="200px"
+          maxSize="520px"
+          collapsible
+          collapsedSize={0}
+          onResize={follow(secondaryVisible, setSecondaryVisible)}
+          className="overflow-hidden"
+        >
           {secondaryVisible && <SecondarySidebar />}
         </Panel>
       </Group>

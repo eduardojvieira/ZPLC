@@ -35,9 +35,25 @@ export function extendSelection(nodes: Node[], edges: Edge[], command: string): 
   if (selected.length === 0) return { ...keep, nodes, say: t('editor.extend.none'), refused: true };
   const direction = command.slice('extend'.length).toLowerCase() as Direction;
   // the far edge of the selection in that direction is where the next node is looked for
-  const edgeOf = (node: Node) => (direction === 'left' ? -node.position.x : direction === 'right' ? node.position.x : direction === 'up' ? -node.position.y : node.position.y);
+  const edgeOf = (node: Node) =>
+    direction === 'left'
+      ? -node.position.x
+      : direction === 'right'
+        ? node.position.x
+        : direction === 'up'
+          ? -node.position.y
+          : node.position.y;
   const far = selected.reduce((best, node) => (edgeOf(node) > edgeOf(best) ? node : best));
-  const next = nearestNode(nodes.filter((node) => !node.selected || node.id === far.id), far, direction);
+  const next = nearestNode(
+    nodes.filter((node) => !node.selected || node.id === far.id),
+    far,
+    direction,
+  );
   if (!next) return { ...keep, nodes, say: t(`editor.extend.nothing.${direction}`) };
-  return { ...keep, edges: unselectedEdges, nodes: nodes.map((node) => (node.id === next.id ? { ...node, selected: true } : node)), say: count(selected.length + 1) };
+  return {
+    ...keep,
+    edges: unselectedEdges,
+    nodes: nodes.map((node) => (node.id === next.id ? { ...node, selected: true } : node)),
+    say: count(selected.length + 1),
+  };
 }

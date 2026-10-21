@@ -44,8 +44,15 @@ describe('the catalogue of the project blocks', () => {
     expect(findProjectBlock(blocks, 'LATCH')).toEqual({
       name: 'Latch',
       kind: 'FUNCTION_BLOCK',
-      inputs: [{ name: 'Set', type: 'BOOL' }, { name: 'Level', type: 'INT' }, { name: 'Total', type: 'DINT' }],
-      outputs: [{ name: 'Q', type: 'BOOL' }, { name: 'Count', type: 'INT' }],
+      inputs: [
+        { name: 'Set', type: 'BOOL' },
+        { name: 'Level', type: 'INT' },
+        { name: 'Total', type: 'DINT' },
+      ],
+      outputs: [
+        { name: 'Q', type: 'BOOL' },
+        { name: 'Count', type: 'INT' },
+      ],
       source: 'src/blocks.st',
     });
   });
@@ -53,7 +60,10 @@ describe('the catalogue of the project blocks', () => {
   it('has the inputs of a function and its result as the output OUT', () => {
     expect(findProjectBlock(blocks, 'scale')).toMatchObject({
       kind: 'FUNCTION',
-      inputs: [{ name: 'Value', type: 'INT' }, { name: 'Gain', type: 'REAL' }],
+      inputs: [
+        { name: 'Value', type: 'INT' },
+        { name: 'Gain', type: 'REAL' },
+      ],
       outputs: [{ name: 'OUT', type: 'REAL' }],
     });
   });
@@ -77,7 +87,9 @@ describe('the palette data', () => {
   });
 
   it('puts the function blocks of the project among the blocks an LD rung places, and not the functions', () => {
-    const names = getToolboxItems(blocks).filter((item) => item.category === 'function_block').map((item) => item.fbType);
+    const names = getToolboxItems(blocks)
+      .filter((item) => item.category === 'function_block')
+      .map((item) => item.fbType);
     expect(names).toContain('Latch');
     expect(names).toContain('TON');
     expect(names).not.toContain('Scale');
@@ -88,7 +100,9 @@ describe('the palette data', () => {
 describe('the ports of a block a diagram places', () => {
   it('are the ones of the declaration, and win over a standard block of the same name', () => {
     expect(getDefaultPorts('Latch', blocks).inputs.map((port) => port.name)).toEqual(['Set', 'Level', 'Total']);
-    const timer = collectProjectBlocks([{ name: 'ton.st', language: 'ST', content: 'FUNCTION_BLOCK TON\nVAR_INPUT Go : BOOL; END_VAR\nEND_FUNCTION_BLOCK' }]);
+    const timer = collectProjectBlocks([
+      { name: 'ton.st', language: 'ST', content: 'FUNCTION_BLOCK TON\nVAR_INPUT Go : BOOL; END_VAR\nEND_FUNCTION_BLOCK' },
+    ]);
     expect(getDefaultPorts('TON', timer).inputs).toEqual([{ name: 'Go', type: 'BOOL' }]);
     expect(getDefaultPorts('TON').inputs.map((port) => port.name)).toEqual(['IN', 'PT']);
   });
@@ -104,7 +118,9 @@ describe('the ports of a block a diagram places', () => {
       connections: [{ id: 'w', from: { block: 'a', port: 'OUT' }, to: { block: 'l', port: 'Reset' } }],
     };
     expect(() => validateFBDModel(model, blocks)).toThrow(/unknown destination input port 'l.Reset'/);
-    expect(() => validateFBDModel({ ...model, connections: [{ ...model.connections[0], to: { block: 'l', port: 'Set' } }] }, blocks)).not.toThrow();
+    expect(() =>
+      validateFBDModel({ ...model, connections: [{ ...model.connections[0], to: { block: 'l', port: 'Set' } }] }, blocks),
+    ).not.toThrow();
   });
 });
 
@@ -113,8 +129,14 @@ describe('the text of a diagram that places a block of the project', () => {
     name: 'Place',
     variables: {
       local: [{ name: 'Total', type: 'DINT' }],
-      inputs: [{ name: 'Go', type: 'BOOL', address: '%IX0.0' }, { name: 'Raw', type: 'INT', address: '%IW0' }],
-      outputs: [{ name: 'Done', type: 'BOOL', address: '%QX0.0' }, { name: 'Level', type: 'REAL', address: '%QD0' }],
+      inputs: [
+        { name: 'Go', type: 'BOOL', address: '%IX0.0' },
+        { name: 'Raw', type: 'INT', address: '%IW0' },
+      ],
+      outputs: [
+        { name: 'Done', type: 'BOOL', address: '%QX0.0' },
+        { name: 'Level', type: 'REAL', address: '%QD0' },
+      ],
     },
     blocks: [
       { id: 'go', type: 'input', variableName: 'Go', position: { x: 0, y: 0 } },
@@ -125,16 +147,19 @@ describe('the text of a diagram that places a block of the project', () => {
   });
 
   it('declares the instance of a function block and calls it with the ports of the declaration by name', () => {
-    const result = transpileFBDToST(diagram(
-      [
-        { id: 'latch', type: 'Latch', instanceName: 'Held', position: { x: 1, y: 0 } },
-        { id: 'done', type: 'output', variableName: 'Done', position: { x: 2, y: 0 } },
-      ],
-      [
-        { id: 'w1', from: { block: 'go', port: 'OUT' }, to: { block: 'latch', port: 'Set' } },
-        { id: 'w2', from: { block: 'latch', port: 'Q' }, to: { block: 'done', port: 'IN' } },
-      ],
-    ), blocks);
+    const result = transpileFBDToST(
+      diagram(
+        [
+          { id: 'latch', type: 'Latch', instanceName: 'Held', position: { x: 1, y: 0 } },
+          { id: 'done', type: 'output', variableName: 'Done', position: { x: 2, y: 0 } },
+        ],
+        [
+          { id: 'w1', from: { block: 'go', port: 'OUT' }, to: { block: 'latch', port: 'Set' } },
+          { id: 'w2', from: { block: 'latch', port: 'Q' }, to: { block: 'done', port: 'IN' } },
+        ],
+      ),
+      blocks,
+    );
     expect(result.errors).toEqual([]);
     expect(result.source).toContain('Held : Latch;');
     expect(result.source).toContain('Held(Set := Go);');
@@ -142,18 +167,21 @@ describe('the text of a diagram that places a block of the project', () => {
   });
 
   it('calls a function with its inputs by name and takes its result from OUT', () => {
-    const result = transpileFBDToST(diagram(
-      [
-        { id: 'gain', type: 'constant', dataType: 'REAL', value: 1.5, position: { x: 0, y: 2 } },
-        { id: 'scale', type: 'Scale', position: { x: 1, y: 0 } },
-        { id: 'level', type: 'output', variableName: 'Level', position: { x: 2, y: 0 } },
-      ],
-      [
-        { id: 'w1', from: { block: 'raw', port: 'OUT' }, to: { block: 'scale', port: 'Value' } },
-        { id: 'w2', from: { block: 'gain', port: 'OUT' }, to: { block: 'scale', port: 'Gain' } },
-        { id: 'w3', from: { block: 'scale', port: 'OUT' }, to: { block: 'level', port: 'IN' } },
-      ],
-    ), blocks);
+    const result = transpileFBDToST(
+      diagram(
+        [
+          { id: 'gain', type: 'constant', dataType: 'REAL', value: 1.5, position: { x: 0, y: 2 } },
+          { id: 'scale', type: 'Scale', position: { x: 1, y: 0 } },
+          { id: 'level', type: 'output', variableName: 'Level', position: { x: 2, y: 0 } },
+        ],
+        [
+          { id: 'w1', from: { block: 'raw', port: 'OUT' }, to: { block: 'scale', port: 'Value' } },
+          { id: 'w2', from: { block: 'gain', port: 'OUT' }, to: { block: 'scale', port: 'Gain' } },
+          { id: 'w3', from: { block: 'scale', port: 'OUT' }, to: { block: 'level', port: 'IN' } },
+        ],
+      ),
+      blocks,
+    );
     expect(result.errors).toEqual([]);
     expect(result.source).toContain('_scale_OUT := Scale(Value := Raw, Gain := 1.5);');
     expect(result.source).toContain('_scale_OUT : REAL;');
@@ -162,34 +190,36 @@ describe('the text of a diagram that places a block of the project', () => {
   });
 
   it('still calls a function whose result nobody uses', () => {
-    const result = transpileFBDToST(diagram(
-      [{ id: 'scale', type: 'Scale', position: { x: 1, y: 0 } }],
-      [{ id: 'w1', from: { block: 'raw', port: 'OUT' }, to: { block: 'scale', port: 'Value' } }],
-    ), blocks);
+    const result = transpileFBDToST(
+      diagram(
+        [{ id: 'scale', type: 'Scale', position: { x: 1, y: 0 } }],
+        [{ id: 'w1', from: { block: 'raw', port: 'OUT' }, to: { block: 'scale', port: 'Value' } }],
+      ),
+      blocks,
+    );
     expect(result.errors).toEqual([]);
     expect(result.source).toContain('Scale(Value := Raw);');
   });
 
   it('is an error that names the block when the project does not declare its type', () => {
-    const result = transpileFBDToST(diagram(
-      [{ id: 'ghost', type: 'Ghost', instanceName: 'g', position: { x: 1, y: 0 } }],
-      [],
-    ), blocks);
+    const result = transpileFBDToST(diagram([{ id: 'ghost', type: 'Ghost', instanceName: 'g', position: { x: 1, y: 0 } }], []), blocks);
     expect(result.success).toBe(false);
     expect(result.errors.join(' ')).toMatch(/ghost.*Ghost/);
   });
 
   it('is what the build does with a diagram file: the ports come from the project files', () => {
-    const content = JSON.stringify(diagram(
-      [
-        { id: 'latch', type: 'Latch', instanceName: 'Held', position: { x: 1, y: 0 } },
-        { id: 'done', type: 'output', variableName: 'Done', position: { x: 2, y: 0 } },
-      ],
-      [
-        { id: 'w1', from: { block: 'go', port: 'OUT' }, to: { block: 'latch', port: 'Set' } },
-        { id: 'w2', from: { block: 'latch', port: 'Q' }, to: { block: 'done', port: 'IN' } },
-      ],
-    ));
+    const content = JSON.stringify(
+      diagram(
+        [
+          { id: 'latch', type: 'Latch', instanceName: 'Held', position: { x: 1, y: 0 } },
+          { id: 'done', type: 'output', variableName: 'Done', position: { x: 2, y: 0 } },
+        ],
+        [
+          { id: 'w1', from: { block: 'go', port: 'OUT' }, to: { block: 'latch', port: 'Set' } },
+          { id: 'w2', from: { block: 'latch', port: 'Q' }, to: { block: 'done', port: 'IN' } },
+        ],
+      ),
+    );
     expect(transpileToST(content, 'FBD').success).toBe(false);
     const result = transpileToST(content, 'FBD', undefined, blocks);
     expect(result.errors).toEqual([]);
@@ -205,15 +235,25 @@ describe('the text of a rung that places a function block of the project', () =>
       inputs: [{ name: 'Sensor', type: 'BOOL', address: '%IX0.0' }],
       outputs: [{ name: 'Held', type: 'BOOL', address: '%QX0.0' }],
     },
-    rungs: [{
-      id: 'rung1',
-      number: 1,
-      elements: [
-        { id: 'c1', type: 'contact_no', position: { x: 50, y: 0 }, variable: 'Sensor' },
-        { id: 'fb1', type: 'function_block', position: { x: 150, y: 0 }, fbType, instance: 'Keeper', parameters: { Set: 'CONNECTED' }, outputs: { Q: 'Held' } },
-      ],
-      connections: [],
-    }],
+    rungs: [
+      {
+        id: 'rung1',
+        number: 1,
+        elements: [
+          { id: 'c1', type: 'contact_no', position: { x: 50, y: 0 }, variable: 'Sensor' },
+          {
+            id: 'fb1',
+            type: 'function_block',
+            position: { x: 150, y: 0 },
+            fbType,
+            instance: 'Keeper',
+            parameters: { Set: 'CONNECTED' },
+            outputs: { Q: 'Held' },
+          },
+        ],
+        connections: [],
+      },
+    ],
   });
 
   it('declares the instance and calls it, the contact powering the input it is wired to', () => {

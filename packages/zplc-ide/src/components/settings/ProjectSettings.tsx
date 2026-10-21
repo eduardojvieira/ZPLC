@@ -9,12 +9,8 @@
 import { useState } from 'react';
 import { Settings, FileText } from 'lucide-react';
 import { useProjectSettingsState } from '../../store/regionSubscriptions';
-import type {
-  ZPLCProjectConfig,
-} from '../../types';
-import {
-  getBoardNetworkType,
-} from '../../config/boardProfiles';
+import type { ZPLCProjectConfig } from '../../types';
+import { getBoardNetworkType } from '../../config/boardProfiles';
 import { AppPreferences } from './AppPreferences';
 import { SettingsSection } from './SettingsSection';
 import { MetadataSection } from './MetadataSection';
@@ -42,7 +38,7 @@ export function ProjectSettings() {
   }
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   // Generic update helper for nested config
@@ -70,27 +66,37 @@ export function ProjectSettings() {
               <Settings className="text-[var(--color-accent-blue)]" size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[var(--color-surface-100)]">
-                {t('toolbar.settings')}
-              </h1>
-              <p className="text-sm text-[var(--color-surface-400)]">
-                {t('project.configureHardwareTargetI')}
-              </p>
+              <h1 className="text-xl font-bold text-[var(--color-surface-100)]">{t('toolbar.settings')}</h1>
+              <p className="text-sm text-[var(--color-surface-400)]">{t('project.configureHardwareTargetI')}</p>
             </div>
           </div>
-          <Button variant="primary" size="sm" tooltip={t('project.saveChangesToZplc')} onClick={() => { void handleSave(); }}>
+          <Button
+            variant="primary"
+            size="sm"
+            tooltip={t('project.saveChangesToZplc')}
+            onClick={() => {
+              void handleSave();
+            }}
+          >
             {t('project.saveConfig')}
           </Button>
         </div>
 
         <AppPreferences />
 
-        <section aria-labelledby="config-editors-heading" className="mb-4 rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4">
-          <h2 id="config-editors-heading" className="text-sm font-medium text-[var(--color-surface-100)]">{t('configEditor.editorsHeading')}</h2>
+        <section
+          aria-labelledby="config-editors-heading"
+          className="mb-4 rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4"
+        >
+          <h2 id="config-editors-heading" className="text-sm font-medium text-[var(--color-surface-100)]">
+            {t('configEditor.editorsHeading')}
+          </h2>
           <p className="mt-1 text-xs text-[var(--color-surface-300)]">{t('configEditor.editorsHint')}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {CONFIG_EDITOR_KINDS.map((kind) => (
-              <Button key={kind} size="sm" data-open-config-editor={kind} onClick={() => openConfigEditorFromNavigator(kind)}>{t(CONFIG_EDITOR_TITLE_KEYS[kind])}</Button>
+              <Button key={kind} size="sm" data-open-config-editor={kind} onClick={() => openConfigEditorFromNavigator(kind)}>
+                {t(CONFIG_EDITOR_TITLE_KEYS[kind])}
+              </Button>
             ))}
           </div>
         </section>
@@ -114,28 +120,45 @@ export function ProjectSettings() {
             <strong className="text-[var(--color-surface-100)]">{t('project.configurationSummary')}</strong>
             <ul className="mt-2 space-y-1 text-xs">
               <li>
-                {t('project.project')}{' '}<span className="text-[var(--color-accent-blue)]">{projectConfig.name}</span>{' '}{t('project.v')}{projectConfig.version}
-                {projectConfig.author && <span className="text-[var(--color-surface-400)]">{t('project.by', { author: projectConfig.author })}</span>}
+                {t('project.project')} <span className="text-[var(--color-accent-blue)]">{projectConfig.name}</span> {t('project.v')}
+                {projectConfig.version}
+                {projectConfig.author && (
+                  <span className="text-[var(--color-surface-400)]">{t('project.by', { author: projectConfig.author })}</span>
+                )}
               </li>
               {projectConfig.target?.board && (
                 <li>
-                  {t('project.target')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.target.board}</span>
+                  {t('project.target')} <span className="text-[var(--color-accent-green)]">{projectConfig.target.board}</span>
                   {projectConfig.target.clock_mhz && t('project.mhz', { clock_mhz: projectConfig.target.clock_mhz })}
                 </li>
               )}
               <li>
-                {t('project.iO')}{' '}<span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span>{' '}{t('project.inputs')}
-                <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span>{' '}{t('project.outputs')}
+                {t('project.iO')} <span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span>{' '}
+                {t('project.inputs')}
+                <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span> {t('project.outputs')}
               </li>
               <li>
-                {t('project.communication')}{' '}<span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0}</span>{' '}{t('project.tagsMqtt')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.communication?.mqtt?.enabled ? t('console.on') : t('console.off')}</span>{t('project.modbus')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.communication?.modbus?.enabled ? t('console.on') : t('console.off')}</span>
+                {t('project.communication')}{' '}
+                <span className="text-[var(--color-accent-blue)]">
+                  {projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0}
+                </span>{' '}
+                {t('project.tagsMqtt')}{' '}
+                <span className="text-[var(--color-accent-green)]">
+                  {projectConfig.communication?.mqtt?.enabled ? t('console.on') : t('console.off')}
+                </span>
+                {t('project.modbus')}{' '}
+                <span className="text-[var(--color-accent-green)]">
+                  {projectConfig.communication?.modbus?.enabled ? t('console.on') : t('console.off')}
+                </span>
               </li>
               <li>
-                {t('project.network')}{' '}<span className="text-[var(--color-accent-green)]">{getBoardNetworkType(projectConfig.target?.board)}</span>
+                {t('project.network')}{' '}
+                <span className="text-[var(--color-accent-green)]">{getBoardNetworkType(projectConfig.target?.board)}</span>
                 {projectConfig.network?.hostname ? ` (${projectConfig.network.hostname})` : ''}
               </li>
               <li>
-                {t('project.tasks')}{' '}<span className="text-[var(--color-accent-green)]">{projectConfig.tasks.length}</span>{' '}{t('project.configured')}
+                {t('project.tasks')} <span className="text-[var(--color-accent-green)]">{projectConfig.tasks.length}</span>{' '}
+                {t('project.configured')}
               </li>
             </ul>
           </div>

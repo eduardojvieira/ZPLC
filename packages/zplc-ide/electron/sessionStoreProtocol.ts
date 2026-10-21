@@ -21,9 +21,18 @@ export const SESSION_LIMITS = {
   maxScrollTop: 100_000_000,
 } as const;
 
-export interface SessionTab { path: string; line: number; column: number; scrollTop: number }
+export interface SessionTab {
+  path: string;
+  line: number;
+  column: number;
+  scrollTop: number;
+}
 /** The split of the workbench in percent (they add up to 100) and whether the lower panel is collapsed. */
-export interface SessionPanels { editor: number; console: number; consoleCollapsed: boolean }
+export interface SessionPanels {
+  editor: number;
+  console: number;
+  consoleCollapsed: boolean;
+}
 export interface SessionState {
   schemaVersion: 1;
   tabs: SessionTab[];
@@ -57,7 +66,13 @@ const isNumberInRange = (value: unknown, max: number): value is number =>
 function parseTab(value: unknown): SessionTab | null {
   if (!isPlainObject(value) || !hasExactKeys(value, ['path', 'line', 'column', 'scrollTop'])) return null;
   const { path, line, column, scrollTop } = value;
-  if (!isSessionPath(path) || !isIntegerInRange(line, SESSION_LIMITS.maxLine) || !isIntegerInRange(column, SESSION_LIMITS.maxColumn) || !isNumberInRange(scrollTop, SESSION_LIMITS.maxScrollTop)) return null;
+  if (
+    !isSessionPath(path) ||
+    !isIntegerInRange(line, SESSION_LIMITS.maxLine) ||
+    !isIntegerInRange(column, SESSION_LIMITS.maxColumn) ||
+    !isNumberInRange(scrollTop, SESSION_LIMITS.maxScrollTop)
+  )
+    return null;
   return { path, line, column, scrollTop };
 }
 
@@ -71,7 +86,8 @@ function parsePanels(value: unknown): SessionPanels | null | undefined {
 
 /** A fresh, validated copy of a session document, or null for anything that is not exactly one. */
 export function parseSessionState(value: unknown): SessionState | null {
-  if (!isPlainObject(value) || !hasExactKeys(value, ['schemaVersion', 'tabs', 'activePath', 'panels']) || value.schemaVersion !== 1) return null;
+  if (!isPlainObject(value) || !hasExactKeys(value, ['schemaVersion', 'tabs', 'activePath', 'panels']) || value.schemaVersion !== 1)
+    return null;
   const { tabs: rawTabs, activePath, panels: rawPanels } = value;
   if (!Array.isArray(rawTabs) || rawTabs.length > SESSION_LIMITS.maxTabs) return null;
   const tabs: SessionTab[] = [];

@@ -7,9 +7,9 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "REAL", "value": -3.0},
-    {"at": "%QD1", "type": "REAL", "value": 0.0},
-    {"at": "%QD2", "type": "REAL", "value": 3000000000.0},
-    {"at": "%QD3", "type": "REAL", "value": 0.0}
+    { "at": "%QD0", "type": "REAL", "value": -3.0 },
+    { "at": "%QD1", "type": "REAL", "value": 0.0 },
+    { "at": "%QD2", "type": "REAL", "value": 3000000000.0 },
+    { "at": "%QD3", "type": "REAL", "value": 0.0 }
   ]
 }

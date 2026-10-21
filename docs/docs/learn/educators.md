@@ -32,13 +32,13 @@ bun tools/ci/learn-educator.ts verify student-progress.json
 
 The command prints one line per lesson:
 
-| Result | Meaning |
-|---|---|
-| `verified` | The lesson is passed, and its grade record was taken in simulation against the current scenario of the lesson: same scenario id, same SHA-256 and same number of assertions. |
-| `mismatch` | The grade record was taken against another scenario, another track or another number of assertions. The line says which. |
-| `unverified` | The lesson is passed without a grade record, as happens for progress migrated from the first release. |
-| `in-progress` | The lesson was started and not passed. |
-| `unknown-lesson` | The file names a lesson this build does not have; it is kept and ignored. |
+| Result           | Meaning                                                                                                                                                                      |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verified`       | The lesson is passed, and its grade record was taken in simulation against the current scenario of the lesson: same scenario id, same SHA-256 and same number of assertions. |
+| `mismatch`       | The grade record was taken against another scenario, another track or another number of assertions. The line says which.                                                     |
+| `unverified`     | The lesson is passed without a grade record, as happens for progress migrated from the first release.                                                                        |
+| `in-progress`    | The lesson was started and not passed.                                                                                                                                       |
+| `unknown-lesson` | The file names a lesson this build does not have; it is kept and ignored.                                                                                                    |
 
 The exit code is 0 when no lesson is a `mismatch`, 1 when one is or when the file
 is not a progress file, and 2 for a wrong command line. Add `--strict` to also fail

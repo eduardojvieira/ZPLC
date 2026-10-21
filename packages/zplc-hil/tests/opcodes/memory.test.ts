@@ -20,13 +20,13 @@ export const memoryTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"LOAD16",.*\}/
+        pattern: /\{"t":"opcode","op":"LOAD16",.*\}/,
       },
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"STORE16",.*\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"STORE16",.*\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.memory.out_of_bounds',
@@ -48,10 +48,10 @@ export const memoryTests: HILTestCase[] = [
     assertions: [
       {
         type: 'error',
-        code: 5 // OUT_OF_BOUNDS
-      }
-    ]
-  }
+        code: 5, // OUT_OF_BOUNDS
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: memory opcodes (HIL-001)', memoryTests);

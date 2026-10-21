@@ -24,8 +24,8 @@
 /* The server of the product, with a bank of registers and coils behind it. */
 static uint16_t bank[16];
 static uint8_t coil_bits[2];
-static int read_hook(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits,
-                     zplc_modbus_area_t area, void *context) {
+static int read_hook(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits, zplc_modbus_area_t area,
+                     void *context) {
   uint16_t i;
 
   (void)area;
@@ -49,8 +49,8 @@ static int read_hook(uint16_t address, uint16_t count, uint8_t *response, size_t
   }
   return (int)count * 2;
 }
-static int write_hook(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple,
-                      zplc_modbus_area_t area, void *context) {
+static int write_hook(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple, zplc_modbus_area_t area,
+                      void *context) {
   (void)multiple;
   (void)area;
   (void)context;
@@ -60,8 +60,7 @@ static int write_hook(uint16_t address, uint16_t count, const uint8_t *data, boo
   if (bits) {
     if (count == 1U) {
       const uint8_t on = data[0] == 0xFFU;
-      coil_bits[address / 8U] = (uint8_t)((coil_bits[address / 8U] & ~(1U << (address % 8U))) |
-                                          ((unsigned)on << (address % 8U)));
+      coil_bits[address / 8U] = (uint8_t)((coil_bits[address / 8U] & ~(1U << (address % 8U))) | ((unsigned)on << (address % 8U)));
     }
   } else {
     bank[address] = (uint16_t)((data[0] << 8) | data[1]);
@@ -70,8 +69,8 @@ static int write_hook(uint16_t address, uint16_t count, const uint8_t *data, boo
 }
 
 /* Run a request PDU through the server and give back the response PDU. */
-static size_t serve(uint16_t transaction, uint8_t unit, const uint8_t *pdu, size_t pdu_length,
-                    uint8_t *response_adu, size_t *adu_length, const uint8_t **response_pdu) {
+static size_t serve(uint16_t transaction, uint8_t unit, const uint8_t *pdu, size_t pdu_length, uint8_t *response_adu, size_t *adu_length,
+                    const uint8_t **response_pdu) {
   uint8_t request[ZPLC_MODBUS_TCP_ADU_MAX];
   const zplc_modbus_tcp_ops_t ops = {.unit_id = 5U, .read = read_hook, .write = write_hook, .context = NULL};
   size_t n = zplc_modbus_tcp_build_request(request, sizeof(request), transaction, unit, pdu, pdu_length);
@@ -79,8 +78,7 @@ static size_t serve(uint16_t transaction, uint8_t unit, const uint8_t *pdu, size
 
   assert(n == 7U + pdu_length);
   assert(zplc_modbus_tcp_process_adu(request, n, response_adu, ZPLC_MODBUS_TCP_ADU_MAX, adu_length, &ops) == 0);
-  assert(zplc_modbus_tcp_response_pdu(response_adu, *adu_length, transaction, unit, response_pdu,
-                                      &response_pdu_length) == 0);
+  assert(zplc_modbus_tcp_response_pdu(response_adu, *adu_length, transaction, unit, response_pdu, &response_pdu_length) == 0);
   return response_pdu_length;
 }
 
@@ -151,8 +149,8 @@ static void test_only_the_answer_to_the_request_is_taken_for_one(void) {
   /* the PDU: a count that is not the one asked for, another function, a short body, an exception */
   regs[0] = regs[1] = 0U;
   assert(zplc_modbus_pdu_read_registers_response(rpdu = &adu[7], 6U, 1U, regs) == -EPROTO); /* byte count 4 for 1 */
-  assert(zplc_modbus_pdu_read_registers_response(&adu[7], 5U, 2U, regs) == -EPROTO);       /* one byte short */
-  assert(zplc_modbus_pdu_read_registers_response(&adu[7], 7U, 2U, regs) == -EPROTO);       /* one byte long */
+  assert(zplc_modbus_pdu_read_registers_response(&adu[7], 5U, 2U, regs) == -EPROTO);        /* one byte short */
+  assert(zplc_modbus_pdu_read_registers_response(&adu[7], 7U, 2U, regs) == -EPROTO);        /* one byte long */
   {
     uint8_t other[8];
 
@@ -162,8 +160,7 @@ static void test_only_the_answer_to_the_request_is_taken_for_one(void) {
     other[0] = 0x83U;
     other[1] = 0x02U;
     assert(zplc_modbus_pdu_read_registers_response(other, 2U, 2U, regs) == -EBADMSG);
-    assert(zplc_modbus_pdu_write_single_response(other, 2U, ZPLC_MODBUS_FC_READ_HOLDING_REGISTERS, 0U, 0U) ==
-           -EBADMSG);
+    assert(zplc_modbus_pdu_write_single_response(other, 2U, ZPLC_MODBUS_FC_READ_HOLDING_REGISTERS, 0U, 0U) == -EBADMSG);
   }
   assert(regs[0] == 0U && regs[1] == 0U); /* nothing delivered from an answer that is not the answer */
 

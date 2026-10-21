@@ -35,37 +35,87 @@ export function LearnBoardLessonView({ board, wiringBoard, wiring, kit, locale, 
   const voltage = useRef<HTMLElement>(null);
   const name = board ? t(BOARD_LABEL[board]) : '';
   return (
-    <section aria-labelledby="learn-board-lesson-title" data-learn-board-lesson className="border-b border-[var(--color-surface-700)] pb-3 text-xs leading-5 text-[var(--color-surface-300)]">
-      <h3 id="learn-board-lesson-title" className="text-sm font-medium text-[var(--color-surface-100)]">{t('learn.hardware.lesson.title')}</h3>
+    <section
+      aria-labelledby="learn-board-lesson-title"
+      data-learn-board-lesson
+      className="border-b border-[var(--color-surface-700)] pb-3 text-xs leading-5 text-[var(--color-surface-300)]"
+    >
+      <h3 id="learn-board-lesson-title" className="text-sm font-medium text-[var(--color-surface-100)]">
+        {t('learn.hardware.lesson.title')}
+      </h3>
       <LearnBoardPicker board={board} onChoose={onChoose} className="mt-2 flex-wrap" />
-      {!board || !wiringBoard ? <p className="mt-2">{t('learn.hardware.lesson.noBoard')}</p> : (
+      {!board || !wiringBoard ? (
+        <p className="mt-2">{t('learn.hardware.lesson.noBoard')}</p>
+      ) : (
         <div className="mt-2 space-y-3">
-          <Button variant="secondary" size="sm" data-learn-voltage-link onClick={() => voltage.current?.focus()}>{t('learn.hardware.voltage.link')}</Button>
+          <Button variant="secondary" size="sm" data-learn-voltage-link onClick={() => voltage.current?.focus()}>
+            {t('learn.hardware.voltage.link')}
+          </Button>
           <figure data-learn-wiring={board}>
-            <figcaption className="font-medium text-[var(--color-surface-100)]">{t('learn.hardware.wiring.title', { board: name })}</figcaption>
-            <img className="mt-1 h-auto max-w-full" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderWiringSvg(wiringBoard, wiring, locale))}`} alt={t('learn.hardware.wiring.alt', { board: name })} />
-            <ol data-learn-wiring-list className="mt-1 list-decimal space-y-0.5 pl-5">{wiringCard(wiringBoard, wiring, locale).map((line) => <li key={line}>{line}</li>)}</ol>
+            <figcaption className="font-medium text-[var(--color-surface-100)]">
+              {t('learn.hardware.wiring.title', { board: name })}
+            </figcaption>
+            <img
+              className="mt-1 h-auto max-w-full"
+              src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderWiringSvg(wiringBoard, wiring, locale))}`}
+              alt={t('learn.hardware.wiring.alt', { board: name })}
+            />
+            <ol data-learn-wiring-list className="mt-1 list-decimal space-y-0.5 pl-5">
+              {wiringCard(wiringBoard, wiring, locale).map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ol>
           </figure>
           <table data-learn-pin-map className="w-full text-left">
             <caption className="text-left font-medium text-[var(--color-surface-100)]">{t('learn.hardware.pins.title')}</caption>
-            <thead><tr><th scope="col">{t('learn.hardware.pins.part')}</th><th scope="col">{t('learn.hardware.pins.channel')}</th><th scope="col">{t('learn.hardware.pins.pin')}</th><th scope="col">{t('learn.hardware.pins.where')}</th></tr></thead>
+            <thead>
+              <tr>
+                <th scope="col">{t('learn.hardware.pins.part')}</th>
+                <th scope="col">{t('learn.hardware.pins.channel')}</th>
+                <th scope="col">{t('learn.hardware.pins.pin')}</th>
+                <th scope="col">{t('learn.hardware.pins.where')}</th>
+              </tr>
+            </thead>
             <tbody>
               {partsFor(wiring, wiringBoard).map((part) => {
                 const channel = channelOf(wiringBoard, part.channel);
-                return <tr key={part.id} data-learn-pin={part.id}><td>{part.label[locale]}</td><td>{part.channel}</td><td>{channel?.pin ?? ''}</td><td>{channel?.location ?? ''}</td></tr>;
+                return (
+                  <tr key={part.id} data-learn-pin={part.id}>
+                    <td>{part.label[locale]}</td>
+                    <td>{part.channel}</td>
+                    <td>{channel?.pin ?? ''}</td>
+                    <td>{channel?.location ?? ''}</td>
+                  </tr>
+                );
               })}
             </tbody>
           </table>
           <section ref={voltage} tabIndex={-1} aria-labelledby="learn-voltage-title" data-learn-voltage>
-            <h4 id="learn-voltage-title" className="font-medium text-[var(--color-surface-100)]">{t('learn.hardware.voltage.title')}</h4>
-            <ul className="list-disc space-y-0.5 pl-5">{kit.voltageLimit[locale].map((sentence) => <li key={sentence}>{sentence}</li>)}</ul>
+            <h4 id="learn-voltage-title" className="font-medium text-[var(--color-surface-100)]">
+              {t('learn.hardware.voltage.title')}
+            </h4>
+            <ul className="list-disc space-y-0.5 pl-5">
+              {kit.voltageLimit[locale].map((sentence) => (
+                <li key={sentence}>{sentence}</li>
+              ))}
+            </ul>
           </section>
           <details data-learn-bom>
-            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.hardware.bom.title')}</summary>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">{kit.bom.map((item) => <li key={item.id} data-learn-bom-item>{t('learn.hardware.bom.item', { quantity: item.quantity, name: item.name[locale] })}</li>)}</ul>
+            <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">
+              {t('learn.hardware.bom.title')}
+            </summary>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {kit.bom.map((item) => (
+                <li key={item.id} data-learn-bom-item>
+                  {t('learn.hardware.bom.item', { quantity: item.quantity, name: item.name[locale] })}
+                </li>
+              ))}
+            </ul>
           </details>
           <section aria-labelledby="learn-firmware-title" data-learn-firmware>
-            <h4 id="learn-firmware-title" className="font-medium text-[var(--color-surface-100)]">{t('learn.hardware.firmware.title')}</h4>
+            <h4 id="learn-firmware-title" className="font-medium text-[var(--color-surface-100)]">
+              {t('learn.hardware.firmware.title')}
+            </h4>
             {firmware}
           </section>
           {check}
@@ -83,8 +133,18 @@ export function LearnBoardLesson({ lessonId }: { lessonId: string }) {
   if (!entry?.hardware) return null;
   return (
     <LearnBoardLessonView
-      board={board} wiringBoard={board ? learnerBoardOf(board) ?? null : null} wiring={entry.hardware.wiring} kit={LEARNER_KIT} locale={locale}
-      onChoose={(chosen) => chooseLearnerBoard(chosen, t)} firmware={<Suspense fallback={null}><FirmwareImageCard ideId={board ? ideIdOf(board) : undefined} /></Suspense>} check={<LearnBoardCheck lessonId={lessonId} />}
+      board={board}
+      wiringBoard={board ? (learnerBoardOf(board) ?? null) : null}
+      wiring={entry.hardware.wiring}
+      kit={LEARNER_KIT}
+      locale={locale}
+      onChoose={(chosen) => chooseLearnerBoard(chosen, t)}
+      firmware={
+        <Suspense fallback={null}>
+          <FirmwareImageCard ideId={board ? ideIdOf(board) : undefined} />
+        </Suspense>
+      }
+      check={<LearnBoardCheck lessonId={lessonId} />}
     />
   );
 }

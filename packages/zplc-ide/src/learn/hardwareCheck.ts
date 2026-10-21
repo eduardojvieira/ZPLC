@@ -30,10 +30,21 @@ import { snapshotUri } from './gradeRecord';
 import type { ScenarioExpectation, ScenarioFile } from './lessonPackage';
 
 /** One sample read from the board: when, in whole ms since the recording started, and the lesson's inputs and outputs then. */
-export interface HardwareSample { atMs: number; values: Record<string, boolean | number> }
+export interface HardwareSample {
+  atMs: number;
+  values: Record<string, boolean | number>;
+}
 /** What the lesson manifest declares under `hardware.tolerances`. */
-export interface HardwareTolerances { timeMs: number; analogPercent: number }
-export interface HardwareResult { track: 'hardware'; passed: boolean; assertions: { total: number; passed: number }; failures: FailedAssertion[] }
+export interface HardwareTolerances {
+  timeMs: number;
+  analogPercent: number;
+}
+export interface HardwareResult {
+  track: 'hardware';
+  passed: boolean;
+  assertions: { total: number; passed: number };
+  failures: FailedAssertion[];
+}
 
 type Trace = readonly HardwareSample[];
 
@@ -50,7 +61,10 @@ export function alignEvents(scenario: ScenarioFile, trace: Trace, anchored = fal
   const observed: Array<number | null> = [];
   let from = 0;
   for (const event of eventsOf(scenario)) {
-    if (anchored && event.atMs === 0) { observed.push(trace.length > 0 ? trace[0]!.atMs : null); continue; }
+    if (anchored && event.atMs === 0) {
+      observed.push(trace.length > 0 ? trace[0]!.atMs : null);
+      continue;
+    }
     const index = from < 0 ? -1 : trace.findIndex((sample, position) => position >= from && matches(event.set, sample.values));
     observed.push(index < 0 ? null : trace[index]!.atMs);
     from = index;
@@ -58,7 +72,13 @@ export function alignEvents(scenario: ScenarioFile, trace: Trace, anchored = fal
   return observed;
 }
 
-export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tolerances: HardwareTolerances, traceSha256: string, anchored = false): HardwareResult {
+export function evaluateHardwareTrace(
+  scenario: ScenarioFile,
+  trace: Trace,
+  tolerances: HardwareTolerances,
+  traceSha256: string,
+  anchored = false,
+): HardwareResult {
   const events = eventsOf(scenario);
   const observed = alignEvents(scenario, trace, anchored);
   const slack = tolerances.timeMs;
@@ -69,7 +89,8 @@ export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tole
     const at = observed[last];
     return at === null || at === undefined ? null : at + (atMs - events[last]!.atMs);
   };
-  const within = (from: number, to: number): number[] => trace.flatMap((sample, index) => (sample.atMs >= from && sample.atMs <= to ? [index] : []));
+  const within = (from: number, to: number): number[] =>
+    trace.flatMap((sample, index) => (sample.atMs >= from && sample.atMs <= to ? [index] : []));
 
   const failure = (index: number, expectation: ScenarioExpectation, cursor: number | undefined): FailedAssertion => {
     const sample = cursor === undefined ? undefined : trace[cursor];
@@ -79,8 +100,14 @@ export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tole
       observedValues[signal] = typeof value === 'boolean' ? value : null;
     }
     return {
-      index, kind: expectation.kind, atMs: sample ? sample.atMs : null, expected: { ...expectation.condition }, observed: observedValues,
-      trace: sample ? { scenarioId: scenario.id, traceSha256, cursor: cursor!, atMs: sample.atMs, uri: snapshotUri(scenario.id, cursor!, traceSha256) } : null,
+      index,
+      kind: expectation.kind,
+      atMs: sample ? sample.atMs : null,
+      expected: { ...expectation.condition },
+      observed: observedValues,
+      trace: sample
+        ? { scenarioId: scenario.id, traceSha256, cursor: cursor!, atMs: sample.atMs, uri: snapshotUri(scenario.id, cursor!, traceSha256) }
+        : null,
     };
   };
 
@@ -88,11 +115,16 @@ export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tole
   const check = (expectation: ScenarioExpectation, index: number): FailedAssertion | null => {
     const holds = (cursor: number): boolean => matches(expectation.condition, trace[cursor]!.values);
     const { kind } = expectation;
-    const start = moved(kind === 'AT' ? expectation.atMs ?? 0 : expectation.fromMs ?? 0);
-    const end = moved(kind === 'AT' ? expectation.atMs ?? 0
-      : kind === 'FOR' ? (expectation.fromMs ?? 0) + (expectation.forMs ?? 0)
-        : kind === 'UNTIL' || kind === 'ALWAYS' || kind === 'NEVER' ? scenario.durationMs
-          : (expectation.fromMs ?? 0) + (expectation.withinMs ?? 0));
+    const start = moved(kind === 'AT' ? (expectation.atMs ?? 0) : (expectation.fromMs ?? 0));
+    const end = moved(
+      kind === 'AT'
+        ? (expectation.atMs ?? 0)
+        : kind === 'FOR'
+          ? (expectation.fromMs ?? 0) + (expectation.forMs ?? 0)
+          : kind === 'UNTIL' || kind === 'ALWAYS' || kind === 'NEVER'
+            ? scenario.durationMs
+            : (expectation.fromMs ?? 0) + (expectation.withinMs ?? 0),
+    );
     if (start === null || end === null) return failure(index, expectation, undefined);
     if (kind === 'AT' || kind === 'WITHIN' || kind === 'EVENTUALLY') {
       const window = within(start - slack, end + slack);
@@ -102,12 +134,17 @@ export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tole
       const target = kind === 'RISING';
       const signal = Object.keys(expectation.condition)[0] ?? '';
       const window = within(start - slack, end + slack);
-      const edge = window.some((cursor) => cursor > 0 && trace[cursor]!.values[signal] === target && trace[cursor - 1]!.values[signal] !== target);
+      const edge = window.some(
+        (cursor) => cursor > 0 && trace[cursor]!.values[signal] === target && trace[cursor - 1]!.values[signal] !== target,
+      );
       return edge ? null : failure(index, expectation, window.at(-1));
     }
     if (kind === 'FOR') {
       const strict = within(start + slack, end - slack);
-      if (strict.length > 0) { const broken = strict.find((cursor) => !holds(cursor)); return broken === undefined ? null : failure(index, expectation, broken); }
+      if (strict.length > 0) {
+        const broken = strict.find((cursor) => !holds(cursor));
+        return broken === undefined ? null : failure(index, expectation, broken);
+      }
       // A window shorter than twice the slack has no sample that must hold: one match near it is enough.
       const loose = within(start - slack, end + slack);
       return loose.some(holds) ? null : failure(index, expectation, loose.at(-1));
@@ -125,14 +162,29 @@ export function evaluateHardwareTrace(scenario: ScenarioFile, trace: Trace, tole
     return offending === undefined ? null : failure(index, expectation, offending);
   };
 
-  const failures = scenario.expectations.flatMap((expectation, index) => { const failed = check(expectation, index); return failed ? [failed] : []; });
+  const failures = scenario.expectations.flatMap((expectation, index) => {
+    const failed = check(expectation, index);
+    return failed ? [failed] : [];
+  });
   const total = scenario.expectations.length;
-  return { track: 'hardware', passed: total > 0 && failures.length === 0, assertions: { total, passed: total - failures.length }, failures };
+  return {
+    track: 'hardware',
+    passed: total > 0 && failures.length === 0,
+    assertions: { total, passed: total - failures.length },
+    failures,
+  };
 }
 
 /** The identity of a trace: SHA-256 of its canonical text (samples in order, each sample's signals in name order). */
 export async function traceSha256Of(trace: Trace): Promise<string> {
-  const text = JSON.stringify(trace.map((sample) => [sample.atMs, Object.keys(sample.values).sort().map((signal) => [signal, sample.values[signal]])]));
+  const text = JSON.stringify(
+    trace.map((sample) => [
+      sample.atMs,
+      Object.keys(sample.values)
+        .sort()
+        .map((signal) => [signal, sample.values[signal]]),
+    ]),
+  );
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }

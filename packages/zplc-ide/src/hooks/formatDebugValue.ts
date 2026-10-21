@@ -17,10 +17,7 @@ import type { DebugDataType } from '../compiler';
  * @param type - The data type
  * @returns Formatted string representation
  */
-export function formatDebugValue(
-  value: LiveValue | null,
-  type: DebugDataType | null
-): string {
+export function formatDebugValue(value: LiveValue | null, type: DebugDataType | null): string {
   if (value === null || value === undefined) {
     return '---';
   }
@@ -56,7 +53,10 @@ export function formatDebugValue(
     case 'LWORD': {
       // a bit string: 16 hexadecimal digits of the 64 bits
       try {
-        return `16#${BigInt.asUintN(64, BigInt(typeof value === 'boolean' ? (value ? 1 : 0) : value)).toString(16).toUpperCase().padStart(16, '0')}`;
+        return `16#${BigInt.asUintN(64, BigInt(typeof value === 'boolean' ? (value ? 1 : 0) : value))
+          .toString(16)
+          .toUpperCase()
+          .padStart(16, '0')}`;
       } catch {
         return String(value);
       }

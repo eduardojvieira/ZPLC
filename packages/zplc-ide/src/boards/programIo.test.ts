@@ -17,7 +17,12 @@ function program(instructions: Array<[number, number?]>): Uint8Array {
 
 describe('the process image a program touches, read from its code', () => {
   test('a load from the input image and a store to the output image are listed with their width', () => {
-    const accesses = processImageAccesses(program([[Op.LOAD8, 0x0003], [Op.STORE16, 0x1004]]));
+    const accesses = processImageAccesses(
+      program([
+        [Op.LOAD8, 0x0003],
+        [Op.STORE16, 0x1004],
+      ]),
+    );
     expect(accesses).toEqual([
       { region: 'I', byte: 3, width: 1, access: 'read' },
       { region: 'Q', byte: 4, width: 2, access: 'write' },
@@ -25,7 +30,14 @@ describe('the process image a program touches, read from its code', () => {
   });
 
   test('work memory and retentive memory are not process image', () => {
-    expect(processImageAccesses(program([[Op.LOAD8, 0x2000], [Op.STORE32, 0x4000]]))).toEqual([]);
+    expect(
+      processImageAccesses(
+        program([
+          [Op.LOAD8, 0x2000],
+          [Op.STORE32, 0x4000],
+        ]),
+      ),
+    ).toEqual([]);
   });
 
   test('a wide access reports its width so that every byte can be checked', () => {

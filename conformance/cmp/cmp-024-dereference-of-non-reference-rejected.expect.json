@@ -2,10 +2,6 @@
   "requirement": "CMP-024",
   "title": "the dereference of a variable that is not a reference is rejected",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "INVALID_REFERENCE"
-  ]
+  "lines": [6],
+  "codes": ["INVALID_REFERENCE"]
 }

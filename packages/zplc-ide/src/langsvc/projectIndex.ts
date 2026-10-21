@@ -94,7 +94,8 @@ export class ProjectIndex {
     for (const symbol of this.symbols) {
       const add = (table: Map<string, IndexedSymbol[]>, key: string): void => {
         const list = table.get(key);
-        if (list) list.push(symbol); else table.set(key, [symbol]);
+        if (list) list.push(symbol);
+        else table.set(key, [symbol]);
       };
       if (symbol.container >= 0) {
         let table = this.members.get(symbol.container);
@@ -162,23 +163,33 @@ export class ProjectIndex {
     const found: IndexedSymbol[] = [];
     for (const owner of this.scopeChain(scope)) {
       for (const member of this.membersOfSymbol(owner.id)) {
-        if (!seen.has(upper(member.name))) { seen.add(upper(member.name)); found.push(member); }
+        if (!seen.has(upper(member.name))) {
+          seen.add(upper(member.name));
+          found.push(member);
+        }
       }
     }
     return found;
   }
 
-  /** The members of a type, by what the type is: a block (and its bases), a structure, an enumeration, an interface, an alias, a standard block. */
+  /**
+   * The members of a type, by what the type is: a block (and its bases), a structure, an enumeration, an interface, an alias, a standard
+   * block.
+   */
   membersOfType(type: TypeRef | undefined): MemberEntry[] {
     if (!type || type.name === '') return [];
     const declared = this.typeSymbol(type.name);
     const found = new Map<string, MemberEntry>();
-    const add = (entry: MemberEntry): void => { if (!found.has(upper(entry.name))) found.set(upper(entry.name), entry); };
+    const add = (entry: MemberEntry): void => {
+      if (!found.has(upper(entry.name))) found.set(upper(entry.name), entry);
+    };
     if (declared) {
-      if (declared.kind === 'alias') return declared.type && upper(declared.type.name) !== upper(type.name) ? this.membersOfType(declared.type) : [];
+      if (declared.kind === 'alias')
+        return declared.type && upper(declared.type.name) !== upper(type.name) ? this.membersOfType(declared.type) : [];
       const chain = declared.kind === 'functionBlock' || declared.kind === 'interface' ? this.blockChain(declared.id) : [declared];
       for (const owner of chain) {
-        for (const member of this.membersOfSymbol(owner.id)) add({ name: member.name, symbol: member, ...(member.type ? { type: member.type } : {}) });
+        for (const member of this.membersOfSymbol(owner.id))
+          add({ name: member.name, symbol: member, ...(member.type ? { type: member.type } : {}) });
       }
       return [...found.values()];
     }
@@ -188,7 +199,14 @@ export class ProjectIndex {
         if (member.isInternal || (!member.isInput && !member.isOutput)) continue;
         add({
           name: member.name,
-          builtin: { kind: 'member', name: member.name, owner: block.name, detail: `${block.name}.${member.name} : ${member.isInput ? 'input' : 'output'}${member.dataType ? ` ${typeof member.dataType === 'string' ? member.dataType : 'ARRAY'}` : ''}` },
+          builtin: {
+            kind: 'member',
+            name: member.name,
+            owner: block.name,
+            detail: `${block.name}.${member.name} : ${member.isInput ? 'input' : 'output'}${
+              member.dataType ? ` ${typeof member.dataType === 'string' ? member.dataType : 'ARRAY'}` : ''
+            }`,
+          },
           ...(typeof member.dataType === 'string' ? { type: { name: member.dataType, array: false, pointer: false } } : {}),
         });
       }
@@ -199,7 +217,9 @@ export class ProjectIndex {
   /** The inputs, outputs and in-outs of something that can be called with named arguments. */
   private callableParams(symbol: IndexedSymbol): MemberEntry[] {
     if (symbol.kind === 'function' || symbol.kind === 'method') {
-      return this.membersOfSymbol(symbol.id).filter((member) => PARAM_KINDS.has(member.kind)).map((member) => ({ name: member.name, symbol: member, ...(member.type ? { type: member.type } : {}) }));
+      return this.membersOfSymbol(symbol.id)
+        .filter((member) => PARAM_KINDS.has(member.kind))
+        .map((member) => ({ name: member.name, symbol: member, ...(member.type ? { type: member.type } : {}) }));
     }
     return [];
   }
@@ -212,7 +232,11 @@ export class ProjectIndex {
 
   /** The reference whose name covers the position, if any. */
   referenceAt(file: string, line: number, column: number): IndexedReference | undefined {
-    return this.files.get(file)?.references.find((reference) => reference.line === line && column >= reference.column && column <= reference.column + reference.length);
+    return this.files
+      .get(file)
+      ?.references.find(
+        (reference) => reference.line === line && column >= reference.column && column <= reference.column + reference.length,
+      );
   }
 
   referencesTo(id: number, includeDeclaration = true): IndexedReference[] {
@@ -234,7 +258,13 @@ export class ProjectIndex {
       if (!extent || !['program', 'function', 'functionBlock', 'method', 'interface'].includes(symbol.kind)) continue;
       const after = line > extent.line || (line === extent.line && column >= extent.column);
       const before = line < extent.endLine || (line === extent.endLine && column <= extent.endColumn);
-      if (after && before && (!best || (best.extent && (extent.line > best.extent.line || (extent.line === best.extent.line && extent.column > best.extent.column))))) best = symbol;
+      if (
+        after &&
+        before &&
+        (!best ||
+          (best.extent && (extent.line > best.extent.line || (extent.line === best.extent.line && extent.column > best.extent.column))))
+      )
+        best = symbol;
     }
     return best?.id ?? -1;
   }
@@ -296,7 +326,8 @@ export class ProjectIndex {
     const value = this.enumValues.get(key)?.[0];
     if (value) return { symbol: value };
     if (getFn(name)) return { builtin: { kind: 'function', name: getFn(name)!.name, detail: `${getFn(name)!.name} : standard function` } };
-    if (getFB(name)) return { builtin: { kind: 'functionBlock', name: getFB(name)!.name, detail: `${getFB(name)!.name} : standard function block` } };
+    if (getFB(name))
+      return { builtin: { kind: 'functionBlock', name: getFB(name)!.name, detail: `${getFB(name)!.name} : standard function block` } };
     return {};
   }
 
@@ -305,17 +336,41 @@ export class ProjectIndex {
     const { tokens } = scan;
     const references = file.references;
     const push = (token: Token, symbol: number, scope: number, extra: Partial<IndexedReference> = {}): void => {
-      references.push({ file: scan.path, line: token.line, column: token.column, length: token.value.length, symbol, scope, declaration: false, ...extra });
+      references.push({
+        file: scan.path,
+        line: token.line,
+        column: token.column,
+        length: token.value.length,
+        symbol,
+        scope,
+        declaration: false,
+        ...extra,
+      });
     };
     for (const id of scan.symbols) {
       const symbol = this.symbols[id]!;
-      references.push({ file: scan.path, line: symbol.line, column: symbol.column, length: symbol.name.length, symbol: id, scope: symbol.container, declaration: true });
+      references.push({
+        file: scan.path,
+        line: symbol.line,
+        column: symbol.column,
+        length: symbol.name.length,
+        symbol: id,
+        scope: symbol.container,
+        declaration: true,
+      });
     }
     for (const pending of scan.typeRefs) {
       const token = tokens[pending.token]!;
       const declared = this.typeSymbol(token.value);
       if (declared) push(token, declared.id, pending.scope);
-      else if (getFB(token.value)) push(token, -1, pending.scope, { builtin: { kind: 'functionBlock', name: getFB(token.value)!.name, detail: `${getFB(token.value)!.name} : standard function block` } });
+      else if (getFB(token.value))
+        push(token, -1, pending.scope, {
+          builtin: {
+            kind: 'functionBlock',
+            name: getFB(token.value)!.name,
+            detail: `${getFB(token.value)!.name} : standard function block`,
+          },
+        });
       else push(token, -1, pending.scope);
     }
 
@@ -323,7 +378,11 @@ export class ProjectIndex {
   }
 
   private resolveRange(
-    scan: FileScan, from: number, to: number, scope: number, initializerType: TypeRef | undefined,
+    scan: FileScan,
+    from: number,
+    to: number,
+    scope: number,
+    initializerType: TypeRef | undefined,
     push: (token: Token, symbol: number, scope: number, extra?: Partial<IndexedReference>) => void,
   ): void {
     const { tokens } = scan;
@@ -331,7 +390,11 @@ export class ProjectIndex {
     if (!types) this.valueTypes.set(scan.path, (types = new Map()));
     /** What a token that names a callable or an instance was resolved to, for the `(` that follows it. */
     const named = new Map<number, { symbol?: IndexedSymbol; builtin?: BuiltinRef; type?: TypeRef }>();
-    interface Context { params?: MemberEntry[]; struct?: TypeRef; call: boolean }
+    interface Context {
+      params?: MemberEntry[];
+      struct?: TypeRef;
+      call: boolean;
+    }
     const stack: Context[] = [];
     let pendingStruct: TypeRef | undefined;
     const typeBefore = (index: number): TypeRef | undefined => this.typeBefore(scan.path, index, scope, from);
@@ -352,7 +415,13 @@ export class ProjectIndex {
         const symbol = target.symbol;
         if (symbol.kind === 'function' || symbol.kind === 'method') return { params: this.callableParams(symbol), call: true };
         if (symbol.kind === 'functionBlock') return { call: false };
-        if (VALUE_KINDS.has(symbol.kind) && symbol.type) return { params: this.membersOfType({ ...symbol.type, array: false }).filter((entry) => entry.symbol ? PARAM_KINDS.has(entry.symbol.kind) : entry.builtin !== undefined), call: true };
+        if (VALUE_KINDS.has(symbol.kind) && symbol.type)
+          return {
+            params: this.membersOfType({ ...symbol.type, array: false }).filter((entry) =>
+              entry.symbol ? PARAM_KINDS.has(entry.symbol.kind) : entry.builtin !== undefined,
+            ),
+            call: true,
+          };
       }
       // a standard function or block: its arguments are named by the library, which this does not list
       return target?.builtin ? { call: true } : { call: false };
@@ -369,13 +438,18 @@ export class ProjectIndex {
         stack.push(context);
         continue;
       }
-      if (token.type === TokenType.RPAREN) { stack.pop(); continue; }
+      if (token.type === TokenType.RPAREN) {
+        stack.pop();
+        continue;
+      }
       if (token.type !== TokenType.IDENTIFIER) continue;
 
       const previous = tokens[k - 1];
       const next = tokens[k + 1];
-      const isLabel = (next?.type === TokenType.ASSIGN || next?.type === TokenType.OUTPUT_ASSIGN)
-        && (previous?.type === TokenType.LPAREN || previous?.type === TokenType.COMMA) && stack.length > 0;
+      const isLabel =
+        (next?.type === TokenType.ASSIGN || next?.type === TokenType.OUTPUT_ASSIGN) &&
+        (previous?.type === TokenType.LPAREN || previous?.type === TokenType.COMMA) &&
+        stack.length > 0;
 
       if (previous?.type === TokenType.DOT) {
         const base = typeBefore(k - 2);
@@ -396,8 +470,9 @@ export class ProjectIndex {
 
       if (isLabel) {
         const context = stack[stack.length - 1]!;
-        const found = context.params?.find((entry) => upper(entry.name) === upper(token.value))
-          ?? (context.struct ? this.membersOfType(context.struct).find((entry) => upper(entry.name) === upper(token.value)) : undefined);
+        const found =
+          context.params?.find((entry) => upper(entry.name) === upper(token.value)) ??
+          (context.struct ? this.membersOfType(context.struct).find((entry) => upper(entry.name) === upper(token.value)) : undefined);
         if (found?.symbol) push(token, found.symbol.id, scope, { label: true });
         else if (found?.builtin) push(token, -1, scope, { label: true, builtin: found.builtin });
         if (next?.type === TokenType.ASSIGN && found?.type && tokens[k + 2]?.type === TokenType.LPAREN) pendingStruct = found.type;

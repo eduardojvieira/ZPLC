@@ -22,7 +22,12 @@ describe('the VM error codes the Console trace shows', () => {
   });
 
   // Fails while describeVmError returns the bare number.
-  it.each([[0, '0 ok'], [3, '3 division by zero'], [9, '9 halted'], [10, '10 paused']])('shows %i as "%s"', (code, text) => {
+  it.each([
+    [0, '0 ok'],
+    [3, '3 division by zero'],
+    [9, '9 halted'],
+    [10, '10 paused'],
+  ])('shows %i as "%s"', (code, text) => {
     expect(describeVmError(code)).toBe(text);
   });
 

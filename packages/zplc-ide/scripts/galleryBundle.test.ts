@@ -31,13 +31,16 @@ async function buildTo(mode: 'production' | 'development'): Promise<string> {
       build: { outDir, emptyOutDir: true, sourcemap: true, reportCompressedSize: false },
     });
   } finally {
-    if (before === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = before;
+    if (before === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = before;
   }
   return outDir;
 }
 
-const filesOf = (directory: string, base = ''): string[] => readdirSync(join(directory, base), { withFileTypes: true })
-  .flatMap((entry) => (entry.isDirectory() ? filesOf(directory, join(base, entry.name)) : [join(base, entry.name)]));
+const filesOf = (directory: string, base = ''): string[] =>
+  readdirSync(join(directory, base), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? filesOf(directory, join(base, entry.name)) : [join(base, entry.name)],
+  );
 
 /**
  * The files of a build that hold the gallery: a chunk or stylesheet named for it, a script or stylesheet whose text has its
@@ -47,7 +50,8 @@ function galleryTraces(directory: string): string[] {
   return filesOf(directory).filter((file) => {
     if (/GalleryPage/.test(file)) return true;
     const text = readFileSync(join(directory, file), 'utf8');
-    if (file.endsWith('.map')) return (JSON.parse(text) as { sources: string[] }).sources.some((source) => /src\/ui\/gallery\//.test(source));
+    if (file.endsWith('.map'))
+      return (JSON.parse(text) as { sources: string[] }).sources.some((source) => /src\/ui\/gallery\//.test(source));
     if (!/\.(js|css|html)$/.test(file)) return false;
     return text.includes(MARKER) || text.includes('data-ui-theme') || text.includes('GalleryPage');
   });
@@ -58,7 +62,9 @@ beforeAll(async () => {
   development = await buildTo('development');
 }, 480_000);
 
-afterAll(() => { for (const folder of folders) rmSync(folder, { recursive: true, force: true }); });
+afterAll(() => {
+  for (const folder of folders) rmSync(folder, { recursive: true, force: true });
+});
 
 describe('the component gallery is a development-build page (UX-004)', () => {
   it('is in no file of the production build: no chunk, no text, no stylesheet, no source map entry', () => {

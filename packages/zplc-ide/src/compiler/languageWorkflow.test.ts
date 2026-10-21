@@ -58,10 +58,12 @@ const LD_MODEL: LDModel = {
       gridConfig: { cols: 2, rows: 1, cellWidth: 80, cellHeight: 60 },
       verticalLinks: [],
       branches: [],
-      grid: [[
-        { element: { id: 'c1', type: 'contact_no', row: 0, col: 0, variable: 'Start' }, hasWire: true },
-        { element: { id: 'coil1', type: 'coil', row: 0, col: 1, variable: 'Out1' }, hasWire: true },
-      ]],
+      grid: [
+        [
+          { element: { id: 'c1', type: 'contact_no', row: 0, col: 0, variable: 'Start' }, hasWire: true },
+          { element: { id: 'coil1', type: 'coil', row: 0, col: 1, variable: 'Out1' }, hasWire: true },
+        ],
+      ],
     },
   ],
 };
@@ -85,9 +87,7 @@ const SFC_MODEL: SFCModel = {
     local: [],
     outputs: [{ name: 'Out1', type: 'BOOL', address: '%Q0.0' }],
   },
-  steps: [
-    { id: 'step_1', name: 'Idle', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'SetOut' }] },
-  ],
+  steps: [{ id: 'step_1', name: 'Idle', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'SetOut' }] }],
   transitions: [],
   actions: [{ id: 'action_1', name: 'SetOut', type: 'ST', body: 'Out1 := TRUE;' }],
 };
@@ -126,7 +126,9 @@ describe('v1.5 language workflow support', () => {
   it('propagates ESP32 target memory limits through the canonical project compiler', () => {
     const result = compileMultiTaskProject(
       {
-        name: 'EspProfile', version: '1.0.0', target: { board: 'esp32s3_devkitc' },
+        name: 'EspProfile',
+        version: '1.0.0',
+        target: { board: 'esp32s3_devkitc' },
         tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main'] }],
       },
       [{ name: 'Main', sourceRef: 'src/Main.st', language: 'ST', content: 'PROGRAM Main VAR Value : BOOL; END_VAR END_PROGRAM' }],
@@ -140,10 +142,19 @@ describe('v1.5 language workflow support', () => {
     try {
       compileMultiTaskProject(
         {
-          name: 'NoChannel', version: '1.0.0', target: { board: 'rpi_pico' },
+          name: 'NoChannel',
+          version: '1.0.0',
+          target: { board: 'rpi_pico' },
           tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main'] }],
         },
-        [{ name: 'Main', sourceRef: 'src/Main.st', language: 'ST', content: 'PROGRAM Main\nVAR\n  Led AT %QX0.6 : BOOL;\nEND_VAR\n  Led := TRUE;\nEND_PROGRAM\n' }],
+        [
+          {
+            name: 'Main',
+            sourceRef: 'src/Main.st',
+            language: 'ST',
+            content: 'PROGRAM Main\nVAR\n  Led AT %QX0.6 : BOOL;\nEND_VAR\n  Led := TRUE;\nEND_PROGRAM\n',
+          },
+        ],
       );
     } catch (error) {
       failure = error as CompilerError;
@@ -155,7 +166,15 @@ describe('v1.5 language workflow support', () => {
   });
 
   it('refuses a source that does not translate, with the code TRANSLATION_FAILED and the element it is about (LNG-003, CMP-006)', () => {
-    const empty = transpileFailure({ success: false, source: '', errors: ['FBD block \'not_1\' (NOT): input \'IN\' is not wired'], diagnostics: [{ message: 'FBD block \'not_1\' (NOT): input \'IN\' is not wired', element: 'block:not_1' }] }, 'src/main.fbd.json');
+    const empty = transpileFailure(
+      {
+        success: false,
+        source: '',
+        errors: ["FBD block 'not_1' (NOT): input 'IN' is not wired"],
+        diagnostics: [{ message: "FBD block 'not_1' (NOT): input 'IN' is not wired", element: 'block:not_1' }],
+      },
+      'src/main.fbd.json',
+    );
     expect(empty.code).toBe('TRANSLATION_FAILED');
     expect(empty.element).toBe('block:not_1');
     expect(empty.sourceRef).toBe('src/main.fbd.json');
@@ -178,10 +197,12 @@ describe('v1.5 language workflow support', () => {
   });
 
   it('keeps a single-file ST diagnostic on its exact source path', () => {
-    expect(() => compileSingleFileWithTask('PROGRAM Main\n@\nEND_PROGRAM', 'ST', {
-      programName: 'Main',
-      sourceRef: 'src/Main.st',
-    })).toThrow(CompilerError);
+    expect(() =>
+      compileSingleFileWithTask('PROGRAM Main\n@\nEND_PROGRAM', 'ST', {
+        programName: 'Main',
+        sourceRef: 'src/Main.st',
+      }),
+    ).toThrow(CompilerError);
 
     try {
       compileSingleFileWithTask('PROGRAM Main\n@\nEND_PROGRAM', 'ST', {
@@ -217,14 +238,16 @@ describe('v1.5 language workflow support', () => {
   });
 
   it('rejects task cardinality before resolving or transpiling sources', () => {
-    expect(() => compileMultiTaskProject(
-      {
-        name: 'CardinalityFirst',
-        version: '1.0.0',
-        tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['broken.fbd', 'missing.st'] }],
-      },
-      [{ name: 'broken.fbd', sourceRef: 'src/broken.fbd', language: 'FBD', content: '{' }],
-    )).toThrow(CompilerError);
+    expect(() =>
+      compileMultiTaskProject(
+        {
+          name: 'CardinalityFirst',
+          version: '1.0.0',
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['broken.fbd', 'missing.st'] }],
+        },
+        [{ name: 'broken.fbd', sourceRef: 'src/broken.fbd', language: 'FBD', content: '{' }],
+      ),
+    ).toThrow(CompilerError);
 
     try {
       compileMultiTaskProject(
@@ -286,7 +309,11 @@ describe('v1.5 language workflow support', () => {
 
     try {
       compileMultiTaskProject(
-        { name: 'VisualDiagnostic', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }] },
+        {
+          name: 'VisualDiagnostic',
+          version: '1.0.0',
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }],
+        },
         [{ name: 'main.fbd', sourceRef: 'src/main.fbd.json', language: 'FBD', content: JSON.stringify(invalidModel) }],
       );
       throw new Error('expected a compiler diagnostic');
@@ -305,11 +332,19 @@ describe('v1.5 language workflow support', () => {
       connections: [{ id: 'missing-source', from: { block: 'missing', port: 'OUT' }, to: { block: 'out', port: 'IN' } }],
     };
 
-    expect(transpileToST(JSON.stringify(invalidModel), 'FBD')).toMatchObject({ success: false, source: '', errors: [expect.stringContaining('unknown source block')] });
+    expect(transpileToST(JSON.stringify(invalidModel), 'FBD')).toMatchObject({
+      success: false,
+      source: '',
+      errors: [expect.stringContaining('unknown source block')],
+    });
 
     try {
       compileMultiTaskProject(
-        { name: 'InvalidFBD', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }] },
+        {
+          name: 'InvalidFBD',
+          version: '1.0.0',
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }],
+        },
         [{ name: 'main.fbd', sourceRef: 'src/main.fbd.json', language: 'FBD', content: JSON.stringify(invalidModel) }],
       );
       throw new Error('expected an FBD parser diagnostic');
@@ -347,11 +382,19 @@ describe('v1.5 language workflow support', () => {
     ];
 
     for (const { label, model, message } of invalidCases) {
-      expect(transpileToST(JSON.stringify(model), 'SFC')).toMatchObject({ success: false, source: '', errors: [expect.stringContaining(message)] });
+      expect(transpileToST(JSON.stringify(model), 'SFC')).toMatchObject({
+        success: false,
+        source: '',
+        errors: [expect.stringContaining(message)],
+      });
 
       try {
         compileMultiTaskProject(
-          { name: `InvalidSFC-${label}`, version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }] },
+          {
+            name: `InvalidSFC-${label}`,
+            version: '1.0.0',
+            tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }],
+          },
           [{ name: 'main.sfc', sourceRef: 'src/main.sfc.json', language: 'SFC', content: JSON.stringify(model) }],
         );
         throw new Error('expected an SFC parser diagnostic');
@@ -371,7 +414,11 @@ describe('v1.5 language workflow support', () => {
       expect(transpileToST(content, 'SFC')).toMatchObject({ success: false, source: '', errors: [expect.any(String)] });
       try {
         compileMultiTaskProject(
-          { name: 'MalformedSFC', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }] },
+          {
+            name: 'MalformedSFC',
+            version: '1.0.0',
+            tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }],
+          },
           [{ name: 'main.sfc', sourceRef: 'src/main.sfc.json', language: 'SFC', content }],
         );
         throw new Error('expected an SFC parser diagnostic');
@@ -388,15 +435,32 @@ describe('v1.5 language workflow support', () => {
   it('rejects malformed and semantically invalid LD before bytecode generation', () => {
     const invalidCases = [
       '{',
-      JSON.stringify({ ...LD_MODEL, rungs: [{ ...LD_MODEL.rungs[0], elements: [{ id: 'bad', type: 'NOT_A_REAL_TYPE' }], grid: undefined, gridConfig: undefined }] }),
-      JSON.stringify({ ...LD_MODEL, rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'contact', type: 'contact_no', variable: 'Start' }], connections: [{ from: 'contact', to: 'missing' }] }] }),
+      JSON.stringify({
+        ...LD_MODEL,
+        rungs: [{ ...LD_MODEL.rungs[0], elements: [{ id: 'bad', type: 'NOT_A_REAL_TYPE' }], grid: undefined, gridConfig: undefined }],
+      }),
+      JSON.stringify({
+        ...LD_MODEL,
+        rungs: [
+          {
+            id: 'rung_1',
+            number: 1,
+            elements: [{ id: 'contact', type: 'contact_no', variable: 'Start' }],
+            connections: [{ from: 'contact', to: 'missing' }],
+          },
+        ],
+      }),
     ];
 
     for (const content of invalidCases) {
       expect(transpileToST(content, 'LD')).toMatchObject({ success: false, source: '', errors: [expect.any(String)] });
       try {
         compileMultiTaskProject(
-          { name: 'InvalidLD', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.ld'] }] },
+          {
+            name: 'InvalidLD',
+            version: '1.0.0',
+            tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.ld'] }],
+          },
           [{ name: 'main.ld', sourceRef: 'src/main.ld.json', language: 'LD', content }],
         );
         throw new Error('expected an LD parser diagnostic');
@@ -415,22 +479,42 @@ describe('v1.5 language workflow support', () => {
       {
         ...LD_MODEL,
         variables: { local: [{ name: 'Start', type: 'BOOL' }], inputs: [{ name: 'In', type: 'BOOL', address: '%I0.0' }], outputs: [] },
-        rungs: [{ id: 'rung_1', number: 1, gridConfig: { rows: 1, cols: 2, cellWidth: 80, cellHeight: 60 }, grid: [[
-          { element: { id: 'start', type: 'contact_no', variable: 'Start', row: 0, col: 0 }, hasWire: true },
-          { element: { id: 'coil', type: 'coil', variable: 'In', row: 0, col: 1 }, hasWire: true },
-        ]], branches: [] }],
+        rungs: [
+          {
+            id: 'rung_1',
+            number: 1,
+            gridConfig: { rows: 1, cols: 2, cellWidth: 80, cellHeight: 60 },
+            grid: [
+              [
+                { element: { id: 'start', type: 'contact_no', variable: 'Start', row: 0, col: 0 }, hasWire: true },
+                { element: { id: 'coil', type: 'coil', variable: 'In', row: 0, col: 1 }, hasWire: true },
+              ],
+            ],
+            branches: [],
+          },
+        ],
       },
       {
         ...LD_MODEL,
-        rungs: [{ id: 'rung_1', number: 1, gridConfig: { rows: 1, cols: 1, cellWidth: 80, cellHeight: 60 }, grid: [[
-          { element: { id: 'orphan', type: 'contact_no', variable: 'Start', row: 0, col: 0 }, hasWire: false },
-        ]], branches: [] }],
+        rungs: [
+          {
+            id: 'rung_1',
+            number: 1,
+            gridConfig: { rows: 1, cols: 1, cellWidth: 80, cellHeight: 60 },
+            grid: [[{ element: { id: 'orphan', type: 'contact_no', variable: 'Start', row: 0, col: 0 }, hasWire: false }]],
+            branches: [],
+          },
+        ],
       },
     ];
     for (const model of invalidCases) {
       try {
         compileMultiTaskProject(
-          { name: 'UnsafeLD', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.ld'] }] },
+          {
+            name: 'UnsafeLD',
+            version: '1.0.0',
+            tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.ld'] }],
+          },
           [{ name: 'main.ld', sourceRef: 'src/main.ld.json', language: 'LD', content: JSON.stringify(model) }],
         );
         throw new Error('expected an LD parser diagnostic');
@@ -447,8 +531,24 @@ describe('v1.5 language workflow support', () => {
   it('rejects a writable local alias of the input area before bytecode exists', () => {
     const model = {
       name: 'WriteInput',
-      variables: { local: [{ name: 'Start', type: 'BOOL' }, { name: 'Mapped', type: 'BOOL', address: '%I0.0' }], outputs: [] },
-      rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'start', type: 'contact_no', variable: 'Start' }, { id: 'coil', type: 'coil', variable: 'Mapped' }], connections: [] }],
+      variables: {
+        local: [
+          { name: 'Start', type: 'BOOL' },
+          { name: 'Mapped', type: 'BOOL', address: '%I0.0' },
+        ],
+        outputs: [],
+      },
+      rungs: [
+        {
+          id: 'rung_1',
+          number: 1,
+          elements: [
+            { id: 'start', type: 'contact_no', variable: 'Start' },
+            { id: 'coil', type: 'coil', variable: 'Mapped' },
+          ],
+          connections: [],
+        },
+      ],
     };
     expect(transpileToST(JSON.stringify(model), 'LD')).toMatchObject({ success: false, source: '' });
     try {
@@ -486,7 +586,8 @@ describe('v1.5 language workflow support', () => {
 
   it('reports sanitized FBD temporary collisions as parser diagnostics', () => {
     const collisionModel = {
-      name: 'Collision', variables: { local: [], outputs: [] },
+      name: 'Collision',
+      variables: { local: [], outputs: [] },
       blocks: [
         { id: 'a-b', type: 'NOT', position: { x: 0, y: 0 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
         { id: 'a_b', type: 'NOT', position: { x: 0, y: 100 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
@@ -501,7 +602,11 @@ describe('v1.5 language workflow support', () => {
 
     try {
       compileMultiTaskProject(
-        { name: 'CollisionFBD', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }] },
+        {
+          name: 'CollisionFBD',
+          version: '1.0.0',
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.fbd'] }],
+        },
         [{ name: 'main.fbd', sourceRef: 'src/main.fbd.json', language: 'FBD', content: JSON.stringify(collisionModel) }],
       );
       throw new Error('expected an FBD parser diagnostic');
@@ -548,7 +653,11 @@ describe('v1.5 language workflow support', () => {
       },
       [
         { name: 'main', language: 'ST', content: 'PROGRAM Bare VAR BareValue : BOOL; END_VAR BareValue := TRUE; END_PROGRAM' },
-        { name: 'main.st', language: 'ST', content: 'PROGRAM Extension VAR ExtensionValue : BOOL; END_VAR ExtensionValue := FALSE; END_PROGRAM' },
+        {
+          name: 'main.st',
+          language: 'ST',
+          content: 'PROGRAM Extension VAR ExtensionValue : BOOL; END_VAR ExtensionValue := FALSE; END_PROGRAM',
+        },
       ],
     );
 

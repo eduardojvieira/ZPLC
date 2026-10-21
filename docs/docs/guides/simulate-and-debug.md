@@ -3,7 +3,7 @@ slug: /guides/simulate-and-debug
 id: simulate-and-debug
 title: Simulate and debug a program
 sidebar_label: Simulate and debug
-description: "Run a program on the simulator, watch its variables, stop it on a breakpoint, step it and see what each control keeps."
+description: 'Run a program on the simulator, watch its variables, stop it on a breakpoint, step it and see what each control keeps.'
 tags: [how-to, debugging, simulation, breakpoints]
 ---
 
@@ -51,7 +51,7 @@ END_PROGRAM
 1. Click in the gutter of the editor, next to `Count := Count + 1;`. A dot marks the line.
 2. Press **Run**. The program stops when a scan reaches the statement: the toolbar
    offers **Resume** (F5), the editor marks the line, **Output** says `Breakpoint hit
-   at PC=..., line N`, and a row of the **Trace** tab says `paused`.
+at PC=..., line N`, and a row of the **Trace** tab says `paused`.
 3. Look at the values in **Watch**. They are the values of the scan that stopped. Set
    an input, or force a value ([Force a value](./force-values.md)), and look again.
 4. Press **Resume** (F5) to let the scan finish and run on to the next stop, or **Step
@@ -64,13 +64,13 @@ you edited.
 
 ## 3. What each control keeps
 
-| Control | Output image | Forces | The scan |
-| --- | --- | --- | --- |
-| Pause (F6) | Kept | Kept | Stops between scans |
-| Step one cycle (F10) | Kept, and shows the stepped scan | Kept | Runs one whole scan, or finishes the one stopped at a breakpoint |
-| Resume (F5) | Kept | Kept | A scan stopped at a breakpoint continues from there |
-| Stop (Shift+F5) | Zeroed | Cleared | Every task returns to its entry point |
-| Reset (F8) | A cold restart: initial values | Cleared | Starts again from the first scan |
+| Control              | Output image                     | Forces  | The scan                                                         |
+| -------------------- | -------------------------------- | ------- | ---------------------------------------------------------------- |
+| Pause (F6)           | Kept                             | Kept    | Stops between scans                                              |
+| Step one cycle (F10) | Kept, and shows the stepped scan | Kept    | Runs one whole scan, or finishes the one stopped at a breakpoint |
+| Resume (F5)          | Kept                             | Kept    | A scan stopped at a breakpoint continues from there              |
+| Stop (Shift+F5)      | Zeroed                           | Cleared | Every task returns to its entry point                            |
+| Reset (F8)           | A cold restart: initial values   | Cleared | Starts again from the first scan                                 |
 
 The full table, with the tests behind it, is in
 [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop). On a
@@ -84,12 +84,12 @@ failing scenario: the failure gives the instant, and you can run to that scan.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
+| Part                                                                            | Verified                                                            | Level                 |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------- |
 | A breakpoint binds and stops the scan, and Resume finishes the interrupted scan | Journeys 7 and 16 in the real application, and the scheduler suites | Host and `native_sim` |
-| A force set at a breakpoint is seen by the rest of the scan | Journey 18 in the real application | Host |
-| Pause, step and stop keep and clear what the table says | The Zephyr suites on `native_sim` and QEMU | Emulated target |
-| The same stops on a board | Not tested | None |
+| A force set at a breakpoint is seen by the rest of the scan                     | Journey 18 in the real application                                  | Host                  |
+| Pause, step and stop keep and clear what the table says                         | The Zephyr suites on `native_sim` and QEMU                          | Emulated target       |
+| The same stops on a board                                                       | Not tested                                                          | None                  |
 
 ## See also
 

@@ -62,21 +62,9 @@ import type { AsmLine, Mnemonic } from './asm-line.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import type { ErrorCode } from './error-codes.ts';
 import type { CodegenWarning } from './diagnostics.ts';
-import {
-    getLoadStoreSuffix,
-    buildSymbolTable,
-    MemoryLayout,
-    alignTo,
-    parseStringType,
-    typeToString as typeText,
-} from './symbol-table.ts';
+import { getLoadStoreSuffix, buildSymbolTable, MemoryLayout, alignTo, parseStringType, typeToString as typeText } from './symbol-table.ts';
 import type { SymbolTable, Symbol, MemberInfo, MethodInfo } from './symbol-table.ts';
-import {
-    getFn,
-    getFB,
-    type CodeGenContext,
-    type MemberSize,
-} from './stdlib/index.ts';
+import { getFn, getFB, type CodeGenContext, type MemberSize } from './stdlib/index.ts';
 import { strappendHelper, strdelHelper, strfindHelper, strsubHelper } from './stdlib/strings.ts';
 import type { StringCells } from './stdlib/strings.ts';
 import {
@@ -225,7 +213,7 @@ export interface CodeGenOptions {
 interface StringLiteralEntry {
     value: string;
     address: number;
-    size: number;  // Total bytes including header
+    size: number; // Total bytes including header
 }
 
 /**
@@ -367,7 +355,7 @@ function fbScopeSymbol(state: CodeGenState, name: string): Symbol | undefined {
         ioAddress: null,
         members: memberOffsets(state, memberInfo?.dataType),
         initialValue: null,
-        tags: {}
+        tags: {},
     };
 }
 
@@ -448,7 +436,8 @@ export function generateProject(unit: CompilationUnit | Program, options?: CodeG
         const error = codegenErrorFrom(caught, where);
         if (error === null) throw caught;
         // an error that names no file is the one of the first program's
-        for (const each of error.errors) if (each.sourceRef === undefined && where.sourceRef !== undefined) each.sourceRef = where.sourceRef;
+        for (const each of error.errors)
+            if (each.sourceRef === undefined && where.sourceRef !== undefined) each.sourceRef = where.sourceRef;
         found.push(...error.errors);
     }
     if (found.length === 0) {
@@ -465,10 +454,9 @@ export function generateProject(unit: CompilationUnit | Program, options?: CodeG
 function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): GeneratedProject {
     const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
     const memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
-    const workMemorySize = options?.workMemorySize
-        ?? (options?.workMemoryBase !== undefined ? WORK_MEMORY_REGION_SIZE : memoryProfile.workSize);
-    const initFlagAddr = options?.initFlagAddress ??
-        workMemoryBase + workMemorySize - 1;
+    const workMemorySize =
+        options?.workMemorySize ?? (options?.workMemoryBase !== undefined ? WORK_MEMORY_REGION_SIZE : memoryProfile.workSize);
+    const initFlagAddr = options?.initFlagAddress ?? workMemoryBase + workMemorySize - 1;
 
     validateWorkRegionOptions(workMemoryBase, workMemorySize, initFlagAddr, memoryProfile);
 
@@ -536,7 +524,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         const member = fbScopeSymbol(state, name);
         if (member !== undefined) return member;
         // a function block sees its members and the globals, never the variables of the program that calls it
-        return state.currentFBInstance ? state.symbols.getGlobal(name) ?? null : undefined;
+        return state.currentFBInstance ? (state.symbols.getGlobal(name) ?? null) : undefined;
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -593,7 +581,13 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         // Generate User Functions: once for the whole unit, whichever programs call them (CMP-042)
         for (const func of cu.functions) {
             inFile(state, func.sourceRef, () => generateFunctionDecl(state, func));
-            units.push({ label: `func_${func.name}`, title: `Function ${func.name}`, line: func.line, column: func.column, ...(func.sourceRef === undefined ? {} : { sourceRef: func.sourceRef }) });
+            units.push({
+                label: `func_${func.name}`,
+                title: `Function ${func.name}`,
+                line: func.line,
+                column: func.column,
+                ...(func.sourceRef === undefined ? {} : { sourceRef: func.sourceRef }),
+            });
         }
     }
 
@@ -629,7 +623,13 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         const cycleLabel = index === 0 ? '_cycle' : `_cycle_${program.name}`;
         starts.push(state.output.length);
         entries.push({ name: program.name, sourceRef: program.sourceRef, entryLabel, assembly: '' });
-        units.push({ label: entryLabel, title: `Program ${program.name}`, line: program.line, column: program.column, ...(program.sourceRef === undefined ? {} : { sourceRef: program.sourceRef }) });
+        units.push({
+            label: entryLabel,
+            title: `Program ${program.name}`,
+            line: program.line,
+            column: program.column,
+            ...(program.sourceRef === undefined ? {} : { sourceRef: program.sourceRef }),
+        });
 
         // Emit program entry
         if (shared) {
@@ -740,7 +740,8 @@ function inFile<T>(state: CodeGenState, file: string | undefined, action: () => 
         return action();
     } catch (caught) {
         if (caught instanceof CodegenError) {
-            for (const each of caught.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
+            for (const each of caught.errors)
+                if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
         }
         throw caught;
     } finally {
@@ -830,9 +831,9 @@ function emitMemoryMapEntry(state: CodeGenState, sym: Symbol): void {
  * Map tag names to numeric IDs from zplc_isa.h
  */
 export const TAG_MAP: Record<string, number> = {
-    'publish': TAG_ID.PUBLISH,
-    'modbus': TAG_ID.MODBUS,
-    'subscribe': TAG_ID.SUBSCRIBE,
+    publish: TAG_ID.PUBLISH,
+    modbus: TAG_ID.MODBUS,
+    subscribe: TAG_ID.SUBSCRIBE,
 };
 
 /**
@@ -868,15 +869,11 @@ function validateWorkRegionOptions(
 
     const workEnd = workMemoryBase + workMemorySize;
     const profileEnd = MemoryLayout.WORK_BASE + profile.workSize;
-    if (!Number.isSafeInteger(workEnd)
-        || workMemoryBase < MemoryLayout.WORK_BASE
-        || workEnd > profileEnd) {
+    if (!Number.isSafeInteger(workEnd) || workMemoryBase < MemoryLayout.WORK_BASE || workEnd > profileEnd) {
         throw new TagAdmissionError('WORK_MEMORY_EXCEEDED', 'WORK allocation exceeds the target memory profile', 0, 0);
     }
 
-    if (!Number.isSafeInteger(initFlagAddr)
-        || initFlagAddr < workMemoryBase
-        || initFlagAddr >= workEnd) {
+    if (!Number.isSafeInteger(initFlagAddr) || initFlagAddr < workMemoryBase || initFlagAddr >= workEnd) {
         throw new TagAdmissionError('INVALID_MEMORY_PROFILE', 'Invalid initFlagAddress for the WORK region', 0, 0);
     }
 }
@@ -892,14 +889,20 @@ interface WorkConsumer {
  * three largest consumers, so the author knows what to shrink. The WORK memory is the one of the target
  * profile, shared by every program of the project; one byte of it is the initialization flag.
  */
-function workBudgetError(required: number, available: number, consumers: WorkConsumer[], at: { line: number; column: number; sourceRef?: string }): TagAdmissionError {
+function workBudgetError(
+    required: number,
+    available: number,
+    consumers: WorkConsumer[],
+    at: { line: number; column: number; sourceRef?: string },
+): TagAdmissionError {
     const largest = [...consumers].sort((first, second) => second.size - first.size || (first.name < second.name ? -1 : 1)).slice(0, 3);
     const names = largest.map((consumer) => `${consumer.name} (${consumer.size} bytes)`).join(', ');
     const error = new TagAdmissionError(
         'WORK_MEMORY_EXCEEDED',
-        `WORK allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available `
-        + `(the WORK memory of the target profile, one byte of it the initialization flag). Largest consumers: ${names || 'none'}`,
-        at.line, at.column,
+        `WORK allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available ` +
+            `(the WORK memory of the target profile, one byte of it the initialization flag). Largest consumers: ${names || 'none'}`,
+        at.line,
+        at.column,
     );
     if (at.sourceRef !== undefined) error.sourceRef = at.sourceRef;
     return error;
@@ -909,18 +912,26 @@ function workBudgetError(required: number, available: number, consumers: WorkCon
  * The failure of an allocation in the retentive memory (CMP-043), in the words of `workBudgetError`: the bytes the
  * `RETAIN` variables need, the bytes the target profile has, and the three largest consumers.
  */
-function retainBudgetError(symbols: SymbolTable, available: number, at: { line: number; column: number; sourceRef?: string }): TagAdmissionError {
+function retainBudgetError(
+    symbols: SymbolTable,
+    available: number,
+    at: { line: number; column: number; sourceRef?: string },
+): TagAdmissionError {
     const retained = symbols.all().filter((symbol) => symbol.retain && symbol.ioAddress === null && symbol.size > 0);
-    const required = retained.reduce<number>((end, symbol) => Math.max(end, symbol.address + symbol.size), MemoryLayout.RETAIN_BASE) - MemoryLayout.RETAIN_BASE;
+    const required =
+        retained.reduce<number>((end, symbol) => Math.max(end, symbol.address + symbol.size), MemoryLayout.RETAIN_BASE) -
+        MemoryLayout.RETAIN_BASE;
     const largest = retained
         .map((symbol) => ({ name: symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, size: symbol.size }))
         .sort((first, second) => second.size - first.size || (first.name < second.name ? -1 : 1))
         .slice(0, 3);
     const error = new TagAdmissionError(
         'RETAIN_MEMORY_EXCEEDED',
-        `RETAIN allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available `
-        + `(the retentive memory of the target profile). Largest consumers: ${largest.map((consumer) => `${consumer.name} (${consumer.size} bytes)`).join(', ') || 'none'}`,
-        at.line, at.column,
+        `RETAIN allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available ` +
+            `(the retentive memory of the target profile). Largest ` +
+            `consumers: ${largest.map((consumer) => `${consumer.name} (${consumer.size} bytes)`).join(', ') || 'none'}`,
+        at.line,
+        at.column,
     );
     if (at.sourceRef !== undefined) error.sourceRef = at.sourceRef;
     return error;
@@ -928,12 +939,19 @@ function retainBudgetError(symbols: SymbolTable, available: number, at: { line: 
 
 /** The variables and instances that take automatic WORK memory, named as the author wrote them. */
 function workConsumers(symbols: SymbolTable): WorkConsumer[] {
-    return symbols.all()
+    return symbols
+        .all()
         .filter((symbol) => symbol.ioAddress === null && !symbol.retain && symbol.size > 0)
         .map((symbol) => ({ name: symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, size: symbol.size }));
 }
 
-function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number, retainSize: number = MEMORY_REGION.RETAIN.size): void {
+function validateWorkSymbols(
+    symbols: SymbolTable,
+    workMemoryBase: number,
+    workMemorySize: number,
+    initFlagAddr: number,
+    retainSize: number = MEMORY_REGION.RETAIN.size,
+): void {
     const workEnd = workMemoryBase + workMemorySize;
     // the last byte of the region is the initialization flag: variables end before it (CMP-043)
     const limit = initFlagAddr === workEnd - 1 ? initFlagAddr : workEnd;
@@ -941,10 +959,12 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
     const directlyLocatedWorkSymbols: Symbol[] = [];
     for (const symbol of symbols.all()) {
         const symbolEnd = symbol.address + symbol.size;
-        if (!Number.isSafeInteger(symbol.address)
-            || !Number.isSafeInteger(symbol.size)
-            || symbol.size < 0
-            || !Number.isSafeInteger(symbolEnd)) {
+        if (
+            !Number.isSafeInteger(symbol.address) ||
+            !Number.isSafeInteger(symbol.size) ||
+            symbol.size < 0 ||
+            !Number.isSafeInteger(symbolEnd)
+        ) {
             throw new TagAdmissionError('INTERNAL_COMPILER_ERROR', 'Invalid memory symbol allocation', symbol.declarationLine ?? 0, 0);
         }
 
@@ -953,16 +973,27 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
                 throw new TagAdmissionError('INVALID_LOCATED_VARIABLE', 'Invalid located bit address', symbol.declarationLine ?? 0, 0);
             }
             if (symbol.ioAddress.size === 'X' && symbol.dataType !== 'BOOL') {
-                throw new TagAdmissionError('INVALID_LOCATED_VARIABLE', 'Bit-addressed locations require BOOL values', symbol.declarationLine ?? 0, 0);
+                throw new TagAdmissionError(
+                    'INVALID_LOCATED_VARIABLE',
+                    'Bit-addressed locations require BOOL values',
+                    symbol.declarationLine ?? 0,
+                    0,
+                );
             }
 
-            const [regionBase, regionEnd, regionName] = symbol.ioAddress.type === 'I'
-                ? [MemoryLayout.IPI_BASE, MemoryLayout.OPI_BASE, 'IPI']
-                : symbol.ioAddress.type === 'Q'
-                    ? [MemoryLayout.OPI_BASE, MemoryLayout.WORK_BASE, 'OPI']
-                    : [workMemoryBase, workEnd, 'WORK'];
+            const [regionBase, regionEnd, regionName] =
+                symbol.ioAddress.type === 'I'
+                    ? [MemoryLayout.IPI_BASE, MemoryLayout.OPI_BASE, 'IPI']
+                    : symbol.ioAddress.type === 'Q'
+                      ? [MemoryLayout.OPI_BASE, MemoryLayout.WORK_BASE, 'OPI']
+                      : [workMemoryBase, workEnd, 'WORK'];
             if (symbol.address < regionBase || symbolEnd > regionEnd) {
-                throw new TagAdmissionError('ADDRESS_OUT_OF_REGION', `${regionName} allocation exceeds its memory region`, symbol.declarationLine ?? 0, 0);
+                throw new TagAdmissionError(
+                    'ADDRESS_OUT_OF_REGION',
+                    `${regionName} allocation exceeds its memory region`,
+                    symbol.declarationLine ?? 0,
+                    0,
+                );
             }
         } else if (symbol.retain) {
             // VAR RETAIN lives in the retentive region, which has its own budget (CMP-029)
@@ -973,13 +1004,20 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
         } else if (symbol.address < workMemoryBase || symbolEnd > limit) {
             // the variables of the whole unit, in the order they were allocated, from the start of the region
             const required = symbols.getWorkBase() + symbols.getWorkOffset() - workMemoryBase + 1;
-            throw workBudgetError(required, workMemorySize, workConsumers(symbols),
-                { line: symbol.declarationLine ?? 0, column: 0, sourceRef: symbol.sourceRef });
+            throw workBudgetError(required, workMemorySize, workConsumers(symbols), {
+                line: symbol.declarationLine ?? 0,
+                column: 0,
+                sourceRef: symbol.sourceRef,
+            });
         }
 
-        if ((!symbol.ioAddress || symbol.ioAddress.type === 'M')
-            && rangesOverlap(symbol.address, symbol.size, initFlagAddr, 1)) {
-            throw new TagAdmissionError('ADDRESS_OVERLAP', 'WORK symbol collides with the initialization flag', symbol.declarationLine ?? 0, 0);
+        if ((!symbol.ioAddress || symbol.ioAddress.type === 'M') && rangesOverlap(symbol.address, symbol.size, initFlagAddr, 1)) {
+            throw new TagAdmissionError(
+                'ADDRESS_OVERLAP',
+                'WORK symbol collides with the initialization flag',
+                symbol.declarationLine ?? 0,
+                0,
+            );
         }
 
         if (symbol.ioAddress === null) automaticWorkSymbols.push(symbol);
@@ -989,7 +1027,12 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
     for (const automaticSymbol of automaticWorkSymbols) {
         for (const locatedSymbol of directlyLocatedWorkSymbols) {
             if (rangesOverlap(automaticSymbol.address, automaticSymbol.size, locatedSymbol.address, locatedSymbol.size)) {
-                throw new TagAdmissionError('ADDRESS_OVERLAP', 'automatic WORK symbol collides with located %M symbol', locatedSymbol.declarationLine ?? 0, 0);
+                throw new TagAdmissionError(
+                    'ADDRESS_OVERLAP',
+                    'automatic WORK symbol collides with located %M symbol',
+                    locatedSymbol.declarationLine ?? 0,
+                    0,
+                );
             }
         }
     }
@@ -998,11 +1041,8 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
 function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, workMemorySize: number): void {
     const workEnd = workMemoryBase + workMemorySize;
     const limit = state.initFlagAddr === workEnd - 1 ? state.initFlagAddr : workEnd;
-    const directlyLocatedSymbols = state.symbols.all().filter(symbol => symbol.ioAddress?.type === 'M');
-    const pooled = [
-        ...state.stringLiterals,
-        ...state.scratchStrings,
-    ];
+    const directlyLocatedSymbols = state.symbols.all().filter((symbol) => symbol.ioAddress?.type === 'M');
+    const pooled = [...state.stringLiterals, ...state.scratchStrings];
     // the literals and the buffers of the string functions come after the variables, in the same region
     if (!Number.isSafeInteger(state.stringLiteralNextAddr) || state.stringLiteralNextAddr > limit) {
         const consumers = workConsumers(state.symbols);
@@ -1014,9 +1054,7 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
     }
     for (const literal of pooled) {
         const literalEnd = literal.address + literal.size;
-        if (!Number.isSafeInteger(literalEnd)
-            || literal.address < workMemoryBase
-            || literalEnd > workEnd) {
+        if (!Number.isSafeInteger(literalEnd) || literal.address < workMemoryBase || literalEnd > workEnd) {
             throw workBudgetError(literalEnd - workMemoryBase + 1, workMemorySize, workConsumers(state.symbols), { line: 0, column: 0 });
         }
         if (rangesOverlap(literal.address, literal.size, state.initFlagAddr, 1)) {
@@ -1024,7 +1062,12 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
         }
         for (const symbol of directlyLocatedSymbols) {
             if (rangesOverlap(literal.address, literal.size, symbol.address, symbol.size)) {
-                throw new TagAdmissionError('ADDRESS_OVERLAP', 'string literal pool collides with WORK symbol', symbol.declarationLine ?? 0, 0);
+                throw new TagAdmissionError(
+                    'ADDRESS_OVERLAP',
+                    'string literal pool collides with WORK symbol',
+                    symbol.declarationLine ?? 0,
+                    0,
+                );
             }
         }
     }
@@ -1046,9 +1089,11 @@ function tagTypeWidth(tagId: number, typeId: number): number {
         return 0;
     }
     if (tagId === TAG_MAP.modbus) {
-        if (typeId === DATA_TYPE_ID.BOOL || typeId === DATA_TYPE_ID.SINT || typeId === DATA_TYPE_ID.USINT || typeId === DATA_TYPE_ID.BYTE) return 1;
+        if (typeId === DATA_TYPE_ID.BOOL || typeId === DATA_TYPE_ID.SINT || typeId === DATA_TYPE_ID.USINT || typeId === DATA_TYPE_ID.BYTE)
+            return 1;
         if (typeId === DATA_TYPE_ID.INT || typeId === DATA_TYPE_ID.UINT || typeId === DATA_TYPE_ID.WORD) return 2;
-        if (typeId === DATA_TYPE_ID.DINT || typeId === DATA_TYPE_ID.UDINT || typeId === DATA_TYPE_ID.REAL || typeId === DATA_TYPE_ID.DWORD) return 4;
+        if (typeId === DATA_TYPE_ID.DINT || typeId === DATA_TYPE_ID.UDINT || typeId === DATA_TYPE_ID.REAL || typeId === DATA_TYPE_ID.DWORD)
+            return 4;
     }
     return 0;
 }
@@ -1067,8 +1112,13 @@ function tagAdmissionError(sym: Symbol, message: string): TagAdmissionError {
     return new TagAdmissionError('INVALID_TAG', message, sym.declarationLine ?? 0, 0);
 }
 
-function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
-                             tagValue: string | true, profile: CompilerMemoryProfile): number {
+function validateVariableTag(
+    sym: Symbol,
+    tagIdName: string,
+    tagId: number,
+    tagValue: string | true,
+    profile: CompilerMemoryProfile,
+): number {
     const typeId = getDataTypeId(sym.dataType);
     const width = tagTypeWidth(tagId, typeId);
     const region = tagMemoryRegion(sym.address, width, profile);
@@ -1088,7 +1138,7 @@ function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
     }
 
     const modbusAddress = tagValue === true ? 0 : Number(tagValue);
-    if (!Number.isInteger(modbusAddress) || modbusAddress < 0 || modbusAddress > 0xFFFF) {
+    if (!Number.isInteger(modbusAddress) || modbusAddress < 0 || modbusAddress > 0xffff) {
         throw tagAdmissionError(sym, `MODBUS address for '${sym.name}' must be an unsigned 16-bit integer`);
     }
     return modbusAddress;
@@ -1098,24 +1148,29 @@ function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
  * Emit .TAG directives for variables with attributes.
  */
 function emitVariableTags(state: CodeGenState): void {
-    const symbolsWithTags = state.symbols.all().filter(s => s.tags && Object.keys(s.tags).length > 0);
-    
+    const symbolsWithTags = state.symbols.all().filter((s) => s.tags && Object.keys(s.tags).length > 0);
+
     if (symbolsWithTags.length === 0) return;
 
     emit(state, ``);
     emit(state, `; --- Variable Tags ---`);
-    
+
     for (const sym of symbolsWithTags) {
         if (!sym.tags) continue;
-        
+
         for (const [tagIdName, tagValue] of Object.entries(sym.tags)) {
             const tagId = TAG_MAP[tagIdName.toLowerCase()];
             if (tagId === undefined) continue;
-            
+
             const typeId = getDataTypeId(sym.dataType);
             const val = validateVariableTag(sym, tagIdName, tagId, tagValue, state.memoryProfile);
-            
-            emit(state, `.TAG ${formatAddress(sym.address)} ${typeId} ${tagId} ${val}  ; ${sym.name} {${tagIdName}${tagValue === true ? '' : ':' + tagValue}}`);
+
+            emit(
+                state,
+                `.TAG ${formatAddress(sym.address)} ${typeId} ${tagId} ${val}  ; ${sym.name} {${tagIdName}${
+                    tagValue === true ? '' : ':' + tagValue
+                }}`,
+            );
         }
     }
 }
@@ -1128,7 +1183,7 @@ function emitVariableTags(state: CodeGenState): void {
  * STRING memory layout constants.
  * Matches zplc_isa.h definitions.
  */
-const STRING_HEADER_SIZE = STRING_LAYOUT.headerSize;  // 2 bytes length + 2 bytes capacity
+const STRING_HEADER_SIZE = STRING_LAYOUT.headerSize; // 2 bytes length + 2 bytes capacity
 // Default capacity is defined in zplc_isa.h as 80 bytes
 
 /**
@@ -1137,8 +1192,8 @@ const STRING_HEADER_SIZE = STRING_LAYOUT.headerSize;  // 2 bytes length + 2 byte
  */
 function getStringLiteralSize(value: string): number {
     // Use the string length as capacity (plus null terminator)
-    const capacity = Math.max(value.length, 1);  // At least 1 char capacity
-    return STRING_HEADER_SIZE + capacity + 1;  // +1 for null terminator
+    const capacity = Math.max(value.length, 1); // At least 1 char capacity
+    return STRING_HEADER_SIZE + capacity + 1; // +1 for null terminator
 }
 
 /**
@@ -1216,7 +1271,7 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
     switch (expr.kind) {
         case 'StringLiteral':
             // Check if already collected
-            if (!state.stringLiterals.some(l => l.value === expr.value)) {
+            if (!state.stringLiterals.some((l) => l.value === expr.value)) {
                 const size = STRING_HEADER_SIZE + expr.value.length + 1; // header + data + null
                 const alignment = 2; // header uses STORE16
                 state.stringLiteralNextAddr = alignTo(state.stringLiteralNextAddr, alignment);
@@ -1230,7 +1285,7 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
             break;
         case 'WStringLiteral':
             const wkey = `W:${expr.value}`;
-            if (!state.stringLiterals.some(l => l.value === wkey)) {
+            if (!state.stringLiterals.some((l) => l.value === wkey)) {
                 const size = STRING_HEADER_SIZE + expr.value.length * 2 + 2; // header + utf16 data + null word
                 const alignment = 2;
                 state.stringLiteralNextAddr = alignTo(state.stringLiteralNextAddr, alignment);
@@ -1392,7 +1447,7 @@ function collectStringLiteralsInStatement(state: CodeGenState, stmt: Statement):
  * Returns undefined if not found.
  */
 function findStringLiteralAddress(state: CodeGenState, value: string): number | undefined {
-    const entry = state.stringLiterals.find(e => e.value === value);
+    const entry = state.stringLiterals.find((e) => e.value === value);
     return entry?.address;
 }
 
@@ -1412,9 +1467,9 @@ function emitStringLiteralInit(state: CodeGenState): void {
         const lit = state.stringLiterals[i];
         let val = lit.value;
         const isWString = val.startsWith('W:');
-        
+
         if (isWString) val = val.substring(2);
-        
+
         const len = val.length;
         const cap = len > 0 ? len : 1;
 
@@ -1423,10 +1478,10 @@ function emitStringLiteralInit(state: CodeGenState): void {
         // Header (Len, Cap)
         emit(state, `    PUSH16 ${len}`);
         emit(state, `    STORE16 ${formatAddress(lit.address)}`);
-        
+
         emit(state, `    PUSH16 ${cap}`);
         emit(state, `    STORE16 ${formatAddress(lit.address + 2)}`);
-        
+
         const headerSize = 4;
 
         if (isWString) {
@@ -1486,8 +1541,14 @@ function hasNonZeroDefault(state: CodeGenState, type: STDataType | ArrayType): b
 }
 
 /** Fill `count` elements of `stride` bytes from `address` with the value `emitValue` leaves, in a loop. */
-function emitFillLoop(state: CodeGenState, address: number, count: number, stride: number,
-                      width: '8' | '16' | '32', emitValue: () => void): void {
+function emitFillLoop(
+    state: CodeGenState,
+    address: number,
+    count: number,
+    stride: number,
+    width: '8' | '16' | '32',
+    emitValue: () => void,
+): void {
     const loop = newLabel(state, 'fill_loop');
     const done = newLabel(state, 'fill_done');
     emitPushInteger(state, address);
@@ -1534,7 +1595,11 @@ function flattenArrayInitializer(literal: ArrayLiteral, out: Array<{ value: Elem
 function checkStringFits(literal: StringLiteral | WStringLiteral, type: unknown, name: string): void {
     const text = parseStringType(type);
     if (text && literal.value.length > text.capacity) {
-        fail('STRING_TOO_LONG', literal, `String literal of ${literal.value.length} characters does not fit '${name}' (${typeText(type)} holds ${text.capacity})`);
+        fail(
+            'STRING_TOO_LONG',
+            literal,
+            `String literal of ${literal.value.length} characters does not fit '${name}' (${typeText(type)} holds ${text.capacity})`,
+        );
     }
 }
 
@@ -1542,9 +1607,15 @@ function checkStringFits(literal: StringLiteral | WStringLiteral, type: unknown,
  * Write the declared initial value of the storage at the fixed `address` (see InitOptions).
  * `init` is the value the declaration gives, or null.
  */
-function emitInitValue(state: CodeGenState, address: number, type: STDataType | ArrayType,
-                       init: InitialValue | null | undefined, at: { line: number; column: number },
-                       name: string, options: InitOptions): void {
+function emitInitValue(
+    state: CodeGenState,
+    address: number,
+    type: STDataType | ArrayType,
+    init: InitialValue | null | undefined,
+    at: { line: number; column: number },
+    name: string,
+    options: InitOptions,
+): void {
     const t = storedType(state, type);
 
     if (isArrayType(t as STDataType)) {
@@ -1576,7 +1647,11 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
             emit(state, `    PUSH16 0`);
             emit(state, `    STORE16 ${formatAddress(address + 4 + init.value.length * 2)}`);
         } else if (init) {
-            fail('INVALID_INITIALISER', at, `'${name}' of type ${typeText(t)} cannot be initialised with ${stringifyExpression(init as Expression)}`);
+            fail(
+                'INVALID_INITIALISER',
+                at,
+                `'${name}' of type ${typeText(t)} cannot be initialised with ${stringifyExpression(init as Expression)}`,
+            );
         } else if (options.everyCall) {
             emit(state, `    PUSH16 0`);
             emit(state, `    STORE16 ${formatAddress(address)}   ; ${name} := ''`);
@@ -1588,7 +1663,12 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
 
     // a variable of an interface type refers to no instance until one is assigned
     if (isInterfaceType(state, t)) {
-        if (init) fail('INVALID_INITIALISER', at, `'${name}' of the interface type ${typeText(t)} is given an instance by assignment, not by an initial value`);
+        if (init)
+            fail(
+                'INVALID_INITIALISER',
+                at,
+                `'${name}' of the interface type ${typeText(t)} is given an instance by assignment, not by an initial value`,
+            );
         emit(state, `    ; ${name} := NULL`);
         emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL: no instance`);
         emit(state, `    STORE32 ${formatAddress(address)}`);
@@ -1626,7 +1706,7 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
             if (options.everyCall) emitZeroBytes(state, address, state.symbols.sizeOf(t));
             for (const [memberName, member] of members) {
                 const given = fields.find((field) => sameName(field.name, memberName));
-                const memberInit = given ? given.value : member.initialValue ?? null;
+                const memberInit = given ? given.value : (member.initialValue ?? null);
                 const memberAt = given ?? at;
                 if (member.section === VarSection.VAR_IN_OUT) {
                     // not bound yet: a null reference, so the body faults instead of touching address 0
@@ -1636,8 +1716,9 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
                 }
                 if (member.section === VarSection.VAR_TEMP && !options.everyCall) continue; // written on each call
                 if (!memberInit && !hasNonZeroDefault(state, member.dataType)) continue;
-                emitInitValue(state, address + member.offset, member.dataType, memberInit, memberAt,
-                    `${name}.${memberName}`, { everyCall: false });
+                emitInitValue(state, address + member.offset, member.dataType, memberInit, memberAt, `${name}.${memberName}`, {
+                    everyCall: false,
+                });
             }
             return;
         }
@@ -1652,7 +1733,13 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
     // a scalar
     if (init) {
         if (init.kind === 'ArrayLiteral' || init.kind === 'StructInitializer') {
-            fail('INVALID_INITIALISER', at, `'${name}' of type ${typeText(t)} cannot be initialised with ${init.kind === 'ArrayLiteral' ? 'an array' : 'a structure'} value`);
+            fail(
+                'INVALID_INITIALISER',
+                at,
+                `'${name}' of type ${typeText(t)} cannot be initialised with ${
+                    init.kind === 'ArrayLiteral' ? 'an array' : 'a structure'
+                } value`,
+            );
         }
         emit(state, `    ; ${name} := ...`);
         emitValueFor(state, init as Expression, t);
@@ -1666,9 +1753,15 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
     }
 }
 
-function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
-                       init: InitialValue | null | undefined, at: { line: number; column: number },
-                       name: string, options: InitOptions): void {
+function emitArrayInit(
+    state: CodeGenState,
+    address: number,
+    type: ArrayType,
+    init: InitialValue | null | undefined,
+    at: { line: number; column: number },
+    name: string,
+    options: InitOptions,
+): void {
     const elementType = type.elementType;
     const stride = state.symbols.sizeOf(elementType);
     const count = getArrayElementCount(type);
@@ -1683,20 +1776,31 @@ function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
     if (init && init.kind === 'ArrayLiteral') flattenArrayInitializer(init, items);
     const given = items.reduce((n, item) => n + item.repeat, 0);
     if (given > count) {
-        fail('INVALID_INITIALISER', init as { line: number; column: number }, `Too many initial values for '${name}': ${given} given, it has ${count} elements`);
+        fail(
+            'INVALID_INITIALISER',
+            init as { line: number; column: number },
+            `Too many initial values for '${name}': ${given} given, it has ${count} elements`,
+        );
     }
 
-    const scalar = !isArrayType(elementType as STDataType) && !isStringType(storedType(state, elementType))
-        && !isAggregateType(state, storedType(state, elementType));
+    const scalar =
+        !isArrayType(elementType as STDataType) &&
+        !isStringType(storedType(state, elementType)) &&
+        !isAggregateType(state, storedType(state, elementType));
     let index = 0;
     for (const item of items) {
         const start = index;
-        const width = scalar && !isPointerType(storedType(state, elementType)) ? getLoadStoreSuffix(storedType(state, elementType) as DataTypeValue) : null;
+        const width =
+            scalar && !isPointerType(storedType(state, elementType))
+                ? getLoadStoreSuffix(storedType(state, elementType) as DataTypeValue)
+                : null;
         // many equal scalars: one loop instead of one store each
         if (item.repeat >= 8 && width !== null && width !== '64' && item.value.kind !== 'StructInitializer') {
             const value = item.value;
             emit(state, `    ; ${name}[${start}..${start + item.repeat - 1}] := ...`);
-            emitFillLoop(state, address + start * stride, item.repeat, stride, width, () => emitValueFor(state, value, storedType(state, elementType)));
+            emitFillLoop(state, address + start * stride, item.repeat, stride, width, () =>
+                emitValueFor(state, value, storedType(state, elementType)),
+            );
             index += item.repeat;
             continue;
         }
@@ -1718,7 +1822,6 @@ function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
             }
         }
     }
-
 }
 
 /** The variable of a retained declaration: found when its program is in scope, used when the guard is emitted. */
@@ -1745,8 +1848,8 @@ function emitDeclarationInitialization(state: CodeGenState, declarations: VarDec
             hasInit = true;
         }
 
-        const isLocatedBit = sym.dataType === 'BOOL' && sym.ioAddress &&
-            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined);
+        const isLocatedBit =
+            sym.dataType === 'BOOL' && sym.ioAddress && (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined);
         if (isLocatedBit && decl.initialValue) {
             // a bit of a byte: read-modify-write
             emit(state, `    ; ${decl.name} := ...`);
@@ -1760,7 +1863,11 @@ function emitDeclarationInitialization(state: CodeGenState, declarations: VarDec
 }
 
 function emitInitialization(state: CodeGenState, program: Program, retained: VarDecl[]): void {
-    emitDeclarationInitialization(state, program.varBlocks.flatMap((block) => block.variables), retained);
+    emitDeclarationInitialization(
+        state,
+        program.varBlocks.flatMap((block) => block.variables),
+        retained,
+    );
 }
 
 /** The VAR_GLOBAL blocks hold their declared values at the first scan too (CMP-025). */
@@ -1787,7 +1894,9 @@ function emitRetainedInitialization(state: CodeGenState, retained: VarDecl[]): v
     emit(state, `    JNZ ${restored}`);
     for (const decl of retained) {
         const sym = retainedSymbol.get(decl)!;
-        inFile(state, decl.sourceRef, () => emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false }));
+        inFile(state, decl.sourceRef, () =>
+            emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false }),
+        );
     }
     emit(state, `    PUSH8 1`);
     emit(state, `    STORE8 ${marker}`);
@@ -1808,7 +1917,12 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
 
     const returnType = state.symbols.effectiveType(func.returnType);
     if (isArrayType(returnType as STDataType) || (typeof returnType === 'string' && isAggregateType(state, returnType))) {
-        fail('INVALID_FUNCTION_RETURN_TYPE', func, `Function '${func.name}' returns ${typeText(returnType)}: a function can return an elementary value or a string, not a structure, function block or array`);
+        fail(
+            'INVALID_FUNCTION_RETURN_TYPE',
+            func,
+            `Function '${func.name}' returns ${typeText(returnType)}: a function can return an elementary value or a string, not a ` +
+                `structure, function block or array`,
+        );
     }
 
     state.currentFunction = func;
@@ -1893,7 +2007,17 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
  */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
-    const { currentFBInstance, currentMethod, currentBlock, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity, sourceRef } = state;
+    const {
+        currentFBInstance,
+        currentMethod,
+        currentBlock,
+        currentFunction,
+        returnLabel,
+        expressionDepth,
+        resultBuffer,
+        resultCapacity,
+        sourceRef,
+    } = state;
     const depth = state.statementStack.length;
     state.statementStack.push({ line: stmt.line, column: stmt.column, sourceRef: state.sourceRef });
     try {
@@ -1902,7 +2026,8 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         const error = codegenErrorFrom(caught, stmt);
         if (error === null) throw caught;
         // the error is in the file of the declaration the statement belongs to (CMP-042)
-        for (const each of error.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
+        for (const each of error.errors)
+            if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
         state.loopStack.length = loops;
         state.currentFBInstance = currentFBInstance;
         state.currentMethod = currentMethod;
@@ -2034,9 +2159,12 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     } else if (stmt.target.kind === 'MemberAccess' || stmt.target.kind === 'ArrayAccess' || stmt.target.kind === 'DereferenceExpr') {
         // structure and function-block members, array elements and dereferenced references (CMP-019, CMP-022)
         const place = resolvePlace(state, stmt.target);
-        emit(state, `    ; ${stmt.target.kind === 'DereferenceExpr'
-            ? `*(${stringifyExpression(stmt.target.operand)})`
-            : stringifyExpression(stmt.target)} := ...`);
+        emit(
+            state,
+            `    ; ${
+                stmt.target.kind === 'DereferenceExpr' ? `*(${stringifyExpression(stmt.target.operand)})` : stringifyExpression(stmt.target)
+            } := ...`,
+        );
         emitAssignToPlace(state, place, stmt.value, stmt.target);
     }
 }
@@ -2047,7 +2175,12 @@ function emitCondition(state: CodeGenState, condition: Expression): void {
     if (type !== UNKNOWN_TYPE && type !== 'BOOL') {
         const named = type === LITERAL_INT ? 'INT' : type;
         const text = parseStringType(type) !== null;
-        fail('TYPE_MISMATCH', condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${text ? 'LEN(x) > 0' : named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`);
+        fail(
+            'TYPE_MISMATCH',
+            condition,
+            `Type mismatch: a condition is a BOOL and this is ` +
+                `a ${named}; compare it, for example ${text ? 'LEN(x) > 0' : named === 'REAL' || named === 'LREAL' ? 'x > 0.0' : 'x <> 0'}`,
+        );
     }
     emitExpression(state, condition);
 }
@@ -2065,9 +2198,7 @@ function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
     const elseLabel = hasElse ? newLabel(state, 'else') : null;
 
     // Determine where to jump if the main IF condition is false
-    const firstFalseLabel = elsifLabels.length > 0
-        ? elsifLabels[0]
-        : (elseLabel ?? endLabel);
+    const firstFalseLabel = elsifLabels.length > 0 ? elsifLabels[0] : (elseLabel ?? endLabel);
 
     emit(state, ``);
     emit(state, `    ; IF condition`);
@@ -2092,9 +2223,7 @@ function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
             const currentLabel = elsifLabels[i];
 
             // Determine where to jump if this ELSIF condition is false
-            const nextFalseLabel = i + 1 < elsifLabels.length
-                ? elsifLabels[i + 1]
-                : (elseLabel ?? endLabel);
+            const nextFalseLabel = i + 1 < elsifLabels.length ? elsifLabels[i + 1] : (elseLabel ?? endLabel);
 
             emit(state, `${currentLabel}:`);
             emit(state, `    ; ELSIF condition`);
@@ -2138,7 +2267,7 @@ function emitWhileStatement(state: CodeGenState, stmt: WhileStatement): void {
 
     // Push loop context for EXIT/CONTINUE handling
     state.loopStack.push({
-        continueLabel: loopLabel,  // CONTINUE jumps to loop start (re-evaluate condition)
+        continueLabel: loopLabel, // CONTINUE jumps to loop start (re-evaluate condition)
         exitLabel: endLabel,
     });
 
@@ -2212,7 +2341,7 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     // Push loop context for EXIT/CONTINUE handling
     state.loopStack.push({
-        continueLabel: continueLabel,  // CONTINUE jumps to increment section
+        continueLabel: continueLabel, // CONTINUE jumps to increment section
         exitLabel: endLabel,
     });
 
@@ -2221,9 +2350,9 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     // Initialize counter
     emit(state, `    ; counter := start`);
-    emitStorePlace(state, counterPlace, () => (wideCounter
-        ? emitConverted(state, stmt.start, counterType)
-        : emitExpression(state, stmt.start)));
+    emitStorePlace(state, counterPlace, () =>
+        wideCounter ? emitConverted(state, stmt.start, counterType) : emitExpression(state, stmt.start),
+    );
 
     // Loop condition check: past the end is counter > end going up, counter < end going down
     // (an unsigned counter or end compares unsigned)
@@ -2332,7 +2461,7 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
 
     // Push loop context for EXIT/CONTINUE handling
     state.loopStack.push({
-        continueLabel: continueLabel,  // CONTINUE jumps to condition check
+        continueLabel: continueLabel, // CONTINUE jumps to condition check
         exitLabel: endLabel,
     });
 
@@ -2391,7 +2520,8 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
 function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
     const selectorType = staticType(state, stmt.selector);
     if (isWide(selectorType)) {
-        if (!isWideInteger(selectorType)) fail('INVALID_CASE_LABEL', stmt.selector, `A CASE selector must be an integer or an enumeration, not ${selectorType}`);
+        if (!isWideInteger(selectorType))
+            fail('INVALID_CASE_LABEL', stmt.selector, `A CASE selector must be an integer or an enumeration, not ${selectorType}`);
         emitWideCaseStatement(state, stmt, selectorType);
         return;
     }
@@ -2405,15 +2535,18 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
 
     // Resolve every label to its bounds; an empty range or a label that overlaps an earlier one is an error.
     const taken: Array<{ lo: number; hi: number }> = [];
-    const bounds = stmt.branches.map((branch) => branch.values.map((label) => {
-        const lo = constantInt(state, label.start);
-        const hi = label.end ? constantInt(state, label.end) : lo;
-        const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
-        if (lo > hi) fail('INVALID_CASE_LABEL', label, `CASE range ${text} is empty`);
-        if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi)) fail('OVERLAPPING_CASE_LABELS', label, `CASE label ${text} overlaps an earlier label`);
-        taken.push({ lo, hi });
-        return { lo, hi };
-    }));
+    const bounds = stmt.branches.map((branch) =>
+        branch.values.map((label) => {
+            const lo = constantInt(state, label.start);
+            const hi = label.end ? constantInt(state, label.end) : lo;
+            const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
+            if (lo > hi) fail('INVALID_CASE_LABEL', label, `CASE range ${text} is empty`);
+            if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi))
+                fail('OVERLAPPING_CASE_LABELS', label, `CASE label ${text} overlaps an earlier label`);
+            taken.push({ lo, hi });
+            return { lo, hi };
+        }),
+    );
 
     emit(state, ``);
     emit(state, `    ; CASE statement`);
@@ -2506,15 +2639,18 @@ function emitWideCaseStatement(state: CodeGenState, stmt: CaseStatement, selecto
     };
 
     const taken: Array<{ lo: bigint; hi: bigint }> = [];
-    const bounds = stmt.branches.map((branch) => branch.values.map((label) => {
-        const lo = labelValue(label.start);
-        const hi = label.end ? labelValue(label.end) : lo;
-        const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
-        if (lo > hi) fail('INVALID_CASE_LABEL', label, `CASE range ${text} is empty`);
-        if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi)) fail('OVERLAPPING_CASE_LABELS', label, `CASE label ${text} overlaps an earlier label`);
-        taken.push({ lo, hi });
-        return { lo, hi };
-    }));
+    const bounds = stmt.branches.map((branch) =>
+        branch.values.map((label) => {
+            const lo = labelValue(label.start);
+            const hi = label.end ? labelValue(label.end) : lo;
+            const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
+            if (lo > hi) fail('INVALID_CASE_LABEL', label, `CASE range ${text} is empty`);
+            if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi))
+                fail('OVERLAPPING_CASE_LABELS', label, `CASE label ${text} overlaps an earlier label`);
+            taken.push({ lo, hi });
+            return { lo, hi };
+        }),
+    );
 
     emit(state, ``);
     emit(state, `    ; CASE statement on ${selectorType} (two cells)`);
@@ -2656,8 +2792,7 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
         }
 
         // A function called for what it does, its result discarded (CMP-035)
-        if (state.functionTable.has(stmt.fbName)
-            || (getFn(stmt.fbName) !== undefined && stmt.fbName.toUpperCase() !== 'WATCHDOG_RESET')) {
+        if (state.functionTable.has(stmt.fbName) || (getFn(stmt.fbName) !== undefined && stmt.fbName.toUpperCase() !== 'WATCHDOG_RESET')) {
             emitFunctionCallStatement(state, stmt);
             return;
         }
@@ -2676,14 +2811,21 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
             // the call does nothing (RT-034): the build says so, once for each place the call is written
             const warning: CodegenWarning = {
                 code: 'WATCHDOG_RESET_NO_EFFECT',
-                message: `WATCHDOG_RESET() does nothing: the runtime feeds the hardware watchdog itself after each completed scan, so a program neither needs nor can feed it; remove the call (it is not a safety control)`,
+                message:
+                    `WATCHDOG_RESET() does nothing: the runtime feeds the hardware watchdog itself after each completed scan, so a ` +
+                    `program neither needs nor can feed it; remove the call (it is not a safety control)`,
                 line: stmt.line,
                 column: stmt.column,
                 ...(stmt.endLine === undefined ? {} : { endLine: stmt.endLine, endColumn: stmt.endColumn }),
                 ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
             };
-            const seen = state.warnings.some((each) => each.code === warning.code && each.line === warning.line
-                && each.column === warning.column && each.sourceRef === warning.sourceRef);
+            const seen = state.warnings.some(
+                (each) =>
+                    each.code === warning.code &&
+                    each.line === warning.line &&
+                    each.column === warning.column &&
+                    each.sourceRef === warning.sourceRef,
+            );
             if (!seen) state.warnings.push(warning);
 
             watchdogReset.generateInline(makeCodeGenContext(state, 0, stmt.fbName, stmt), []);
@@ -2717,11 +2859,21 @@ function statementAsCall(stmt: FBCallStatement): FunctionCall {
         name: stmt.fbName,
         args: stmt.parameters.map((parameter) => {
             if (parameter.output) {
-                fail('INVALID_OUTPUT_BINDING', parameter as { line: number; column: number }, `'${parameter.name}' is bound with =>: only a function block call has output bindings`);
+                fail(
+                    'INVALID_OUTPUT_BINDING',
+                    parameter as { line: number; column: number },
+                    `'${parameter.name}' is bound with =>: only a function block call has output bindings`,
+                );
             }
             return parameter.name === ''
                 ? parameter.value
-                : { kind: 'NamedArgument' as const, name: parameter.name, value: parameter.value, line: parameter.line, column: parameter.column };
+                : {
+                      kind: 'NamedArgument' as const,
+                      name: parameter.name,
+                      value: parameter.value,
+                      line: parameter.line,
+                      column: parameter.column,
+                  };
         }),
         line: stmt.line,
         column: stmt.column,
@@ -2757,7 +2909,12 @@ function emitSuperBodyCall(state: CodeGenState, stmt: FBCallStatement): void {
     if (!baseName) fail('INVALID_THIS_OR_SUPER', stmt, `'${block}' extends no function block: SUPER^() has no base block to call`);
     const base = state.functionBlockTable.get(baseName);
     if (!base) fail('INVALID_INHERITANCE', stmt, `The base block '${baseName}' of '${block}' is not declared`);
-    if (stmt.parameters.length > 0) fail('INVALID_ARGUMENTS', stmt.parameters[0]! as { line: number; column: number }, `SUPER^() takes no parameters: give the inputs a value before the call`);
+    if (stmt.parameters.length > 0)
+        fail(
+            'INVALID_ARGUMENTS',
+            stmt.parameters[0]! as { line: number; column: number },
+            `SUPER^() takes no parameters: give the inputs a value before the call`,
+        );
 
     emit(state, `    ; --- SUPER^(): the body of ${base.name} ---`);
     const oldBlock = state.currentBlock;
@@ -2778,7 +2935,13 @@ function emitSuperBodyCall(state: CodeGenState, stmt: FBCallStatement): void {
 
 /** The error of a parameter that cannot be bound as written. */
 function parameterError(code: ErrorCode, stmt: FBCallStatement, parameter: FBParameter, message: string): never {
-    return fail(code, parameter.line === undefined ? stmt : { line: parameter.line, column: parameter.column ?? stmt.column, endLine: parameter.endLine, endColumn: parameter.endColumn }, message);
+    return fail(
+        code,
+        parameter.line === undefined
+            ? stmt
+            : { line: parameter.line, column: parameter.column ?? stmt.column, endLine: parameter.endLine, endColumn: parameter.endColumn },
+        message,
+    );
 }
 
 /** The call of the function block instance `sym`: user-defined blocks are inlined, library blocks generate their own code. */
@@ -2788,9 +2951,13 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
 
     // A function block is called with named parameters (formal call); the positional form is left to 2.x (D-04)
     const positional = stmt.parameters.find((parameter) => parameter.name === '');
-    if (positional && (state.symbols.isFBType(typeName))) {
-        fail('INVALID_ARGUMENTS', { line: positional.line ?? stmt.line, column: positional.column ?? stmt.column }, `'${instanceName}' is a function block: its parameters are written by name, as in ${instanceName}(IN := x) ` +
-            `(positional calls of function blocks are not supported in this release)`);
+    if (positional && state.symbols.isFBType(typeName)) {
+        fail(
+            'INVALID_ARGUMENTS',
+            { line: positional.line ?? stmt.line, column: positional.column ?? stmt.column },
+            `'${instanceName}' is a function block: its parameters are written by name, as in ${instanceName}(IN := x) ` +
+                `(positional calls of function blocks are not supported in this release)`,
+        );
     }
 
     // 1. Check if it's a user-defined FB
@@ -2804,25 +2971,52 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // Assign inputs
         for (const param of stmt.parameters) {
             const member = fbDef?.members.get(param.name);
-            if (!member) parameterError('UNKNOWN_PARAMETER', stmt, param, `'${param.name}' is not a parameter of '${typeName}' (instance '${instanceName}')`);
+            if (!member)
+                parameterError(
+                    'UNKNOWN_PARAMETER',
+                    stmt,
+                    param,
+                    `'${param.name}' is not a parameter of '${typeName}' (instance '${instanceName}')`,
+                );
             if (param.output) {
                 if (member.section !== VarSection.VAR_OUTPUT) {
-                    parameterError('INVALID_OUTPUT_BINDING', stmt, param, `'${param.name}' is not an output of '${typeName}': bind it with :=`);
+                    parameterError(
+                        'INVALID_OUTPUT_BINDING',
+                        stmt,
+                        param,
+                        `'${param.name}' is not an output of '${typeName}': bind it with :=`,
+                    );
                 }
                 continue; // copied out after the call
             }
             if (member.section !== VarSection.VAR_INPUT && member.section !== VarSection.VAR_IN_OUT) {
-                parameterError(member.section === VarSection.VAR_OUTPUT ? 'INVALID_OUTPUT_BINDING' : 'UNKNOWN_PARAMETER', stmt, param, member.section === VarSection.VAR_OUTPUT
-                    ? `'${param.name}' is an output of '${typeName}': bind it with =>`
-                    : `'${param.name}' is not a parameter of '${typeName}'`);
+                parameterError(
+                    member.section === VarSection.VAR_OUTPUT ? 'INVALID_OUTPUT_BINDING' : 'UNKNOWN_PARAMETER',
+                    stmt,
+                    param,
+                    member.section === VarSection.VAR_OUTPUT
+                        ? `'${param.name}' is an output of '${typeName}': bind it with =>`
+                        : `'${param.name}' is not a parameter of '${typeName}'`,
+                );
             }
             emit(state, `    ; ${stmt.fbName}.${param.name} := ...`);
             if (member.section === VarSection.VAR_IN_OUT) {
                 // by reference (CMP-028): the member keeps the address of the caller's variable
                 const actual = resolvePlace(state, param.value);
-                if (actual.readonly) fail('ASSIGNMENT_TO_CONSTANT', param.value, `'${actual.name}' is a constant and cannot be passed to the VAR_IN_OUT '${param.name}'`);
+                if (actual.readonly)
+                    fail(
+                        'ASSIGNMENT_TO_CONSTANT',
+                        param.value,
+                        `'${actual.name}' is a constant and cannot be passed to the VAR_IN_OUT '${param.name}'`,
+                    );
                 if (typeText(storedType(state, actual.type)) !== typeText(storedType(state, member.dataType))) {
-                    fail('TYPE_MISMATCH', param.value, `VAR_IN_OUT '${param.name}' of '${typeName}' is ${typeText(member.dataType)}, '${actual.name}' is ${typeText(actual.type)}`);
+                    fail(
+                        'TYPE_MISMATCH',
+                        param.value,
+                        `VAR_IN_OUT '${param.name}' of '${typeName}' is ${typeText(
+                            member.dataType,
+                        )}, '${actual.name}' is ${typeText(actual.type)}`,
+                    );
                 }
                 emitAddr(state, actual.addr);
                 emit(state, `    STORE32 ${formatAddress(sym.address + member.offset)}   ; ${stmt.fbName}.${param.name} -> ${actual.name}`);
@@ -2834,8 +3028,15 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // VAR_TEMP holds nothing from the previous call (CMP-027)
         for (const [memberName, member] of fbDef?.members ?? []) {
             if (member.section === VarSection.VAR_TEMP) {
-                emitInitValue(state, sym.address + member.offset, member.dataType, member.initialValue, stmt,
-                    `${stmt.fbName}.${memberName}`, { everyCall: true });
+                emitInitValue(
+                    state,
+                    sym.address + member.offset,
+                    member.dataType,
+                    member.initialValue,
+                    stmt,
+                    `${stmt.fbName}.${memberName}`,
+                    { everyCall: true },
+                );
             }
         }
 
@@ -2883,12 +3084,25 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         const outputs: FBParameter[] = [];
         for (const param of stmt.parameters) {
             const member = fbDef.members.find((candidate) => !candidate.isInternal && sameName(candidate.name, param.name));
-            if (!member) parameterError('UNKNOWN_PARAMETER', stmt, param, `'${param.name}' is not a parameter of ${fbDef.name} (instance '${instanceName}')`);
+            if (!member)
+                parameterError(
+                    'UNKNOWN_PARAMETER',
+                    stmt,
+                    param,
+                    `'${param.name}' is not a parameter of ${fbDef.name} (instance '${instanceName}')`,
+                );
             if (param.output) {
-                if (!member.isOutput) parameterError('INVALID_OUTPUT_BINDING', stmt, param, `'${member.name}' is an input of ${fbDef.name}: bind it with :=`);
+                if (!member.isOutput)
+                    parameterError('INVALID_OUTPUT_BINDING', stmt, param, `'${member.name}' is an input of ${fbDef.name}: bind it with :=`);
                 outputs.push({ ...param, name: member.name });
             } else {
-                if (!member.isInput) parameterError('INVALID_OUTPUT_BINDING', stmt, param, `'${member.name}' is an output of ${fbDef.name}: bind it with =>`);
+                if (!member.isInput)
+                    parameterError(
+                        'INVALID_OUTPUT_BINDING',
+                        stmt,
+                        param,
+                        `'${member.name}' is an output of ${fbDef.name}: bind it with =>`,
+                    );
                 // the value goes to a parameter of the type the block declares (CMP-005)
                 const memberType = stdlibMemberType(typeName, member);
                 if (memberType !== UNKNOWN_TYPE) {
@@ -2907,7 +3121,12 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         for (const param of outputs) {
             const member = fbDef.members.find((candidate) => candidate.name === param.name)!;
             emit(state, `    ; ${param.value.kind === 'Identifier' ? param.value.name : '...'} := ${stmt.fbName}.${param.name}`);
-            const source: Place = { addr: addOffset(instance.addr, member.offset), type: stdlibMemberType(typeName, member), size: member.size, name: `${stmt.fbName}.${member.name}` };
+            const source: Place = {
+                addr: addOffset(instance.addr, member.offset),
+                type: stdlibMemberType(typeName, member),
+                size: member.size,
+                name: `${stmt.fbName}.${member.name}`,
+            };
             emitCopyOut(state, source, param);
         }
         return;
@@ -2923,7 +3142,12 @@ function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): vo
     const type = storedType(state, target.type);
     if (isStringType(type) || isAggregateType(state, type) || isPointerType(type)) {
         const same = typeText(storedType(state, source.type)) === typeText(type);
-        if (!same) fail('TYPE_MISMATCH', param.value, `Cannot bind '${param.name}' (${typeText(source.type)}) to '${target.name}' of type ${typeText(type)}`);
+        if (!same)
+            fail(
+                'TYPE_MISMATCH',
+                param.value,
+                `Cannot bind '${param.name}' (${typeText(source.type)}) to '${target.name}' of type ${typeText(type)}`,
+            );
         if (isPointerType(type)) {
             emitStorePlace(state, target, () => emitLoadPlace(state, source));
         } else {
@@ -2960,8 +3184,13 @@ function emitExpression(state: CodeGenState, expr: Expression): void {
 
     // The VM zero-extends an 8- or 16-bit load. A signed value comes back with its sign here, once,
     // so every operator sees the canonical 32-bit form of a SINT or an INT (CMP-011).
-    if (expr.kind === 'Identifier' || expr.kind === 'MemberAccess' || expr.kind === 'ArrayAccess' ||
-        expr.kind === 'DereferenceExpr' || (expr.kind === 'FunctionCall' && state.functionTable.has(expr.name))) {
+    if (
+        expr.kind === 'Identifier' ||
+        expr.kind === 'MemberAccess' ||
+        expr.kind === 'ArrayAccess' ||
+        expr.kind === 'DereferenceExpr' ||
+        (expr.kind === 'FunctionCall' && state.functionTable.has(expr.name))
+    ) {
         const extend = signExtension(staticType(state, expr));
         if (extend) emit(state, extend);
     }
@@ -3048,13 +3277,17 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
         emit(state, `    PUSH16 ${expr.value}`);
     } else if (expr.value >= -2147483648 && expr.value <= 2147483647) {
         emit(state, `    PUSH32 ${expr.value}`);
-    } else if (expr.literalType !== undefined && isUnsigned32(expr.literalType) && expr.value > 0 && expr.value <= 0xFFFFFFFF) {
+    } else if (expr.literalType !== undefined && isUnsigned32(expr.literalType) && expr.value > 0 && expr.value <= 0xffffffff) {
         // DWORD#16#FFFFFFFF, or a plain literal given to a DWORD parameter: the 32-bit pattern (CMP-012)
         emit(state, `    PUSH32 ${expr.value}`);
     } else {
         // An unsigned 32-bit or a 64-bit context takes such a literal through emitConverted
-        fail('CONSTANT_OUT_OF_RANGE', expr, `Integer literal ${expr.value} does not fit a signed 32-bit integer; ` +
-            `use an unsigned 32-bit (UDINT, DWORD) or a 64-bit (LINT, ULINT) variable`);
+        fail(
+            'CONSTANT_OUT_OF_RANGE',
+            expr,
+            `Integer literal ${expr.value} does not fit a signed 32-bit integer; ` +
+                `use an unsigned 32-bit (UDINT, DWORD) or a 64-bit (LINT, ULINT) variable`,
+        );
     }
 }
 
@@ -3151,7 +3384,12 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
 
     const type = storedType(state, place.type);
     if (isArrayType(type as STDataType) || (typeof type === 'string' && state.symbols.isStructType(type))) {
-        fail('INVALID_MEMBER_ACCESS', expr, `'${expr.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the same type`);
+        fail(
+            'INVALID_MEMBER_ACCESS',
+            expr,
+            `'${expr.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the ` +
+                `same type`,
+        );
     }
     emitLoadPlace(state, place, expr.name);
 }
@@ -3159,7 +3397,6 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
 function emitMemberAccess(state: CodeGenState, expr: MemberAccess): void {
     emitPlaceExpression(state, expr);
 }
-
 
 function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     // A negative literal is one constant: -2147483648 is not 2147483648 negated
@@ -3173,7 +3410,11 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
 
     const operandKind = typeKind(staticType(state, expr.operand));
     if (expr.operator === 'NOT' && operandKind === 'real') {
-        fail('TYPE_MISMATCH', expr.operand, `Type mismatch: NOT takes a BOOL or a bit string and this is a ${staticType(state, expr.operand)}`);
+        fail(
+            'TYPE_MISMATCH',
+            expr.operand,
+            `Type mismatch: NOT takes a BOOL or a bit string and this is a ${staticType(state, expr.operand)}`,
+        );
     }
     if (expr.operator === 'NEG' && operandKind === 'bool') {
         fail('TYPE_MISMATCH', expr.operand, `Type mismatch: the negation takes a number and this is a BOOL`);
@@ -3230,11 +3471,16 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
  */
 export function getSizeSuffix(size: MemberSize): '8' | '16' | '32' | '64' {
     switch (size) {
-        case 1: return '8';
-        case 2: return '16';
-        case 4: return '32';
-        case 8: return '64';
-        default: return '32'; // Default to 32-bit if unknown size
+        case 1:
+            return '8';
+        case 2:
+            return '16';
+        case 4:
+            return '32';
+        case 8:
+            return '64';
+        default:
+            return '32'; // Default to 32-bit if unknown size
     }
 }
 
@@ -3318,14 +3564,18 @@ function stringifyExpression(expr: Expression): string {
         case 'UnaryExpr':
             return `${expr.operator}(${stringifyExpression(expr.operand)})`;
         case 'FunctionCall':
-            const args = expr.args.map((arg) => arg.kind === 'NamedArgument'
-                ? `${arg.name} := ${stringifyExpression(arg.value)}`
-                : stringifyExpression(arg)).join(', ');
+            const args = expr.args
+                .map((arg) =>
+                    arg.kind === 'NamedArgument' ? `${arg.name} := ${stringifyExpression(arg.value)}` : stringifyExpression(arg),
+                )
+                .join(', ');
             return `${expr.name}(${args})`;
         case 'MethodCall':
-             const mArgs = expr.args.map((arg) => arg.kind === 'NamedArgument'
-                ? `${arg.name} := ${stringifyExpression(arg.value)}`
-                : stringifyExpression(arg)).join(', ');
+            const mArgs = expr.args
+                .map((arg) =>
+                    arg.kind === 'NamedArgument' ? `${arg.name} := ${stringifyExpression(arg.value)}` : stringifyExpression(arg),
+                )
+                .join(', ');
             return `${stringifyExpression(expr.object)}.${expr.methodName}(${mArgs})`;
         default:
             return '...';
@@ -3386,23 +3636,52 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
         list.map((a) => staticType(state, a)).reduce((acc, t) => commonType(acc, t), LITERAL_INT);
 
     switch (expr.name.toUpperCase()) {
-        case 'ABS': case 'NEG': case 'MOD': case 'MAX': case 'MIN': case 'LIMIT':
+        case 'ABS':
+        case 'NEG':
+        case 'MOD':
+        case 'MAX':
+        case 'MIN':
+        case 'LIMIT':
             return args.length > 0 ? common(args) : UNKNOWN_TYPE;
         case 'SEL':
             return args.length === 3 ? common(args.slice(1)) : UNKNOWN_TYPE;
         case 'MUX':
             return args.length > 1 ? common(args.slice(1)) : UNKNOWN_TYPE;
-        case 'SHL': case 'SHR': case 'ROL': case 'ROR':
+        case 'SHL':
+        case 'SHR':
+        case 'ROL':
+        case 'ROR':
             return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
-        case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
-        case 'EXP': case 'EXPT': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
+        case 'ABSF':
+        case 'NEGF':
+        case 'SQRT':
+        case 'SIN':
+        case 'COS':
+        case 'TAN':
+        case 'LN':
+        case 'LOG':
+        case 'EXP':
+        case 'EXPT':
+        case 'ASIN':
+        case 'ACOS':
+        case 'ATAN':
+        case 'ATAN2':
+        case 'TRUNC':
+        case 'ROUND':
             // an LREAL argument gives an LREAL (the transcendental functions compute in REAL and widen back)
             return args.some((a) => staticType(state, a) === 'LREAL') ? 'LREAL' : 'REAL';
-        case 'NAND': case 'NOR':
+        case 'NAND':
+        case 'NOR':
             return 'BOOL';
-        case 'AND_WORD': case 'OR_WORD': case 'XOR_WORD': case 'NOT_WORD':
+        case 'AND_WORD':
+        case 'OR_WORD':
+        case 'XOR_WORD':
+        case 'NOT_WORD':
             return 'WORD';
-        case 'AND_DWORD': case 'OR_DWORD': case 'XOR_DWORD': case 'NOT_DWORD':
+        case 'AND_DWORD':
+        case 'OR_DWORD':
+        case 'XOR_DWORD':
+        case 'NOT_DWORD':
             return 'DWORD';
         default:
             // <FROM>_TO_<TO> (CMP-057)
@@ -3416,17 +3695,24 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
  */
 function staticType(state: CodeGenState, expr: Expression): string {
     switch (expr.kind) {
-        case 'BoolLiteral': return 'BOOL';
+        case 'BoolLiteral':
+            return 'BOOL';
         // INT#5 is an INT; a plain 5 adopts the type of the operand it meets (CMP-031)
-        case 'IntLiteral': return expr.literalType ?? LITERAL_INT;
+        case 'IntLiteral':
+            return expr.literalType ?? LITERAL_INT;
         // 1.5 is a REAL; LREAL#1.5 is an LREAL. In an LREAL context a plain literal is the double (emitAsDouble).
-        case 'RealLiteral': return expr.literalType === 'LREAL' ? 'LREAL' : 'REAL';
-        case 'TimeLiteral': return 'TIME';
-        case 'DateLiteral': return 'DATE';
-        case 'TODLiteral': return 'TOD';
-        case 'DTLiteral': return 'DT';
+        case 'RealLiteral':
+            return expr.literalType === 'LREAL' ? 'LREAL' : 'REAL';
+        case 'TimeLiteral':
+            return 'TIME';
+        case 'DateLiteral':
+            return 'DATE';
+        case 'TODLiteral':
+            return 'TOD';
+        case 'DTLiteral':
+            return 'DT';
         case 'Identifier': {
-            if (expr.name.includes('#')) return 'INT';  // Type#Value of an enumeration
+            if (expr.name.includes('#')) return 'INT'; // Type#Value of an enumeration
             return placeType(state, expr);
         }
         case 'MemberAccess':
@@ -3467,7 +3753,8 @@ function methodResultType(state: CodeGenState, expr: MethodCall): string {
             returned = base ? state.symbols.getFBDefinition(base)?.methods.get(expr.methodName)?.returnType : undefined;
         } else if (expr.object.kind === 'ThisExpr') {
             const block = state.currentFBInstance?.dataType;
-            returned = typeof block === 'string' ? state.symbols.getFBDefinition(block)?.methods.get(expr.methodName)?.returnType : undefined;
+            returned =
+                typeof block === 'string' ? state.symbols.getFBDefinition(block)?.methods.get(expr.methodName)?.returnType : undefined;
         } else if (expr.object.kind === 'Identifier' || expr.object.kind === 'MemberAccess' || expr.object.kind === 'ArrayAccess') {
             const type = storedType(state, resolvePlace(state, expr.object).type);
             if (typeof type === 'string' && isInterfaceType(state, type)) {
@@ -3534,7 +3821,7 @@ function constantInteger(expr: Expression): bigint | undefined {
 /** Push a 64-bit constant as two cells, low word first (the order LOAD64 leaves them in). */
 function emitWideConstant(state: CodeGenState, value: bigint): void {
     const bits = BigInt.asUintN(64, value);
-    emit(state, `    PUSH32 ${Number(bits & 0xFFFFFFFFn)}       ; ${value} (low word)`);
+    emit(state, `    PUSH32 ${Number(bits & 0xffffffffn)}       ; ${value} (low word)`);
     emit(state, `    PUSH32 ${Number(bits >> 32n)}       ; (high word)`);
 }
 
@@ -3574,26 +3861,39 @@ function foldNumber(state: CodeGenState, expr: Expression, depth = 0): FoldedNum
             if (left === undefined || right === undefined) return undefined;
             if ('int' in left && 'int' in right) {
                 switch (expr.operator) {
-                    case 'ADD': return { int: left.int + right.int };
-                    case 'SUB': return { int: left.int - right.int };
-                    case 'MUL': return { int: left.int * right.int };
-                    default: return right.int === 0n ? undefined : { int: left.int / right.int };
+                    case 'ADD':
+                        return { int: left.int + right.int };
+                    case 'SUB':
+                        return { int: left.int - right.int };
+                    case 'MUL':
+                        return { int: left.int * right.int };
+                    default:
+                        return right.int === 0n ? undefined : { int: left.int / right.int };
                 }
             }
             const a = 'int' in left ? Number(left.int) : left.real;
             const b = 'int' in right ? Number(right.int) : right.real;
             switch (expr.operator) {
-                case 'ADD': return { real: a + b };
-                case 'SUB': return { real: a - b };
-                case 'MUL': return { real: a * b };
-                default: return b === 0 ? undefined : { real: a / b };
+                case 'ADD':
+                    return { real: a + b };
+                case 'SUB':
+                    return { real: a - b };
+                case 'MUL':
+                    return { real: a * b };
+                default:
+                    return b === 0 ? undefined : { real: a / b };
             }
         }
         case 'Identifier': {
             const symbol = state.symbols.get(expr.name);
             if (!symbol || symbol.section !== VarSection.CONSTANT || !symbol.initialValue) return undefined;
             const initial = symbol.initialValue as Expression;
-            if (initial.kind !== 'IntLiteral' && initial.kind !== 'RealLiteral' && initial.kind !== 'UnaryExpr' && initial.kind !== 'BinaryExpr') {
+            if (
+                initial.kind !== 'IntLiteral' &&
+                initial.kind !== 'RealLiteral' &&
+                initial.kind !== 'UnaryExpr' &&
+                initial.kind !== 'BinaryExpr'
+            ) {
                 return undefined;
             }
             const value = foldNumber(state, initial, depth + 1);
@@ -3694,7 +3994,7 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
     if (isUnsigned32(target)) {
         // 2^31 to 2^32 - 1 is a UDINT, DWORD or TIME value, not a signed one (CMP-012)
         const constant = constantInteger(expr);
-        if (constant !== undefined && constant >= 0n && constant <= 0xFFFFFFFFn) {
+        if (constant !== undefined && constant >= 0n && constant <= 0xffffffffn) {
             emit(state, `    PUSH32 ${constant}`);
             return;
         }
@@ -3806,7 +4106,9 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         if (value.kind === 'RealLiteral' || foldNumber(state, value) !== undefined) return;
         const warning: CodegenWarning = {
             code: 'IMPLICIT_NARROWING',
-            message: `Implicit narrowing from LREAL to REAL: the value is rounded to single precision (about 7 significant digits) and a magnitude above 3.4e38 becomes an infinity; use LREAL_TO_REAL if that is intended`,
+            message:
+                `Implicit narrowing from LREAL to REAL: the value is rounded to single precision (about 7 significant digits) and a ` +
+                `magnitude above 3.4e38 becomes an infinity; use LREAL_TO_REAL if that is intended`,
             line: value.line,
             column: value.column,
             ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
@@ -3822,13 +4124,20 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         for (const operand of [value.left, value.right]) {
             const limit = foldConstant(state, operand);
             if (limit === undefined || limit < 0n) continue;
-            if (value.operator === 'AND' ? limit <= range.high : limit > 0n && limit - 1n <= range.high && (range.low === 0n || -(limit - 1n) >= range.low)) return;
+            if (
+                value.operator === 'AND'
+                    ? limit <= range.high
+                    : limit > 0n && limit - 1n <= range.high && (range.low === 0n || -(limit - 1n) >= range.low)
+            )
+                return;
         }
     }
     const bits = numericInfo(to)!.bits;
     const warning: CodegenWarning = {
         code: 'IMPLICIT_NARROWING',
-        message: `Implicit narrowing from ${from} to ${to}: a value that does not fit keeps only its low ${bits} bits; use an explicit conversion if that is intended`,
+        message:
+            `Implicit narrowing from ${from} to ${to}: a value that does not fit keeps only its low ${bits} bits; use an explicit ` +
+            `conversion if that is intended`,
         line: value.line,
         column: value.column,
         ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
@@ -3842,8 +4151,13 @@ function reportNarrowing(state: CodeGenState, warning: CodegenWarning, value: Ex
     if (state.strictTypes) {
         fail('NARROWING_NOT_ALLOWED', value, `${warning.message}. This is an error because compiler.strictTypes is on`);
     }
-    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column
-        && each.message === warning.message && each.sourceRef === warning.sourceRef);
+    const seen = state.warnings.some(
+        (each) =>
+            each.line === warning.line &&
+            each.column === warning.column &&
+            each.message === warning.message &&
+            each.sourceRef === warning.sourceRef,
+    );
     if (!seen) state.warnings.push(warning);
 }
 
@@ -3853,8 +4167,12 @@ function reportNarrowing(state: CodeGenState, warning: CodegenWarning, value: Ex
  */
 function meaningType(state: CodeGenState, expr: Expression): string {
     const type = staticType(state, expr);
-    if (expr.kind === 'BinaryExpr' && expr.operator === 'SUB' && (type === 'DT' || type === 'TOD' || type === 'DATE')
-        && staticType(state, expr.left) === staticType(state, expr.right)) {
+    if (
+        expr.kind === 'BinaryExpr' &&
+        expr.operator === 'SUB' &&
+        (type === 'DT' || type === 'TOD' || type === 'DATE') &&
+        staticType(state, expr.left) === staticType(state, expr.right)
+    ) {
         return 'TIME';
     }
     return type;
@@ -3876,15 +4194,35 @@ type TypeKind = 'bool' | 'signed' | 'unsigned' | 'bits' | 'real' | 'time' | 'dat
 
 function typeKind(type: string): TypeKind | undefined {
     switch (type) {
-        case 'BOOL': return 'bool';
-        case 'SINT': case 'INT': case 'DINT': case 'LINT': return 'signed';
-        case 'USINT': case 'UINT': case 'UDINT': case 'ULINT': return 'unsigned';
-        case 'BYTE': case 'WORD': case 'DWORD': case 'LWORD': return 'bits';
-        case 'REAL': case 'LREAL': return 'real';
-        case 'TIME': case 'TOD': return 'time';
-        case 'DATE': return 'date';
-        case 'DT': return 'datetime';
-        default: return undefined;
+        case 'BOOL':
+            return 'bool';
+        case 'SINT':
+        case 'INT':
+        case 'DINT':
+        case 'LINT':
+            return 'signed';
+        case 'USINT':
+        case 'UINT':
+        case 'UDINT':
+        case 'ULINT':
+            return 'unsigned';
+        case 'BYTE':
+        case 'WORD':
+        case 'DWORD':
+        case 'LWORD':
+            return 'bits';
+        case 'REAL':
+        case 'LREAL':
+            return 'real';
+        case 'TIME':
+        case 'TOD':
+            return 'time';
+        case 'DATE':
+            return 'date';
+        case 'DT':
+            return 'datetime';
+        default:
+            return undefined;
     }
 }
 
@@ -3957,11 +4295,16 @@ function foldConstant(state: CodeGenState, expr: Expression, depth = 0): bigint 
             const right = foldConstant(state, expr.right, depth + 1);
             if (left === undefined || right === undefined) return undefined;
             switch (expr.operator) {
-                case 'ADD': return left + right;
-                case 'SUB': return left - right;
-                case 'MUL': return left * right;
-                case 'DIV': return right === 0n ? undefined : left / right;
-                default: return right === 0n ? undefined : left % right;
+                case 'ADD':
+                    return left + right;
+                case 'SUB':
+                    return left - right;
+                case 'MUL':
+                    return left * right;
+                case 'DIV':
+                    return right === 0n ? undefined : left / right;
+                default:
+                    return right === 0n ? undefined : left % right;
             }
         }
         case 'Identifier': {
@@ -3982,15 +4325,25 @@ function foldConstant(state: CodeGenState, expr: Expression, depth = 0): bigint 
  * implicitly to the place's, and a constant fits the place's range. `from` is the static type of the value,
  * `constant` its value when it is one.
  */
-function checkConvertible(from: string, to: string, at: { line: number; column: number; endLine?: number; endColumn?: number },
-                          constant: bigint | undefined): void {
+function checkConvertible(
+    from: string,
+    to: string,
+    at: { line: number; column: number; endLine?: number; endColumn?: number },
+    constant: bigint | undefined,
+): void {
     if (!convertsImplicitly(from, to)) {
         const named = from === LITERAL_INT ? 'INT' : from;
         const text = parseStringType(from) !== null || parseStringType(to) !== null;
-        fail('TYPE_MISMATCH', at, `Type mismatch: a value of type ${named} cannot be used where ${to} is expected. `
-            + (text
-                ? `A STRING or WSTRING is text, and IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`
-                : `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`));
+        fail(
+            'TYPE_MISMATCH',
+            at,
+            `Type mismatch: a value of type ${named} cannot be used where ${to} is expected. ` +
+                (text
+                    ? `A STRING or WSTRING is text, and IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only ` +
+                      `through a function`
+                    : `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example ` +
+                      `with ${named}_TO_${to}`),
+        );
     }
     const range = constant === undefined ? undefined : integerRange(to);
     if (range && constant !== undefined && (constant < range.low || constant > range.high)) {
@@ -4023,10 +4376,18 @@ function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
     if (isUnsigned32(type) && op !== 'EQ' && op !== 'NE') {
         // Only LTU and GTU exist: a <= b is not (a > b), a >= b is not (a < b)
         switch (op) {
-            case 'LT': emit(state, `    LTU`); return;
-            case 'GT': emit(state, `    GTU`); return;
-            case 'LE': emit(state, `    GTU`); break;
-            case 'GE': emit(state, `    LTU`); break;
+            case 'LT':
+                emit(state, `    LTU`);
+                return;
+            case 'GT':
+                emit(state, `    GTU`);
+                return;
+            case 'LE':
+                emit(state, `    GTU`);
+                break;
+            case 'GE':
+                emit(state, `    LTU`);
+                break;
         }
         emit(state, `    PUSH8 0`);
         emit(state, `    EQ`);
@@ -4060,9 +4421,7 @@ function acquireStringBuffer(state: CodeGenState, capacity: number): number {
     // a count written as a constant bounds the result of LEFT, RIGHT and MID
     if (bound !== null) capacity = Math.min(capacity, bound);
     const size = 4 + capacity + 1;
-    let buffer = state.stringBuffers
-        .filter((candidate) => candidate.free && candidate.size >= size)
-        .sort((a, b) => a.size - b.size)[0];
+    let buffer = state.stringBuffers.filter((candidate) => candidate.free && candidate.size >= size).sort((a, b) => a.size - b.size)[0];
     if (buffer) {
         buffer.free = false;
     } else {
@@ -4074,7 +4433,22 @@ function acquireStringBuffer(state: CodeGenState, capacity: number): number {
     return buffer.address;
 }
 
-const STRING_FUNCTION_NAMES = new Set(['LEN', 'CONCAT', 'COPY', 'CLEAR', 'LEFT', 'RIGHT', 'MID', 'FIND', 'INSERT', 'DELETE', 'REPLACE', 'STRCMP', 'EQ_STRING', 'NE_STRING']);
+const STRING_FUNCTION_NAMES = new Set([
+    'LEN',
+    'CONCAT',
+    'COPY',
+    'CLEAR',
+    'LEFT',
+    'RIGHT',
+    'MID',
+    'FIND',
+    'INSERT',
+    'DELETE',
+    'REPLACE',
+    'STRCMP',
+    'EQ_STRING',
+    'NE_STRING',
+]);
 function isStringFunction(name: string): boolean {
     return STRING_FUNCTION_NAMES.has(name.toUpperCase());
 }
@@ -4089,7 +4463,9 @@ function stringCapacityOf(state: CodeGenState, expr: Expression): number {
             if (userFunction) return parseStringType(userFunction.returnType)?.capacity ?? 80;
             const args = expr.args.map(argumentValue);
             switch (expr.name.toUpperCase()) {
-                case 'LEFT': case 'RIGHT': case 'MID': {
+                case 'LEFT':
+                case 'RIGHT':
+                case 'MID': {
                     // a constant count bounds the result
                     const whole = args[0] ? stringCapacityOf(state, args[0]) : 80;
                     const count = args[expr.name.toUpperCase() === 'MID' ? 2 : 1];
@@ -4098,8 +4474,10 @@ function stringCapacityOf(state: CodeGenState, expr: Expression): number {
                 }
                 case 'DELETE':
                     return args[0] ? stringCapacityOf(state, args[0]) : 80;
-                case 'CONCAT': case 'INSERT': case 'REPLACE':
-                    return args.length > 1 ? Math.min(0xFFFF, stringCapacityOf(state, args[0]) + stringCapacityOf(state, args[1])) : 80;
+                case 'CONCAT':
+                case 'INSERT':
+                case 'REPLACE':
+                    return args.length > 1 ? Math.min(0xffff, stringCapacityOf(state, args[0]) + stringCapacityOf(state, args[1])) : 80;
                 default:
                     return 80;
             }
@@ -4183,7 +4561,12 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
         const otherType = meaningType(state, other);
         if (otherType === LITERAL_INT || typeKind(otherType) !== undefined) {
             const named = otherType === LITERAL_INT ? 'INT' : otherType;
-            fail('TYPE_MISMATCH', other, `Type mismatch: a ${inferExpressionType(state, text)} cannot be used with a ${named} in an operation: IEC 61131-3 converts a text to a number, a BOOL or a time, and back, only through a function`);
+            fail(
+                'TYPE_MISMATCH',
+                other,
+                `Type mismatch: a ${inferExpressionType(state, text)} cannot be used with a ${named} in an operation: IEC 61131-3 ` +
+                    `converts a text to a number, a BOOL or a time, and back, only through a function`,
+            );
         }
     }
 
@@ -4245,9 +4628,15 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
 
     switch (expr.operator) {
         // Arithmetic operators - use float variants when operands are REAL, double ones for LREAL
-        case 'ADD': emit(state, double ? `    ADDD` : useFloat ? `    ADDF` : `    ADD`); break;
-        case 'SUB': emit(state, double ? `    SUBD` : useFloat ? `    SUBF` : `    SUB`); break;
-        case 'MUL': emit(state, double ? `    MULD` : useFloat ? `    MULF` : `    MUL`); break;
+        case 'ADD':
+            emit(state, double ? `    ADDD` : useFloat ? `    ADDF` : `    ADD`);
+            break;
+        case 'SUB':
+            emit(state, double ? `    SUBD` : useFloat ? `    SUBF` : `    SUB`);
+            break;
+        case 'MUL':
+            emit(state, double ? `    MULD` : useFloat ? `    MULF` : `    MUL`);
+            break;
         case 'DIV':
             if (double) {
                 emit(state, `    DIVD`);
@@ -4274,15 +4663,33 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
             }
             break;
 
-        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+        case 'EQ':
+        case 'NE':
+        case 'LT':
+        case 'LE':
+        case 'GT':
+        case 'GE':
             emitCompare(state, expr.operator, opType);
             break;
     }
 }
 
 const OPERATOR_TEXT: Record<BinaryExpr['operator'], string> = {
-    AND: 'AND', OR: 'OR', XOR: 'XOR', ADD: '+', SUB: '-', MUL: '*', DIV: '/', MOD: 'MOD', POW: '**',
-    EQ: '=', NE: '<>', LT: '<', LE: '<=', GT: '>', GE: '>=',
+    AND: 'AND',
+    OR: 'OR',
+    XOR: 'XOR',
+    ADD: '+',
+    SUB: '-',
+    MUL: '*',
+    DIV: '/',
+    MOD: 'MOD',
+    POW: '**',
+    EQ: '=',
+    NE: '<>',
+    LT: '<',
+    LE: '<=',
+    GT: '>',
+    GE: '>=',
 };
 
 /**
@@ -4301,23 +4708,44 @@ function checkOperands(state: CodeGenState, expr: BinaryExpr): void {
     const named = (type: string) => (type === LITERAL_INT ? 'INT' : type);
 
     switch (expr.operator) {
-        case 'ADD': case 'SUB': case 'MUL': case 'DIV': case 'MOD':
+        case 'ADD':
+        case 'SUB':
+        case 'MUL':
+        case 'DIV':
+        case 'MOD':
             for (const [operand, type] of operands) {
                 const k = kind(type);
                 if (k === 'bool') fail('TYPE_MISMATCH', operand, `Type mismatch: the operator ${text} takes numbers and this is a BOOL`);
-                if (expr.operator === 'MOD' && k === 'real') fail('TYPE_MISMATCH', operand, `Type mismatch: MOD takes integers and this is a ${named(type)}`);
+                if (expr.operator === 'MOD' && k === 'real')
+                    fail('TYPE_MISMATCH', operand, `Type mismatch: MOD takes integers and this is a ${named(type)}`);
             }
             return;
-        case 'AND': case 'OR': case 'XOR':
+        case 'AND':
+        case 'OR':
+        case 'XOR':
             for (const [operand, type] of operands) {
-                if (kind(type) === 'real') fail('TYPE_MISMATCH', operand, `Type mismatch: the operator ${text} takes BOOL or bit strings and this is a ${named(type)}`);
+                if (kind(type) === 'real')
+                    fail(
+                        'TYPE_MISMATCH',
+                        operand,
+                        `Type mismatch: the operator ${text} takes BOOL or bit strings and this is a ${named(type)}`,
+                    );
             }
             if ((left === 'bool') !== (right === 'bool') && left !== undefined && right !== undefined) {
                 const [operand, type] = left === 'bool' ? operands[1]! : operands[0]!;
-                fail('TYPE_MISMATCH', operand, `Type mismatch: the operator ${text} takes two BOOL or two bit strings, not a BOOL with a ${named(type)}`);
+                fail(
+                    'TYPE_MISMATCH',
+                    operand,
+                    `Type mismatch: the operator ${text} takes two BOOL or two bit strings, not a BOOL with a ${named(type)}`,
+                );
             }
             return;
-        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+        case 'EQ':
+        case 'NE':
+        case 'LT':
+        case 'LE':
+        case 'GT':
+        case 'GE':
             if ((left === 'bool') !== (right === 'bool') && left !== undefined && right !== undefined) {
                 const [operand, type] = left === 'bool' ? operands[1]! : operands[0]!;
                 fail('TYPE_MISMATCH', operand, `Type mismatch: a BOOL cannot be compared with a ${named(type)}`);
@@ -4336,12 +4764,24 @@ function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): 
     // LINT and DT are signed; ULINT and LWORD divide and take the remainder as unsigned values (CMP-012, CMP-015)
     const signed = numericInfo(opType)?.signed === true;
     switch (expr.operator) {
-        case 'ADD': callHelper(state, 'add64', ADD64_LABEL); break;
-        case 'SUB': callHelper(state, 'sub64', SUB64_LABEL); break;
-        case 'MUL': emit(state, `    MUL64`); break;
-        case 'DIV': emit(state, signed ? `    DIVS64` : `    DIVU64`); break;
-        case 'MOD': emit(state, signed ? `    MODS64` : `    MODU64`); break;
-        case 'AND': case 'OR': case 'XOR':
+        case 'ADD':
+            callHelper(state, 'add64', ADD64_LABEL);
+            break;
+        case 'SUB':
+            callHelper(state, 'sub64', SUB64_LABEL);
+            break;
+        case 'MUL':
+            emit(state, `    MUL64`);
+            break;
+        case 'DIV':
+            emit(state, signed ? `    DIVS64` : `    DIVU64`);
+            break;
+        case 'MOD':
+            emit(state, signed ? `    MODS64` : `    MODU64`);
+            break;
+        case 'AND':
+        case 'OR':
+        case 'XOR':
             // [alo ahi blo bhi]: the high words, then the low words
             emit(state, `    ROT`);
             emit(state, `    ${expr.operator}`);
@@ -4350,7 +4790,12 @@ function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): 
             emit(state, `    ${expr.operator}`);
             emit(state, `    SWAP`);
             break;
-        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+        case 'EQ':
+        case 'NE':
+        case 'LT':
+        case 'LE':
+        case 'GT':
+        case 'GE':
             emitCompare(state, expr.operator, opType);
             break;
     }
@@ -4361,8 +4806,14 @@ function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): 
  * a literal over 2147483647 is a DWORD, not an error (CMP-012).
  */
 const STANDARD_PARAMETER_TYPE: Record<string, string> = {
-    AND_WORD: 'WORD', OR_WORD: 'WORD', XOR_WORD: 'WORD', NOT_WORD: 'WORD',
-    AND_DWORD: 'DWORD', OR_DWORD: 'DWORD', XOR_DWORD: 'DWORD', NOT_DWORD: 'DWORD',
+    AND_WORD: 'WORD',
+    OR_WORD: 'WORD',
+    XOR_WORD: 'WORD',
+    NOT_WORD: 'WORD',
+    AND_DWORD: 'DWORD',
+    OR_DWORD: 'DWORD',
+    XOR_DWORD: 'DWORD',
+    NOT_DWORD: 'DWORD',
 };
 
 /** `value` as the argument of a parameter of `type`: checked, and a constant carries the type it is given to. */
@@ -4372,7 +4823,15 @@ function typedArgument(state: CodeGenState, value: Expression, type: string): Ex
     checkConvertible(from, type, value, constant);
     warnNarrowing(state, value, from, type, constant);
     if (constant === undefined) return value;
-    return { kind: 'IntLiteral', value: Number(constant), literalType: type, line: value.line, column: value.column, endLine: value.endLine, endColumn: value.endColumn };
+    return {
+        kind: 'IntLiteral',
+        value: Number(constant),
+        literalType: type,
+        line: value.line,
+        column: value.column,
+        endLine: value.endLine,
+        endColumn: value.endColumn,
+    };
 }
 
 /**
@@ -4391,11 +4850,26 @@ function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[
             const argument = arg as NamedArgument;
             named = true;
             const index = inputs.findIndex((input) => sameName(input.name, argument.name));
-            if (index < 0) fail('UNKNOWN_PARAMETER', argument as { line: number; column: number }, `Function '${call.name}' has no input parameter '${argument.name}'`);
-            if (bound[index] !== undefined) fail('INVALID_ARGUMENTS', argument as { line: number; column: number }, `Parameter '${inputs[index]!.name}' of function '${call.name}' is given twice`);
+            if (index < 0)
+                fail(
+                    'UNKNOWN_PARAMETER',
+                    argument as { line: number; column: number },
+                    `Function '${call.name}' has no input parameter '${argument.name}'`,
+                );
+            if (bound[index] !== undefined)
+                fail(
+                    'INVALID_ARGUMENTS',
+                    argument as { line: number; column: number },
+                    `Parameter '${inputs[index]!.name}' of function '${call.name}' is given twice`,
+                );
             bound[index] = argument.value;
         } else {
-            if (named) fail('INVALID_ARGUMENTS', arg as Expression, `In a call of '${call.name}', an argument by position cannot follow one by name`);
+            if (named)
+                fail(
+                    'INVALID_ARGUMENTS',
+                    arg as Expression,
+                    `In a call of '${call.name}', an argument by position cannot follow one by name`,
+                );
             if (positional >= inputs.length) {
                 fail('INVALID_ARGUMENTS', arg as Expression, `Function '${call.name}' takes ${inputs.length} argument(s)`);
             }
@@ -4412,8 +4886,33 @@ function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[
 
 /** The standard functions that take 64-bit integers and LREAL (two cells) as well as one-cell values. */
 const WIDE_FUNCTIONS = new Set([
-    'ABS', 'NEG', 'ABSF', 'NEGF', 'MAX', 'MIN', 'LIMIT', 'SEL', 'MUX', 'SQRT', 'EXPT', 'TRUNC', 'ROUND',
-    'SIN', 'COS', 'TAN', 'LN', 'LOG', 'EXP', 'ASIN', 'ACOS', 'ATAN', 'ATAN2', 'SHL', 'SHR', 'ROL', 'ROR',
+    'ABS',
+    'NEG',
+    'ABSF',
+    'NEGF',
+    'MAX',
+    'MIN',
+    'LIMIT',
+    'SEL',
+    'MUX',
+    'SQRT',
+    'EXPT',
+    'TRUNC',
+    'ROUND',
+    'SIN',
+    'COS',
+    'TAN',
+    'LN',
+    'LOG',
+    'EXP',
+    'ASIN',
+    'ACOS',
+    'ATAN',
+    'ATAN2',
+    'SHL',
+    'SHR',
+    'ROL',
+    'ROR',
 ]);
 
 function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
@@ -4433,7 +4932,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
         // integer given to a REAL parameter is converted
         const bound = bindArguments(state, expr, userFn.inputs);
         userFn.inputs.forEach((input, index) => {
-            const value = bound[index] ?? input.initialValue as Expression;
+            const value = bound[index] ?? (input.initialValue as Expression);
             const type = storedType(state, input.dataType);
             if (isStringType(type)) {
                 // a string goes by address; the function copies it (it never changes the caller's)
@@ -4479,12 +4978,19 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
         const value = argumentValue(arg);
         const argType = staticType(state, value);
         if (isWide(argType) && !WIDE_FUNCTIONS.has(expr.name.toUpperCase()) && conversionResultType(expr.name) === undefined) {
-            fail('UNSUPPORTED_ARGUMENT_TYPE', expr, `${expr.name} does not take a 64-bit or LREAL argument (CMP-015): use a conversion function first`);
+            fail(
+                'UNSUPPORTED_ARGUMENT_TYPE',
+                expr,
+                `${expr.name} does not take a 64-bit or LREAL argument (CMP-015): use a conversion function first`,
+            );
         }
         // the string routines of the VM work on one-byte characters
-        if (expr.name.toUpperCase() !== 'LEN' && isStringFunction(expr.name)
-            && parseStringType(inferExpressionType(state, value))?.wide) {
-            fail('UNSUPPORTED_ARGUMENT_TYPE', value, `${expr.name} does not take a WSTRING yet: only LEN, assignment and initial values do`);
+        if (expr.name.toUpperCase() !== 'LEN' && isStringFunction(expr.name) && parseStringType(inferExpressionType(state, value))?.wide) {
+            fail(
+                'UNSUPPORTED_ARGUMENT_TYPE',
+                value,
+                `${expr.name} does not take a WSTRING yet: only LEN, assignment and initial values do`,
+            );
         }
     }
 
@@ -4498,8 +5004,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
 
     // A standard function takes its arguments by position: a named argument stands for its value
     const formal = STANDARD_PARAMETER_TYPE[expr.name.toUpperCase()];
-    const simpleArgs = expr.args.map(argumentValue)
-        .map((value) => formal === undefined ? value : typedArgument(state, value, formal));
+    const simpleArgs = expr.args.map(argumentValue).map((value) => (formal === undefined ? value : typedArgument(state, value, formal)));
 
     fnDef.generateInline(ctx, simpleArgs);
     state.resultCapacity = null;
@@ -4529,10 +5034,9 @@ function emitStore(state: CodeGenState, sym: Symbol): void {
     //   OR                         ; [value, new_byte]
     //   STORE8 addr                ; [value]
     //   DROP                       ; []
-    if (sym.dataType === 'BOOL' && sym.ioAddress &&
-        (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+    if (sym.dataType === 'BOOL' && sym.ioAddress && (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
         const bitPos = sym.ioAddress.bitOffset;
-        const andMask = (~(1 << bitPos)) & 0xFF;  // Clear the target bit
+        const andMask = ~(1 << bitPos) & 0xff; // Clear the target bit
         emit(state, `    ; RMW STORE BOOL bit ${bitPos} at ${formatAddress(sym.address)}`);
         emit(state, `    DUP`);
         emit(state, `    PUSH8 ${bitPos}`);
@@ -4582,7 +5086,7 @@ interface Place {
 }
 
 /** The address `0xFFFF`: no memory region contains it, so any access through it is a VM fault (CMP-024). */
-const NULL_REFERENCE = 0xFFFF;
+const NULL_REFERENCE = 0xffff;
 
 /** Address inside the CODE region: a load from it ends the scan with the VM fault of a memory access violation. */
 const FAULT_ADDRESS = MEMORY_REGION.CODE.base;
@@ -4646,7 +5150,13 @@ function identifierPlace(state: CodeGenState, expr: Identifier): Place {
     if (instance && typeof instance.dataType === 'string') {
         const member = state.symbols.getFBDefinition(instance.dataType)?.members.get(name);
         if (member) {
-            const owner: Place = { addr: { k: 'const', a: instance.address }, type: instance.dataType, size: instance.size, sym: instance, name: instance.name };
+            const owner: Place = {
+                addr: { k: 'const', a: instance.address },
+                type: instance.dataType,
+                size: instance.size,
+                sym: instance,
+                name: instance.name,
+            };
             return placeOfMember(state, owner, member, name);
         }
     }
@@ -4654,14 +5164,25 @@ function identifierPlace(state: CodeGenState, expr: Identifier): Place {
     // 3. A global, a program variable or the variable of a function
     const sym = state.symbols.get(name);
     if (!sym) fail('UNKNOWN_IDENTIFIER', expr, `Unknown identifier '${name}'`);
-    return { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, readonly: sym.section === VarSection.CONSTANT, name };
+    return {
+        addr: { k: 'const', a: sym.address },
+        type: sym.dataType,
+        size: sym.size,
+        sym,
+        readonly: sym.section === VarSection.CONSTANT,
+        name,
+    };
 }
 
 function memberPlace(state: CodeGenState, owner: Place, expr: MemberAccess): Place {
     const typeName = owner.type;
     const name = `${owner.name}.${expr.member}`;
     if (typeof typeName !== 'string') {
-        fail('INVALID_MEMBER_ACCESS', expr, `Cannot access member '${expr.member}' of '${owner.name}': it is not a structure or a function block`);
+        fail(
+            'INVALID_MEMBER_ACCESS',
+            expr,
+            `Cannot access member '${expr.member}' of '${owner.name}': it is not a structure or a function block`,
+        );
     }
 
     const struct = state.symbols.getStructDefinition(typeName);
@@ -4700,7 +5221,11 @@ function arrayPlace(state: CodeGenState, expr: ArrayAccess): Place {
     const type = array.type as ArrayType;
     const dims = type.dimensions;
     if (expr.indices.length !== dims.length) {
-        fail('INVALID_ARRAY_ACCESS', expr, `'${array.name}' has ${dims.length} dimension${dims.length === 1 ? '' : 's'}, ${expr.indices.length} given`);
+        fail(
+            'INVALID_ARRAY_ACCESS',
+            expr,
+            `'${array.name}' has ${dims.length} dimension${dims.length === 1 ? '' : 's'}, ${expr.indices.length} given`,
+        );
     }
 
     const elementSize = state.symbols.sizeOf(type.elementType);
@@ -4714,7 +5239,11 @@ function arrayPlace(state: CodeGenState, expr: ArrayAccess): Place {
         if (constant !== undefined) {
             // CMP-023: a constant index outside the bounds is a compile error
             if (constant < dims[d].lowerBound || constant > dims[d].upperBound) {
-                fail('INDEX_OUT_OF_BOUNDS', index, `Array index ${constant} is outside the bounds ${dims[d].lowerBound}..${dims[d].upperBound} of '${array.name}'`);
+                fail(
+                    'INDEX_OUT_OF_BOUNDS',
+                    index,
+                    `Array index ${constant} is outside the bounds ${dims[d].lowerBound}..${dims[d].upperBound} of '${array.name}'`,
+                );
             }
             addr = addOffset(addr, (constant - dims[d].lowerBound) * stride);
         } else {
@@ -4722,7 +5251,11 @@ function arrayPlace(state: CodeGenState, expr: ArrayAccess): Place {
             if (isFloatType(indexType)) fail('INVALID_ARRAY_ACCESS', index, `An array index must be an integer, not ${indexType}`);
             if (isWide(indexType)) {
                 // a 64-bit value cut to its low word could name an element that is not the one it says
-                fail('INVALID_ARRAY_ACCESS', index, `An array index must be a 32-bit integer, not ${indexType}: convert it, for example with ${indexType}_TO_DINT`);
+                fail(
+                    'INVALID_ARRAY_ACCESS',
+                    index,
+                    `An array index must be a 32-bit integer, not ${indexType}: convert it, for example with ${indexType}_TO_DINT`,
+                );
             }
             addr = { k: 'index', base: addr, index, lower: dims[d].lowerBound, count, stride };
         }
@@ -4826,7 +5359,8 @@ function accessWidth(state: CodeGenState, place: Place): '8' | '16' | '32' | '64
     if (isPointerType(place.type)) return '32';
     const type = storedType(state, place.type);
     // the member of a standard function block declares its size, not always a type
-    if (typeof type === 'string' && numericTypeName(type) === UNKNOWN_TYPE && place.size > 0) return getSizeSuffix(place.size as MemberSize);
+    if (typeof type === 'string' && numericTypeName(type) === UNKNOWN_TYPE && place.size > 0)
+        return getSizeSuffix(place.size as MemberSize);
     return getLoadStoreSuffix(type as DataTypeValue);
 }
 
@@ -4848,8 +5382,7 @@ function emitLoadPlace(state: CodeGenState, place: Place, label?: string): void 
     if (place.addr.k === 'const') {
         const sym = place.sym;
         // Bit-addressed BOOL (e.g. AT %QX0.1): extract the specific bit from the byte
-        if (sym && sym.dataType === 'BOOL' && sym.ioAddress &&
-            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+        if (sym && sym.dataType === 'BOOL' && sym.ioAddress && (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
             const bitPos = sym.ioAddress.bitOffset;
             emit(state, `    LOAD8 ${formatAddress(sym.address)}   ; ${label ?? sym.name} (byte)`);
             if (bitPos > 0) {
@@ -4887,8 +5420,7 @@ function emitStorePlace(state: CodeGenState, place: Place, emitValue: () => void
     if (place.addr.k === 'const') {
         emitValue();
         const sym = place.sym;
-        if (sym && sym.dataType === 'BOOL' && sym.ioAddress &&
-            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+        if (sym && sym.dataType === 'BOOL' && sym.ioAddress && (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
             emitStore(state, sym);
         } else {
             emit(state, `    STORE${width} ${formatAddress(place.addr.a)}`);
@@ -4947,9 +5479,15 @@ function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src
     while (off < size) {
         const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
         emit(state, `    PICK 1`);
-        if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
+        if (off) {
+            emitPushInteger(state, off);
+            emit(state, `    ADD`);
+        }
         emit(state, `    PICK 1`);
-        if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
+        if (off) {
+            emitPushInteger(state, off);
+            emit(state, `    ADD`);
+        }
         emit(state, `    LOADI${chunkWidth(chunk)}`);
         emit(state, `    STOREI${chunkWidth(chunk)}`);
         off += chunk;
@@ -4979,7 +5517,13 @@ function emitZeroBytes(state: CodeGenState, address: number, size: number): void
  * Whether `value` names a variable (or a member, an element) of exactly `type`: the only
  * thing a whole structure or array can be assigned from.
  */
-function aggregateSource(state: CodeGenState, value: Expression, type: STDataType | ArrayType, at: { line: number; column: number }, target: string): Place {
+function aggregateSource(
+    state: CodeGenState,
+    value: Expression,
+    type: STDataType | ArrayType,
+    at: { line: number; column: number },
+    target: string,
+): Place {
     let place: Place;
     try {
         place = resolvePlace(state, value);
@@ -5017,7 +5561,11 @@ function emitAssignToPlace(state: CodeGenState, place: Place, value: Expression,
         return;
     } else if (value.kind === 'ReferenceExpr' || valueIsReference(state, value)) {
         // CMP-024: a reference is not a number
-        fail('TYPE_MISMATCH', value, `Cannot assign a reference to '${place.name}' of type ${typeText(type)}: only a REF_TO variable holds one`);
+        fail(
+            'TYPE_MISMATCH',
+            value,
+            `Cannot assign a reference to '${place.name}' of type ${typeText(type)}: only a REF_TO variable holds one`,
+        );
     }
 
     emitStorePlace(state, place, () => emitValueFor(state, value, type));
@@ -5100,8 +5648,10 @@ function emitStringFunctionInto(state: CodeGenState, place: Place, call: Functio
     if (first.kind === 'Identifier' || first.kind === 'MemberAccess' || first.kind === 'ArrayAccess') {
         try {
             const firstPlace = resolvePlace(state, first);
-            firstIsTarget = firstPlace.addr.k === 'const' && firstPlace.addr.a === target
-                && typeText(storedType(state, firstPlace.type)) === typeText(storedType(state, place.type));
+            firstIsTarget =
+                firstPlace.addr.k === 'const' &&
+                firstPlace.addr.a === target &&
+                typeText(storedType(state, firstPlace.type)) === typeText(storedType(state, place.type));
         } catch (error) {
             if (!(error instanceof CodegenError)) throw error;
         }
@@ -5184,21 +5734,35 @@ function emitStringAssign(state: CodeGenState, place: Place, value: Expression, 
 
     if (value.kind === 'StringLiteral' || value.kind === 'WStringLiteral') {
         if ((value.kind === 'WStringLiteral') !== text.wide) {
-            fail('TYPE_MISMATCH', value, `Cannot assign ${value.kind === 'WStringLiteral' ? 'a WSTRING' : 'a STRING'} literal to '${place.name}' of type ${typeText(type)}`);
+            fail(
+                'TYPE_MISMATCH',
+                value,
+                `Cannot assign ${
+                    value.kind === 'WStringLiteral' ? 'a WSTRING' : 'a STRING'
+                } literal to '${place.name}' of type ${typeText(type)}`,
+            );
         }
         checkStringFits(value, type, place.name);
     } else if (!isStringExpression(state, value)) {
-        fail('TYPE_MISMATCH', value, `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: it is not a string`);
-    } else if (text.wide !== (inferExpressionType(state, value).toUpperCase().startsWith('W'))) {
-        fail('TYPE_MISMATCH', value, `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: STRING and WSTRING do not mix`);
+        fail(
+            'TYPE_MISMATCH',
+            value,
+            `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: it is not a string`,
+        );
+    } else if (text.wide !== inferExpressionType(state, value).toUpperCase().startsWith('W')) {
+        fail(
+            'TYPE_MISMATCH',
+            value,
+            `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: STRING and WSTRING do not mix`,
+        );
     }
 
     if (!text.wide && place.addr.k === 'const' && value.kind === 'FunctionCall' && emitStringFunctionInto(state, place, value)) {
         return;
     }
 
-    emitExpression(state, value);                // [src]
-    emitAddr(state, place.addr);                 // [src dst]
+    emitExpression(state, value); // [src]
+    emitAddr(state, place.addr); // [src dst]
     if (text.wide) {
         state.helpers.add('memcpy');
         callHelper(state, 'wstrcpy', WSTRCPY_LABEL);
@@ -5253,7 +5817,12 @@ function emitPlaceExpression(state: CodeGenState, expr: Expression): void {
     const place = resolvePlace(state, expr);
     const type = storedType(state, place.type);
     if (isArrayType(type as STDataType) || (typeof type === 'string' && state.symbols.isStructType(type))) {
-        fail('INVALID_MEMBER_ACCESS', expr, `'${place.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the same type`);
+        fail(
+            'INVALID_MEMBER_ACCESS',
+            expr,
+            `'${place.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the ` +
+                `same type`,
+        );
     }
     emitLoadPlace(state, place);
 }
@@ -5272,11 +5841,11 @@ function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
 
 /**
  * Emit a method call expression.
- * 
+ *
  * A method is inlined at each call site; the dispatch of a call through an interface is written out by
  * the compiler (see Interfaces below).
  * Format: instance.MethodName(args)
- * 
+ *
  * The method body is executed with THIS bound to the instance.
  */
 function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
@@ -5298,11 +5867,11 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr' && !isSuper) {
         fail('UNSUPPORTED_CONSTRUCT', expr, `Complex method call targets not supported yet`);
     }
-    
+
     let instanceName: string;
     let fbTypeName: string;
     let instanceSym: Symbol | undefined;
-    
+
     if (isSuper) {
         const block = state.currentBlock;
         if (!block || !state.currentFBInstance) fail('INVALID_THIS_OR_SUPER', expr, `SUPER^ is used outside of a function block`);
@@ -5327,7 +5896,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
         fbTypeName = instanceSym.dataType as string;
     }
-    
+
     emitMethodInline(state, expr, instanceSym, fbTypeName);
 }
 
@@ -5341,7 +5910,7 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
     if (!fbDef) {
         fail('UNKNOWN_TYPE', expr, `Unknown FB type '${fbTypeName}'`);
     }
-    
+
     // Find the method (includes inherited ones)
     const methodInfo = fbDef.methods.get(expr.methodName);
     if (!methodInfo) {
@@ -5349,9 +5918,13 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
     }
     checkMethodAccess(state, methodInfo, fbTypeName, expr);
     if (methodInfo.isAbstract) {
-        fail('INTERNAL_COMPILER_ERROR', expr, `The method '${methodInfo.name}' of '${methodInfo.owner}' is ABSTRACT: it has no body to run, a derived block implements it`);
+        fail(
+            'INTERNAL_COMPILER_ERROR',
+            expr,
+            `The method '${methodInfo.name}' of '${methodInfo.owner}' is ABSTRACT: it has no body to run, a derived block implements it`,
+        );
     }
-    
+
     // A method that returns a number writes a result slot that is pushed once where the method ends,
     // so the caller sees one value however many times, or never, the method assigns its name
     const methodReturnType = (methodInfo as { returnType?: DataTypeValue | null }).returnType ?? undefined;
@@ -5381,11 +5954,11 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
     const prevReturnLabel = state.returnLabel;
 
     emit(state, `    ; --- Begin Method ${fbTypeName}.${expr.methodName} ---`);
-    
+
     // Handle method inputs from args (Positional and Named)
     if (expr.args && expr.args.length > 0) {
         let positionalIndex = 0;
-        
+
         for (const arg of expr.args) {
             let inputName: string;
             let argExpr: Expression;
@@ -5412,23 +5985,29 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
                 inputName = input.name;
                 positionalIndex++;
             }
-            
+
             emit(state, `    ; Arg ${inputName} := ...`);
 
             if (input.mangledName) {
                 const sym = state.symbols.get(input.mangledName);
                 if (sym) {
-                    const target: Place = { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name: inputName };
+                    const target: Place = {
+                        addr: { k: 'const', a: sym.address },
+                        type: sym.dataType,
+                        size: sym.size,
+                        sym,
+                        name: inputName,
+                    };
                     emitAssignToPlace(state, target, argExpr, argExpr);
                 } else {
-                     fail('INTERNAL_COMPILER_ERROR', expr, `Symbol for input '${inputName}' not found`);
+                    fail('INTERNAL_COMPILER_ERROR', expr, `Symbol for input '${inputName}' not found`);
                 }
             } else {
                 fail('INTERNAL_COMPILER_ERROR', expr, `Input '${inputName}' has no allocated memory`);
             }
         }
     }
-    
+
     // From here on the code is the method's: its instance, its inputs and locals, its return
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
@@ -5468,7 +6047,12 @@ function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Sy
         emit(state, `    ; ${expr.methodName} := 0`);
         if (resultPlace.size === 8) emit(state, `    PUSH32 0`);
         emit(state, `    PUSH32 0`);
-        emit(state, `    STORE${getLoadStoreSuffix(storedType(state, methodReturnType!) as DataTypeValue)} ${formatAddress((resultPlace.addr as { a: number }).a)}`);
+        emit(
+            state,
+            `    STORE${getLoadStoreSuffix(
+                storedType(state, methodReturnType!) as DataTypeValue,
+            )} ${formatAddress((resultPlace.addr as { a: number }).a)}`,
+        );
     }
 
     // Inline the method body: its statements are the ones of the file of the block that declares it
@@ -5543,7 +6127,11 @@ function emitInterfaceValue(state: CodeGenState, value: Expression, iface: strin
     const given = place === undefined ? undefined : storedType(state, place.type);
     if (place && typeof given === 'string' && isInterfaceType(state, given)) {
         if (!state.symbols.interfaceDerivesFrom(given, iface)) {
-            fail('TYPE_MISMATCH', value, `Cannot assign the interface '${given}' of '${place.name}' to a variable of the interface '${iface}'`);
+            fail(
+                'TYPE_MISMATCH',
+                value,
+                `Cannot assign the interface '${given}' of '${place.name}' to a variable of the interface '${iface}'`,
+            );
         }
         emitLoadPlace(state, place);
         return;
@@ -5557,7 +6145,12 @@ function emitInterfaceValue(state: CodeGenState, value: Expression, iface: strin
         emit(state, `    OR`);
         return;
     }
-    fail('INTERFACE_NOT_IMPLEMENTED', value, `A variable of the interface '${iface}' takes an instance of a block that implements it, a variable of that interface or NULL, not ${stringifyExpression(value)}`);
+    fail(
+        'INTERFACE_NOT_IMPLEMENTED',
+        value,
+        `A variable of the interface '${iface}' takes an instance of a block that implements it, a variable of that interface or NULL, ` +
+            `not ${stringifyExpression(value)}`,
+    );
 }
 
 /** The place an expression names, when it is a variable of an interface type. */
@@ -5587,9 +6180,11 @@ function interfaceCandidates(state: CodeGenState, iface: string): Array<{ symbol
         if (isArrayType(type as STDataType)) {
             const array = type as ArrayType;
             const element = array.elementType;
-            if (typeof element !== 'string' || !(state.symbols.getFBDefinition(element) || state.symbols.getStructDefinition(element))) return;
+            if (typeof element !== 'string' || !(state.symbols.getFBDefinition(element) || state.symbols.getStructDefinition(element)))
+                return;
             const stride = state.symbols.sizeOf(element);
-            for (let index = 0; index < getArrayElementCount(array); index++) visit(`${name}[${index}]`, element, address + index * stride, depth + 1);
+            for (let index = 0; index < getArrayElementCount(array); index++)
+                visit(`${name}[${index}]`, element, address + index * stride, depth + 1);
             return;
         }
         if (typeof type !== 'string') return;
@@ -5601,8 +6196,15 @@ function interfaceCandidates(state: CodeGenState, iface: string): Array<{ symbol
                     seen.add(reference);
                     candidates.push({
                         symbol: {
-                            name, dataType: block.name, address, size: block.size, section: VarSection.VAR, ioAddress: null,
-                            members: memberOffsets(state, block.name), initialValue: null, tags: {},
+                            name,
+                            dataType: block.name,
+                            address,
+                            size: block.size,
+                            section: VarSection.VAR,
+                            ioAddress: null,
+                            members: memberOffsets(state, block.name),
+                            initialValue: null,
+                            tags: {},
                         },
                         type: block.name,
                         reference,
@@ -5669,7 +6271,11 @@ function isSuperReference(expr: Expression): boolean {
 /** Whether `block` is `ancestor` or extends it, directly or through other blocks. */
 function derivesFrom(state: CodeGenState, block: string, ancestor: string): boolean {
     const seen = new Set<string>();
-    for (let name: string | null = block; name !== null && !seen.has(name.toUpperCase()); name = state.symbols.getFBDefinition(name)?.extends ?? null) {
+    for (
+        let name: string | null = block;
+        name !== null && !seen.has(name.toUpperCase());
+        name = state.symbols.getFBDefinition(name)?.extends ?? null
+    ) {
         if (sameName(name, ancestor)) return true;
         seen.add(name.toUpperCase());
     }
@@ -5681,21 +6287,24 @@ function derivesFrom(state: CodeGenState, block: string, ancestor: string): bool
  * from the block that declares it, and a PROTECTED one from that block and the blocks that extend it. The code
  * that runs is the block's own, so a call from a program, a function or another block is outside.
  */
-function checkMethodAccess(state: CodeGenState, method: MethodInfo, typeName: string, at: { line: number; column: number; endLine?: number; endColumn?: number }): void {
+function checkMethodAccess(
+    state: CodeGenState,
+    method: MethodInfo,
+    typeName: string,
+    at: { line: number; column: number; endLine?: number; endColumn?: number },
+): void {
     if (method.access !== 'PRIVATE' && method.access !== 'PROTECTED') return;
     const here = state.currentBlock;
-    const inside = here !== null
-        && (method.access === 'PRIVATE' ? sameName(here, method.owner) : derivesFrom(state, here, method.owner));
+    const inside = here !== null && (method.access === 'PRIVATE' ? sameName(here, method.owner) : derivesFrom(state, here, method.owner));
     if (inside) return;
-    const where = method.access === 'PRIVATE'
-        ? `inside '${method.owner}'`
-        : `inside '${method.owner}' and the function blocks that extend it`;
+    const where =
+        method.access === 'PRIVATE' ? `inside '${method.owner}'` : `inside '${method.owner}' and the function blocks that extend it`;
     fail('ACCESS_VIOLATION', at, `The method '${method.name}' of '${typeName}' is ${method.access}: it can be called only ${where}`);
 }
 
 /**
  * Emit THIS expression.
- * 
+ *
  * THIS refers to the current FB instance's base address.
  * Used within methods to access the FB's own members.
  */
@@ -5703,7 +6312,7 @@ function emitThisExpr(state: CodeGenState, expr: ThisExpr): void {
     if (!state.currentFBInstance) {
         fail('INVALID_THIS_OR_SUPER', expr, `THIS used outside of FB/method context`);
     }
-    
+
     // Push the base address of the current FB instance
     emit(state, `    PUSH32 ${formatAddress(state.currentFBInstance.address)}   ; THIS`);
 }
@@ -5731,11 +6340,11 @@ function emitDTLiteral(state: CodeGenState, expr: DTLiteral): void {
     if (isNaN(timestamp)) {
         fail('INVALID_TIME_LITERAL', expr, `Invalid DT literal '${expr.value}'`);
     }
-    
+
     const bigVal = BigInt(timestamp);
-    const low = Number(bigVal & 0xFFFFFFFFn) | 0;
-    const high = Number((bigVal >> 32n) & 0xFFFFFFFFn) | 0;
-    
+    const low = Number(bigVal & 0xffffffffn) | 0;
+    const high = Number((bigVal >> 32n) & 0xffffffffn) | 0;
+
     emit(state, `    PUSH32 ${low}`);
     emit(state, `    PUSH32 ${high}`);
 }
@@ -5763,9 +6372,13 @@ const BIT_ACCESS_TYPES = new Set(['SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT'
 function bitMask(state: CodeGenState, access: BitAccess): { mask: bigint; bits: number; signed: boolean } {
     const type = staticType(state, access.operand);
     if (!BIT_ACCESS_TYPES.has(type)) {
-        fail('INVALID_BIT_ACCESS', access, type === 'BOOL' || type === UNKNOWN_TYPE || type === LITERAL_INT
-            ? `Bit access .${access.bit} needs an integer or bit-string variable (SINT to LINT, BYTE to LWORD)`
-            : `Bit access .${access.bit} is not defined for ${type}: it applies to the integers and the bit strings`);
+        fail(
+            'INVALID_BIT_ACCESS',
+            access,
+            type === 'BOOL' || type === UNKNOWN_TYPE || type === LITERAL_INT
+                ? `Bit access .${access.bit} needs an integer or bit-string variable (SINT to LINT, BYTE to LWORD)`
+                : `Bit access .${access.bit} is not defined for ${type}: it applies to the integers and the bit strings`,
+        );
     }
     const bits = numericInfo(type)!.bits;
     if (access.bit >= bits) {
@@ -5848,10 +6461,18 @@ function emitIndexedInstanceCall(state: CodeGenState, stmt: FBCallStatement, acc
     }
     const elementType = arrayType.elementType as string;
     if (!state.symbols.isFBType(elementType)) {
-        fail('INVALID_ARRAY_ACCESS', access, `'${elementType}' is not a function block: only an array of function block instances can be called`);
+        fail(
+            'INVALID_ARRAY_ACCESS',
+            access,
+            `'${elementType}' is not a function block: only an array of function block instances can be called`,
+        );
     }
     if (access.indices.length !== arrayType.dimensions.length) {
-        fail('INVALID_ARRAY_ACCESS', access, `The array has ${arrayType.dimensions.length} dimension(s) and is indexed with ${access.indices.length}`);
+        fail(
+            'INVALID_ARRAY_ACCESS',
+            access,
+            `The array has ${arrayType.dimensions.length} dimension(s) and is indexed with ${access.indices.length}`,
+        );
     }
     const elementSize = state.symbols.getTypeSizeByName(elementType);
     const members = memberOffsets(state, elementType);
@@ -5882,7 +6503,11 @@ function emitIndexedInstanceCall(state: CodeGenState, stmt: FBCallStatement, acc
         arrayType.dimensions.forEach((dimension, d) => {
             const index = indices[d]!;
             if (index < dimension.lowerBound || index > dimension.upperBound) {
-                fail('INDEX_OUT_OF_BOUNDS', access.indices[d]!, `Index ${index} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`);
+                fail(
+                    'INDEX_OUT_OF_BOUNDS',
+                    access.indices[d]!,
+                    `Index ${index} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`,
+                );
             }
             linear = linear * (dimension.upperBound - dimension.lowerBound + 1) + (index - dimension.lowerBound);
         });
@@ -5916,9 +6541,13 @@ function emitIndexedInstanceCall(state: CodeGenState, stmt: FBCallStatement, acc
 /** Text for the instance of a call, for messages and comments. */
 function describeCallee(expr: Expression): string {
     switch (expr.kind) {
-        case 'Identifier': return expr.name;
-        case 'MemberAccess': return `${describeCallee(expr.object)}.${expr.member}`;
-        case 'ArrayAccess': return `${describeCallee(expr.array)}[]`;
-        default: return 'instance';
+        case 'Identifier':
+            return expr.name;
+        case 'MemberAccess':
+            return `${describeCallee(expr.object)}.${expr.member}`;
+        case 'ArrayAccess':
+            return `${describeCallee(expr.array)}[]`;
+        default:
+            return 'instance';
     }
 }

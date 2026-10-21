@@ -114,11 +114,7 @@ export function groupVariablesForBatchPeek(variables: WatchVariable[]): PeekGrou
  * @param baseAddress - The address the buffer starts at
  * @param variable    - The variable to extract
  */
-export function extractVariableBytes(
-  buffer: Uint8Array,
-  baseAddress: number,
-  variable: WatchVariable,
-): Uint8Array {
+export function extractVariableBytes(buffer: Uint8Array, baseAddress: number, variable: WatchVariable): Uint8Array {
   const size = getTypeSize(variable.type, variable.maxLength);
   const offset = variable.address - baseAddress;
 
@@ -200,7 +196,7 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
   // We can just rely on standard JSON parser if we extract the right substring.
   // The C code outputs `]}` at the very end.
   const jsonEnd = combined.lastIndexOf('}');
-  
+
   if (jsonEnd <= jsonStart) {
     console.warn('[parseMpeekResponse] Invalid JSON boundaries', { jsonStart, jsonEnd });
     return result;
@@ -209,10 +205,11 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
   let parsed: MpeekResponse;
   try {
     // Sometimes the last serial line is cut or has extra garbage.
-    const cleanJsonStr = combined.slice(jsonStart, jsonEnd + 1)
-        // Fix any trailing commas in the array just in case
-        .replace(/,\s*\]/, ']');
-        
+    const cleanJsonStr = combined
+      .slice(jsonStart, jsonEnd + 1)
+      // Fix any trailing commas in the array just in case
+      .replace(/,\s*\]/, ']');
+
     debugLog('[parseMpeekResponse] Clean JSON string:', cleanJsonStr);
     parsed = JSON.parse(cleanJsonStr) as MpeekResponse;
     debugLog('[parseMpeekResponse] Parsed Object:', parsed);
@@ -250,8 +247,6 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
  * Example output: "0x2000:2,0x2002:2,0x2004:1"
  */
 export function buildMpeekArgument(requests: MpeekRequest[]): string {
-  return requests
-    .map((r) => `0x${r.address.toString(16)}:${r.size}`)
-    .join(',');
+  return requests.map((r) => `0x${r.address.toString(16)}:${r.size}`).join(',');
 }
 import { debugLog } from '../utils/debugLog';

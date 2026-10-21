@@ -34,18 +34,18 @@ The first scan runs at 0 ms and each next one `scanMs` later, so scan 6 of a 10 
 }
 ```
 
-| Key | Meaning |
-|---|---|
-| `requirement`, `title` | The test is named `<requirement> <title>`. The pair must be unique. |
-| `matrix` | The rows of `conformance/matrix.json` this case is evidence for, such as `["data-types.dint"]`. An id that the matrix does not have is an error. |
-| `tags` | `arch-sensitive` for a result that could differ between a 64-bit host, a 32-bit host and a Cortex-M3 under QEMU, and with it why: `division`, `shifts`, `float`, `float-conversion`, `64-bit`, or `alignment`, which also selects the case for the Cortex-M0 (VF-005). |
-| `note` | Why the expected value is right: the IEC rule it cites, or the contract of the requirement. |
-| `scans`, `scanMs` | How many scans to run and the task interval in milliseconds. |
-| `inputs` | Values written to the input image before a scan (`beforeScan`, default 1); they stay until changed. `at` is a `%I` address. |
-| `expect` | Values read after a scan (`afterScan`, default the last one). `at` is a `%I`, `%Q` or `%M` address; `var` names a variable instead and reads it where the debug map says it is (use it only to test the map). |
-| `fault` | `true` if the last scan must end in a VM fault. |
-| `files` | Further source files in the same folder that the program needs (a function block or a global declared in another file). They are not cases of their own. |
-| `tasks` | The tasks of the generated `zplc.json`, for a project of more than one program: `{ "name", "trigger", "interval_ms", "priority", "programs" }`, where `programs` names `main.<extension>` (the program of the case) and the entries of `files`. Without it, one cyclic task at the scan interval runs the program. |
+| Key                    | Meaning                                                                                                                                                                                                                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `requirement`, `title` | The test is named `<requirement> <title>`. The pair must be unique.                                                                                                                                                                                                                                                |
+| `matrix`               | The rows of `conformance/matrix.json` this case is evidence for, such as `["data-types.dint"]`. An id that the matrix does not have is an error.                                                                                                                                                                   |
+| `tags`                 | `arch-sensitive` for a result that could differ between a 64-bit host, a 32-bit host and a Cortex-M3 under QEMU, and with it why: `division`, `shifts`, `float`, `float-conversion`, `64-bit`, or `alignment`, which also selects the case for the Cortex-M0 (VF-005).                                             |
+| `note`                 | Why the expected value is right: the IEC rule it cites, or the contract of the requirement.                                                                                                                                                                                                                        |
+| `scans`, `scanMs`      | How many scans to run and the task interval in milliseconds.                                                                                                                                                                                                                                                       |
+| `inputs`               | Values written to the input image before a scan (`beforeScan`, default 1); they stay until changed. `at` is a `%I` address.                                                                                                                                                                                        |
+| `expect`               | Values read after a scan (`afterScan`, default the last one). `at` is a `%I`, `%Q` or `%M` address; `var` names a variable instead and reads it where the debug map says it is (use it only to test the map).                                                                                                      |
+| `fault`                | `true` if the last scan must end in a VM fault.                                                                                                                                                                                                                                                                    |
+| `files`                | Further source files in the same folder that the program needs (a function block or a global declared in another file). They are not cases of their own.                                                                                                                                                           |
+| `tasks`                | The tasks of the generated `zplc.json`, for a project of more than one program: `{ "name", "trigger", "interval_ms", "priority", "programs" }`, where `programs` names `main.<extension>` (the program of the case) and the entries of `files`. Without it, one cyclic task at the scan interval runs the program. |
 
 `type` is one of `BOOL`, `SINT`, `INT`, `DINT`, `USINT`, `UINT`, `UDINT`, `BYTE`, `WORD`, `DWORD`, `REAL`, and its width must match the address (`INT` with `%QW0`, `REAL` with `%QD0`, `BOOL` with `%QX0.0`). A misspelled key, a value that does not fit its type or a source file without an expectation is an error when the cases load, so nothing is silently skipped.
 
@@ -124,7 +124,12 @@ A row that must work needs a case that builds and runs and is not on the expecte
 A case that fails because of a defect the project already knows is listed in `tools/ci/expected-failures.json` with the requirement that will fix it:
 
 ```json
-{ "test": "packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-011 INT division of a negative operand", "requirement": "CMP-011", "added": "2026-10-09", "reason": "..." }
+{
+  "test": "packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-011 INT division of a negative operand",
+  "requirement": "CMP-011",
+  "added": "2026-10-09",
+  "reason": "..."
+}
 ```
 
 CI stays green while the listed cases fail and goes red for any other failure. When a repair makes a listed case pass, CI goes red until the entry is removed, so the list can only shrink. `bun tools/ci/check-expected-failures.ts` explains the rule; the id to copy is printed by its "unlisted failure" message.

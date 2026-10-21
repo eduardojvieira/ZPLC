@@ -14,11 +14,13 @@ const BASE_STATUS: StatusInfo = {
 
 describe('deriveHardwareDebugState', () => {
   it('maps paused scheduler state to paused VM state', () => {
-    expect(deriveHardwareDebugState({
-      ...BASE_STATUS,
-      state: 'paused',
-      vm: { pc: 24, sp: 2, halted: true, error: 10 },
-    })).toEqual({ vmState: 'paused', halted: true });
+    expect(
+      deriveHardwareDebugState({
+        ...BASE_STATUS,
+        state: 'paused',
+        vm: { pc: 24, sp: 2, halted: true, error: 10 },
+      }),
+    ).toEqual({ vmState: 'paused', halted: true });
   });
 
   it('maps running scheduler state to running VM state', () => {

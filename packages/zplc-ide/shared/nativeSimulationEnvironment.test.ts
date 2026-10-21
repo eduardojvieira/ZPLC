@@ -13,10 +13,14 @@ describe('native simulation child environment', () => {
     };
 
     expect(nativeSimulationEnvironment(inherited, true, '/resources', 'linux')).toEqual({
-      PATH: '/safe/bin', ZPLC_NATIVE_SIM_BIN: '/untrusted/runtime', ...LOOPBACK,
+      PATH: '/safe/bin',
+      ZPLC_NATIVE_SIM_BIN: '/untrusted/runtime',
+      ...LOOPBACK,
     });
     expect(nativeSimulationEnvironment(inherited, false, '/resources', 'win32')).toEqual({
-      PATH: '/safe/bin', ZPLC_NATIVE_SIM_BIN: '/resources/native-runtime/zplc_runtime.exe', ...LOOPBACK,
+      PATH: '/safe/bin',
+      ZPLC_NATIVE_SIM_BIN: '/resources/native-runtime/zplc_runtime.exe',
+      ...LOOPBACK,
     });
   });
 

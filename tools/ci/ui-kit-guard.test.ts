@@ -7,8 +7,12 @@ const rulesOf = (text: string, path = at('Sample')): Rule[] => violationsOf({ pa
 
 describe('kit guard: what breaks the kit rules (UX-002)', () => {
   it('finds a raw button, input, select and textarea', () => {
-    expect(rulesOf('export const A = () => <div><button type="button">Go</button><input aria-label="n" /><select aria-label="s" /><textarea aria-label="t" /></div>'))
-      .toEqual(['raw-button', 'raw-input', 'raw-select', 'raw-textarea']);
+    expect(
+      rulesOf(
+        'export const A = () => <div><button type="button">Go</button><input aria-label="n" /><select aria-label="s" /><textarea ' +
+          'aria-label="t" /></div>',
+      ),
+    ).toEqual(['raw-button', 'raw-input', 'raw-select', 'raw-textarea']);
   });
 
   it('finds a title tooltip on an element, but not an svg title, a component prop or the kit', () => {
@@ -18,7 +22,11 @@ describe('kit guard: what breaks the kit rules (UX-002)', () => {
   });
 
   it('finds the native confirm, alert and prompt, called bare or on window', () => {
-    expect(rulesOf('const a = () => { confirm("Sure?"); window.alert("x"); globalThis.prompt("y"); }')).toEqual(['native-dialog', 'native-dialog', 'native-dialog']);
+    expect(rulesOf('const a = () => { confirm("Sure?"); window.alert("x"); globalThis.prompt("y"); }')).toEqual([
+      'native-dialog',
+      'native-dialog',
+      'native-dialog',
+    ]);
     expect(rulesOf('const a = () => { dialog.confirm("Sure?"); }')).toEqual([]);
   });
 
@@ -44,7 +52,12 @@ describe('kit guard: focus and text size (UX-005, UX-006)', () => {
     expect(rulesOf('const c = "text-[10px] font-mono"')).toEqual(['small-text']);
     expect(rulesOf('const s = { fontSize: 9 }')).toEqual(['small-text']);
     expect(rulesOf('const c = "text-[11px]"')).toEqual([]);
-    expect(violationsOf({ path: 'packages/zplc-ide/src/index.css', text: '.a { font-size: 10px; }\n.b { font-size: 11px; }' }).map((v) => [v.rule, v.line])).toEqual([['small-text', 1]]);
+    expect(
+      violationsOf({ path: 'packages/zplc-ide/src/index.css', text: '.a { font-size: 10px; }\n.b { font-size: 11px; }' }).map((v) => [
+        v.rule,
+        v.line,
+      ]),
+    ).toEqual([['small-text', 1]]);
   });
 });
 
@@ -75,8 +88,18 @@ describe('kit guard: names (UX-026 stopgap)', () => {
 });
 
 describe('kit guard: the shrink-only list (UX-002)', () => {
-  const entry = (rule: Rule, count: number): Offender => ({ file: at('Sample'), rule, count, requirement: 'UX-002', added: '2026-10-10', reason: 'not moved yet' });
-  const sample = { path: at('Sample'), text: 'const A = () => <div><button type="button">A</button><button type="button">B</button></div>' };
+  const entry = (rule: Rule, count: number): Offender => ({
+    file: at('Sample'),
+    rule,
+    count,
+    requirement: 'UX-002',
+    added: '2026-10-10',
+    reason: 'not moved yet',
+  });
+  const sample = {
+    path: at('Sample'),
+    text: 'const A = () => <div><button type="button">A</button><button type="button">B</button></div>',
+  };
 
   it('passes when the counts equal the entries', () => {
     expect(checkKit([sample], { offenders: [entry('raw-button', 2)] })).toEqual([]);
@@ -107,8 +130,13 @@ describe('kit guard: nothing glows, pulses or animates continuously (UX-010)', (
   const panel = (name: string) => `packages/zplc-ide/src/components/${name}.tsx`;
 
   it('UX-010 finds a pulse, a ping and a glow in a visual editor', () => {
-    expect(rulesOf('const c = "animate-pulse"; const d = "animate-ping"; const e = "drop-shadow-[0_0_4px_red]"; const f = "shadow-lg shadow-green-500/30"', editor))
-      .toEqual(expect.arrayContaining(['editor-effect']));
+    expect(
+      rulesOf(
+        'const c = "animate-pulse"; const d = "animate-ping"; const e = "drop-shadow-[0_0_4px_red]"; const f = ' +
+          '"shadow-lg shadow-green-500/30"',
+        editor,
+      ),
+    ).toEqual(expect.arrayContaining(['editor-effect']));
     expect(rulesOf('const c = "animate-pulse"', editor)).toEqual(['editor-effect']);
   });
 

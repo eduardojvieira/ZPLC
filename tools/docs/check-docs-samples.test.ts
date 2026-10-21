@@ -15,7 +15,15 @@ describe('docs samples: the fence convention (VF-020)', () => {
   });
 
   it('finds the runnable blocks of a page with the line of their fence, and nothing else', () => {
-    const text = ['# Page', '', block('st runnable', 'PROGRAM A', 'END_PROGRAM'), '', block('c', 'int x;'), '', block('st', 'PROGRAM B', 'END_PROGRAM')].join('\n');
+    const text = [
+      '# Page',
+      '',
+      block('st runnable', 'PROGRAM A', 'END_PROGRAM'),
+      '',
+      block('c', 'int x;'),
+      '',
+      block('st', 'PROGRAM B', 'END_PROGRAM'),
+    ].join('\n');
     const { samples, unmarked, errors } = extractSamples(PAGE, text);
     expect(errors).toEqual([]);
     expect(samples.map((sample) => [sample.line, sample.source, sample.language])).toEqual([[3, 'PROGRAM A\nEND_PROGRAM', 'st']]);
@@ -25,12 +33,20 @@ describe('docs samples: the fence convention (VF-020)', () => {
   it('reads the expected result, the scan count and the scan period', () => {
     const text = block('st runnable expect="Out1=TRUE Count:DINT=7 %QW0=5" scans=30 scan_ms=20', 'PROGRAM A', 'END_PROGRAM');
     const [sample] = extractSamples(PAGE, text).samples;
-    expect(sample!.expected).toEqual([{ name: 'Out1', value: true }, { name: 'Count', type: 'DINT', value: 7 }, { name: '%QW0', value: 5 }]);
+    expect(sample!.expected).toEqual([
+      { name: 'Out1', value: true },
+      { name: 'Count', type: 'DINT', value: 7 },
+      { name: '%QW0', value: 5 },
+    ]);
     expect([sample!.scans, sample!.scanMs]).toEqual([30, 20]);
   });
 
   it('accepts an iecst or pascal fence as Structured Text and language=il as Instruction List', () => {
-    const text = [block('iecst runnable', 'PROGRAM A', 'END_PROGRAM'), block('pascal runnable', 'PROGRAM B', 'END_PROGRAM'), block('iecst runnable language=il', 'PROGRAM C', 'END_PROGRAM')].join('\n\n');
+    const text = [
+      block('iecst runnable', 'PROGRAM A', 'END_PROGRAM'),
+      block('pascal runnable', 'PROGRAM B', 'END_PROGRAM'),
+      block('iecst runnable language=il', 'PROGRAM C', 'END_PROGRAM'),
+    ].join('\n\n');
     expect(extractSamples(PAGE, text).samples.map((sample) => sample.language)).toEqual(['st', 'st', 'il']);
   });
 
@@ -71,7 +87,15 @@ describe('docs samples: expected results (VF-020)', () => {
 
 describe('docs samples: the English page and its Spanish twin (VF-020)', () => {
   const sample = (page: string, over: Partial<Sample> = {}): Sample => ({
-    page, line: 1, language: 'st', fragment: false, source: 'PROGRAM A\nEND_PROGRAM', expected: [{ name: 'Out1', value: true }], scans: 30, scanMs: 10, ...over,
+    page,
+    line: 1,
+    language: 'st',
+    fragment: false,
+    source: 'PROGRAM A\nEND_PROGRAM',
+    expected: [{ name: 'Out1', value: true }],
+    scans: 30,
+    scanMs: 10,
+    ...over,
   });
 
   it('is satisfied when both pages mark the same samples the same way', () => {
@@ -79,7 +103,9 @@ describe('docs samples: the English page and its Spanish twin (VF-020)', () => {
   });
 
   it('names a page whose twin marks fewer or more samples', () => {
-    expect(parityErrors(new Map([['a.md', [sample('en')]]]), new Map()).join('\n')).toContain('has 1 runnable sample(s) and its Spanish page has 0');
+    expect(parityErrors(new Map([['a.md', [sample('en')]]]), new Map()).join('\n')).toContain(
+      'has 1 runnable sample(s) and its Spanish page has 0',
+    );
     expect(parityErrors(new Map(), new Map([['a.md', [sample('es')]]])).join('\n')).toContain('no English page does');
   });
 

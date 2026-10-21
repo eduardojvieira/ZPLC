@@ -16,7 +16,7 @@ describe('CodeEditor local Monaco bootstrap', () => {
     // the debug state moved to the status bar (UX-034): the editor draws nothing over the code, so it claims nothing either
     expect(source).not.toContain('Debug mode indicator');
     expect(source).not.toContain("isPaused ? 'Paused' : 'Running'");
-    expect(source).not.toContain("bg-green-500 animate-pulse");
+    expect(source).not.toContain('bg-green-500 animate-pulse');
   });
 
   it('keeps live ST markers isolated from canonical build markers', () => {

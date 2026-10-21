@@ -802,8 +802,8 @@ typedef struct {
   uint8_t halted;     /**< Execution stopped */
 
   /* Debugger state */
-  uint8_t paused;           /**< Paused at breakpoint */
-  uint8_t breakpoint_count; /**< Number of active breakpoints */
+  uint8_t paused;                             /**< Paused at breakpoint */
+  uint8_t breakpoint_count;                   /**< Number of active breakpoints */
   uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
 
   uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */

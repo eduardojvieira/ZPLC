@@ -8,7 +8,8 @@ const { connectionManager } = await import('../runtime/connectionManager');
 const { TerminalTab } = await import('./TerminalTab');
 
 const link = { connected: false, passthrough: false, rx: '', sent: [] as string[], polls: 0 };
-const notify = (connected: boolean) => (connectionManager as unknown as { notifyConnectionChange(connected: boolean): void }).notifyConnectionChange(connected);
+const notify = (connected: boolean) =>
+  (connectionManager as unknown as { notifyConnectionChange(connected: boolean): void }).notifyConnectionChange(connected);
 const restores: Array<() => void> = [];
 
 function fakeLink(): void {
@@ -16,13 +17,30 @@ function fakeLink(): void {
   Object.defineProperty(connectionManager, 'connected', { get: () => link.connected, configurable: true });
   Object.defineProperty(connectionManager, 'passthroughMode', { get: () => link.passthrough, configurable: true });
   Object.defineProperty(navigator, 'serial', { value: {}, configurable: true });
-  const connect = spyOn(connectionManager, 'connect').mockImplementation(async () => { link.connected = true; notify(true); });
-  const disconnect = spyOn(connectionManager, 'disconnect').mockImplementation(async () => { link.connected = false; notify(false); });
-  const sendRaw = spyOn(connectionManager, 'sendRaw').mockImplementation(async (data: string) => { link.sent.push(data); });
-  const enable = spyOn(connectionManager, 'enablePassthrough').mockImplementation(() => { link.passthrough = true; });
-  const disable = spyOn(connectionManager, 'disablePassthrough').mockImplementation(() => { link.passthrough = false; });
-  const rx = spyOn(connectionManager, 'getRxBuffer').mockImplementation(() => { link.polls += 1; return link.rx; });
-  const clear = spyOn(connectionManager, 'clearRxBuffer').mockImplementation(() => { link.rx = ''; });
+  const connect = spyOn(connectionManager, 'connect').mockImplementation(async () => {
+    link.connected = true;
+    notify(true);
+  });
+  const disconnect = spyOn(connectionManager, 'disconnect').mockImplementation(async () => {
+    link.connected = false;
+    notify(false);
+  });
+  const sendRaw = spyOn(connectionManager, 'sendRaw').mockImplementation(async (data: string) => {
+    link.sent.push(data);
+  });
+  const enable = spyOn(connectionManager, 'enablePassthrough').mockImplementation(() => {
+    link.passthrough = true;
+  });
+  const disable = spyOn(connectionManager, 'disablePassthrough').mockImplementation(() => {
+    link.passthrough = false;
+  });
+  const rx = spyOn(connectionManager, 'getRxBuffer').mockImplementation(() => {
+    link.polls += 1;
+    return link.rx;
+  });
+  const clear = spyOn(connectionManager, 'clearRxBuffer').mockImplementation(() => {
+    link.rx = '';
+  });
   restores.push(() => {
     for (const spy of [connect, disconnect, sendRaw, enable, disable, rx, clear]) spy.mockRestore();
     delete (connectionManager as unknown as Record<string, unknown>).connected;
@@ -30,7 +48,9 @@ function fakeLink(): void {
     delete (navigator as unknown as Record<string, unknown>).serial;
   });
 }
-afterEach(() => { while (restores.length > 0) restores.pop()!(); });
+afterEach(() => {
+  while (restores.length > 0) restores.pop()!();
+});
 
 async function connected(user: ReturnType<typeof dom.render>['user']) {
   await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.terminal.connect') }));
@@ -103,13 +123,19 @@ describe('Terminal tab in a DOM (VF-007)', () => {
     fakeLink();
     const { user } = dom.render(<TerminalTab isActive />);
     await connected(user);
-    await dom.act(async () => { link.rx = '\u001b[32mstate: RUN\u001b[0m\r\n'; await new Promise((resolve) => setTimeout(resolve, 60)); });
+    await dom.act(async () => {
+      link.rx = '\u001b[32mstate: RUN\u001b[0m\r\n';
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
     await dom.waitFor(() => expect(output()).toContain('state: RUN'));
     expect(output()).not.toContain('[32m');
     await user.type(dom.screen.getByRole('textbox', { name: dom.t('workbench.terminal.command') }), 'clear{Enter}');
     await dom.waitFor(() => expect(output()).not.toContain('state: RUN'));
     expect(link.sent).toEqual([]);
-    await dom.act(async () => { link.rx = 'again\r\n'; await new Promise((resolve) => setTimeout(resolve, 60)); });
+    await dom.act(async () => {
+      link.rx = 'again\r\n';
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    });
     await dom.waitFor(() => expect(output()).toContain('again'));
     await user.click(dom.screen.getByRole('button', { name: dom.t('workbench.terminal.clear') }));
     expect(output()).not.toContain('again');
@@ -122,10 +148,14 @@ describe('Terminal tab in a DOM (VF-007)', () => {
     await connected(user);
     await dom.waitFor(() => expect(link.polls).toBeGreaterThan(0));
     unmount();
-    await dom.act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    await dom.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
     const polls = link.polls;
     link.rx = 'kept for the next reader';
-    await dom.act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+    await dom.act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
     expect(link.polls).toBe(polls);
     expect(link.rx).toBe('kept for the next reader');
   });

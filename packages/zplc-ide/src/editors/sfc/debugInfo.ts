@@ -40,7 +40,12 @@ export function stepDebugInfoOf(steps: readonly SFCStep[], states: ReadonlyMap<s
   const info = new Map<string, DebugStepInfo>();
   for (const step of steps) {
     const state = states.get(stepElement(step.id));
-    info.set(step.id, { isActive: state?.active === true, unavailable: state?.active === undefined, timeInStep: state?.time, ...state?.flags });
+    info.set(step.id, {
+      isActive: state?.active === true,
+      unavailable: state?.active === undefined,
+      timeInStep: state?.time,
+      ...state?.flags,
+    });
   }
   return info;
 }

@@ -39,9 +39,7 @@ function unavailable(): Error {
 }
 
 function validOwner(ownerWebContentsId: unknown): ownerWebContentsId is number {
-  return typeof ownerWebContentsId === 'number'
-    && Number.isSafeInteger(ownerWebContentsId)
-    && ownerWebContentsId > 0;
+  return typeof ownerWebContentsId === 'number' && Number.isSafeInteger(ownerWebContentsId) && ownerWebContentsId > 0;
 }
 
 function identityOf(status: { dev: bigint; ino: bigint; ctimeNs: bigint }): WorkspaceIdentity {
@@ -87,7 +85,7 @@ async function inspectProjectManifest(candidatePath: unknown): Promise<Pick<Regi
 async function isShownRoot(canonicalRoot: string, shownRoot: string | null): Promise<boolean> {
   if (shownRoot === null) return false;
   try {
-    return canonicalRoot === await realpath(shownRoot);
+    return canonicalRoot === (await realpath(shownRoot));
   } catch {
     return false;
   }
@@ -98,9 +96,7 @@ async function revalidateRoot(workspace: RegisteredWorkspace): Promise<boolean> 
     const currentCanonicalRoot = await realpath(workspace.canonicalRoot);
     if (currentCanonicalRoot !== workspace.canonicalRoot) return false;
     const status = await lstat(workspace.canonicalRoot, { bigint: true });
-    return !status.isSymbolicLink()
-      && status.isDirectory()
-      && sameIdentity(workspace.identity, identityOf(status));
+    return !status.isSymbolicLink() && status.isDirectory() && sameIdentity(workspace.identity, identityOf(status));
   } catch {
     return false;
   }
@@ -121,23 +117,23 @@ export function createWorkspaceTestGateway() {
     ownerWebContentsId: number,
     inspect: () => Promise<Pick<RegisteredWorkspace, 'canonicalRoot' | 'identity'>>,
   ): Promise<WorkspaceTestToken> => {
-      if (!validOwner(ownerWebContentsId) || busy) throw unavailable();
-      busy = true;
-      const generation = ++registrationGeneration;
-      pendingRegistration = { ownerWebContentsId, generation };
-      try {
-        const inspected = await inspect();
-        if (pendingRegistration?.generation !== generation) throw unavailable();
-        workspace = {
-          workspaceId: randomUUID(),
-          ownerWebContentsId,
-          ...inspected,
-        };
-        return { workspaceId: workspace.workspaceId };
-      } finally {
-        if (pendingRegistration?.generation === generation) pendingRegistration = undefined;
-        busy = false;
-      }
+    if (!validOwner(ownerWebContentsId) || busy) throw unavailable();
+    busy = true;
+    const generation = ++registrationGeneration;
+    pendingRegistration = { ownerWebContentsId, generation };
+    try {
+      const inspected = await inspect();
+      if (pendingRegistration?.generation !== generation) throw unavailable();
+      workspace = {
+        workspaceId: randomUUID(),
+        ownerWebContentsId,
+        ...inspected,
+      };
+      return { workspaceId: workspace.workspaceId };
+    } finally {
+      if (pendingRegistration?.generation === generation) pendingRegistration = undefined;
+      busy = false;
+    }
   };
 
   return {
@@ -150,7 +146,11 @@ export function createWorkspaceTestGateway() {
      * (`projectFiles.currentRoot`): a manifest that lives anywhere else is refused, so a workspace is always the
      * project of the window (IDE-002).
      */
-    registerProjectManifest(ownerWebContentsId: number, candidateManifest: string, expectedRoot: string | null): Promise<WorkspaceTestToken> {
+    registerProjectManifest(
+      ownerWebContentsId: number,
+      candidateManifest: string,
+      expectedRoot: string | null,
+    ): Promise<WorkspaceTestToken> {
       return register(ownerWebContentsId, async () => {
         const inspected = await inspectProjectManifest(candidateManifest);
         if (!(await isShownRoot(inspected.canonicalRoot, expectedRoot))) throw unavailable();
@@ -169,25 +169,29 @@ export function createWorkspaceTestGateway() {
       runner: (canonicalRoot: string, options: WorkspaceTestRunOptions) => Promise<T> | T,
       expectedRoot: string | null,
     ): Promise<T> {
-      if (!validOwner(ownerWebContentsId)
-        || busy
-        || !isAllowedWorkspaceTestRequest(request)
-        || !workspace) throw unavailable();
+      if (!validOwner(ownerWebContentsId) || busy || !isAllowedWorkspaceTestRequest(request) || !workspace) throw unavailable();
 
       const admittedWorkspace = workspace;
-      if (admittedWorkspace.ownerWebContentsId !== ownerWebContentsId
-        || admittedWorkspace.workspaceId !== request.workspaceId
-        || expectedRoot === null
-        || admittedWorkspace.canonicalRoot !== expectedRoot) throw unavailable();
+      if (
+        admittedWorkspace.ownerWebContentsId !== ownerWebContentsId ||
+        admittedWorkspace.workspaceId !== request.workspaceId ||
+        expectedRoot === null ||
+        admittedWorkspace.canonicalRoot !== expectedRoot
+      )
+        throw unavailable();
 
       busy = true;
       const controller = new AbortController();
       const execution = { owner: ownerWebContentsId, controller, jobId: randomUUID(), startedAt: new Date().toISOString() };
       active = execution;
       try {
-        if (!await revalidateRoot(admittedWorkspace)) throw unavailable();
+        if (!(await revalidateRoot(admittedWorkspace))) throw unavailable();
         try {
-          return await runner(admittedWorkspace.canonicalRoot, { signal: controller.signal, jobId: execution.jobId, startedAt: execution.startedAt });
+          return await runner(admittedWorkspace.canonicalRoot, {
+            signal: controller.signal,
+            jobId: execution.jobId,
+            startedAt: execution.startedAt,
+          });
         } catch {
           throw unavailable();
         }

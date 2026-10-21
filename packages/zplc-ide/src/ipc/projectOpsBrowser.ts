@@ -12,7 +12,11 @@ function segments(path: string): string[] {
   return parts;
 }
 
-async function parentOf(root: FileSystemDirectoryHandle, path: string, create: boolean): Promise<{ parent: FileSystemDirectoryHandle; name: string }> {
+async function parentOf(
+  root: FileSystemDirectoryHandle,
+  path: string,
+  create: boolean,
+): Promise<{ parent: FileSystemDirectoryHandle; name: string }> {
   const parts = segments(path);
   let parent = root;
   for (const part of parts.slice(0, -1)) parent = await parent.getDirectoryHandle(part, { create });
@@ -20,8 +24,18 @@ async function parentOf(root: FileSystemDirectoryHandle, path: string, create: b
 }
 
 async function kindOf(parent: FileSystemDirectoryHandle, name: string): Promise<'file' | 'directory' | null> {
-  try { await parent.getFileHandle(name); return 'file'; } catch { /* not a file */ }
-  try { await parent.getDirectoryHandle(name); return 'directory'; } catch { return null; }
+  try {
+    await parent.getFileHandle(name);
+    return 'file';
+  } catch {
+    /* not a file */
+  }
+  try {
+    await parent.getDirectoryHandle(name);
+    return 'directory';
+  } catch {
+    return null;
+  }
 }
 
 export async function readBrowserFile(root: FileSystemDirectoryHandle, path: string): Promise<Uint8Array> {
@@ -46,7 +60,13 @@ export async function removeBrowserEntry(root: FileSystemDirectoryHandle, path: 
   await parent.removeEntry(name, { recursive });
 }
 
-async function copyEntry(from: FileSystemDirectoryHandle, name: string, kind: 'file' | 'directory', to: FileSystemDirectoryHandle, newName: string): Promise<void> {
+async function copyEntry(
+  from: FileSystemDirectoryHandle,
+  name: string,
+  kind: 'file' | 'directory',
+  to: FileSystemDirectoryHandle,
+  newName: string,
+): Promise<void> {
   if (kind === 'file') {
     const bytes = new Uint8Array(await (await (await from.getFileHandle(name)).getFile()).arrayBuffer());
     const writable = await (await to.getFileHandle(newName, { create: true })).createWritable();
@@ -59,14 +79,19 @@ async function copyEntry(from: FileSystemDirectoryHandle, name: string, kind: 'f
   for await (const child of source.values()) await copyEntry(source, child.name, child.kind, target, child.name);
 }
 
-/** Rename and move: the browser has no atomic move across folders, so the entry is copied and then removed; a failure while copying leaves the original. */
+/**
+ * Rename and move: the browser has no atomic move across folders, so the entry is copied and then removed; a failure while copying leaves
+ * the original.
+ */
 export async function renameBrowserEntry(root: FileSystemDirectoryHandle, from: string, to: string): Promise<void> {
   const source = await parentOf(root, from, false);
   const kind = await kindOf(source.parent, source.name);
   if (kind === null) throw Object.assign(new Error('The folder, or a file in it, was not found.'), { name: 'NotFoundError' });
-  if (to === from || to.startsWith(`${from}/`)) throw Object.assign(new Error('An entry cannot be moved onto itself.'), { name: 'InvalidModificationError' });
+  if (to === from || to.startsWith(`${from}/`))
+    throw Object.assign(new Error('An entry cannot be moved onto itself.'), { name: 'InvalidModificationError' });
   const target = await parentOf(root, to, true);
-  if (await kindOf(target.parent, target.name) !== null) throw Object.assign(new Error('An entry with that name already exists.'), { name: 'InvalidModificationError' });
+  if ((await kindOf(target.parent, target.name)) !== null)
+    throw Object.assign(new Error('An entry with that name already exists.'), { name: 'InvalidModificationError' });
   await copyEntry(source.parent, source.name, kind, target.parent, target.name);
   await source.parent.removeEntry(source.name, { recursive: true });
 }

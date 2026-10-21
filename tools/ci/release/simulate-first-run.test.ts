@@ -10,7 +10,10 @@ test('counts the steps by status', () => {
 });
 
 test('reads a string of an Info.plist, the first one, and nothing that is not a string', () => {
-  const xml = '<dict><key>CFBundleName</key>\n  <string>ZPLC</string><key>CFBundleIdentifier</key><string>' + APP_ID + '</string><key>X</key><true/><key>CFBundleName</key><string>Other</string></dict>';
+  const xml =
+    '<dict><key>CFBundleName</key>\n  <string>ZPLC</string><key>CFBundleIdentifier</key><string>' +
+    APP_ID +
+    '</string><key>X</key><true/><key>CFBundleName</key><string>Other</string></dict>';
   expect(plistString(xml, 'CFBundleName')).toBe('ZPLC');
   expect(plistString(xml, 'CFBundleIdentifier')).toBe('com.zenithindustrialcloud.zplc');
   expect(plistString(xml, 'X')).toBeUndefined();

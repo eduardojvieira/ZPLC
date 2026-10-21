@@ -3,7 +3,7 @@ slug: /guides/flash-firmware
 id: flash-firmware
 title: Flash the firmware
 sidebar_label: Flash the firmware
-description: "How to write the ZPLC runtime image to a board: the boot-mode steps of the Raspberry Pi Pico and the ESP32-S3, and the command-line way for every board."
+description: 'How to write the ZPLC runtime image to a board: the boot-mode steps of the Raspberry Pi Pico and the ESP32-S3, and the command-line way for every board.'
 tags: [how-to, hardware, firmware]
 ---
 
@@ -39,15 +39,15 @@ Check the file before you write it:
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-| Board | Manifest id | Image of the release | Written by |
-| --- | --- | --- | --- |
-| Raspberry Pi Pico | `rpi-pico-rp2040` | `zplc-runtime-<version>-rpi-pico-rp2040.uf2` | the boot ROM: you copy the file |
-| Waveshare RP2040-Zero | `waveshare-rp2040-zero` | `zplc-runtime-<version>-waveshare-rp2040-zero.uf2` | the boot ROM: you copy the file |
-| ESP32-S3-DevKitC-1 | `esp32-s3-devkitc` | `zplc-runtime-<version>-esp32-s3-devkitc.bin` | `esptool` or `west flash` |
-| Arduino GIGA R1 (M7) | `arduino-giga-r1-m7` | `zplc-runtime-<version>-arduino-giga-r1-m7.bin` | `dfu-util` or `west flash` |
-| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7` | `zplc-runtime-<version>-arduino-opta-wifi-m7.bin` | `dfu-util` or `west flash` |
-| STM32 Nucleo-H743ZI | `nucleo-h743zi` | `zplc-runtime-<version>-nucleo-h743zi.bin` | `west flash` |
-| STM32F746G Discovery | `stm32f746g-disco` | `zplc-runtime-<version>-stm32f746g-disco.bin` | `west flash` |
+| Board                  | Manifest id             | Image of the release                               | Written by                      |
+| ---------------------- | ----------------------- | -------------------------------------------------- | ------------------------------- |
+| Raspberry Pi Pico      | `rpi-pico-rp2040`       | `zplc-runtime-<version>-rpi-pico-rp2040.uf2`       | the boot ROM: you copy the file |
+| Waveshare RP2040-Zero  | `waveshare-rp2040-zero` | `zplc-runtime-<version>-waveshare-rp2040-zero.uf2` | the boot ROM: you copy the file |
+| ESP32-S3-DevKitC-1     | `esp32-s3-devkitc`      | `zplc-runtime-<version>-esp32-s3-devkitc.bin`      | `esptool` or `west flash`       |
+| Arduino GIGA R1 (M7)   | `arduino-giga-r1-m7`    | `zplc-runtime-<version>-arduino-giga-r1-m7.bin`    | `dfu-util` or `west flash`      |
+| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7`  | `zplc-runtime-<version>-arduino-opta-wifi-m7.bin`  | `dfu-util` or `west flash`      |
+| STM32 Nucleo-H743ZI    | `nucleo-h743zi`         | `zplc-runtime-<version>-nucleo-h743zi.bin`         | `west flash`                    |
+| STM32F746G Discovery   | `stm32f746g-disco`      | `zplc-runtime-<version>-stm32f746g-disco.bin`      | `west flash`                    |
 
 ## 2. Raspberry Pi Pico and Waveshare RP2040-Zero: download and boot mode
 
@@ -85,8 +85,8 @@ not start on the N8 or the N8R2 ([Board reference](../reference/boards.md)).
 esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<version>-esp32-s3-devkitc.bin
 ```
 
-   For an image you built yourself the file is `build/zephyr/zephyr.bin`. Version 4 of
-   esptool spells the same command `esptool.py ... write_flash`.
+For an image you built yourself the file is `build/zephyr/zephyr.bin`. Version 4 of
+esptool spells the same command `esptool.py ... write_flash`.
 
 4. Press RST to leave download mode and start the program that you wrote. If the console
    stays silent, the board is still in download mode: press RST again.
@@ -120,15 +120,15 @@ From the build directory of the image, or from the root of the Zephyr workspace 
 that each board names in its Zephyr definition are the ones in this table; choose one
 with `--runner <name>`.
 
-| Board | Runners | A command |
-| --- | --- | --- |
-| Raspberry Pi Pico | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` with the board in boot mode |
-| Waveshare RP2040-Zero | `uf2` | `west flash --runner uf2` with the board in boot mode |
-| ESP32-S3-DevKitC-1 | `esp32`, `openocd` | `west flash --runner esp32` with the board in download mode |
-| Arduino GIGA R1 (M7) | `dfu-util`, `openocd`, `jlink`, `blackmagicprobe` | `west flash --runner dfu-util` with the board in its DFU boot mode |
-| Arduino Opta WiFi (M7) | `dfu-util`, `stm32cubeprogrammer`, `openocd` | `west flash --runner dfu-util` with the board in its DFU boot mode |
-| STM32 Nucleo-H743ZI | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd` | `west flash --runner stm32cubeprogrammer` over the on-board ST-LINK |
-| STM32F746G Discovery | `stm32cubeprogrammer`, `openocd`, `jlink` | `west flash --runner stm32cubeprogrammer` over the on-board ST-LINK |
+| Board                  | Runners                                               | A command                                                           |
+| ---------------------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
+| Raspberry Pi Pico      | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` with the board in boot mode               |
+| Waveshare RP2040-Zero  | `uf2`                                                 | `west flash --runner uf2` with the board in boot mode               |
+| ESP32-S3-DevKitC-1     | `esp32`, `openocd`                                    | `west flash --runner esp32` with the board in download mode         |
+| Arduino GIGA R1 (M7)   | `dfu-util`, `openocd`, `jlink`, `blackmagicprobe`     | `west flash --runner dfu-util` with the board in its DFU boot mode  |
+| Arduino Opta WiFi (M7) | `dfu-util`, `stm32cubeprogrammer`, `openocd`          | `west flash --runner dfu-util` with the board in its DFU boot mode  |
+| STM32 Nucleo-H743ZI    | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd`    | `west flash --runner stm32cubeprogrammer` over the on-board ST-LINK |
+| STM32F746G Discovery   | `stm32cubeprogrammer`, `openocd`, `jlink`             | `west flash --runner stm32cubeprogrammer` over the on-board ST-LINK |
 
 A runner needs its own tool on your computer (`esptool`, `dfu-util`, OpenOCD, the STM32
 programmer). If the tool or the board is not found, the message of `west flash` says
@@ -143,9 +143,9 @@ file you wrote. Then [connect ZPLC](../tutorials/first-board.md#3-connect-zplc).
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| Every board's firmware builds and fits its budget | Continuous integration build | Build |
-| The names, addresses and checksums of the release images | The release pipeline checks them | Host |
-| The boot-mode steps and the flash runner commands | Written from the tools of each board, not executed | None |
-| A flash on a real board | Not recorded by anyone | None |
+| Part                                                     | Verified                                           | Level |
+| -------------------------------------------------------- | -------------------------------------------------- | ----- |
+| Every board's firmware builds and fits its budget        | Continuous integration build                       | Build |
+| The names, addresses and checksums of the release images | The release pipeline checks them                   | Host  |
+| The boot-mode steps and the flash runner commands        | Written from the tools of each board, not executed | None  |
+| A flash on a real board                                  | Not recorded by anyone                             | None  |

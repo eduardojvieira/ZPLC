@@ -7,14 +7,34 @@ import { actionsOf } from './keymap';
 
 const context = (over: Partial<CanvasMenuContext> = {}): CanvasMenuContext & { ran: string[] } => {
   const ran: string[] = [];
-  return { editor: 'fbd', target: 'node', selectedNodes: 1, selectedEdges: 0, readOnly: false, canPaste: true, run: (command) => { ran.push(command); }, ...over, ran };
+  return {
+    editor: 'fbd',
+    target: 'node',
+    selectedNodes: 1,
+    selectedEdges: 0,
+    readOnly: false,
+    canPaste: true,
+    run: (command) => {
+      ran.push(command);
+    },
+    ...over,
+    ran,
+  };
 };
 const byId = (items: ReturnType<typeof canvasMenuItems>, id: string) => items.find((item) => item.id === id);
 
 describe('UX-033 context menus of the diagram editors', () => {
   it('offers the commands of the element, the clipboard, and all eight alignments on an element', () => {
     const items = canvasMenuItems(context());
-    expect(items.map((item) => item.id)).toEqual(['bindVariable', 'editComment', 'toggleBreakpoint', 'copySelection', 'pasteSelection', 'deleteSelection', ...ARRANGE_COMMANDS]);
+    expect(items.map((item) => item.id)).toEqual([
+      'bindVariable',
+      'editComment',
+      'toggleBreakpoint',
+      'copySelection',
+      'pasteSelection',
+      'deleteSelection',
+      ...ARRANGE_COMMANDS,
+    ]);
     expect(items.every((item) => item.label.trim().length > 0)).toBe(true);
   });
 
@@ -38,7 +58,10 @@ describe('UX-033 context menus of the diagram editors', () => {
     expect(byId(one, 'alignLeft')).toMatchObject({ disabled: true, disabledReason: arrangeReason(1, 'alignLeft') });
     const two = canvasMenuItems(context({ selectedNodes: 2 }));
     expect(byId(two, 'alignLeft')?.disabled).toBeFalsy();
-    expect(byId(two, 'distributeHorizontally')).toMatchObject({ disabled: true, disabledReason: arrangeReason(2, 'distributeHorizontally') });
+    expect(byId(two, 'distributeHorizontally')).toMatchObject({
+      disabled: true,
+      disabledReason: arrangeReason(2, 'distributeHorizontally'),
+    });
     expect(byId(canvasMenuItems(context({ selectedNodes: 3 })), 'distributeVertically')?.disabled).toBeFalsy();
   });
 
@@ -82,7 +105,13 @@ describe('UX-033 context menus of the diagram editors', () => {
 
   it('offers the instance monitor on a function block instance, and runs it, without a key', () => {
     let opened = 0;
-    const items = canvasMenuItems(context({ instanceMonitor: () => { opened += 1; } }));
+    const items = canvasMenuItems(
+      context({
+        instanceMonitor: () => {
+          opened += 1;
+        },
+      }),
+    );
     const monitor = byId(items, 'openInstanceMonitor')!;
     expect(monitor.shortcut).toBeUndefined();
     monitor.onSelect();
@@ -94,13 +123,36 @@ describe('UX-033 context menus of the diagram editors', () => {
 describe('UX-033 context menu of a rung', () => {
   const rung = (over: Partial<Parameters<typeof rungMenuItems>[0]> = {}) => {
     const ran: string[] = [];
-    return { ran, items: rungMenuItems({ index: 1, count: 3, readOnly: false, canPaste: true, run: (command) => { ran.push(command); }, ...over }) };
+    return {
+      ran,
+      items: rungMenuItems({
+        index: 1,
+        count: 3,
+        readOnly: false,
+        canPaste: true,
+        run: (command) => {
+          ran.push(command);
+        },
+        ...over,
+      }),
+    };
   };
 
   it('names the commands of the key table that act on a rung, with the keys of the table', () => {
     const { items, ran } = rung();
-    expect(items.map((item) => item.id)).toEqual(['addRung', 'moveRungUp', 'moveRungDown', 'copyRung', 'pasteRung', 'toggleBreakpoint', 'deleteRung', 'fitView']);
-    expect(items.map((item) => item.shortcut)).toEqual(items.map((item) => actionsOf('ld').find((action) => action.id === item.id)?.keys[0]));
+    expect(items.map((item) => item.id)).toEqual([
+      'addRung',
+      'moveRungUp',
+      'moveRungDown',
+      'copyRung',
+      'pasteRung',
+      'toggleBreakpoint',
+      'deleteRung',
+      'fitView',
+    ]);
+    expect(items.map((item) => item.shortcut)).toEqual(
+      items.map((item) => actionsOf('ld').find((action) => action.id === item.id)?.keys[0]),
+    );
     items.find((item) => item.id === 'copyRung')!.onSelect();
     expect(ran).toEqual(['copyRung']);
   });
@@ -115,7 +167,11 @@ describe('UX-033 context menu of a rung', () => {
   it('keeps what changes the ladder disabled, with the reason, when it is read-only, and the copy and the fit available', () => {
     const { items } = rung({ readOnly: true, canPaste: false });
     for (const id of ['addRung', 'moveRungUp', 'moveRungDown', 'pasteRung', 'deleteRung']) {
-      expect([id, items.find((item) => item.id === id)?.disabled, Boolean(items.find((item) => item.id === id)?.disabledReason)]).toEqual([id, true, true]);
+      expect([id, items.find((item) => item.id === id)?.disabled, Boolean(items.find((item) => item.id === id)?.disabledReason)]).toEqual([
+        id,
+        true,
+        true,
+      ]);
     }
     expect(items.find((item) => item.id === 'copyRung')?.disabled).toBeFalsy();
     expect(items.find((item) => item.id === 'fitView')?.disabled).toBeFalsy();

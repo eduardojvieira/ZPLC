@@ -55,7 +55,5 @@
       "text": "Write HalfPeriod : TIME := T#500ms; and press Check again after saving."
     }
   ],
-  "faultCases": [
-    "The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms."
-  ]
+  "faultCases": ["The starting program uses a half period of two seconds, so Lamp is still OFF when the scenario looks at {{t:750}} ms."]
 }

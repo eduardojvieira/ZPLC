@@ -23,11 +23,18 @@ beforeAll(async () => {
 describe('the port conformance suite on WebAssembly: the C suites of the core on its HAL port (IO-013, RT-008)', () => {
   for (const suite of SUITES) {
     // a suite runs in well under a second; the limit is for a machine under the load of a full run
-    itWasm(`${suite.category}: ${suite.name}`, async () => {
-      const run = await runSuite(built.get(suite.name)!);
-      expect({ suite: suite.name, code: run.code, failures: run.output.filter((line) => /FAIL|trapped/.test(line)) })
-        .toEqual({ suite: suite.name, code: 0, failures: [] });
-    }, 60_000);
+    itWasm(
+      `${suite.category}: ${suite.name}`,
+      async () => {
+        const run = await runSuite(built.get(suite.name)!);
+        expect({ suite: suite.name, code: run.code, failures: run.output.filter((line) => /FAIL|trapped/.test(line)) }).toEqual({
+          suite: suite.name,
+          code: 0,
+          failures: [],
+        });
+      },
+      60_000,
+    );
   }
 });
 
@@ -38,7 +45,10 @@ describe('the port conformance suite on WebAssembly: the C suites of the core on
 const PROGRAM = assemble('    PUSH32 5\n    STORE32 0x1000\n    HALT\n').zplcFile;
 const hex = (bytes: Uint8Array) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
-interface Stored { program_generation: number; stats: { program_size: number } }
+interface Stored {
+  program_generation: number;
+  stats: { program_size: number };
+}
 
 /** A runtime over `records`; `status` answers status.get, `end` shuts the session down as the IDE does. */
 async function boot(records: MemoryRecordStore) {
@@ -46,7 +56,9 @@ async function boot(records: MemoryRecordStore) {
   let counter = 0;
   const send = (method: string, params: object = {}) => {
     counter += 1;
-    return JSON.parse(runtime.request(JSON.stringify({ id: `p${counter}`, type: 'request', method, params })).response) as { result?: unknown };
+    return JSON.parse(runtime.request(JSON.stringify({ id: `p${counter}`, type: 'request', method, params })).response) as {
+      result?: unknown;
+    };
   };
   return {
     load: () => send('program.load', { bytecode_hex: hex(PROGRAM) }),

@@ -2,13 +2,7 @@
   "requirement": "CMP-006",
   "title": "an error in the body of a function is reported at its line",
   "build": "fails",
-  "lines": [
-    4
-  ],
-  "codes": [
-    "UNKNOWN_IDENTIFIER"
-  ],
-  "messageIncludes": [
-    "missing"
-  ]
+  "lines": [4],
+  "codes": ["UNKNOWN_IDENTIFIER"],
+  "messageIncludes": ["missing"]
 }

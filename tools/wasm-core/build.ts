@@ -26,7 +26,17 @@ const session = join(root, 'firmware/apps/posix_host/src');
 
 /** The sources of the module, by directory. The embedder and the libc shim come last. */
 const SOURCES = [
-  ...['zplc_core', 'zplc_loader', 'zplc_comm_dispatch', 'zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe', 'zplc_io_trace'].map((name) => join(core, `src/core/${name}.c`)),
+  ...[
+    'zplc_core',
+    'zplc_loader',
+    'zplc_comm_dispatch',
+    'zplc_retain',
+    'zplc_program_store',
+    'zplc_sched_core',
+    'zplc_exchange',
+    'zplc_failsafe',
+    'zplc_io_trace',
+  ].map((name) => join(core, `src/core/${name}.c`)),
   join(core, 'src/hal/wasm/zplc_hal_wasm.c'),
   join(session, 'native_runtime_session.c'),
   join(session, 'native_program_store.c'),
@@ -38,7 +48,10 @@ const SOURCES = [
 const STACK_BYTES = 1024 * 1024;
 const MEMORY_BYTES = 4 * 1024 * 1024;
 
-export interface Toolchain { clang: string; linker: string }
+export interface Toolchain {
+  clang: string;
+  linker: string;
+}
 
 export interface ModuleManifest {
   /** The file name of the module, as the IDE ships it. */
@@ -84,7 +97,8 @@ export function treeIdentity(): { commit: string; dirty: boolean } {
   const commit = head !== null && /^[0-9a-f]{40}$/.test(head) ? head : 'unknown';
   const changes = git('status', '--porcelain', '--untracked-files=no');
   const dirtyFlag = process.env.ZPLC_BUILD_DIRTY;
-  const dirty = dirtyFlag !== undefined && dirtyFlag !== '' ? dirtyFlag !== '0' : commit !== 'unknown' && (changes === null || changes !== '');
+  const dirty =
+    dirtyFlag !== undefined && dirtyFlag !== '' ? dirtyFlag !== '0' : commit !== 'unknown' && (changes === null || changes !== '');
   return { commit, dirty };
 }
 
@@ -126,17 +140,41 @@ export function buildCoreWasm(out: string): ModuleManifest {
     const objects = SOURCES.map((source, index) => {
       const object = join(work, `${index}.o`);
       run([
-        tools.clang, '--target=wasm32', '-ffreestanding', '-fno-builtin', '-O2', '-std=c99', '-Wall',
+        tools.clang,
+        '--target=wasm32',
+        '-ffreestanding',
+        '-fno-builtin',
+        '-O2',
+        '-std=c99',
+        '-Wall',
         `-DZPLC_CORE_VERSION_STR="${version}"`,
-        '-I', join(core, 'include'), '-I', join(here, 'shim'), '-I', generated, '-I', session,
-        '-c', source, '-o', object,
+        '-I',
+        join(core, 'include'),
+        '-I',
+        join(here, 'shim'),
+        '-I',
+        generated,
+        '-I',
+        session,
+        '-c',
+        source,
+        '-o',
+        object,
       ]);
       return object;
     });
     mkdirSync(dirname(resolve(out)), { recursive: true });
     run([
-      tools.linker, '--no-entry', '--export-all', '-z', `stack-size=${STACK_BYTES}`,
-      `--initial-memory=${MEMORY_BYTES}`, `--max-memory=${MEMORY_BYTES}`, '-o', resolve(out), ...objects,
+      tools.linker,
+      '--no-entry',
+      '--export-all',
+      '-z',
+      `stack-size=${STACK_BYTES}`,
+      `--initial-memory=${MEMORY_BYTES}`,
+      `--max-memory=${MEMORY_BYTES}`,
+      '-o',
+      resolve(out),
+      ...objects,
     ]);
     const bytes = readFileSync(resolve(out));
     return {
@@ -172,5 +210,10 @@ if (import.meta.main) {
     mkdirSync(dirname(resolve(values.manifest)), { recursive: true });
     writeFileSync(resolve(values.manifest), `${JSON.stringify(manifest, null, 2)}\n`);
   }
-  console.log(`wasm-core: wrote ${values.out} (${manifest.bytes} bytes, sha256 ${manifest.sha256.slice(0, 12)}, commit ${manifest.commit.slice(0, 12)}${manifest.dirty ? ' dirty' : ''})`);
+  console.log(
+    `wasm-core: wrote ${values.out} (${manifest.bytes} bytes, sha256 ${manifest.sha256.slice(
+      0,
+      12,
+    )}, commit ${manifest.commit.slice(0, 12)}${manifest.dirty ? ' dirty' : ''})`,
+  );
 }

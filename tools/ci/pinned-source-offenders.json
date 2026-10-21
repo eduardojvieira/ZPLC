@@ -3,9 +3,7 @@
     "file": "packages/zplc-compiler/src/compiler/codegen_functions.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "22 assertions that the assembly the compiler emits for a function call contains an instruction or a label. Replace each by a conformance case that runs the program in the VM and reads the result (VF-001, VF-004); keep only what the assembler's own tests can state."
   },
@@ -13,9 +11,7 @@
     "file": "packages/zplc-compiler/src/compiler/compiler.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "About 60 assertions on the instructions and comments the compiler emits (header, memory map, program body, task tags). Replace by conformance cases that load the artifact and read VM memory, and by assertions on the binary container and the debug map."
   },
@@ -23,9 +19,7 @@
     "file": "packages/zplc-compiler/src/compiler/control-flow.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "Three assertions on emitted instructions of loops and EXIT (a PUSH8 and the count of HALT lines). Replace by conformance cases that run the loops and read the counters."
   },
@@ -33,9 +27,7 @@
     "file": "packages/zplc-compiler/src/compiler/names.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "Two assertions that the assembly stores to the address the debug map gives a variable. Replace by running the program and reading that address, which the conformance runner does."
   },
@@ -43,9 +35,7 @@
     "file": "packages/zplc-compiler/src/compiler/numeric.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "The shape of the assembly the numeric rules generate (which helper is linked, which extension follows a narrow load). The values are already proven by the conformance cases; the instruction-shape cases belong in the assembler tests or go."
   },
@@ -53,10 +43,7 @@
     "file": "packages/zplc-compiler/src/compiler/semantic-errors.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-compiler/src/compiler/codegen.ts",
-      "packages/zplc-compiler/src/compiler/stdlib/"
-    ],
+    "reads": ["packages/zplc-compiler/src/compiler/codegen.ts", "packages/zplc-compiler/src/compiler/stdlib/"],
     "replacement": "behaviour",
     "reason": "One case scans codegen.ts and the stdlib modules for the text \"; ERROR\". The behavioural cases beside it (compileST throws, no assembly returned) already prove the property; replace the scan by a conformance case per construct that 2.0 rejects (VF-003)."
   },
@@ -64,9 +51,7 @@
     "file": "packages/zplc-compiler/src/compiler/structs.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "Four assertions that the assembly contains the comment lines of a struct member assignment. Replace by running a struct program and reading each member."
   },
@@ -74,9 +59,7 @@
     "file": "packages/zplc-ide/electron/closeGuardIpc.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/electron/main.ts"
-    ],
+    "reads": ["packages/zplc-ide/electron/main.ts"],
     "replacement": "behaviour",
     "reason": "Pins that main.ts installs the window guards (guardWindowClose, guardReloadChord) and reloads only through them: the BrowserWindow has no stand-in. The guards themselves are proven by behaviour in windowGuards.test.ts, and the channels, the narrow preload namespace and the sender and message checks in ipcRegistry.test.ts and preload.test.ts. Replace by a main-process test against a stub electron module."
   },
@@ -124,9 +107,7 @@
     "file": "packages/zplc-ide/electron/security.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "firmware/apps/posix_host/src/native_runtime_session.h"
-    ],
+    "reads": ["firmware/apps/posix_host/src/native_runtime_session.h"],
     "replacement": "contract",
     "reason": "The program limit is now compared with the generated contract. One case still reads native_runtime_session.h for the request envelope and the buffer formula. Replace by exporting those constants through the session protocol (hello) so the test compares a reported value."
   },
@@ -171,10 +152,7 @@
     "file": "packages/zplc-ide/scripts/release-config.test.ts",
     "requirement": "VF-021",
     "added": "2026-10-10",
-    "reads": [
-      ".github/workflows/release.yml",
-      "packages/zplc-ide/scripts/check-linux-package.sh"
-    ],
+    "reads": [".github/workflows/release.yml", "packages/zplc-ide/scripts/check-linux-package.sh"],
     "replacement": "artifact",
     "reason": "Matches release.yml and the Linux package check script as text to prove signing, draft-only publishing and clean-container installs. Replace by tests of the produced artifacts (signature kind, installation, launch) as VF-021 requires."
   },
@@ -194,9 +172,7 @@
     "file": "packages/zplc-ide/scripts/smoke-desktop-builds.test.ts",
     "requirement": "VF-021",
     "added": "2026-10-10",
-    "reads": [
-      ".github/workflows/release.yml"
-    ],
+    "reads": [".github/workflows/release.yml"],
     "replacement": "artifact",
     "reason": "The packaged-layout cases are behavioural; one case matches release.yml as text for its runner and architecture matrix. Replace by the recorded outcome of the release run for each platform."
   },
@@ -204,9 +180,7 @@
     "file": "packages/zplc-ide/src/compiler/languageWorkflow.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "Three assertions that the assembly of a multi-program build names a variable of one program and not of the other. Replace by the debug map of each program, which the same build returns."
   },
@@ -214,9 +188,7 @@
     "file": "packages/zplc-ide/src/components/CodeEditor.monaco.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/CodeEditor.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/CodeEditor.tsx"],
     "replacement": "dom",
     "reason": "Pins the Monaco bootstrap, the debug-editor label and the model-per-file wiring as text of CodeEditor.tsx. Replace by render tests once VF-007 provides the DOM environment (Monaco stubbed at its module boundary)."
   },
@@ -237,9 +209,7 @@
     "file": "packages/zplc-ide/src/components/LearnPanel.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/LearnPanel.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/LearnPanel.tsx"],
     "replacement": "dom",
     "reason": "The lesson catalog and content are now tested as data. Two cases still pin the Learn panel wiring, labels and failure message as text of LearnPanel.tsx. Replace by render tests of the panel once VF-007 provides the DOM environment."
   },
@@ -247,9 +217,7 @@
     "file": "packages/zplc-ide/src/components/Sidebar.migrationDisclosure.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/Sidebar.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/Sidebar.tsx"],
     "replacement": "dom",
     "reason": "Pins the migration preview tab and the new-file refusal message as text of Sidebar.tsx. Replace by render tests once VF-007 provides the DOM environment."
   },
@@ -257,9 +225,7 @@
     "file": "packages/zplc-ide/src/components/ThemeControlChoices.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/ThemeControl.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/ThemeControl.tsx"],
     "replacement": "dom",
     "reason": "The choice list and chooseTheme are behavioural; one case pins that ThemeControl.tsx is one labelled native select as text. Replace by a render test (VF-007)."
   },
@@ -281,9 +247,7 @@
     "file": "packages/zplc-ide/src/components/WelcomeScreen.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/WelcomeScreen.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/WelcomeScreen.tsx"],
     "replacement": "dom",
     "reason": "Pins the start actions, example groups, recents and the Learn entry as text of WelcomeScreen.tsx and LearnPanel.tsx. Replace by render tests of the Welcome screen (VF-007); the layout assertions go with the new shell (UX workstream)."
   },
@@ -303,9 +267,7 @@
     "file": "packages/zplc-ide/src/utils/breakpoints.inactive.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/index.css"
-    ],
+    "reads": ["packages/zplc-ide/src/index.css"],
     "replacement": "dom",
     "reason": "The decoration classes are behavioural; two cases match rules of index.css as text. Replace by computed-style assertions in the DOM environment (VF-007)."
   },
@@ -313,9 +275,7 @@
     "file": "packages/zplc-ide/src/components/debugWatchPanelLogic.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/DebugWatchPanel.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/DebugWatchPanel.tsx"],
     "replacement": "dom",
     "reason": "The decision functions are behavioural; two cases pin the Watch panel wiring of the write callback and the serial session state as text of DebugWatchPanel.tsx. Replace by render tests (VF-007)."
   },
@@ -323,9 +283,7 @@
     "file": "packages/zplc-ide/src/components/labPlayback.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/LabPanel.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/LabPanel.tsx"],
     "replacement": "dom",
     "reason": "Playback functions are behavioural; one case pins the Lab panel labels, reduced-motion note and SVG path as text of LabPanel.tsx. Replace by a render test (VF-007)."
   },
@@ -333,9 +291,7 @@
     "file": "packages/zplc-ide/src/editors/ld/fbLabel.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/editors/ld/LDElement.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/editors/ld/LDElement.tsx"],
     "replacement": "dom",
     "reason": "splitFBIdentifier is behavioural; one case pins the SVG band coordinates of LDElement.tsx as text. Replace by a layout function exported from the editor module that the test calls, or a render test (VF-007)."
   },
@@ -369,9 +325,7 @@
     "file": "packages/zplc-ide/src/hooks/useDebugController.breakpointHit.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/hooks/useDebugController.ts"
-    ],
+    "reads": ["packages/zplc-ide/src/hooks/useDebugController.ts"],
     "replacement": "behaviour",
     "reason": "The entry formatting is behavioural; one case pins the adapter event handler wiring as text of useDebugController.ts. Replace by driving the hook with a fake adapter (VF-007 hook rendering)."
   },
@@ -379,10 +333,7 @@
     "file": "packages/zplc-ide/src/hooks/useDebugController.capabilities.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/hooks/useDebugController.ts",
-      "packages/zplc-ide/src/hooks/useDebugControllerForces.ts"
-    ],
+    "reads": ["packages/zplc-ide/src/hooks/useDebugController.ts", "packages/zplc-ide/src/hooks/useDebugControllerForces.ts"],
     "replacement": "behaviour",
     "reason": "The resolution and capability functions are behavioural; four cases pin the controller boundary (input staging, serial write owner, force without value, breakpoint syncer) as text of useDebugController.ts. Replace by driving the hook with fake adapters (VF-007 hook rendering)."
   },
@@ -390,9 +341,7 @@
     "file": "packages/zplc-ide/src/models/visualFileLoad.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/EditorArea.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/EditorArea.tsx"],
     "replacement": "dom",
     "reason": "The loaders are behavioural; one case pins that EditorArea.tsx no longer parses a visual model inline as text. Replace by a render test that opens a malformed file (VF-007)."
   },
@@ -400,10 +349,7 @@
     "file": "packages/zplc-ide/src/projects/bundledProjectsQuality.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay",
-      "firmware/app/boards/rpi_pico_rp2040.overlay"
-    ],
+    "reads": ["firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay", "firmware/app/boards/rpi_pico_rp2040.overlay"],
     "replacement": "contract",
     "reason": "Cross-checks the pins and pin sentences of the hardware demos against the GPIO nodes of two board overlays parsed as text. Replace by reading the pin map from the generated board manifest, so the check compares data with data."
   },
@@ -411,9 +357,7 @@
     "file": "packages/zplc-ide/src/runtime/nativeTrace.vmError.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/Console.tsx"
-    ],
+    "reads": ["packages/zplc-ide/src/components/Console.tsx"],
     "replacement": "dom",
     "reason": "The VM error table is now compared with the generated contract. One case still reads Console.tsx to prove the Error column calls describeVmError. Replace by a render test of the trace table (VF-007)."
   },
@@ -433,9 +377,7 @@
     "file": "packages/zplc-ide/src/theme/contrast.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/index.css"
-    ],
+    "reads": ["packages/zplc-ide/src/index.css"],
     "replacement": "behaviour",
     "reason": "Parses the colour tokens of index.css and measures WCAG contrast for every declared pair. Replace by computed styles in the DOM environment (VF-007) or by tokens held in a typed module that the stylesheet is generated from."
   },
@@ -443,9 +385,7 @@
     "file": "packages/zplc-ide/src/theme/focusRing.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/index.css"
-    ],
+    "reads": ["packages/zplc-ide/src/index.css"],
     "replacement": "behaviour",
     "reason": "Matches the focus-ring rules of index.css as text and measures token contrast. Replace by computed-style assertions in the DOM environment (VF-007)."
   },
@@ -453,9 +393,7 @@
     "file": "packages/zplc-ide/src/theme/separator.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/index.css"
-    ],
+    "reads": ["packages/zplc-ide/src/index.css"],
     "replacement": "behaviour",
     "reason": "Matches the panel-separator rules of index.css as text. Replace by computed-style assertions in the DOM environment (VF-007)."
   },
@@ -463,10 +401,7 @@
     "file": "packages/zplc-ide/src/theme/signalTone.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/components/DebugWatchPanel.tsx",
-      "packages/zplc-ide/src/index.css"
-    ],
+    "reads": ["packages/zplc-ide/src/components/DebugWatchPanel.tsx", "packages/zplc-ide/src/index.css"],
     "replacement": "behaviour",
     "reason": "signalTone is behavioural; two groups match index.css rules and the Watch panel source as text. Replace by computed-style assertions and a render test (VF-007)."
   },
@@ -474,9 +409,7 @@
     "file": "packages/zplc-ide/src/theme/windowSurface.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/electron/main.ts"
-    ],
+    "reads": ["packages/zplc-ide/electron/main.ts"],
     "replacement": "behaviour",
     "reason": "Matches index.html, index.css and the BrowserWindow options in electron/main.ts as text. Replace by a main-process test against a stub electron module and a page-load check (VF-008)."
   },
@@ -484,9 +417,7 @@
     "file": "packages/zplc-ide/src/transpiler/transpiler.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "generated assembly text"
-    ],
+    "reads": ["generated assembly text"],
     "replacement": "behaviour",
     "reason": "Six assertions that the assembly of a transpiled visual program contains an instruction or a comment. Replace by compiling and running the transpiled program, as the conformance cases for .ld.json, .fbd.json and .sfc.json do."
   },
@@ -494,9 +425,7 @@
     "file": "packages/zplc-ide/src/utils/projectLoader.starters.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/utils/projectLoader.ts"
-    ],
+    "reads": ["packages/zplc-ide/src/utils/projectLoader.ts"],
     "replacement": "behaviour",
     "reason": "Matches two lines of projectLoader.ts as text to prove _starter projects are loadable but not listed. Replace by calling the starter filter as a function once it is exported without the Vite glob."
   },
@@ -517,10 +446,7 @@
     "file": "tools/ci/ci-workflow.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/nightly-quality.yml"
-    ],
+    "reads": [".github/workflows/ci.yml", ".github/workflows/nightly-quality.yml"],
     "replacement": "artifact",
     "reason": "Parses ci.yml and the nightly workflow to check triggers, the bun install cache, the expected-failure rule and the cross-build upload. The recorded hosted run (VF-016) is the proof that the workflow does what it says; keep only as a workflow lint until then."
   },
@@ -528,10 +454,7 @@
     "file": "tools/ci/release-gate.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-19",
-    "reads": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/release.yml"
-    ],
+    "reads": [".github/workflows/ci.yml", ".github/workflows/release.yml"],
     "replacement": "artifact",
     "reason": "Parses release.yml and ci.yml to prove that the release needs the Linux journeys. A workflow has no renderer or runner here; the recorded hosted release run (VF-009) is the proof that the gate holds, and until then this is a workflow lint."
   },
@@ -539,9 +462,7 @@
     "file": "tools/ci/requirement-coverage.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/scripts/journeys.ts"
-    ],
+    "reads": ["packages/zplc-ide/scripts/journeys.ts"],
     "replacement": "behaviour",
     "reason": "Reads the journey table in packages/zplc-ide/scripts/journeys.ts as text. Replace by importing the journey list from the module that exports it."
   },
@@ -549,10 +470,7 @@
     "file": "tools/hil/test_validate_release_evidence.py",
     "requirement": "VF-021",
     "added": "2026-10-10",
-    "reads": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/release.yml"
-    ],
+    "reads": [".github/workflows/ci.yml", ".github/workflows/release.yml"],
     "replacement": "artifact",
     "reason": "Feeds the real release.yml and ci.yml text to the validator. VF-021 requires the validator to be rewritten in place to inspect produced artifacts and run outcomes, with its tests."
   },
@@ -585,10 +503,7 @@
     "file": "tools/ci/port-conformance.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-16",
-    "reads": [
-      "firmware/lib/zplc_core/CMakeLists.txt",
-      "firmware/lib/zplc_core/src/hal/freertos/freertos.cmake"
-    ],
+    "reads": ["firmware/lib/zplc_core/CMakeLists.txt", "firmware/lib/zplc_core/src/hal/freertos/freertos.cmake"],
     "replacement": "artifact",
     "reason": "Checks that every category of the port conformance manifest names a ctest and a scenario that exist, by matching add_test(NAME ...) in CMakeLists.txt as text, and the FreeRTOS suites by matching zplc_freertos_suite(...) in freertos.cmake. Replace by the list printed by ctest -N for the built suite, so the check compares the manifest with the produced test list."
   },
@@ -596,10 +511,7 @@
     "file": "tools/docs/generate_port_interface.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-16",
-    "reads": [
-      "firmware/lib/zplc_core/include/zplc_hal.h",
-      "firmware/lib/zplc_core/include/zplc_sched_core.h"
-    ],
+    "reads": ["firmware/lib/zplc_core/include/zplc_hal.h", "firmware/lib/zplc_core/include/zplc_sched_core.h"],
     "replacement": "contract",
     "reason": "Feeds the real zplc_hal.h and zplc_sched_core.h to the port interface generator to prove that every documented function and its contract text come from the headers. Replace by exporting the port interface through the generated contract, so the check compares data with data."
   },
@@ -607,9 +519,7 @@
     "file": "packages/zplc-ide/src/theme/typography.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-19",
-    "reads": [
-      "packages/zplc-ide/src/ui/kit.css"
-    ],
+    "reads": ["packages/zplc-ide/src/ui/kit.css"],
     "replacement": "dom",
     "reason": "UX-007 and UX-008 are properties of the kit style sheet (which rules cast a shadow, which sizes come from the density tokens) and the repository has no browser-free renderer for computed styles. Journeys 41 and 55 measure the same in a real window; replace the text match by computed-style assertions in the DOM environment (VF-007)."
   },
@@ -617,9 +527,7 @@
     "file": "packages/zplc-ide/scripts/welcomeBundle.test.ts",
     "requirement": "LRN-030",
     "added": "2026-10-20",
-    "reads": [
-      "packages/zplc-ide/electron/"
-    ],
+    "reads": ["packages/zplc-ide/electron/"],
     "replacement": "behaviour",
     "reason": "LRN-030 lists the main-process files whose source calls the network (fetch, net, http, WebSocket, autoUpdater), because the main process has no stand-in that records its requests. The renderer half of the test reads the production build, and the update default and gate are proven by behaviour. Replace by a journey of the packaged application with the main process kept off the network."
   }

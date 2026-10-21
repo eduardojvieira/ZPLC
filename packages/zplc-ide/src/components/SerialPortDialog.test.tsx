@@ -5,18 +5,43 @@ import { SerialPortDialog, type SerialPortDialogProps } from './SerialPortDialog
 import { boardNote, type SerialPortRow } from '../utils/serialPortChoice';
 
 const row = (overrides: Partial<SerialPortRow> & { portId: string }): SerialPortRow => ({
-  name: `Port ${overrides.portId}`, usbId: null, serialNumber: null, boards: [], ambiguous: false, vendor: null, kind: 'other', ...overrides,
+  name: `Port ${overrides.portId}`,
+  usbId: null,
+  serialNumber: null,
+  boards: [],
+  ambiguous: false,
+  vendor: null,
+  kind: 'other',
+  ...overrides,
 });
 
-const render = (props: Partial<SerialPortDialogProps> = {}) => renderToStaticMarkup(
-  <SerialPortDialog rows={[]} selectedPortId={null} refreshing={false} onSelect={() => undefined} onChoose={() => undefined} onRefresh={() => undefined} onCancel={() => undefined} {...props} />,
-);
+const render = (props: Partial<SerialPortDialogProps> = {}) =>
+  renderToStaticMarkup(
+    <SerialPortDialog
+      rows={[]}
+      selectedPortId={null}
+      refreshing={false}
+      onSelect={() => undefined}
+      onChoose={() => undefined}
+      onRefresh={() => undefined}
+      onCancel={() => undefined}
+      {...props}
+    />,
+  );
 
 describe('serial port dialog (IDE-018)', () => {
   it('lists each port with its name and USB identifiers, and marks a known board', () => {
     const html = render({
       rows: [
-        row({ portId: 'a', name: 'Pico', usbId: '2E8A:000A', serialNumber: 'E661', boards: ['Raspberry Pi Pico (RP2040)'], kind: 'known-board', vendor: 'Raspberry Pi (Pico, RP2040)' }),
+        row({
+          portId: 'a',
+          name: 'Pico',
+          usbId: '2E8A:000A',
+          serialNumber: 'E661',
+          boards: ['Raspberry Pi Pico (RP2040)'],
+          kind: 'known-board',
+          vendor: 'Raspberry Pi (Pico, RP2040)',
+        }),
         row({ portId: 'b', name: 'ttyUSB0', usbId: '0403:6001', kind: 'known-vendor', vendor: 'FTDI' }),
         row({ portId: 'c', name: 'ttyS0' }),
       ],
@@ -47,7 +72,9 @@ describe('serial port dialog (IDE-018)', () => {
   });
 
   it('says so when two boards share the identifiers, instead of naming one of them', () => {
-    const note = boardNote(row({ portId: 'a', boards: ['Raspberry Pi Pico (RP2040)', 'Waveshare RP2040-Zero'], ambiguous: true, kind: 'known-board' }));
+    const note = boardNote(
+      row({ portId: 'a', boards: ['Raspberry Pi Pico (RP2040)', 'Waveshare RP2040-Zero'], ambiguous: true, kind: 'known-board' }),
+    );
     expect(note).toContain('Raspberry Pi Pico (RP2040) or Waveshare RP2040-Zero');
     expect(note).toContain('does not say which one');
   });

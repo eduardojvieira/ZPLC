@@ -24,11 +24,7 @@ export interface Offender {
  * Lines of `text` longer than `limit` characters (code points, as the formatters count). With `generated`, the lines
  * between a `>>> GENERATED` and a `<<< END GENERATED` marker (a block a generator writes into a C file) are skipped.
  */
-export function longLines(
-  text: string,
-  limit: number = LIMIT,
-  generated = false,
-): Array<{ line: number; length: number }> {
+export function longLines(text: string, limit: number = LIMIT, generated = false): Array<{ line: number; length: number }> {
   const found: Array<{ line: number; length: number }> = [];
   let inside = false;
   text.split(/\r?\n/).forEach((content, index) => {
@@ -45,7 +41,11 @@ export function longLines(
 export async function offenders(files?: string[]): Promise<Offender[]> {
   const named = files ?? (await formattableFiles()).filter((file) => GUARDED_FILE.test(file) && !isLengthExempt(file));
   return named.flatMap((file) =>
-    longLines(readFileSync(resolve(ROOT, file), 'utf8'), LIMIT, /\.(?:c|h)$/.test(file)).map(({ line, length }) => ({ file, line, length })),
+    longLines(readFileSync(resolve(ROOT, file), 'utf8'), LIMIT, /\.(?:c|h)$/.test(file)).map(({ line, length }) => ({
+      file,
+      line,
+      length,
+    })),
   );
 }
 

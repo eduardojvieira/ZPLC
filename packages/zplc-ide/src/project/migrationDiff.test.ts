@@ -7,7 +7,8 @@ import { describe, expect, it } from 'bun:test';
 import { parseAndMigrateProject } from './projectModel';
 import { changedHunks, describeMigration, diffLines } from './migrationDiff';
 
-const kinds = (lines: ReturnType<typeof diffLines>) => lines.map((line) => `${line.kind === 'same' ? ' ' : line.kind === 'added' ? '+' : '-'}${line.text}`);
+const kinds = (lines: ReturnType<typeof diffLines>) =>
+  lines.map((line) => `${line.kind === 'same' ? ' ' : line.kind === 'added' ? '+' : '-'}${line.text}`);
 
 describe('diffLines', () => {
   it('marks what a line-by-line comparison removes and adds, and keeps what both texts hold', () => {
@@ -44,7 +45,17 @@ describe('changedHunks', () => {
     after[17] = 'changed 17';
     const hunks = changedHunks(diffLines(before.join('\n'), after.join('\n')));
     expect(hunks).toHaveLength(2);
-    expect(kinds(hunks[0]!)).toEqual([' line 1', ' line 2', '-line 3', '+changed 3', ' line 4', '-line 5', '+changed 5', ' line 6', ' line 7']);
+    expect(kinds(hunks[0]!)).toEqual([
+      ' line 1',
+      ' line 2',
+      '-line 3',
+      '+changed 3',
+      ' line 4',
+      '-line 5',
+      '+changed 5',
+      ' line 6',
+      ' line 7',
+    ]);
     expect(kinds(hunks[1]!)).toEqual([' line 15', ' line 16', '-line 17', '+changed 17', ' line 18', ' line 19']);
   });
 
@@ -55,7 +66,8 @@ describe('changedHunks', () => {
 
 describe('describeMigration of a version 1 project (IDE-022)', () => {
   const v1 = {
-    name: 'Legacy', version: '1.0.0',
+    name: 'Legacy',
+    version: '1.0.0',
     tasks: [{ name: 'Main', type: 'CYCLIC', interval: 20, priority: 2, file: 'main.st', watchdog_ms: 100 }],
   };
   const text = `${JSON.stringify(v1, null, 2)}\n`;
@@ -66,7 +78,9 @@ describe('describeMigration of a version 1 project (IDE-022)', () => {
     const difference = describeMigration(text, migrated.project);
     expect(difference.file).toBe('zplc.json');
     expect(difference.changed).toBe(true);
-    const flat = difference.hunks.flat().map((line) => `${line.kind === 'removed' ? '-' : line.kind === 'added' ? '+' : ' '}${line.text.trim()}`);
+    const flat = difference.hunks
+      .flat()
+      .map((line) => `${line.kind === 'removed' ? '-' : line.kind === 'added' ? '+' : ' '}${line.text.trim()}`);
     expect(flat).toContain('+"schemaVersion": 2');
     expect(flat).toContain('-"type": "CYCLIC",');
     expect(flat).toContain('+"trigger": "cyclic",');

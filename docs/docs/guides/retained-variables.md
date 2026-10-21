@@ -3,7 +3,7 @@ slug: /guides/retained-variables
 id: retained-variables
 title: Keep values across restarts
 sidebar_label: Retained variables
-description: "Declare variables that keep their value when the program stops or the runtime restarts, and see what is saved, when, and what discards it."
+description: 'Declare variables that keep their value when the program stops or the runtime restarts, and see what is saved, when, and what discards it.'
 tags: [how-to, retain, persistence]
 ---
 
@@ -59,13 +59,13 @@ periodic saves off, and a stop and a shutdown still store.
 
 ## 3. What discards the values
 
-| Event | Retained values |
-| --- | --- |
-| Stop and run again, or a restart, of the same program | Restored |
-| A rebuild of the program, even one that only moves code | Discarded: the program has another identity |
-| A reset command | Discarded: it is a cold restart |
-| Another program loaded | Discarded: the stored record belongs to the other program |
-| A fault | A stop of a faulted runtime stores nothing |
+| Event                                                   | Retained values                                           |
+| ------------------------------------------------------- | --------------------------------------------------------- |
+| Stop and run again, or a restart, of the same program   | Restored                                                  |
+| A rebuild of the program, even one that only moves code | Discarded: the program has another identity               |
+| A reset command                                         | Discarded: it is a cold restart                           |
+| Another program loaded                                  | Discarded: the stored record belongs to the other program |
+| A fault                                                 | A stop of a faulted runtime stores nothing                |
 
 The status of the native runtime says which of these happened, with a `reason` such
 as `restored`, `none`, `identity_mismatch` or `layout_mismatch`: the field `retain`
@@ -92,12 +92,12 @@ every start and the status says `io_error`.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
+| Part                                                          | Verified                                   | Level                 |
+| ------------------------------------------------------------- | ------------------------------------------ | --------------------- |
 | The record format, the alternating slots, restore and reasons | Tests with failures injected at every step | Host and `native_sim` |
-| Values survive a stop and a start of the native runtime | Test of the native session | Host |
-| A power cut on a board | Not tested | None |
-| How long a flash write delays a scan | Not measured | None |
+| Values survive a stop and a start of the native runtime       | Test of the native session                 | Host                  |
+| A power cut on a board                                        | Not tested                                 | None                  |
+| How long a flash write delays a scan                          | Not measured                               | None                  |
 
 ## See also
 

@@ -22,7 +22,11 @@ export interface ReleaseEvent {
   canonicalVersion: string;
 }
 
-export interface ReleaseIdentity { version: string; tag: string; publishing: boolean }
+export interface ReleaseIdentity {
+  version: string;
+  tag: string;
+  publishing: boolean;
+}
 
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
 /** The last tagged release candidate of 2.0.0 when REL-031 was written: later candidates continue from it. */
@@ -35,10 +39,16 @@ function checkSequence(version: string): void {
   const label = match[4];
   if (label === undefined) return;
   const candidate = /^rc\.(0|[1-9]\d*)$/.exec(label);
-  if (!candidate) throw new Error(`Prerelease ${version} must be rc.<n>: an alpha, beta or preview name sorts below rc.3, so tags continue the rc sequence`);
+  if (!candidate)
+    throw new Error(
+      `Prerelease ${version} must be rc.<n>: an alpha, beta or preview name sorts below rc.3, so tags continue the rc sequence`,
+    );
   const base = `${match[1]}.${match[2]}.${match[3]}`;
   if (base === LAST_TAGGED_RC.base && Number(candidate[1]) < LAST_TAGGED_RC.number) {
-    throw new Error(`Release candidate ${version} comes after ${LAST_TAGGED_RC.base}-rc.${LAST_TAGGED_RC.number}: the sequence continues, it does not go back`);
+    throw new Error(
+      `Release candidate ${version} comes after ${LAST_TAGGED_RC.base}-rc.${LAST_TAGGED_RC.number}: the sequence continues, it does not ` +
+        `go back`,
+    );
   }
 }
 
@@ -55,7 +65,9 @@ export function resolveRelease(event: ReleaseEvent): ReleaseIdentity {
     throw new Error(`Select the exact release tag refs/tags/${tag} before publishing a release; a rehearsal can run from any ref.`);
   }
   if (!manual && event.ref !== `refs/tags/${tag}`) {
-    throw new Error(`The ref ${event.ref} is not the tag ${tag} that this version of package.json is released as: tag ${event.refName} does not match.`);
+    throw new Error(
+      `The ref ${event.ref} is not the tag ${tag} that this version of package.json is released as: tag ${event.refName} does not match.`,
+    );
   }
   return { version: event.canonicalVersion, tag, publishing };
 }
@@ -75,9 +87,14 @@ function main(): number {
     });
     // a prerelease is named for how complete it is (REL-031): the statement is part of the title of the release
     if (identity.version.includes('-')) {
-      const status = JSON.parse(readFileSync(join(root, 'scripts/release/release-status.json'), 'utf8')) as { versions: Record<string, { completeness?: string }> };
+      const status = JSON.parse(readFileSync(join(root, 'scripts/release/release-status.json'), 'utf8')) as {
+        versions: Record<string, { completeness?: string }>;
+      };
       if ((status.versions[identity.version]?.completeness ?? '').trim() === '') {
-        throw new Error(`scripts/release/release-status.json has no completeness for ${identity.version}: the title of a prerelease says how complete it is`);
+        throw new Error(
+          `scripts/release/release-status.json has no completeness ` +
+            `for ${identity.version}: the title of a prerelease says how complete it is`,
+        );
       }
     }
     const lines = `version=${identity.version}\ntag=${identity.tag}\npublishing=${identity.publishing}\n`;

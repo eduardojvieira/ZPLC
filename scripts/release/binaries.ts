@@ -20,7 +20,10 @@ export interface BinaryTarget {
   runner: string;
 }
 
-export interface BinaryTool { name: 'zplc-cli' | 'zplc-mcp'; entry: string }
+export interface BinaryTool {
+  name: 'zplc-cli' | 'zplc-mcp';
+  entry: string;
+}
 
 export const TARGETS: readonly BinaryTarget[] = [
   { os: 'linux', arch: 'x64', bun: 'bun-linux-x64', runner: 'ubuntu-24.04' },
@@ -52,7 +55,10 @@ export function hostTarget(platform: string = process.platform, arch: string = p
 }
 
 function run(command: string[], options: { cwd?: string; input?: string } = {}): { status: number; stdout: string; stderr: string } {
-  const result = Bun.spawnSync(command, { ...(options.cwd === undefined ? {} : { cwd: options.cwd }), stdin: options.input === undefined ? 'ignore' : Buffer.from(options.input) });
+  const result = Bun.spawnSync(command, {
+    ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
+    stdin: options.input === undefined ? 'ignore' : Buffer.from(options.input),
+  });
   return { status: result.exitCode, stdout: result.stdout.toString(), stderr: result.stderr.toString() };
 }
 
@@ -102,12 +108,14 @@ async function smoke(directory: string, repoRoot: string, version: string, targe
   const away = join(directory, '..');
 
   const reported = run([cli, '--version'], { cwd: away });
-  if (reported.status !== 0 || reported.stdout.trim() !== `zplc-cli ${version}`) throw new Error(`${cli} --version printed "${reported.stdout.trim()}" ${reported.stderr}`);
+  if (reported.status !== 0 || reported.stdout.trim() !== `zplc-cli ${version}`)
+    throw new Error(`${cli} --version printed "${reported.stdout.trim()}" ${reported.stderr}`);
   lines.push(reported.stdout.trim());
 
   const compiled = run([cli, 'compile', project, '--json'], { cwd: away });
   const parsed = compiled.stdout.trim() === '' ? undefined : (JSON.parse(compiled.stdout.trim().split('\n').at(-1)!) as { ok?: boolean });
-  if (compiled.status !== 0 || parsed?.ok !== true) throw new Error(`${cli} compile ${project} failed: ${compiled.stdout} ${compiled.stderr}`);
+  if (compiled.status !== 0 || parsed?.ok !== true)
+    throw new Error(`${cli} compile ${project} failed: ${compiled.stdout} ${compiled.stderr}`);
   lines.push(`zplc-cli compile ${project}: compile passed`);
 
   const count = await mcpToolCount(mcp, project);
@@ -125,9 +133,15 @@ async function main(argv: string[]): Promise<number> {
     else if (flag === '--version') options.version = argv[++index] ?? '';
     else if (flag === '--smoke') options.smoke = true;
     else if (flag === '--native') options.native = true;
-    else { console.error(`binaries: unknown argument ${flag}`); return 2; }
+    else {
+      console.error(`binaries: unknown argument ${flag}`);
+      return 2;
+    }
   }
-  if (!options.out) { console.error('usage: binaries.ts --out <dir> [--targets host|all|linux-x64,...] [--version <v>] [--smoke] [--native]'); return 2; }
+  if (!options.out) {
+    console.error('usage: binaries.ts --out <dir> [--targets host|all|linux-x64,...] [--version <v>] [--smoke] [--native]');
+    return 2;
+  }
   const root = resolve(import.meta.dir, '..', '..');
   const productVersion = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string }).version;
   if (options.version !== '' && options.version !== productVersion) {
@@ -138,11 +152,12 @@ async function main(argv: string[]): Promise<number> {
     console.error('binaries: the compiler package is not built: run `bun run build:compiler` first');
     return 1;
   }
-  const selected = options.targets === 'all'
-    ? [...TARGETS]
-    : options.targets === 'host'
-      ? [hostTarget()].filter((target): target is BinaryTarget => target !== undefined)
-      : options.targets.split(',').map((key) => TARGETS.find((target) => `${target.os}-${target.arch}` === key));
+  const selected =
+    options.targets === 'all'
+      ? [...TARGETS]
+      : options.targets === 'host'
+        ? [hostTarget()].filter((target): target is BinaryTarget => target !== undefined)
+        : options.targets.split(',').map((key) => TARGETS.find((target) => `${target.os}-${target.arch}` === key));
   if (selected.length === 0 || selected.some((target) => target === undefined)) {
     console.error(`binaries: unknown or unsupported target in "${options.targets}"`);
     return 2;
@@ -153,7 +168,10 @@ async function main(argv: string[]): Promise<number> {
     for (const tool of TOOLS) {
       const file = join(out, binaryName(tool, productVersion, target));
       const built = Bun.spawnSync(buildCommand(root, tool, target, file), { stdout: 'inherit', stderr: 'inherit' });
-      if (built.exitCode !== 0) { console.error(`binaries: building ${file} failed`); return 1; }
+      if (built.exitCode !== 0) {
+        console.error(`binaries: building ${file} failed`);
+        return 1;
+      }
       console.log(`binaries: ${file} (${Bun.file(file).size} bytes)`);
     }
     // --native: the runner is of the architecture of the target even where Bun reports another one (an emulated x64 Bun on

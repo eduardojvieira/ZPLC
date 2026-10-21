@@ -39,10 +39,18 @@ export function usbIdText(vendorId: number | undefined, productId: number | unde
   return productId === undefined ? hex4(vendorId) : `${hex4(vendorId)}:${hex4(productId)}`;
 }
 
-interface BoardEntry { ide_id: string; display_name: string }
-interface UsbIdFile { boards: Record<string, { ids: Array<{ vid: string; pid: string }> }> }
+interface BoardEntry {
+  ide_id: string;
+  display_name: string;
+}
+interface UsbIdFile {
+  boards: Record<string, { ids: Array<{ vid: string; pid: string }> }>;
+}
 
-/** The catalog from the board manifest, the USB identifier file and the vendor list; entries of the identifier file that are not boards of the manifest are left out. */
+/**
+ * The catalog from the board manifest, the USB identifier file and the vendor list; entries of the identifier file that are not boards of
+ * the manifest are left out.
+ */
 export function buildSerialBoardCatalog(
   boards: readonly BoardEntry[],
   usbIds: UsbIdFile,
@@ -79,10 +87,11 @@ const ORDER: Record<SerialPortRow['kind'], number> = { 'known-board': 0, 'known-
 export function describePorts(ports: readonly SerialPortOffered[], catalog: SerialBoardCatalog): SerialPortRow[] {
   const rows = ports.map((port): SerialPortRow => {
     const usbId = usbIdText(port.vendorId, port.productId);
-    const boards = port.vendorId !== undefined && port.productId !== undefined
-      ? [...(catalog.boardsByUsbId.get(`${hex4(port.vendorId)}:${hex4(port.productId)}`) ?? [])]
-      : [];
-    const vendor = port.vendorId === undefined ? null : catalog.vendorsById.get(port.vendorId) ?? null;
+    const boards =
+      port.vendorId !== undefined && port.productId !== undefined
+        ? [...(catalog.boardsByUsbId.get(`${hex4(port.vendorId)}:${hex4(port.productId)}`) ?? [])]
+        : [];
+    const vendor = port.vendorId === undefined ? null : (catalog.vendorsById.get(port.vendorId) ?? null);
     return {
       portId: port.portId,
       name: port.name,
@@ -94,7 +103,8 @@ export function describePorts(ports: readonly SerialPortOffered[], catalog: Seri
       kind: boards.length > 0 ? 'known-board' : vendor !== null ? 'known-vendor' : 'other',
     };
   });
-  return rows.map((row, index) => ({ row, index }))
+  return rows
+    .map((row, index) => ({ row, index }))
     .sort((a, b) => ORDER[a.row.kind] - ORDER[b.row.kind] || a.index - b.index)
     .map(({ row }) => row);
 }

@@ -1,6 +1,6 @@
 /**
  * LDRungGrid - SVG Grid for Ladder Rung Visualization
- * 
+ *
  * Renders a single ladder rung as an SVG grid with:
  * - Left and right power rails
  * - Grid cells for element placement
@@ -14,7 +14,8 @@ import { Trash2 } from 'lucide-react';
 import {
   type LDRung,
   type LDElement as LDElementType,
-  type LDCell, isGridBasedRung,
+  type LDCell,
+  isGridBasedRung,
   DEFAULT_GRID_CONFIG,
   convertToGridRung,
   normalizeGridRung,
@@ -85,10 +86,13 @@ export default function LDRungGrid({
 
   // Whether power reaches an element, from the power flow of its rung as the debug map states it (LNG-006): an element
   // whose state was not read is not shown as energized
-  const isElementEnergized = useCallback((element: LDElementType | null, row: number, col: number): boolean => {
-    if (!element || !elementStates) return false;
-    return elementStates.get(cellElement(rung.id, row, col))?.power === true;
-  }, [elementStates, rung.id]);
+  const isElementEnergized = useCallback(
+    (element: LDElementType | null, row: number, col: number): boolean => {
+      if (!element || !elementStates) return false;
+      return elementStates.get(cellElement(rung.id, row, col))?.power === true;
+    },
+    [elementStates, rung.id],
+  );
 
   // Convert legacy rung to grid-based if needed, then normalize
   const gridRung = useMemo(() => {
@@ -118,7 +122,7 @@ export default function LDRungGrid({
   const totalHeight = PADDING + rows * CELL_HEIGHT + PADDING;
 
   // Check if rung is empty (no elements)
-  const isRungEmpty = grid.every(row => row.every(cell => cell.element === null));
+  const isRungEmpty = grid.every((row) => row.every((cell) => cell.element === null));
 
   // Find selected element position for delete button overlay
   const selectedElementPosition = (() => {
@@ -149,90 +153,100 @@ export default function LDRungGrid({
   }, []);
 
   // Handle native drag/drop at the container level
-  const handleContainerDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    setDraggedElementId(null);
-    if (readOnly || !onChange || !hoverCell) return;
-
-    const { col, row } = hoverCell;
-
-    // Handle BRANCH RESIZE
-    const resizeData = e.dataTransfer.getData('application/zplc-ld-branch-resize');
-    if (resizeData) {
-      try {
-        const { branchId } = JSON.parse(resizeData);
-        const branchToResize = gridRung.branches?.find(b => b.id === branchId);
-        if (branchToResize) {
-          // New end column is where we dropped
-          let newEndCol = col;
-          // Ensure it ends AFTER startCol
-          if (newEndCol <= branchToResize.startCol) {
-            newEndCol = branchToResize.startCol + 1;
-          }
-          // Ensure we don't shrink past elements inside (simplistic check)
-          // Ideally we check if excluding columns would hide elements
-
-          const updatedBranches = gridRung.branches?.map(b => {
-            if (b.id === branchId) {
-              return { ...b, endCol: newEndCol };
-            }
-            return b;
-          });
-
-          onChange({ ...gridRung, branches: updatedBranches });
-          setHoverCell(null);
-          return;
-        }
-      } catch (err) {
-        console.error('Failed to parse branch resize data', err);
-      }
-    }
-
-    const dropData = parseLDDropData(e.dataTransfer);
-    if (!dropData) return;
-
-    // A new element and a new branch are inserted by the editor, as they are from the keyboard
-    if (!(dropData.isMove && dropData.fromRow !== undefined && dropData.fromCol !== undefined)) {
-      onInsert?.(dropData, row, col);
-      setHoverCell(null);
-      return;
-    }
-
-    // Check if cell is occupied (can't drop on occupied cell)
-    if (grid[row]?.[col]?.element) {
-      console.warn('Cell is occupied');
-      setHoverCell(null);
-      return;
-    }
-
-    // MOVE existing element
-    const newGrid = grid.map(r => [...r]);
-    while (newGrid.length <= row) {
-      newGrid.push(Array(cols).fill(null).map(() => ({ element: null, hasWire: false })));
-    }
-    const sourceElement = grid[dropData.fromRow]?.[dropData.fromCol]?.element;
-    if (!sourceElement) {
-      console.warn('Source element not found');
-      setHoverCell(null);
-      return;
-    }
-    // Clear source cell but keep wire for continuity
-    newGrid[dropData.fromRow]![dropData.fromCol] = { element: null, hasWire: true };
-    newGrid[row]![col] = { element: { ...sourceElement, row, col }, hasWire: true };
-    onChange({ ...gridRung, grid: newGrid });
-    setHoverCell(null);
-  }, [readOnly, onChange, onInsert, hoverCell, grid, cols, gridRung]);
-
-  const handleContainerDragOver = useCallback((e: React.DragEvent) => {
-    // Check if it's our LD element type
-    if (e.dataTransfer.types.includes(DRAG_MIME_TYPE)) {
+  const handleContainerDrop = useCallback(
+    (e: React.DragEvent) => {
       e.preventDefault();
-      // If we're dragging an existing element, it's a move; otherwise copy
-      e.dataTransfer.dropEffect = draggedElementId ? 'move' : 'copy';
-      setIsDragging(true);
-    }
-  }, [draggedElementId]);
+      setIsDragging(false);
+      setDraggedElementId(null);
+      if (readOnly || !onChange || !hoverCell) return;
+
+      const { col, row } = hoverCell;
+
+      // Handle BRANCH RESIZE
+      const resizeData = e.dataTransfer.getData('application/zplc-ld-branch-resize');
+      if (resizeData) {
+        try {
+          const { branchId } = JSON.parse(resizeData);
+          const branchToResize = gridRung.branches?.find((b) => b.id === branchId);
+          if (branchToResize) {
+            // New end column is where we dropped
+            let newEndCol = col;
+            // Ensure it ends AFTER startCol
+            if (newEndCol <= branchToResize.startCol) {
+              newEndCol = branchToResize.startCol + 1;
+            }
+            // Ensure we don't shrink past elements inside (simplistic check)
+            // Ideally we check if excluding columns would hide elements
+
+            const updatedBranches = gridRung.branches?.map((b) => {
+              if (b.id === branchId) {
+                return { ...b, endCol: newEndCol };
+              }
+              return b;
+            });
+
+            onChange({ ...gridRung, branches: updatedBranches });
+            setHoverCell(null);
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to parse branch resize data', err);
+        }
+      }
+
+      const dropData = parseLDDropData(e.dataTransfer);
+      if (!dropData) return;
+
+      // A new element and a new branch are inserted by the editor, as they are from the keyboard
+      if (!(dropData.isMove && dropData.fromRow !== undefined && dropData.fromCol !== undefined)) {
+        onInsert?.(dropData, row, col);
+        setHoverCell(null);
+        return;
+      }
+
+      // Check if cell is occupied (can't drop on occupied cell)
+      if (grid[row]?.[col]?.element) {
+        console.warn('Cell is occupied');
+        setHoverCell(null);
+        return;
+      }
+
+      // MOVE existing element
+      const newGrid = grid.map((r) => [...r]);
+      while (newGrid.length <= row) {
+        newGrid.push(
+          Array(cols)
+            .fill(null)
+            .map(() => ({ element: null, hasWire: false })),
+        );
+      }
+      const sourceElement = grid[dropData.fromRow]?.[dropData.fromCol]?.element;
+      if (!sourceElement) {
+        console.warn('Source element not found');
+        setHoverCell(null);
+        return;
+      }
+      // Clear source cell but keep wire for continuity
+      newGrid[dropData.fromRow]![dropData.fromCol] = { element: null, hasWire: true };
+      newGrid[row]![col] = { element: { ...sourceElement, row, col }, hasWire: true };
+      onChange({ ...gridRung, grid: newGrid });
+      setHoverCell(null);
+    },
+    [readOnly, onChange, onInsert, hoverCell, grid, cols, gridRung],
+  );
+
+  const handleContainerDragOver = useCallback(
+    (e: React.DragEvent) => {
+      // Check if it's our LD element type
+      if (e.dataTransfer.types.includes(DRAG_MIME_TYPE)) {
+        e.preventDefault();
+        // If we're dragging an existing element, it's a move; otherwise copy
+        e.dataTransfer.dropEffect = draggedElementId ? 'move' : 'copy';
+        setIsDragging(true);
+      }
+    },
+    [draggedElementId],
+  );
 
   const handleContainerDragLeave = useCallback((e: React.DragEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -246,22 +260,28 @@ export default function LDRungGrid({
   }, []);
 
   // Handle branch deletion
-  const handleBranchDelete = useCallback((branchId: string) => {
-    if (readOnly || !onChange) return;
-    const updatedRung = removeBranch(gridRung, branchId);
-    onChange(updatedRung);
-  }, [readOnly, onChange, gridRung]);
+  const handleBranchDelete = useCallback(
+    (branchId: string) => {
+      if (readOnly || !onChange) return;
+      const updatedRung = removeBranch(gridRung, branchId);
+      onChange(updatedRung);
+    },
+    [readOnly, onChange, gridRung],
+  );
 
   // Handle branch resizing (via drag)
   // Logic moved to handleContainerDrop to support visual drag-drop interaction
   // kept here if needed for direct callbacks later
 
   // Handle element click
-  const handleElementClick = useCallback((element: LDElementType) => {
-    if (onElementSelect) {
-      onElementSelect(element);
-    }
-  }, [onElementSelect]);
+  const handleElementClick = useCallback(
+    (element: LDElementType) => {
+      if (onElementSelect) {
+        onElementSelect(element);
+      }
+    },
+    [onElementSelect],
+  );
 
   // Handle element drag start (for moving existing elements)
   const handleElementDragStart = useCallback((element: LDElementType) => {
@@ -270,7 +290,7 @@ export default function LDRungGrid({
   }, []);
 
   // Draw horizontal wires for empty cells
-  // Elements draw their own internal wires (left edge to right edge), 
+  // Elements draw their own internal wires (left edge to right edge),
   // so we only need to draw wires for empty cells that should have connections.
   //
   // Strategy:
@@ -281,10 +301,10 @@ export default function LDRungGrid({
 
     grid.forEach((row, rowIdx) => {
       const isMainRow = rowIdx === 0;
-      
+
       row.forEach((cell, colIdx) => {
         const isEmpty = cell.element === null;
-        
+
         // Determine if this empty cell should have a wire
         let shouldHaveWire = false;
         if (isEmpty) {
@@ -296,22 +316,14 @@ export default function LDRungGrid({
             shouldHaveWire = cell.hasWire === true;
           }
         }
-        
+
         if (shouldHaveWire) {
           const x1 = gridOffsetX + colIdx * CELL_WIDTH;
           const x2 = gridOffsetX + (colIdx + 1) * CELL_WIDTH;
           const y = PADDING + rowIdx * CELL_HEIGHT + WIRE_Y;
 
           wires.push(
-            <line
-              key={`wire-${rowIdx}-${colIdx}`}
-              x1={x1}
-              y1={y}
-              x2={x2}
-              y2={y}
-              stroke={COLORS.wire}
-              strokeWidth={STROKE_WIDTH}
-            />
+            <line key={`wire-${rowIdx}-${colIdx}`} x1={x1} y1={y} x2={x2} y2={y} stroke={COLORS.wire} strokeWidth={STROKE_WIDTH} />,
           );
         }
       });
@@ -328,41 +340,27 @@ export default function LDRungGrid({
       onDragLeave={handleContainerDragLeave}
     >
       {/* Rung header */}
-      <RungHeader
-        rung={rung}
-        cols={cols}
-        rows={rows}
-        readOnly={readOnly}
-        onChange={onChange}
-        editRequest={commentRequest}
-      />
+      <RungHeader rung={rung} cols={cols} rows={rows} readOnly={readOnly} onChange={onChange} editRequest={commentRequest} />
 
       {/* SVG Canvas with delete button overlay */}
       <div ref={viewRef} className="overflow-x-auto relative">
-        <svg
-          width={drawnWidth}
-          height={totalHeight}
-          className="block"
-          style={{ minWidth: totalWidth }}
-        >
+        <svg width={drawnWidth} height={totalHeight} className="block" style={{ minWidth: totalWidth }}>
           {/* Background grid (subtle) */}
-          <LDGridBackground rungId={rung.id} x={gridOffsetX} y={PADDING} cellWidth={CELL_WIDTH} cellHeight={CELL_HEIGHT} width={gridWidth} height={rows * CELL_HEIGHT} />
+          <LDGridBackground
+            rungId={rung.id}
+            x={gridOffsetX}
+            y={PADDING}
+            cellWidth={CELL_WIDTH}
+            cellHeight={CELL_HEIGHT}
+            width={gridWidth}
+            height={rows * CELL_HEIGHT}
+          />
 
           {/* Left power rail */}
-          <PowerRail
-            side="left"
-            x={RAIL_WIDTH / 2}
-            height={totalHeight}
-            rows={rows}
-          />
+          <PowerRail side="left" x={RAIL_WIDTH / 2} height={totalHeight} rows={rows} />
 
           {/* Right power rail */}
-          <PowerRail
-            side="right"
-            x={drawnWidth - RAIL_WIDTH / 2}
-            height={totalHeight}
-            rows={rows}
-          />
+          <PowerRail side="right" x={drawnWidth - RAIL_WIDTH / 2} height={totalHeight} rows={rows} />
 
           {/* Horizontal wires connecting to rails */}
           {Array.from({ length: rows }, (_, rowIdx) => {
@@ -379,14 +377,7 @@ export default function LDRungGrid({
             return (
               <g key={`rail-wires-${rowIdx}`}>
                 {/* Left rail to first cell */}
-                <line
-                  x1={RAIL_WIDTH / 2 + 10}
-                  y1={y}
-                  x2={gridOffsetX}
-                  y2={y}
-                  stroke={COLORS.wire}
-                  strokeWidth={STROKE_WIDTH}
-                />
+                <line x1={RAIL_WIDTH / 2 + 10} y1={y} x2={gridOffsetX} y2={y} stroke={COLORS.wire} strokeWidth={STROKE_WIDTH} />
                 {/* Last cell to right rail */}
                 <line
                   x1={gridOffsetX + gridWidth}
@@ -415,16 +406,17 @@ export default function LDRungGrid({
           ))}
 
           {/* Legacy vertical links (for backward compatibility) */}
-          {!gridRung.branches?.length && gridRung.verticalLinks?.map((link, idx) => (
-            <VerticalLink
-              key={`vlink-${idx}`}
-              col={link.col}
-              fromRow={link.fromRow}
-              toRow={link.toRow}
-              gridOffsetX={gridOffsetX}
-              position="start"
-            />
-          ))}
+          {!gridRung.branches?.length &&
+            gridRung.verticalLinks?.map((link, idx) => (
+              <VerticalLink
+                key={`vlink-${idx}`}
+                col={link.col}
+                fromRow={link.fromRow}
+                toRow={link.toRow}
+                gridOffsetX={gridOffsetX}
+                position="start"
+              />
+            ))}
 
           {/* Empty rung placeholder - drag hint */}
           {!readOnly && isRungEmpty && (
@@ -442,22 +434,23 @@ export default function LDRungGrid({
           )}
 
           {/* Drop zones (below elements, for drag-drop on empty cells) */}
-          {!readOnly && grid.map((row, rowIdx) =>
-            row.map((cell, colIdx) => (
-              <DropZone
-                key={`drop-${rowIdx}-${colIdx}`}
-                col={colIdx}
-                row={rowIdx}
-                gridOffsetX={gridOffsetX}
-                isOver={hoverCell?.col === colIdx && hoverCell?.row === rowIdx}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                hasElement={cell.element !== null}
-                isDragging={isDragging}
-                onPick={(pickedCol, pickedRow) => onCursor?.(pickedRow, pickedCol)}
-              />
-            ))
-          )}
+          {!readOnly &&
+            grid.map((row, rowIdx) =>
+              row.map((cell, colIdx) => (
+                <DropZone
+                  key={`drop-${rowIdx}-${colIdx}`}
+                  col={colIdx}
+                  row={rowIdx}
+                  gridOffsetX={gridOffsetX}
+                  isOver={hoverCell?.col === colIdx && hoverCell?.row === rowIdx}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  hasElement={cell.element !== null}
+                  isDragging={isDragging}
+                  onPick={(pickedCol, pickedRow) => onCursor?.(pickedRow, pickedCol)}
+                />
+              )),
+            )}
 
           {/* Elements (above drop zones to receive clicks) */}
           <g transform={`translate(${gridOffsetX}, ${PADDING})`}>
@@ -485,8 +478,8 @@ export default function LDRungGrid({
                       onDragStart={handleElementDragStart}
                     />
                   </g>
-                ) : null
-              )
+                ) : null,
+              ),
             )}
           </g>
 
@@ -509,21 +502,24 @@ export default function LDRungGrid({
 
         {/* Delete button overlay for selected element */}
         {!readOnly && selectedElementPosition && onElementDelete && (
-          <Button variant="bare" aria-label={t('editors.ld.deleteElement')} tooltip={t('editors.ld.deleteElement')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onElementDelete(selectedElementPosition.element);
-              }}
-              className="absolute w-6 h-6 flex items-center justify-center 
+          <Button
+            variant="bare"
+            aria-label={t('editors.ld.deleteElement')}
+            tooltip={t('editors.ld.deleteElement')}
+            onClick={(e) => {
+              e.stopPropagation();
+              onElementDelete(selectedElementPosition.element);
+            }}
+            className="absolute w-6 h-6 flex items-center justify-center 
                          bg-[var(--color-accent-red)] hover:opacity-90 text-[var(--color-on-accent)] rounded-full 
                          transition-colors z-10"
-              style={{
-                left: selectedElementPosition.x,
-                top: selectedElementPosition.y + 28, // +28 for header height
-              }}
-            >
-              <Trash2 size={12} />
-            </Button>
+            style={{
+              left: selectedElementPosition.x,
+              top: selectedElementPosition.y + 28, // +28 for header height
+            }}
+          >
+            <Trash2 size={12} />
+          </Button>
         )}
       </div>
     </div>

@@ -140,8 +140,10 @@ export function useDebugValue(varPath: string): DebugValueResult {
 }
 
 /** The values of `paths` and no others: what `useDebugValues` subscribes to (IDE-013). */
-export const selectLiveValues = (paths: readonly string[]) => (state: IDEState): Array<LiveValue | undefined> =>
-  paths.map((path) => state.debug.liveValues.get(path));
+export const selectLiveValues =
+  (paths: readonly string[]) =>
+  (state: IDEState): Array<LiveValue | undefined> =>
+    paths.map((path) => state.debug.liveValues.get(path));
 
 /**
  * Hook to get multiple variable values at once.
@@ -150,9 +152,7 @@ export const selectLiveValues = (paths: readonly string[]) => (state: IDEState):
  * @param varPaths - Array of variable paths
  * @returns Map of variable path to DebugValueResult
  */
-export function useDebugValues(
-  varPaths: string[]
-): Map<string, DebugValueResult> {
+export function useDebugValues(varPaths: string[]): Map<string, DebugValueResult> {
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
   // The values of these paths, and no others: with 200 values read ten times a second, a component that shows five of

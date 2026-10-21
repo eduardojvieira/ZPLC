@@ -46,22 +46,14 @@ static const request_spec_t *spec_of(uint8_t id) {
 /* Small helpers                                                                                                 */
 /* ------------------------------------------------------------------------------------------------------------- */
 
-static uint32_t now_ms(const zplc_proto_dev_t *dev) {
-  return dev->ops->now_ms(dev->ops->context);
-}
+static uint32_t now_ms(const zplc_proto_dev_t *dev) { return dev->ops->now_ms(dev->ops->context); }
 
-static uint32_t elapsed_ms(uint32_t now, uint32_t then) {
-  return now - then;
-}
+static uint32_t elapsed_ms(uint32_t now, uint32_t then) { return now - then; }
 
 /** The response body starts after the header and the status byte. */
-static uint8_t *body_of(zplc_proto_dev_t *dev) {
-  return dev->tx + ZPLC_PROTO_HEADER_BYTES + 1U;
-}
+static uint8_t *body_of(zplc_proto_dev_t *dev) { return dev->tx + ZPLC_PROTO_HEADER_BYTES + 1U; }
 
-static size_t body_capacity(const zplc_proto_link_t *link) {
-  return link->payload_max - 1U;
-}
+static size_t body_capacity(const zplc_proto_link_t *link) { return link->payload_max - 1U; }
 
 static void put_text(uint8_t *out, size_t size, const char *text) {
   size_t length = text == NULL ? 0U : strlen(text);
@@ -92,22 +84,20 @@ static int capability_bit(const zplc_proto_ops_t *ops, uint32_t bit) {
   case ZPLC_PROTO_CAP_MEMORY:
     return ops->mem_read != NULL && ops->mem_write != NULL;
   case ZPLC_PROTO_CAP_FORCE:
-    return ops->force_set != NULL && ops->force_clear != NULL && ops->force_clear_all != NULL &&
-           ops->force_get != NULL;
+    return ops->force_set != NULL && ops->force_clear != NULL && ops->force_clear_all != NULL && ops->force_get != NULL;
   case ZPLC_PROTO_CAP_RUN_CONTROL:
     return ops->run != NULL && ops->stop != NULL;
   case ZPLC_PROTO_CAP_BREAKPOINTS:
     return ops->bp_add != NULL && ops->bp_remove != NULL && ops->bp_clear != NULL && ops->bp_list != NULL;
   case ZPLC_PROTO_CAP_PROGRAM:
-    return ops->program_begin != NULL && ops->program_chunk != NULL && ops->program_commit != NULL &&
-           ops->program_abort != NULL && ops->program_info != NULL;
+    return ops->program_begin != NULL && ops->program_chunk != NULL && ops->program_commit != NULL && ops->program_abort != NULL &&
+           ops->program_info != NULL;
   case ZPLC_PROTO_CAP_WATCH:
     return ops->mem_read != NULL;
   case ZPLC_PROTO_CAP_AUTH:
     return ops->random != NULL && ops->key_load != NULL && ops->key_store != NULL && ops->key_erase != NULL;
   case ZPLC_PROTO_CAP_SIGNATURE:
-    return ops->signing_key_load != NULL && ops->signing_key_store != NULL && ops->signing_key_erase != NULL &&
-           ops->program_verify != NULL;
+    return ops->signing_key_load != NULL && ops->signing_key_store != NULL && ops->signing_key_erase != NULL && ops->program_verify != NULL;
   case ZPLC_PROTO_CAP_CONFIG:
     return ops->config_set != NULL && ops->config_save != NULL && ops->config_reset != NULL;
   case ZPLC_PROTO_CAP_CREDENTIALS:
@@ -146,8 +136,7 @@ static void region_of(uint32_t address, uint16_t *start, uint16_t *end) {
 }
 
 /** 0 when the access is valid, ERR_RANGE otherwise; region_start and region_end describe where the address is. */
-static int check_access(uint32_t address, uint32_t length, access_kind_t kind, uint16_t *region_start,
-                        uint16_t *region_end) {
+static int check_access(uint32_t address, uint32_t length, access_kind_t kind, uint16_t *region_start, uint16_t *region_end) {
   const int region = zplc_mem_extent_locate(address, length, NULL);
 
   region_of(address, region_start, region_end);
@@ -165,8 +154,7 @@ static int check_access(uint32_t address, uint32_t length, access_kind_t kind, u
 /* ------------------------------------------------------------------------------------------------------------- */
 
 /** Seal the frame whose payload (length bytes) is at dev->tx + HEADER, and hand it to the link. */
-static void send_sealed(zplc_proto_link_t *link, uint8_t kind, uint8_t message, uint32_t sequence, size_t length,
-                        int authenticated) {
+static void send_sealed(zplc_proto_link_t *link, uint8_t kind, uint8_t message, uint32_t sequence, size_t length, int authenticated) {
   zplc_proto_dev_t *dev = link->dev;
   uint8_t mac[ZPLC_SHA256_DIGEST_BYTES];
   size_t used;
@@ -189,8 +177,8 @@ static void send_sealed(zplc_proto_link_t *link, uint8_t kind, uint8_t message, 
 /** The response to a request: the body (body_length bytes) is already at body_of(dev). */
 static void respond(zplc_proto_link_t *link, const zplc_proto_frame_t *request, uint8_t status, size_t body_length) {
   zplc_proto_dev_t *dev = link->dev;
-  const int authenticated = dev->session_open != 0U && dev->owner == link && dev->session_authenticated != 0U &&
-                            request->authenticated != 0U;
+  const int authenticated =
+      dev->session_open != 0U && dev->owner == link && dev->session_authenticated != 0U && request->authenticated != 0U;
 
   dev->tx[ZPLC_PROTO_HEADER_BYTES] = status;
   send_sealed(link, ZPLC_PROTO_KIND_RESPONSE, request->message, request->sequence, 1U + body_length, authenticated);
@@ -200,8 +188,8 @@ static void respond_error(zplc_proto_link_t *link, const zplc_proto_frame_t *req
   respond(link, request, (uint8_t)status, 0U);
 }
 
-static void respond_range(zplc_proto_link_t *link, const zplc_proto_frame_t *request, uint32_t address,
-                          uint32_t length, uint16_t region_start, uint16_t region_end) {
+static void respond_range(zplc_proto_link_t *link, const zplc_proto_frame_t *request, uint32_t address, uint32_t length,
+                          uint16_t region_start, uint16_t region_end) {
   uint8_t *body = body_of(link->dev);
 
   zplc_put_u16_le(body + 0U, (uint16_t)address);
@@ -213,8 +201,7 @@ static void respond_range(zplc_proto_link_t *link, const zplc_proto_frame_t *req
 
 static void send_event(zplc_proto_link_t *link, uint8_t id, const uint8_t *data, size_t length) {
   zplc_proto_dev_t *dev = link->dev;
-  const int authenticated =
-      dev->session_open != 0U && dev->owner == link && dev->session_authenticated != 0U;
+  const int authenticated = dev->session_open != 0U && dev->owner == link && dev->session_authenticated != 0U;
 
   if (length != 0U) {
     (void)memcpy(dev->tx + ZPLC_PROTO_HEADER_BYTES, data, length);
@@ -228,9 +215,7 @@ static void send_event(zplc_proto_link_t *link, uint8_t id, const uint8_t *data,
 /* The event queue                                                                                               */
 /* ------------------------------------------------------------------------------------------------------------- */
 
-static int queue_lock(zplc_proto_dev_t *dev) {
-  return dev->ops->event_lock == NULL || dev->ops->event_lock(dev->ops->context) == 0;
-}
+static int queue_lock(zplc_proto_dev_t *dev) { return dev->ops->event_lock == NULL || dev->ops->event_lock(dev->ops->context) == 0; }
 
 static void queue_unlock(zplc_proto_dev_t *dev) {
   if (dev->ops->event_unlock != NULL) {
@@ -307,8 +292,8 @@ static uint32_t mask_of(uint8_t id) {
 }
 
 static uint32_t all_event_bits(void) {
-  return ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT |
-         ZPLC_PROTO_EVTMASK_FORCE | ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH;
+  return ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT | ZPLC_PROTO_EVTMASK_FORCE |
+         ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH;
 }
 
 /** An event the engine produced itself (a force it set): into the queue, without the lock of the producers. */
@@ -487,13 +472,9 @@ void zplc_proto_session_force_changed(zplc_proto_link_t *link, uint8_t change, u
   post_force_event(dev, change, address, current_forces(dev));
 }
 
-int zplc_proto_session_is_open(const zplc_proto_dev_t *dev) {
-  return dev->session_open != 0U;
-}
+int zplc_proto_session_is_open(const zplc_proto_dev_t *dev) { return dev->session_open != 0U; }
 
-void zplc_proto_session_end(zplc_proto_dev_t *dev, uint8_t reason) {
-  end_session(dev, reason, 1);
-}
+void zplc_proto_session_end(zplc_proto_dev_t *dev, uint8_t reason) { end_session(dev, reason, 1); }
 
 static uint8_t session_state_for(const zplc_proto_dev_t *dev, const zplc_proto_link_t *link) {
   if (dev->session_open == 0U) {
@@ -532,8 +513,7 @@ static int code_matches(const uint8_t *key, const zplc_proto_frame_t *frame) {
   return equal;
 }
 
-static gate_t gate(zplc_proto_link_t *link, const zplc_proto_frame_t *frame, const request_spec_t *spec,
-                   int *answer) {
+static gate_t gate(zplc_proto_link_t *link, const zplc_proto_frame_t *frame, const request_spec_t *spec, int *answer) {
   zplc_proto_dev_t *dev = link->dev;
   const int network = link->transport == ZPLC_PROTO_TRANSPORT_NETWORK;
   const int session_here = dev->session_open != 0U && dev->owner == link;
@@ -616,8 +596,7 @@ static void do_hello(const request_t *r) {
     negotiated = ZPLC_PROTO_PAYLOAD_MAX;
   }
   if (negotiated < ZPLC_PROTO_PAYLOAD_MAX_MIN) {
-    negotiated = ZPLC_PROTO_PAYLOAD_MAX_MIN < ZPLC_PROTO_PAYLOAD_MAX ? ZPLC_PROTO_PAYLOAD_MAX_MIN
-                                                                      : ZPLC_PROTO_PAYLOAD_MAX;
+    negotiated = ZPLC_PROTO_PAYLOAD_MAX_MIN < ZPLC_PROTO_PAYLOAD_MAX ? ZPLC_PROTO_PAYLOAD_MAX_MIN : ZPLC_PROTO_PAYLOAD_MAX;
   }
   if (dev->session_open != 0U && dev->owner == link) {
     /* The hello is answered to anyone, with no code: it must not be able to change what a live session uses. */
@@ -668,13 +647,10 @@ static void do_identity(const request_t *r) {
   zplc_put_u32_le(b + ZPLC_PROTO_IDENTITY_RSP_RETAIN_SIZE_OFF - shift, id.retain_size);
   zplc_put_u32_le(b + ZPLC_PROTO_IDENTITY_RSP_IPI_SIZE_OFF - shift, id.ipi_size);
   zplc_put_u32_le(b + ZPLC_PROTO_IDENTITY_RSP_OPI_SIZE_OFF - shift, id.opi_size);
-  put_text(b + ZPLC_PROTO_IDENTITY_RSP_PRODUCT_VERSION_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_PRODUCT_VERSION_SIZE,
-           id.product_version);
+  put_text(b + ZPLC_PROTO_IDENTITY_RSP_PRODUCT_VERSION_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_PRODUCT_VERSION_SIZE, id.product_version);
   put_text(b + ZPLC_PROTO_IDENTITY_RSP_BOARD_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_BOARD_SIZE, id.board);
-  put_text(b + ZPLC_PROTO_IDENTITY_RSP_BOARD_PROFILE_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_BOARD_PROFILE_SIZE,
-           id.board_profile);
-  put_text(b + ZPLC_PROTO_IDENTITY_RSP_IO_BOARD_ID_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_IO_BOARD_ID_SIZE,
-           id.io_board_id);
+  put_text(b + ZPLC_PROTO_IDENTITY_RSP_BOARD_PROFILE_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_BOARD_PROFILE_SIZE, id.board_profile);
+  put_text(b + ZPLC_PROTO_IDENTITY_RSP_IO_BOARD_ID_OFF - shift, ZPLC_PROTO_IDENTITY_RSP_IO_BOARD_ID_SIZE, id.io_board_id);
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, ZPLC_PROTO_IDENTITY_RSP_FIXED - shift);
 }
 
@@ -746,8 +722,7 @@ static void do_link_stats(const request_t *r) {
   zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_REPLAY_DROPS_OFF - shift, link->stats.replay_drops);
   zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_ORDER_DROPS_OFF - shift, link->stats.order_drops);
   zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_EVENTS_SENT_OFF - shift, link->stats.events_sent);
-  zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_EVENTS_DROPPED_OFF - shift,
-                  link->stats.events_dropped + link->dev->dropped_total);
+  zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_EVENTS_DROPPED_OFF - shift, link->stats.events_dropped + link->dev->dropped_total);
   zplc_put_u32_le(b + ZPLC_PROTO_LINK_STATS_RSP_SESSIONS_OPENED_OFF - shift, link->stats.sessions_opened);
   respond(link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, ZPLC_PROTO_LINK_STATS_RSP_FIXED - shift);
 }
@@ -797,8 +772,7 @@ static void do_mem_write(const request_t *r) {
     return;
   }
   /* One call, one value: the port queues it whole and the scan applies it at its next input latch. */
-  result = ops_error(dev->ops->mem_write(dev->ops->context, address, r->payload + ZPLC_PROTO_MEM_WRITE_REQ_FIXED,
-                                         length));
+  result = ops_error(dev->ops->mem_write(dev->ops->context, address, r->payload + ZPLC_PROTO_MEM_WRITE_REQ_FIXED, length));
   respond(r->link, r->frame, (uint8_t)result, 0U);
 }
 
@@ -823,8 +797,7 @@ static void do_force_set(const request_t *r) {
     respond_range(r->link, r->frame, address, (uint32_t)length, start, end);
     return;
   }
-  result = ops_error(dev->ops->force_set(dev->ops->context, address, r->payload + ZPLC_PROTO_FORCE_SET_REQ_FIXED,
-                                         (uint16_t)length));
+  result = ops_error(dev->ops->force_set(dev->ops->context, address, r->payload + ZPLC_PROTO_FORCE_SET_REQ_FIXED, (uint16_t)length));
   if (result != 0) {
     respond_error(r->link, r->frame, result);
     return;
@@ -935,8 +908,7 @@ static void do_session_open(const request_t *r) {
     uint8_t key[ZPLC_PROTO_KEY_BYTES];
     zplc_hmac_sha256_t hmac;
     const uint32_t now = now_ms(dev);
-    const int fresh = dev->challenge_valid != 0U &&
-                      elapsed_ms(now, dev->challenge_ms) <= ZPLC_PROTO_CHALLENGE_S * 1000U &&
+    const int fresh = dev->challenge_valid != 0U && elapsed_ms(now, dev->challenge_ms) <= ZPLC_PROTO_CHALLENGE_S * 1000U &&
                       zplc_ct_equal(device_nonce, dev->challenge, ZPLC_PROTO_NONCE_BYTES);
 
     /* The challenge is used up whether it was the right one or not. */
@@ -1059,9 +1031,8 @@ static void respond_state(const request_t *r, int result) {
     respond_error(r->link, r->frame, result);
     return;
   }
-  body_of(dev)[0] = (dev->ops->status != NULL && dev->ops->status(dev->ops->context, &status) == 0)
-                        ? status.state
-                        : (uint8_t)ZPLC_PROTO_RUN_STATE_STOPPED;
+  body_of(dev)[0] = (dev->ops->status != NULL && dev->ops->status(dev->ops->context, &status) == 0) ? status.state
+                                                                                                    : (uint8_t)ZPLC_PROTO_RUN_STATE_STOPPED;
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 1U);
 }
 
@@ -1246,8 +1217,7 @@ static void do_program_sign(const request_t *r) {
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_STATE);
     return;
   }
-  (void)memcpy(dev->transfer_signature, r->payload + ZPLC_PROTO_PROGRAM_SIGN_REQ_SIGNATURE_OFF,
-               sizeof(dev->transfer_signature));
+  (void)memcpy(dev->transfer_signature, r->payload + ZPLC_PROTO_PROGRAM_SIGN_REQ_SIGNATURE_OFF, sizeof(dev->transfer_signature));
   dev->transfer_signed = 1U;
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 0U);
 }
@@ -1344,8 +1314,7 @@ static void do_cred_chunk(const request_t *r) {
   int result;
 
   if (dev->ops->cred_chunk == NULL || dev->cred_active == 0U) {
-    respond_error(r->link, r->frame, dev->ops->cred_chunk == NULL ? (int)ZPLC_PROTO_ERR_UNSUPPORTED
-                                                                    : (int)ZPLC_PROTO_ERR_STATE);
+    respond_error(r->link, r->frame, dev->ops->cred_chunk == NULL ? (int)ZPLC_PROTO_ERR_UNSUPPORTED : (int)ZPLC_PROTO_ERR_STATE);
     return;
   }
   if (length == 0U || length > (size_t)(dev->cred_size - dev->cred_received)) {
@@ -1383,8 +1352,7 @@ static void do_cred_erase(const request_t *r) {
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
     return;
   }
-  respond(r->link, r->frame,
-          (uint8_t)ops_error(dev->ops->cred_erase(dev->ops->context, r->payload[ZPLC_PROTO_CRED_ERASE_REQ_KIND_OFF])),
+  respond(r->link, r->frame, (uint8_t)ops_error(dev->ops->cred_erase(dev->ops->context, r->payload[ZPLC_PROTO_CRED_ERASE_REQ_KIND_OFF])),
           0U);
 }
 
@@ -1411,8 +1379,7 @@ static void do_signing_key_set(const request_t *r) {
     return;
   }
   respond(r->link, r->frame,
-          (uint8_t)ops_error(dev->ops->signing_key_store(dev->ops->context,
-                                                         r->payload + ZPLC_PROTO_SIGNING_KEY_SET_REQ_PUBLIC_KEY_OFF)),
+          (uint8_t)ops_error(dev->ops->signing_key_store(dev->ops->context, r->payload + ZPLC_PROTO_SIGNING_KEY_SET_REQ_PUBLIC_KEY_OFF)),
           0U);
 }
 
@@ -1441,29 +1408,75 @@ static void dispatch(const request_t *r) {
   const zplc_proto_ops_t *ops = r->link->dev->ops;
 
   switch (r->frame->message) {
-  case ZPLC_PROTO_MSG_HELLO: do_hello(r); break;
-  case ZPLC_PROTO_MSG_IDENTITY: do_identity(r); break;
-  case ZPLC_PROTO_MSG_STATUS: do_status(r); break;
-  case ZPLC_PROTO_MSG_CHALLENGE: do_challenge(r); break;
-  case ZPLC_PROTO_MSG_LINK_STATS: do_link_stats(r); break;
-  case ZPLC_PROTO_MSG_MEM_READ: do_mem_read(r); break;
-  case ZPLC_PROTO_MSG_MEM_WRITE: do_mem_write(r); break;
-  case ZPLC_PROTO_MSG_FORCE_SET: do_force_set(r); break;
-  case ZPLC_PROTO_MSG_FORCE_CLEAR: do_force_clear(r); break;
-  case ZPLC_PROTO_MSG_FORCE_CLEAR_ALL: do_force_clear_all(r); break;
-  case ZPLC_PROTO_MSG_FORCE_LIST: do_force_list(r); break;
-  case ZPLC_PROTO_MSG_SESSION_OPEN: do_session_open(r); break;
-  case ZPLC_PROTO_MSG_SESSION_CLOSE: do_session_close(r); break;
-  case ZPLC_PROTO_MSG_KEEPALIVE: do_keepalive(r); break;
-  case ZPLC_PROTO_MSG_EVENTS_SET: do_events_set(r); break;
-  case ZPLC_PROTO_MSG_WATCH_SET: do_watch_set(r); break;
-  case ZPLC_PROTO_MSG_WATCH_CLEAR: do_watch_clear(r); break;
-  case ZPLC_PROTO_MSG_RUN: do_control(r, ops->run); break;
-  case ZPLC_PROTO_MSG_STOP: do_control(r, ops->stop); break;
-  case ZPLC_PROTO_MSG_PAUSE: do_control(r, ops->pause); break;
-  case ZPLC_PROTO_MSG_RESUME: do_control(r, ops->resume); break;
-  case ZPLC_PROTO_MSG_STEP: do_control(r, ops->step); break;
-  case ZPLC_PROTO_MSG_RESET: do_control(r, ops->reset); break;
+  case ZPLC_PROTO_MSG_HELLO:
+    do_hello(r);
+    break;
+  case ZPLC_PROTO_MSG_IDENTITY:
+    do_identity(r);
+    break;
+  case ZPLC_PROTO_MSG_STATUS:
+    do_status(r);
+    break;
+  case ZPLC_PROTO_MSG_CHALLENGE:
+    do_challenge(r);
+    break;
+  case ZPLC_PROTO_MSG_LINK_STATS:
+    do_link_stats(r);
+    break;
+  case ZPLC_PROTO_MSG_MEM_READ:
+    do_mem_read(r);
+    break;
+  case ZPLC_PROTO_MSG_MEM_WRITE:
+    do_mem_write(r);
+    break;
+  case ZPLC_PROTO_MSG_FORCE_SET:
+    do_force_set(r);
+    break;
+  case ZPLC_PROTO_MSG_FORCE_CLEAR:
+    do_force_clear(r);
+    break;
+  case ZPLC_PROTO_MSG_FORCE_CLEAR_ALL:
+    do_force_clear_all(r);
+    break;
+  case ZPLC_PROTO_MSG_FORCE_LIST:
+    do_force_list(r);
+    break;
+  case ZPLC_PROTO_MSG_SESSION_OPEN:
+    do_session_open(r);
+    break;
+  case ZPLC_PROTO_MSG_SESSION_CLOSE:
+    do_session_close(r);
+    break;
+  case ZPLC_PROTO_MSG_KEEPALIVE:
+    do_keepalive(r);
+    break;
+  case ZPLC_PROTO_MSG_EVENTS_SET:
+    do_events_set(r);
+    break;
+  case ZPLC_PROTO_MSG_WATCH_SET:
+    do_watch_set(r);
+    break;
+  case ZPLC_PROTO_MSG_WATCH_CLEAR:
+    do_watch_clear(r);
+    break;
+  case ZPLC_PROTO_MSG_RUN:
+    do_control(r, ops->run);
+    break;
+  case ZPLC_PROTO_MSG_STOP:
+    do_control(r, ops->stop);
+    break;
+  case ZPLC_PROTO_MSG_PAUSE:
+    do_control(r, ops->pause);
+    break;
+  case ZPLC_PROTO_MSG_RESUME:
+    do_control(r, ops->resume);
+    break;
+  case ZPLC_PROTO_MSG_STEP:
+    do_control(r, ops->step);
+    break;
+  case ZPLC_PROTO_MSG_RESET:
+    do_control(r, ops->reset);
+    break;
   case ZPLC_PROTO_MSG_BP_ADD:
     if (ops->bp_add == NULL) {
       respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
@@ -1478,25 +1491,63 @@ static void dispatch(const request_t *r) {
       respond_breakpoints(r, ops_error(ops->bp_remove(ops->context, zplc_get_u16_le(r->payload))));
     }
     break;
-  case ZPLC_PROTO_MSG_BP_CLEAR: do_simple(r, ops->bp_clear); break;
-  case ZPLC_PROTO_MSG_BP_LIST: do_bp_list(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_BEGIN: do_program_begin(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_CHUNK: do_program_chunk(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_COMMIT: do_program_commit(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_SIGN: do_program_sign(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_ABORT: do_program_abort(r); break;
-  case ZPLC_PROTO_MSG_PROGRAM_INFO: do_program_info(r); break;
-  case ZPLC_PROTO_MSG_CONFIG_SET: do_config_set(r); break;
-  case ZPLC_PROTO_MSG_CONFIG_SAVE: do_simple(r, ops->config_save); break;
-  case ZPLC_PROTO_MSG_CONFIG_RESET: do_simple(r, ops->config_reset); break;
-  case ZPLC_PROTO_MSG_CRED_BEGIN: do_cred_begin(r); break;
-  case ZPLC_PROTO_MSG_CRED_CHUNK: do_cred_chunk(r); break;
-  case ZPLC_PROTO_MSG_CRED_COMMIT: do_cred_commit(r); break;
-  case ZPLC_PROTO_MSG_CRED_ERASE: do_cred_erase(r); break;
-  case ZPLC_PROTO_MSG_KEY_SET: do_key_set(r); break;
-  case ZPLC_PROTO_MSG_KEY_CLEAR: do_key_clear(r); break;
-  case ZPLC_PROTO_MSG_SIGNING_KEY_SET: do_signing_key_set(r); break;
-  case ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR: do_signing_key_clear(r); break;
+  case ZPLC_PROTO_MSG_BP_CLEAR:
+    do_simple(r, ops->bp_clear);
+    break;
+  case ZPLC_PROTO_MSG_BP_LIST:
+    do_bp_list(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_BEGIN:
+    do_program_begin(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_CHUNK:
+    do_program_chunk(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_COMMIT:
+    do_program_commit(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_SIGN:
+    do_program_sign(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_ABORT:
+    do_program_abort(r);
+    break;
+  case ZPLC_PROTO_MSG_PROGRAM_INFO:
+    do_program_info(r);
+    break;
+  case ZPLC_PROTO_MSG_CONFIG_SET:
+    do_config_set(r);
+    break;
+  case ZPLC_PROTO_MSG_CONFIG_SAVE:
+    do_simple(r, ops->config_save);
+    break;
+  case ZPLC_PROTO_MSG_CONFIG_RESET:
+    do_simple(r, ops->config_reset);
+    break;
+  case ZPLC_PROTO_MSG_CRED_BEGIN:
+    do_cred_begin(r);
+    break;
+  case ZPLC_PROTO_MSG_CRED_CHUNK:
+    do_cred_chunk(r);
+    break;
+  case ZPLC_PROTO_MSG_CRED_COMMIT:
+    do_cred_commit(r);
+    break;
+  case ZPLC_PROTO_MSG_CRED_ERASE:
+    do_cred_erase(r);
+    break;
+  case ZPLC_PROTO_MSG_KEY_SET:
+    do_key_set(r);
+    break;
+  case ZPLC_PROTO_MSG_KEY_CLEAR:
+    do_key_clear(r);
+    break;
+  case ZPLC_PROTO_MSG_SIGNING_KEY_SET:
+    do_signing_key_set(r);
+    break;
+  case ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR:
+    do_signing_key_clear(r);
+    break;
   default:
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNKNOWN_MESSAGE);
     break;
@@ -1575,9 +1626,9 @@ int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint
   for (bit = 1U; bit < 32U; bit++) {
     const uint32_t flag = 1UL << bit;
 
-    if ((flag & (ZPLC_PROTO_CAP_MEMORY | ZPLC_PROTO_CAP_FORCE | ZPLC_PROTO_CAP_RUN_CONTROL |
-                 ZPLC_PROTO_CAP_BREAKPOINTS | ZPLC_PROTO_CAP_PROGRAM | ZPLC_PROTO_CAP_WATCH | ZPLC_PROTO_CAP_AUTH |
-                 ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS | ZPLC_PROTO_CAP_SIGNATURE)) != 0U &&
+    if ((flag & (ZPLC_PROTO_CAP_MEMORY | ZPLC_PROTO_CAP_FORCE | ZPLC_PROTO_CAP_RUN_CONTROL | ZPLC_PROTO_CAP_BREAKPOINTS |
+                 ZPLC_PROTO_CAP_PROGRAM | ZPLC_PROTO_CAP_WATCH | ZPLC_PROTO_CAP_AUTH | ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS |
+                 ZPLC_PROTO_CAP_SIGNATURE)) != 0U &&
         capability_bit(ops, flag) != 0) {
       dev->capabilities |= flag;
     }
@@ -1585,8 +1636,8 @@ int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint
   return 0;
 }
 
-void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport,
-                          zplc_proto_write_fn write, void *write_context) {
+void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport, zplc_proto_write_fn write,
+                          void *write_context) {
   (void)memset(link, 0, sizeof(*link));
   link->dev = dev;
   link->transport = transport;
@@ -1764,16 +1815,14 @@ static void produce_watch_batch(zplc_proto_dev_t *dev, uint32_t now) {
     total += dev->watch_extents[i].length;
   }
   if (dev->ops->mem_read_many != NULL) {
-    if (dev->ops->mem_read_many(dev->ops->context, dev->watch_extents, dev->watch_count,
-                                data + ZPLC_PROTO_EVT_WATCH_FIXED, &scan) != 0) {
+    if (dev->ops->mem_read_many(dev->ops->context, dev->watch_extents, dev->watch_count, data + ZPLC_PROTO_EVT_WATCH_FIXED, &scan) != 0) {
       return;
     }
   } else {
     size_t offset = ZPLC_PROTO_EVT_WATCH_FIXED;
 
     for (i = 0U; i < dev->watch_count; i++) {
-      if (dev->ops->mem_read(dev->ops->context, dev->watch_extents[i].address, data + offset,
-                             dev->watch_extents[i].length) != 0) {
+      if (dev->ops->mem_read(dev->ops->context, dev->watch_extents[i].address, data + offset, dev->watch_extents[i].length) != 0) {
         return;
       }
       offset += dev->watch_extents[i].length;
@@ -1814,8 +1863,7 @@ static void drain_queue(zplc_proto_dev_t *dev, zplc_proto_link_t *const *links, 
     mask = mask_of(event.id);
     for (i = 0U; i < link_count; i++) {
       zplc_proto_link_t *link = links[i];
-      const int wanted = event.id == ZPLC_PROTO_EVT_DROPPED ? link->event_mask != 0U
-                                                           : (link->event_mask & mask) != 0U;
+      const int wanted = event.id == ZPLC_PROTO_EVT_DROPPED ? link->event_mask != 0U : (link->event_mask & mask) != 0U;
 
       if (wanted) {
         send_event(link, event.id, event.data, event.length);
@@ -1828,8 +1876,7 @@ void zplc_proto_dev_service(zplc_proto_dev_t *dev, zplc_proto_link_t *const *lin
   const uint32_t now = now_ms(dev);
 
   /* idle session */
-  if (dev->session_open != 0U &&
-      elapsed_ms(now, dev->last_activity_ms) >= (uint32_t)dev->idle_timeout_s * 1000U) {
+  if (dev->session_open != 0U && elapsed_ms(now, dev->last_activity_ms) >= (uint32_t)dev->idle_timeout_s * 1000U) {
     end_session(dev, (uint8_t)ZPLC_PROTO_SESSION_END_IDLE, 1);
   }
   /* challenge that was not used */
@@ -1839,8 +1886,8 @@ void zplc_proto_dev_service(zplc_proto_dev_t *dev, zplc_proto_link_t *const *lin
   }
   /* telemetry the runtime does not push: the engine reads it, here, and not on the scan */
   if (any_link_wants(links, link_count,
-                     ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT |
-                         ZPLC_PROTO_EVTMASK_FORCE | ZPLC_PROTO_EVTMASK_LOG)) {
+                     ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT | ZPLC_PROTO_EVTMASK_FORCE |
+                         ZPLC_PROTO_EVTMASK_LOG)) {
     produce_status_events(dev);
   }
   if (dev->watch_link != NULL && (dev->watch_link->event_mask & ZPLC_PROTO_EVTMASK_WATCH) != 0U) {

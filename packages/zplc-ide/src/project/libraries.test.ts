@@ -8,8 +8,20 @@ import { describe, expect, it } from 'bun:test';
 import type { FileTreeNode } from '../types';
 import { addLibrary, configuredLibraries, libraryProblem, projectSourceFiles, removeLibrary, unlistedSourceFiles } from './libraries';
 
-const file = (path: string, language: FileTreeNode['language'] = 'ST'): FileTreeNode => ({ id: `file:${path}`, name: path.split('/').at(-1)!, type: 'file', path, language });
-const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({ id: `dir:${path}`, name: path.split('/').at(-1)!, type: 'directory', path, children });
+const file = (path: string, language: FileTreeNode['language'] = 'ST'): FileTreeNode => ({
+  id: `file:${path}`,
+  name: path.split('/').at(-1)!,
+  type: 'file',
+  path,
+  language,
+});
+const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({
+  id: `dir:${path}`,
+  name: path.split('/').at(-1)!,
+  type: 'directory',
+  path,
+  children,
+});
 const tree: FileTreeNode = folder('', [
   file('zplc.json', 'LD'),
   folder('src', [file('src/Main.st'), file('src/pump.ld.json', 'LD'), folder('src/helpers', [file('src/helpers/Util.st')])]),

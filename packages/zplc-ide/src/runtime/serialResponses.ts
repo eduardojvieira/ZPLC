@@ -31,14 +31,16 @@ export function requireForceCommandConfirmation(response: string): void {
 }
 
 export function parseStatusInfo(value: unknown): StatusInfo {
-  if (!isRecord(value)
-    || typeof value.state !== 'string'
-    || !ZPLC_STATUS_STATES.has(value.state.toLowerCase())
-    || !isNonNegativeInteger(value.uptime_ms)
-    || !isRecord(value.stats)
-    || !isNonNegativeInteger(value.stats.cycles)
-    || !Array.isArray(value.opi)
-    || !value.opi.every(isByte)) {
+  if (
+    !isRecord(value) ||
+    typeof value.state !== 'string' ||
+    !ZPLC_STATUS_STATES.has(value.state.toLowerCase()) ||
+    !isNonNegativeInteger(value.uptime_ms) ||
+    !isRecord(value.stats) ||
+    !isNonNegativeInteger(value.stats.cycles) ||
+    !Array.isArray(value.opi) ||
+    !value.opi.every(isByte)
+  ) {
     throw new Error('Invalid ZPLC status response');
   }
 
@@ -48,20 +50,24 @@ export function parseStatusInfo(value: unknown): StatusInfo {
     }
   }
 
-  if (value.io_unsupported !== undefined
-    && (!isRecord(value.io_unsupported)
-      || !isNonNegativeInteger(value.io_unsupported.inputs)
-      || !isNonNegativeInteger(value.io_unsupported.outputs))) {
+  if (
+    value.io_unsupported !== undefined &&
+    (!isRecord(value.io_unsupported) ||
+      !isNonNegativeInteger(value.io_unsupported.inputs) ||
+      !isNonNegativeInteger(value.io_unsupported.outputs))
+  ) {
     throw new Error('Invalid ZPLC status response');
   }
 
   if (value.vm !== undefined) {
-    if (!isRecord(value.vm)
-      || !isNonNegativeInteger(value.vm.pc)
-      || !isNonNegativeInteger(value.vm.sp)
-      || typeof value.vm.halted !== 'boolean'
-      || typeof value.vm.error !== 'number'
-      || !Number.isSafeInteger(value.vm.error)) {
+    if (
+      !isRecord(value.vm) ||
+      !isNonNegativeInteger(value.vm.pc) ||
+      !isNonNegativeInteger(value.vm.sp) ||
+      typeof value.vm.halted !== 'boolean' ||
+      typeof value.vm.error !== 'number' ||
+      !Number.isSafeInteger(value.vm.error)
+    ) {
       throw new Error('Invalid ZPLC status response');
     }
   }
@@ -70,25 +76,29 @@ export function parseStatusInfo(value: unknown): StatusInfo {
 }
 
 export function parseForcedValues(value: unknown): WatchForceEntry[] {
-  if (!isRecord(value)
-    || !isNonNegativeInteger(value.count)
-    || value.count > 8
-    || !Array.isArray(value.items)
-    || value.count !== value.items.length) {
+  if (
+    !isRecord(value) ||
+    !isNonNegativeInteger(value.count) ||
+    value.count > 8 ||
+    !Array.isArray(value.items) ||
+    value.count !== value.items.length
+  ) {
     throw new Error('Invalid force list response');
   }
 
   const ranges: Array<{ start: number; end: number }> = [];
   return value.items.map((item) => {
-    if (!isRecord(item)
-      || !isNonNegativeInteger(item.addr)
-      || item.addr > 0xffff
-      || !isNonNegativeInteger(item.size)
-      || item.size === 0
-      || item.size > 260
-      || typeof item.bytes !== 'string'
-      || !/^[0-9a-f]*$/i.test(item.bytes)
-      || item.bytes.length !== item.size * 2) {
+    if (
+      !isRecord(item) ||
+      !isNonNegativeInteger(item.addr) ||
+      item.addr > 0xffff ||
+      !isNonNegativeInteger(item.size) ||
+      item.size === 0 ||
+      item.size > 260 ||
+      typeof item.bytes !== 'string' ||
+      !/^[0-9a-f]*$/i.test(item.bytes) ||
+      item.bytes.length !== item.size * 2
+    ) {
       throw new Error('Invalid force list response');
     }
 

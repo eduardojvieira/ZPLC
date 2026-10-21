@@ -21,7 +21,10 @@ import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
  */
 export const KNOWN_GAPS: Record<string, string> = {};
 
-/** `detail` is the evidence of a failure or the reason a journey is not possible; `notes` are steps the journey needed that a user should not. */
+/**
+ * `detail` is the evidence of a failure or the reason a journey is not possible; `notes` are steps the journey needed that a user should
+ * not.
+ */
 export type Outcome = { status: 'pass' | 'fail' | 'not-possible'; detail: string; notes: string[] };
 
 /** The exit decision, kept apart from the runner so that it can be checked without launching anything. */
@@ -30,7 +33,8 @@ export function judge(results: Array<{ name: string; outcome: Pick<Outcome, 'sta
   for (const { name, outcome } of results) {
     const known = knownGaps[name];
     if (outcome.status === 'pass' && known) problems.push(`"${name}" passes now: remove its entry (${known}) from KNOWN_GAPS`);
-    if (outcome.status !== 'pass' && !known) problems.push(`"${name}" ${outcome.status === 'fail' ? 'failed' : 'is not possible'} and is not a known gap`);
+    if (outcome.status !== 'pass' && !known)
+      problems.push(`"${name}" ${outcome.status === 'fail' ? 'failed' : 'is not possible'} and is not a known gap`);
   }
   return problems;
 }
@@ -43,8 +47,18 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
   try {
     launched = await launchApp(harness, root, journey.environment);
     const notes: string[] = [];
-    const relaunch = async () => { notes.push(...launched!.notes); await launched!.stop(); launched = await launchApp(harness, root, journey.environment); return launched.app; };
-    const crash = async () => { notes.push(...launched!.notes); await launched!.crash(); launched = await launchApp(harness, root, journey.environment); return launched.app; };
+    const relaunch = async () => {
+      notes.push(...launched!.notes);
+      await launched!.stop();
+      launched = await launchApp(harness, root, journey.environment);
+      return launched.app;
+    };
+    const crash = async () => {
+      notes.push(...launched!.notes);
+      await launched!.crash();
+      launched = await launchApp(harness, root, journey.environment);
+      return launched.app;
+    };
     await journey.run(launched.app, { root, project, runtime: harness.runtime, relaunch, crash });
     notes.push(...launched.notes);
     return { status: 'pass', detail: '', notes };
@@ -53,10 +67,28 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
     if (error instanceof NotPossible) return { status: 'not-possible', detail: error.message, notes };
     const shots = process.env.ZPLC_JOURNEY_SHOTS;
     if (shots && launched) {
-      const shot = await launched.app.cdp.command('Page.captureScreenshot', { format: 'png' }).catch(() => undefined) as { data?: string } | undefined;
-      if (shot?.data) { mkdirSync(shots, { recursive: true }); writeFileSync(join(shots, `${journey.name.replace(/\W+/g, '-')}.png`), Buffer.from(shot.data, 'base64')); }
+      const shot = (await launched.app.cdp.command('Page.captureScreenshot', { format: 'png' }).catch(() => undefined)) as
+        { data?: string } | undefined;
+      if (shot?.data) {
+        mkdirSync(shots, { recursive: true });
+        writeFileSync(join(shots, `${journey.name.replace(/\W+/g, '-')}.png`), Buffer.from(shot.data, 'base64'));
+      }
     }
-    return { status: 'fail', detail: `${error instanceof Error ? `${error.message}\n${error.stack?.split('\n').filter((line) => line.includes('/journeys.ts')).slice(0, 3).join('\n') ?? ''}` : String(error)}\n--- app output ---\n${launched?.app.log().slice(-1_500) ?? ''}`, notes };
+    return {
+      status: 'fail',
+      detail: `${
+        error instanceof Error
+          ? `${error.message}\n${
+              error.stack
+                ?.split('\n')
+                .filter((line) => line.includes('/journeys.ts'))
+                .slice(0, 3)
+                .join('\n') ?? ''
+            }`
+          : String(error)
+      }\n--- app output ---\n${launched?.app.log().slice(-1_500) ?? ''}`,
+      notes,
+    };
   } finally {
     await launched?.stop();
     rmSync(root, { recursive: true, force: true });
@@ -76,11 +108,16 @@ async function runPackaged(distribution: string): Promise<void> {
     console.log(`PASS         IDE-016 security probes on the packaged application (${((Date.now() - started) / 1000).toFixed(1)}s)`);
     for (const line of evidence) console.log(`  - ${line}`);
     console.log('\nThe packaged application on Linux only, native POSIX: no installer, macOS, Windows, HIL, timing or hardware evidence.');
-  } finally { rmSync(scratch, { recursive: true, force: true }); }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 async function main(): Promise<void> {
-  if (process.env.ZPLC_PACKAGED_DIST) { await runPackaged(process.env.ZPLC_PACKAGED_DIST); return; }
+  if (process.env.ZPLC_PACKAGED_DIST) {
+    await runPackaged(process.env.ZPLC_PACKAGED_DIST);
+    return;
+  }
   const only = process.env.ZPLC_JOURNEY_ONLY;
   const selected = JOURNEYS.filter((journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()));
   assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);
@@ -91,16 +128,39 @@ async function main(): Promise<void> {
       const started = Date.now();
       const outcome = await runJourney(harness, journey, scratch);
       results.push({ name: journey.name, example: journey.example, outcome });
-      console.log(`${outcome.status.toUpperCase().padEnd(12)} ${journey.name} (${journey.example}, ${((Date.now() - started) / 1000).toFixed(1)}s)`);
+      console.log(
+        `${outcome.status.toUpperCase().padEnd(12)} ${journey.name} (${journey.example}, ${((Date.now() - started) / 1000).toFixed(1)}s)`,
+      );
     }
-  } finally { await stop(); }
+  } finally {
+    await stop();
+  }
 
   console.log(`\n${'Journey'.padEnd(50)}${'Example'.padEnd(18)}${'Result'.padEnd(14)}Known gap / notes`);
-  for (const { name, example, outcome } of results) console.log(`${name.padEnd(50)}${example.padEnd(18)}${outcome.status.padEnd(14)}${[KNOWN_GAPS[name] && `gap ${KNOWN_GAPS[name]}`, ...outcome.notes].filter(Boolean).join('; ')}`);
-  for (const { name, outcome } of results) if (outcome.status !== 'pass') console.log(`\n--- ${name}: ${outcome.status === 'fail' ? 'FAILED' : 'NOT POSSIBLE'}${KNOWN_GAPS[name] ? ` (known gap ${KNOWN_GAPS[name]})` : ''}\n${outcome.detail}`);
+  for (const { name, example, outcome } of results)
+    console.log(
+      `${name.padEnd(50)}${example.padEnd(18)}${outcome.status.padEnd(14)}${[
+        KNOWN_GAPS[name] && `gap ${KNOWN_GAPS[name]}`,
+        ...outcome.notes,
+      ]
+        .filter(Boolean)
+        .join('; ')}`,
+    );
+  for (const { name, outcome } of results)
+    if (outcome.status !== 'pass')
+      console.log(
+        `\n--- ${name}: ${outcome.status === 'fail' ? 'FAILED' : 'NOT POSSIBLE'}${
+          KNOWN_GAPS[name] ? ` (known gap ${KNOWN_GAPS[name]})` : ''
+        }\n${outcome.detail}`,
+      );
   const problems = only ? [] : judge(results, KNOWN_GAPS);
-  if (problems.length > 0) { console.error(`\n${problems.join('\n')}`); process.exit(1); }
-  console.log('\nThe development host on Linux and native POSIX only: no packaged-artifact, macOS, Windows, HIL, timing or hardware evidence.');
+  if (problems.length > 0) {
+    console.error(`\n${problems.join('\n')}`);
+    process.exit(1);
+  }
+  console.log(
+    '\nThe development host on Linux and native POSIX only: no packaged-artifact, macOS, Windows, HIL, timing or hardware evidence.',
+  );
 }
 
 if (import.meta.main) await main();

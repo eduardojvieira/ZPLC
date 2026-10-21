@@ -1,18 +1,9 @@
 {
   "requirement": "CMP-018",
   "title": "a constant expression whose value does not fit its type is rejected",
-  "matrix": [
-    "data-types.sint-int"
-  ],
+  "matrix": ["data-types.sint-int"],
   "build": "fails",
-  "lines": [
-    3
-  ],
-  "codes": [
-    "CONSTANT_OUT_OF_RANGE"
-  ],
-  "messageIncludes": [
-    "200",
-    "SINT"
-  ]
+  "lines": [3],
+  "codes": ["CONSTANT_OUT_OF_RANGE"],
+  "messageIncludes": ["200", "SINT"]
 }

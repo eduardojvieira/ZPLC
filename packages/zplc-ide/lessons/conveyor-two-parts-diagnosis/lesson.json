@@ -5,15 +5,9 @@
   "order": 10,
   "module": 8,
   "level": "advanced",
-  "prerequisites": [
-    "conveyor-classification-jam"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["conveyor-classification-jam"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

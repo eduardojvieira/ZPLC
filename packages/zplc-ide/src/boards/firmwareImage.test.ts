@@ -10,21 +10,60 @@ const sha = (character: string) => character.repeat(64);
 
 function image(board: string, patch: Partial<FirmwareImage> = {}): FirmwareImage {
   return {
-    board, boardId: board.replaceAll('_', '-'), displayName: `Board ${board}`, file: `zplc-runtime-${VERSION}-${board.replaceAll('_', '-')}.bin`, format: 'bin', role: 'flash',
-    sha256: sha('a'), bytes: 1000, evidenceLevel: 'cross-build', learner: false, flash: { runner: 'stm32cubeprogrammer', address: '0x08000000', args: { port: 'swd' } }, bundled: 'missing', ...patch,
+    board,
+    boardId: board.replaceAll('_', '-'),
+    displayName: `Board ${board}`,
+    file: `zplc-runtime-${VERSION}-${board.replaceAll('_', '-')}.bin`,
+    format: 'bin',
+    role: 'flash',
+    sha256: sha('a'),
+    bytes: 1000,
+    evidenceLevel: 'cross-build',
+    learner: false,
+    flash: { runner: 'stm32cubeprogrammer', address: '0x08000000', args: { port: 'swd' } },
+    bundled: 'missing',
+    ...patch,
   };
 }
 
-const pico = image('rpi_pico', { file: `zplc-runtime-${VERSION}-rpi-pico-rp2040.uf2`, format: 'uf2', learner: true, bundled: 'verified', flash: { runner: 'uf2', address: null, args: { 'board-id': 'RPI-RP2' } }, sha256: sha('p') });
+const pico = image('rpi_pico', {
+  file: `zplc-runtime-${VERSION}-rpi-pico-rp2040.uf2`,
+  format: 'uf2',
+  learner: true,
+  bundled: 'verified',
+  flash: { runner: 'uf2', address: null, args: { 'board-id': 'RPI-RP2' } },
+  sha256: sha('p'),
+});
 const esp = image('esp32s3_devkitc', {
-  file: `zplc-runtime-${VERSION}-esp32-s3-devkitc.bin`, learner: true, bundled: 'verified', sha256: sha('e'),
-  flash: { runner: 'esp32', address: '0x00000000', args: { 'esp-app-address': '0x0', 'esp-flash-size': '8MB', 'esp-flash-freq': '80m', 'esp-flash-mode': 'dio' } },
+  file: `zplc-runtime-${VERSION}-esp32-s3-devkitc.bin`,
+  learner: true,
+  bundled: 'verified',
+  sha256: sha('e'),
+  flash: {
+    runner: 'esp32',
+    address: '0x00000000',
+    args: { 'esp-app-address': '0x0', 'esp-flash-size': '8MB', 'esp-flash-freq': '80m', 'esp-flash-mode': 'dio' },
+  },
 });
 const nucleo = image('nucleo_h743zi', { sha256: sha('n') });
-const nucleoElf = image('nucleo_h743zi', { file: `zplc-runtime-${VERSION}-nucleo-h743zi.elf`, format: 'elf', role: 'debug', flash: null, sha256: sha('d') });
-const giga = image('arduino_giga_r1', { flash: { runner: 'dfu-util', address: '0x08040000', args: { pid: '2341:0366', alt: '0', dfuse: 'true' } } });
+const nucleoElf = image('nucleo_h743zi', {
+  file: `zplc-runtime-${VERSION}-nucleo-h743zi.elf`,
+  format: 'elf',
+  role: 'debug',
+  flash: null,
+  sha256: sha('d'),
+});
+const giga = image('arduino_giga_r1', {
+  flash: { runner: 'dfu-util', address: '0x08040000', args: { pid: '2341:0366', alt: '0', dfuse: 'true' } },
+});
 
-const result = (images: FirmwareImage[], folder = '/opt/ZPLC/resources/firmware'): FirmwareImagesResult => ({ status: 'available', version: VERSION, commit: 'c'.repeat(40), folder, images });
+const result = (images: FirmwareImage[], folder = '/opt/ZPLC/resources/firmware'): FirmwareImagesResult => ({
+  status: 'available',
+  version: VERSION,
+  commit: 'c'.repeat(40),
+  folder,
+  images,
+});
 const studio = { version: VERSION, platform: 'linux' };
 
 describe('the image of the selected board (REL-025)', () => {
@@ -34,7 +73,13 @@ describe('the image of the selected board (REL-025)', () => {
     const shown = presentFirmwareImage(all, 'rpi_pico', studio);
     expect(shown.kind).toBe('ready');
     if (shown.kind !== 'ready') return;
-    expect(shown.image).toMatchObject({ file: pico.file, sha256: sha('p'), bytes: 1000, offline: true, location: `/opt/ZPLC/resources/firmware/${pico.file}` });
+    expect(shown.image).toMatchObject({
+      file: pico.file,
+      sha256: sha('p'),
+      bytes: 1000,
+      offline: true,
+      location: `/opt/ZPLC/resources/firmware/${pico.file}`,
+    });
     expect(shown.learner).toBe(true);
     expect(shown.versionNote).toBeNull();
   });
@@ -54,10 +99,18 @@ describe('the image of the selected board (REL-025)', () => {
   });
 
   it('lists the two learner boards first, then the rest in the order of the manifest, and no debug file', () => {
-    expect(orderedFlashImages(all.status === 'available' ? all.images : []).map((entry) => entry.board)).toEqual(['rpi_pico', 'esp32s3_devkitc', 'nucleo_h743zi', 'arduino_giga_r1']);
+    expect(orderedFlashImages(all.status === 'available' ? all.images : []).map((entry) => entry.board)).toEqual([
+      'rpi_pico',
+      'esp32s3_devkitc',
+      'nucleo_h743zi',
+      'arduino_giga_r1',
+    ]);
     const shown = presentFirmwareImage(all, 'arduino_giga_r1', studio);
     expect(shown.kind === 'ready' && shown.boards.map((entry) => [entry.board, entry.learner, entry.offline])).toEqual([
-      ['rpi_pico', true, true], ['esp32s3_devkitc', true, true], ['nucleo_h743zi', false, false], ['arduino_giga_r1', false, false],
+      ['rpi_pico', true, true],
+      ['esp32s3_devkitc', true, true],
+      ['nucleo_h743zi', false, false],
+      ['arduino_giga_r1', false, false],
     ]);
   });
 
@@ -76,8 +129,14 @@ describe('the image of the selected board (REL-025)', () => {
 
   it('says why there is nothing to show instead of an empty card', () => {
     expect(presentFirmwareImage(null, 'rpi_pico', studio)).toMatchObject({ kind: 'unavailable' });
-    expect(presentFirmwareImage({ status: 'absent' }, 'rpi_pico', studio)).toMatchObject({ kind: 'unavailable', message: expect.stringContaining('holds no firmware image') });
-    expect(presentFirmwareImage({ status: 'invalid' }, 'rpi_pico', studio)).toMatchObject({ kind: 'unavailable', message: expect.stringContaining('could not be read') });
+    expect(presentFirmwareImage({ status: 'absent' }, 'rpi_pico', studio)).toMatchObject({
+      kind: 'unavailable',
+      message: expect.stringContaining('holds no firmware image'),
+    });
+    expect(presentFirmwareImage({ status: 'invalid' }, 'rpi_pico', studio)).toMatchObject({
+      kind: 'unavailable',
+      message: expect.stringContaining('could not be read'),
+    });
     expect(presentFirmwareImage(all, 'my_own_board', studio)).toMatchObject({ kind: 'no-image' });
     expect(presentFirmwareImage(all, undefined, studio)).toEqual({ kind: 'no-board' });
     expect(presentFirmwareImage(all, 'custom', studio)).toEqual({ kind: 'no-board' });
@@ -100,7 +159,9 @@ describe('the flashing steps (REL-025)', () => {
     expect(text).toContain('Hold BOOT, press and release RST, and release BOOT');
     expect(text).toContain(`\`esptool --chip esp32s3 --port <port> write-flash 0x00000000 ${esp.file}\``);
     expect(text).not.toContain('--flash-mode');
-    expect(steps.findIndex((step) => step.startsWith('Press RST'))).toBeGreaterThan(steps.findIndex((step) => step.includes('write-flash')));
+    expect(steps.findIndex((step) => step.startsWith('Press RST'))).toBeGreaterThan(
+      steps.findIndex((step) => step.includes('write-flash')),
+    );
   });
 
   it('writes a DFU board and an ST-LINK board at the address of their build, with the identifier that the build names', () => {

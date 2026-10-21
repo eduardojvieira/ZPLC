@@ -7,7 +7,16 @@ const { useIDEStore } = await import('../store/useIDEStore');
 const { DebugWatchPanel } = await import('./DebugWatchPanel');
 
 function prepare(debug: Record<string, unknown> = {}) {
-  dom.patchStore(useIDEStore, { debug: { ...useIDEStore.getState().debug, mode: 'none', watchVariables: [], forcedValues: new Map(), forcesUnconfirmed: false, ...debug } } as never);
+  dom.patchStore(useIDEStore, {
+    debug: {
+      ...useIDEStore.getState().debug,
+      mode: 'none',
+      watchVariables: [],
+      forcedValues: new Map(),
+      forcesUnconfirmed: false,
+      ...debug,
+    },
+  } as never);
 }
 
 describe('Watch and force (CMP-054, IDE-019, UX-009) in a DOM', () => {
@@ -48,7 +57,10 @@ describe('Watch and force (CMP-054, IDE-019, UX-009) in a DOM', () => {
     expect(nameHeader.getAttribute('aria-sort')).toBe('none');
     await user.click(dom.screen.getByRole('button', { name: dom.t('panel.watch.sort', { column: dom.t('panel.watch.col.name') }) }));
     expect(nameHeader.getAttribute('aria-sort')).toBe('ascending');
-    const names = dom.screen.getAllByRole('row').slice(1).map((row) => row.querySelector('td')?.textContent);
+    const names = dom.screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.querySelector('td')?.textContent);
     expect(names).toEqual(['Alpha', 'Zeta']);
   });
 

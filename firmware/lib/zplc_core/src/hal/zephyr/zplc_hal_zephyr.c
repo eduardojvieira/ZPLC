@@ -102,9 +102,7 @@ void zplc_hal_sleep(uint32_t ms) { k_msleep((int32_t)ms); }
  */
 
 /** @brief Number of digital channels (outputs first) of the board. */
-static uint16_t gpio_channel_count(void) {
-  return zplc_io_gpio_binding_count;
-}
+static uint16_t gpio_channel_count(void) { return zplc_io_gpio_binding_count; }
 
 /** @brief Whether channel `channel` must configure for the HAL to initialize. */
 static bool gpio_channel_required(uint16_t channel) {
@@ -114,8 +112,7 @@ static bool gpio_channel_required(uint16_t channel) {
     return true;
   }
   /* The Kconfig mask counts outputs from the first one, which is channel 0. */
-  return binding->is_output != 0U && channel < 32U &&
-         (CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK & BIT(channel)) != 0U;
+  return binding->is_output != 0U && channel < 32U && (CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK & BIT(channel)) != 0U;
 }
 
 /**
@@ -146,14 +143,12 @@ static int gpio_channel_configure(uint16_t idx) {
 
   ret = gpio_pin_configure_dt(&binding->spec, flags);
   if (ret < 0) {
-    zplc_hal_log("[HAL] GPIO channel %u: configure failed (%d)\n",
-                 (unsigned)idx, ret);
+    zplc_hal_log("[HAL] GPIO channel %u: configure failed (%d)\n", (unsigned)idx, ret);
     return ret;
   }
 
   gpio_state[idx].configured = true;
-  zplc_hal_log("[HAL] GPIO channel %u: configured as %s\n", (unsigned)idx,
-               binding->is_output != 0U ? "OUTPUT" : "INPUT");
+  zplc_hal_log("[HAL] GPIO channel %u: configured as %s\n", (unsigned)idx, binding->is_output != 0U ? "OUTPUT" : "INPUT");
 
   return 0;
 }
@@ -192,10 +187,8 @@ static bool gpio_required_configured(void) {
 
   for (channel = 0U; channel < gpio_channel_count(); channel++) {
     if (gpio_channel_required(channel) && !gpio_state[channel].configured) {
-      zplc_hal_log("[HAL] Required GPIO channel %u (%s) is missing\n",
-                   (unsigned)channel,
-                   zplc_io_gpio_bindings[channel].is_output != 0U ? "output"
-                                                                  : "input");
+      zplc_hal_log("[HAL] Required GPIO channel %u (%s) is missing\n", (unsigned)channel,
+                   zplc_io_gpio_bindings[channel].is_output != 0U ? "output" : "input");
       all = false;
     }
   }
@@ -247,8 +240,7 @@ zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
     return ZPLC_HAL_ERROR;
   }
 
-  if (channel >= gpio_channel_count() ||
-      zplc_io_gpio_bindings[channel].is_output == 0U) {
+  if (channel >= gpio_channel_count() || zplc_io_gpio_bindings[channel].is_output == 0U) {
     return ZPLC_HAL_ERROR;
   }
 
@@ -301,14 +293,12 @@ static int adc_init_all(void) {
       continue;
     }
     if (!device_is_ready(binding->dev)) {
-      zplc_hal_log("[HAL] ADC channel %u: device not ready\n",
-                   (unsigned)channel);
+      zplc_hal_log("[HAL] ADC channel %u: device not ready\n", (unsigned)channel);
       continue;
     }
     ret = adc_channel_setup(binding->dev, &binding->cfg);
     if (ret < 0) {
-      zplc_hal_log("[HAL] ADC channel %u setup failed: %d\n",
-                   (unsigned)channel, ret);
+      zplc_hal_log("[HAL] ADC channel %u setup failed: %d\n", (unsigned)channel, ret);
       continue;
     }
     adc_state_configured[channel] = true;
@@ -324,10 +314,8 @@ static bool adc_required_configured(void) {
   bool all = true;
 
   for (channel = 0U; channel < zplc_io_adc_binding_count; channel++) {
-    if (zplc_io_adc_bindings[channel].required != 0U &&
-        !adc_state_configured[channel]) {
-      zplc_hal_log("[HAL] Required ADC channel %u is missing\n",
-                   (unsigned)channel);
+    if (zplc_io_adc_bindings[channel].required != 0U && !adc_state_configured[channel]) {
+      zplc_hal_log("[HAL] Required ADC channel %u is missing\n", (unsigned)channel);
       all = false;
     }
   }
@@ -507,20 +495,16 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  * profile, or a larger partition. */
 #define ZPLC_STORAGE_SPARE_SECTOR_BYTES 4096U
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
-#define ZPLC_STORAGE_RETAIN_BYTES                                              \
-  (2U * (((ZPLC_MEM_RETAIN_SIZE + 64U + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) /  \
-          ZPLC_PROGRAM_STORE_CHUNK_SIZE) *                                     \
+#define ZPLC_STORAGE_RETAIN_BYTES                                                                              \
+  (2U * (((ZPLC_MEM_RETAIN_SIZE + 64U + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) / ZPLC_PROGRAM_STORE_CHUNK_SIZE) * \
          (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)))
 #else
 #define ZPLC_STORAGE_RETAIN_BYTES 0U
 #endif
-#define ZPLC_STORAGE_REQUIRED_BYTES                                            \
-  (ZPLC_PROGRAM_STORE_WORST_CASE_BYTES + ZPLC_STORAGE_RETAIN_BYTES +           \
-   ZPLC_STORAGE_SPARE_SECTOR_BYTES)
-BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES,
-             "the storage partition cannot hold two program slots of "
-             "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
-             "of the board profile or enlarge its NVS partition");
+#define ZPLC_STORAGE_REQUIRED_BYTES (ZPLC_PROGRAM_STORE_WORST_CASE_BYTES + ZPLC_STORAGE_RETAIN_BYTES + ZPLC_STORAGE_SPARE_SECTOR_BYTES)
+BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES, "the storage partition cannot hold two program slots of "
+                                                                 "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
+                                                                 "of the board profile or enlarge its NVS partition");
 
 /** @brief NVS IDs 512..611: one device setting per entry, "cfg_NN" (COM-027). Above the program chunk range
  *         (NVS_ID_PROGRAM_CHUNKS + 2 * ZPLC_PROGRAM_STORE_MAX_CHUNKS, at most 418 with the smallest chunk and the
@@ -535,8 +519,7 @@ BUILD_ASSERT(NVS_ID_PROGRAM_CHUNKS + 2U * ZPLC_PROGRAM_STORE_MAX_CHUNKS <= NVS_I
  *         settings, which the assertion keeps true. */
 #define NVS_ID_AWS_CERT_PEM 640
 #define NVS_ID_AWS_KEY_PEM 641
-BUILD_ASSERT(NVS_ID_CONFIG_BASE + 100U <= NVS_ID_AWS_CERT_PEM,
-             "the device setting identifiers run into those of the AWS credentials");
+BUILD_ASSERT(NVS_ID_CONFIG_BASE + 100U <= NVS_ID_AWS_CERT_PEM, "the device setting identifiers run into those of the AWS credentials");
 
 /** @brief The keys of the device link (COM-021, COM-026): the 32-byte key of the authenticated sessions, and the
  *         Ed25519 public key that programs have to be signed with. They are provisioned over the serial link. */
@@ -572,19 +555,14 @@ void zplc_hal_persist_test_power_cut_at(unsigned long operation) {
   persist_power_cut_at = operation;
 }
 
-unsigned long zplc_hal_persist_test_operation_count(void) {
-  return persist_operation_count;
-}
+unsigned long zplc_hal_persist_test_operation_count(void) { return persist_operation_count; }
 
-int zplc_hal_persist_test_failure_triggered(void) {
-  return persist_failure_triggered ? 1 : 0;
-}
+int zplc_hal_persist_test_failure_triggered(void) { return persist_failure_triggered ? 1 : 0; }
 
 /* True when the operation about to run is the one that fails, or comes after the power cut. */
 static bool persist_operation_fails(void) {
   persist_operation_count++;
-  if (persist_power_is_cut ||
-      (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
+  if (persist_power_is_cut || (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
     persist_power_is_cut = true;
     persist_failure_triggered = true;
     return true;
@@ -595,15 +573,15 @@ static bool persist_operation_fails(void) {
   }
   return false;
 }
-#define ZPLC_PERSIST_INJECT()                                                  \
-  do {                                                                         \
-    if (persist_operation_fails()) {                                           \
-      return ZPLC_HAL_ERROR;                                                   \
-    }                                                                          \
+#define ZPLC_PERSIST_INJECT()        \
+  do {                               \
+    if (persist_operation_fails()) { \
+      return ZPLC_HAL_ERROR;         \
+    }                                \
   } while (0)
 #else
-#define ZPLC_PERSIST_INJECT()                                                  \
-  do {                                                                         \
+#define ZPLC_PERSIST_INJECT() \
+  do {                        \
   } while (0)
 #endif
 
@@ -619,8 +597,7 @@ static uint16_t program_chunk_id(const char *key) {
   unsigned long chunk = 0UL;
   unsigned slot;
 
-  if (strncmp(key, prefix, prefix_length) != 0 ||
-      (key[prefix_length] != 'a' && key[prefix_length] != 'b') ||
+  if (strncmp(key, prefix, prefix_length) != 0 || (key[prefix_length] != 'a' && key[prefix_length] != 'b') ||
       strncmp(key + prefix_length + 1U, suffix, suffix_length) != 0) {
     return 0;
   }
@@ -661,11 +638,9 @@ static uint16_t key_to_nvs_id(const char *key) {
     return NVS_ID_PROGRAM_SLOT_B_PAYLOAD;
   if (strcmp(key, "program_v1_slot_b_meta") == 0)
     return NVS_ID_PROGRAM_SLOT_B_META;
-  if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
-      key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
+  if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') && key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
-  if (strncmp(key, "cfg_", 4) == 0 && key[4] >= '0' && key[4] <= '9' &&
-      key[5] >= '0' && key[5] <= '9' && key[6] == '\0')
+  if (strncmp(key, "cfg_", 4) == 0 && key[4] >= '0' && key[4] <= '9' && key[5] >= '0' && key[5] <= '9' && key[6] == '\0')
     return NVS_ID_CONFIG_BASE + (key[4] - '0') * 10 + (key[5] - '0');
   if (strcmp(key, "aws_cert_pem") == 0)
     return NVS_ID_AWS_CERT_PEM;
@@ -699,16 +674,14 @@ static int ensure_nvs_init(void) {
   nvs_handle.offset = ZPLC_STORAGE_OFFSET();
 
   /* Get flash page info to determine sector size */
-  ret = flash_get_page_info_by_offs(nvs_handle.flash_device, nvs_handle.offset,
-                                    &page_info);
+  ret = flash_get_page_info_by_offs(nvs_handle.flash_device, nvs_handle.offset, &page_info);
   if (ret != 0) {
     zplc_hal_log("[HAL] Failed to get flash page info: %d\n", ret);
     return ret;
   }
 
   nvs_handle.sector_size = page_info.size;
-  nvs_handle.sector_count =
-      ZPLC_STORAGE_SIZE() / page_info.size;
+  nvs_handle.sector_count = ZPLC_STORAGE_SIZE() / page_info.size;
 
   /* Mount NVS */
   ret = zplc_kv_mount(&nvs_handle);
@@ -718,8 +691,7 @@ static int ensure_nvs_init(void) {
   }
 
   nvs_initialized = true;
-  zplc_hal_log("[HAL] NVS initialized (%u sectors of %u bytes)\n",
-               nvs_handle.sector_count, nvs_handle.sector_size);
+  zplc_hal_log("[HAL] NVS initialized (%u sectors of %u bytes)\n", nvs_handle.sector_count, nvs_handle.sector_size);
   return 0;
 }
 
@@ -732,8 +704,7 @@ static int ensure_nvs_init(void) {
  *
  * @return ZPLC_HAL_OK on success, error code otherwise.
  */
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
   uint16_t id;
   ssize_t ret;
 
@@ -776,8 +747,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
  * @return ZPLC_HAL_OK on success, error code otherwise.
  *         Returns ZPLC_HAL_NOT_IMPL if key is not found.
  */
-zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len) {
   uint16_t id;
   ssize_t ret;
 
@@ -803,12 +773,9 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
    * An entry is never larger, so asking for less than the caller's capacity truncates nothing. A caller that
    * passes the capacity of a whole artifact (the program store reads the first chunk that way) is served. */
   {
-    const size_t write_block = nvs_handle.flash_parameters != NULL
-                                   ? nvs_handle.flash_parameters->write_block_size
-                                   : 1U;
+    const size_t write_block = nvs_handle.flash_parameters != NULL ? nvs_handle.flash_parameters->write_block_size : 1U;
     const size_t allocation_entry =
-        write_block <= 1U ? ZPLC_KV_ENTRY_BYTES
-                          : ((ZPLC_KV_ENTRY_BYTES + write_block - 1U) / write_block) * write_block;
+        write_block <= 1U ? ZPLC_KV_ENTRY_BYTES : ((ZPLC_KV_ENTRY_BYTES + write_block - 1U) / write_block) * write_block;
     const size_t largest_entry = nvs_handle.sector_size - 2U * allocation_entry;
 
     if (len > largest_entry) {
@@ -877,8 +844,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
 /**
  * @brief Save data to persistent storage (stub - NVS disabled).
  */
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
   (void)key;
   (void)data;
   (void)len;
@@ -890,8 +856,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
 /**
  * @brief Load data from persistent storage (stub - Settings disabled).
  */
-zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len) {
   (void)key;
   (void)data;
   (void)len;
@@ -1002,16 +967,18 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
 #ifdef CONFIG_NETWORKING
   struct net_if *iface = net_if_get_default();
   if (!iface) {
-    if (buf && len > 0) buf[0] = '\0';
+    if (buf && len > 0)
+      buf[0] = '\0';
     return ZPLC_HAL_ERROR;
   }
-  
+
   struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
   if (!ipv4 || net_ipv4_is_addr_unspecified(&ipv4->unicast[0].ipv4.address.in_addr)) {
-    if (buf && len > 0) buf[0] = '\0';
+    if (buf && len > 0)
+      buf[0] = '\0';
     return ZPLC_HAL_ERROR;
   }
-  
+
   net_addr_ntop(AF_INET, &ipv4->unicast[0].ipv4.address.in_addr, buf, len);
   return ZPLC_HAL_OK;
 #else

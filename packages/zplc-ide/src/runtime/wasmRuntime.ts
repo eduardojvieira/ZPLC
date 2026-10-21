@@ -91,10 +91,23 @@ interface RuntimeExports {
 
 /** What the scheduler core decided (zplc_sched_trace_kind_t, firmware/lib/zplc_core/include/zplc_sched_core.h). */
 export const SCHEDULER_TRACE_KIND = {
-  ADMIT: 1, COALESCE: 2, ORDER: 3, LATCH: 4, TASK: 5, MISS: 6, FAULT: 7, COMMIT: 8, PAUSE: 9,
+  ADMIT: 1,
+  COALESCE: 2,
+  ORDER: 3,
+  LATCH: 4,
+  TASK: 5,
+  MISS: 6,
+  FAULT: 7,
+  COMMIT: 8,
+  PAUSE: 9,
 } as const;
 
-export interface SchedulerDecision { kind: number; taskId: number; a: bigint; b: bigint }
+export interface SchedulerDecision {
+  kind: number;
+  taskId: number;
+  a: bigint;
+  b: bigint;
+}
 
 const TRACE_RECORD_BYTES = 24;
 
@@ -264,8 +277,18 @@ export interface WasmSimulationOptions extends WasmRuntimeHost {
 /** The transport, and the module behind it for a caller that has to look at it (a test, a diagnostics view). */
 export type WasmSimulationApi = NativeSimulationApi & { readonly runtime: WasmRuntime | null };
 
-interface EnvelopeError { code?: string; message?: string }
-interface Envelope { id?: string; type?: string; method?: string; params?: unknown; result?: unknown; error?: EnvelopeError }
+interface EnvelopeError {
+  code?: string;
+  message?: string;
+}
+interface Envelope {
+  id?: string;
+  type?: string;
+  method?: string;
+  params?: unknown;
+  result?: unknown;
+  error?: EnvelopeError;
+}
 
 /**
  * A native-session transport over a WebAssembly runtime. `startSession` instantiates the module and shakes hands
@@ -333,12 +356,14 @@ export function createWasmSimulationApi(options: WasmSimulationOptions): WasmSim
 
   const hello = (profile: NativeCapabilityProfile): unknown => {
     requestCount += 1;
-    const answer = call(JSON.stringify({
-      id: `wasm-hello-${requestCount}`,
-      type: 'request',
-      method: 'session.hello',
-      params: { client_name: 'zplc-ide', client_version: '0', protocol_version: '1.0' },
-    }));
+    const answer = call(
+      JSON.stringify({
+        id: `wasm-hello-${requestCount}`,
+        type: 'request',
+        method: 'session.hello',
+        params: { client_name: 'zplc-ide', client_version: '0', protocol_version: '1.0' },
+      }),
+    );
     if (answer.error) throw new Error(answer.error.message ?? 'session.hello failed');
     return { ...(answer.result as Record<string, unknown>), runtime_kind: WASM_RUNTIME_KIND, capability_profile: profile };
   };

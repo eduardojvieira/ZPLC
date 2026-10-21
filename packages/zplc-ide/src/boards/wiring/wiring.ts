@@ -29,7 +29,7 @@ import type { BoardChannel, BoardIoDescription } from '../boardIo';
 export const WIRING_SCHEMA_VERSION = 1 as const;
 export const WIRING_FILE = 'wiring.json';
 export const WIRING_LOCALES = ['en', 'es'] as const;
-export type WiringLocale = typeof WIRING_LOCALES[number];
+export type WiringLocale = (typeof WIRING_LOCALES)[number];
 
 /** LRN-016: the only parts a lesson may wire, all of them low-voltage and passive. */
 export const LOW_VOLTAGE_KINDS = ['led', 'resistor', 'button', 'potentiometer', 'capacitor', 'jumper'] as const;
@@ -95,18 +95,25 @@ export function validateWiring(value: unknown): string[] {
   const ids = new Set<string>();
   value.parts.forEach((part: unknown, index) => {
     const here = `wiring.parts[${index}]`;
-    if (!isObject(part)) { problems.push(`${here}: must be an object`); return; }
+    if (!isObject(part)) {
+      problems.push(`${here}: must be an object`);
+      return;
+    }
     for (const key of Object.keys(part)) if (!PART_KEYS.includes(key)) problems.push(`${here}: unknown key "${key}"`);
     if (typeof part.id !== 'string' || !PART_ID.test(part.id)) problems.push(`${here}.id: must be a lowercase slug`);
     else if (ids.has(part.id)) problems.push(`wiring.parts: part id "${part.id}" is used twice`);
     else ids.add(part.id);
     if (!isText(part.kind)) problems.push(`${here}.kind: must name the kind of part`);
-    if (typeof part.channel !== 'string' || !CHANNEL_ID.test(part.channel)) problems.push(`${here}.channel: must be a channel id of the board I/O description, such as DO0 or DI1`);
+    if (typeof part.channel !== 'string' || !CHANNEL_ID.test(part.channel))
+      problems.push(`${here}.channel: must be a channel id of the board I/O description, such as DO0 or DI1`);
     const label = part.label;
-    if (!isObject(label) || Object.keys(label).length !== WIRING_LOCALES.length || !WIRING_LOCALES.every((locale) => isText(label[locale]))) problems.push(`${here}.label: must be a non-empty string in ${WIRING_LOCALES.join(' and ')}`);
+    if (!isObject(label) || Object.keys(label).length !== WIRING_LOCALES.length || !WIRING_LOCALES.every((locale) => isText(label[locale])))
+      problems.push(`${here}.label: must be a non-empty string in ${WIRING_LOCALES.join(' and ')}`);
     if ('color' in part && !isText(part.color)) problems.push(`${here}.color: must name a colour`);
-    for (const key of ['resistorOhms', 'ohms'] as const) if (key in part && !isPositiveInt(part[key])) problems.push(`${here}.${key}: must be a positive integer number of ohms`);
-    if ('boards' in part && (!Array.isArray(part.boards) || part.boards.length === 0 || !part.boards.every(isText))) problems.push(`${here}.boards: must list at least one board id`);
+    for (const key of ['resistorOhms', 'ohms'] as const)
+      if (key in part && !isPositiveInt(part[key])) problems.push(`${here}.${key}: must be a positive integer number of ohms`);
+    if ('boards' in part && (!Array.isArray(part.boards) || part.boards.length === 0 || !part.boards.every(isText)))
+      problems.push(`${here}.boards: must list at least one board id`);
   });
   return problems;
 }
@@ -114,16 +121,19 @@ export function validateWiring(value: unknown): string[] {
 /** A channel the board carries itself (the Pico's on-board LED): the learner wires nothing to it. */
 export const isOnBoard = (channel: BoardChannel): boolean => /\bon-board\b/i.test(channel.location ?? '');
 
-export const channelOf = (board: WiringBoard, id: string): BoardChannel | undefined => board.io.channels.find((channel) => channel.id === id);
+export const channelOf = (board: WiringBoard, id: string): BoardChannel | undefined =>
+  board.io.channels.find((channel) => channel.id === id);
 
 /** The parts wired on this board, in the order of the file. */
-export const partsFor = (wiring: WiringFile, board: WiringBoard): WiringPart[] => wiring.parts.filter((part) => part.boards === undefined || part.boards.includes(board.boardId));
+export const partsFor = (wiring: WiringFile, board: WiringBoard): WiringPart[] =>
+  wiring.parts.filter((part) => part.boards === undefined || part.boards.includes(board.boardId));
 
 /** The parts the learner puts on the breadboard for this board: the parts of the board that are not on-board channels. */
-export const externalParts = (wiring: WiringFile, board: WiringBoard): WiringPart[] => partsFor(wiring, board).filter((part) => {
-  const channel = channelOf(board, part.channel);
-  return channel !== undefined && !isOnBoard(channel);
-});
+export const externalParts = (wiring: WiringFile, board: WiringBoard): WiringPart[] =>
+  partsFor(wiring, board).filter((part) => {
+    const channel = channelOf(board, part.channel);
+    return channel !== undefined && !isOnBoard(channel);
+  });
 
 /**
  * The rules between a wiring file and the learner boards: each part's channel exists on every board it is wired on
@@ -132,15 +142,21 @@ export const externalParts = (wiring: WiringFile, board: WiringBoard): WiringPar
 export function wiringBoardProblems(wiring: WiringFile, boards: readonly WiringBoard[]): string[] {
   const problems: string[] = [];
   const known = new Set(boards.map((board) => board.boardId));
-  for (const part of wiring.parts) for (const id of part.boards ?? []) if (!known.has(id)) problems.push(`part "${part.id}": board "${id}" is not a learner board`);
+  for (const part of wiring.parts)
+    for (const id of part.boards ?? []) if (!known.has(id)) problems.push(`part "${part.id}": board "${id}" is not a learner board`);
   for (const board of boards) {
     const taken = new Map<string, string>();
     for (const part of partsFor(wiring, board)) {
       const channel = channelOf(board, part.channel);
-      if (!channel) { problems.push(`part "${part.id}": channel ${part.channel} does not exist on ${board.displayName}`); continue; }
+      if (!channel) {
+        problems.push(`part "${part.id}": channel ${part.channel} does not exist on ${board.displayName}`);
+        continue;
+      }
       const wanted = INPUT_KINDS.includes(part.kind) ? 'input' : OUTPUT_KINDS.includes(part.kind) ? 'output' : undefined;
-      if (wanted && channel.direction !== wanted) problems.push(`part "${part.id}": a ${part.kind} is an ${wanted}, but ${part.channel} is an ${channel.direction}`);
-      if (part.kind === 'potentiometer' && channel.kind !== 'analog') problems.push(`part "${part.id}": a potentiometer needs an analog input, but ${part.channel} is digital`);
+      if (wanted && channel.direction !== wanted)
+        problems.push(`part "${part.id}": a ${part.kind} is an ${wanted}, but ${part.channel} is an ${channel.direction}`);
+      if (part.kind === 'potentiometer' && channel.kind !== 'analog')
+        problems.push(`part "${part.id}": a potentiometer needs an analog input, but ${part.channel} is digital`);
       const other = taken.get(part.channel);
       if (other) problems.push(`parts "${other}" and "${part.id}" are both wired to ${part.channel} on ${board.displayName}`);
       else taken.set(part.channel, part.id);
@@ -155,19 +171,30 @@ export function wiringBoardProblems(wiring: WiringFile, boards: readonly WiringB
  * it on that board); and every part the board wires is a channel the program uses. `addresses` are normalized
  * (`%IX0.0`, `%QX0.1`, `%IW4`), as `normalizeAddress` of boardIoMapping writes them.
  */
-export function programWiringProblems(wiring: WiringFile, boards: readonly WiringBoard[], addresses: readonly string[], virtual: readonly string[]): string[] {
+export function programWiringProblems(
+  wiring: WiringFile,
+  boards: readonly WiringBoard[],
+  addresses: readonly string[],
+  virtual: readonly string[],
+): string[] {
   const problems: string[] = [];
   for (const board of boards) {
     const wired = new Set(partsFor(wiring, board).map((part) => part.channel));
     for (const address of addresses) {
       const channel = board.io.channels.find((entry) => entry.address === address);
       if (!channel) {
-        if (!virtual.includes(address)) problems.push(`the program uses ${address}, which ${board.displayName} has no channel for; declare it in io.virtual of the project if no pin drives it there`);
-      } else if (!wired.has(channel.id)) problems.push(`the program uses ${address} (${channel.id}) on ${board.displayName}, but no part is wired to it`);
+        if (!virtual.includes(address))
+          problems.push(
+            `the program uses ${address}, which ${board.displayName} has no channel for; declare it in io.virtual of the project if no ` +
+              `pin drives it there`,
+          );
+      } else if (!wired.has(channel.id))
+        problems.push(`the program uses ${address} (${channel.id}) on ${board.displayName}, but no part is wired to it`);
     }
     for (const part of partsFor(wiring, board)) {
       const channel = channelOf(board, part.channel);
-      if (channel && !addresses.includes(channel.address)) problems.push(`part "${part.id}" is wired to ${part.channel} on ${board.displayName}, which the program does not use`);
+      if (channel && !addresses.includes(channel.address))
+        problems.push(`part "${part.id}" is wired to ${part.channel} on ${board.displayName}, which the program does not use`);
     }
   }
   return problems;
@@ -184,16 +211,24 @@ export function wiringSafetyProblems(wiring: WiringFile, boards: readonly Wiring
   const problems: string[] = [];
   for (const part of wiring.parts) {
     const here = `part "${part.id}"`;
-    if (!(LOW_VOLTAGE_KINDS as readonly string[]).includes(part.kind)) problems.push(`${here}: kind "${part.kind}" is not a low-voltage part of the course (${LOW_VOLTAGE_KINDS.join(', ')})`);
+    if (!(LOW_VOLTAGE_KINDS as readonly string[]).includes(part.kind))
+      problems.push(`${here}: kind "${part.kind}" is not a low-voltage part of the course (${LOW_VOLTAGE_KINDS.join(', ')})`);
     const onHeader = boards.some((board) => externalParts(wiring, board).includes(part));
     if (part.kind === 'led' && onHeader) {
-      if (!(LED_COLORS as readonly string[]).includes(part.color ?? '')) problems.push(`${here}: an LED must be ${LED_COLORS.slice(0, -1).join(', ')} or ${LED_COLORS.at(-1)}, not ${part.color ?? 'unnamed'}`);
-      if ((part.resistorOhms ?? 0) < MIN_LED_RESISTOR_OHMS) problems.push(`${here}: an LED needs a series resistor of at least ${MIN_LED_RESISTOR_OHMS} ohms, it has ${part.resistorOhms ?? 'none'}`);
+      if (!(LED_COLORS as readonly string[]).includes(part.color ?? ''))
+        problems.push(
+          `${here}: an LED must be ${LED_COLORS.slice(0, -1).join(', ')} or ${LED_COLORS.at(-1)}, not ${part.color ?? 'unnamed'}`,
+        );
+      if ((part.resistorOhms ?? 0) < MIN_LED_RESISTOR_OHMS)
+        problems.push(
+          `${here}: an LED needs a series resistor of at least ${MIN_LED_RESISTOR_OHMS} ohms, it has ${part.resistorOhms ?? 'none'}`,
+        );
     }
     for (const locale of WIRING_LOCALES) {
       const label = part.label[locale];
       const volts = [...label.matchAll(VOLTS)].map((match) => Number(match[1]!.replace(',', '.'))).filter((value) => value > MAX_VOLTS);
-      for (const value of volts) problems.push(`${here}: the ${locale} label names ${value} V, above the ${MAX_VOLTS} V of the learner boards`);
+      for (const value of volts)
+        problems.push(`${here}: the ${locale} label names ${value} V, above the ${MAX_VOLTS} V of the learner boards`);
       if (MAINS.test(label)) problems.push(`${here}: the ${locale} label names mains wiring`);
     }
   }

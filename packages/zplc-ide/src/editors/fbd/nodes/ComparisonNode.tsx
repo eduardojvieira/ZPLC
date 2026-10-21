@@ -1,6 +1,6 @@
 /**
  * ComparisonNode - Custom ReactFlow node for comparison operators
- * 
+ *
  * Renders EQ, NE, LT, LE, GT, GE blocks.
  */
 
@@ -22,13 +22,20 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
   // Get operator symbol
   const getSymbol = () => {
     switch (type) {
-      case 'EQ': return '=';
-      case 'NE': return '≠';
-      case 'LT': return '<';
-      case 'LE': return '≤';
-      case 'GT': return '>';
-      case 'GE': return '≥';
-      default: return '?';
+      case 'EQ':
+        return '=';
+      case 'NE':
+        return '≠';
+      case 'LT':
+        return '<';
+      case 'LE':
+        return '≤';
+      case 'GT':
+        return '>';
+      case 'GE':
+        return '≥';
+      default:
+        return '?';
     }
   };
 
@@ -59,12 +66,10 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
               className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
               style={{ top: '70%' }}
             />
-  
+
             {/* Symbol */}
-            <span className="text-2xl font-bold text-[var(--text-primary)]">
-              {getSymbol()}
-            </span>
-  
+            <span className="text-2xl font-bold text-[var(--text-primary)]">{getSymbol()}</span>
+
             {/* Output handle */}
             <Handle
               type="source"
@@ -73,12 +78,10 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
               className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             />
           </div>
-  
+
           {/* Type label */}
           <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
-              {type}
-            </span>
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">{type}</span>
           </div>
         </div>
       </Tooltip>

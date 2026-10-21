@@ -18,7 +18,8 @@ export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleT
  * Where the lesson of the open lesson workspace is shown (LRN-004). On the Learn rail it fills the primary sidebar; on any other
  * rail the primary sidebar is the Explorer, Search or Tests, so the lesson moves to the secondary sidebar instead of hiding.
  */
-export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary' | 'secondary' | 'none' => (!lessonOpen ? 'none' : view === 'learn' ? 'primary' : 'secondary');
+export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary' | 'secondary' | 'none' =>
+  !lessonOpen ? 'none' : view === 'learn' ? 'primary' : 'secondary';
 
 export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' };
 
@@ -47,11 +48,16 @@ export function startShellRouting(workbench: WorkbenchStore, shell: () => ShellA
   let resultsTab: ConsoleTab = resultsTabFor(workbench.getState().activeConsoleTab);
   const follow = (tab: ConsoleTab): void => {
     const route = routeConsoleTab(tab);
-    if (!route) { resultsTab = tab; return; }
+    if (!route) {
+      resultsTab = tab;
+      return;
+    }
     if ('primary' in route) shell().showActivity(route.primary);
     else shell().setSecondaryVisible(true);
     workbench.getState().setActiveConsoleTab(resultsTab);
   };
   follow(workbench.getState().activeConsoleTab);
-  return workbench.subscribe((state, previous) => { if (state.activeConsoleTab !== previous.activeConsoleTab) follow(state.activeConsoleTab); });
+  return workbench.subscribe((state, previous) => {
+    if (state.activeConsoleTab !== previous.activeConsoleTab) follow(state.activeConsoleTab);
+  });
 }

@@ -1,7 +1,8 @@
 /** The text of the hardware track of Learn (LRN-013, LRN-024), in English and in Spanish. Keys `learn.hardware.*`. */
 export const learnHardwareEn = {
   'learn.hardware.title': 'Hardware track',
-  'learn.hardware.intro': 'Run the lessons on your own board. Connecting, deploying and running stay your actions: Learn never starts them.',
+  'learn.hardware.intro':
+    'Run the lessons on your own board. Connecting, deploying and running stay your actions: Learn never starts them.',
   'learn.hardware.board': 'Your board',
   'learn.hardware.board.pico': 'Raspberry Pi Pico',
   'learn.hardware.board.esp32s3': 'ESP32-S3-DevKitC-1',
@@ -29,13 +30,15 @@ export const learnHardwareEn = {
   'learn.hardware.check.run': 'Check on board',
   'learn.hardware.check.cancel': 'Cancel the check',
   'learn.hardware.check.ready': 'Your board has the lesson program. Press the check button and follow the steps.',
-  'learn.hardware.check.block.stop-first': 'This check starts with the program. Stop the program from the toolbar, press the check button, then press “Run”.',
+  'learn.hardware.check.block.stop-first':
+    'This check starts with the program. Stop the program from the toolbar, press the check button, then press “Run”.',
   'learn.hardware.check.press-run': 'The check is ready to record. Press “Run” in the toolbar to start the program.',
   'learn.hardware.check.block.no-board': 'Choose your board first.',
   'learn.hardware.check.block.not-connected': 'Connect to your board first, from the toolbar.',
   'learn.hardware.check.block.not-running': 'Deploy the lesson program to your board and run it first, from the toolbar.',
   'learn.hardware.check.block.no-build': 'Build the lesson program first.',
-  'learn.hardware.check.block.board-unreported': 'The connected board does not say which board it is. Flash the learner firmware shown on this page.',
+  'learn.hardware.check.block.board-unreported':
+    'The connected board does not say which board it is. Flash the learner firmware shown on this page.',
   'learn.hardware.check.block.wrong-board': 'The connected board is the {reported}, not the {board} you chose.',
   'learn.hardware.check.missing': 'The build has no {signals}. Build the lesson program and deploy it again.',
   'learn.hardware.check.step': 'Step {number} of {total}: {action}',
@@ -53,7 +56,8 @@ export const learnHardwareEn = {
 
 export const learnHardwareEs: Record<keyof typeof learnHardwareEn, string> = {
   'learn.hardware.title': 'Ruta de hardware',
-  'learn.hardware.intro': 'Ejecute las lecciones en su propia placa. Conectar, cargar y ejecutar siguen siendo acciones suyas: Learn nunca las inicia.',
+  'learn.hardware.intro':
+    'Ejecute las lecciones en su propia placa. Conectar, cargar y ejecutar siguen siendo acciones suyas: Learn nunca las inicia.',
   'learn.hardware.board': 'Su placa',
   'learn.hardware.board.pico': 'Raspberry Pi Pico',
   'learn.hardware.board.esp32s3': 'ESP32-S3-DevKitC-1',
@@ -81,13 +85,17 @@ export const learnHardwareEs: Record<keyof typeof learnHardwareEn, string> = {
   'learn.hardware.check.run': 'Comprobar en la placa',
   'learn.hardware.check.cancel': 'Cancelar la comprobación',
   'learn.hardware.check.ready': 'Su placa tiene el programa de la lección. Pulse el botón de comprobación y siga los pasos.',
-  'learn.hardware.check.block.stop-first': 'Esta comprobación comienza con el programa. Detenga el programa desde la barra de herramientas, pulse el botón de comprobación y luego pulse “Ejecutar”.',
-  'learn.hardware.check.press-run': 'La comprobación está lista para registrar. Pulse “Ejecutar” en la barra de herramientas para poner en marcha el programa.',
+  'learn.hardware.check.block.stop-first':
+    'Esta comprobación comienza con el programa. Detenga el programa desde la barra de herramientas, pulse el botón de comprobación y luego pulse “Ejecutar”.',
+  'learn.hardware.check.press-run':
+    'La comprobación está lista para registrar. Pulse “Ejecutar” en la barra de herramientas para poner en marcha el programa.',
   'learn.hardware.check.block.no-board': 'Primero elija su placa.',
   'learn.hardware.check.block.not-connected': 'Primero conéctese a su placa desde la barra de herramientas.',
-  'learn.hardware.check.block.not-running': 'Primero cargue el programa de la lección en su placa y póngalo en marcha desde la barra de herramientas.',
+  'learn.hardware.check.block.not-running':
+    'Primero cargue el programa de la lección en su placa y póngalo en marcha desde la barra de herramientas.',
   'learn.hardware.check.block.no-build': 'Primero compile el programa de la lección.',
-  'learn.hardware.check.block.board-unreported': 'La placa conectada no indica qué placa es. Grabe el firmware de aprendizaje que se muestra en esta página.',
+  'learn.hardware.check.block.board-unreported':
+    'La placa conectada no indica qué placa es. Grabe el firmware de aprendizaje que se muestra en esta página.',
   'learn.hardware.check.block.wrong-board': 'La placa conectada es la {reported}, no la {board} que usted eligió.',
   'learn.hardware.check.missing': 'La compilación no tiene {signals}. Compile el programa de la lección y cárguelo de nuevo.',
   'learn.hardware.check.step': 'Paso {number} de {total}: {action}',

@@ -15,10 +15,11 @@ Para esos casos, ZPLC permite extender el sistema embebido directamente en C con
 ## La separación arquitectónica
 
 Es importante mantener la separación de responsabilidades:
+
 - **Use la lógica estándar de ZPLC (ST, SFC, LD)** para la automatización de planta, las operaciones generales, la lógica de secuencias, el control PID y la lógica de negocio.
 - **Use C nativo de Zephyr** para operaciones muy rígidas, como los controladores I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
 
-*Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC.* Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
+_Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC._ Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
 
 ## Flujo de trabajo estándar
 
@@ -30,6 +31,7 @@ Si necesita la integración nativa, debe compilar el firmware de ZPLC desde su c
 4. Si hace falta, interactúe con el runtime de ZPLC mediante las funciones `zplc_hal_*` desde su código en C.
 
 **Ejemplo de extensión de `CMakeLists.txt`:**
+
 ```cmake
 target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```

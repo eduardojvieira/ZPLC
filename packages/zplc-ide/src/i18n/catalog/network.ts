@@ -35,7 +35,8 @@ export const networkEs: Record<keyof typeof networkEn, string> = {
   'network.wiFiPassword': 'Contraseña de Wi-Fi',
   'network.hiddenSsid': 'SSID oculto',
   'network.dhcp': 'DHCP',
-  'network.credentialsAreExcludedFrom': 'Las credenciales no se incluyen en zplc.json; el almacenamiento local de secretos no está disponible en esta compilación.',
+  'network.credentialsAreExcludedFrom':
+    'Las credenciales no se incluyen en zplc.json; el almacenamiento local de secretos no está disponible en esta compilación.',
   'network.staticIp': 'IP estática',
   'network.netmask': 'Máscara de red',
   'network.gateway': 'Puerta de enlace',

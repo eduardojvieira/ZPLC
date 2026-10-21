@@ -75,7 +75,9 @@ END_PROGRAM
 });
 
 describe('the widgets of a file (LNG-006)', () => {
-  const read = (values: Record<string, { reading: number | boolean | string | undefined; type: string; known: boolean }>) => (variable: string) => values[variable];
+  const read =
+    (values: Record<string, { reading: number | boolean | string | undefined; type: string; known: boolean }>) => (variable: string) =>
+      values[variable];
   const format = (value: number | boolean | string): string => String(value);
   const targets = [
     { line: 3, column: 3, label: 'Count', variable: 'Count' },
@@ -85,11 +87,15 @@ describe('the widgets of a file (LNG-006)', () => {
   ];
 
   it('shows each variable of a line once, members first, and what cannot be read as unavailable', () => {
-    const widgets = inlineValues(targets, read({
-      Count: { reading: 7, type: 'INT', known: true },
-      'T.Q': { reading: true, type: 'BOOL', known: true },
-      Lost: { reading: undefined, type: '', known: false },
-    }), format);
+    const widgets = inlineValues(
+      targets,
+      read({
+        Count: { reading: 7, type: 'INT', known: true },
+        'T.Q': { reading: true, type: 'BOOL', known: true },
+        Lost: { reading: undefined, type: '', known: false },
+      }),
+      format,
+    );
     expect(widgets.map((widget) => `${widget.label}=${widget.text}`)).toEqual(['T.Q=true', 'Count=7', 'Lost=—']);
     expect(widgets[0]).toMatchObject({ isBool: true, isTrue: true, available: true });
     expect(widgets[2]).toMatchObject({ available: false });

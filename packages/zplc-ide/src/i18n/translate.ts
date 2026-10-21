@@ -7,10 +7,13 @@ export type Values = Record<string, string | number>;
 export type PluralKey = { [K in MessageKey]: K extends `${infer B}.one` ? B : never }[MessageKey];
 /** The arguments after the key: none for a text without markers, the values for the markers otherwise (a union of keys takes either). */
 export type TArgs<K extends MessageKey> = K extends MessageKey
-  ? [ParamNames<(typeof en)[K]>] extends [never] ? [] : [values: Record<ParamNames<(typeof en)[K]>, string | number>]
+  ? [ParamNames<(typeof en)[K]>] extends [never]
+    ? []
+    : [values: Record<ParamNames<(typeof en)[K]>, string | number>]
   : never;
 export type PluralArgs<B extends PluralKey> = [Exclude<ParamNames<(typeof en)[`${B}.other` & MessageKey]>, 'count'>] extends [never]
-  ? [] : [values: Record<Exclude<ParamNames<(typeof en)[`${B}.other` & MessageKey]>, 'count'>, string | number>];
+  ? []
+  : [values: Record<Exclude<ParamNames<(typeof en)[`${B}.other` & MessageKey]>, 'count'>, string | number>];
 
 const CATALOGS: Record<Locale, Readonly<Record<string, string>>> = { en, es };
 const PLURAL_RULES: Partial<Record<Locale, Intl.PluralRules>> = {};

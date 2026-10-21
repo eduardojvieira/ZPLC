@@ -1,6 +1,6 @@
 /**
  * WebSerial Uploader Module
- * 
+ *
  * Provides functionality to upload ZPLC bytecode to devices via WebSerial.
  */
 

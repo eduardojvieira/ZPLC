@@ -25,15 +25,11 @@ function failureOf(example: ErrorExample): CompilerError {
     const files = example.files ?? { Main: example.source ?? '' };
     const sources = Object.entries(files).map(([name, content]) => ({ name, content, sourceRef: `src/${name}.st` }));
     try {
-        compileMultiTaskProject(
-            { name: 'Example', version: '1.0.0', tasks: example.tasks ? [...example.tasks] : RUN_MAIN },
-            sources,
-            {
-                ...(example.memoryProfile ? { memoryProfile: example.memoryProfile } : {}),
-                ...(example.strictTypes ? { strictTypes: true } : {}),
-                ...(example.safeOutputs ? { safeOutputs: example.safeOutputs } : {}),
-            },
-        );
+        compileMultiTaskProject({ name: 'Example', version: '1.0.0', tasks: example.tasks ? [...example.tasks] : RUN_MAIN }, sources, {
+            ...(example.memoryProfile ? { memoryProfile: example.memoryProfile } : {}),
+            ...(example.strictTypes ? { strictTypes: true } : {}),
+            ...(example.safeOutputs ? { safeOutputs: example.safeOutputs } : {}),
+        });
     } catch (error) {
         if (error instanceof CompilerError) return error;
         throw error;
@@ -88,9 +84,17 @@ describe('each code is provoked by a build, with its position and its message (C
             const error = failureOf(example);
             const first = error.errors[0]!;
             expect({
-                code: first.code, line: first.line, column: first.column, file: first.sourceRef, message: first.detail,
+                code: first.code,
+                line: first.line,
+                column: first.column,
+                file: first.sourceRef,
+                message: first.detail,
             }).toEqual({
-                code, line: example.line, column: example.column, file: example.file, message: example.message,
+                code,
+                line: example.line,
+                column: example.column,
+                file: example.file,
+                message: example.message,
             });
             // a build reports no error at line 0 and no error without a code of the registry
             for (const each of error.errors) {
@@ -143,8 +147,12 @@ describe('errors that no source provokes (CMP-006)', () => {
     it('an error that is not one of the compiler’s own is an internal error, placed where the unit starts', () => {
         const error = codegenErrorFrom(new Error('boom'), { line: 3, column: 5 });
         expect(error).toBeInstanceOf(CodegenError);
-        expect({ code: error!.code, line: error!.line, column: error!.column, message: error!.message })
-            .toEqual({ code: 'INTERNAL_COMPILER_ERROR', line: 3, column: 5, message: 'boom' });
+        expect({ code: error!.code, line: error!.line, column: error!.column, message: error!.message }).toEqual({
+            code: 'INTERNAL_COMPILER_ERROR',
+            line: 3,
+            column: 5,
+            message: 'boom',
+        });
     });
 
     it('an assembler error is a compiler error at the program that was built', () => {
@@ -156,15 +164,34 @@ describe('errors that no source provokes (CMP-006)', () => {
         }
         expect(message).toContain('70000');
         const error = assemblerError(message, { line: 4, column: 1, sourceRef: 'src/Main.st' });
-        expect({ code: error.code, line: error.line, column: error.column, phase: error.phase, sourceRef: error.sourceRef })
-            .toEqual({ code: 'ASSEMBLER_ERROR', line: 4, column: 1, phase: 'assembler', sourceRef: 'src/Main.st' });
+        expect({ code: error.code, line: error.line, column: error.column, phase: error.phase, sourceRef: error.sourceRef }).toEqual({
+            code: 'ASSEMBLER_ERROR',
+            line: 4,
+            column: 1,
+            phase: 'assembler',
+            sourceRef: 'src/Main.st',
+        });
     });
 
     it('the error of a source read alone carries the code too: the lexer and the parser', () => {
-        const lexical = (() => { try { parse('PROGRAM P\nX := 1 @ 2;\nEND_PROGRAM'); } catch (error) { return error; } return null; })();
+        const lexical = (() => {
+            try {
+                parse('PROGRAM P\nX := 1 @ 2;\nEND_PROGRAM');
+            } catch (error) {
+                return error;
+            }
+            return null;
+        })();
         expect(lexical).toBeInstanceOf(LexerError);
         expect((lexical as LexerError).code).toBe('UNEXPECTED_CHARACTER');
-        const syntax = (() => { try { parse('PROGRAM P\nX := ;\nEND_PROGRAM'); } catch (error) { return error; } return null; })();
+        const syntax = (() => {
+            try {
+                parse('PROGRAM P\nX := ;\nEND_PROGRAM');
+            } catch (error) {
+                return error;
+            }
+            return null;
+        })();
         expect(syntax).toBeInstanceOf(ParseError);
         expect((syntax as ParseError).code).toBe('UNEXPECTED_TOKEN');
         expect((syntax as ParseError).errors[0]!.code).toBe('UNEXPECTED_TOKEN');
@@ -173,10 +200,15 @@ describe('errors that no source provokes (CMP-006)', () => {
     it('every error of a build that has several carries its own code', () => {
         const error = failureOf({
             source: 'PROGRAM Main\nVAR\n  X : INT;\nEND_VAR\n  X := Missing;\n  X := Other;\n  B := TRUE;\nEND_PROGRAM\n',
-            line: 5, column: 8, file: 'src/Main.st', message: '',
+            line: 5,
+            column: 8,
+            file: 'src/Main.st',
+            message: '',
         });
         expect(error.errors.map((each) => [each.code, each.line])).toEqual([
-            ['UNKNOWN_IDENTIFIER', 5], ['UNKNOWN_IDENTIFIER', 6], ['UNKNOWN_IDENTIFIER', 7],
+            ['UNKNOWN_IDENTIFIER', 5],
+            ['UNKNOWN_IDENTIFIER', 6],
+            ['UNKNOWN_IDENTIFIER', 7],
         ]);
     });
 });

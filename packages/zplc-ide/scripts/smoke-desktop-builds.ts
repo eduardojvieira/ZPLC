@@ -115,7 +115,14 @@ function assertRuntimeFormat(runtime: string, platform: DesktopPlatform, arch: D
     if (header.length < 20) throw new Error(`Desktop smoke build check failed: truncated ELF runtime ${runtime}`);
     if (header[4] !== 2 || header[5] !== 1) throw new Error(`Desktop smoke build check failed: unsupported ELF runtime ${runtime}`);
     actualPlatform = 'linux';
-    actualArch = readU16LE(header, 18) === 0x3e ? 'x64' : readU16LE(header, 18) === 0xb7 ? 'arm64' : (() => { throw new Error(`Desktop smoke build check failed: unsupported ELF architecture in ${runtime}`); })();
+    actualArch =
+      readU16LE(header, 18) === 0x3e
+        ? 'x64'
+        : readU16LE(header, 18) === 0xb7
+          ? 'arm64'
+          : (() => {
+              throw new Error(`Desktop smoke build check failed: unsupported ELF architecture in ${runtime}`);
+            })();
   } else if (header[0] === 0x4d && header[1] === 0x5a) {
     if (header.length < 64) throw new Error(`Desktop smoke build check failed: truncated PE runtime ${runtime}`);
     const peOffset = readU32LE(header, 0x3c);
@@ -124,15 +131,32 @@ function assertRuntimeFormat(runtime: string, platform: DesktopPlatform, arch: D
       throw new Error(`Desktop smoke build check failed: invalid PE runtime ${runtime}`);
     }
     actualPlatform = 'windows';
-    actualArch = readU16LE(header, peOffset + 4) === 0x8664 ? 'x64' : readU16LE(header, peOffset + 4) === 0xaa64 ? 'arm64' : (() => { throw new Error(`Desktop smoke build check failed: unsupported PE architecture in ${runtime}`); })();
+    actualArch =
+      readU16LE(header, peOffset + 4) === 0x8664
+        ? 'x64'
+        : readU16LE(header, peOffset + 4) === 0xaa64
+          ? 'arm64'
+          : (() => {
+              throw new Error(`Desktop smoke build check failed: unsupported PE architecture in ${runtime}`);
+            })();
   } else if (header.length >= 8 && readU32LE(header, 0) === 0xfeedfacf) {
     actualPlatform = 'macos';
-    actualArch = readU32LE(header, 4) === 0x01000007 ? 'x64' : readU32LE(header, 4) === 0x0100000c ? 'arm64' : (() => { throw new Error(`Desktop smoke build check failed: unsupported Mach-O architecture in ${runtime}`); })();
+    actualArch =
+      readU32LE(header, 4) === 0x01000007
+        ? 'x64'
+        : readU32LE(header, 4) === 0x0100000c
+          ? 'arm64'
+          : (() => {
+              throw new Error(`Desktop smoke build check failed: unsupported Mach-O architecture in ${runtime}`);
+            })();
   } else {
     throw new Error(`Desktop smoke build check failed: unknown binary format for packaged native runtime ${runtime}`);
   }
   if (actualPlatform !== platform || actualArch !== arch) {
-    throw new Error(`Desktop smoke build check failed: packaged native runtime architecture mismatch; expected ${platform}/${arch}, got ${actualPlatform}/${actualArch}`);
+    throw new Error(
+      `Desktop smoke build check failed: packaged native runtime architecture mismatch; ` +
+        `expected ${platform}/${arch}, got ${actualPlatform}/${actualArch}`,
+    );
   }
 }
 
@@ -166,12 +190,10 @@ export function assertPackagedToolApi(appAsar: string): void {
   });
 
   if (result.status !== 0) {
-    const detail = [
-      result.error?.message,
-      result.signal && `terminated by signal ${result.signal}`,
-      result.stderr.trim(),
-      result.stdout.trim(),
-    ].filter(Boolean).join('; ') || 'unknown Electron module load error';
+    const detail =
+      [result.error?.message, result.signal && `terminated by signal ${result.signal}`, result.stderr.trim(), result.stdout.trim()]
+        .filter(Boolean)
+        .join('; ') || 'unknown Electron module load error';
     throw new Error(
       `Desktop smoke build check failed: packaged electron-dist/toolApi.js is missing or not loadable in ${appAsar}: ${detail}`,
     );
@@ -195,14 +217,10 @@ export function verifyDesktopBuilds(cwd = process.cwd(), platform = detectPlatfo
   if (!existsSync(distDir)) throw new Error(`Desktop smoke build check failed: missing ${distDir}`);
 
   const files = readdirSync(distDir);
-  const missing = EXPECTED_ARTIFACTS[platform].filter(
-    (suffix) => !files.some((file) => file.endsWith(suffix))
-  );
+  const missing = EXPECTED_ARTIFACTS[platform].filter((suffix) => !files.some((file) => file.endsWith(suffix)));
 
   if (missing.length > 0) {
-    throw new Error(
-      `Desktop smoke build check failed for ${platform}: missing ${missing.join(', ')}`
-    );
+    throw new Error(`Desktop smoke build check failed for ${platform}: missing ${missing.join(', ')}`);
   }
 
   verifyPackagedResources(discoverUnpackedResources(distDir), platform, arch);

@@ -1,10 +1,10 @@
 /**
  * TerminalTab Component
- * 
+ *
  * Serial terminal for direct shell access to ZPLC devices.
- * Uses the global connectionManager with passthrough mode to 
+ * Uses the global connectionManager with passthrough mode to
  * pause IDE polling when terminal is active.
- * 
+ *
  * Features:
  * - Direct shell access (zplc status, zplc dbg info, etc.)
  * - Command history (up/down arrows)
@@ -19,10 +19,7 @@ import { Terminal, Trash2, Plug, PlugZap } from 'lucide-react';
 import { connectionManager } from '../runtime/connectionManager';
 import { isWebSerialSupported } from '../uploader/webserial';
 import { terminalDisconnectMessage } from './terminalConnectionPresentation';
-import {
-  isTerminalForceMutation,
-  terminalForceBlockedMessage,
-} from './terminalForceCommandPolicy';
+import { isTerminalForceMutation, terminalForceBlockedMessage } from './terminalForceCommandPolicy';
 import { Button, IconButton, TextField } from '../ui';
 
 /** Line ending for commands */
@@ -47,11 +44,11 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
   const [inputValue, setInputValue] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  
+
   // Connection state (synced with connectionManager)
   const [isConnected, setIsConnected] = useState(connectionManager.connected);
   const [isConnecting, setIsConnecting] = useState(false);
-  
+
   // Refs
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,26 +60,26 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
   const appendOutput = useCallback((text: string) => {
     // Strip ANSI codes
     const cleanText = text.replace(ANSI_REGEX, '');
-    
-    setLines(prev => {
+
+    setLines((prev) => {
       // Split incoming text by newlines and merge with existing lines
       const newLines = cleanText.split(/\r?\n/);
       const updated = [...prev];
-      
+
       // Append first part to last existing line
       if (updated.length > 0 && newLines.length > 0) {
         updated[updated.length - 1] += newLines[0];
         newLines.shift();
       }
-      
+
       // Add remaining lines
       updated.push(...newLines);
-      
+
       // Trim if too many lines
       if (updated.length > MAX_LINES) {
         return updated.slice(-MAX_LINES);
       }
-      
+
       return updated;
     });
   }, []);
@@ -92,25 +89,25 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    */
   const startReading = useCallback(() => {
     if (readLoopActiveRef.current) return;
-    
+
     readLoopActiveRef.current = true;
-    
+
     const pollBuffer = () => {
       if (!readLoopActiveRef.current) return;
-      
+
       // Check if there's data in the buffer
       const buffer = connectionManager.getRxBuffer();
       if (buffer && buffer.length > 0) {
         connectionManager.clearRxBuffer();
         appendOutput(buffer);
       }
-      
+
       // Continue polling
       if (readLoopActiveRef.current) {
         requestAnimationFrame(pollBuffer);
       }
     };
-    
+
     pollBuffer();
   }, [appendOutput]);
 
@@ -147,11 +144,10 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     setIsConnecting(true);
     try {
       appendOutput('\n[Connecting...]\n');
-      
+
       await connectionManager.connect();
       appendOutput('[Connected to ZPLC device]\n');
       appendOutput('[Type "help" for available commands]\n\n');
-      
     } catch (e) {
       appendOutput(`[ERROR: ${e instanceof Error ? e.message : String(e)}]\n`);
     } finally {
@@ -175,7 +171,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
 
     try {
       await connectionManager.sendRaw(cmd + LINE_ENDING);
-      
+
       // Echo the command
       appendOutput(`$ ${cmd}\n`);
     } catch (e) {
@@ -188,7 +184,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const cmd = inputValue.trim();
     if (!cmd) return;
 
@@ -197,23 +193,23 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       appendOutput(terminalForceBlockedMessage());
       return;
     }
-    
+
     // Add to history
-    setCommandHistory(prev => {
-      const updated = [...prev.filter(c => c !== cmd), cmd];
+    setCommandHistory((prev) => {
+      const updated = [...prev.filter((c) => c !== cmd), cmd];
       return updated.slice(-50); // Keep last 50 commands
     });
     setHistoryIndex(-1);
-    
+
     // Clear input
     setInputValue('');
-    
+
     // Handle local commands
     if (cmd === 'clear') {
       setLines(['']);
       return;
     }
-    
+
     // Send to device
     void sendCommand(cmd);
   };
@@ -225,10 +221,8 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (commandHistory.length === 0) return;
-      
-      const newIndex = historyIndex < commandHistory.length - 1 
-        ? historyIndex + 1 
-        : historyIndex;
+
+      const newIndex = historyIndex < commandHistory.length - 1 ? historyIndex + 1 : historyIndex;
       setHistoryIndex(newIndex);
       setInputValue(commandHistory[commandHistory.length - 1 - newIndex] || '');
     } else if (e.key === 'ArrowDown') {
@@ -263,7 +257,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
         stopReading();
       }
     });
-    
+
     return unsubscribe;
   }, [isActive, startReading, stopReading]);
 
@@ -283,7 +277,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       stopReading();
       connectionManager.disablePassthrough();
     }
-    
+
     return () => {
       if (notificationTimeout !== null) {
         clearTimeout(notificationTimeout);
@@ -325,15 +319,28 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
             {t('workbench.terminal.passthrough')}
           </span>
         )}
-        
+
         <div className="flex-1" />
-        
+
         {/* Connect/Disconnect Button */}
-        <Button variant={isConnected ? 'secondary' : 'primary'} size="sm" onClick={() => { void handleConnect(); }} disabled={isConnecting}>
+        <Button
+          variant={isConnected ? 'secondary' : 'primary'}
+          size="sm"
+          onClick={() => {
+            void handleConnect();
+          }}
+          disabled={isConnecting}
+        >
           {isConnected ? <PlugZap size={12} /> : <Plug size={12} />}
-          <span>{isConnecting ? t('workbench.terminal.connecting') : isConnected ? t('workbench.terminal.disconnect') : t('workbench.terminal.connect')}</span>
+          <span>
+            {isConnecting
+              ? t('workbench.terminal.connecting')
+              : isConnected
+                ? t('workbench.terminal.disconnect')
+                : t('workbench.terminal.connect')}
+          </span>
         </Button>
-        
+
         {/* Clear Button */}
         <IconButton label={t('workbench.terminal.clear')} variant="ghost" size="sm" icon={<Trash2 size={12} />} onClick={handleClear} />
       </div>
@@ -365,7 +372,18 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       {/* Input Line */}
       <form onSubmit={handleSubmit} className="flex items-center border-t border-[var(--color-surface-700)]">
         <span className="px-2 text-[var(--color-accent-green)] font-mono text-sm">$</span>
-        <TextField aria-label={t('workbench.terminal.command')} ref={inputRef} value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={handleKeyDown} placeholder={isConnected ? t('workbench.terminal.typeCommand') : t('workbench.terminal.connectToSend')} disabled={!isConnected} className="flex-1 font-mono" spellCheck={false} autoComplete="off" />
+        <TextField
+          aria-label={t('workbench.terminal.command')}
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={isConnected ? t('workbench.terminal.typeCommand') : t('workbench.terminal.connectToSend')}
+          disabled={!isConnected}
+          className="flex-1 font-mono"
+          spellCheck={false}
+          autoComplete="off"
+        />
       </form>
     </div>
   );

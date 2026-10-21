@@ -1,17 +1,9 @@
 {
   "requirement": "CMP-037",
   "title": "an output is bound with =>, not given a value with :=",
-  "matrix": [
-    "pous.function-block-call-with-named-inputs"
-  ],
+  "matrix": ["pous.function-block-call-with-named-inputs"],
   "build": "fails",
-  "lines": [
-    11
-  ],
-  "codes": [
-    "INVALID_OUTPUT_BINDING"
-  ],
-  "messageIncludes": [
-    "sum"
-  ]
+  "lines": [11],
+  "codes": ["INVALID_OUTPUT_BINDING"],
+  "messageIncludes": ["sum"]
 }

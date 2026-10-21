@@ -68,57 +68,93 @@ export function compareDeployFacts(facts: DeployFacts, t: Translator['t']): Depl
   const projectAbi = project.abi ? abiText(project.abi.major, project.abi.minor, project.abi.draft) : notReported;
 
   const profileMatches = device !== null && device.boardProfile === project.boardProfile;
-  const abiMatches = device !== null && project.abi !== null
-    && device.abi.major === project.abi.major && device.abi.minor === project.abi.minor && device.draft === project.abi.draft;
-  const sizeStatus: DeployRowStatus = device?.maxArtifactBytes == null ? 'unreported' : project.byteLength > device.maxArtifactBytes ? 'mismatch' : 'match';
+  const abiMatches =
+    device !== null &&
+    project.abi !== null &&
+    device.abi.major === project.abi.major &&
+    device.abi.minor === project.abi.minor &&
+    device.draft === project.abi.draft;
+  const sizeStatus: DeployRowStatus =
+    device?.maxArtifactBytes == null ? 'unreported' : project.byteLength > device.maxArtifactBytes ? 'mismatch' : 'match';
   const tasksStatus: DeployRowStatus = device?.maxTasks == null ? 'unreported' : project.taskCount > device.maxTasks ? 'mismatch' : 'match';
 
   const rows: DeployRow[] = [
     {
-      id: 'board', label: t('deploy.row.board'), project: project.board, device: device?.board ?? notReported,
-      status: device === null ? 'unreported' : profileMatches ? 'match' : 'mismatch', message: null,
-    },
-    {
-      id: 'profile', label: t('deploy.row.profile'), project: project.boardProfile ?? notReported, device: device?.boardProfile ?? notReported,
+      id: 'board',
+      label: t('deploy.row.board'),
+      project: project.board,
+      device: device?.board ?? notReported,
       status: device === null ? 'unreported' : profileMatches ? 'match' : 'mismatch',
-      message: device !== null && !profileMatches ? t('deploy.mismatch.profile', { project: project.boardProfile ?? project.board, device: device.boardProfile }) : null,
+      message: null,
     },
     {
-      id: 'firmware', label: t('deploy.row.firmware'), project: t('deploy.value.anyFirmware'),
+      id: 'profile',
+      label: t('deploy.row.profile'),
+      project: project.boardProfile ?? notReported,
+      device: device?.boardProfile ?? notReported,
+      status: device === null ? 'unreported' : profileMatches ? 'match' : 'mismatch',
+      message:
+        device !== null && !profileMatches
+          ? t('deploy.mismatch.profile', { project: project.boardProfile ?? project.board, device: device.boardProfile })
+          : null,
+    },
+    {
+      id: 'firmware',
+      label: t('deploy.row.firmware'),
+      project: t('deploy.value.anyFirmware'),
       device: device ? t('deploy.value.firmware', { version: device.zplcVersion, zephyr: device.zephyrVersion }) : notReported,
-      status: device === null ? 'unreported' : 'info', message: null,
+      status: device === null ? 'unreported' : 'info',
+      message: null,
     },
     {
-      id: 'abi', label: t('deploy.row.abi'), project: projectAbi,
+      id: 'abi',
+      label: t('deploy.row.abi'),
+      project: projectAbi,
       device: device ? abiText(device.abi.major, device.abi.minor, device.draft) : notReported,
       status: device === null ? 'unreported' : abiMatches ? 'match' : 'mismatch',
-      message: device !== null && !abiMatches
-        ? (project.abi !== null && device.draft !== project.abi.draft
-          ? draftMismatchMessage(project.abi.draft, device.draft)
-          : t('deploy.mismatch.abi', { project: projectAbi, device: abiText(device.abi.major, device.abi.minor, device.draft) }))
-        : null,
+      message:
+        device !== null && !abiMatches
+          ? project.abi !== null && device.draft !== project.abi.draft
+            ? draftMismatchMessage(project.abi.draft, device.draft)
+            : t('deploy.mismatch.abi', { project: projectAbi, device: abiText(device.abi.major, device.abi.minor, device.draft) })
+          : null,
     },
     {
-      id: 'identity', label: t('deploy.row.identity'),
+      id: 'identity',
+      label: t('deploy.row.identity'),
       project: t('deploy.value.identity', { name: project.name ?? '', hash: project.sha256.slice(0, HASH_SHOWN) }).replace(/^, /, ''),
       // The device protocol has no command that reports the identity of the program it holds.
-      device: notReported, status: 'unreported', message: null,
+      device: notReported,
+      status: 'unreported',
+      message: null,
     },
     {
-      id: 'size', label: t('deploy.row.size'), project: t('deploy.value.bytes', { count: project.byteLength }),
+      id: 'size',
+      label: t('deploy.row.size'),
+      project: t('deploy.value.bytes', { count: project.byteLength }),
       device: device?.maxArtifactBytes == null ? notReported : t('deploy.value.upToBytes', { count: device.maxArtifactBytes }),
       status: sizeStatus,
-      message: sizeStatus === 'mismatch' && device?.maxArtifactBytes != null ? t('deploy.mismatch.size', { size: project.byteLength, max: device.maxArtifactBytes }) : null,
+      message:
+        sizeStatus === 'mismatch' && device?.maxArtifactBytes != null
+          ? t('deploy.mismatch.size', { size: project.byteLength, max: device.maxArtifactBytes })
+          : null,
     },
     {
-      id: 'tasks', label: t('deploy.row.tasks'), project: t('deploy.value.count', { count: project.taskCount }),
+      id: 'tasks',
+      label: t('deploy.row.tasks'),
+      project: t('deploy.value.count', { count: project.taskCount }),
       device: device?.maxTasks == null ? notReported : t('deploy.value.upTo', { count: device.maxTasks }),
       status: tasksStatus,
-      message: tasksStatus === 'mismatch' && device?.maxTasks != null ? t('deploy.mismatch.tasks', { count: project.taskCount, max: device.maxTasks }) : null,
+      message:
+        tasksStatus === 'mismatch' && device?.maxTasks != null
+          ? t('deploy.mismatch.tasks', { count: project.taskCount, max: device.maxTasks })
+          : null,
     },
   ];
 
-  const values = facts.declaredSafe.map((output) => `${output.address}: ${output.value ? t('deploy.safe.on') : t('deploy.safe.off')}`).join(', ');
+  const values = facts.declaredSafe
+    .map((output) => `${output.address}: ${output.value ? t('deploy.safe.on') : t('deploy.safe.off')}`)
+    .join(', ');
   return {
     rows,
     blocked: device === null || rows.some((entry) => entry.status === 'mismatch'),

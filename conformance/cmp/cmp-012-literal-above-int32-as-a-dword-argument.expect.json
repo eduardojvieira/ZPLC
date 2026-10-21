@@ -6,7 +6,5 @@
   "note": "CMP-012: a literal over the full range of the type MUST be accepted; 4294967295 is a valid DWORD (16#FFFFFFFF) and an untyped literal takes the type of the parameter it is given to; 16#F0F0F0F0 XOR 16#FFFFFFFF = 16#0F0F0F0F",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QD0", "type": "DWORD", "value": 252645135}
-  ]
+  "expect": [{ "at": "%QD0", "type": "DWORD", "value": 252645135 }]
 }

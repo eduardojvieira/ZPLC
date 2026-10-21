@@ -222,21 +222,52 @@ describe('a breakpoint binds in every ST file of a project, by the project-relat
   // Two tasks and two program files: the lines of each belong to its own file, whatever the order of the tasks.
   beforeAll(async () => {
     mkdirSync(join(scratch, 'src'), { recursive: true });
-    writeFileSync(join(scratch, 'zplc.json'), JSON.stringify({
-      schemaVersion: 2, name: 'Two files', version: '1.0.0', target: { board: 'posix' },
-      tasks: [
-        { name: 'FastTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Fast.st'] },
-        { name: 'SlowTask', trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Slow.st'] },
-      ],
-    }));
-    writeFileSync(join(scratch, 'src', 'Fast.st'), [
-      'PROGRAM Fast', 'VAR', '  Counter : INT;', 'END_VAR', 'Counter := Counter + 1;', 'IF Counter > 100 THEN', '  Counter := 0;', 'END_IF;', 'END_PROGRAM', '',
-    ].join('\n'));
-    writeFileSync(join(scratch, 'src', 'Slow.st'), [
-      '(* the slow task *)', 'PROGRAM Slow', 'VAR', '  Beat : BOOL;', '  Ticks : INT;', 'END_VAR', 'Ticks := Ticks + 1;', 'Beat := Ticks > 5;', 'END_PROGRAM', '',
-    ].join('\n'));
+    writeFileSync(
+      join(scratch, 'zplc.json'),
+      JSON.stringify({
+        schemaVersion: 2,
+        name: 'Two files',
+        version: '1.0.0',
+        target: { board: 'posix' },
+        tasks: [
+          { name: 'FastTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Fast.st'] },
+          { name: 'SlowTask', trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Slow.st'] },
+        ],
+      }),
+    );
+    writeFileSync(
+      join(scratch, 'src', 'Fast.st'),
+      [
+        'PROGRAM Fast',
+        'VAR',
+        '  Counter : INT;',
+        'END_VAR',
+        'Counter := Counter + 1;',
+        'IF Counter > 100 THEN',
+        '  Counter := 0;',
+        'END_IF;',
+        'END_PROGRAM',
+        '',
+      ].join('\n'),
+    );
+    writeFileSync(
+      join(scratch, 'src', 'Slow.st'),
+      [
+        '(* the slow task *)',
+        'PROGRAM Slow',
+        'VAR',
+        '  Beat : BOOL;',
+        '  Ticks : INT;',
+        'END_VAR',
+        'Ticks := Ticks + 1;',
+        'Beat := Ticks > 5;',
+        'END_PROGRAM',
+        '',
+      ].join('\n'),
+    );
     const built = await compilerCompile(scratch);
-    if (!built.ok || !built.debugMap) throw new Error(`the two-file project did not compile: ${JSON.stringify((built as { evidence?: unknown }).evidence ?? built)}`);
+    if (!built.ok || !built.debugMap)
+      throw new Error(`the two-file project did not compile: ${JSON.stringify((built as { evidence?: unknown }).evidence ?? built)}`);
     map = built.debugMap;
   });
 
@@ -260,8 +291,6 @@ describe('breakpointHoverMessage', () => {
   // Fails without the helper: the dot of a refused breakpoint must not read like an armed one.
   it('says why a dot is not active and keeps the plain text for an active one', () => {
     expect(breakpointHoverMessage(29, null)).toBe('Breakpoint at line 29');
-    expect(breakpointHoverMessage(29, 'the runtime refused them')).toBe(
-      'Breakpoint at line 29 is not active: the runtime refused them',
-    );
+    expect(breakpointHoverMessage(29, 'the runtime refused them')).toBe('Breakpoint at line 29 is not active: the runtime refused them');
   });
 });

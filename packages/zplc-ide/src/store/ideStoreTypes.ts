@@ -1,8 +1,19 @@
 /**
- * The shape of the IDE store: its state, its actions and the types they use (IDEState). IDE-014: split out of useIDEStore.ts, which re-exports them.
+ * The shape of the IDE store: its state, its actions and the types they use (IDEState). IDE-014: split out of useIDEStore.ts, which
+ * re-exports them.
  */
 
-import type { ConnectionState, ConsoleEntry, ConsoleTab, PLCLanguage, CompilerMessage, STBufferDiagnostics, ZPLCProjectConfig, FileTreeNode, ProjectFileWithHandle } from '../types';
+import type {
+  ConnectionState,
+  ConsoleEntry,
+  ConsoleTab,
+  PLCLanguage,
+  CompilerMessage,
+  STBufferDiagnostics,
+  ZPLCProjectConfig,
+  FileTreeNode,
+  ProjectFileWithHandle,
+} from '../types';
 import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
@@ -20,8 +31,14 @@ import type { CanonicalWorkspaceBuildEvidence } from './buildEvidence';
 // =============================================================================
 
 export type Theme = 'light' | 'dark' | 'high-contrast' | 'system';
-export interface CompilerNavigationTarget { file: string; line: number; column: number; }
-export interface CloseProjectOptions { discardUnsaved?: boolean; }
+export interface CompilerNavigationTarget {
+  file: string;
+  line: number;
+  column: number;
+}
+export interface CloseProjectOptions {
+  discardUnsaved?: boolean;
+}
 
 // =============================================================================
 // Debug State Types
@@ -39,7 +56,7 @@ export type LiveValue = number | boolean | string;
 
 /**
  * Debug state for the IDE
- * 
+ *
  * This tracks all debugging-related state including:
  * - Debug map from compilation (variable locations, source mappings)
  * - Active breakpoints (by file and line)
@@ -49,16 +66,16 @@ export type LiveValue = number | boolean | string;
 export interface DebugState {
   /** Current debug mode (none, simulation, or hardware) */
   mode: DebugMode;
-  
+
   /** Debug map from last compilation */
   debugMap: DebugMap | null;
-  
-  /** 
+
+  /**
    * Active breakpoints indexed by file ID.
    * Value is a Set of line numbers with breakpoints.
    */
   breakpoints: Map<string, Set<number>>;
-  
+
   /**
    * Why the runtime does not hold the breakpoints the editor shows (null = they are armed or there
    * is no session). Set from the breakpoint sync, so a dot never claims a stop the runtime refused.
@@ -67,17 +84,17 @@ export interface DebugState {
 
   /** Current execution line when paused (null if running or not debugging) */
   currentLine: number | null;
-  
+
   /** Current POU name when paused */
   currentPOU: string | null;
-  
+
   /** Current PC (program counter) when paused */
   currentPC: number | null;
-  
+
   /** Watch variable paths (e.g., "MyTimer.ET", "Counter") */
   watchVariables: string[];
-  
-  /** 
+
+  /**
    * Live values cache for watched variables.
    * Key is the variable path, value is the current value.
    */
@@ -91,10 +108,10 @@ export interface DebugState {
 
   /** Bounded, host-only samples from the active native POSIX session. */
   nativeTrace: NativeTraceSample[];
-  
+
   /** Whether the debugger is currently polling for live values */
   isPolling: boolean;
-  
+
   /** Polling interval in milliseconds (default: 500ms) */
   pollingInterval: number;
 
@@ -129,11 +146,11 @@ export interface IDEState {
   projectMigrationPreview: { sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changes: ProjectMigrationChange[] } | null;
   directoryHandle: FileSystemDirectoryHandle | null;
   fileTree: FileTreeNode | null;
-  
+
   // Files (loaded on demand)
   loadedFiles: Map<string, ProjectFileWithHandle>;
   activeFileId: string | null;
-  openTabs: string[];                    // File IDs of open tabs
+  openTabs: string[]; // File IDs of open tabs
 
   // Connection State
   connection: ConnectionState;
@@ -179,7 +196,10 @@ export interface IDEState {
   sessionLayout: WorkspaceLayout | null;
   setSessionLayout: (layout: WorkspaceLayout | null) => void;
   createNewProjectInFolder: (options?: NewProjectRequest) => Promise<boolean>;
-  copyExampleProjectToFolder: (projectId: string, folder?: () => Promise<{ handle: FileSystemDirectoryHandle; seed: boolean } | null>) => Promise<boolean>;
+  copyExampleProjectToFolder: (
+    projectId: string,
+    folder?: () => Promise<{ handle: FileSystemDirectoryHandle; seed: boolean } | null>,
+  ) => Promise<boolean>;
   /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
   startLearning: (starterExampleId: string) => Promise<boolean>;
   getExampleProjects: () => ProjectInfo[];

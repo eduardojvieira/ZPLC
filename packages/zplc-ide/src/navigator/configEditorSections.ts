@@ -18,5 +18,9 @@ export const CONFIG_EDITOR_SECTIONS: Record<ConfigEditorKind, ComponentType<Sect
 };
 
 export const CONFIG_EDITOR_ICONS: Record<ConfigEditorKind, ComponentType<{ size?: number; className?: string }>> = {
-  tasks: Zap, io: Cable, network: Wifi, communication: Radio, target: Cpu,
+  tasks: Zap,
+  io: Cable,
+  network: Wifi,
+  communication: Radio,
+  target: Cpu,
 };

@@ -32,19 +32,59 @@ export interface DeclaredInput {
 /** What reading a variable of the process image needs: where it is, how wide, and what it is (an input or an output). */
 export type IoPoint = Pick<DeclaredInput, 'address' | 'size' | 'type' | 'bitOffset'>;
 
-type Scalar = 'BOOL' | 'BYTE' | 'SINT' | 'USINT' | 'INT' | 'UINT' | 'WORD' | 'DINT' | 'UDINT' | 'DWORD' | 'TIME' | 'REAL' | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
+type Scalar =
+  | 'BOOL'
+  | 'BYTE'
+  | 'SINT'
+  | 'USINT'
+  | 'INT'
+  | 'UINT'
+  | 'WORD'
+  | 'DINT'
+  | 'UDINT'
+  | 'DWORD'
+  | 'TIME'
+  | 'REAL'
+  | 'LINT'
+  | 'ULINT'
+  | 'LWORD'
+  | 'LREAL';
 
 const WIDTH: Record<Scalar, number> = {
-  BOOL: 1, BYTE: 1, SINT: 1, USINT: 1, INT: 2, UINT: 2, WORD: 2, DINT: 4, UDINT: 4, DWORD: 4, TIME: 4, REAL: 4,
-  LINT: 8, ULINT: 8, LWORD: 8, LREAL: 8,
+  BOOL: 1,
+  BYTE: 1,
+  SINT: 1,
+  USINT: 1,
+  INT: 2,
+  UINT: 2,
+  WORD: 2,
+  DINT: 4,
+  UDINT: 4,
+  DWORD: 4,
+  TIME: 4,
+  REAL: 4,
+  LINT: 8,
+  ULINT: 8,
+  LWORD: 8,
+  LREAL: 8,
 };
 export const isScalar = (type: string): type is Scalar => Object.hasOwn(WIDTH, type);
 
 /** Inclusive range of the integer types, by name. */
 const RANGE: Partial<Record<Scalar, [bigint, bigint]>> = {
-  BYTE: [0n, 255n], USINT: [0n, 255n], SINT: [-128n, 127n], INT: [-32_768n, 32_767n], UINT: [0n, 65_535n], WORD: [0n, 65_535n],
-  DINT: [-2_147_483_648n, 2_147_483_647n], TIME: [-2_147_483_648n, 2_147_483_647n], UDINT: [0n, 4_294_967_295n], DWORD: [0n, 4_294_967_295n],
-  LINT: [-(2n ** 63n), 2n ** 63n - 1n], ULINT: [0n, 2n ** 64n - 1n], LWORD: [0n, 2n ** 64n - 1n],
+  BYTE: [0n, 255n],
+  USINT: [0n, 255n],
+  SINT: [-128n, 127n],
+  INT: [-32_768n, 32_767n],
+  UINT: [0n, 65_535n],
+  WORD: [0n, 65_535n],
+  DINT: [-2_147_483_648n, 2_147_483_647n],
+  TIME: [-2_147_483_648n, 2_147_483_647n],
+  UDINT: [0n, 4_294_967_295n],
+  DWORD: [0n, 4_294_967_295n],
+  LINT: [-(2n ** 63n), 2n ** 63n - 1n],
+  ULINT: [0n, 2n ** 64n - 1n],
+  LWORD: [0n, 2n ** 64n - 1n],
 };
 
 /** The scalar variables of the debug map that are inputs, in the order of the map. */
@@ -58,8 +98,13 @@ export function listDeclaredInputs(debugMap: DebugMap | null | undefined): Decla
       const mapped = variable.region === 'IPI';
       if (!mapped && !(marked && variable.region === 'WORK')) continue;
       found.push({
-        path: `${pou}.${name}`, pou, name, type: variable.type,
-        region: mapped ? 'IPI' : 'WORK', address: variable.addr, size: variable.size,
+        path: `${pou}.${name}`,
+        pou,
+        name,
+        type: variable.type,
+        region: mapped ? 'IPI' : 'WORK',
+        address: variable.addr,
+        size: variable.size,
         ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }),
         origin: mapped ? 'mapped' : 'program-input',
       });
@@ -85,8 +130,14 @@ export function inputWrite(input: DeclaredInput, value: boolean | number, curren
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${input.name} takes a number`);
   const bytes = new Uint8Array(WIDTH[type]);
   const view = new DataView(bytes.buffer);
-  if (type === 'REAL') { view.setFloat32(0, value, true); return { address: input.address, bytes }; }
-  if (type === 'LREAL') { view.setFloat64(0, value, true); return { address: input.address, bytes }; }
+  if (type === 'REAL') {
+    view.setFloat32(0, value, true);
+    return { address: input.address, bytes };
+  }
+  if (type === 'LREAL') {
+    view.setFloat64(0, value, true);
+    return { address: input.address, bytes };
+  }
   if (!Number.isInteger(value)) throw new Error(`${input.name} takes a whole number`);
   const integer = BigInt(value);
   const [low, high] = RANGE[type]!;
@@ -130,11 +181,15 @@ export function inputReadPlan(inputs: readonly IoPoint[]): Array<{ address: numb
   let current: { start: number; end: number } | null = null;
   const flush = () => {
     if (!current) return;
-    for (let start = current.start; start < current.end; start += MAX_READ) plan.push({ address: start, length: Math.min(MAX_READ, current.end - start) });
+    for (let start = current.start; start < current.end; start += MAX_READ)
+      plan.push({ address: start, length: Math.min(MAX_READ, current.end - start) });
   };
   for (const span of spans) {
     if (current && span.start <= current.end + MERGE_GAP) current.end = Math.max(current.end, span.end);
-    else { flush(); current = { ...span }; }
+    else {
+      flush();
+      current = { ...span };
+    }
   }
   flush();
   return plan;
@@ -144,18 +199,32 @@ export function inputReadPlan(inputs: readonly IoPoint[]): Array<{ address: numb
 export function decodeInput(input: IoPoint, read: (address: number, length: number) => Uint8Array): boolean | number {
   const type = input.type as Scalar;
   const bytes = read(input.address, Math.max(1, input.size));
-  if (type === 'BOOL') return input.bitOffset === undefined ? bytes[0] !== 0 : ((bytes[0] ?? 0) >> input.bitOffset & 1) === 1;
+  if (type === 'BOOL') return input.bitOffset === undefined ? bytes[0] !== 0 : (((bytes[0] ?? 0) >> input.bitOffset) & 1) === 1;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   switch (type) {
-    case 'BYTE': case 'USINT': return view.getUint8(0);
-    case 'SINT': return view.getInt8(0);
-    case 'INT': return view.getInt16(0, true);
-    case 'UINT': case 'WORD': return view.getUint16(0, true);
-    case 'DINT': case 'TIME': return view.getInt32(0, true);
-    case 'UDINT': case 'DWORD': return view.getUint32(0, true);
-    case 'REAL': return view.getFloat32(0, true);
-    case 'LREAL': return view.getFloat64(0, true);
-    case 'LINT': return Number(view.getBigInt64(0, true));
-    default: return Number(view.getBigUint64(0, true));
+    case 'BYTE':
+    case 'USINT':
+      return view.getUint8(0);
+    case 'SINT':
+      return view.getInt8(0);
+    case 'INT':
+      return view.getInt16(0, true);
+    case 'UINT':
+    case 'WORD':
+      return view.getUint16(0, true);
+    case 'DINT':
+    case 'TIME':
+      return view.getInt32(0, true);
+    case 'UDINT':
+    case 'DWORD':
+      return view.getUint32(0, true);
+    case 'REAL':
+      return view.getFloat32(0, true);
+    case 'LREAL':
+      return view.getFloat64(0, true);
+    case 'LINT':
+      return Number(view.getBigInt64(0, true));
+    default:
+      return Number(view.getBigUint64(0, true));
   }
 }

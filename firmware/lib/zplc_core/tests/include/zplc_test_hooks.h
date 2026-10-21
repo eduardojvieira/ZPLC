@@ -92,11 +92,9 @@ int zplc_sched_test_wait_output_write(int timeout_ms);
 void zplc_sched_test_release_output_write(void);
 void zplc_sched_test_reset_debug_before_mem(void);
 int zplc_sched_test_wait_debug_before_mem(int timeout_ms);
-void zplc_sched_test_fail_next_output_commit(uint8_t channel,
-                                             zplc_hal_result_t result);
+void zplc_sched_test_fail_next_output_commit(uint8_t channel, zplc_hal_result_t result);
 uint8_t zplc_sched_test_output_commit_write_count(void);
-void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
-                                         zplc_hal_result_t result);
+void zplc_sched_test_fail_next_gpio_read(uint8_t channel, zplc_hal_result_t result);
 void zplc_sched_test_fail_next_watchdog_prepare(int result);
 void zplc_sched_test_fail_next_watchdog_setup(int result);
 void zplc_sched_test_fail_next_watchdog_feed(int result);
@@ -116,14 +114,9 @@ void zplc_sched_test_set_watchdog_policy(uint8_t stop, uint8_t pause, uint8_t fa
 void zplc_sched_test_fail_next_lock(int result, int which);
 
 /* Seams for the duration and deadline arithmetic of the target clock. */
-uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms,
-                                    uint32_t start_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32);
-int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms,
-                                    uint32_t release_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32, uint32_t interval_us);
+uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms, uint32_t start_cycle32, uint64_t end_uptime_ms, uint32_t end_cycle32);
+int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms, uint32_t release_cycle32, uint64_t end_uptime_ms, uint32_t end_cycle32,
+                                    uint32_t interval_us);
 int zplc_sched_test_admit_release(int task_id);
 
 /*

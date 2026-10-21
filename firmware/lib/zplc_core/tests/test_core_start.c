@@ -27,15 +27,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
@@ -60,8 +60,7 @@ static int all_equal(const uint8_t *bytes, size_t size, uint8_t value) {
 
 /* A container with a CODE segment and one cyclic task. */
 static size_t build_artifact(uint8_t *out, size_t capacity, const uint8_t *code, size_t code_size) {
-  const size_t total =
-      ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE + code_size + ZPLC_TASK_DEF_SIZE;
+  const size_t total = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE + code_size + ZPLC_TASK_DEF_SIZE;
   size_t offset;
   uint32_t crc;
 
@@ -85,12 +84,12 @@ static size_t build_artifact(uint8_t *out, size_t capacity, const uint8_t *code,
   offset += ZPLC_SEGMENT_ENTRY_SIZE;
   memcpy(out + offset, code, code_size);
   offset += code_size;
-  zplc_put_u16_le(out + offset, 0U);        /* task id */
+  zplc_put_u16_le(out + offset, 0U); /* task id */
   out[offset + 2U] = ZPLC_TASK_CYCLIC;
-  out[offset + 3U] = 1U;                    /* priority */
+  out[offset + 3U] = 1U;                      /* priority */
   zplc_put_u32_le(out + offset + 4U, 10000U); /* interval, us */
-  zplc_put_u16_le(out + offset + 8U, 0U);   /* entry point */
-  zplc_put_u16_le(out + offset + 10U, 16U); /* stack */
+  zplc_put_u16_le(out + offset + 8U, 0U);     /* entry point */
+  zplc_put_u16_le(out + offset + 10U, 16U);   /* stack */
   crc = zplc_crc32_update(0xFFFFFFFFU, out, 12U);
   crc = zplc_crc32_update(crc, out + 16U, total - 16U) ^ 0xFFFFFFFFU;
   zplc_put_u32_le(out + 12U, crc);
@@ -118,8 +117,7 @@ static void test_cold_and_warm_start(void) {
   CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_IPI_BASE), ZPLC_MEM_IPI_SIZE, 0U), "warm start clears IPI");
   CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_OPI_BASE), ZPLC_MEM_OPI_SIZE, 0U), "and OPI");
   CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), ZPLC_MEM_WORK_SIZE, 0U), "and WORK");
-  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), ZPLC_MEM_RETAIN_SIZE, 0x44U),
-        "but keeps RETAIN");
+  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), ZPLC_MEM_RETAIN_SIZE, 0x44U), "but keeps RETAIN");
   CHECK(zplc_force_get_count() == 0U, "and clears the force table");
 }
 
@@ -164,10 +162,8 @@ static void test_a_rejected_load_changes_nothing(void) {
   artifact[ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE] ^= 0x01U; /* CRC-32 no longer matches */
   CHECK(zplc_core_load_tasks(artifact, size, tasks, ZPLC_LOADER_MAX_TASKS, workspace, sizeof(workspace)) < 0,
         "a damaged artifact is rejected");
-  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), ZPLC_MEM_WORK_SIZE, 0x33U),
-        "WORK is as it was");
-  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), ZPLC_MEM_RETAIN_SIZE, 0x44U),
-        "and RETAIN");
+  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), ZPLC_MEM_WORK_SIZE, 0x33U), "WORK is as it was");
+  CHECK(all_equal(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), ZPLC_MEM_RETAIN_SIZE, 0x44U), "and RETAIN");
 }
 
 int main(void) {

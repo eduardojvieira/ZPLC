@@ -206,11 +206,15 @@ export function internalMember(name: string, size: MemberSize, offset: number, d
  */
 export function getSizeSuffix(size: MemberSize): '8' | '16' | '32' {
     switch (size) {
-        case 1: return '8';
-        case 2: return '16';
-        case 4: return '32';
+        case 1:
+            return '8';
+        case 2:
+            return '16';
+        case 4:
+            return '32';
         // an 8-byte member is moved as two 32-bit cells
-        default: return '32';
+        default:
+            return '32';
     }
 }
 

@@ -63,8 +63,7 @@ typedef struct {
  * @param report     receives what was measured; may be NULL
  * @return ZPLC_PORT_TIMING_OK, or the code of the first check that failed
  */
-static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char *why, size_t why_size,
-                                            zplc_port_timing_report_t *report) {
+static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char *why, size_t why_size, zplc_port_timing_report_t *report) {
   uint32_t previous;
   uint32_t now;
   uint32_t step;
@@ -74,12 +73,12 @@ static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char
   zplc_port_timing_report_t local = {0U, 0U};
   zplc_port_timing_report_t *out = (report != NULL) ? report : &local;
 
-#define ZPLC_PORT_TIMING_FAIL(code, ...)                       \
-  do {                                                         \
-    if (why != NULL && why_size > 0U) {                        \
-      (void)snprintf(why, why_size, __VA_ARGS__);              \
-    }                                                          \
-    return (code);                                             \
+#define ZPLC_PORT_TIMING_FAIL(code, ...)          \
+  do {                                            \
+    if (why != NULL && why_size > 0U) {           \
+      (void)snprintf(why, why_size, __VA_ARGS__); \
+    }                                             \
+    return (code);                                \
   } while (0)
 
   /* 1. The clock never goes backwards, and never jumps by a second between two reads that follow each other.
@@ -89,12 +88,11 @@ static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char
     now = clock->tick();
     step = now - previous;
     if (step > 0x7FFFFFFFU) {
-      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_NOT_MONOTONIC, "the tick went backwards: %lu then %lu",
-                            (unsigned long)previous, (unsigned long)now);
+      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_NOT_MONOTONIC, "the tick went backwards: %lu then %lu", (unsigned long)previous,
+                            (unsigned long)now);
     }
     if (step > 1000U) {
-      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_NOT_MONOTONIC,
-                            "the tick jumped by %lu ms between two reads: it does not count milliseconds",
+      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_NOT_MONOTONIC, "the tick jumped by %lu ms between two reads: it does not count milliseconds",
                             (unsigned long)step);
     }
     previous = now;
@@ -112,16 +110,14 @@ static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char
     clock->sleep_ms(1U);
     step = clock->tick() - start;
     if (step == 0U) {
-      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_STANDS_STILL, "the tick stood still at %lu through a sleep of 1 ms",
-                            (unsigned long)start);
+      ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_STANDS_STILL, "the tick stood still at %lu through a sleep of 1 ms", (unsigned long)start);
     }
     if (step < out->resolution_ms) {
       out->resolution_ms = step;
     }
   }
   if (out->resolution_ms > ZPLC_PORT_TIMING_MAX_RESOLUTION_MS) {
-    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_TOO_COARSE,
-                          "the smallest step of the tick is %lu ms; the scheduler needs %lu ms or finer",
+    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_TOO_COARSE, "the smallest step of the tick is %lu ms; the scheduler needs %lu ms or finer",
                           (unsigned long)out->resolution_ms, (unsigned long)ZPLC_PORT_TIMING_MAX_RESOLUTION_MS);
   }
 
@@ -132,12 +128,10 @@ static inline int zplc_port_timing_selftest(const zplc_port_clock_t *clock, char
   elapsed = clock->tick() - start;
   out->sleep_50_ms = elapsed;
   if (elapsed < 50U) {
-    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_SLEEP_TOO_SHORT, "a sleep of 50 ms took %lu ms by the tick",
-                          (unsigned long)elapsed);
+    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_SLEEP_TOO_SHORT, "a sleep of 50 ms took %lu ms by the tick", (unsigned long)elapsed);
   }
   if (elapsed > 50U + ZPLC_PORT_TIMING_MAX_OVERSLEEP_MS) {
-    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_SLEEP_TOO_LONG, "a sleep of 50 ms took %lu ms by the tick",
-                          (unsigned long)elapsed);
+    ZPLC_PORT_TIMING_FAIL(ZPLC_PORT_TIMING_SLEEP_TOO_LONG, "a sleep of 50 ms took %lu ms by the tick", (unsigned long)elapsed);
   }
 #undef ZPLC_PORT_TIMING_FAIL
   return ZPLC_PORT_TIMING_OK;

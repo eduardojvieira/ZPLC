@@ -5,16 +5,9 @@
   "order": 16,
   "module": 2,
   "level": "foundation",
-  "prerequisites": [
-    "boolean-logic-two-hand-guard"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["boolean-logic-two-hand-guard"],
+  "languages": ["LD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

@@ -2,13 +2,7 @@
   "requirement": "CMP-038",
   "title": "a call with a constant index outside the array is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "INDEX_OUT_OF_BOUNDS"
-  ],
-  "messageIncludes": [
-    "outside the array bounds"
-  ]
+  "lines": [5],
+  "codes": ["INDEX_OUT_OF_BOUNDS"],
+  "messageIncludes": ["outside the array bounds"]
 }

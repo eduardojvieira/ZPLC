@@ -13,9 +13,7 @@
       "pattern": "^(?=.*\\b(?:Modbus|MQTT|Sparkplug|Azure|AWS|Event Grid|OPC)\\b)(?=.*\\b(?:[Ss]upports?|[Ss]upported|[Ww]orks?|[Cc]ompatible|[Ii]nteroperab\\w*|[Vv]erified|[Tt]ested|[Cc]ertified|[Bb]uilt-in)\\b)",
       "caseSensitive": true,
       "evidence": {
-        "rows": [
-          "blocks.communication-and-cloud-blocks"
-        ]
+        "rows": ["blocks.communication-and-cloud-blocks"]
       }
     },
     {

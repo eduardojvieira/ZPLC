@@ -35,12 +35,14 @@ const junit = `<?xml version="1.0" encoding="UTF-8"?>
 
 describe('parseJunit', () => {
   it('identifies each test by suite, file, describe path and decoded name, with its status', () => {
-    expect(parseJunit(junit, SUITE)).toEqual(run(
-      ['packages/zplc-ide/src/a.test.ts > outer > inner > fails "quoted" <x> & y', 'fail'],
-      ['packages/zplc-ide/src/a.test.ts > outer > passes', 'pass'],
-      ['packages/zplc-ide/src/a.test.ts > outer > skipped', 'skip'],
-      ['packages/zplc-ide/src/a.test.ts > top level', 'pass'],
-    ));
+    expect(parseJunit(junit, SUITE)).toEqual(
+      run(
+        ['packages/zplc-ide/src/a.test.ts > outer > inner > fails "quoted" <x> & y', 'fail'],
+        ['packages/zplc-ide/src/a.test.ts > outer > passes', 'pass'],
+        ['packages/zplc-ide/src/a.test.ts > outer > skipped', 'skip'],
+        ['packages/zplc-ide/src/a.test.ts > top level', 'pass'],
+      ),
+    );
   });
 });
 
@@ -67,7 +69,9 @@ describe('validateEntries (VF-027)', () => {
   it('rejects a requirement that the tracked requirement index does not have', () => {
     const known = new Set(['CMP-012']);
     expect(validateEntries([entry()], known)).toEqual([]);
-    expect(validateEntries([entry({ requirement: 'CMP-999' })], known).join('\n')).toContain('CMP-999 is not in tools/ci/requirements-index.json');
+    expect(validateEntries([entry({ requirement: 'CMP-999' })], known).join('\n')).toContain(
+      'CMP-999 is not in tools/ci/requirements-index.json',
+    );
     expect(validateEntries([entry({ requirement: 'CMP-999' })]).join('\n')).not.toContain('requirements-index');
   });
 
@@ -143,14 +147,22 @@ describe('check-expected-failures command (VF-027)', () => {
   it('passes a run in which exactly the committed failures fail', () => {
     const committed = JSON.parse(readFileSync(new URL('./expected-failures.json', import.meta.url), 'utf8')) as Entry[];
     const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const failing = committed.filter(({ test }) => test.startsWith(`${SUITE}/`)).map(({ test }) => {
-      const [file = '', ...describes] = test.slice(SUITE.length + 1).split(' > ');
-      const name = describes.pop() ?? '';
-      const open = [file, ...describes].map((title) => `<testsuite name="${escape(title)}" file="${escape(file)}">`).join('');
-      return `${open}<testcase name="${escape(name)}" file="${escape(file)}"><failure/></testcase>${'</testsuite>'.repeat(describes.length + 1)}`;
-    });
+    const failing = committed
+      .filter(({ test }) => test.startsWith(`${SUITE}/`))
+      .map(({ test }) => {
+        const [file = '', ...describes] = test.slice(SUITE.length + 1).split(' > ');
+        const name = describes.pop() ?? '';
+        const open = [file, ...describes].map((title) => `<testsuite name="${escape(title)}" file="${escape(file)}">`).join('');
+        return `${open}<testcase name="${escape(name)}" file="${escape(file)}"><failure/></testcase>${'</testsuite>'.repeat(
+          describes.length + 1,
+        )}`;
+      });
     // the list is empty when no known defect is open: then the run passes with nothing failing and exit code 0
-    const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, failing.length > 0 ? 1 : 0);
+    const result = withReport(
+      `<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase ` +
+        `name="ok" file="src/a.test.ts"/></testsuite></testsuites>`,
+      failing.length > 0 ? 1 : 0,
+    );
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
     expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ decided, \d+ uncovered/);

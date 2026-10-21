@@ -12,8 +12,13 @@ import type { EdgeChange, NodeChange } from '@xyflow/react';
 
 /** Whether the changes of a canvas end a gesture: they add, remove or replace a node, or put a dragged node down. */
 export function nodeChangesCommit(changes: readonly NodeChange[]): boolean {
-  return changes.some((change) => change.type === 'add' || change.type === 'remove' || change.type === 'replace'
-    || (change.type === 'position' && change.dragging !== true));
+  return changes.some(
+    (change) =>
+      change.type === 'add' ||
+      change.type === 'remove' ||
+      change.type === 'replace' ||
+      (change.type === 'position' && change.dragging !== true),
+  );
 }
 
 /** Whether the changes of a canvas change the wires of the document. */

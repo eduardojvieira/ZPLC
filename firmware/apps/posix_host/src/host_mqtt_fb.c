@@ -132,8 +132,7 @@ zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
   return GET(s_phase) == PHASE_CONNECTING ? ZPLC_MQTT_FB_CONNECTING : ZPLC_MQTT_FB_DOWN;
 }
 
-int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload, size_t length,
-                         uint8_t qos, bool retain) {
+int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload, size_t length, uint8_t qos, bool retain) {
   struct fb_req *req;
 
   if (!GET(s_started)) {
@@ -166,8 +165,7 @@ int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *pa
   return ZPLC_COMM_HANDLER_PENDING;
 }
 
-int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic,
-                            const char *data) {
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic, const char *data) {
   (void)owner;
   (void)event_type;
   (void)topic;
@@ -242,8 +240,7 @@ int zplc_mqtt_fb_subscribe(const void *owner, const char *topic, uint8_t qos) {
     if (GET(s_phase) != PHASE_CONNECTING) {
       const int status = zplc_comm_status_from_errno(GET(s_last_error));
 
-      result = ZPLC_COMM_HANDLER_FAIL(
-          status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
+      result = ZPLC_COMM_HANDLER_FAIL(status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
     }
   } else if (sub->state == 2U) {
     result = ZPLC_COMM_HANDLER_DONE;
@@ -304,9 +301,7 @@ static bool put_byte(struct packet *p, uint8_t value) {
   return true;
 }
 
-static bool put_u16(struct packet *p, uint16_t value) {
-  return put_byte(p, (uint8_t)(value >> 8)) && put_byte(p, (uint8_t)value);
-}
+static bool put_u16(struct packet *p, uint16_t value) { return put_byte(p, (uint8_t)(value >> 8)) && put_byte(p, (uint8_t)value); }
 
 static bool put_bytes(struct packet *p, const void *data, size_t length) {
   if (length > sizeof(p->data) - p->length) {
@@ -387,16 +382,14 @@ static int send_packet(int sock, struct packet *body, uint8_t first) {
   return send_all(sock, wire, length, k_uptime_get() + (int64_t)s_connect_timeout_ms);
 }
 
-static void packet_begin(struct packet *p) {
-  p->length = 5U; /* the gap of the fixed header */
-}
+static void packet_begin(struct packet *p) { p->length = 5U; /* the gap of the fixed header */ }
 
 static int send_connect(int sock) {
   struct packet p;
 
   packet_begin(&p);
-  if (!put_string(&p, "MQTT") || !put_byte(&p, 4U) || !put_byte(&p, 0x02U) /* clean session */ ||
-      !put_u16(&p, s_keepalive_s) || !put_string(&p, s_client_id)) {
+  if (!put_string(&p, "MQTT") || !put_byte(&p, 4U) || !put_byte(&p, 0x02U) /* clean session */ || !put_u16(&p, s_keepalive_s) ||
+      !put_string(&p, s_client_id)) {
     return -EMSGSIZE;
   }
   return send_packet(sock, &p, 0x10U);
@@ -553,8 +546,7 @@ static void fail_queued(int error) {
 
   while (k_msgq_get(&s_queue, (void *)&req, K_NO_WAIT) == 0) {
     if (req != NULL && zplc_comm_req_begin(&s_pool, &req->head)) {
-      zplc_comm_req_finish(&s_pool, &req->head,
-                           zplc_comm_fail_from_errno(error != 0 ? error : -ENOTCONN));
+      zplc_comm_req_finish(&s_pool, &req->head, zplc_comm_fail_from_errno(error != 0 ? error : -ENOTCONN));
     }
   }
 }
@@ -570,8 +562,7 @@ static int run_queued(int sock) {
       continue;
     }
     rc = send_publish(sock, req);
-    zplc_comm_req_finish(&s_pool, &req->head,
-                         rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
+    zplc_comm_req_finish(&s_pool, &req->head, rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
     if (rc != 0) {
       return rc;
     }
@@ -583,13 +574,13 @@ static int run_queued(int sock) {
 
 struct reader {
   uint8_t body[PACKET_MAX];
-  size_t have;       /* bytes of the body that arrived */
-  size_t want;       /* bytes of the body the header announced */
-  size_t skip;       /* bytes of a packet that does not fit and is dropped */
-  uint8_t first;     /* the first byte of the fixed header */
+  size_t have;   /* bytes of the body that arrived */
+  size_t want;   /* bytes of the body the header announced */
+  size_t skip;   /* bytes of a packet that does not fit and is dropped */
+  uint8_t first; /* the first byte of the fixed header */
   uint32_t multiplier;
   uint32_t value;
-  int state;         /* 0 first byte, 1 length digits, 2 body, 3 skipping */
+  int state; /* 0 first byte, 1 length digits, 2 body, 3 skipping */
 };
 
 static int handle_packet(int sock, uint8_t first, const uint8_t *body, size_t length) {
@@ -630,11 +621,9 @@ static int handle_packet(int sock, uint8_t first, const uint8_t *body, size_t le
     return 0;
   }
   case 5: /* PUBREC: the second step of a QoS 2 publish */
-    return length >= 2U ? send_small(sock, 0x62U, true, (uint16_t)(((uint16_t)body[0] << 8) | body[1]))
-                        : -EPROTO;
+    return length >= 2U ? send_small(sock, 0x62U, true, (uint16_t)(((uint16_t)body[0] << 8) | body[1])) : -EPROTO;
   case 6: /* PUBREL */
-    return length >= 2U ? send_small(sock, 0x70U, true, (uint16_t)(((uint16_t)body[0] << 8) | body[1]))
-                        : -EPROTO;
+    return length >= 2U ? send_small(sock, 0x70U, true, (uint16_t)(((uint16_t)body[0] << 8) | body[1])) : -EPROTO;
   case 9: { /* SUBACK */
     if (length < 3U) {
       return -EPROTO;
@@ -895,12 +884,9 @@ int zplc_host_mqtt_start(const zplc_host_mqtt_config_t *config) {
     (void)snprintf(s_client_id, sizeof(s_client_id), "zplc-sim-%ld", (long)getpid());
   }
   s_keepalive_s = config->keepalive_s != 0U ? config->keepalive_s : ZPLC_HOST_MQTT_KEEPALIVE_S_DEFAULT;
-  s_connect_timeout_ms =
-      config->connect_timeout_ms != 0U ? config->connect_timeout_ms : ZPLC_HOST_MQTT_CONNECT_TIMEOUT_MS_DEFAULT;
-  s_reconnect_initial_ms = config->reconnect_initial_ms != 0U ? config->reconnect_initial_ms
-                                                              : ZPLC_HOST_MQTT_RECONNECT_INITIAL_MS_DEFAULT;
-  s_reconnect_max_ms =
-      config->reconnect_max_ms != 0U ? config->reconnect_max_ms : ZPLC_HOST_MQTT_RECONNECT_MAX_MS_DEFAULT;
+  s_connect_timeout_ms = config->connect_timeout_ms != 0U ? config->connect_timeout_ms : ZPLC_HOST_MQTT_CONNECT_TIMEOUT_MS_DEFAULT;
+  s_reconnect_initial_ms = config->reconnect_initial_ms != 0U ? config->reconnect_initial_ms : ZPLC_HOST_MQTT_RECONNECT_INITIAL_MS_DEFAULT;
+  s_reconnect_max_ms = config->reconnect_max_ms != 0U ? config->reconnect_max_ms : ZPLC_HOST_MQTT_RECONNECT_MAX_MS_DEFAULT;
   if (s_reconnect_max_ms < s_reconnect_initial_ms) {
     s_reconnect_max_ms = s_reconnect_initial_ms;
   }
@@ -909,8 +895,7 @@ int zplc_host_mqtt_start(const zplc_host_mqtt_config_t *config) {
   SET(s_phase, PHASE_CONNECTING);
   SET(s_connected, false);
   SET(s_started, true);
-  if (k_thread_create(&s_thread, s_stack, K_THREAD_STACK_SIZEOF(s_stack), client_thread, NULL, NULL, NULL,
-                      0, 0, 0) != 0) {
+  if (k_thread_create(&s_thread, s_stack, K_THREAD_STACK_SIZEOF(s_stack), client_thread, NULL, NULL, NULL, 0, 0, 0) != 0) {
     SET(s_started, false);
     return -EAGAIN;
   }

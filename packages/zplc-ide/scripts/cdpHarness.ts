@@ -17,7 +17,12 @@ export function assert(condition: unknown, message: string): asserts condition {
 
 function executable(path: string | undefined): string | undefined {
   if (!path) return undefined;
-  try { accessSync(path, constants.X_OK); return path; } catch { return undefined; }
+  try {
+    accessSync(path, constants.X_OK);
+    return path;
+  } catch {
+    return undefined;
+  }
 }
 
 export function chromium(): string {
@@ -46,19 +51,25 @@ export async function freePort(): Promise<number> {
     server.once('error', reject);
     server.listen(0, HOST, () => {
       const address = server.address();
-      server.close((error) => error ? reject(error) : resolve(typeof address === 'object' && address ? address.port : 0));
+      server.close((error) => (error ? reject(error) : resolve(typeof address === 'object' && address ? address.port : 0)));
     });
   });
 }
 
-export async function waitFor<T>(description: string, check: () => Promise<T | undefined> | T | undefined, timeoutMs = TIMEOUT_MS): Promise<T> {
+export async function waitFor<T>(
+  description: string,
+  check: () => Promise<T | undefined> | T | undefined,
+  timeoutMs = TIMEOUT_MS,
+): Promise<T> {
   const deadline = Date.now() + timeoutMs;
   let lastError: unknown;
   while (Date.now() < deadline) {
     try {
       const value = await check();
       if (value !== undefined) return value;
-    } catch (error) { lastError = error; }
+    } catch (error) {
+      lastError = error;
+    }
     await Bun.sleep(100);
   }
   throw new Error(`Timed out waiting for ${description}${lastError instanceof Error ? `: ${lastError.message}` : ''}`);
@@ -68,10 +79,24 @@ export async function stop(process: OwnedProcess | undefined): Promise<void> {
   if (!process || process.exitCode !== null) return;
   process.kill();
   await Promise.race([process.exited, Bun.sleep(3_000)]);
-  if (process.exitCode === null) { process.kill('SIGKILL'); await process.exited; }
+  if (process.exitCode === null) {
+    process.kill('SIGKILL');
+    await process.exited;
+  }
 }
 
-type Message = { id?: number; result?: unknown; error?: { message?: string }; method?: string; params?: { exceptionDetails?: { text?: string; exception?: { description?: string } }; entry?: { level?: string; text?: string }; type?: string; args?: Array<{ value?: unknown; description?: string }> } };
+type Message = {
+  id?: number;
+  result?: unknown;
+  error?: { message?: string };
+  method?: string;
+  params?: {
+    exceptionDetails?: { text?: string; exception?: { description?: string } };
+    entry?: { level?: string; text?: string };
+    type?: string;
+    args?: Array<{ value?: unknown; description?: string }>;
+  };
+};
 
 export class Cdp {
   #socket: WebSocket;
@@ -82,7 +107,9 @@ export class Cdp {
   readonly #handlers = new Map<string, Array<(params: unknown) => void>>();
 
   /** Calls `handler` with the parameters of every DevTools event called `method` (a binding the page calls, for one). */
-  on(method: string, handler: (params: unknown) => void): void { this.#handlers.set(method, [...(this.#handlers.get(method) ?? []), handler]); }
+  on(method: string, handler: (params: unknown) => void): void {
+    this.#handlers.set(method, [...(this.#handlers.get(method) ?? []), handler]);
+  }
 
   private constructor(socket: WebSocket) {
     this.#socket = socket;
@@ -97,11 +124,19 @@ export class Cdp {
         return;
       }
       if (message.method) for (const handler of this.#handlers.get(message.method) ?? []) handler(message.params);
-      if (message.method === 'Runtime.exceptionThrown') this.errors.push(message.params?.exceptionDetails?.exception?.description ?? message.params?.exceptionDetails?.text ?? 'Runtime exception');
-      if (message.method === 'Log.entryAdded' && message.params?.entry?.level === 'error') this.errors.push(message.params.entry.text ?? 'Browser log error');
-      if (message.method === 'Runtime.consoleAPICalled' && message.params?.type === 'error') this.errors.push(message.params.args?.map((arg) => String(arg.value ?? arg.description ?? '')).join(' ') || 'console.error');
+      if (message.method === 'Runtime.exceptionThrown')
+        this.errors.push(
+          message.params?.exceptionDetails?.exception?.description ?? message.params?.exceptionDetails?.text ?? 'Runtime exception',
+        );
+      if (message.method === 'Log.entryAdded' && message.params?.entry?.level === 'error')
+        this.errors.push(message.params.entry.text ?? 'Browser log error');
+      if (message.method === 'Runtime.consoleAPICalled' && message.params?.type === 'error')
+        this.errors.push(message.params.args?.map((arg) => String(arg.value ?? arg.description ?? '')).join(' ') || 'console.error');
     });
-    const fail = (error: Error) => { for (const pending of this.#pending.values()) pending.reject(error); this.#pending.clear(); };
+    const fail = (error: Error) => {
+      for (const pending of this.#pending.values()) pending.reject(error);
+      this.#pending.clear();
+    };
     socket.addEventListener('close', () => fail(new Error('CDP WebSocket closed')));
     socket.addEventListener('error', () => fail(new Error('CDP WebSocket failed')));
   }
@@ -118,25 +153,55 @@ export class Cdp {
   async command(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     const id = this.#nextId++;
     const response = new Promise<unknown>((resolve, reject) => {
-      const timeout = setTimeout(() => { this.#pending.delete(id); reject(new Error(`CDP ${method} timed out`)); }, TIMEOUT_MS);
-      this.#pending.set(id, { resolve: (value) => { clearTimeout(timeout); resolve(value); }, reject: (error) => { clearTimeout(timeout); reject(error); } });
+      const timeout = setTimeout(() => {
+        this.#pending.delete(id);
+        reject(new Error(`CDP ${method} timed out`));
+      }, TIMEOUT_MS);
+      this.#pending.set(id, {
+        resolve: (value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+      });
     });
     this.#socket.send(JSON.stringify({ id, method, params }));
     return await response;
   }
 
   async evaluate(expression: string): Promise<unknown> {
-    const result = await this.command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }) as { result?: { value?: unknown }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? 'Page evaluation failed');
+    const result = (await this.command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })) as {
+      result?: { value?: unknown };
+      exceptionDetails?: { text?: string; exception?: { description?: string } };
+    };
+    if (result.exceptionDetails)
+      throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? 'Page evaluation failed');
     return result.result?.value;
   }
 
-  close(): void { this.#socket.close(); }
+  close(): void {
+    this.#socket.close();
+  }
 }
 
 /** Starts headless Chromium on `url` with a private profile folder and returns the process and a connected DevTools session. */
 export async function openPage(url: string, profile: string): Promise<{ browser: OwnedProcess; cdp: Cdp }> {
-  const browser = Bun.spawn([chromium(), '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--headless=new', '--disable-gpu', '--disable-dev-shm-usage', '--no-sandbox', url], { stdout: 'ignore', stderr: 'ignore' });
+  const browser = Bun.spawn(
+    [
+      chromium(),
+      '--remote-debugging-port=0',
+      `--user-data-dir=${profile}`,
+      '--headless=new',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--no-sandbox',
+      url,
+    ],
+    { stdout: 'ignore', stderr: 'ignore' },
+  );
   const debugPort = await waitFor('the Chromium DevTools port', () => {
     const activePort = join(profile, 'DevToolsActivePort');
     if (!existsSync(activePort)) return undefined;
@@ -144,11 +209,17 @@ export async function openPage(url: string, profile: string): Promise<{ browser:
     return Number.isInteger(port) && port > 0 ? port : undefined;
   });
   const target = await waitFor('the Chromium page', async () => {
-    const targets: Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }> = await fetch(`http://${HOST}:${debugPort}/json/list`).then((response) => response.json() as Promise<Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>>).catch(() => []);
+    const targets: Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }> = await fetch(
+      `http://${HOST}:${debugPort}/json/list`,
+    )
+      .then((response) => response.json() as Promise<Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>>)
+      .catch(() => []);
     return targets.find((item) => item.type === 'page' && item.url === url && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl;
   });
   const cdp = await Cdp.connect(target);
-  await cdp.command('Runtime.enable'); await cdp.command('Log.enable'); await cdp.command('Page.enable');
+  await cdp.command('Runtime.enable');
+  await cdp.command('Log.enable');
+  await cdp.command('Page.enable');
   await cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
   await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
   return { browser, cdp };

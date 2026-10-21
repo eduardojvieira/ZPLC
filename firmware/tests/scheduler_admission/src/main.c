@@ -31,8 +31,7 @@ static void control_thread_entry(void *arg1, void *arg2, void *arg3) {
   if (control_unregistration == 1) {
     control_result = zplc_sched_unregister_task(control_task_id);
   } else if (control_unregistration == 2) {
-    control_result =
-        zplc_sched_debug_add_breakpoint(control_task_id, control_breakpoint);
+    control_result = zplc_sched_debug_add_breakpoint(control_task_id, control_breakpoint);
   } else {
     control_result = zplc_sched_stop();
   }
@@ -45,12 +44,9 @@ static void start_control_thread(int unregister_task, int task_id) {
   control_result = -99;
   control_unregistration = unregister_task;
   control_task_id = task_id;
-  (void)k_thread_create(&control_thread, control_thread_stack,
-                        K_THREAD_STACK_SIZEOF(control_thread_stack),
-                        control_thread_entry, NULL, NULL, NULL,
-                        K_PRIO_PREEMPT(5), 0U, K_NO_WAIT);
-  zassert_ok(k_sem_take(&control_started, K_MSEC(100)),
-             "control thread did not start");
+  (void)k_thread_create(&control_thread, control_thread_stack, K_THREAD_STACK_SIZEOF(control_thread_stack), control_thread_entry, NULL,
+                        NULL, NULL, K_PRIO_PREEMPT(5), 0U, K_NO_WAIT);
+  zassert_ok(k_sem_take(&control_started, K_MSEC(100)), "control thread did not start");
 }
 
 static void start_debug_thread(int task_id, uint16_t pc) {
@@ -84,9 +80,7 @@ static void write_u32_le(uint8_t *data, uint32_t value) {
   data[3] = (uint8_t)(value >> 24);
 }
 
-static size_t build_program(uint8_t *program, uint8_t task_count,
-                            uint8_t task_type, uint32_t interval_us,
-                            uint8_t output_value) {
+static size_t build_program(uint8_t *program, uint8_t task_count, uint8_t task_type, uint32_t interval_us, uint8_t output_value) {
   uint8_t code[3U * 6U];
   size_t task_bytes = (size_t)task_count * ZPLC_TASK_DEF_SIZE;
   size_t offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
@@ -185,8 +179,7 @@ static void set_task_two_pushes(uint8_t *program, uint8_t slot) {
   code[5] = OP_NOP;
 }
 
-static void set_task_stack_size(uint8_t *program, uint8_t slot,
-                                uint16_t stack_size) {
+static void set_task_stack_size(uint8_t *program, uint8_t slot, uint16_t stack_size) {
   size_t code_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_offset = code_offset + 3U * 6U;
   uint8_t *task = program + task_offset + (size_t)slot * ZPLC_TASK_DEF_SIZE;
@@ -194,8 +187,7 @@ static void set_task_stack_size(uint8_t *program, uint8_t slot,
   write_u16_le(task + 10U, stack_size);
 }
 
-static void set_task_order(uint8_t *program, uint8_t slot, uint16_t id,
-                           uint8_t priority) {
+static void set_task_order(uint8_t *program, uint8_t slot, uint16_t id, uint8_t priority) {
   size_t code_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_offset = code_offset + 3U * 6U;
   uint8_t *task = program + task_offset + (size_t)slot * ZPLC_TASK_DEF_SIZE;
@@ -223,12 +215,10 @@ static void clear_scheduler(void) {
 
     zassert_true(result == 0 || result == -2, "unregister task");
   }
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "scheduler must be idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "scheduler must be idle");
 }
 
-static void assert_rejected_without_mutation(const uint8_t *program,
-                                             size_t size) {
+static void assert_rejected_without_mutation(const uint8_t *program, size_t size) {
   zplc_sched_stats_t before;
   zplc_sched_stats_t after;
   uint32_t code_size = zplc_mem_get_code_size();
@@ -260,12 +250,9 @@ ZTEST(zplc_scheduler_admission, test_admits_exact_capacity) {
   zplc_sched_stats_t stats;
 
   clear_scheduler();
-  size = build_program(program, CONFIG_ZPLC_MAX_TASKS, ZPLC_TASK_CYCLIC, 1000U,
-                       1U);
-  zassert_equal(zplc_sched_validate_program(program, size), ZPLC_LOADER_OK,
-                "valid program rejected");
-  zassert_equal(zplc_sched_load(program, size), CONFIG_ZPLC_MAX_TASKS,
-                "exact capacity must load");
+  size = build_program(program, CONFIG_ZPLC_MAX_TASKS, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_validate_program(program, size), ZPLC_LOADER_OK, "valid program rejected");
+  zassert_equal(zplc_sched_load(program, size), CONFIG_ZPLC_MAX_TASKS, "exact capacity must load");
   zassert_ok(zplc_sched_get_stats(&stats), "read stats");
   zassert_equal(stats.active_tasks, CONFIG_ZPLC_MAX_TASKS, "wrong task count");
 }
@@ -279,8 +266,7 @@ ZTEST(zplc_scheduler_admission, test_load_stays_idle_until_explicit_start) {
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load program");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "load must not start scheduler");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "load must not start scheduler");
   zassert_ok(zplc_sched_get_task(0, &task), "read loaded task");
   zassert_equal(task.state, ZPLC_TASK_STATE_READY, "loaded task must be ready");
   zassert_equal(task.stats.cycle_count, 0U, "task ran before explicit start");
@@ -300,30 +286,25 @@ ZTEST(zplc_scheduler_admission, test_empty_start_stays_idle_and_safe) {
   clear_scheduler();
   zassert_ok(zplc_sched_get_stats(&before), "read empty baseline");
   zassert_equal(zplc_sched_start(), -2, "empty scheduler must reject start");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "empty start must remain idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "empty start must remain idle");
   zassert_ok(zplc_sched_get_stats(&after), "read empty final state");
   zassert_equal(after.total_cycles, before.total_cycles, "empty start cycles");
-  zassert_equal(after.input_latch_count, before.input_latch_count,
-                "empty start input latches");
-  zassert_equal(after.output_commit_count, before.output_commit_count,
-                "empty start output commits");
+  zassert_equal(after.input_latch_count, before.input_latch_count, "empty start input latches");
+  zassert_equal(after.output_commit_count, before.output_commit_count, "empty start output commits");
   opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
   zassert_not_null(opi, "OPI exists");
   zassert_equal(opi[0], 0U, "empty start leaves OPI safe");
   zassert_equal(zplc_force_get_count(), 0U, "empty start leaves no forces");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_rejects_invalid_admission_without_mutation) {
+ZTEST(zplc_scheduler_admission, test_rejects_invalid_admission_without_mutation) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   const uint32_t intervals[] = {999U, 1001U, 1000001U};
   size_t index;
 
   clear_scheduler();
-  size = build_program(program, CONFIG_ZPLC_MAX_TASKS + 1U, ZPLC_TASK_CYCLIC,
-                       1000U, 1U);
+  size = build_program(program, CONFIG_ZPLC_MAX_TASKS + 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
   assert_rejected_without_mutation(program, size);
   for (index = 0U; index < ARRAY_SIZE(intervals); index++) {
     size = build_program(program, 1U, ZPLC_TASK_CYCLIC, intervals[index], 1U);
@@ -350,12 +331,10 @@ ZTEST(zplc_scheduler_admission, test_rejects_noncyclic_manual_registration) {
   };
 
   clear_scheduler();
-  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4,
-                "manual event task must be rejected");
+  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4, "manual event task must be rejected");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_rejects_raw_manual_registration_without_mutation) {
+ZTEST(zplc_scheduler_admission, test_rejects_raw_manual_registration_without_mutation) {
   uint8_t program[PROGRAM_CAPACITY];
   static const uint8_t raw[] = {OP_NOP, OP_HALT};
   zplc_task_def_t definition = {
@@ -378,8 +357,7 @@ ZTEST(zplc_scheduler_admission,
   clear_scheduler();
   code_size = zplc_mem_get_code_size();
   zassert_ok(zplc_sched_get_stats(&before), "read initial stats");
-  zassert_equal(zplc_sched_register_task(&definition, raw, sizeof(raw)), -2,
-                "raw registration must be rejected");
+  zassert_equal(zplc_sched_register_task(&definition, raw, sizeof(raw)), -2, "raw registration must be rejected");
   zassert_ok(zplc_sched_get_stats(&after), "read final stats");
   zassert_equal(after.active_tasks, before.active_tasks, "task count changed");
   zassert_equal(zplc_mem_get_code_size(), code_size, "core code changed");
@@ -398,12 +376,10 @@ ZTEST(zplc_scheduler_admission, test_task_stack_limit_is_refused_at_load) {
   set_task_two_pushes(program, 0U);
   set_task_stack_size(program, 0U, 1U);
   rewrite_program_crc(program, size);
-  zassert_true(zplc_sched_load(program, size) < 0,
-               "a task above its declared stack depth must be refused");
+  zassert_true(zplc_sched_load(program, size) < 0, "a task above its declared stack depth must be refused");
   zassert_ok(zplc_sched_get_stats(&stats), "read stats after the refusal");
   zassert_equal(stats.active_tasks, 0U, "a refused artifact registers no task");
-  zassert_not_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING,
-                    "a refused artifact never runs");
+  zassert_not_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING, "a refused artifact never runs");
 }
 
 ZTEST(zplc_scheduler_admission, test_task_stack_limit_allows_configured_depth) {
@@ -417,12 +393,10 @@ ZTEST(zplc_scheduler_admission, test_task_stack_limit_allows_configured_depth) {
   rewrite_program_crc(program, size);
   zassert_equal(zplc_sched_load(program, size), 1, "load depth-two task");
   zassert_ok(zplc_sched_step(), "task with matching stack depth completes");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "successful single step pauses after completing the task");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "successful single step pauses after completing the task");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_manual_registration_rejects_invalid_stack_bounds) {
+ZTEST(zplc_scheduler_admission, test_manual_registration_rejects_invalid_stack_bounds) {
   uint8_t program[PROGRAM_CAPACITY];
   zplc_task_def_t definition = {
       .id = 7U,
@@ -442,18 +416,13 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(program, size), 1, "load baseline program");
   clear_scheduler();
   zassert_ok(zplc_sched_get_stats(&before), "read initial stats");
-  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4,
-                "zero stack size is rejected");
+  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4, "zero stack size is rejected");
   definition.stack_size = ZPLC_STACK_MAX_DEPTH + 1U;
-  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4,
-                "oversized stack is rejected");
+  zassert_equal(zplc_sched_register_task(&definition, NULL, 0U), -4, "oversized stack is rejected");
   zassert_ok(zplc_sched_get_stats(&after), "read final stats");
-  zassert_equal(after.active_tasks, before.active_tasks,
-                "invalid stack registration does not materialize task");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "invalid stack registration leaves OPI safe");
-  zassert_equal(zplc_force_get_count(), 0U,
-                "invalid stack registration leaves no forces");
+  zassert_equal(after.active_tasks, before.active_tasks, "invalid stack registration does not materialize task");
+  zassert_equal(zplc_opi_read8(0U), 0U, "invalid stack registration leaves OPI safe");
+  zassert_equal(zplc_force_get_count(), 0U, "invalid stack registration leaves no forces");
 }
 
 ZTEST(zplc_scheduler_admission, test_bounded_fault_latches_safe_scheduler) {
@@ -467,20 +436,13 @@ ZTEST(zplc_scheduler_admission, test_bounded_fault_latches_safe_scheduler) {
 
   clear_scheduler();
   loop_size = build_program(loop_program, 2U, ZPLC_TASK_CYCLIC, 1000U, 0xFFU);
-  zassert_equal(zplc_sched_load(loop_program, loop_size), 2,
-                "load looping program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U),
-             "set force before fault");
-  zassert_equal(zplc_sched_step(), -ZPLC_VM_WATCHDOG,
-                "first step faults at bounded loop");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "bounded fault latches scheduler error");
-  zassert_ok(zplc_sched_get_task(1, &second_task),
-             "read unexecuted second task");
-  zassert_equal(second_task.stats.cycle_count, 0U,
-                "second task does not execute after first task fault");
-  zassert_equal(second_task.state, ZPLC_TASK_STATE_ERROR,
-                "fault makes second task non-executable");
+  zassert_equal(zplc_sched_load(loop_program, loop_size), 2, "load looping program");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U), "set force before fault");
+  zassert_equal(zplc_sched_step(), -ZPLC_VM_WATCHDOG, "first step faults at bounded loop");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "bounded fault latches scheduler error");
+  zassert_ok(zplc_sched_get_task(1, &second_task), "read unexecuted second task");
+  zassert_equal(second_task.stats.cycle_count, 0U, "second task does not execute after first task fault");
+  zassert_equal(second_task.state, ZPLC_TASK_STATE_ERROR, "fault makes second task non-executable");
   opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
   zassert_not_null(opi, "OPI exists");
   zassert_equal(opi[0], 0U, "fault clears OPI");
@@ -491,16 +453,13 @@ ZTEST(zplc_scheduler_admission, test_bounded_fault_latches_safe_scheduler) {
   zassert_ok(zplc_sched_stop(), "stop keeps outputs safe after fault");
   zassert_true(zplc_sched_start() < 0, "stop does not clear fault latch");
   clear_scheduler();
-  healthy_size =
-      build_program(healthy_program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
-  zassert_equal(zplc_sched_load(healthy_program, healthy_size), 1,
-                "validated replacement clears fault latch");
+  healthy_size = build_program(healthy_program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(healthy_program, healthy_size), 1, "validated replacement clears fault latch");
   zassert_ok(zplc_sched_start(), "healthy replacement starts");
   clear_scheduler();
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_control_plane_safe_error_latches_and_requires_replacement) {
+ZTEST(zplc_scheduler_admission, test_control_plane_safe_error_latches_and_requires_replacement) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t replacement[PROGRAM_CAPACITY];
   size_t size;
@@ -510,45 +469,36 @@ ZTEST(zplc_scheduler_admission,
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
-  replacement_size =
-      build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  replacement_size = build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
   zassert_equal(zplc_sched_load(program, size), 1, "load resident program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)),
-             "force output before ambiguous control-plane result");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)), "force output before ambiguous control-plane result");
   zassert_ok(zplc_sched_enter_safe_error(), "enter safe error");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "safe error must latch scheduler state");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "safe error must latch scheduler state");
   opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
   zassert_not_null(opi, "OPI exists");
   zassert_equal(opi[0], 0U, "safe error clears OPI");
   zassert_equal(zplc_force_get_count(), 0U, "safe error clears forces");
   zassert_true(zplc_sched_start() < 0, "safe error rejects start");
-  zassert_true(zplc_sched_load(replacement, replacement_size) < 0,
-               "safe error rejects replacement before explicit reset");
+  zassert_true(zplc_sched_load(replacement, replacement_size) < 0, "safe error rejects replacement before explicit reset");
   zassert_ok(zplc_sched_stop(), "stop remains safe while latched");
   zassert_true(zplc_sched_start() < 0, "stop cannot clear safe error latch");
 
   clear_scheduler();
-  zassert_equal(zplc_sched_load(replacement, replacement_size), 1,
-                "validated replacement is explicit recovery");
+  zassert_equal(zplc_sched_load(replacement, replacement_size), 1, "validated replacement is explicit recovery");
   zassert_ok(zplc_sched_start(), "replacement starts after recovery");
   clear_scheduler();
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_empty_safe_error_recovers_only_with_verified_replacement) {
+ZTEST(zplc_scheduler_admission, test_empty_safe_error_recovers_only_with_verified_replacement) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
   zassert_ok(zplc_sched_enter_safe_error(), "latch empty scheduler safely");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "safe error is latched");
-  zassert_equal(zplc_sched_load(program, size), 1,
-                "verified replacement recovers empty scheduler");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "only materialized replacement clears error");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "safe error is latched");
+  zassert_equal(zplc_sched_load(program, size), 1, "verified replacement recovers empty scheduler");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "only materialized replacement clears error");
   zassert_ok(zplc_sched_start(), "recovered scheduler starts explicitly");
   clear_scheduler();
 }
@@ -561,25 +511,20 @@ ZTEST(zplc_scheduler_admission, test_async_bounded_fault_stops_future_cycles) {
 
   clear_scheduler();
   loop_size = build_program(loop_program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0xFFU);
-  zassert_equal(zplc_sched_load(loop_program, loop_size), 1,
-                "load async looping program");
+  zassert_equal(zplc_sched_load(loop_program, loop_size), 1, "load async looping program");
   zassert_ok(zplc_sched_start(), "start async looping program");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "timer work latches bounded fault");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "timer work latches bounded fault");
   zassert_ok(zplc_sched_get_stats(&before), "read faulted scheduler stats");
   k_msleep(20);
   zassert_ok(zplc_sched_get_stats(&after), "read stable scheduler stats");
-  zassert_equal(after.total_cycles, before.total_cycles,
-                "no task cycles execute after fault latch");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_OPI_BASE)[0], 0U,
-                "async bounded fault keeps OPI safe");
+  zassert_equal(after.total_cycles, before.total_cycles, "no task cycles execute after fault latch");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_OPI_BASE)[0], 0U, "async bounded fault keeps OPI safe");
   zassert_ok(zplc_sched_stop(), "stop after async fault");
   clear_scheduler();
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_rejects_when_occupied_or_running_then_reloads) {
+ZTEST(zplc_scheduler_admission, test_rejects_when_occupied_or_running_then_reloads) {
   uint8_t program_a[PROGRAM_CAPACITY];
   uint8_t program_b[PROGRAM_CAPACITY];
   uint8_t saved_code[18U];
@@ -598,32 +543,22 @@ ZTEST(zplc_scheduler_admission,
   saved_code_size = zplc_mem_get_code_size();
   memcpy(saved_code, zplc_mem_get_code(0U, saved_code_size), saved_code_size);
   assert_rejected_without_mutation(program_b, b_size);
-  zassert_equal(memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code,
-                       saved_code_size),
-                0, "occupied load replaced A");
+  zassert_equal(memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size), 0, "occupied load replaced A");
   zassert_ok(zplc_sched_get_task(0, &task_after), "read preserved task A");
   zassert_equal(task_after.config.id, task_before.config.id, "A id changed");
-  zassert_equal(task_after.config.type, task_before.config.type,
-                "A type changed");
-  zassert_equal(task_after.config.interval_us, task_before.config.interval_us,
-                "A interval changed");
+  zassert_equal(task_after.config.type, task_before.config.type, "A type changed");
+  zassert_equal(task_after.config.interval_us, task_before.config.interval_us, "A interval changed");
   zassert_ok(zplc_sched_start(), "start scheduler");
   assert_rejected_without_mutation(program_b, b_size);
-  zassert_equal(memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code,
-                       saved_code_size),
-                0, "running load replaced A");
+  zassert_equal(memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size), 0, "running load replaced A");
   zassert_ok(zplc_sched_get_task(0, &task_after), "read running task A");
-  zassert_equal(task_after.config.id, task_before.config.id,
-                "running A id changed");
-  zassert_equal(task_after.config.type, task_before.config.type,
-                "running A type changed");
-  zassert_equal(task_after.config.interval_us, task_before.config.interval_us,
-                "running A interval changed");
+  zassert_equal(task_after.config.id, task_before.config.id, "running A id changed");
+  zassert_equal(task_after.config.type, task_before.config.type, "running A type changed");
+  zassert_equal(task_after.config.interval_us, task_before.config.interval_us, "running A interval changed");
   zassert_ok(zplc_sched_get_stats(&stats), "read running stats");
   zassert_equal(stats.active_tasks, 1U, "running task count changed");
   clear_scheduler();
-  zassert_equal(zplc_sched_load(program_b, b_size), 1,
-                "reload after unregister failed");
+  zassert_equal(zplc_sched_load(program_b, b_size), 1, "reload after unregister failed");
 }
 
 ZTEST(zplc_scheduler_admission, test_stop_and_reload_leave_no_stale_scan) {
@@ -644,8 +579,7 @@ ZTEST(zplc_scheduler_admission, test_stop_and_reload_leave_no_stale_scan) {
   zassert_ok(zplc_sched_get_stats(&before), "read stopped stats");
   k_sleep(K_MSEC(20));
   zassert_ok(zplc_sched_get_stats(&after), "read final stats");
-  zassert_equal(after.total_cycles, before.total_cycles,
-                "cycle ran after stop returned");
+  zassert_equal(after.total_cycles, before.total_cycles, "cycle ran after stop returned");
   zassert_ok(zplc_sched_unregister_task(0), "unregister A");
   b_size = build_program(program_b, 1U, ZPLC_TASK_CYCLIC, 1000U, 0U);
   zassert_equal(zplc_sched_load(program_b, b_size), 1, "load B");
@@ -654,12 +588,10 @@ ZTEST(zplc_scheduler_admission, test_stop_and_reload_leave_no_stale_scan) {
   zassert_ok(zplc_sched_start(), "start B");
   k_sleep(K_MSEC(20));
   zassert_ok(zplc_sched_stop(), "stop B");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "stale A work executed after slot reuse");
+  zassert_equal(zplc_opi_read8(0U), 0U, "stale A work executed after slot reuse");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_stop_clears_outputs_and_forces_while_idle_or_running) {
+ZTEST(zplc_scheduler_admission, test_stop_clears_outputs_and_forces_while_idle_or_running) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t forced = 0xA5U;
   size_t size;
@@ -667,22 +599,19 @@ ZTEST(zplc_scheduler_admission,
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load safe-output program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &forced, sizeof(forced)),
-             "set output force");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &forced, sizeof(forced)), "set output force");
   zassert_equal(zplc_force_get_count(), 1U, "force must be active");
   zassert_ok(zplc_sched_start(), "start scheduler");
   zassert_ok(zplc_sched_stop(), "stop scheduler");
   zassert_equal(zplc_opi_read8(0U), 0U, "stop must clear OPI");
   zassert_equal(zplc_force_get_count(), 0U, "stop must clear forces");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &forced, sizeof(forced)),
-             "set idle output force");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &forced, sizeof(forced)), "set idle output force");
   zassert_ok(zplc_sched_stop(), "idle stop must remain safe");
   zassert_equal(zplc_opi_read8(0U), 0U, "idle stop must clear OPI");
   zassert_equal(zplc_force_get_count(), 0U, "idle stop must clear forces");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_external_pause_stops_cycles_and_resume_restarts) {
+ZTEST(zplc_scheduler_admission, test_external_pause_stops_cycles_and_resume_restarts) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t paused;
@@ -695,18 +624,15 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_start(), "start pause program");
   k_sleep(K_MSEC(20));
   zassert_ok(zplc_sched_pause(), "pause scheduler");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "scheduler did not pause");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "scheduler did not pause");
   zassert_ok(zplc_sched_get_stats(&paused), "read paused stats");
   k_sleep(K_MSEC(20));
   zassert_ok(zplc_sched_get_stats(&after_pause), "read stable paused stats");
-  zassert_equal(after_pause.total_cycles, paused.total_cycles,
-                "cycle ran after pause returned");
+  zassert_equal(after_pause.total_cycles, paused.total_cycles, "cycle ran after pause returned");
   zassert_ok(zplc_sched_resume(), "resume scheduler");
   k_sleep(K_MSEC(20));
   zassert_ok(zplc_sched_get_stats(&resumed), "read resumed stats");
-  zassert_true(resumed.total_cycles > after_pause.total_cycles,
-               "resume did not restart cycles");
+  zassert_true(resumed.total_cycles > after_pause.total_cycles, "resume did not restart cycles");
   zassert_ok(zplc_sched_stop(), "stop resumed scheduler");
 }
 
@@ -732,13 +658,10 @@ ZTEST(zplc_scheduler_admission, test_step_orders_batch_and_commits_once) {
   zassert_ok(zplc_sched_step(), "step ordered batch");
   /* RT-017: a step keeps the committed image and leaves the pins safe.
    * The last ordered task wrote 0x11. */
-  zassert_equal(zplc_opi_read8(0U), 0x11U,
-                "single-step pause keeps the committed process image");
+  zassert_equal(zplc_opi_read8(0U), 0x11U, "single-step pause keeps the committed process image");
   zassert_ok(zplc_sched_get_stats(&after), "read batch result");
-  zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
-                "one process-image input latch");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 1U,
-                "one process-image output commit");
+  zassert_equal(after.input_latch_count - before.input_latch_count, 1U, "one process-image input latch");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 1U, "one process-image output commit");
   zassert_ok(zplc_sched_get_task(0, &task), "read first task");
   zassert_equal(task.stats.cycle_count, 1U, "first task ran once");
   zassert_ok(zplc_sched_get_task(1, &task), "read second task");
@@ -747,31 +670,23 @@ ZTEST(zplc_scheduler_admission, test_step_orders_batch_and_commits_once) {
   zassert_equal(task.stats.cycle_count, 1U, "third task ran once");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_process_image_differential_ordered_artifact) {
+ZTEST(zplc_scheduler_admission, test_process_image_differential_ordered_artifact) {
   zplc_sched_stats_t before;
   zplc_sched_stats_t after;
   zplc_task_t task;
 
   clear_scheduler();
-  zassert_equal(zplc_sched_validate_program(
-                    zplc_process_image_ordered_program,
-                    ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE),
-                ZPLC_LOADER_OK, "shared ordered artifact verifies");
-  zassert_equal(zplc_sched_load(zplc_process_image_ordered_program,
-                                ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE),
-                3, "shared ordered artifact loads");
+  zassert_equal(zplc_sched_validate_program(zplc_process_image_ordered_program, ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE), ZPLC_LOADER_OK,
+                "shared ordered artifact verifies");
+  zassert_equal(zplc_sched_load(zplc_process_image_ordered_program, ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE), 3,
+                "shared ordered artifact loads");
   zassert_ok(zplc_sched_get_stats(&before), "read ordered baseline");
   zassert_ok(zplc_sched_step(), "step shared ordered artifact");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U,
-                "priority then task ID determines the final process image");
-  zassert_equal(zplc_opi_read8(0U), 0x11U,
-                "single-step pause keeps the ordered OPI like the POSIX host");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U, "priority then task ID determines the final process image");
+  zassert_equal(zplc_opi_read8(0U), 0x11U, "single-step pause keeps the ordered OPI like the POSIX host");
   zassert_ok(zplc_sched_get_stats(&after), "read ordered result");
-  zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
-                "one input latch for the shared ordered artifact");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 1U,
-                "one output commit for the shared ordered artifact");
+  zassert_equal(after.input_latch_count - before.input_latch_count, 1U, "one input latch for the shared ordered artifact");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 1U, "one output commit for the shared ordered artifact");
   zassert_ok(zplc_sched_get_task(0, &task), "read source slot zero");
   zassert_equal(task.config.id, 30U, "source slot zero remains task 30");
   zassert_equal(task.stats.cycle_count, 1U, "source slot zero ran once");
@@ -783,48 +698,34 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(task.stats.cycle_count, 1U, "source slot two ran once");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_process_image_differential_fault_artifact) {
+ZTEST(zplc_scheduler_admission, test_process_image_differential_fault_artifact) {
   zplc_sched_stats_t before;
   zplc_sched_stats_t after;
   zplc_task_t later;
   uint8_t force = 1U;
 
   clear_scheduler();
-  zassert_equal(zplc_sched_validate_program(
-                    zplc_process_image_fault_program,
-                    ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE),
-                ZPLC_LOADER_OK, "shared fault artifact verifies");
-  zassert_equal(zplc_sched_load(zplc_process_image_fault_program,
-                                ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE),
-                3, "shared fault artifact loads");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)),
-             "force output before fault");
+  zassert_equal(zplc_sched_validate_program(zplc_process_image_fault_program, ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE), ZPLC_LOADER_OK,
+                "shared fault artifact verifies");
+  zassert_equal(zplc_sched_load(zplc_process_image_fault_program, ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE), 3, "shared fault artifact loads");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)), "force output before fault");
   zassert_ok(zplc_sched_get_stats(&before), "read fault baseline");
-  zassert_equal(zplc_sched_step(), -ZPLC_VM_WATCHDOG,
-                "middle shared task faults by instruction watchdog");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "watchdog fault latches scheduler error");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U,
-                "first ordered task ran before the watchdog fault");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[7], 0U,
-                "later ordered task did not write its sentinel");
+  zassert_equal(zplc_sched_step(), -ZPLC_VM_WATCHDOG, "middle shared task faults by instruction watchdog");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "watchdog fault latches scheduler error");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U, "first ordered task ran before the watchdog fault");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[7], 0U, "later ordered task did not write its sentinel");
   zassert_equal(zplc_opi_read8(0U), 0U, "fault clears OPI");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_IPI_BASE)[0], 0U,
-                "fault clears IPI");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_IPI_BASE)[0], 0U, "fault clears IPI");
   zassert_equal(zplc_force_get_count(), 0U, "fault clears forces");
   zassert_ok(zplc_sched_get_task(0, &later), "read later source slot");
   zassert_equal(later.config.id, 30U, "sentinel belongs to task 30");
   zassert_equal(later.stats.cycle_count, 0U, "later task never ran");
   zassert_ok(zplc_sched_get_stats(&after), "read fault result");
-  zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
-                "fault batch latches input once");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 0U,
-                "fault batch has no normal output commit");
+  zassert_equal(after.input_latch_count - before.input_latch_count, 1U, "fault batch latches input once");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 0U, "fault batch has no normal output commit");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_step_after_uptime_does_not_count_a_deadline_overrun) {
+ZTEST(zplc_scheduler_admission, test_step_after_uptime_does_not_count_a_deadline_overrun) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t before;
@@ -838,14 +739,11 @@ ZTEST(zplc_scheduler_admission,
   zassert_true(before.uptime_ms > 0U, "uptime must be positive before step");
   zassert_ok(zplc_sched_step(), "step task");
   zassert_ok(zplc_sched_get_stats(&after), "read step result");
-  zassert_equal(after.total_cycles, before.total_cycles + 1U,
-                "manual step executes one cycle");
-  zassert_equal(after.total_overruns, before.total_overruns,
-                "manual step is not a periodic deadline overrun");
+  zassert_equal(after.total_cycles, before.total_cycles + 1U, "manual step executes one cycle");
+  zassert_equal(after.total_overruns, before.total_overruns, "manual step is not a periodic deadline overrun");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_pending_periodic_release_coalesces_without_an_overrun) {
+ZTEST(zplc_scheduler_admission, test_pending_periodic_release_coalesces_without_an_overrun) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_task_t before;
@@ -855,17 +753,13 @@ ZTEST(zplc_scheduler_admission,
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
   zassert_equal(zplc_sched_load(program, size), 1, "load periodic task");
   zassert_ok(zplc_sched_get_task(0, &before), "read initial task stats");
-  zassert_equal(zplc_sched_test_admit_release(0), 1,
-                "first periodic release admits one activation");
-  zassert_equal(zplc_sched_test_admit_release(0), 0,
-                "pending periodic release coalesces");
+  zassert_equal(zplc_sched_test_admit_release(0), 1, "first periodic release admits one activation");
+  zassert_equal(zplc_sched_test_admit_release(0), 0, "pending periodic release coalesces");
   zassert_ok(zplc_sched_get_task(0, &after), "read coalesced task stats");
-  zassert_equal(after.stats.overrun_count, before.stats.overrun_count,
-                "coalescing does not count an activation overrun");
+  zassert_equal(after.stats.overrun_count, before.stats.overrun_count, "coalescing does not count an activation overrun");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_output_commit_fault_latches_safe_scheduler) {
+ZTEST(zplc_scheduler_admission, test_output_commit_fault_latches_safe_scheduler) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t replacement[PROGRAM_CAPACITY];
   uint8_t force = 1U;
@@ -879,45 +773,34 @@ ZTEST(zplc_scheduler_admission,
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load output program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)),
-             "set output force");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)), "set output force");
   zassert_ok(zplc_sched_get_stats(&before), "read output baseline");
   zplc_sched_test_fail_next_output_commit(1U, ZPLC_HAL_ERROR);
   zassert_equal(zplc_sched_step(), ZPLC_HAL_ERROR, "output commit fault");
-  zassert_equal(zplc_sched_test_output_commit_write_count(), 1U,
-                "channel zero writes before channel one fault");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "fault latches");
+  zassert_equal(zplc_sched_test_output_commit_write_count(), 1U, "channel zero writes before channel one fault");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "fault latches");
   zassert_equal(zplc_opi_read8(0U), 0U, "fault clears OPI");
   zassert_equal(zplc_force_get_count(), 0U, "fault clears forces");
   zassert_ok(zplc_sched_get_task(0, &task), "read faulted task");
-  zassert_equal(task.stats.cycle_count, 1U,
-                "task cycle occurred before commit");
+  zassert_equal(task.stats.cycle_count, 1U, "task cycle occurred before commit");
   zassert_ok(zplc_sched_get_stats(&after), "read output fault evidence");
-  zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
-                "fault batch latches input once");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 0U,
-                "fault batch has no normal output commit");
+  zassert_equal(after.input_latch_count - before.input_latch_count, 1U, "fault batch latches input once");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 0U, "fault batch has no normal output commit");
   zassert_true(zplc_sched_start() < 0, "faulted scheduler rejects start");
   zassert_true(zplc_sched_resume() < 0, "faulted scheduler rejects resume");
   zassert_true(zplc_sched_step() < 0, "faulted scheduler rejects step");
   zassert_ok(zplc_sched_get_stats(&stable), "read stable fault evidence");
   zassert_equal(stable.total_cycles, after.total_cycles, "no later task cycle");
-  zassert_equal(stable.input_latch_count, after.input_latch_count,
-                "no later input latch");
-  zassert_equal(stable.output_commit_count, after.output_commit_count,
-                "no later output commit");
+  zassert_equal(stable.input_latch_count, after.input_latch_count, "no later input latch");
+  zassert_equal(stable.output_commit_count, after.output_commit_count, "no later output commit");
   clear_scheduler();
-  replacement_size =
-      build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
-  zassert_equal(zplc_sched_load(replacement, replacement_size), 1,
-                "validated replacement clears fault latch");
+  replacement_size = build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(replacement, replacement_size), 1, "validated replacement clears fault latch");
   zassert_ok(zplc_sched_start(), "replacement starts after output fault");
   clear_scheduler();
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_input_read_fault_latches_before_batch_execution) {
+ZTEST(zplc_scheduler_admission, test_input_read_fault_latches_before_batch_execution) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t replacement[PROGRAM_CAPACITY];
   uint8_t force = 1U;
@@ -931,45 +814,35 @@ ZTEST(zplc_scheduler_admission,
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load input program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)),
-             "set output force");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)), "set output force");
   zassert_ok(zplc_sched_get_stats(&before), "read input baseline");
   zplc_sched_test_fail_next_gpio_read(0U, ZPLC_HAL_ERROR);
   zassert_equal(zplc_sched_step(), ZPLC_HAL_ERROR, "input read fault");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "fault latches");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "fault latches");
   zassert_equal(zplc_opi_read8(0U), 0U, "fault clears OPI");
   zassert_equal(zplc_force_get_count(), 0U, "fault clears forces");
   zassert_ok(zplc_sched_get_task(0, &task), "read faulted task");
   zassert_equal(task.state, ZPLC_TASK_STATE_ERROR, "task enters error");
   zassert_equal(task.stats.cycle_count, 0U, "input failure executes no task");
   zassert_ok(zplc_sched_get_stats(&after), "read input fault evidence");
-  zassert_equal(after.total_cycles, before.total_cycles,
-                "fault has no task cycles");
-  zassert_equal(after.input_latch_count, before.input_latch_count,
-                "fault has no input latch");
-  zassert_equal(after.output_commit_count, before.output_commit_count,
-                "fault has no output commit");
+  zassert_equal(after.total_cycles, before.total_cycles, "fault has no task cycles");
+  zassert_equal(after.input_latch_count, before.input_latch_count, "fault has no input latch");
+  zassert_equal(after.output_commit_count, before.output_commit_count, "fault has no output commit");
   zassert_true(zplc_sched_start() < 0, "faulted scheduler rejects start");
   zassert_true(zplc_sched_resume() < 0, "faulted scheduler rejects resume");
   zassert_true(zplc_sched_step() < 0, "faulted scheduler rejects step");
   zassert_ok(zplc_sched_get_stats(&stable), "read stable fault evidence");
   zassert_equal(stable.total_cycles, after.total_cycles, "no later task cycle");
-  zassert_equal(stable.input_latch_count, after.input_latch_count,
-                "no later input latch");
-  zassert_equal(stable.output_commit_count, after.output_commit_count,
-                "no later output commit");
+  zassert_equal(stable.input_latch_count, after.input_latch_count, "no later input latch");
+  zassert_equal(stable.output_commit_count, after.output_commit_count, "no later output commit");
   clear_scheduler();
-  replacement_size =
-      build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
-  zassert_equal(zplc_sched_load(replacement, replacement_size), 1,
-                "validated replacement clears fault latch");
+  replacement_size = build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(replacement, replacement_size), 1, "validated replacement clears fault latch");
   zassert_ok(zplc_sched_start(), "replacement starts after input fault");
   clear_scheduler();
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_prepare_failure_never_enters_run_or_feeds) {
+ZTEST(zplc_scheduler_admission, test_watchdog_prepare_failure_never_enters_run_or_feeds) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t force = 1U;
   size_t size;
@@ -978,22 +851,18 @@ ZTEST(zplc_scheduler_admission,
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load watchdog program");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)),
-             "stage force before prepare failure");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)), "stage force before prepare failure");
   feeds_before = zplc_sched_test_watchdog_feed_count();
   zplc_sched_test_fail_next_watchdog_prepare(-EIO);
   zassert_equal(zplc_sched_start(), -3, "prepare failure rejects start");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "prepare failure leaves scheduler idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "prepare failure leaves scheduler idle");
   zassert_equal(zplc_opi_read8(0U), 0U, "prepare failure applies safe OPI");
   zassert_equal(zplc_force_get_count(), 0U, "prepare failure clears forces");
   k_msleep(10);
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "prepare failure must not feed");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "prepare failure must not feed");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_timeout_rejects_a_task_without_two_periods_of_margin) {
+ZTEST(zplc_scheduler_admission, test_watchdog_timeout_rejects_a_task_without_two_periods_of_margin) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t feeds_before;
@@ -1003,16 +872,12 @@ ZTEST(zplc_scheduler_admission,
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 600000000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load long-period task");
   feeds_before = zplc_sched_test_watchdog_feed_count();
-  zassert_equal(zplc_sched_start(), -3,
-                "timeout must exceed twice the largest task interval");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "rejected watchdog admission remains idle");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "rejected watchdog admission does not feed");
+  zassert_equal(zplc_sched_start(), -3, "timeout must exceed twice the largest task interval");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "rejected watchdog admission remains idle");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "rejected watchdog admission does not feed");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_feeds_once_per_clean_normal_commit_then_disarms_on_stop) {
+ZTEST(zplc_scheduler_admission, test_watchdog_feeds_once_per_clean_normal_commit_then_disarms_on_stop) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t before;
@@ -1030,21 +895,16 @@ ZTEST(zplc_scheduler_admission,
   k_msleep(20);
   zassert_ok(zplc_sched_stop(), "stop clean watchdog task");
   zassert_ok(zplc_sched_get_stats(&after), "read clean result");
-  zassert_true(after.output_commit_count > before.output_commit_count,
-               "clean task produces normal commits");
-  zassert_equal(zplc_sched_test_watchdog_feed_count() - feeds_before,
-                after.output_commit_count - before.output_commit_count,
+  zassert_true(after.output_commit_count > before.output_commit_count, "clean task produces normal commits");
+  zassert_equal(zplc_sched_test_watchdog_feed_count() - feeds_before, after.output_commit_count - before.output_commit_count,
                 "every and only normal commits feed once");
-  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before,
-               "stop disarms after safe outputs");
+  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before, "stop disarms after safe outputs");
   feeds_before = zplc_sched_test_watchdog_feed_count();
   k_msleep(10);
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "stop leaves no continuing feeder");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "stop leaves no continuing feeder");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_deadline_overrun_faults_before_normal_commit_or_watchdog_feed) {
+ZTEST(zplc_scheduler_admission, test_deadline_overrun_faults_before_normal_commit_or_watchdog_feed) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t before;
@@ -1060,20 +920,15 @@ ZTEST(zplc_scheduler_admission,
   zplc_sched_test_force_next_deadline_miss();
   zassert_ok(zplc_sched_start(), "start overrun task");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "deadline overrun latches error");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "deadline overrun latches error");
   zassert_equal(zplc_opi_read8(0U), 0U, "overrun leaves safe OPI");
   zassert_ok(zplc_sched_get_stats(&after), "read overrun result");
-  zassert_true(after.total_overruns > before.total_overruns,
-               "overrun is recorded");
-  zassert_equal(after.output_commit_count, before.output_commit_count,
-                "overrun faults before normal output commit");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "overrun does not feed watchdog");
+  zassert_true(after.total_overruns > before.total_overruns, "overrun is recorded");
+  zassert_equal(after.output_commit_count, before.output_commit_count, "overrun faults before normal output commit");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "overrun does not feed watchdog");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_feed_failure_latches_safe_and_pause_stops_feeding) {
+ZTEST(zplc_scheduler_admission, test_watchdog_feed_failure_latches_safe_and_pause_stops_feeding) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t feeds_before;
@@ -1086,19 +941,16 @@ ZTEST(zplc_scheduler_admission,
   zplc_sched_test_fail_next_watchdog_feed(-EIO);
   zassert_ok(zplc_sched_start(), "start feed-failure task");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "feed failure latches error");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "feed failure latches error");
   zassert_equal(zplc_opi_read8(0U), 0U, "feed failure applies safe OPI");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before + 1U,
-                "failed feed is attempted once");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before + 1U, "failed feed is attempted once");
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
   zassert_equal(zplc_sched_load(program, size), 1, "load pause task");
   zassert_ok(zplc_sched_start(), "start pause task");
   k_msleep(10);
-  for (int waited_ms = 0; zplc_opi_read8(0U) != 0x5AU && waited_ms < 200;
-       waited_ms++) {
+  for (int waited_ms = 0; zplc_opi_read8(0U) != 0x5AU && waited_ms < 200; waited_ms++) {
     k_msleep(1);
   }
   feeds_before = zplc_sched_test_watchdog_feed_count();
@@ -1106,15 +958,12 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_pause(), "pause applies safe state");
   /* RT-017: the physical outputs are safe; the image is not the safe state. */
   zassert_equal(zplc_opi_read8(0U), 0x5AU, "pause keeps the output image");
-  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before,
-               "pause disarms hardware watchdog");
+  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before, "pause disarms hardware watchdog");
   k_msleep(10);
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "paused scheduler has no continuing feeder");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "paused scheduler has no continuing feeder");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_disarm_failure_latches_error_after_safe_pause) {
+ZTEST(zplc_scheduler_admission, test_watchdog_disarm_failure_latches_error_after_safe_pause) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
 
@@ -1125,13 +974,11 @@ ZTEST(zplc_scheduler_admission,
   k_msleep(10);
   zplc_sched_test_fail_next_watchdog_disarm(-EIO);
   zassert_equal(zplc_sched_pause(), -EIO, "disarm failure is reported");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "disarm failure is an honest safe error");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "disarm failure is an honest safe error");
   zassert_equal(zplc_opi_read8(0U), 0U, "disarm failure keeps outputs safe");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_armed_async_faults_never_feed_watchdog) {
+ZTEST(zplc_scheduler_admission, test_armed_async_faults_never_feed_watchdog) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t feeds_before;
@@ -1142,10 +989,8 @@ ZTEST(zplc_scheduler_admission,
   feeds_before = zplc_sched_test_watchdog_feed_count();
   zassert_ok(zplc_sched_start(), "start VM fault task");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "VM fault latches error");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "VM fault has no feed");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "VM fault latches error");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "VM fault has no feed");
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
@@ -1154,10 +999,8 @@ ZTEST(zplc_scheduler_admission,
   zplc_sched_test_fail_next_gpio_read(0U, ZPLC_HAL_ERROR);
   zassert_ok(zplc_sched_start(), "start input fault task");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "input fault latches error");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "input fault has no feed");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "input fault latches error");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "input fault has no feed");
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
@@ -1166,14 +1009,11 @@ ZTEST(zplc_scheduler_admission,
   zplc_sched_test_fail_next_output_commit(0U, ZPLC_HAL_ERROR);
   zassert_ok(zplc_sched_start(), "start output fault task");
   k_msleep(20);
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "output fault latches error");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "output fault has no feed");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "output fault latches error");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "output fault has no feed");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_watchdog_setup_failure_cleans_up_before_run) {
+ZTEST(zplc_scheduler_admission, test_watchdog_setup_failure_cleans_up_before_run) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t disarms_before;
@@ -1186,34 +1026,25 @@ ZTEST(zplc_scheduler_admission,
   feeds_before = zplc_sched_test_watchdog_feed_count();
   zplc_sched_test_fail_next_watchdog_setup(-EIO);
   zassert_equal(zplc_sched_start(), -3, "setup failure rejects start");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "setup failure remains idle after safe outputs");
-  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before,
-               "post-install setup failure attempts cleanup");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "setup failure never feeds");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "setup failure remains idle after safe outputs");
+  zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before, "post-install setup failure attempts cleanup");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "setup failure never feeds");
 
   clear_scheduler();
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
-  zassert_equal(zplc_sched_load(program, size), 1,
-                "reload setup plus safe-failure task");
+  zassert_equal(zplc_sched_load(program, size), 1, "reload setup plus safe-failure task");
   disarms_before = zplc_sched_test_watchdog_disarm_count();
   feeds_before = zplc_sched_test_watchdog_feed_count();
   zplc_sched_test_fail_next_watchdog_setup(-EIO);
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_ERROR);
-  zassert_equal(zplc_sched_start(), -3,
-                "setup plus safe-output failure rejects start");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "unsafe start cleanup latches error");
-  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before,
-                "unsafe start cleanup does not disarm watchdog");
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "unsafe start cleanup never feeds");
+  zassert_equal(zplc_sched_start(), -3, "setup plus safe-output failure rejects start");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "unsafe start cleanup latches error");
+  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before, "unsafe start cleanup does not disarm watchdog");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "unsafe start cleanup never feeds");
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_safe_output_failure_keeps_watchdog_armed_and_latches_error) {
+ZTEST(zplc_scheduler_admission, test_safe_output_failure_keeps_watchdog_armed_and_latches_error) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t disarms_before;
@@ -1226,10 +1057,8 @@ ZTEST(zplc_scheduler_admission,
   disarms_before = zplc_sched_test_watchdog_disarm_count();
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_ERROR);
   zassert_equal(zplc_sched_pause(), ZPLC_HAL_ERROR, "pause reports safe failure");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "pause safe failure latches error");
-  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before,
-                "pause does not disarm before safe outputs succeed");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "pause safe failure latches error");
+  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before, "pause does not disarm before safe outputs succeed");
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);
   clear_scheduler();
 
@@ -1240,15 +1069,12 @@ ZTEST(zplc_scheduler_admission,
   disarms_before = zplc_sched_test_watchdog_disarm_count();
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_ERROR);
   zassert_equal(zplc_sched_stop(), ZPLC_HAL_ERROR, "stop reports safe failure");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "stop safe failure latches error");
-  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before,
-                "stop does not disarm before safe outputs succeed");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "stop safe failure latches error");
+  zassert_equal(zplc_sched_test_watchdog_disarm_count(), disarms_before, "stop does not disarm before safe outputs succeed");
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_resume_prepare_failure_stays_paused_without_feed) {
+ZTEST(zplc_scheduler_admission, test_resume_prepare_failure_stays_paused_without_feed) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t feeds_before;
@@ -1262,15 +1088,12 @@ ZTEST(zplc_scheduler_admission,
   feeds_before = zplc_sched_test_watchdog_feed_count();
   zplc_sched_test_fail_next_watchdog_setup(-EIO);
   zassert_equal(zplc_sched_resume(), -2, "resume prepare failure is reported");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "resume prepare failure remains paused");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "resume prepare failure remains paused");
   k_msleep(10);
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "failed resume starts no feeder");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "failed resume starts no feeder");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_last_running_task_unregisters_to_safe_idle_without_feeder) {
+ZTEST(zplc_scheduler_admission, test_last_running_task_unregisters_to_safe_idle_without_feeder) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   uint32_t feeds_before;
@@ -1281,17 +1104,14 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_start(), "start last-task fixture");
   k_msleep(10);
   zassert_ok(zplc_sched_unregister_task(0), "unregister final running task");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "last task unregister leaves safe idle");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "last task unregister leaves safe idle");
   zassert_equal(zplc_opi_read8(0U), 0U, "last task unregister applies safe OPI");
   feeds_before = zplc_sched_test_watchdog_feed_count();
   k_msleep(10);
-  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before,
-                "last task leaves no feeder");
+  zassert_equal(zplc_sched_test_watchdog_feed_count(), feeds_before, "last task leaves no feeder");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_shutdown_retains_error_on_stop_failure_and_reinitializes_cleanly) {
+ZTEST(zplc_scheduler_admission, test_shutdown_retains_error_on_stop_failure_and_reinitializes_cleanly) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
 
@@ -1302,20 +1122,16 @@ ZTEST(zplc_scheduler_admission,
   k_msleep(10);
   zplc_sched_test_fail_next_watchdog_disarm(-EIO);
   zassert_equal(zplc_sched_shutdown(), -EIO, "shutdown reports disarm failure");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "failed shutdown retains safe error state");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "failed shutdown retains safe error state");
   clear_scheduler();
 
   size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x5AU);
-  zassert_equal(zplc_sched_load(program, size), 1,
-                "reload shutdown safe-failure fixture");
+  zassert_equal(zplc_sched_load(program, size), 1, "reload shutdown safe-failure fixture");
   zassert_ok(zplc_sched_start(), "start shutdown safe-failure fixture");
   k_msleep(10);
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_ERROR);
-  zassert_equal(zplc_sched_shutdown(), ZPLC_HAL_ERROR,
-                "shutdown reports safe-output failure");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "safe-output shutdown failure retains error state");
+  zassert_equal(zplc_sched_shutdown(), ZPLC_HAL_ERROR, "shutdown reports safe-output failure");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "safe-output shutdown failure retains error state");
   zplc_sched_test_fail_safe_outputs(ZPLC_HAL_OK);
   clear_scheduler();
   zassert_ok(zplc_sched_shutdown(), "clean shutdown succeeds after recovery");
@@ -1325,12 +1141,10 @@ ZTEST(zplc_scheduler_admission,
 ZTEST(zplc_scheduler_admission, test_empty_step_keeps_scheduler_idle) {
   clear_scheduler();
   zassert_equal(zplc_sched_step(), -2, "empty step must report no work");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "empty step must not enter running state");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "empty step must not enter running state");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_unregister_running_task_drains_target_and_keeps_other_task_running) {
+ZTEST(zplc_scheduler_admission, test_unregister_running_task_drains_target_and_keeps_other_task_running) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_task_t removed;
@@ -1347,32 +1161,24 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_get_task(1, &peer_before), "observe peer baseline");
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_start(), "start two running tasks");
-  zassert_ok(zplc_sched_test_wait_before_commit(100),
-             "batch did not reach hold");
+  zassert_ok(zplc_sched_test_wait_before_commit(100), "batch did not reach hold");
   start_control_thread(1, 0);
   k_msleep(10);
-  zassert_equal(k_sem_count_get(&control_done), 0U,
-                "unregister must wait for in-flight coordinator");
+  zassert_equal(k_sem_count_get(&control_done), 0U, "unregister must wait for in-flight coordinator");
   zplc_sched_test_release_before_commit();
-  zassert_ok(k_sem_take(&control_done, K_MSEC(100)),
-             "unregister did not drain");
-  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)),
-             "unregister thread did not terminate");
+  zassert_ok(k_sem_take(&control_done, K_MSEC(100)), "unregister did not drain");
+  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)), "unregister thread did not terminate");
   zassert_ok(control_result, "unregister running target");
-  zassert_equal(zplc_sched_get_task(0, &removed), -3,
-                "target must remain inaccessible after drain");
+  zassert_equal(zplc_sched_get_task(0, &removed), -3, "target must remain inaccessible after drain");
   zassert_ok(zplc_sched_get_task(1, &peer_after), "observe peer after drain");
-  zassert_true(peer_after.stats.cycle_count > peer_before.stats.cycle_count,
-               "pending peer work must continue after coordinator drain");
+  zassert_true(peer_after.stats.cycle_count > peer_before.stats.cycle_count, "pending peer work must continue after coordinator drain");
   k_msleep(40);
   zassert_ok(zplc_sched_get_task(1, &peer_before), "observe later peer cycle");
-  zassert_true(peer_before.stats.cycle_count > peer_after.stats.cycle_count,
-               "peer continues after target unregister returns");
+  zassert_true(peer_before.stats.cycle_count > peer_after.stats.cycle_count, "peer continues after target unregister returns");
   zassert_ok(zplc_sched_stop(), "stop remaining task");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_stop_waits_for_batch_and_leaves_safe_outputs) {
+ZTEST(zplc_scheduler_admission, test_stop_waits_for_batch_and_leaves_safe_outputs) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t before;
@@ -1384,32 +1190,25 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_get_stats(&before), "read baseline evidence");
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_start(), "start stop-admission task");
-  zassert_ok(zplc_sched_test_wait_before_commit(100),
-             "batch did not reach hold");
+  zassert_ok(zplc_sched_test_wait_before_commit(100), "batch did not reach hold");
   start_control_thread(0, 0);
   k_msleep(10);
-  zassert_equal(k_sem_count_get(&control_done), 0U,
-                "stop must wait for in-flight coordinator");
+  zassert_equal(k_sem_count_get(&control_done), 0U, "stop must wait for in-flight coordinator");
   zplc_sched_test_release_before_commit();
   zassert_ok(k_sem_take(&control_done, K_MSEC(100)), "stop did not complete");
-  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)),
-             "stop thread did not terminate");
+  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)), "stop thread did not terminate");
   zassert_ok(control_result, "stop scheduler");
   zassert_equal(zplc_opi_read8(0U), 0U, "stop must leave OPI safe");
   zassert_ok(zplc_sched_get_stats(&after), "read stopped evidence");
   k_msleep(20);
   zassert_ok(zplc_sched_get_stats(&before), "read stable stopped evidence");
-  zassert_equal(before.total_cycles, after.total_cycles,
-                "no cycle executes after stop returns");
-  zassert_equal(before.output_commit_count, after.output_commit_count,
-                "no normal commit occurs after stop returns");
+  zassert_equal(before.total_cycles, after.total_cycles, "no cycle executes after stop returns");
+  zassert_equal(before.output_commit_count, after.output_commit_count, "no normal commit occurs after stop returns");
 }
 
 /* The order of a batch is decided by the portable core (RT-008); the target's wrap-safe clock is checked by
  * test_cycle_stamp_handles_cycle32_wrap_and_long_elapsed_duration. */
-static int before(uint64_t left_us, uint8_t left_priority, uint16_t left_id,
-                  uint64_t right_us, uint8_t right_priority,
-                  uint16_t right_id) {
+static int before(uint64_t left_us, uint8_t left_priority, uint16_t left_id, uint64_t right_us, uint8_t right_priority, uint16_t right_id) {
   zplc_sched_slot_t left = {0};
   zplc_sched_slot_t right = {0};
 
@@ -1423,61 +1222,44 @@ static int before(uint64_t left_us, uint8_t left_priority, uint16_t left_id,
 }
 
 ZTEST(zplc_scheduler_admission, test_release_comparator_is_tied_by_priority_then_id) {
-  zassert_true(before(100U, 1U, 1U, 130U, 0U, 0U),
-               "earlier release wins before priority");
-  zassert_true(before(101000U, 1U, 1U, 102000U, 0U, 0U),
-               "release ordering is monotonic");
-  zassert_true(before(7U, 0U, 9U, 7U, 1U, 1U),
-               "lower priority value wins tied release");
-  zassert_true(before(7U, 1U, 2U, 7U, 1U, 3U),
-               "lower task id wins complete tie");
-  zassert_false(before(7U, 1U, 3U, 7U, 1U, 2U),
-                "comparator is directional");
-  zassert_false(before(7U, 1U, 2U, 7U, 1U, 2U),
-                "a task is not before itself");
+  zassert_true(before(100U, 1U, 1U, 130U, 0U, 0U), "earlier release wins before priority");
+  zassert_true(before(101000U, 1U, 1U, 102000U, 0U, 0U), "release ordering is monotonic");
+  zassert_true(before(7U, 0U, 9U, 7U, 1U, 1U), "lower priority value wins tied release");
+  zassert_true(before(7U, 1U, 2U, 7U, 1U, 3U), "lower task id wins complete tie");
+  zassert_false(before(7U, 1U, 3U, 7U, 1U, 2U), "comparator is directional");
+  zassert_false(before(7U, 1U, 2U, 7U, 1U, 2U), "a task is not before itself");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_cycle_stamp_duration_and_deadline_boundaries_are_microsecond_exact) {
+ZTEST(zplc_scheduler_admission, test_cycle_stamp_duration_and_deadline_boundaries_are_microsecond_exact) {
   uint32_t at_750_us = (uint32_t)k_us_to_cyc_floor64(750U);
   uint32_t at_1000_us = (uint32_t)k_us_to_cyc_floor64(1000U);
   uint32_t at_1001_us = (uint32_t)k_us_to_cyc_floor64(1001U);
 
-  zassert_equal(zplc_sched_test_elapsed_us(0U, 0U, 0U, at_750_us), 750U,
-                "750us execution must not publish as a millisecond");
-  zassert_false(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_750_us, 1000U),
-                "deadline before interval is not an overrun");
-  zassert_false(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_1000_us, 1000U),
-                "deadline equal to interval is not an overrun");
-  zassert_true(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_1001_us, 1000U),
-               "deadline after interval is an overrun");
+  zassert_equal(zplc_sched_test_elapsed_us(0U, 0U, 0U, at_750_us), 750U, "750us execution must not publish as a millisecond");
+  zassert_false(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_750_us, 1000U), "deadline before interval is not an overrun");
+  zassert_false(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_1000_us, 1000U), "deadline equal to interval is not an overrun");
+  zassert_true(zplc_sched_test_deadline_missed(0U, 0U, 0U, at_1001_us, 1000U), "deadline after interval is an overrun");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_cycle_stamp_handles_cycle32_wrap_and_long_elapsed_duration) {
+ZTEST(zplc_scheduler_admission, test_cycle_stamp_handles_cycle32_wrap_and_long_elapsed_duration) {
   uint32_t start_cycle = UINT32_MAX - 999U;
   uint32_t wrapped_end = start_cycle + (uint32_t)k_us_to_cyc_floor64(750U);
   uint64_t cycles_per_ms = k_ms_to_cyc_floor64(1U);
   uint64_t long_ms;
   uint64_t expected_cycles;
 
-  zassert_equal(zplc_sched_test_elapsed_us(0U, start_cycle, 0U, wrapped_end),
-                750U, "cycle32 wrap must preserve a sub-millisecond duration");
+  zassert_equal(zplc_sched_test_elapsed_us(0U, start_cycle, 0U, wrapped_end), 750U,
+                "cycle32 wrap must preserve a sub-millisecond duration");
   zassert_true(cycles_per_ms > 0U, "target must expose a cycle clock");
   long_ms = UINT32_MAX / cycles_per_ms + 2U;
   expected_cycles = k_ms_to_cyc_floor64(long_ms);
-  zassert_true(expected_cycles > UINT32_MAX,
-               "test duration must exceed one cycle32 epoch");
-  zassert_equal(
-      zplc_sched_test_elapsed_us(0U, 0U, long_ms, (uint32_t)expected_cycles),
-      k_cyc_to_us_floor64(expected_cycles) > UINT32_MAX
-          ? UINT32_MAX
-          : (uint32_t)k_cyc_to_us_floor64(expected_cycles),
-      "coarse uptime reconstructs durations beyond one cycle32 wrap");
+  zassert_true(expected_cycles > UINT32_MAX, "test duration must exceed one cycle32 epoch");
+  zassert_equal(zplc_sched_test_elapsed_us(0U, 0U, long_ms, (uint32_t)expected_cycles),
+                k_cyc_to_us_floor64(expected_cycles) > UINT32_MAX ? UINT32_MAX : (uint32_t)k_cyc_to_us_floor64(expected_cycles),
+                "coarse uptime reconstructs durations beyond one cycle32 wrap");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_step_fault_has_latch_without_normal_commit) {
+ZTEST(zplc_scheduler_admission, test_step_fault_has_latch_without_normal_commit) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_sched_stats_t before;
@@ -1495,25 +1277,20 @@ ZTEST(zplc_scheduler_admission,
   set_task_order(program, 2U, 30U, 2U);
   rewrite_program_crc(program, size);
   zassert_equal(zplc_sched_load(program, size), 3, "load fault batch");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U),
-             "force output");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U), "force output");
   zassert_ok(zplc_sched_get_stats(&before), "read fault baseline");
   zassert_equal(zplc_sched_step(), -ZPLC_VM_WATCHDOG, "middle task faults");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "fault latches");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "fault latches");
   zassert_equal(zplc_opi_read8(0U), 0U, "fault applies safe OPI");
   zassert_equal(zplc_force_get_count(), 0U, "fault clears forces");
   zassert_ok(zplc_sched_get_task(2, &later), "read later task");
   zassert_equal(later.stats.cycle_count, 0U, "later task never ran");
   zassert_ok(zplc_sched_get_stats(&after), "read fault result");
-  zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
-                "fault batch latches input once");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 0U,
-                "fault batch has no normal output commit");
+  zassert_equal(after.input_latch_count - before.input_latch_count, 1U, "fault batch latches input once");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 0U, "fault batch has no normal output commit");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_breakpoint_pauses_batch_before_later_task) {
+ZTEST(zplc_scheduler_admission, test_breakpoint_pauses_batch_before_later_task) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
   zplc_task_t later;
@@ -1529,22 +1306,18 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_debug_add_breakpoint(0, 0U), "add first breakpoint");
   zassert_ok(zplc_sched_get_stats(&before), "read breakpoint baseline");
   zassert_ok(zplc_sched_step(), "step pauses without deadlock");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED,
-                "breakpoint pauses scheduler");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_PAUSED, "breakpoint pauses scheduler");
   zassert_ok(zplc_sched_get_task(1, &later), "read later task");
   zassert_equal(later.stats.cycle_count, 0U, "later task did not execute");
   zassert_ok(zplc_sched_get_stats(&after), "read breakpoint result");
-  zassert_equal(after.output_commit_count - before.output_commit_count, 1U,
-                "breakpoint batch commits outputs once");
+  zassert_equal(after.output_commit_count - before.output_commit_count, 1U, "breakpoint batch commits outputs once");
   zassert_ok(zplc_sched_debug_remove_breakpoint(0, 0U), "remove breakpoint");
   zassert_ok(zplc_sched_step(), "step progresses after breakpoint removal");
   zassert_ok(zplc_sched_get_task(0, &later), "read recovered first task");
-  zassert_equal(later.stats.cycle_count, 2U,
-                "recovered task executes exactly one later step");
+  zassert_equal(later.stats.cycle_count, 2U, "recovered task executes exactly one later step");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_debug_snapshot_drops_unregistered_slot_state) {
+ZTEST(zplc_scheduler_admission, test_debug_snapshot_drops_unregistered_slot_state) {
   uint8_t first[PROGRAM_CAPACITY];
   uint8_t second[PROGRAM_CAPACITY];
   zplc_sched_vm_snapshot_t snapshot;
@@ -1556,13 +1329,11 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(first, first_size), 1, "load first program");
   zassert_ok(zplc_sched_debug_add_breakpoint(0, 0U), "set first breakpoint");
   zassert_ok(zplc_sched_unregister_task(0), "unregister first task");
-  zassert_equal(zplc_sched_debug_snapshot(0, &snapshot), -2,
-                "unregistered slot has no snapshot");
+  zassert_equal(zplc_sched_debug_snapshot(0, &snapshot), -2, "unregistered slot has no snapshot");
   second_size = build_program(second, 1U, ZPLC_TASK_CYCLIC, 1000U, 2U);
   zassert_equal(zplc_sched_load(second, second_size), 1, "reuse task slot");
   zassert_ok(zplc_sched_debug_snapshot(0, &snapshot), "snapshot replacement");
-  zassert_equal(snapshot.breakpoint_count, 0U,
-                "replacement must not inherit breakpoints");
+  zassert_equal(snapshot.breakpoint_count, 0U, "replacement must not inherit breakpoints");
 }
 
 ZTEST(zplc_scheduler_admission, test_debug_mutation_waits_for_active_batch) {
@@ -1575,19 +1346,14 @@ ZTEST(zplc_scheduler_admission, test_debug_mutation_waits_for_active_batch) {
   zassert_equal(zplc_sched_load(program, size), 1, "load debug lock program");
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_start(), "start debug lock program");
-  zassert_ok(zplc_sched_test_wait_before_commit(100),
-             "batch did not reach hold");
+  zassert_ok(zplc_sched_test_wait_before_commit(100), "batch did not reach hold");
   zplc_sched_test_reset_debug_before_mem();
   start_debug_thread(0, 0U);
-  zassert_ok(zplc_sched_test_wait_debug_before_mem(100),
-             "debug operation did not acquire control lock");
-  zassert_equal(k_sem_count_get(&control_done), 0U,
-                "debug mutation must wait for batch memory ownership");
+  zassert_ok(zplc_sched_test_wait_debug_before_mem(100), "debug operation did not acquire control lock");
+  zassert_equal(k_sem_count_get(&control_done), 0U, "debug mutation must wait for batch memory ownership");
   zplc_sched_test_release_before_commit();
-  zassert_ok(k_sem_take(&control_done, K_MSEC(100)),
-             "debug mutation did not drain");
-  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)),
-             "debug thread did not terminate");
+  zassert_ok(k_sem_take(&control_done, K_MSEC(100)), "debug mutation did not drain");
+  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)), "debug thread did not terminate");
   zassert_ok(control_result, "add breakpoint after batch");
   zassert_ok(zplc_sched_debug_snapshot(0, &snapshot), "snapshot debug result");
   zassert_equal(snapshot.breakpoint_count, 1U, "breakpoint was not stored");
@@ -1596,8 +1362,7 @@ ZTEST(zplc_scheduler_admission, test_debug_mutation_waits_for_active_batch) {
 }
 
 /* RT-030: a lock the scheduler cannot take is an error the caller sees, never a silent continuation. */
-ZTEST(zplc_scheduler_admission,
-      test_control_lock_failure_is_reported_and_changes_nothing) {
+ZTEST(zplc_scheduler_admission, test_control_lock_failure_is_reported_and_changes_nothing) {
   uint8_t program[PROGRAM_CAPACITY];
   size_t size;
 
@@ -1606,27 +1371,21 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(program, size), 1, "load a program");
 
   zplc_sched_test_fail_next_lock(-EAGAIN, 1);
-  zassert_equal(zplc_sched_start(), ZPLC_SCHED_ERR_LOCK,
-                "start reports the control lock it could not take");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "a refused start changes nothing");
+  zassert_equal(zplc_sched_start(), ZPLC_SCHED_ERR_LOCK, "start reports the control lock it could not take");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "a refused start changes nothing");
   zplc_sched_test_fail_next_lock(-EAGAIN, 1);
-  zassert_equal(zplc_sched_load(program, size), ZPLC_SCHED_ERR_LOCK,
-                "load reports it too");
+  zassert_equal(zplc_sched_load(program, size), ZPLC_SCHED_ERR_LOCK, "load reports it too");
   zplc_sched_test_fail_next_lock(-EAGAIN, 1);
   zassert_equal(zplc_sched_stop(), ZPLC_SCHED_ERR_LOCK, "and stop");
   zplc_sched_test_fail_next_lock(-EAGAIN, 1);
-  zassert_equal(zplc_sched_debug_clear_breakpoints(0), ZPLC_SCHED_ERR_LOCK,
-                "and the debug calls");
+  zassert_equal(zplc_sched_debug_clear_breakpoints(0), ZPLC_SCHED_ERR_LOCK, "and the debug calls");
 
   zassert_ok(zplc_sched_start(), "the same start works once the lock is back");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING,
-                "and the scheduler runs");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING, "and the scheduler runs");
   zassert_ok(zplc_sched_stop(), "stop");
 }
 
-ZTEST(zplc_scheduler_admission,
-      test_memory_lock_failure_latches_the_fault_with_outputs_safe) {
+ZTEST(zplc_scheduler_admission, test_memory_lock_failure_latches_the_fault_with_outputs_safe) {
   uint8_t program[PROGRAM_CAPACITY];
   uint8_t replacement[PROGRAM_CAPACITY];
   size_t size;
@@ -1642,23 +1401,19 @@ ZTEST(zplc_scheduler_admission,
   /* A control path that needs the memory lock and cannot take it: the pins are driven safe without it, the fault
    * is latched, and the caller is told. */
   zplc_sched_test_fail_next_lock(-EAGAIN, 0);
-  zassert_equal(zplc_sched_stop(), ZPLC_SCHED_ERR_LOCK,
-                "stop reports the memory lock it could not take");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "the scheduler latched its fault");
+  zassert_equal(zplc_sched_stop(), ZPLC_SCHED_ERR_LOCK, "stop reports the memory lock it could not take");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "the scheduler latched its fault");
   zassert_true(zplc_sched_start() < 0, "a latched fault refuses a start");
 
   /* The statistics call cannot take the memory lock either, and says so. */
   zplc_sched_test_fail_next_lock(-EAGAIN, 0);
-  zassert_equal(zplc_sched_get_stats(&stats), ZPLC_SCHED_ERR_LOCK,
-                "the statistics call reports the lock");
+  zassert_equal(zplc_sched_get_stats(&stats), ZPLC_SCHED_ERR_LOCK, "the statistics call reports the lock");
   zassert_ok(zplc_sched_get_stats(&stats), "and works with the lock back");
 
   /* A validated replacement is the only way out, as for any fault. */
   clear_scheduler();
   size = build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
-  zassert_equal(zplc_sched_load(replacement, size), 1,
-                "a replacement program clears the latch");
+  zassert_equal(zplc_sched_load(replacement, size), 1, "a replacement program clears the latch");
   zassert_ok(zplc_sched_start(), "and starts");
   zassert_ok(zplc_sched_stop(), "stop");
 }
@@ -1693,8 +1448,7 @@ ZTEST(zplc_scheduler_admission, test_program_load_is_a_cold_start) {
 /* RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit.
  * A write from outside the scan is queued and applied at an input latch, a read sees what the last commit
  * published, and neither waits for the scan. */
-ZTEST(zplc_scheduler_admission,
-      test_external_access_waits_for_the_latch_and_never_for_the_scan) {
+ZTEST(zplc_scheduler_admission, test_external_access_waits_for_the_latch_and_never_for_the_scan) {
   uint8_t program[PROGRAM_CAPACITY];
   const uint16_t address = ZPLC_MEM_WORK_BASE + 0x40U;
   const uint8_t value = 0x5AU;
@@ -1711,19 +1465,15 @@ ZTEST(zplc_scheduler_admission,
 
   zplc_sched_test_hold_before_commit();
   zassert_ok(zplc_sched_start(), "start");
-  zassert_ok(zplc_sched_test_wait_before_commit(100),
-             "the scan reached the hold with its tasks done");
+  zassert_ok(zplc_sched_test_wait_before_commit(100), "the scan reached the hold with its tasks done");
   zassert_equal(zplc_opi_read8(0U), 0x11U, "the live image is ahead of the last commit");
 
   started = k_uptime_get();
-  zassert_ok(zplc_exchange_write(address, &value, 1U),
-             "a write is accepted while a scan is in progress");
+  zassert_ok(zplc_exchange_write(address, &value, 1U), "a write is accepted while a scan is in progress");
   zassert_ok(zplc_exchange_read(ZPLC_MEM_OPI_BASE, &seen, 1U), "a read is served");
-  zassert_true(k_uptime_get() - started < 50,
-               "neither call waited for the scan (the hold lasts up to a second)");
+  zassert_true(k_uptime_get() - started < 50, "neither call waited for the scan (the hold lasts up to a second)");
   zassert_equal(seen, 0U, "the reader sees the last commit, not the scan in progress");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x40U], 0U,
-                "the live memory is not written in the middle of a scan");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x40U], 0U, "the live memory is not written in the middle of a scan");
 
   zplc_sched_test_release_before_commit();
   k_sleep(K_MSEC(30));
@@ -1747,13 +1497,11 @@ ZTEST(zplc_scheduler_admission, test_image_lock_is_free_while_the_pins_are_writt
   zassert_equal(zplc_sched_load(program, size), 1, "load a program");
   zplc_sched_test_hold_output_write();
   zassert_ok(zplc_sched_start(), "start");
-  zassert_ok(zplc_sched_test_wait_output_write(100),
-             "the scan reached the output write");
+  zassert_ok(zplc_sched_test_wait_output_write(100), "the scan reached the output write");
 
   /* A debug operation needs the image lock; with the pins about to be written it must not wait for them. */
   start_debug_thread(0, 0U);
-  zassert_ok(k_sem_take(&control_done, K_MSEC(100)),
-             "the image lock was held across the hardware write");
+  zassert_ok(k_sem_take(&control_done, K_MSEC(100)), "the image lock was held across the hardware write");
   zplc_sched_test_release_output_write();
   zassert_ok(k_thread_join(&control_thread, K_MSEC(100)), "debug thread ends");
   zassert_ok(control_result, "the breakpoint was added");
@@ -1765,8 +1513,7 @@ ZTEST(zplc_scheduler_admission, test_image_lock_is_free_while_the_pins_are_writt
 /* RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported.
  * With no scan there is no latch to wait for; a lock that cannot be taken is an error the caller sees and the
  * write is refused whole. */
-ZTEST(zplc_scheduler_admission,
-      test_external_write_without_a_scan_applies_at_once_and_reports_a_lock_failure) {
+ZTEST(zplc_scheduler_admission, test_external_write_without_a_scan_applies_at_once_and_reports_a_lock_failure) {
   const uint16_t address = ZPLC_MEM_WORK_BASE + 0x44U;
   uint8_t first = 0x77U;
   uint8_t second = 0x88U;
@@ -1774,17 +1521,13 @@ ZTEST(zplc_scheduler_admission,
 
   clear_scheduler();
   zassert_ok(zplc_exchange_write(address, &first, 1U), "a write while no scan runs");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first,
-                "it is in the live memory at once");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first, "it is in the live memory at once");
   zassert_ok(zplc_exchange_read(address, &seen, 1U), "and in what a reader sees");
   zassert_equal(seen, first, "published");
 
   zplc_sched_test_fail_next_lock(-EAGAIN, 0);
-  zassert_equal(zplc_exchange_write(address, &second, 1U), ZPLC_EXCHANGE_ERR_LOCK,
-                "a lock that cannot be taken is reported");
-  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first,
-                "and nothing was written");
+  zassert_equal(zplc_exchange_write(address, &second, 1U), ZPLC_EXCHANGE_ERR_LOCK, "a lock that cannot be taken is reported");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first, "and nothing was written");
 }
 
-ZTEST_SUITE(zplc_scheduler_admission, NULL, scheduler_setup, NULL, NULL,
-            scheduler_teardown);
+ZTEST_SUITE(zplc_scheduler_admission, NULL, scheduler_setup, NULL, NULL, scheduler_teardown);

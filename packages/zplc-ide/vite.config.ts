@@ -1,17 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { wasmRuntimePlugin } from './scripts/wasmRuntimePlugin.ts'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { wasmRuntimePlugin } from './scripts/wasmRuntimePlugin.ts';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const repoVersion = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../..', 'package.json'), 'utf8'),
-).version
+const repoVersion = JSON.parse(readFileSync(path.resolve(__dirname, '../..', 'package.json'), 'utf8')).version;
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -49,4 +47,4 @@ export default defineConfig({
       },
     },
   },
-})
+});

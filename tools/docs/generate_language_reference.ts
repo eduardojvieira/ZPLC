@@ -61,11 +61,16 @@ const ST_AREAS = ['data-types', 'literals', 'declarations', 'pous', 'statements'
 /** Whether a row belongs on the page of a language. A row may be on several pages. */
 export function onPage(language: Language, row: MatrixRow): boolean {
   switch (language) {
-    case 'st': return ST_AREAS.includes(row.area);
-    case 'il': return row.area === 'il';
-    case 'sfc': return row.area === 'sfc';
-    case 'ld': return row.id.startsWith('ld-fbd.ld-') || SHARED_GRAPHICAL.includes(row.id);
-    case 'fbd': return row.id.startsWith('ld-fbd.fbd-') || SHARED_GRAPHICAL.includes(row.id);
+    case 'st':
+      return ST_AREAS.includes(row.area);
+    case 'il':
+      return row.area === 'il';
+    case 'sfc':
+      return row.area === 'sfc';
+    case 'ld':
+      return row.id.startsWith('ld-fbd.ld-') || SHARED_GRAPHICAL.includes(row.id);
+    case 'fbd':
+      return row.id.startsWith('ld-fbd.fbd-') || SHARED_GRAPHICAL.includes(row.id);
   }
 }
 
@@ -96,14 +101,24 @@ const STATE_LABEL: Record<State, L10n> = {
   decision: { en: 'Rejected with a message, decision open', es: 'Se rechaza con un mensaje, decisión abierta' },
 };
 
-const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L10n; editor: L10n; related: Array<{ href: string; text: L10n }> }> = {
+const LANGUAGE_TEXT: Record<
+  Language,
+  { title: L10n; label: L10n; description: L10n; editor: L10n; related: Array<{ href: string; text: L10n }> }
+> = {
   st: {
     title: { en: 'Structured Text (ST) reference', es: 'Referencia de texto estructurado (ST)' },
     label: { en: 'Structured Text', es: 'Texto estructurado' },
-    description: { en: 'What of Structured Text works, from the executed conformance tests.', es: 'Qué funciona del texto estructurado, según las pruebas de conformidad ejecutadas.' },
+    description: {
+      en: 'What of Structured Text works, from the executed conformance tests.',
+      es: 'Qué funciona del texto estructurado, según las pruebas de conformidad ejecutadas.',
+    },
     editor: {
-      en: 'Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.',
-      es: 'El texto estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.',
+      en:
+        'Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and ' +
+        'column and navigates from a diagnostic to its source.',
+      es:
+        'El texto estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con ' +
+        'su línea y columna y navega desde un diagnóstico hasta su código.',
     },
     related: [
       { href: '../languages/st.md', text: { en: 'Structured Text guide', es: 'Guía de texto estructurado' } },
@@ -114,10 +129,17 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
   il: {
     title: { en: 'Instruction List (IL) reference', es: 'Referencia de lista de instrucciones (IL)' },
     label: { en: 'Instruction List', es: 'Lista de instrucciones' },
-    description: { en: 'What of Instruction List works, from the executed conformance tests.', es: 'Qué funciona de la lista de instrucciones, según las pruebas de conformidad ejecutadas.' },
+    description: {
+      en: 'What of Instruction List works, from the executed conformance tests.',
+      es: 'Qué funciona de la lista de instrucciones, según las pruebas de conformidad ejecutadas.',
+    },
     editor: {
-      en: 'Instruction List is written in a text editor. The source is parsed and translated to Structured Text before it is compiled, so the data types, functions and function blocks are those of Structured Text.',
-      es: 'La lista de instrucciones se escribe en un editor de texto. El código se analiza y se traduce a texto estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los del texto estructurado.',
+      en:
+        'Instruction List is written in a text editor. The source is parsed and translated to Structured Text before it is compiled, ' +
+        'so the data types, functions and function blocks are those of Structured Text.',
+      es:
+        'La lista de instrucciones se escribe en un editor de texto. El código se analiza y se traduce a texto estructurado antes de ' +
+        'compilarse, por eso los tipos de datos, funciones y bloques de función son los del texto estructurado.',
     },
     related: [
       { href: '../languages/il.md', text: { en: 'Instruction List guide', es: 'Guía de lista de instrucciones' } },
@@ -127,10 +149,18 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
   ld: {
     title: { en: 'Ladder Diagram (LD) reference', es: 'Referencia de diagrama de escalera (LD)' },
     label: { en: 'Ladder Diagram', es: 'Diagrama de escalera' },
-    description: { en: 'What of Ladder Diagram works, from the executed conformance tests.', es: 'Qué funciona del diagrama de escalera, según las pruebas de conformidad ejecutadas.' },
+    description: {
+      en: 'What of Ladder Diagram works, from the executed conformance tests.',
+      es: 'Qué funciona del diagrama de escalera, según las pruebas de conformidad ejecutadas.',
+    },
     editor: {
-      en: 'Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you draw. The Structured Text that the build generates from the rungs is read-only output.',
-      es: 'El diagrama de escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.',
+      en:
+        'Ladder Diagram is drawn in the rung editor of ZPLC: contacts, coils, branches and blocks, with undo and validation while you ' +
+        'draw. The Structured Text that the build generates from the rungs is read-only output.',
+      es:
+        'El diagrama de escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y ' +
+        'validación mientras se dibuja. El texto estructurado que la compilación genera a partir de los peldaños es solo una salida de ' +
+        'lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -141,10 +171,18 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
   fbd: {
     title: { en: 'Function Block Diagram (FBD) reference', es: 'Referencia de diagrama de bloques de función (FBD)' },
     label: { en: 'Function Block Diagram', es: 'Diagrama de bloques de función' },
-    description: { en: 'What of Function Block Diagram works, from the executed conformance tests.', es: 'Qué funciona del diagrama de bloques de función, según las pruebas de conformidad ejecutadas.' },
+    description: {
+      en: 'What of Function Block Diagram works, from the executed conformance tests.',
+      es: 'Qué funciona del diagrama de bloques de función, según las pruebas de conformidad ejecutadas.',
+    },
     editor: {
-      en: 'Function Block Diagram is drawn in the diagram editor of ZPLC: blocks with typed pins and connections, with undo and validation while you draw. The Structured Text that the build generates from the diagram is read-only output.',
-      es: 'El diagrama de bloques de función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
+      en:
+        'Function Block Diagram is drawn in the diagram editor of ZPLC: blocks with typed pins and connections, with undo and ' +
+        'validation while you draw. The Structured Text that the build generates from the diagram is read-only output.',
+      es:
+        'El diagrama de bloques de función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con ' +
+        'deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una ' +
+        'salida de lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -156,10 +194,18 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
   sfc: {
     title: { en: 'Sequential Function Chart (SFC) reference', es: 'Referencia de diagrama funcional secuencial (SFC)' },
     label: { en: 'Sequential Function Chart', es: 'Diagrama funcional secuencial' },
-    description: { en: 'What of Sequential Function Chart works, from the executed conformance tests.', es: 'Qué funciona del diagrama funcional secuencial, según las pruebas de conformidad ejecutadas.' },
+    description: {
+      en: 'What of Sequential Function Chart works, from the executed conformance tests.',
+      es: 'Qué funciona del diagrama funcional secuencial, según las pruebas de conformidad ejecutadas.',
+    },
     editor: {
-      en: 'Sequential Function Chart is drawn in the chart editor of ZPLC: steps, transitions and actions, with undo and validation while you draw. The Structured Text that the build generates from the chart is read-only output.',
-      es: 'El diagrama funcional secuencial se dibuja en el editor de diagramas de ZPLC: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.',
+      en:
+        'Sequential Function Chart is drawn in the chart editor of ZPLC: steps, transitions and actions, with undo and validation ' +
+        'while you draw. The Structured Text that the build generates from the chart is read-only output.',
+      es:
+        'El diagrama funcional secuencial se dibuja en el editor de diagramas de ZPLC: pasos, transiciones y acciones, con deshacer y ' +
+        'validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de ' +
+        'lectura.',
     },
     related: [
       { href: '../ide/editors.md', text: { en: 'Text and visual editors', es: 'Editores de texto y visuales' } },
@@ -169,8 +215,14 @@ const LANGUAGE_TEXT: Record<Language, { title: L10n; label: L10n; description: L
 };
 
 const PAGE_INTRO: L10n = {
-  en: 'The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known failures. CI runs the whole suite on every change. {counts}',
-  es: 'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. {counts}',
+  en:
+    'The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when ' +
+    'at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known ' +
+    'failures. CI runs the whole suite on every change. {counts}',
+  es:
+    'El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento ' +
+    'funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso ' +
+    'suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. {counts}',
 };
 
 const HEADINGS: Record<string, L10n> = {
@@ -185,24 +237,54 @@ const HEADINGS: Record<string, L10n> = {
 export const editorImage = (language: Language, lang: Lang): string => `/img/editors/${language}-${lang}.png`;
 
 const EDITOR_SHOT: Record<Language, L10n> = {
-  st: { en: 'The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations', es: 'El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables' },
-  il: { en: 'The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations', es: 'El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables' },
-  ld: { en: 'The Ladder Diagram editor of ZPLC with the Blinky example open, showing its rungs, contacts and coils', es: 'El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas' },
-  fbd: { en: 'The Function Block Diagram editor of ZPLC with the Blinky example open, showing its blocks and connections', es: 'El editor de diagrama de bloques de función de ZPLC con el ejemplo Blinky abierto, que muestra sus bloques y conexiones' },
-  sfc: { en: 'The Sequential Function Chart editor of ZPLC with the Blinky example open, showing its steps and transitions', es: 'El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones' },
+  st: {
+    en: 'The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations',
+    es: 'El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables',
+  },
+  il: {
+    en: 'The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations',
+    es:
+      'El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus ' +
+      'variables',
+  },
+  ld: {
+    en: 'The Ladder Diagram editor of ZPLC with the Blinky example open, showing its rungs, contacts and coils',
+    es: 'El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas',
+  },
+  fbd: {
+    en: 'The Function Block Diagram editor of ZPLC with the Blinky example open, showing its blocks and connections',
+    es: 'El editor de diagrama de bloques de función de ZPLC con el ejemplo Blinky abierto, que muestra sus bloques y conexiones',
+  },
+  sfc: {
+    en: 'The Sequential Function Chart editor of ZPLC with the Blinky example open, showing its steps and transitions',
+    es: 'El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones',
+  },
 };
 
 /** What the image shows, for people who cannot see it. */
-export const editorAlt = (language: Language, lang: Lang): string => `${EDITOR_SHOT[language][lang]}${lang === 'en' ? ', in English' : ', con la interfaz en español'}`;
+export const editorAlt = (language: Language, lang: Lang): string =>
+  `${EDITOR_SHOT[language][lang]}${lang === 'en' ? ', in English' : ', con la interfaz en español'}`;
 
 const SCREENSHOT: L10n = {
-  en: 'The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.',
-  es: 'La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.',
+  en:
+    'The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example ' +
+    'program open.',
+  es:
+    'La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa ' +
+    'de ejemplo pequeño abierto.',
 };
 
 const ADDRESSING_INTRO: L10n = {
-  en: 'A variable is bound to a place of the process image with `AT`, or with an entry of `io` in the [project file](./project-file.md). An address is written `%`, the area, the size and the position; the short form `%I0.0` is `%IX0.0`, and addresses are not case sensitive. The same addresses are used in every language: Instruction List writes them in its declarations and the graphical languages declare them in the variable table of the program.',
-  es: 'Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.',
+  en:
+    'A variable is bound to a place of the process image with `AT`, or with an entry of `io` in the [project file](./project-file.md). ' +
+    'An address is written `%`, the area, the size and the position; the short form `%I0.0` is `%IX0.0`, and addresses are not case ' +
+    'sensitive. The same addresses are used in every language: Instruction List writes them in its declarations and the graphical ' +
+    'languages declare them in the variable table of the program.',
+  es:
+    'Una variable se asocia a un lugar de la imagen de proceso con `AT`, o con una entrada de `io` en el [archivo de ' +
+    'proyecto](./project-file.md). Una dirección se escribe `%`, el área, el tamaño y la posición; la forma corta `%I0.0` es `%IX0.0`, y ' +
+    'las direcciones no distinguen mayúsculas de minúsculas. Las mismas direcciones se usan en todos los lenguajes: la lista de ' +
+    'instrucciones las escribe en sus declaraciones y los lenguajes gráficos las declaran en la tabla de variables del programa.',
 };
 
 const ADDRESS_HEAD: Record<Lang, string[]> = {
@@ -226,13 +308,15 @@ const AREAS: Array<{ letter: string; en: string; es: string; region: { base: num
 const hex = (value: number) => `0x${value.toString(16).toUpperCase().padStart(4, '0')}`;
 
 export function addressingTable(lang: Lang): string {
-  const rows = AREAS.flatMap((area) => SIZES.map((size) => [
-    code(size.form(area.letter)),
-    size[lang],
-    area[lang],
-    size.factor === 1 ? (size.letter === 'X' ? '`<byte>`' : '`n`') : `\`${size.factor} * n\``,
-    `${code(hex(area.region.base))} (${area.region.size} ${lang === 'en' ? 'bytes' : 'bytes'})`,
-  ]));
+  const rows = AREAS.flatMap((area) =>
+    SIZES.map((size) => [
+      code(size.form(area.letter)),
+      size[lang],
+      area[lang],
+      size.factor === 1 ? (size.letter === 'X' ? '`<byte>`' : '`n`') : `\`${size.factor} * n\``,
+      `${code(hex(area.region.base))} (${area.region.size} ${lang === 'en' ? 'bytes' : 'bytes'})`,
+    ]),
+  );
   return table(ADDRESS_HEAD[lang], rows);
 }
 
@@ -259,12 +343,18 @@ export function titleCell(title: string): string {
   return title.replace(/([\\*_<>{}|[\]])/g, '\\$1');
 }
 
-export interface Inputs { matrix: Matrix; facts: RowFacts[]; spanishTitles: Record<string, string> }
+export interface Inputs {
+  matrix: Matrix;
+  facts: RowFacts[];
+  spanishTitles: Record<string, string>;
+}
 
 export function loadInputs(root = ROOT): Inputs {
   const matrix = JSON.parse(readFileSync(join(root, 'conformance/matrix.json'), 'utf8')) as Matrix;
   const cases = loadCases(join(root, 'conformance')).map(factsOf);
-  const listed = (JSON.parse(readFileSync(join(root, 'tools/ci/expected-failures.json'), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
+  const listed = (JSON.parse(readFileSync(join(root, 'tools/ci/expected-failures.json'), 'utf8')) as Array<{ test: string }>).map(
+    (entry) => entry.test,
+  );
   const gaps = JSON.parse(readFileSync(join(root, 'conformance/matrix-gaps.json'), 'utf8')) as Gap[];
   const spanishPath = join(root, TITLES_ES);
   const spanishTitles = existsSync(spanishPath) ? (JSON.parse(readFileSync(spanishPath, 'utf8')) as Record<string, string>) : {};
@@ -274,35 +364,67 @@ export function loadInputs(root = ROOT): Inputs {
 export function inputErrors(inputs: Inputs): string[] {
   const errors: string[] = [];
   for (const { row } of inputs.facts) {
-    if (!LANGUAGES.some((language) => onPage(language, row))) errors.push(`the matrix row ${row.id} is on no language page: add its area to ${GENERATOR}`);
+    if (!LANGUAGES.some((language) => onPage(language, row)))
+      errors.push(`the matrix row ${row.id} is on no language page: add its area to ${GENERATOR}`);
     if (!(row.id in inputs.spanishTitles)) errors.push(`the matrix row ${row.id} has no Spanish title in ${TITLES_ES}`);
   }
-  for (const id of Object.keys(inputs.spanishTitles)) if (!inputs.facts.some(({ row }) => row.id === id)) errors.push(`${TITLES_ES} names the row ${id}, which is not in conformance/matrix.json`);
+  for (const id of Object.keys(inputs.spanishTitles))
+    if (!inputs.facts.some(({ row }) => row.id === id))
+      errors.push(`${TITLES_ES} names the row ${id}, which is not in conformance/matrix.json`);
   return errors;
 }
 
 function evidenceCell(fact: RowFacts, lang: Lang): string {
-  if (fact.failing > 0) return lang === 'en' ? `${fact.passing} pass, ${fact.failing} fail` : `${fact.passing} pasan, ${fact.failing} fallan`;
+  if (fact.failing > 0)
+    return lang === 'en' ? `${fact.passing} pass, ${fact.failing} fail` : `${fact.passing} pasan, ${fact.failing} fallan`;
   return String(fact.passing);
 }
 
 const NOT_SUPPORTED_NOTE: Record<State, L10n> = {
   works: { en: '', es: '' },
-  partial: { en: 'Part of its cases fail today and are on the list of known failures.', es: 'Parte de sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
-  broken: { en: 'Its cases fail today and are on the list of known failures.', es: 'Sus casos fallan hoy y figuran en la lista de fallas conocidas.' },
-  unverified: { en: 'No conformance case that runs covers it yet, so nothing is claimed about its behaviour.', es: 'Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento.' },
-  rejected: { en: 'Not supported: the build refuses it with a message that names the position.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición.' },
-  decision: { en: 'Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision.', es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta.' },
+  partial: {
+    en: 'Part of its cases fail today and are on the list of known failures.',
+    es: 'Parte de sus casos fallan hoy y figuran en la lista de fallas conocidas.',
+  },
+  broken: {
+    en: 'Its cases fail today and are on the list of known failures.',
+    es: 'Sus casos fallan hoy y figuran en la lista de fallas conocidas.',
+  },
+  unverified: {
+    en: 'No conformance case that runs covers it yet, so nothing is claimed about its behaviour.',
+    es: 'Ningún caso de conformidad que se ejecute lo cubre aún, por eso no se afirma nada sobre su comportamiento.',
+  },
+  rejected: {
+    en: 'Not supported: the build refuses it with a message that names the position.',
+    es: 'No admitido: la compilación lo rechaza con un mensaje que indica la posición.',
+  },
+  decision: {
+    en:
+      'Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open ' +
+      'decision.',
+    es:
+      'No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una ' +
+      'decisión abierta.',
+  },
 };
 
 export function languageBody(language: Language, inputs: Inputs, lang: Lang): string {
   const text = LANGUAGE_TEXT[language];
   const facts = inputs.facts.filter(({ row }) => onPage(language, row));
   const counts: L10n = {
-    en: `This page covers ${facts.length} elements: ${facts.filter((fact) => fact.state === 'works').length} work, ${facts.filter((fact) => fact.state === 'rejected' || fact.state === 'decision').length} are rejected on purpose and ${facts.filter((fact) => ['partial', 'broken', 'unverified'].includes(fact.state)).length} are not yet proven.`,
-    es: `Esta página cubre ${facts.length} elementos: ${facts.filter((fact) => fact.state === 'works').length} funcionan, ${facts.filter((fact) => fact.state === 'rejected' || fact.state === 'decision').length} se rechazan a propósito y ${facts.filter((fact) => ['partial', 'broken', 'unverified'].includes(fact.state)).length} aún no están probados.`,
+    en: `This page covers ${facts.length} elements: ${facts.filter((fact) => fact.state === 'works').length} work, ${
+      facts.filter((fact) => fact.state === 'rejected' || fact.state === 'decision').length
+    } are rejected on purpose and ${
+      facts.filter((fact) => ['partial', 'broken', 'unverified'].includes(fact.state)).length
+    } are not yet proven.`,
+    es: `Esta página cubre ${facts.length} elementos: ${facts.filter((fact) => fact.state === 'works').length} funcionan, ${
+      facts.filter((fact) => fact.state === 'rejected' || fact.state === 'decision').length
+    } se rechazan a propósito y ${
+      facts.filter((fact) => ['partial', 'broken', 'unverified'].includes(fact.state)).length
+    } aún no están probados.`,
   };
-  const title = (fact: RowFacts) => titleCell(lang === 'es' ? inputs.spanishTitles[fact.row.id] ?? fact.row.title : plainTitle(fact.row.title));
+  const title = (fact: RowFacts) =>
+    titleCell(lang === 'es' ? (inputs.spanishTitles[fact.row.id] ?? fact.row.title) : plainTitle(fact.row.title));
   const requirement = (fact: RowFacts) => fact.row.requirements.join(', ');
 
   const areas = [...new Set(facts.map((fact) => fact.row.area))];
@@ -310,15 +432,22 @@ export function languageBody(language: Language, inputs: Inputs, lang: Lang): st
     const inArea = facts.filter((fact) => fact.row.area === area);
     return [
       ...(areas.length > 1 ? [`### ${AREA_TITLE[area]?.[lang] ?? area}`] : []),
-      table(TABLE_HEAD[lang], inArea.map((fact) => [title(fact), STATE_LABEL[fact.state][lang], evidenceCell(fact, lang), requirement(fact)])),
+      table(
+        TABLE_HEAD[lang],
+        inArea.map((fact) => [title(fact), STATE_LABEL[fact.state][lang], evidenceCell(fact, lang), requirement(fact)]),
+      ),
     ].join('\n\n');
   });
 
   const unsupported = facts.filter((fact) => fact.state !== 'works');
   const none: L10n = { en: 'Every element of this page works.', es: 'Todos los elementos de esta página funcionan.' };
   const lead: L10n = {
-    en: 'These elements do not work today. Each is rejected with a located message or is not yet proven; none of them is silently accepted.',
-    es: 'Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o aún no está probado; ninguno se acepta en silencio.',
+    en:
+      'These elements do not work today. Each is rejected with a located message or is not yet proven; none of them is silently ' +
+      'accepted.',
+    es:
+      'Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o aún no está probado; ninguno se acepta en ' +
+      'silencio.',
   };
   return [
     PAGE_INTRO[lang].replace('{counts}', counts[lang]),
@@ -334,7 +463,18 @@ export function languageBody(language: Language, inputs: Inputs, lang: Lang): st
     `## ${HEADINGS.unsupported![lang]}`,
     ...(unsupported.length === 0
       ? [none[lang]]
-      : [lead[lang], table(UNSUPPORTED_HEAD[lang], unsupported.map((fact) => [title(fact), STATE_LABEL[fact.state][lang], NOT_SUPPORTED_NOTE[fact.state][lang], requirement(fact)]))]),
+      : [
+          lead[lang],
+          table(
+            UNSUPPORTED_HEAD[lang],
+            unsupported.map((fact) => [
+              title(fact),
+              STATE_LABEL[fact.state][lang],
+              NOT_SUPPORTED_NOTE[fact.state][lang],
+              requirement(fact),
+            ]),
+          ),
+        ]),
     `## ${HEADINGS.related![lang]}`,
     text.related.map((link) => `- [${link.text[lang]}](${link.href})`).join('\n'),
   ].join('\n\n');

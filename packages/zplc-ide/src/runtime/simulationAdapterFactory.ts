@@ -52,12 +52,15 @@ export async function connectSimulationAdapter(options: SimulationOptions = {}):
   try {
     await browser.connect();
   } catch (error) {
-    throw new Error(nativeFailure === null
-      ? describe(error)
-      : `${nativeFailure} The WebAssembly runtime could not start either: ${describe(error)}`);
+    throw new Error(
+      nativeFailure === null ? describe(error) : `${nativeFailure} The WebAssembly runtime could not start either: ${describe(error)}`,
+    );
   }
   if (nativeFailure !== null) {
-    report(`Native simulation could not start: ${nativeFailure} Running the WebAssembly runtime instead: it is a degraded simulation with no network blocks and no serial, and its timing is the browser's.`);
+    report(
+      `Native simulation could not start: ${nativeFailure} Running the WebAssembly runtime instead: it is a degraded simulation with no ` +
+        `network blocks and no serial, and its timing is the browser's.`,
+    );
   }
   return browser;
 }

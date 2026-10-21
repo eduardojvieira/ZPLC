@@ -3,7 +3,10 @@ import { transpileLDToST } from '../../transpiler/ldToST';
 import { parseElement, rungElement, rungItemElement } from '../../models/sourceElements';
 
 /** What is selected in a ladder: a rung, and perhaps an element of it. */
-export interface LDSelection { rungId: string | null; elementId: string | null }
+export interface LDSelection {
+  rungId: string | null;
+  elementId: string | null;
+}
 export const NO_LD_SELECTION: LDSelection = { rungId: null, elementId: null };
 
 /** The selection as the ids the history remembers (LNG-010): `rung:<id>`, or `rung:<id>/element:<id>`. */
@@ -107,14 +110,16 @@ function cloneRungWithIds(rung: LDRung, model: LDModel, fragmentLocals: LDVariab
     const id = uniqueCaseInsensitive(`${element.id}_copy`, elementIds);
     elementIds.push(id);
     const withId = { ...element, id };
-    const instance = isFunctionBlock(withId.type) && typeof withId.instance === 'string'
-      ? instances.get(key(withId.instance))
-      : undefined;
+    const instance = isFunctionBlock(withId.type) && typeof withId.instance === 'string' ? instances.get(key(withId.instance)) : undefined;
     return rewriteContactMemberReference(instance ? { ...withId, instance } : withId, instances);
   };
   if (copied.grid !== undefined) {
     if (!Array.isArray(copied.grid)) return undefined;
-    copied.grid = copied.grid.map((row) => Array.isArray(row) ? row.map((cell) => cell.element === null ? { ...cell } : { ...cell, element: updateElement(cell.element) }) : row);
+    copied.grid = copied.grid.map((row) =>
+      Array.isArray(row)
+        ? row.map((cell) => (cell.element === null ? { ...cell } : { ...cell, element: updateElement(cell.element) }))
+        : row,
+    );
   } else if (copied.elements !== undefined) {
     if (!Array.isArray(copied.elements)) return undefined;
     copied.elements = copied.elements.map(updateElement);
@@ -174,8 +179,15 @@ export function pasteLDRungFragment(model: LDModel, fragment: LDClipboardFragmen
       return { ...clone(source), name };
     });
     if (localVariables.some((variable) => !variable)) return undefined;
-    const rungs = [...model.rungs.slice(0, after + 1), copied, ...model.rungs.slice(after + 1)].map((rung, index) => ({ ...rung, number: index + 1 }));
-    const candidate: LDModel = { ...model, variables: { ...model.variables, local: [...model.variables.local, ...(localVariables as LDVariable[])] }, rungs };
+    const rungs = [...model.rungs.slice(0, after + 1), copied, ...model.rungs.slice(after + 1)].map((rung, index) => ({
+      ...rung,
+      number: index + 1,
+    }));
+    const candidate: LDModel = {
+      ...model,
+      variables: { ...model.variables, local: [...model.variables.local, ...(localVariables as LDVariable[])] },
+      rungs,
+    };
     return transpileLDToST(candidate).success ? candidate : undefined;
   } catch {
     return undefined;

@@ -4,18 +4,30 @@
   "boards": {
     "rpi_pico": {
       "ids": [
-        { "vid": "2E8A", "pid": "000A", "source": "CONFIG_USB_DEVICE_VID and CONFIG_USB_DEVICE_PID in firmware/app/boards/rpi_pico_rp2040.conf (CDC ACM shell)" }
+        {
+          "vid": "2E8A",
+          "pid": "000A",
+          "source": "CONFIG_USB_DEVICE_VID and CONFIG_USB_DEVICE_PID in firmware/app/boards/rpi_pico_rp2040.conf (CDC ACM shell)"
+        }
       ]
     },
     "waveshare_rp2040_zero": {
       "ids": [
-        { "vid": "2E8A", "pid": "000A", "source": "CONFIG_USB_DEVICE_VID and CONFIG_USB_DEVICE_PID in firmware/app/boards/rp2040_zero_rp2040.conf (CDC ACM shell)" }
+        {
+          "vid": "2E8A",
+          "pid": "000A",
+          "source": "CONFIG_USB_DEVICE_VID and CONFIG_USB_DEVICE_PID in firmware/app/boards/rp2040_zero_rp2040.conf (CDC ACM shell)"
+        }
       ],
       "note": "The same identifiers as the Pico: they do not tell the two boards apart. With both plugged in, name the port; `zplc sys info` says which one it is."
     },
     "esp32s3_devkitc": {
       "ids": [
-        { "vid": "303A", "pid": "1001", "source": "Espressif USB Serial/JTAG controller (VID 303A, PID 1001; docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-serial-jtag-console.html, OpenOCD esp_usb_jtag); the shell is on it: zephyr,shell-uart = &usb_serial in firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay" }
+        {
+          "vid": "303A",
+          "pid": "1001",
+          "source": "Espressif USB Serial/JTAG controller (VID 303A, PID 1001; docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-serial-jtag-console.html, OpenOCD esp_usb_jtag); the shell is on it: zephyr,shell-uart = &usb_serial in firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+        }
       ],
       "note": "Not yet seen on a bench run (HIL-014). The board's other USB port (a UART bridge, 10C4:EA60 on the DevKitC-1) carries no shell, so it is not listed. After a flash the port re-enumerates under a new name: the chain opens it only after the flash step."
     }

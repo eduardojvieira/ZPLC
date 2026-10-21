@@ -1,18 +1,10 @@
 {
   "requirement": "CMP-049",
   "title": "a direct address beyond the 16-bit operand field is rejected, not truncated",
-  "matrix": [
-    "configuration.ownership-and-memory-checks"
-  ],
+  "matrix": ["configuration.ownership-and-memory-checks"],
   "note": "CMP-049: %MW40000 is the byte 0x2000 + 80000, which a 16-bit operand cannot hold; the build refuses it where it is declared instead of storing the low 16 bits and writing to another variable",
   "build": "fails",
-  "lines": [
-    3
-  ],
-  "codes": [
-    "ADDRESS_OUT_OF_REGION"
-  ],
-  "messageIncludes": [
-    "exceeds"
-  ]
+  "lines": [3],
+  "codes": ["ADDRESS_OUT_OF_REGION"],
+  "messageIncludes": ["exceeds"]
 }

@@ -1,20 +1,21 @@
 /**
  * Toolbar Component - Unified Control Bar
- * 
+ *
  * Single toolbar that handles:
  * - File operations (Save, Export)
  * - Build operations (Compile, Download, View ASM)
  * - Execution mode (Simulate vs Hardware)
  * - Execution controls (Run/Pause/Stop/Step/Reset)
  * - Connection status and settings
- * 
+ *
  * Uses useDebugController as the single source of truth for all
  * simulation and hardware connection state.
  */
 
 import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import { Settings, FileCode, Save } from 'lucide-react';
-import { useIDEStore } from '../store/useIDEStore'; import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
+import { useIDEStore } from '../store/useIDEStore';
+import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useT } from '../i18n';
 import { bindCommands, publishCommandState } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
@@ -23,7 +24,15 @@ import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { canRunCurrentProgram, isCompileResultCurrent, type LastCompileResult, nextProgramLoadStateAfterCompile, nextProgramLoadStateAfterConnect, PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
+import {
+  canRunCurrentProgram,
+  isCompileResultCurrent,
+  type LastCompileResult,
+  nextProgramLoadStateAfterCompile,
+  nextProgramLoadStateAfterConnect,
+  PROGRAM_LOAD_STATE,
+  shouldAutoLoadBeforeStart,
+} from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
 import { CommandBarCenter } from '../shell/CommandBarCenter';
@@ -51,8 +60,22 @@ import { Button } from '../ui';
 
 /** The commands whose behaviour lives in the toolbar (UX-015). */
 const TOOLBAR_COMMANDS = [
-  'file.save', 'build.compile', 'build.generateSt', 'build.downloadProgram', 'build.viewAssembly', 'online.simulation', 'online.hardware',
-  'online.connect', 'online.disconnect', 'online.deploy', 'debug.run', 'debug.pause', 'debug.stop', 'debug.step', 'debug.reset', 'debug.liveValues',
+  'file.save',
+  'build.compile',
+  'build.generateSt',
+  'build.downloadProgram',
+  'build.viewAssembly',
+  'online.simulation',
+  'online.hardware',
+  'online.connect',
+  'online.disconnect',
+  'online.deploy',
+  'debug.run',
+  'debug.pause',
+  'debug.stop',
+  'debug.step',
+  'debug.reset',
+  'debug.liveValues',
 ] as const satisfies readonly CommandId[];
 type ToolbarCommandId = (typeof TOOLBAR_COMMANDS)[number];
 
@@ -108,7 +131,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isModeTransitioning, setIsModeTransitioning] = useState(false);
-  const [programLoadState, setProgramLoadState] = useState<typeof PROGRAM_LOAD_STATE[keyof typeof PROGRAM_LOAD_STATE]>(PROGRAM_LOAD_STATE.EMPTY);
+  const [programLoadState, setProgramLoadState] = useState<(typeof PROGRAM_LOAD_STATE)[keyof typeof PROGRAM_LOAD_STATE]>(
+    PROGRAM_LOAD_STATE.EMPTY,
+  );
   const compileRevisionRef = useRef(0);
 
   const connectionButtonRef = useRef<HTMLButtonElement>(null);
@@ -140,9 +165,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const hasCurrentCompileResult = useIDEStore((s) => isCompileResultCurrent(lastCompileResult?.compilerRunId ?? null, s.compilerRunId));
   const currentCompileResult = () => {
     const result = lastCompileResult;
-    return result && isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)
-      ? result
-      : null;
+    return result && isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId) ? result : null;
   };
 
   useEffect(() => {
@@ -175,8 +198,23 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     const saved = await saveFile(activeFileId);
-    useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name: activeFile.name }), details: 'output' }
-      : { kind: 'save', status: 'error', title: t('toolbarMsg.couldNotSave', { name: activeFile.name }), detail: t('toolbarMsg.theFileStaysModified'), details: 'output', recover: { label: t('toolbarMsg.trySavingAgain'), run: () => { void handleSaveFile(); } } });
+    useNotifications.getState().report(
+      saved
+        ? { kind: 'save', status: 'success', title: t('toolbarMsg.saved', { name: activeFile.name }), details: 'output' }
+        : {
+            kind: 'save',
+            status: 'error',
+            title: t('toolbarMsg.couldNotSave', { name: activeFile.name }),
+            detail: t('toolbarMsg.theFileStaysModified'),
+            details: 'output',
+            recover: {
+              label: t('toolbarMsg.trySavingAgain'),
+              run: () => {
+                void handleSaveFile();
+              },
+            },
+          },
+    );
   };
 
   // ==========================================================================
@@ -184,12 +222,21 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // ==========================================================================
 
   const handleGenerateST = () => {
-    const file = getActiveFile(); if (!file) return;
-    addConsoleEntry({ type: 'info', message: t('toolbarMsg.transpilingToStructuredText', { language: file.language }), source: 'transpiler' });
+    const file = getActiveFile();
+    if (!file) return;
+    addConsoleEntry({
+      type: 'info',
+      message: t('toolbarMsg.transpilingToStructuredText', { language: file.language }),
+      source: 'transpiler',
+    });
 
     const source = generateStructuredText(file, addConsoleEntry);
     if (source !== null) {
-      addConsoleEntry({ type: 'success', message: t('toolbarMsg.generatedLinesOfStructured', { length: source.split('\n').length }), source: 'transpiler' });
+      addConsoleEntry({
+        type: 'success',
+        message: t('toolbarMsg.generatedLinesOfStructured', { length: source.split('\n').length }),
+        source: 'transpiler',
+      });
       setGeneratedCode(source);
       setGeneratedCodeType(file.language as 'FBD' | 'LD' | 'SFC');
       setShowGeneratedCode(true);
@@ -212,7 +259,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
     buildMenu.setOpen(false);
 
-    const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests) ?? webBuildBridge(() => useIDEStore.getState().directoryHandle);
+    const workspaceTests =
+      shownProjectBridge(window.electronAPI?.workspaceTests) ?? webBuildBridge(() => useIDEStore.getState().directoryHandle);
     const currentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession ? workspaceScenarioLink : null;
     const workspaceCompileRoute = resolveWorkspaceCompileRoute({
       isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/') || isWebBuild(),
@@ -223,18 +271,25 @@ export function Toolbar({ debugController }: ToolbarProps) {
       hasUnsavedChanges: hasUnsavedChanges(),
     });
 
-    if (workspaceCompileRoute === 'canonical-unavailable' || workspaceCompileRoute === 'link-required' || workspaceCompileRoute === 'save-required') {
+    if (
+      workspaceCompileRoute === 'canonical-unavailable' ||
+      workspaceCompileRoute === 'link-required' ||
+      workspaceCompileRoute === 'save-required'
+    ) {
       const current = useIDEStore.getState();
       if (current.isConsoleCollapsed) current.toggleConsole();
       current.setActiveConsoleTab('tests');
-      const message = workspaceCompileRoute === 'canonical-unavailable'
-        ? t('toolbarMsg.savedWorkspaceCompilerIs')
-        : workspaceCompileRoute === 'link-required'
-          ? t('toolbarMsg.openTestsAndChoose')
-          : t('toolbarMsg.saveChangesBeforeBuilding');
+      const message =
+        workspaceCompileRoute === 'canonical-unavailable'
+          ? t('toolbarMsg.savedWorkspaceCompilerIs')
+          : workspaceCompileRoute === 'link-required'
+            ? t('toolbarMsg.openTestsAndChoose')
+            : t('toolbarMsg.saveChangesBeforeBuilding');
       addConsoleEntry({ type: 'error', message, source: 'compiler' });
       addCompilerMessage({ type: 'error', message });
-      useNotifications.getState().report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'tests' });
+      useNotifications
+        .getState()
+        .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'tests' });
       return;
     }
 
@@ -248,7 +303,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
         addConsoleEntry({ type: 'error', message, source: 'compiler' });
         addCompilerMessage({ type: 'error', message });
         markCompilerMessagesChecked();
-        useNotifications.getState().report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'problems' });
+        useNotifications
+          .getState()
+          .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'problems' });
         return;
       }
       const workspaceId = link.workspaceId;
@@ -257,18 +314,31 @@ export function Toolbar({ debugController }: ToolbarProps) {
       let cancelRequested = false;
       const notices = useNotifications.getState();
       const operation = notices.begin({
-        kind: 'build', title: t('toolbarMsg.buildingProject'), details: 'output',
-        cancel: () => { cancelRequested = true; void workspaceTests.cancel().catch(() => undefined); },
+        kind: 'build',
+        title: t('toolbarMsg.buildingProject'),
+        details: 'output',
+        cancel: () => {
+          cancelRequested = true;
+          void workspaceTests.cancel().catch(() => undefined);
+        },
       });
       try {
         const response = await workspaceTests.compile({ workspaceId });
         const latest = useIDEStore.getState();
-        if (!isWorkspaceTestRunCurrent(latest, expected)) { notices.dismiss(operation); return; }
+        if (!isWorkspaceTestRunCurrent(latest, expected)) {
+          notices.dismiss(operation);
+          return;
+        }
         const canonical = presentWorkspaceCompileResult(response);
         if (!canonical.ok) {
           notices.finish(operation, {
-            kind: 'build', status: 'error', title: t('toolbarMsg.buildFailed'), details: 'problems',
-            detail: canonical.diagnostics[0] ? `${canonical.diagnostics[0].path ? `${canonical.diagnostics[0].path}: ` : ''}${canonical.diagnostics[0].message}` : undefined,
+            kind: 'build',
+            status: 'error',
+            title: t('toolbarMsg.buildFailed'),
+            details: 'problems',
+            detail: canonical.diagnostics[0]
+              ? `${canonical.diagnostics[0].path ? `${canonical.diagnostics[0].path}: ` : ''}${canonical.diagnostics[0].message}`
+              : undefined,
           });
           revealCompileProblems();
           addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
@@ -276,7 +346,15 @@ export function Toolbar({ debugController }: ToolbarProps) {
             addCompilerMessage({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed') });
           }
           for (const diagnostic of canonical.diagnostics) {
-            addCompilerMessage({ type: 'error', message: diagnostic.message, code: diagnostic.code, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
+            addCompilerMessage({
+              type: 'error',
+              message: diagnostic.message,
+              code: diagnostic.code,
+              ...(diagnostic.path ? { file: diagnostic.path } : {}),
+              ...(diagnostic.line ? { line: diagnostic.line } : {}),
+              ...(diagnostic.column ? { column: diagnostic.column } : {}),
+              ...(diagnostic.element ? { element: diagnostic.element } : {}),
+            });
           }
           markCompilerMessagesChecked();
           return;
@@ -301,22 +379,56 @@ export function Toolbar({ debugController }: ToolbarProps) {
           zplc: canonical.zplcEvidence,
         });
         setProgramLoadState(nextProgramLoadStateAfterCompile());
-        addConsoleEntry({ type: 'success', message: t('toolbarMsg.builtSavedWorkspaceLocally', { length: canonical.artifact.zplcFile.length, codeSize: canonical.summary.codeSize, taskCount: canonical.summary.taskCount, DRAFT_COUNTER: ZPLC_CONSTANTS.DRAFT_COUNTER }), source: 'compiler' });
+        addConsoleEntry({
+          type: 'success',
+          message: t('toolbarMsg.builtSavedWorkspaceLocally', {
+            length: canonical.artifact.zplcFile.length,
+            codeSize: canonical.summary.codeSize,
+            taskCount: canonical.summary.taskCount,
+            DRAFT_COUNTER: ZPLC_CONSTANTS.DRAFT_COUNTER,
+          }),
+          source: 'compiler',
+        });
         markCompilerMessagesChecked();
-        notices.finish(operation, { kind: 'build', status: 'success', title: t('toolbarMsg.buildSucceeded'), detail: t('toolbarMsg.bytes', { name: canonical.summary.name, length: canonical.artifact.zplcFile.length, value: tn('toolbarMsg.tasks', canonical.summary.taskCount) }), details: 'output' });
+        notices.finish(operation, {
+          kind: 'build',
+          status: 'success',
+          title: t('toolbarMsg.buildSucceeded'),
+          detail: t('toolbarMsg.bytes', {
+            name: canonical.summary.name,
+            length: canonical.artifact.zplcFile.length,
+            value: tn('toolbarMsg.tasks', canonical.summary.taskCount),
+          }),
+          details: 'output',
+        });
       } catch {
         const latest = useIDEStore.getState();
-        if (!isWorkspaceTestRunCurrent(latest, expected)) { notices.dismiss(operation); return; }
+        if (!isWorkspaceTestRunCurrent(latest, expected)) {
+          notices.dismiss(operation);
+          return;
+        }
         if (cancelRequested) {
           addConsoleEntry({ type: 'warning', message: t('toolbarMsg.buildCancelled'), source: 'compiler' });
-          notices.finish(operation, { kind: 'build', status: 'cancelled', title: t('toolbarMsg.buildCancelled'), detail: t('toolbarMsg.noArtifactWasKept'), details: 'output' });
+          notices.finish(operation, {
+            kind: 'build',
+            status: 'cancelled',
+            title: t('toolbarMsg.buildCancelled'),
+            detail: t('toolbarMsg.noArtifactWasKept'),
+            details: 'output',
+          });
           return;
         }
         revealCompileProblems();
         addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
         addCompilerMessage({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed') });
         markCompilerMessagesChecked();
-        notices.finish(operation, { kind: 'build', status: 'error', title: t('toolbarMsg.buildFailed'), detail: t('toolbarMsg.theCompilerCouldNot'), details: 'problems' });
+        notices.finish(operation, {
+          kind: 'build',
+          status: 'error',
+          title: t('toolbarMsg.buildFailed'),
+          detail: t('toolbarMsg.theCompilerCouldNot'),
+          details: 'problems',
+        });
       }
       return;
     }
@@ -342,7 +454,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
       downloadBlob(new Blob([new Uint8Array(result.zplcFile).buffer], { type: 'application/octet-stream' }), result.fileName);
       addConsoleEntry({ type: 'success', message: t('toolbarMsg.downloaded', { fileName: result.fileName }), source: 'system' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.failedToDownload', { value: e instanceof Error ? e.message : String(e) }), source: 'system' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.failedToDownload', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'system',
+      });
     }
   };
 
@@ -368,7 +484,15 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingConnectionFocusRef.current = !isConnected;
     setIsConnecting(true);
     const notices = useNotifications.getState();
-    const operation = notices.begin({ kind: 'connection', title: isConnected ? t('toolbarMsg.disconnecting') : executionMode === 'simulate' ? t('toolbarMsg.startingTheSimulator') : t('toolbarMsg.connectingToTheDevice'), details: 'output' });
+    const operation = notices.begin({
+      kind: 'connection',
+      title: isConnected
+        ? t('toolbarMsg.disconnecting')
+        : executionMode === 'simulate'
+          ? t('toolbarMsg.startingTheSimulator')
+          : t('toolbarMsg.connectingToTheDevice'),
+      details: 'output',
+    });
     try {
       if (isConnected) {
         await disconnect();
@@ -391,9 +515,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.toLowerCase().includes('cancelled') && !msg.toLowerCase().includes('canceled') && msg !== 'No serial port selected') {
         addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectionFailed', { msg }), source: 'runtime' });
-        notices.finish(operation, { kind: 'connection', status: 'error', title: t('toolbarMsg.connectionFailed2'), detail: msg, details: 'output' });
+        notices.finish(operation, {
+          kind: 'connection',
+          status: 'error',
+          title: t('toolbarMsg.connectionFailed2'),
+          detail: msg,
+          details: 'output',
+        });
       } else {
-        notices.finish(operation, { kind: 'connection', status: 'cancelled', title: t('toolbarMsg.connectionCancelled'), details: 'output' });
+        notices.finish(operation, {
+          kind: 'connection',
+          status: 'cancelled',
+          title: t('toolbarMsg.connectionCancelled'),
+          details: 'output',
+        });
       }
     } finally {
       setIsConnecting(false);
@@ -466,9 +601,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (!canRunCurrentProgram(executionMode, Boolean(result), programLoadState)) {
       addConsoleEntry({
         type: 'error',
-        message: executionMode === EXECUTION_MODE.HARDWARE
-          ? t('toolbarMsg.deployTheCurrentBuild')
-          : t('toolbarMsg.noCompiledBytecodeCompile'),
+        message:
+          executionMode === EXECUTION_MODE.HARDWARE ? t('toolbarMsg.deployTheCurrentBuild') : t('toolbarMsg.noCompiledBytecodeCompile'),
         source: 'runtime',
       });
       return;
@@ -493,7 +627,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       } catch (e) {
         pendingExecutionFocusRef.current = null;
-        addConsoleEntry({ type: 'error', message: t('toolbarMsg.failedToLoad', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+        addConsoleEntry({
+          type: 'error',
+          message: t('toolbarMsg.failedToLoad', { value: e instanceof Error ? e.message : String(e) }),
+          source: 'runtime',
+        });
         return;
       }
     }
@@ -503,7 +641,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.runFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.runFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
@@ -515,7 +657,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfoNow()?.cycles || 0 }), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.pauseFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.pauseFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
@@ -531,17 +677,25 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.resumed'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.resumeFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.resumeFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
   const handleStop = async () => {
-    if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmStop)) return;
+    if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmStop))) return;
     try {
       await stop();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.stopped'), source: 'runtime' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.stopFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.stopFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
@@ -554,17 +708,25 @@ export function Toolbar({ debugController }: ToolbarProps) {
     try {
       await step();
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.stepFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.stepFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
   const handleReset = async () => {
-    if (controlsBusy || !await proceedAfterConfirmation(executionMode, confirmReset)) return;
+    if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmReset))) return;
     try {
       await reset();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.reset'), source: 'runtime' });
     } catch (e) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.resetFailed', { value: e instanceof Error ? e.message : String(e) }), source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: t('toolbarMsg.resetFailed', { value: e instanceof Error ? e.message : String(e) }),
+        source: 'runtime',
+      });
     }
   };
 
@@ -579,21 +741,41 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const handlers: Record<ToolbarCommandId, () => void | Promise<void>> = {
       'file.save': handleSaveFile,
       'build.compile': handleCompile,
-      'build.generateSt': () => { if (isVisualLanguage) handleGenerateST(); },
+      'build.generateSt': () => {
+        if (isVisualLanguage) handleGenerateST();
+      },
       'build.downloadProgram': handleDownloadBytecode,
       'build.viewAssembly': handleViewAssembly,
       'online.simulation': () => handleExecutionModeChange(EXECUTION_MODE.SIMULATE),
       'online.hardware': () => handleExecutionModeChange(EXECUTION_MODE.HARDWARE),
-      'online.connect': () => { if (!isConnected) return handleConnect(); },
-      'online.disconnect': () => { if (isConnected) return handleConnect(); },
+      'online.connect': () => {
+        if (!isConnected) return handleConnect();
+      },
+      'online.disconnect': () => {
+        if (isConnected) return handleConnect();
+      },
       'online.deploy': handleUpload,
       // Already running: nothing to do. Paused: resume. Otherwise start.
-      'debug.run': () => { if (isRunning) return; if (isPaused) return handleResume(true); return handleStart(true); },
-      'debug.pause': () => { if (isRunning) return handlePause(true); },
-      'debug.stop': () => { if (isRunning || isPaused) return handleStop(); },
-      'debug.step': () => { if (isPaused || isIdle) return handleStep(); },
-      'debug.reset': () => { if (isConnected) return handleReset(); },
-      'debug.liveValues': () => { if (isConnected) toggleMpeek(); },
+      'debug.run': () => {
+        if (isRunning) return;
+        if (isPaused) return handleResume(true);
+        return handleStart(true);
+      },
+      'debug.pause': () => {
+        if (isRunning) return handlePause(true);
+      },
+      'debug.stop': () => {
+        if (isRunning || isPaused) return handleStop();
+      },
+      'debug.step': () => {
+        if (isPaused || isIdle) return handleStep();
+      },
+      'debug.reset': () => {
+        if (isConnected) return handleReset();
+      },
+      'debug.liveValues': () => {
+        if (isConnected) toggleMpeek();
+      },
     };
     return handlers[id]();
   });
@@ -602,9 +784,21 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   // What the registry's rules need to know about the toolbar: the menu and the palette offer a command only when it can work.
   useEffect(() => {
-    publishCommandState({ hasActiveFile: activeFile !== null, visualFile: isVisualLanguage, mode: executionMode, connected: isConnected, vmState, compiled: hasCurrentCompileResult, busy: controlsBusy });
+    publishCommandState({
+      hasActiveFile: activeFile !== null,
+      visualFile: isVisualLanguage,
+      mode: executionMode,
+      connected: isConnected,
+      vmState,
+      compiled: hasCurrentCompileResult,
+      busy: controlsBusy,
+    });
   }, [activeFile, isVisualLanguage, executionMode, isConnected, vmState, hasCurrentCompileResult, controlsBusy]);
-  useEffect(() => () => publishCommandState({ hasActiveFile: false, visualFile: false, connected: false, vmState: 'idle', compiled: false, busy: false }), []);
+  useEffect(
+    () => () =>
+      publishCommandState({ hasActiveFile: false, visualFile: false, connected: false, vmState: 'idle', compiled: false, busy: false }),
+    [],
+  );
 
   // ==========================================================================
   // Render Helpers
@@ -648,9 +842,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const status = getStatusDisplay();
 
   // Check if running in Electron on macOS
-  const isElectronMac = typeof window !== 'undefined' &&
-    window.electronAPI?.isElectron &&
-    window.electronAPI?.platform === 'darwin';
+  const isElectronMac = typeof window !== 'undefined' && window.electronAPI?.isElectron && window.electronAPI?.platform === 'darwin';
 
   // ==========================================================================
   // Render
@@ -658,121 +850,150 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   return (
     <>
-    <div role="toolbar" aria-label={t('toolbar.label')} className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 gap-1.5 ${isElectronMac ? 'pl-20' : ''}`}>
-      {/* Logo */}
-      <div className="flex items-center gap-2 mr-2">
-        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-[var(--color-on-accent)] text-xs">{t('toolbar.brandInitial')}</div>
-        <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">{t('toolbar.brand')}</span>
-      </div>
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-      {/* Save Button */}
-      <Button variant="bare"
-        type="button"
-        onClick={() => { void handleSaveFile(); }}
-        disabled={!activeFile}
-        className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
-        tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
+      <div
+        role="toolbar"
+        aria-label={t('toolbar.label')}
+        className={
+          `h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 ` +
+          `gap-1.5 ${isElectronMac ? 'pl-20' : ''}`
+        }
       >
-        <Save size={18} />
-      </Button>
+        {/* Logo */}
+        <div className="flex items-center gap-2 mr-2">
+          <div
+            className={
+              'w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold ' +
+              'text-[var(--color-on-accent)] text-xs'
+            }
+          >
+            {t('toolbar.brandInitial')}
+          </div>
+          <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">{t('toolbar.brand')}</span>
+        </div>
 
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
+        {/* Separator */}
+        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Generate ST button - only for visual languages */}
-      {isVisualLanguage && (
-        <Button variant="bare"
+        {/* Save Button */}
+        <Button
+          variant="bare"
           type="button"
-          onClick={handleGenerateST}
-          className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-purple)] hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors"
-          aria-label={t('toolbar.toSt.label')}
-          tooltip={t('toolbar.toSt.label')}
+          onClick={() => {
+            void handleSaveFile();
+          }}
+          disabled={!activeFile}
+          className={
+            'focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 ' +
+            'disabled:cursor-not-allowed transition-colors'
+          }
+          aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
+          tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
         >
-          <FileCode size={14} />
-          <span className="hidden md:inline">{t('toolbar.toSt.text')}</span>
+          <Save size={18} />
         </Button>
-      )}
 
-      <BuildMenu
-        menu={buildMenu}
-        onCompile={() => { void handleCompile(); }}
-        onDownloadBytecode={handleDownloadBytecode}
-        onViewAssembly={handleViewAssembly}
-        hasCurrentCompileResult={hasCurrentCompileResult}
+        {/* Separator */}
+        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
+
+        {/* Generate ST button - only for visual languages */}
+        {isVisualLanguage && (
+          <Button
+            variant="bare"
+            type="button"
+            onClick={handleGenerateST}
+            className={
+              'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-purple)] hover:brightness-110 ' +
+              'text-[var(--color-on-accent)] text-xs font-medium transition-colors'
+            }
+            aria-label={t('toolbar.toSt.label')}
+            tooltip={t('toolbar.toSt.label')}
+          >
+            <FileCode size={14} />
+            <span className="hidden md:inline">{t('toolbar.toSt.text')}</span>
+          </Button>
+        )}
+
+        <BuildMenu
+          menu={buildMenu}
+          onCompile={() => {
+            void handleCompile();
+          }}
+          onDownloadBytecode={handleDownloadBytecode}
+          onViewAssembly={handleViewAssembly}
+          hasCurrentCompileResult={hasCurrentCompileResult}
+        />
+
+        {/* Separator */}
+        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
+
+        <RunControls
+          executionMode={executionMode}
+          isConnected={isConnected}
+          isConnecting={isConnecting}
+          isUploading={isUploading}
+          controlsBusy={controlsBusy}
+          hasCurrentCompileResult={hasCurrentCompileResult}
+          programLoadState={programLoadState}
+          isRunning={isRunning}
+          isPaused={isPaused}
+          isIdle={isIdle}
+          mpeekEnabled={mpeekEnabled}
+          toggleMpeek={toggleMpeek}
+          connectionButtonRef={connectionButtonRef}
+          executionButtonRef={executionButtonRef}
+          onExecutionModeChange={handleExecutionModeChange}
+          onConnect={handleConnect}
+          onUpload={handleUpload}
+          onStart={handleStart}
+          onPause={handlePause}
+          onResume={handleResume}
+          onStep={handleStep}
+          onStop={handleStop}
+          onReset={handleReset}
+        />
+
+        <CommandBarCenter />
+
+        {/* Separator */}
+        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
+
+        <ThemeMenu />
+
+        {/* Settings */}
+        <Button
+          variant="bare"
+          type="button"
+          onClick={toggleSettings}
+          className={
+            'focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors ' +
+            'max-[1100px]:hidden'
+          }
+          aria-label={t('toolbar.settings')}
+          tooltip={t('toolbar.settings')}
+          data-project-settings
+        >
+          <Settings size={16} />
+        </Button>
+
+        {/* Generated Code Dialog */}
+        <GeneratedCodeDialog
+          isOpen={showGeneratedCode}
+          onClose={() => setShowGeneratedCode(false)}
+          sourceLanguage={generatedCodeType}
+          generatedCode={generatedCode}
+        />
+      </div>
+      <Notifications />
+      <OperationalStatusBar
+        mode={executionMode}
+        adapterType={adapter?.type ?? null}
+        connected={isConnected}
+        status={status}
+        connecting={isConnecting}
+        faulted={vmState === 'error'}
       />
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-      <RunControls
-        executionMode={executionMode}
-        isConnected={isConnected}
-        isConnecting={isConnecting}
-        isUploading={isUploading}
-        controlsBusy={controlsBusy}
-        hasCurrentCompileResult={hasCurrentCompileResult}
-        programLoadState={programLoadState}
-        isRunning={isRunning}
-        isPaused={isPaused}
-        isIdle={isIdle}
-        mpeekEnabled={mpeekEnabled}
-        toggleMpeek={toggleMpeek}
-        connectionButtonRef={connectionButtonRef}
-        executionButtonRef={executionButtonRef}
-        onExecutionModeChange={handleExecutionModeChange}
-        onConnect={handleConnect}
-        onUpload={handleUpload}
-        onStart={handleStart}
-        onPause={handlePause}
-        onResume={handleResume}
-        onStep={handleStep}
-        onStop={handleStop}
-        onReset={handleReset}
-      />
-
-      <CommandBarCenter />
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-      <ThemeMenu />
-
-      {/* Settings */}
-      <Button variant="bare"
-        type="button"
-        onClick={toggleSettings}
-        className="focus-ring p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors max-[1100px]:hidden"
-        aria-label={t('toolbar.settings')}
-        tooltip={t('toolbar.settings')}
-        data-project-settings
-      >
-        <Settings size={16} />
-      </Button>
-
-      {/* Generated Code Dialog */}
-      <GeneratedCodeDialog
-        isOpen={showGeneratedCode}
-        onClose={() => setShowGeneratedCode(false)}
-        sourceLanguage={generatedCodeType}
-        generatedCode={generatedCode}
-      />
-    </div>
-    <Notifications />
-    <OperationalStatusBar
-      mode={executionMode}
-      adapterType={adapter?.type ?? null}
-      connected={isConnected}
-      status={status}
-      connecting={isConnecting}
-      faulted={vmState === 'error'}
-    />
     </>
   );
 }
 
 export default Toolbar;
-

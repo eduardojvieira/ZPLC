@@ -45,8 +45,18 @@ export class ScenarioTimingError extends Error {
   }
 }
 
-export interface StepObservation { atMs: number; deviceMs: number; lateMs: number; cycles: number }
-export interface ReleaseReport { ok: boolean; forcesCleared: boolean; stopped: boolean; errors: string[] }
+export interface StepObservation {
+  atMs: number;
+  deviceMs: number;
+  lateMs: number;
+  cycles: number;
+}
+export interface ReleaseReport {
+  ok: boolean;
+  forcesCleared: boolean;
+  stopped: boolean;
+  errors: string[];
+}
 
 /**
  * A scenario run on a board. Time is the device's: a tick is sampled once the device clock has reached it and a scan
@@ -76,7 +86,12 @@ export class HardwareRuntimePort implements ScenarioRuntimePort {
     this.pollMs = options.pollMs ?? 5;
     this.timeoutMs = options.timeoutMs ?? 10_000;
     this.signal = options.signal;
-    this.sleep = options.sleep ?? ((ms) => new Promise((resolve) => { setTimeout(resolve, ms); }));
+    this.sleep =
+      options.sleep ??
+      ((ms) =>
+        new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        }));
     this.now = options.now ?? Date.now;
   }
 
@@ -98,7 +113,8 @@ export class HardwareRuntimePort implements ScenarioRuntimePort {
 
   async setInput(address: number, bitOffset: number, value: boolean): Promise<void> {
     if (!Number.isInteger(address) || address < 0 || address >= IPI_END) throw new Error('Scenario IPI address is invalid');
-    if (!Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7) throw new Error('Scenario bitOffset must be an integer from 0 to 7');
+    if (!Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7)
+      throw new Error('Scenario bitOffset must be an integer from 0 to 7');
     const current = this.image.get(address) ?? (await this.link.peek(address, 1))[0] ?? 0;
     const next = value ? current | (1 << bitOffset) : current & ~(1 << bitOffset);
     this.image.set(address, next);
@@ -124,14 +140,20 @@ export class HardwareRuntimePort implements ScenarioRuntimePort {
         if (lateMs > this.toleranceMs) throw new ScenarioTimingError(atMs, lateMs, this.toleranceMs);
         return;
       }
-      if (this.now() > deadline) throw new Error(`the device did not reach tick ${atMs} ms in ${this.timeoutMs} ms (clock ${status.uptimeMs - this.origin} ms, scans ${status.cycles - base})`);
+      if (this.now() > deadline)
+        throw new Error(
+          `the device did not reach tick ${atMs} ms in ${this.timeoutMs} ms (clock ${
+            status.uptimeMs - this.origin
+          } ms, scans ${status.cycles - base})`,
+        );
       await this.sleep(this.pollMs);
     }
   }
 
   async readOutput(address: number, bitOffset: number): Promise<boolean> {
     if (!Number.isInteger(address) || address < OPI_START || address >= OPI_END) throw new Error('Scenario OPI address is invalid');
-    if (!Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7) throw new Error('Scenario bitOffset must be an integer from 0 to 7');
+    if (!Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7)
+      throw new Error('Scenario bitOffset must be an integer from 0 to 7');
     return (((await this.link.peek(address, 1))[0] ?? 0) & (1 << bitOffset)) !== 0;
   }
 
@@ -164,15 +186,25 @@ export class HardwareRuntimePort implements ScenarioRuntimePort {
   }
 }
 
-/** Run `body` on a port and release it, on success, on an error and on abort. The body's error is kept, and a failed release is added to it. */
-export async function withHardwarePort<T>(link: DeviceLink, options: HardwarePortOptions, body: (port: HardwareRuntimePort) => Promise<T>): Promise<{ value: T; release: ReleaseReport; port: HardwareRuntimePort }> {
+/**
+ * Run `body` on a port and release it, on success, on an error and on abort. The body's error is kept, and a failed release is added to it.
+ */
+export async function withHardwarePort<T>(
+  link: DeviceLink,
+  options: HardwarePortOptions,
+  body: (port: HardwareRuntimePort) => Promise<T>,
+): Promise<{ value: T; release: ReleaseReport; port: HardwareRuntimePort }> {
   const port = new HardwareRuntimePort(link, options);
   let value: T;
   try {
     value = await body(port);
   } catch (error) {
     const release = await port.release();
-    if (!release.ok) throw new AggregateError([error, new Error(`and the board was not left safe: ${release.errors.join('; ')}`)], `${(error as Error).message}; the release also failed: ${release.errors.join('; ')}`);
+    if (!release.ok)
+      throw new AggregateError(
+        [error, new Error(`and the board was not left safe: ${release.errors.join('; ')}`)],
+        `${(error as Error).message}; the release also failed: ${release.errors.join('; ')}`,
+      );
     throw error;
   }
   return { value, release: await port.release(), port };

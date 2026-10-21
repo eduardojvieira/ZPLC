@@ -4,7 +4,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { updateNotice } from '../ipc/updateNotice';
 import { UpdateNoticeView } from './UpdateNotice';
 
-const notice = updateNotice({ status: 'available', current: '2.0.0-rc.4', latest: '2.0.0', url: 'https://github.com/eduardojvieira/ZPLC/releases/tag/v2.0.0' }, 'linux', null)!;
+const notice = updateNotice(
+  { status: 'available', current: '2.0.0-rc.4', latest: '2.0.0', url: 'https://github.com/eduardojvieira/ZPLC/releases/tag/v2.0.0' },
+  'linux',
+  null,
+)!;
 
 describe('the update notice (REL-021)', () => {
   it('says which release exists, shows its address and how to update, and can be dismissed', () => {

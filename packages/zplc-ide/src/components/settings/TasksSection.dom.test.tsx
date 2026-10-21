@@ -13,7 +13,14 @@ const task = { name: 'Fast', trigger: 'cyclic' as const, interval: 10, priority:
 describe('Task configuration (UX-013) in a DOM', () => {
   it('says there is no task and adds one by click, with a name field named for assistive technology', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={TasksSection} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={TasksSection}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     expect(dom.screen.getByText(dom.t('settings.tasks.none'))).toBeTruthy();
     await user.click(dom.screen.getByRole('button', { name: dom.t('settings.tasks.add') }));
     expect(last?.tasks).toHaveLength(1);
@@ -22,7 +29,15 @@ describe('Task configuration (UX-013) in a DOM', () => {
 
   it('edits the name, the trigger, the interval and the priority of a task by keyboard and pointer', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={TasksSection} initial={{ tasks: [task] }} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={TasksSection}
+        initial={{ tasks: [task] }}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     const name = dom.screen.getByRole('textbox', { name: dom.t('settings.tasks.name') });
     await user.clear(name);
     await user.type(name, 'Slow');
@@ -37,7 +52,15 @@ describe('Task configuration (UX-013) in a DOM', () => {
 
   it('accepts priority 0, which the field says is the lowest value', async () => {
     let last: ZPLCProjectConfig | undefined;
-    const { user } = dom.render(<SectionHost Section={TasksSection} initial={{ tasks: [task] }} onConfig={(config) => { last = config; }} />);
+    const { user } = dom.render(
+      <SectionHost
+        Section={TasksSection}
+        initial={{ tasks: [task] }}
+        onConfig={(config) => {
+          last = config;
+        }}
+      />,
+    );
     const priority = dom.screen.getByRole('spinbutton', { name: dom.t('settings.tasks.priority') });
     expect(priority.getAttribute('min')).toBe('0');
     await user.tripleClick(priority);

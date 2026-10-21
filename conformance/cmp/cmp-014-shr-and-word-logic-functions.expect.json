@@ -7,14 +7,14 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "WORD", "value": 3855},
-    {"at": "%QW1", "type": "WORD", "value": 240},
-    {"at": "%QW2", "type": "WORD", "value": 61695},
-    {"at": "%QW3", "type": "WORD", "value": 3855},
-    {"at": "%QW4", "type": "WORD", "value": 3855},
-    {"at": "%QD3", "type": "DWORD", "value": 61680},
-    {"at": "%QD4", "type": "DWORD", "value": 4042322175},
-    {"at": "%QD5", "type": "DWORD", "value": 252645135},
-    {"at": "%QD6", "type": "DWORD", "value": 252645135}
+    { "at": "%QW0", "type": "WORD", "value": 3855 },
+    { "at": "%QW1", "type": "WORD", "value": 240 },
+    { "at": "%QW2", "type": "WORD", "value": 61695 },
+    { "at": "%QW3", "type": "WORD", "value": 3855 },
+    { "at": "%QW4", "type": "WORD", "value": 3855 },
+    { "at": "%QD3", "type": "DWORD", "value": 61680 },
+    { "at": "%QD4", "type": "DWORD", "value": 4042322175 },
+    { "at": "%QD5", "type": "DWORD", "value": 252645135 },
+    { "at": "%QD6", "type": "DWORD", "value": 252645135 }
   ]
 }

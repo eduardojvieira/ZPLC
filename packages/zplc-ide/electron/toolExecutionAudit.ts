@@ -16,8 +16,14 @@ type AuditDocument = { schemaVersion: 1; executions: ToolExecutionAuditEnvelope[
 
 function exactRecord(value: unknown, keys: readonly string[]): Record<string, unknown> | null {
   try {
-    if (!value || typeof value !== 'object' || Array.isArray(value)
-      || Object.getPrototypeOf(value) !== Object.prototype || Object.getOwnPropertySymbols(value).length !== 0) return null;
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value) ||
+      Object.getPrototypeOf(value) !== Object.prototype ||
+      Object.getOwnPropertySymbols(value).length !== 0
+    )
+      return null;
     const record = value as Record<string, unknown>;
     const names = Object.getOwnPropertyNames(record);
     if (names.length !== keys.length || !keys.every((key) => names.includes(key))) return null;
@@ -26,10 +32,14 @@ function exactRecord(value: unknown, keys: readonly string[]): Record<string, un
       if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return null;
     }
     return record;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-function copyEnvelope(value: ToolExecutionAuditEnvelope): ToolExecutionAuditEnvelope { return { ...value }; }
+function copyEnvelope(value: ToolExecutionAuditEnvelope): ToolExecutionAuditEnvelope {
+  return { ...value };
+}
 
 function unsupportedDirectorySync(error: unknown): boolean {
   const code = (error as NodeJS.ErrnoException).code;
@@ -38,8 +48,8 @@ function unsupportedDirectorySync(error: unknown): boolean {
 
 function auditDocument(value: unknown, validate: ToolExecutionAuditValidator): AuditDocument | null {
   const document = exactRecord(value, DOCUMENT_KEYS);
-  if (!document || document.schemaVersion !== 1 || !Array.isArray(document.executions)
-    || document.executions.length > CAPACITY) return null;
+  if (!document || document.schemaVersion !== 1 || !Array.isArray(document.executions) || document.executions.length > CAPACITY)
+    return null;
   const executions: ToolExecutionAuditEnvelope[] = [];
   for (const execution of document.executions) {
     const envelope = exactRecord(execution, ENVELOPE_KEYS);
@@ -72,7 +82,11 @@ export function createToolExecutionAudit() {
       if (!status.isFile() || status.size > MAX_FILE_BYTES || !validate) return null;
       const content = await handle.readFile();
       return content.byteLength <= MAX_FILE_BYTES ? auditDocument(JSON.parse(content.toString('utf8')), validate) : null;
-    } catch { return null; } finally { await handle.close().catch(() => undefined); }
+    } catch {
+      return null;
+    } finally {
+      await handle.close().catch(() => undefined);
+    }
   }
 
   async function publish(next: ToolExecutionAuditEnvelope[]): Promise<void> {
@@ -85,7 +99,12 @@ export function createToolExecutionAudit() {
     }
     try {
       const handle = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, 0o600);
-      try { await handle.writeFile(encoded); await handle.sync(); } finally { await handle.close(); }
+      try {
+        await handle.writeFile(encoded);
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
       await chmod(temporary, 0o600);
       await rename(temporary, filePath());
       await chmod(filePath(), 0o600).catch(() => undefined);
@@ -97,7 +116,9 @@ export function createToolExecutionAudit() {
           await directory.sync();
         } catch (error: unknown) {
           if (!unsupportedDirectorySync(error)) throw error;
-        } finally { await directory?.close().catch(() => undefined); }
+        } finally {
+          await directory?.close().catch(() => undefined);
+        }
       }
     } catch {
       storageUntrusted = true;
@@ -122,17 +143,32 @@ export function createToolExecutionAudit() {
           await mkdir(storageRoot, { recursive: true, mode: 0o700 });
           root = await lstat(storageRoot);
         }
-        if (!root.isDirectory() || root.isSymbolicLink()) { storageUntrusted = true; completed = []; return; }
+        if (!root.isDirectory() || root.isSymbolicLink()) {
+          storageUntrusted = true;
+          completed = [];
+          return;
+        }
         await chmod(storageRoot, 0o700);
         const status = await lstat(filePath()).catch((error: unknown) => {
           if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
           throw error;
         });
-        if (status && (!status.isFile() || status.isSymbolicLink())) { storageUntrusted = true; completed = []; return; }
+        if (status && (!status.isFile() || status.isSymbolicLink())) {
+          storageUntrusted = true;
+          completed = [];
+          return;
+        }
         const document = await readDocument();
-        if (!document) { storageUntrusted = true; completed = []; return; }
+        if (!document) {
+          storageUntrusted = true;
+          completed = [];
+          return;
+        }
         completed = document.executions;
-      } catch { storageUntrusted = true; completed = []; }
+      } catch {
+        storageUntrusted = true;
+        completed = [];
+      }
     },
 
     async add(envelope: unknown): Promise<void> {
@@ -148,6 +184,8 @@ export function createToolExecutionAudit() {
       return write;
     },
 
-    list(): AuditDocument { return { schemaVersion: 1, executions: completed.map(copyEnvelope) }; },
+    list(): AuditDocument {
+      return { schemaVersion: 1, executions: completed.map(copyEnvelope) };
+    },
   };
 }

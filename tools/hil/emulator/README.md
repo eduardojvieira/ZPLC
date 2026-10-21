@@ -8,14 +8,14 @@ An emulator run proves the firmware logic, the device protocol and the harness o
 model of the chip. It does not prove pins, electrical behaviour, real clocks or the
 drivers against silicon. The guide is `docs/docs/development/hil-emulation.md`.
 
-| File | What it is |
-|---|---|
-| `setup.sh` | installs the emulators into `$ZPLC_EMU_DIR` (default `~/zplc-emu`); a second run changes nothing |
-| `rp2040js-zplc-emu.patch` | five fidelity fixes to rp2040js, applied by `setup.sh` |
-| `build.sh` | builds the firmware images the benches run |
-| `pico/` | the Raspberry Pi Pico bench on rp2040js |
-| `esp32s3/` | the ESP32-S3 bench on Espressif QEMU, and its emulation-only build overlay |
-| `bench_emulated.py` | `EmulatorBench`, the bench of `run_chain.py --bench emulated` |
+| File                      | What it is                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `setup.sh`                | installs the emulators into `$ZPLC_EMU_DIR` (default `~/zplc-emu`); a second run changes nothing |
+| `rp2040js-zplc-emu.patch` | five fidelity fixes to rp2040js, applied by `setup.sh`                                           |
+| `build.sh`                | builds the firmware images the benches run                                                       |
+| `pico/`                   | the Raspberry Pi Pico bench on rp2040js                                                          |
+| `esp32s3/`                | the ESP32-S3 bench on Espressif QEMU, and its emulation-only build overlay                       |
+| `bench_emulated.py`       | `EmulatorBench`, the bench of `run_chain.py --bench emulated`                                    |
 
 ## Third-party software
 

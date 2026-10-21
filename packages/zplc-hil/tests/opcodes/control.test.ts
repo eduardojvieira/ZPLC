@@ -24,9 +24,9 @@ export const controlTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"JMP",.*\}/
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"JMP",.*\}/,
+      },
+    ],
   },
   {
     id: 'opcodes.control.if_else',
@@ -50,10 +50,10 @@ export const controlTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"JNZ",.*\}/
-      }
-    ]
-  }
+        pattern: /\{"t":"opcode","op":"JNZ",.*\}/,
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: control-flow opcodes (HIL-001)', controlTests);

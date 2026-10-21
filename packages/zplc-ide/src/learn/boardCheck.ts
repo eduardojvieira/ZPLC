@@ -42,13 +42,18 @@ export type BoardCheckReadiness = { ready: true } | { ready: false; block: Board
 export function needsRunStart(scenario: ScenarioFile): boolean {
   const firstAction = Math.min(...scenario.events.filter((event) => event.atMs > 0).map((event) => event.atMs), Infinity);
   return scenario.expectations.some((expectation) => {
-    const at = expectation.kind === 'AT' ? expectation.atMs ?? 0 : expectation.fromMs ?? 0;
+    const at = expectation.kind === 'AT' ? (expectation.atMs ?? 0) : (expectation.fromMs ?? 0);
     return at > 0 && at < firstAction;
   });
 }
 
 /** Whether the check may run now, and if not, the first thing the learner still has to do. */
-export function boardCheckReadiness(board: LearnerBoard | null, view: BoardSessionView | null, debugMap: DebugMap | null, scenario: ScenarioFile | null = null): BoardCheckReadiness {
+export function boardCheckReadiness(
+  board: LearnerBoard | null,
+  view: BoardSessionView | null,
+  debugMap: DebugMap | null,
+  scenario: ScenarioFile | null = null,
+): BoardCheckReadiness {
   const blocked = (block: BoardCheckBlock, reported: string | null = null): BoardCheckReadiness => ({ ready: false, block, reported });
   if (board === null) return blocked('no-board');
   if (view === null || !view.session.connected) return blocked('not-connected');
@@ -77,14 +82,32 @@ export function lessonWatchVariables(scenario: ScenarioFile, debugMap: DebugMap)
   const missing: string[] = [];
   for (const signal of signalsOf(scenario)) {
     const found = findSignalVariable(debugMap, signal);
-    if (!found) { missing.push(signal); continue; }
-    variables.push({ name: signal, address: found.variable.addr, ...(found.variable.bitOffset === undefined ? {} : { bitOffset: found.variable.bitOffset }), type: 'BOOL', forceable: false });
+    if (!found) {
+      missing.push(signal);
+      continue;
+    }
+    variables.push({
+      name: signal,
+      address: found.variable.addr,
+      ...(found.variable.bitOffset === undefined ? {} : { bitOffset: found.variable.bitOffset }),
+      type: 'BOOL',
+      forceable: false,
+    });
   }
   return { variables, missing };
 }
 
-export interface BoardCheckSignal { signal: string; value: boolean; channel: string | null; part: string | null; kind: string | null }
-export interface BoardCheckStep { atMs: number; signals: BoardCheckSignal[] }
+export interface BoardCheckSignal {
+  signal: string;
+  value: boolean;
+  channel: string | null;
+  part: string | null;
+  kind: string | null;
+}
+export interface BoardCheckStep {
+  atMs: number;
+  signals: BoardCheckSignal[];
+}
 
 /** The IEC address of a BOOL of the process image, as the board I/O description writes its channels. */
 function addressOf(debugMap: DebugMap, signal: string): string | null {
@@ -96,17 +119,25 @@ function addressOf(debugMap: DebugMap, signal: string): string | null {
 }
 
 /** The steps of the run: each input event of the scenario, in time order, on the channel and part the wiring names. */
-export function boardCheckSteps(scenario: ScenarioFile, debugMap: DebugMap, board: WiringBoard, wiring: WiringFile, locale: WiringLocale): BoardCheckStep[] {
+export function boardCheckSteps(
+  scenario: ScenarioFile,
+  debugMap: DebugMap,
+  board: WiringBoard,
+  wiring: WiringFile,
+  locale: WiringLocale,
+): BoardCheckStep[] {
   const parts = partsFor(wiring, board);
-  return [...scenario.events].sort((left, right) => left.atMs - right.atMs).map((event) => ({
-    atMs: event.atMs,
-    signals: Object.entries(event.set).map(([signal, value]) => {
-      const address = addressOf(debugMap, signal);
-      const channel = board.io.channels.find((candidate) => candidate.address === address)?.id ?? null;
-      const part = channel === null ? undefined : parts.find((candidate) => candidate.channel === channel);
-      return { signal, value, channel, part: part ? part.label[locale] : null, kind: part ? part.kind : null };
-    }),
-  }));
+  return [...scenario.events]
+    .sort((left, right) => left.atMs - right.atMs)
+    .map((event) => ({
+      atMs: event.atMs,
+      signals: Object.entries(event.set).map(([signal, value]) => {
+        const address = addressOf(debugMap, signal);
+        const channel = board.io.channels.find((candidate) => candidate.address === address)?.id ?? null;
+        const part = channel === null ? undefined : parts.find((candidate) => candidate.channel === channel);
+        return { signal, value, channel, part: part ? part.label[locale] : null, kind: part ? part.kind : null };
+      }),
+    }));
 }
 
 /** The longest run: a learner who walks away does not leave a recording going. */
@@ -141,7 +172,9 @@ export type BoardCheckOutcome =
   | { kind: 'stopped'; reason: 'not-connected' | 'not-running' | 'session-ended' | 'read-failed' };
 
 const sha256Hex = async (text: string): Promise<string> =>
-  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 
 export async function runBoardCheck(run: BoardCheckRun): Promise<BoardCheckOutcome> {
   const events = [...run.scenario.events].sort((left, right) => left.atMs - right.atMs);
@@ -155,16 +188,30 @@ export async function runBoardCheck(run: BoardCheckRun): Promise<BoardCheckOutco
   let waiting = awaitRun;
   if (waiting) run.onWaitingForRun?.(true);
   const onSample = (trace: readonly { atMs: number; values: Record<string, boolean | number> }[]) => {
-    if (waiting) { waiting = false; run.onWaitingForRun?.(false); }
+    if (waiting) {
+      waiting = false;
+      run.onWaitingForRun?.(false);
+    }
     const observed = alignEvents(run.scenario, trace, anchored);
     const next = observed.findIndex((at) => at === null);
-    if (next !== step) { step = next; run.onStep?.(next); }
+    if (next !== step) {
+      step = next;
+      run.onStep?.(next);
+    }
     if (next !== -1) return;
     const last = events.at(-1);
     const end = last ? observed.at(-1)! + (run.scenario.durationMs - last.atMs) : run.scenario.durationMs;
     if (trace.at(-1)!.atMs >= end + tolerances.timeMs) finish.abort();
   };
-  const options = { durationMs: MAX_BOARD_CHECK_MS, intervalMs: HARDWARE_SAMPLE_INTERVAL_MS, now: run.now, wait: run.wait, signal: finish.signal, onSample, awaitRun };
+  const options = {
+    durationMs: MAX_BOARD_CHECK_MS,
+    intervalMs: HARDWARE_SAMPLE_INTERVAL_MS,
+    now: run.now,
+    wait: run.wait,
+    signal: finish.signal,
+    onSample,
+    awaitRun,
+  };
   let recording = run.view.trace ? await recordDeviceTrace(run.view.session, run.view.trace, run.variables, options) : null;
   if (recording === null && !cancelled()) {
     // No device trace on this board: the Watch values are polled, and the tolerance widens by a polling period.
@@ -177,9 +224,17 @@ export async function runBoardCheck(run: BoardCheckRun): Promise<BoardCheckOutco
   if (!recording.ok) return { kind: 'stopped', reason: recording.reason };
   if (recording.trace.length === 0) return { kind: 'stopped', reason: 'not-running' };
   const record = hardwareGradeRecordOf({
-    lessonId: run.lessonId, lessonVersion: run.lessonVersion, scenario: run.scenario, scenarioSha256: run.scenarioSha256,
-    programSha256: run.programSha256 ?? await sha256Hex(JSON.stringify(run.debugMap)), runtimeVersion: run.view.runtimeVersion ?? 'unreported', time: run.time(),
-    trace: recording.trace, traceSha256: await traceSha256Of(recording.trace), tolerances, anchored: recording.anchored,
+    lessonId: run.lessonId,
+    lessonVersion: run.lessonVersion,
+    scenario: run.scenario,
+    scenarioSha256: run.scenarioSha256,
+    programSha256: run.programSha256 ?? (await sha256Hex(JSON.stringify(run.debugMap))),
+    runtimeVersion: run.view.runtimeVersion ?? 'unreported',
+    time: run.time(),
+    trace: recording.trace,
+    traceSha256: await traceSha256Of(recording.trace),
+    tolerances,
+    anchored: recording.anchored,
   });
   return { kind: 'graded', record };
 }

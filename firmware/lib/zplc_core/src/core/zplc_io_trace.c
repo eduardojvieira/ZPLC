@@ -42,8 +42,7 @@ static uint32_t first_held(const zplc_io_trace_t *trace, uint32_t written) {
   return written > trace->capacity ? written - trace->capacity : 0U;
 }
 
-void zplc_io_trace_init(zplc_io_trace_t *trace, uint8_t *storage, uint32_t storage_size,
-                        uint64_t (*now_us)(void *ctx), void *clock_ctx,
+void zplc_io_trace_init(zplc_io_trace_t *trace, uint8_t *storage, uint32_t storage_size, uint64_t (*now_us)(void *ctx), void *clock_ctx,
                         int (*read)(uint16_t addr, uint8_t *out, uint16_t size)) {
   if (trace == NULL) {
     return;
@@ -73,8 +72,7 @@ int zplc_io_trace_arm(zplc_io_trace_t *trace, uint32_t capacity, uint16_t in_byt
   if (trace->fed == 0U) {
     return ZPLC_IO_TRACE_ERR_UNFED;
   }
-  if ((in_bytes == 0U && out_bytes == 0U) || in_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES ||
-      out_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES) {
+  if ((in_bytes == 0U && out_bytes == 0U) || in_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES || out_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES) {
     return ZPLC_IO_TRACE_ERR_ARGS;
   }
   size = ZPLC_IO_TRACE_SAMPLE_HEADER + (uint32_t)in_bytes + (uint32_t)out_bytes;
@@ -196,8 +194,7 @@ zplc_io_trace_t *zplc_io_trace_board(void) {
   static zplc_io_trace_t board;
 
   if (board.storage == NULL) {
-    zplc_io_trace_init(&board, board_storage, (uint32_t)sizeof(board_storage), board_now_us, NULL,
-                       zplc_exchange_read);
+    zplc_io_trace_init(&board, board_storage, (uint32_t)sizeof(board_storage), board_now_us, NULL, zplc_exchange_read);
   }
   return &board;
 }

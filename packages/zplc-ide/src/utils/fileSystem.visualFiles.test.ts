@@ -44,7 +44,10 @@ beforeEach(() => {
   project = path.join(sandbox, 'plant');
   mkdirSync(project);
   dialogAnswer = project;
-  Object.defineProperty(globalThis, 'window', { configurable: true, value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } } });
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } },
+  });
   writeFileSync(path.join(project, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));
   mkdirSync(path.join(project, 'src'));
   writeFileSync(path.join(project, 'src', 'main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
@@ -70,7 +73,15 @@ async function openIntoStore(): Promise<void> {
   const directoryHandle = (await openDirectoryPicker())!;
   const fileTree = await readDirectoryRecursive(directoryHandle);
   session += 1;
-  useIDEStore.setState({ isProjectOpen: true, projectSession: session, directoryHandle, fileTree, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+  useIDEStore.setState({
+    isProjectOpen: true,
+    projectSession: session,
+    directoryHandle,
+    fileTree,
+    loadedFiles: new Map(),
+    openTabs: [],
+    activeFileId: null,
+  });
 }
 
 async function workspaceSources(): Promise<WorkspaceSource[]> {
@@ -89,7 +100,11 @@ const CASED_NAMES: Record<string, PLCLanguage> = {
   'Motor.ST': 'ST',
 };
 
-const VISUAL: Array<[PLCLanguage, string]> = [['LD', '.ld.json'], ['FBD', '.fbd.json'], ['SFC', '.sfc.json']];
+const VISUAL: Array<[PLCLanguage, string]> = [
+  ['LD', '.ld.json'],
+  ['FBD', '.fbd.json'],
+  ['SFC', '.sfc.json'],
+];
 
 describe('the extension the New File flow gives each language', () => {
   // Fails without the canonical extensions in PLC_LANGUAGES (types/index.ts): getExtensionForLanguage returned .ld, .fbd, .sfc.
@@ -132,7 +147,11 @@ describe('a file made with New File', () => {
     const sources = await workspaceSources();
     expect(sourced(sources)[`pump${extension}`]).toBe(language);
     // zplc.json names the program the short way ("pump.ld"), the way Project Settings writes it.
-    expect(resolveProgramSource(`pump${extension.replace('.json', '')}`, sources)).toMatchObject({ name: 'pump', language, sourceRef: `src/pump${extension}` });
+    expect(resolveProgramSource(`pump${extension.replace('.json', '')}`, sources)).toMatchObject({
+      name: 'pump',
+      language,
+      sourceRef: `src/pump${extension}`,
+    });
   });
 
   // Fails without the canonical extension (types/index.ts): the first file is saved as pump.ld, next to the pump.ld.json written here.
@@ -204,32 +223,41 @@ describe('a name that the build already reads as an existing file (LX-7b)', () =
   ];
 
   // The table above has to say what the build reader says, or the guard and the build would drift apart.
-  it.each(PAIRS.filter((pair) => pair[0] !== pair[3]))('the build reads %s and the file made from "%s" (%s) as %s the same name: %s', async (existing, _typed, _language, wouldBe, twin) => {
-    seed({ [existing]: '{}', [wouldBe]: '{}' });
-    const result = await readWorkspace(project);
-    expect(!result.ok && result.diagnostics.some((diagnostic) => diagnostic.code === 'WORKSPACE_DUPLICATE_SOURCE')).toBe(twin);
-  });
+  it.each(PAIRS.filter((pair) => pair[0] !== pair[3]))(
+    'the build reads %s and the file made from "%s" (%s) as %s the same name: %s',
+    async (existing, _typed, _language, wouldBe, twin) => {
+      seed({ [existing]: '{}', [wouldBe]: '{}' });
+      const result = await readWorkspace(project);
+      expect(!result.ok && result.diagnostics.some((diagnostic) => diagnostic.code === 'WORKSPACE_DUPLICATE_SOURCE')).toBe(twin);
+    },
+  );
 
   // Fails without the twin check in createFile (store/useIDEStore.ts): pump.ld.json was written next to the legacy pump.ld.
-  it.each(PAIRS.filter((pair) => pair[4]))('refuses "%s" -> "%s" (%s) in the dialog and names the file that is already there', async (existing, typed, language) => {
-    seed({ [existing]: '{"name":"mine"}' });
-    await openIntoStore();
+  it.each(PAIRS.filter((pair) => pair[4]))(
+    'refuses "%s" -> "%s" (%s) in the dialog and names the file that is already there',
+    async (existing, typed, language) => {
+      seed({ [existing]: '{"name":"mine"}' });
+      await openIntoStore();
 
-    await expect(useIDEStore.getState().createFile(typed, language)).rejects.toThrow(existing);
-    // The dialog shows the message of this class in place; any other error becomes its generic failure text.
-    await expect(useIDEStore.getState().createFile(typed, language)).rejects.toBeInstanceOf(FileNameTakenError);
-    expect(readdirSync(path.join(project, 'src')).sort()).toEqual(['main.st', existing].sort());
-    expect(readFileSync(path.join(project, 'src', existing), 'utf8')).toBe('{"name":"mine"}');
-  });
+      await expect(useIDEStore.getState().createFile(typed, language)).rejects.toThrow(existing);
+      // The dialog shows the message of this class in place; any other error becomes its generic failure text.
+      await expect(useIDEStore.getState().createFile(typed, language)).rejects.toBeInstanceOf(FileNameTakenError);
+      expect(readdirSync(path.join(project, 'src')).sort()).toEqual(['main.st', existing].sort());
+      expect(readFileSync(path.join(project, 'src', existing), 'utf8')).toBe('{"name":"mine"}');
+    },
+  );
 
   // Guards the check from refusing names the build accepts.
-  it.each(PAIRS.filter((pair) => !pair[4]))('still creates "%s" -> "%s" (%s) next to a different name', async (existing, typed, language, wouldBe) => {
-    seed({ [existing]: '{}' });
-    await openIntoStore();
+  it.each(PAIRS.filter((pair) => !pair[4]))(
+    'still creates "%s" -> "%s" (%s) next to a different name',
+    async (existing, typed, language, wouldBe) => {
+      seed({ [existing]: '{}' });
+      await openIntoStore();
 
-    expect(await useIDEStore.getState().createFile(typed, language)).toBe(`file:src/${wouldBe}`);
-    expect((await readWorkspace(project)).ok).toBe(true);
-  });
+      expect(await useIDEStore.getState().createFile(typed, language)).toBe(`file:src/${wouldBe}`);
+      expect((await readWorkspace(project)).ok).toBe(true);
+    },
+  );
 });
 
 describe('folders written by earlier versions and by hand', () => {
@@ -257,7 +285,10 @@ describe('folders written by earlier versions and by hand', () => {
 
   // Fails without the case-insensitive match in the folder reader (utils/fileSystem.ts).
   it('lists names with uppercase extensions and extra dots, and still ignores unrelated names', async () => {
-    seed({ ...Object.fromEntries(Object.keys(CASED).map((name) => [name, '{}'])), ...Object.fromEntries(IGNORED.map((name) => [name, 'x'])) });
+    seed({
+      ...Object.fromEntries(Object.keys(CASED).map((name) => [name, '{}'])),
+      ...Object.fromEntries(IGNORED.map((name) => [name, 'x'])),
+    });
 
     expect(listed(await reopen())).toEqual({ 'main.st': 'ST', ...CASED });
     expect(sourced(await workspaceSources())).toEqual({ 'main.st': 'ST', ...CASED });
@@ -280,7 +311,17 @@ describe('the program picker in Project Settings (LX-7b)', () => {
 
   // Fails while the picker keeps its own extension list (utils/fileSystem.ts listTaskPrograms): the legacy names were missing.
   it('offers every file the build reads, under the name a task uses for it', async () => {
-    seed({ 'old.ld': '{}', 'old.fbd': '{}', 'old.sfc': '{}', 'new.ld.json': '{}', 'Upper.LD.JSON': '{}', 'il_prog.il': 'x', 'Globals.gvl': 'VAR_GLOBAL END_VAR', 'notes.json': 'x', 'x.ld.json.bak': 'x' });
+    seed({
+      'old.ld': '{}',
+      'old.fbd': '{}',
+      'old.sfc': '{}',
+      'new.ld.json': '{}',
+      'Upper.LD.JSON': '{}',
+      'il_prog.il': 'x',
+      'Globals.gvl': 'VAR_GLOBAL END_VAR',
+      'notes.json': 'x',
+      'x.ld.json.bak': 'x',
+    });
 
     const picker = listTaskPrograms(asTree(await reopen()));
     expect(picker).toEqual(['Upper.LD', 'il_prog.il', 'main.st', 'new.ld', 'old.fbd', 'old.ld', 'old.sfc'].sort());
@@ -291,24 +332,47 @@ describe('the program picker in Project Settings (LX-7b)', () => {
 
   // Fails while the picker keeps its own extension list: it must not drift away from what the build reads.
   it('offers exactly the programs the build workspace reads, whichever names the folder holds', async () => {
-    seed({ ...Object.fromEntries(Object.keys(CASED_NAMES).map((name) => [name, '{}'])), 'old.ld': '{}', 'old.sfc': '{}', 'link.ld.txt': 'x', 'sfc': 'x', 'ld.json.old': 'x' });
+    seed({
+      ...Object.fromEntries(Object.keys(CASED_NAMES).map((name) => [name, '{}'])),
+      'old.ld': '{}',
+      'old.sfc': '{}',
+      'link.ld.txt': 'x',
+      sfc: 'x',
+      'ld.json.old': 'x',
+    });
 
     const fromBuild = (await workspaceSources()).map((source) => source.name.replace(/(\.(?:ld|fbd|sfc))\.json$/i, '$1'));
     expect(listTaskPrograms(asTree(await reopen()))).toEqual([...new Set(fromBuild)].sort());
   });
 
   it('finds programs in sub-folders and lists a program once when a folder holds both spellings of it', () => {
-    const file = (name: string): FileTreeNode => ({ id: `file:${name}`, name, type: 'file', path: name, language: getLanguageFromFilename(name) });
-    const folder = (name: string, children: FileTreeNode[]): FileTreeNode => ({ id: `dir:${name}`, name, type: 'directory', path: name, children });
+    const file = (name: string): FileTreeNode => ({
+      id: `file:${name}`,
+      name,
+      type: 'file',
+      path: name,
+      language: getLanguageFromFilename(name),
+    });
+    const folder = (name: string, children: FileTreeNode[]): FileTreeNode => ({
+      id: `dir:${name}`,
+      name,
+      type: 'directory',
+      path: name,
+      children,
+    });
 
-    expect(listTaskPrograms(asTree([folder('src', [file('a.ld'), file('a.ld.json'), folder('lib', [file('b.fbd.json')])])]))).toEqual(['a.ld', 'b.fbd']);
+    expect(listTaskPrograms(asTree([folder('src', [file('a.ld'), file('a.ld.json'), folder('lib', [file('b.fbd.json')])])]))).toEqual([
+      'a.ld',
+      'b.fbd',
+    ]);
     expect(listTaskPrograms(null)).toEqual([]);
   });
 });
 
 describe('the bundled example projects', () => {
   const projects = path.join(import.meta.dir, '..', '..', 'projects');
-  // What the folder reader listed before LX-7: lower-case .st .il .ld.json .fbd.json .sfc.json .gvl, never zplc.json, never ignored folders.
+  // What the folder reader listed before LX-7: lower-case .st .il .ld.json .fbd.json .sfc.json .gvl, never zplc.json, never ignored
+  // folders.
   const BEFORE = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json', '.gvl'];
   const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
   const wasListed = (name: string) => name !== 'zplc.json' && BEFORE.some((extension) => name.endsWith(extension));
@@ -325,7 +389,10 @@ describe('the bundled example projects', () => {
     return node.type === 'file' ? [node] : (node.children ?? []).flatMap(files);
   }
 
-  const examples = readdirSync(projects, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  const examples = readdirSync(projects, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
 
   it('are all there to check', () => {
     expect(examples.length).toBeGreaterThanOrEqual(20);
@@ -348,7 +415,9 @@ describe('the bundled example projects', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const top = readdirSync(src, { withFileTypes: true }).filter((entry) => entry.isFile() && wasListed(entry.name) && !entry.name.endsWith('.gvl'));
+    const top = readdirSync(src, { withFileTypes: true }).filter(
+      (entry) => entry.isFile() && wasListed(entry.name) && !entry.name.endsWith('.gvl'),
+    );
     expect(result.workspace.sources.map((source) => source.name).sort()).toEqual(top.map((entry) => entry.name).sort());
   });
 });

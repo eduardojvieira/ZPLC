@@ -11,8 +11,16 @@ export interface NavigationOptions {
   isDisabled?: (index: number) => boolean;
 }
 
-const FORWARD: Record<Orientation, readonly string[]> = { horizontal: ['ArrowRight'], vertical: ['ArrowDown'], both: ['ArrowRight', 'ArrowDown'] };
-const BACKWARD: Record<Orientation, readonly string[]> = { horizontal: ['ArrowLeft'], vertical: ['ArrowUp'], both: ['ArrowLeft', 'ArrowUp'] };
+const FORWARD: Record<Orientation, readonly string[]> = {
+  horizontal: ['ArrowRight'],
+  vertical: ['ArrowDown'],
+  both: ['ArrowRight', 'ArrowDown'],
+};
+const BACKWARD: Record<Orientation, readonly string[]> = {
+  horizontal: ['ArrowLeft'],
+  vertical: ['ArrowUp'],
+  both: ['ArrowLeft', 'ArrowUp'],
+};
 
 /** The index a key moves to, or null when the key is not one of this widget's navigation keys or nothing can take it. */
 export function navigationTarget(key: string, current: number, count: number, options: NavigationOptions = {}): number | null {

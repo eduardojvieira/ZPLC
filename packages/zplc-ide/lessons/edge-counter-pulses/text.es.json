@@ -3,10 +3,7 @@
   "title": "Flancos y contador de pulsos",
   "summary": "Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.",
   "scope": "Las pruebas aportan solo evidencia del host con el runtime nativo POSIX; no son evidencia de un sensor físico, de rebotes, de hardware, de HIL ni de certificación.",
-  "objectives": [
-    "Cuente tres flancos ascendentes de PulseInput con un contador CTU.",
-    "Ponga a cero la cuenta y CountReached con Reset."
-  ],
+  "objectives": ["Cuente tres flancos ascendentes de PulseInput con un contador CTU.", "Ponga a cero la cuenta y CountReached con Reset."],
   "stages": [
     {
       "key": "objective",

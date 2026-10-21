@@ -14,13 +14,13 @@ ZPLC ofrece doce bloques de función que hablan con dispositivos de campo, broke
 
 Todos los bloques empiezan con los mismos cinco pines.
 
-| Pin | Dirección | Significado |
-| --- | --- | --- |
-| `EN` | Entrada | Un flanco ascendente inicia una solicitud. |
-| `BUSY` | Salida | `TRUE` desde la solicitud hasta su resultado. |
-| `DONE` | Salida | `TRUE` cuando la solicitud terminó sin error. |
-| `ERROR` | Salida | `TRUE` cuando la solicitud falló; `STATUS` dice por qué. |
-| `STATUS` | Salida | El código de estado de la última solicitud. |
+| Pin      | Dirección | Significado                                              |
+| -------- | --------- | -------------------------------------------------------- |
+| `EN`     | Entrada   | Un flanco ascendente inicia una solicitud.               |
+| `BUSY`   | Salida    | `TRUE` desde la solicitud hasta su resultado.            |
+| `DONE`   | Salida    | `TRUE` cuando la solicitud terminó sin error.            |
+| `ERROR`  | Salida    | `TRUE` cuando la solicitud falló; `STATUS` dice por qué. |
+| `STATUS` | Salida    | El código de estado de la última solicitud.              |
 
 Un bloque que hace **una solicitud por cada flanco ascendente de `EN`** es un bloque de solicitud: los cuatro bloques Modbus, `MQTT_PUBLISH`, `AZURE_DPS_PROV`, `AZURE_EG_PUB`, `AWS_FLEET_PROV` y `SPB_REBIRTH`. Un bloque que **informa un estado en cada ciclo** es un bloque de servicio: `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV`.
 
@@ -49,40 +49,40 @@ Los valores son los que el programa lee después de la llamada del bloque en ese
 
 El manejador de un bloque de servicio se llama en cada ciclo mientras `EN` es `TRUE` y su respuesta es el estado del bloque:
 
-| Estado | `BUSY` | `DONE` | `ERROR` | `STATUS` |
-| --- | --- | --- | --- | --- |
-| Aún no alcanzado (conectando, suscribiendo) | `TRUE` | `FALSE` | `FALSE` | 1 |
-| Alcanzado (la sesión está activa, la suscripción se mantiene) | `FALSE` | `TRUE` | `FALSE` | 0 |
-| Perdido o no disponible | `FALSE` | `FALSE` | `TRUE` | el código |
+| Estado                                                        | `BUSY`  | `DONE`  | `ERROR` | `STATUS`  |
+| ------------------------------------------------------------- | ------- | ------- | ------- | --------- |
+| Aún no alcanzado (conectando, suscribiendo)                   | `TRUE`  | `FALSE` | `FALSE` | 1         |
+| Alcanzado (la sesión está activa, la suscripción se mantiene) | `FALSE` | `TRUE`  | `FALSE` | 0         |
+| Perdido o no disponible                                       | `FALSE` | `FALSE` | `TRUE`  | el código |
 
 Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran y un `PAYLOAD` recibido se va con ellos. `VALID` de `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` es `TRUE` durante exactamente un ciclo, el ciclo en que un mensaje es nuevo; `PAYLOAD` conserva el último mensaje.
 
 ### Códigos de estado
 
-| `STATUS` | Nombre | Significado |
-| --- | --- | --- |
-| 0 | OK | La solicitud terminó. |
-| 1 | Ocupado | La solicitud está en curso. |
-| 2 | Tiempo agotado | El par no respondió, o la solicitud superó su límite de tiempo. |
-| 3 | Sin manejador | Este runtime no tiene manejador para el bloque. |
-| 4 | Sin conexión | No hay conexión con el par. |
-| 5 | Cola llena | Todas las ranuras de solicitud están en uso. |
-| 6 | Dirección inválida | Un pin tiene un valor con el que no se puede hacer la solicitud. |
-| 7 | Desborde de cadena | Una cadena es más larga de lo que el mensaje puede llevar. |
-| 8 | Error de protocolo | El par respondió algo que el protocolo no permite, o con un error. |
-| 9 | Autenticación fallida | El par rechazó las credenciales. |
-| 10 | No disponible | El servicio del bloque no está disponible en este runtime, o está apagado en la configuración. |
+| `STATUS` | Nombre                | Significado                                                                                    |
+| -------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| 0        | OK                    | La solicitud terminó.                                                                          |
+| 1        | Ocupado               | La solicitud está en curso.                                                                    |
+| 2        | Tiempo agotado        | El par no respondió, o la solicitud superó su límite de tiempo.                                |
+| 3        | Sin manejador         | Este runtime no tiene manejador para el bloque.                                                |
+| 4        | Sin conexión          | No hay conexión con el par.                                                                    |
+| 5        | Cola llena            | Todas las ranuras de solicitud están en uso.                                                   |
+| 6        | Dirección inválida    | Un pin tiene un valor con el que no se puede hacer la solicitud.                               |
+| 7        | Desborde de cadena    | Una cadena es más larga de lo que el mensaje puede llevar.                                     |
+| 8        | Error de protocolo    | El par respondió algo que el protocolo no permite, o con un error.                             |
+| 9        | Autenticación fallida | El par rechazó las credenciales.                                                               |
+| 10       | No disponible         | El servicio del bloque no está disponible en este runtime, o está apagado en la configuración. |
 
 ## Límites de tiempo
 
-| Qué | Límite |
-| --- | --- |
-| Una llamada de un bloque en el ciclo | Toma un cerrojo, retenido unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a una flash. |
-| Una solicitud Modbus | El cliente espera como máximo el doble del tiempo configurado (para conectar y luego por la respuesta); el bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo + 100 ms) x 8` después de la solicitud, es decir 8,8 s con el tiempo por defecto de 500 ms. |
-| `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH` | El hilo del cliente envía el mensaje en una pasada de su bucle; `ERROR` con `STATUS` 2 a los 5 s. |
-| Un aprovisionamiento (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | El servicio espera al broker 30 s en cada paso; `ERROR` con `STATUS` 2 a los 90 s. |
-| Pérdida de la sesión con el broker | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` informan `ERROR` con `STATUS` 4 (o el código de la falla) en el ciclo siguiente a que el cliente lo nota: de inmediato si la conexión se cierra o se reinicia, y dentro del intervalo de keep-alive si la pérdida es silenciosa. Un mensaje que estaba en cola y no se había enviado se falla, no se envía en la sesión siguiente. |
-| Reconexión | Un intento a la vez. El cliente espera hasta 5 s la respuesta del broker y luego espera 2 s, duplicando hasta 60 s, antes del intento siguiente. |
+| Qué                                                       | Límite                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Una llamada de un bloque en el ciclo                      | Toma un cerrojo, retenido unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a una flash.                                                                                                                                                                                                                                                           |
+| Una solicitud Modbus                                      | El cliente espera como máximo el doble del tiempo configurado (para conectar y luego por la respuesta); el bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo + 100 ms) x 8` después de la solicitud, es decir 8,8 s con el tiempo por defecto de 500 ms.                                                                                                                 |
+| `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH`             | El hilo del cliente envía el mensaje en una pasada de su bucle; `ERROR` con `STATUS` 2 a los 5 s.                                                                                                                                                                                                                                                                                      |
+| Un aprovisionamiento (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | El servicio espera al broker 30 s en cada paso; `ERROR` con `STATUS` 2 a los 90 s.                                                                                                                                                                                                                                                                                                     |
+| Pérdida de la sesión con el broker                        | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` informan `ERROR` con `STATUS` 4 (o el código de la falla) en el ciclo siguiente a que el cliente lo nota: de inmediato si la conexión se cierra o se reinicia, y dentro del intervalo de keep-alive si la pérdida es silenciosa. Un mensaje que estaba en cola y no se había enviado se falla, no se envía en la sesión siguiente. |
+| Reconexión                                                | Un intento a la vez. El cliente espera hasta 5 s la respuesta del broker y luego espera 2 s, duplicando hasta 60 s, antes del intento siguiente.                                                                                                                                                                                                                                       |
 
 ## Bloques de función soportados
 
@@ -115,11 +115,11 @@ Se usan para interactuar con dispositivos de campo sin una asignación implícit
 
 El runtime nativo que manejan la simulación y la línea de comandos ejecuta los mismos manejadores Modbus y MQTT que un controlador, sobre un cliente Modbus TCP y un cliente MQTT 3.1.1 del host (TCP plano). Está apagado hasta que la sesión lo pide: un runtime que se inicia como siempre responde a todo bloque `STATUS` 3 (sin manejador), como antes.
 
-| Entorno del runtime | Significado |
-| --- | --- |
-| `ZPLC_NATIVE_COMM=1` | Enciende los bloques de comunicación. |
-| `ZPLC_NATIVE_MQTT_BROKER=host:puerto` | El broker que usan `MQTT_CONNECT`, `MQTT_PUBLISH` y `MQTT_SUBSCRIBE`. Sin él responden `STATUS` 10. |
-| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS` | El tiempo que una solicitud Modbus espera para conectar y, otra vez, por la respuesta. 500 por defecto. |
+| Entorno del runtime                   | Significado                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `ZPLC_NATIVE_COMM=1`                  | Enciende los bloques de comunicación.                                                                   |
+| `ZPLC_NATIVE_MQTT_BROKER=host:puerto` | El broker que usan `MQTT_CONNECT`, `MQTT_PUBLISH` y `MQTT_SUBSCRIBE`. Sin él responden `STATUS` 10.     |
+| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS`       | El tiempo que una solicitud Modbus espera para conectar y, otra vez, por la respuesta. 500 por defecto. |
 
 La aplicación ZPLC inicia los pares por usted. Una sesión de simulación iniciada por la aplicación fija `ZPLC_NATIVE_COMM=1` y `ZPLC_NATIVE_LOOPBACK=1`, y el runtime inicia entonces, dentro de su propio proceso y en 127.0.0.1, un servidor Modbus TCP (1024 registros de retención y 1024 bobinas) y un broker MQTT, de modo que terminan con la sesión y no necesitan un broker instalado, Python ni red. Toda solicitud Modbus TCP de un programa llega a ese servidor sea cual sea el host y el puerto que nombre el bloque (una simulación no tiene planta), los bloques MQTT usan ese broker, y un broker nombrado en el entorno de la aplicación se ignora. La consola de la sesión dice qué extremos funcionan. Si uno no puede iniciarse, los doce bloques responden `STATUS` 10, "no disponible en simulación", la capacidad `communication-endpoints` de la sesión dice `unavailable`, y ningún bloque informa éxito sin actuar. Una solicitud Modbus por RTU (no hay dispositivo serie) y todo bloque de un servicio de nube (no hay servicio) responden `STATUS` 10 en simulación. `zplc_loopback`, que se compila con el runtime, es el mismo par de extremos como programa aparte para pruebas; imprime sus puertos como una línea de JSON y termina cuando se cierra su entrada estándar.
 
@@ -127,12 +127,12 @@ La aplicación ZPLC inicia los pares por usted. Una sesión de simulación inici
 
 Ningún bloque se verificó contra un servicio real, y verificar uno no necesita una suscripción de pago. La verificación de cada bloque es de uno o dos tipos: el **manejador** (los pines, el handshake, los códigos de estado y la entrega a un hilo de trabajo, con el cliente reemplazado por un sustituto que responde lo que dice la prueba) y un **doble de protocolo** (el bloque contra un servidor escrito para la prueba que habla el protocolo por un socket de loopback). Un doble local prueba el comportamiento del bloque y del protocolo. No prueba que un dispositivo, un broker o un servicio de nube reales acepten el intercambio.
 
-| Bloque | Manejador | Doble de protocolo | Servicio real |
-| --- | --- | --- | --- |
-| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en fragmentos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | No |
-| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Sí | El cliente MQTT del runtime de simulación, contra un broker en loopback: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa. El cliente del controlador (`zplc_mqtt.c`, el archivo que corre una placa) también se ejecuta en `native_sim` contra un broker escrito para la prueba en la interfaz de loopback: sesión, una publicación por solicitud, suscripción y mensaje, ausencia de `CONNACK` (error con un estado), conexión rechazada, sesión perdida, reset estando ocupado | No |
-| `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Sí | El cliente del controlador en `native_sim` contra el broker escrito para la prueba, con el perfil de cada servicio: un mensaje de la nube al dispositivo, un mensaje de Event Grid y un `NBIRTH` por solicitud, `STATUS` 10 con un perfil que no ofrece el servicio, `NOT_CONNECTED` sin sesión, reset estando ocupado. El intercambio con el servicio real de Azure o Sparkplug no se prueba | No |
-| `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que usted ejecuta, de uso manual | No |
+| Bloque                                                           | Manejador                                                               | Doble de protocolo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Servicio real |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Sí                                                                      | Modbus TCP: el código de la transacción del cliente es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor en loopback en ambos (native_sim y el host); éxito, respuesta en fragmentos, excepción, silencio, conexión cerrada, puerto rechazado, reset estando ocupado. RTU: solo se comprueban los parámetros de la interfaz (el tiempo se da en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie                                  | No            |
+| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`                 | Sí                                                                      | El cliente MQTT del runtime de simulación, contra un broker en loopback: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa. El cliente del controlador (`zplc_mqtt.c`, el archivo que corre una placa) también se ejecuta en `native_sim` contra un broker escrito para la prueba en la interfaz de loopback: sesión, una publicación por solicitud, suscripción y mensaje, ausencia de `CONNACK` (error con un estado), conexión rechazada, sesión perdida, reset estando ocupado | No            |
+| `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH`                  | Sí                                                                      | El cliente del controlador en `native_sim` contra el broker escrito para la prueba, con el perfil de cada servicio: un mensaje de la nube al dispositivo, un mensaje de Event Grid y un `NBIRTH` por solicitud, `STATUS` 10 con un perfil que no ofrece el servicio, `NOT_CONNECTED` sin sesión, reset estando ocupado. El intercambio con el servicio real de Azure o Sparkplug no se prueba                                                                                                                           | No            |
+| `AZURE_DPS_PROV`, `AWS_FLEET_PROV`                               | Sí, con el servicio de aprovisionamiento reemplazado por uno que espera | Ninguno en la suite de pruebas; `tools/connectivity/` tiene scripts que responden en un broker que usted ejecuta, de uso manual                                                                                                                                                                                                                                                                                                                                                                                         | No            |
 
 ## Disponibilidad por lenguaje
 

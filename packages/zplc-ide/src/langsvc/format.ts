@@ -23,20 +23,60 @@ export interface LineEdit {
 }
 
 const OPENERS: ReadonlySet<string> = new Set([
-  TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.METHOD, TokenType.TYPE,
-  TokenType.VAR, TokenType.VAR_INPUT, TokenType.VAR_OUTPUT, TokenType.VAR_IN_OUT, TokenType.VAR_TEMP, TokenType.VAR_GLOBAL,
-  TokenType.VAR_EXTERNAL, TokenType.IF, TokenType.CASE, TokenType.FOR, TokenType.WHILE, TokenType.REPEAT,
+  TokenType.PROGRAM,
+  TokenType.FUNCTION,
+  TokenType.FUNCTION_BLOCK,
+  TokenType.INTERFACE,
+  TokenType.METHOD,
+  TokenType.TYPE,
+  TokenType.VAR,
+  TokenType.VAR_INPUT,
+  TokenType.VAR_OUTPUT,
+  TokenType.VAR_IN_OUT,
+  TokenType.VAR_TEMP,
+  TokenType.VAR_GLOBAL,
+  TokenType.VAR_EXTERNAL,
+  TokenType.IF,
+  TokenType.CASE,
+  TokenType.FOR,
+  TokenType.WHILE,
+  TokenType.REPEAT,
 ]);
 const CLOSERS: ReadonlySet<string> = new Set([
-  TokenType.END_PROGRAM, TokenType.END_FUNCTION, TokenType.END_FUNCTION_BLOCK, TokenType.END_INTERFACE, TokenType.END_METHOD,
-  TokenType.END_TYPE, TokenType.END_VAR, TokenType.END_IF, TokenType.END_CASE, TokenType.END_FOR, TokenType.END_WHILE,
+  TokenType.END_PROGRAM,
+  TokenType.END_FUNCTION,
+  TokenType.END_FUNCTION_BLOCK,
+  TokenType.END_INTERFACE,
+  TokenType.END_METHOD,
+  TokenType.END_TYPE,
+  TokenType.END_VAR,
+  TokenType.END_IF,
+  TokenType.END_CASE,
+  TokenType.END_FOR,
+  TokenType.END_WHILE,
   TokenType.END_REPEAT,
 ]);
 /** A line that ends with one of these has not ended its statement: the next line continues it. */
 const CONTINUES: ReadonlySet<string> = new Set([
-  TokenType.AND, TokenType.OR, TokenType.XOR, TokenType.NOT, TokenType.MOD, TokenType.PLUS, TokenType.MINUS, TokenType.STAR,
-  TokenType.SLASH, TokenType.POWER, TokenType.ASSIGN, TokenType.OUTPUT_ASSIGN, TokenType.EQ, TokenType.NE, TokenType.LT,
-  TokenType.LE, TokenType.GT, TokenType.GE, TokenType.COMMA,
+  TokenType.AND,
+  TokenType.OR,
+  TokenType.XOR,
+  TokenType.NOT,
+  TokenType.MOD,
+  TokenType.PLUS,
+  TokenType.MINUS,
+  TokenType.STAR,
+  TokenType.SLASH,
+  TokenType.POWER,
+  TokenType.ASSIGN,
+  TokenType.OUTPUT_ASSIGN,
+  TokenType.EQ,
+  TokenType.NE,
+  TokenType.LT,
+  TokenType.LE,
+  TokenType.GT,
+  TokenType.GE,
+  TokenType.COMMA,
 ]);
 /** Tokens that, at the start of a line, are written one level out: they belong to the block that continues. */
 const BRANCHES: ReadonlySet<string> = new Set([TokenType.ELSE, TokenType.ELSIF, TokenType.UNTIL]);
@@ -56,7 +96,11 @@ function scanLines(text: string): Array<{ code: string; inComment: boolean }> {
       const char = raw[at]!;
       const next = raw[at + 1];
       if (block) {
-        if (char === '*' && next === ')') { block = false; code += '  '; at++; } else code += ' ';
+        if (char === '*' && next === ')') {
+          block = false;
+          code += '  ';
+          at++;
+        } else code += ' ';
         continue;
       }
       if (quote) {
@@ -64,8 +108,16 @@ function scanLines(text: string): Array<{ code: string; inComment: boolean }> {
         if (char === quote) quote = null;
         continue;
       }
-      if (char === '(' && next === '*') { block = true; code += '  '; at++; continue; }
-      if (char === '/' && next === '/') { code += ' '.repeat(raw.length - at); break; }
+      if (char === '(' && next === '*') {
+        block = true;
+        code += '  ';
+        at++;
+        continue;
+      }
+      if (char === '/' && next === '/') {
+        code += ' '.repeat(raw.length - at);
+        break;
+      }
       if (char === "'" || char === '"') quote = char;
       code += char;
     }
@@ -89,7 +141,8 @@ export function formatEdits(text: string, options: FormatOptions = {}): LineEdit
   for (const token of lexed.tokens) {
     if (token.type === TokenType.EOF) continue;
     const list = byLine.get(token.line);
-    if (list) list.push(token); else byLine.set(token.line, [token]);
+    if (list) list.push(token);
+    else byLine.set(token.line, [token]);
   }
 
   const edits: LineEdit[] = [];

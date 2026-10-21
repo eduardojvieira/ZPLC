@@ -9,7 +9,11 @@ import { clearReadFaults, readFaultKeys, recordReadFaults, subscribeReadFaults }
 import { signalFlagsOf } from './signalFlags';
 
 const path = 'projects/blinky_fbd/src/main.fbd.json';
-const built = compileSingleFileWithTask(readFileSync(join(import.meta.dir, '../..', path), 'utf8'), 'FBD', { sourceRef: path, programName: 'Main', intervalMs: 10 });
+const built = compileSingleFileWithTask(readFileSync(join(import.meta.dir, '../..', path), 'utf8'), 'FBD', {
+  sourceRef: path,
+  programName: 'Main',
+  intervalMs: 10,
+});
 const led = resolveVariable(built.debugMap, path, 'LED_Output')!;
 
 describe('which variables a diagram shows as forced or faulted (UX-009)', () => {
@@ -49,7 +53,9 @@ describe('the variables the poll could not read (UX-009)', () => {
 
   it('keeps the same set, and tells nobody, when nothing changed', () => {
     let calls = 0;
-    const stop = subscribeReadFaults(() => { calls += 1; });
+    const stop = subscribeReadFaults(() => {
+      calls += 1;
+    });
     recordReadFaults(['a@X'], []);
     const first = readFaultKeys();
     recordReadFaults(['a@X'], []);

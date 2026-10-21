@@ -20,8 +20,7 @@
 #define ZPLC_MODBUS_CLIENT_MIN_TIMEOUT_MS 100U
 
 /** The `rx_timeout` of a Zephyr Modbus client interface for a configured timeout in milliseconds. */
-static inline uint32_t zplc_modbus_rtu_rx_timeout_us(uint32_t timeout_ms)
-{
+static inline uint32_t zplc_modbus_rtu_rx_timeout_us(uint32_t timeout_ms) {
   if (timeout_ms < ZPLC_MODBUS_CLIENT_MIN_TIMEOUT_MS) {
     timeout_ms = ZPLC_MODBUS_CLIENT_MIN_TIMEOUT_MS;
   }

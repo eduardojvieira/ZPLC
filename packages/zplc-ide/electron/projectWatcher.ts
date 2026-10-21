@@ -35,7 +35,12 @@ export interface ProjectWatcherOptions {
   watch?: WatchFunction;
 }
 
-export function createProjectWatcher({ send, debounceMs = 150, maxPaths = PROJECT_CHANGE_LIMITS.maxPaths, watch = fsWatch as WatchFunction }: ProjectWatcherOptions) {
+export function createProjectWatcher({
+  send,
+  debounceMs = 150,
+  maxPaths = PROJECT_CHANGE_LIMITS.maxPaths,
+  watch = fsWatch as WatchFunction,
+}: ProjectWatcherOptions) {
   const active = new Map<number, { watcher: FSWatcher; timer: ReturnType<typeof setTimeout> | null }>();
 
   function stop(ownerId: number): void {
@@ -43,7 +48,11 @@ export function createProjectWatcher({ send, debounceMs = 150, maxPaths = PROJEC
     if (!entry) return;
     active.delete(ownerId);
     if (entry.timer !== null) clearTimeout(entry.timer);
-    try { entry.watcher.close(); } catch { /* already closed */ }
+    try {
+      entry.watcher.close();
+    } catch {
+      /* already closed */
+    }
   }
 
   return {
@@ -59,7 +68,8 @@ export function createProjectWatcher({ send, debounceMs = 150, maxPaths = PROJEC
           if (!current || current.watcher !== watcher) return;
           const path = filename === null ? null : relevantChange(String(filename));
           if (path === null) return;
-          if (pending.size >= maxPaths) overflow = true; else pending.add(path);
+          if (pending.size >= maxPaths) overflow = true;
+          else pending.add(path);
           if (current.timer !== null) clearTimeout(current.timer);
           current.timer = setTimeout(() => {
             current.timer = null;
@@ -77,7 +87,9 @@ export function createProjectWatcher({ send, debounceMs = 150, maxPaths = PROJEC
       active.set(ownerId, { watcher, timer: null });
     },
     stop,
-    stopAll(): void { for (const ownerId of [...active.keys()]) stop(ownerId); },
+    stopAll(): void {
+      for (const ownerId of [...active.keys()]) stop(ownerId);
+    },
   };
 }
 

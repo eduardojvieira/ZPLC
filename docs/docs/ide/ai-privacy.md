@@ -21,13 +21,13 @@ change; it does not approve its own result or operate physical equipment.
 
 ## Data boundary
 
-| Item | ZPLC behavior |
-| --- | --- |
-| Provider key | Stored through the operating system safe-storage/vault integration. |
+| Item              | ZPLC behavior                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| Provider key      | Stored through the operating system safe-storage/vault integration.                                      |
 | Automatic context | Bounded Structured Text context; a known sensitive pattern rejects the request before any provider call. |
-| Prompt warning | ZPLC warns not to paste secrets. |
-| Candidate change | Kept isolated until the person reviews and saves it. |
-| Success message | Derived from compiler/test/simulation evidence, not provider prose. |
+| Prompt warning    | ZPLC warns not to paste secrets.                                                                         |
+| Candidate change  | Kept isolated until the person reviews and saves it.                                                     |
+| Success message   | Derived from compiler/test/simulation evidence, not provider prose.                                      |
 
 ## Important limit
 

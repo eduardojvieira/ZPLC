@@ -56,7 +56,9 @@ describe('semantic errors fail the build (CMP-001, CMP-002 stopgap)', () => {
     });
 
     it('rejects an unknown member of a function block instance (position comes with CMP-006)', () => {
-        const source = `FUNCTION_BLOCK Fb\nVAR_OUTPUT q : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR\n  f : Fb;\n  x : INT;\nEND_VAR\n  x := f.missing;\nEND_PROGRAM\n`;
+        const source =
+            `FUNCTION_BLOCK Fb\nVAR_OUTPUT q : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR\n  f : Fb;\n  x : ` +
+            `INT;\nEND_VAR\n  x := f.missing;\nEND_PROGRAM\n`;
         expect(() => compileToBinary(source)).toThrow('missing');
     });
 

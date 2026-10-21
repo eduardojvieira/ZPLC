@@ -36,7 +36,13 @@ export function listDeclaredOutputs(debugMap: DebugMap | null | undefined): Decl
     for (const [name, variable] of Object.entries(info.vars)) {
       if (variable.region !== 'OPI' || !isScalar(variable.type) || variable.children !== undefined) continue;
       found.push({
-        path: `${pou}.${name}`, pou, name, type: variable.type, region: 'OPI', address: variable.addr, size: variable.size,
+        path: `${pou}.${name}`,
+        pou,
+        name,
+        type: variable.type,
+        region: 'OPI',
+        address: variable.addr,
+        size: variable.size,
         ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }),
       });
     }

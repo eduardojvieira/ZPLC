@@ -27,11 +27,7 @@ interface NativeResponseMessage<TResult = unknown> {
   error?: NativeErrorPayload;
 }
 
-function createNativeRequest<TParams extends Record<string, unknown>>(
-  id: string,
-  method: string,
-  params: TParams,
-): NativeRequestMessage {
+function createNativeRequest<TParams extends Record<string, unknown>>(id: string, method: string, params: TParams): NativeRequestMessage {
   return {
     id,
     type: NATIVE_MESSAGE_TYPE.REQUEST,
@@ -84,23 +80,33 @@ function parseJsonLine(line: string): unknown {
   try {
     return JSON.parse(line) as unknown;
   } catch (error) {
-    throw new Error(
-      `Failed to parse native simulator message: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    throw new Error(`Failed to parse native simulator message: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 function isNativeResponseMessage(value: unknown): value is NativeResponseMessage {
-  return typeof value === 'object' && value !== null
-    && 'type' in value && 'id' in value
-    && typeof value.type === 'string' && typeof value.id === 'string'
-    && (!('error' in value) || value.error === undefined || (typeof value.error === 'object' && value.error !== null && 'message' in value.error && typeof value.error.message === 'string'));
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    'id' in value &&
+    typeof value.type === 'string' &&
+    typeof value.id === 'string' &&
+    (!('error' in value) ||
+      value.error === undefined ||
+      (typeof value.error === 'object' && value.error !== null && 'message' in value.error && typeof value.error.message === 'string'))
+  );
 }
 
 function isNativeEventMessage(value: unknown): value is NativeEventMessage {
-  return typeof value === 'object' && value !== null
-    && 'type' in value && 'method' in value
-    && typeof value.type === 'string' && typeof value.method === 'string';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    'method' in value &&
+    typeof value.type === 'string' &&
+    typeof value.method === 'string'
+  );
 }
 
 function createSessionTerminatedError(message: string): Error {
@@ -115,15 +121,14 @@ interface SimulatorBinaryResolutionOptions {
   resourcesPath: string | null;
 }
 
-function getDefaultSimulatorBinaryCandidates(options: Pick<SimulatorBinaryResolutionOptions, 'cwd' | 'currentDir' | 'resourcesPath'>): string[] {
+function getDefaultSimulatorBinaryCandidates(
+  options: Pick<SimulatorBinaryResolutionOptions, 'cwd' | 'currentDir' | 'resourcesPath'>,
+): string[] {
   const { cwd, currentDir, resourcesPath } = options;
 
   return [
     ...(resourcesPath
-      ? [
-          path.resolve(resourcesPath, 'native-runtime/zplc_runtime'),
-          path.resolve(resourcesPath, 'native-runtime/zplc_runtime.exe'),
-        ]
+      ? [path.resolve(resourcesPath, 'native-runtime/zplc_runtime'), path.resolve(resourcesPath, 'native-runtime/zplc_runtime.exe')]
       : []),
     path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime'),
     path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
@@ -200,15 +205,16 @@ export function resolveDefaultSimulatorBinaryPathForTests(
 function createDefaultSpawnProcess(environment: NodeJS.ProcessEnv): NativeSimulationChildProcess {
   const binaryPath = getDefaultSimulatorBinaryPath(environment);
   if (!existsSync(binaryPath)) {
-    throw new Error(
-      `Native simulator binary not found at ${binaryPath}. Set ZPLC_NATIVE_SIM_BIN or build the POSIX host runtime first.`,
-    );
+    throw new Error(`Native simulator binary not found at ${binaryPath}. Set ZPLC_NATIVE_SIM_BIN or build the POSIX host runtime first.`);
   }
 
-  return spawnAllowed({ kind: 'native-runtime', binary: binaryPath }, {
-    env: environment,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  }) as ChildProcessWithoutNullStreams;
+  return spawnAllowed(
+    { kind: 'native-runtime', binary: binaryPath },
+    {
+      env: environment,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    },
+  ) as ChildProcessWithoutNullStreams;
 }
 
 export class NativeSimulationSupervisor {
@@ -253,9 +259,7 @@ export class NativeSimulationSupervisor {
     }
     if (this.startPromise) return this.startPromise;
 
-    const startPromise = this.process
-      ? this.startExistingSession(this.process)
-      : this.startNewSession();
+    const startPromise = this.process ? this.startExistingSession(this.process) : this.startNewSession();
     this.startPromise = startPromise;
     void startPromise.then(
       () => {
@@ -343,11 +347,14 @@ export class NativeSimulationSupervisor {
   private async startExistingSession(childProcess: NativeSimulationChildProcess): Promise<NativeHelloResult> {
     try {
       const hello = await this.waitForLifecycle(
-        this.requestForChild<NativeHelloResult>(childProcess, createNativeRequest(this.nextRequestId(), 'session.hello', {
-          client_name: this.clientName,
-          client_version: this.clientVersion,
-          protocol_version: '1.0',
-        })),
+        this.requestForChild<NativeHelloResult>(
+          childProcess,
+          createNativeRequest(this.nextRequestId(), 'session.hello', {
+            client_name: this.clientName,
+            client_version: this.clientVersion,
+            protocol_version: '1.0',
+          }),
+        ),
       );
       if (hello === undefined) {
         throw createSessionTerminatedError('session.hello timed out');
@@ -372,7 +379,7 @@ export class NativeSimulationSupervisor {
     } catch {
       /* An exit/error during requested shutdown is a definitive disconnect. */
     }
-    if (await this.waitForLifecycle(exited) === undefined) {
+    if ((await this.waitForLifecycle(exited)) === undefined) {
       await this.terminateChild(childProcess, createSessionTerminatedError('session.shutdown exit timed out'));
     }
   }
@@ -556,7 +563,7 @@ export class NativeSimulationSupervisor {
 
     void (async () => {
       this.sendSignal(childProcess, 'SIGTERM');
-      if (await this.waitForLifecycle(exited) === undefined) {
+      if ((await this.waitForLifecycle(exited)) === undefined) {
         this.sendSignal(childProcess, 'SIGKILL');
         await exited;
       }

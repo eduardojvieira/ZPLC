@@ -2,10 +2,6 @@
   "requirement": "CMP-021",
   "title": "an initial text longer than the capacity is rejected",
   "build": "fails",
-  "lines": [
-    3
-  ],
-  "codes": [
-    "STRING_TOO_LONG"
-  ]
+  "lines": [3],
+  "codes": ["STRING_TOO_LONG"]
 }

@@ -34,7 +34,10 @@ function loopbackBridge(): ProjectFilesBridge {
 }
 
 function installWindow(bridge: ProjectFilesBridge | undefined): void {
-  const showDirectoryPicker = async () => { pickerCalls += 1; throw new Error('the renderer must not open a browser picker'); };
+  const showDirectoryPicker = async () => {
+    pickerCalls += 1;
+    throw new Error('the renderer must not open a browser picker');
+  };
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
     value: bridge ? { electronAPI: { isElectron: true, projectFiles: bridge }, showDirectoryPicker } : {},
@@ -66,7 +69,10 @@ function seedProject(): void {
 
 describe('folder access in Electron', () => {
   it('is available through the bridge alone, and unavailable with neither bridge nor picker', () => {
-    Object.defineProperty(globalThis, 'window', { configurable: true, value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } } });
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } },
+    });
     expect('showDirectoryPicker' in window).toBe(false);
     expect(isFileSystemAccessSupported()).toBe(true);
     installWindow(undefined);
@@ -78,7 +84,14 @@ describe('folder access in Electron', () => {
     Object.defineProperty(globalThis, 'window', { configurable: true, value: { showDirectoryPicker: async () => handle } });
     expect(isFileSystemAccessSupported()).toBe(true);
     expect(await openDirectoryPicker()).toBe(handle);
-    Object.defineProperty(globalThis, 'window', { configurable: true, value: { showDirectoryPicker: async () => { throw Object.assign(new Error('cancelled'), { name: 'AbortError' }); } } });
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        showDirectoryPicker: async () => {
+          throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+        },
+      },
+    });
     expect(await openDirectoryPicker()).toBeNull();
   });
 
@@ -97,7 +110,11 @@ describe('folder access in Electron', () => {
   it('explains a folder that cannot be used, without its path', async () => {
     dialogAnswer = path.join(sandbox, 'missing');
     let error: Error | undefined;
-    try { await openDirectoryPicker(); } catch (caught) { error = caught as Error; }
+    try {
+      await openDirectoryPicker();
+    } catch (caught) {
+      error = caught as Error;
+    }
     expect(error?.name).toBe('NotFoundError');
     expect(error?.message).not.toContain(sandbox);
   });
@@ -117,7 +134,9 @@ describe('open, edit, save and reopen on a real folder', () => {
     const loaded = (await loadFileFromTree(tree.children![0].children![0]))!;
     expect(loaded.content).toBe('PROGRAM Main\nEND_PROGRAM\n');
     await writeFileContent(loaded.handle!, 'PROGRAM Main\n  Counter := Counter + 1; (* ñ *)\nEND_PROGRAM\r\n');
-    expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\n  Counter := Counter + 1; (* ñ *)\nEND_PROGRAM\r\n');
+    expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toBe(
+      'PROGRAM Main\n  Counter := Counter + 1; (* ñ *)\nEND_PROGRAM\r\n',
+    );
   });
 
   it('lists a folder that holds nothing yet (a new folder), and still hides one that holds only files Studio does not read', async () => {
@@ -153,7 +172,11 @@ describe('open, edit, save and reopen on a real folder', () => {
     dialogAnswer = other;
     await openDirectoryPicker();
     let error: Error | undefined;
-    try { await stale.getFileHandle('main.st'); } catch (caught) { error = caught as Error; }
+    try {
+      await stale.getFileHandle('main.st');
+    } catch (caught) {
+      error = caught as Error;
+    }
     expect(error?.name).toBe('ProjectFolderClosedError');
     expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
   });
@@ -172,7 +195,8 @@ describe('create and copy an example on a real folder', () => {
     const root = (await openDirectoryPicker())!;
     const config = await createNewProject(root, 'plant');
     expect(config.name).toBe('plant');
-    for (const file of ['zplc.json', '.gitignore', 'src/main.st', 'src/globals.gvl']) expect(existsSync(path.join(project, file))).toBe(true);
+    for (const file of ['zplc.json', '.gitignore', 'src/main.st', 'src/globals.gvl'])
+      expect(existsSync(path.join(project, file))).toBe(true);
     expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toContain('PROGRAM Main');
     writeFileSync(path.join(project, 'src', 'main.st'), 'edited');
     await expect(createNewProject(root, 'plant')).rejects.toThrow('already exists');
@@ -195,7 +219,9 @@ describe('create and copy an example on a real folder', () => {
   it('stops before writing when an example file already exists', async () => {
     seedProject();
     const root = (await openDirectoryPicker())!;
-    await expect(copyProjectToFolder(root, { ...DEFAULT_ZPLC_CONFIG, name: 'motor' }, [{ path: 'src/main.st', content: 'OVERWRITTEN' }])).rejects.toThrow();
+    await expect(
+      copyProjectToFolder(root, { ...DEFAULT_ZPLC_CONFIG, name: 'motor' }, [{ path: 'src/main.st', content: 'OVERWRITTEN' }]),
+    ).rejects.toThrow();
     expect(readFileSync(path.join(project, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
   });
 });

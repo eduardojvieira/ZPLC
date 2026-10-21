@@ -52,7 +52,12 @@ export class HostRuntimeLink implements DeviceLink {
       const line = this.buffer.slice(0, end).trim();
       this.buffer = this.buffer.slice(end + 1);
       if (!line) continue;
-      const message = JSON.parse(line) as { type?: string; id?: string; result?: Record<string, unknown>; error?: { code: string; message: string } };
+      const message = JSON.parse(line) as {
+        type?: string;
+        id?: string;
+        result?: Record<string, unknown>;
+        error?: { code: string; message: string };
+      };
       if (message.type !== 'response' || !message.id) continue;
       const waiting = this.pending.get(message.id);
       this.pending.delete(message.id);
@@ -66,8 +71,20 @@ export class HostRuntimeLink implements DeviceLink {
     this.count += 1;
     const id = `hil-${this.count}`;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new DeviceCommandError(`${method} was not answered`)); }, 15_000);
-      this.pending.set(id, { resolve: (value) => { clearTimeout(timer); resolve(value); }, reject: (error) => { clearTimeout(timer); reject(error); } });
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new DeviceCommandError(`${method} was not answered`));
+      }, 15_000);
+      this.pending.set(id, {
+        resolve: (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      });
       this.child.stdin.write(`${JSON.stringify({ id, type: 'request', method, params })}\n`);
     });
   }
@@ -76,7 +93,10 @@ export class HostRuntimeLink implements DeviceLink {
     const version = this.hello.runtime_version;
     const build = parseBuildIdentity(this.hello.build);
     return Promise.resolve({
-      board: 'native_posix', boardProfile: 'host-runtime', zephyrVersion: 'none', schedulerCommands: true,
+      board: 'native_posix',
+      boardProfile: 'host-runtime',
+      zephyrVersion: 'none',
+      schedulerCommands: true,
       ...(typeof version === 'string' ? { zplcVersion: version } : {}),
       ...(build ? { build } : {}),
       draftCounter: typeof this.hello.draft_counter === 'number' ? this.hello.draft_counter : null,
@@ -95,9 +115,15 @@ export class HostRuntimeLink implements DeviceLink {
     await this.call('program.load', { bytecode_hex: toHex(zplc) });
   }
 
-  async start(): Promise<void> { await this.call('execution.start'); }
-  async stop(): Promise<void> { await this.call('execution.stop'); }
-  async reset(): Promise<void> { await this.call('execution.reset'); }
+  async start(): Promise<void> {
+    await this.call('execution.start');
+  }
+  async stop(): Promise<void> {
+    await this.call('execution.stop');
+  }
+  async reset(): Promise<void> {
+    await this.call('execution.reset');
+  }
 
   async peek(address: number, length: number): Promise<Uint8Array> {
     return fromHex(String((await this.call('memory.read', { address, length })).bytes_hex));
@@ -111,11 +137,15 @@ export class HostRuntimeLink implements DeviceLink {
     await this.call('force.set', { address, bytes_hex: toHex(bytes) });
   }
 
-  async clearForces(): Promise<void> { await this.call('force.clear_all'); }
+  async clearForces(): Promise<void> {
+    await this.call('force.clear_all');
+  }
 
   async forces(): Promise<ForceEntry[]> {
     const list = await this.call('force.list');
-    const entries = Array.isArray(list.force_entries) ? (list.force_entries as Array<{ address: number; size: number; bytes_hex: string }>) : [];
+    const entries = Array.isArray(list.force_entries)
+      ? (list.force_entries as Array<{ address: number; size: number; bytes_hex: string }>)
+      : [];
     return entries.map((entry) => ({ address: entry.address, size: entry.size, bytesHex: entry.bytes_hex }));
   }
 
@@ -123,8 +153,14 @@ export class HostRuntimeLink implements DeviceLink {
     if (!this.exited) {
       await this.call('session.shutdown').catch(() => undefined);
       await new Promise<void>((resolve) => {
-        const timer = setTimeout(() => { this.child.kill(); resolve(); }, 3_000);
-        this.child.once('exit', () => { clearTimeout(timer); resolve(); });
+        const timer = setTimeout(() => {
+          this.child.kill();
+          resolve();
+        }, 3_000);
+        this.child.once('exit', () => {
+          clearTimeout(timer);
+          resolve();
+        });
       });
     }
     rmSync(this.persist, { recursive: true, force: true });

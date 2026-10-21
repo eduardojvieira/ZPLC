@@ -25,15 +25,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 #define VAR (ZPLC_MEM_WORK_BASE + 0x40U)
@@ -50,9 +50,7 @@ static int lock_image(void) {
 }
 static void unlock_image(void) { image_unlocks++; }
 
-static uint8_t *live(uint16_t addr) {
-  return zplc_mem_get_region(ZPLC_MEM_WORK_BASE) + (addr - ZPLC_MEM_WORK_BASE);
-}
+static uint8_t *live(uint16_t addr) { return zplc_mem_get_region(ZPLC_MEM_WORK_BASE) + (addr - ZPLC_MEM_WORK_BASE); }
 
 static void start(int active) {
   zplc_exchange_hooks_t hooks;
@@ -128,8 +126,7 @@ static void test_extents_are_checked_when_the_write_is_made(void) {
   printf("\n=== Test: an extent outside PLC memory is refused at the call ===\n");
   start(1);
   CHECK(zplc_exchange_write(0xFFFEU, value, 4U) == ZPLC_EXCHANGE_ERR_RANGE, "past the end of the address space");
-  CHECK(zplc_exchange_write(ZPLC_MEM_OPI_BASE - 2U, value, 4U) == ZPLC_EXCHANGE_ERR_RANGE,
-        "across the boundary of two regions");
+  CHECK(zplc_exchange_write(ZPLC_MEM_OPI_BASE - 2U, value, 4U) == ZPLC_EXCHANGE_ERR_RANGE, "across the boundary of two regions");
   CHECK(zplc_exchange_write(VAR, value, 0U) == ZPLC_EXCHANGE_ERR_RANGE, "of no bytes");
   CHECK(zplc_exchange_write(VAR, NULL, 4U) == ZPLC_EXCHANGE_ERR_RANGE, "with no data");
   CHECK(zplc_exchange_read(0xFFFEU, out, 4U) == ZPLC_EXCHANGE_ERR_RANGE, "the same for a read");
@@ -235,8 +232,7 @@ static void *exchange_reader(void *arg) {
       (void)zplc_exchange_read_locked(VAR, value, 4U);
       (void)zplc_exchange_read_locked(OTHER, mirror, 4U);
       zplc_exchange_read_unlock();
-      if (value[0] != value[1] || value[1] != value[2] || value[2] != value[3] ||
-          memcmp(value, mirror, 4U) != 0) {
+      if (value[0] != value[1] || value[1] != value[2] || value[2] != value[3] || memcmp(value, mirror, 4U) != 0) {
         torn_through_exchange++;
       }
       reads_done++;
@@ -306,13 +302,12 @@ static void test_no_value_is_observed_half_written(void) {
 
   zplc_exchange_get_stats(&stats);
   CHECK(reads_done > 100U, "the readers ran against the scanner (many reads)");
-  CHECK(torn_live > 0U,
-        "a reader of the live memory does see half written values: the scanner really interleaves with the others");
+  CHECK(torn_live > 0U, "a reader of the live memory does see half written values: the scanner really interleaves with the others");
   CHECK(torn_through_exchange == 0U, "and a reader of the exchange never does");
   CHECK(latched_inconsistent == 0U, "a queued write lands whole at the latch, never mixed with another");
   CHECK(stats.latched > 0U && stats.publications >= SCANS, "writes were applied at latches, once per scan");
-  printf("  reads=%u torn_live=%u latched=%u refused=%u publications=%u\n", reads_done, torn_live,
-         (unsigned)stats.latched, (unsigned)stats.refused, (unsigned)stats.publications);
+  printf("  reads=%u torn_live=%u latched=%u refused=%u publications=%u\n", reads_done, torn_live, (unsigned)stats.latched,
+         (unsigned)stats.refused, (unsigned)stats.publications);
 }
 
 int main(void) {

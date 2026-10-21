@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "a call through an interface variable that holds no instance ends the scan with a VM fault",
-  "matrix": [
-    "pous.interfaces-implements"
-  ],
+  "matrix": ["pous.interfaces-implements"],
   "note": "A variable of an interface type is NULL until an instance is assigned: calling through it is the memory access violation of a null reference (CMP-024), never a call of some other instance's method",
   "scans": 1,
   "scanMs": 10,

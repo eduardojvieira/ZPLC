@@ -23,7 +23,7 @@ const CRC32_TABLE = new Uint32Array(256);
     for (let i = 0; i < 256; i++) {
         let c = i;
         for (let k = 0; k < 8; k++) {
-            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+            c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
         }
         CRC32_TABLE[i] = c >>> 0;
     }
@@ -36,11 +36,11 @@ const CRC32_TABLE = new Uint32Array(256);
  * @returns CRC32 value (unsigned 32-bit)
  */
 export function crc32(data: Uint8Array): number {
-    let c = 0xFFFFFFFF;
+    let c = 0xffffffff;
     for (let i = 0; i < data.length; i++) {
-        c = (CRC32_TABLE[(c ^ data[i]) & 0xFF] ^ (c >>> 8)) >>> 0;
+        c = (CRC32_TABLE[(c ^ data[i]) & 0xff] ^ (c >>> 8)) >>> 0;
     }
-    return (c ^ 0xFFFFFFFF) >>> 0;
+    return (c ^ 0xffffffff) >>> 0;
 }
 
 /** Write the CRC-32 of the whole file except the crc32 field itself (bytes 12-15) into that field. */
@@ -74,14 +74,11 @@ const RELOCATABLE_OPCODES: Set<number> = new Set(
     OPCODE_TABLE.filter((entry) => entry.flags.includes('absolute')).map((entry) => entry.code),
 );
 
-const UINT16_MAX = 0xFFFF;
-const UINT32_MAX = 0xFFFFFFFF;
+const UINT16_MAX = 0xffff;
+const UINT32_MAX = 0xffffffff;
 
 function isIntegerInRange(value: unknown, minimum: number, maximum: number): value is number {
-    return typeof value === 'number'
-        && Number.isInteger(value)
-        && value >= minimum
-        && value <= maximum;
+    return typeof value === 'number' && Number.isInteger(value) && value >= minimum && value <= maximum;
 }
 
 /** A variable tag whose fields all fit the TAGS entry (CMP-049): nothing is masked when it is written. */
@@ -91,10 +88,10 @@ function validateTags(tags: readonly TagDef[] | undefined): void {
         if (!isIntegerInRange(tag.varAddr, 0, UINT16_MAX)) {
             throw new AssemblerError(`${label} address ${String(tag.varAddr)} does not fit its 16-bit address field`);
         }
-        if (!isIntegerInRange(tag.varType, 0, 0xFF)) {
+        if (!isIntegerInRange(tag.varType, 0, 0xff)) {
             throw new AssemblerError(`${label} data type ${String(tag.varType)} does not fit its 8-bit field`);
         }
-        if (!isIntegerInRange(tag.tagId, 0, 0xFF)) {
+        if (!isIntegerInRange(tag.tagId, 0, 0xff)) {
             throw new AssemblerError(`${label} id ${String(tag.tagId)} does not fit its 8-bit field`);
         }
         if (!isIntegerInRange(tag.value, 0, UINT32_MAX)) {
@@ -156,16 +153,22 @@ function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: 
     const tagSegmentSize = (tags?.length ?? 0) * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
     const safeSegmentSize = (safe?.length ?? 0) * ZPLC_CONSTANTS.SAFE_ENTRY_SIZE;
     const segmentCount = (tags?.length ? 4 : 3) + (safeSegmentSize > 0 ? 1 : 0);
-    const totalSize = ZPLC_CONSTANTS.HEADER_SIZE
-        + (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount)
-        + bytecode.length
-        + taskSegmentSize
-        + tagSegmentSize
-        + safeSegmentSize
-        + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
-    if (!Number.isSafeInteger(taskSegmentSize) || taskSegmentSize > UINT32_MAX
-        || !Number.isSafeInteger(tagSegmentSize) || tagSegmentSize > UINT32_MAX
-        || !Number.isSafeInteger(totalSize) || totalSize > UINT32_MAX) {
+    const totalSize =
+        ZPLC_CONSTANTS.HEADER_SIZE +
+        ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount +
+        bytecode.length +
+        taskSegmentSize +
+        tagSegmentSize +
+        safeSegmentSize +
+        ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
+    if (
+        !Number.isSafeInteger(taskSegmentSize) ||
+        taskSegmentSize > UINT32_MAX ||
+        !Number.isSafeInteger(tagSegmentSize) ||
+        tagSegmentSize > UINT32_MAX ||
+        !Number.isSafeInteger(totalSize) ||
+        totalSize > UINT32_MAX
+    ) {
         throw new AssemblerError('Multi-task file layout exceeds the ZPLC ABI');
     }
 
@@ -187,7 +190,7 @@ function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: 
         if (!taskTypes.has(task.type)) {
             throw new AssemblerError(`${label} type is not a supported task type`);
         }
-        if (!isIntegerInRange(task.priority, 0, 0xFF)) {
+        if (!isIntegerInRange(task.priority, 0, 0xff)) {
             throw new AssemblerError(`${label} priority must be an integer from 0 to 255`);
         }
         if (!isIntegerInRange(task.intervalUs, 1, UINT32_MAX)) {
@@ -239,11 +242,11 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
 
         if (operandSize === 1) {
             // 8-bit operand: an immediate, or a signed offset stored as its two's complement byte
-            view.setUint8(offset, operand & 0xFF);
+            view.setUint8(offset, operand & 0xff);
             offset += 1;
         } else if (operandSize === 2) {
             // 16-bit little-endian; an immediate may be written signed
-            view.setUint16(offset, operand & 0xFFFF, true);
+            view.setUint16(offset, operand & 0xffff, true);
             offset += 2;
         } else if (operandSize === 4) {
             // 32-bit little-endian
@@ -298,7 +301,8 @@ export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint
             if (address > UINT16_MAX) {
                 // nothing has been written: the bytecode is as it was given
                 throw new AssemblerError(
-                    `Relocating the ${OPCODE_BY_VALUE[opcode] ?? 'jump'} at ${pc} by ${baseOffset} gives address ${address}, which does not fit the 16-bit code address`,
+                    `Relocating the ${OPCODE_BY_VALUE[opcode] ?? 'jump'} at ${pc} by ${baseOffset} gives address ${address}, which does ` +
+                        `not fit the 16-bit code address`,
                 );
             }
             relocated.push({ at: pc + 1, address });
@@ -340,14 +344,14 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     validateTags(tags);
     const tagCount = tags?.length ?? 0;
     const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
-    
+
     // CODE, TAGS when there are tags, and the build identity (CMP-056)
     const segmentCount = tagCount > 0 ? 3 : 2;
 
     // Total file size: header (32) + segment table (8 * segmentCount) + code + tags + build identity
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
-        (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
+        ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount +
         codeSize +
         tagSegmentSize +
         ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
@@ -389,7 +393,7 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     offset += 4;
 
     // entry_point (2 bytes)
-    view.setUint16(offset, entryPoint & 0xFFFF, true);
+    view.setUint16(offset, entryPoint & 0xffff, true);
     offset += 2;
 
     // segment_count (2 bytes)
@@ -493,7 +497,7 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     // build identity
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
-        (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
+        ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount +
         codeSize +
         taskSegmentSize +
         tagSegmentSize +
@@ -821,24 +825,16 @@ export function disassemble(bytecode: Uint8Array, baseAddr: number = 0): string 
             if (isRelativeJump(opcode)) {
                 const signedOp = operand < 128 ? operand : operand - 256;
                 const target = addr + 2 + signedOp;
-                lines.push(
-                    `0x${addr.toString(16).padStart(4, '0')}: ${name} ${signedOp} (-> 0x${target.toString(16).padStart(4, '0')})`
-                );
+                lines.push(`0x${addr.toString(16).padStart(4, '0')}: ${name} ${signedOp} (-> 0x${target.toString(16).padStart(4, '0')})`);
             } else {
-                lines.push(
-                    `0x${addr.toString(16).padStart(4, '0')}: ${name} ${operand} (0x${operand.toString(16).padStart(2, '0')})`
-                );
+                lines.push(`0x${addr.toString(16).padStart(4, '0')}: ${name} ${operand} (0x${operand.toString(16).padStart(2, '0')})`);
             }
         } else if (operandSize === 2) {
             const operand = view.getUint16(pc + 1, true);
-            lines.push(
-                `0x${addr.toString(16).padStart(4, '0')}: ${name} 0x${operand.toString(16).padStart(4, '0')}`
-            );
+            lines.push(`0x${addr.toString(16).padStart(4, '0')}: ${name} 0x${operand.toString(16).padStart(4, '0')}`);
         } else {
             const operand = view.getUint32(pc + 1, true);
-            lines.push(
-                `0x${addr.toString(16).padStart(4, '0')}: ${name} 0x${operand.toString(16).padStart(8, '0')}`
-            );
+            lines.push(`0x${addr.toString(16).padStart(4, '0')}: ${name} 0x${operand.toString(16).padStart(8, '0')}`);
         }
 
         pc += instrSize;
@@ -859,7 +855,7 @@ export function hexDump(bytecode: Uint8Array): string {
     for (let i = 0; i < bytecode.length; i += 16) {
         const chunk = bytecode.slice(i, Math.min(i + 16, bytecode.length));
         const hex = Array.from(chunk)
-            .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+            .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
             .join(' ');
         lines.push(`0x${i.toString(16).padStart(4, '0')}: ${hex}`);
     }

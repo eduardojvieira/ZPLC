@@ -17,7 +17,12 @@ describe('which changes of a canvas end a gesture (LNG-010)', () => {
   });
 
   it('a selection or a size change is not an edit of the document', () => {
-    expect(nodeChangesCommit([{ id: 'and_1', type: 'select', selected: true }, { id: 'and_1', type: 'dimensions', dimensions: { width: 10, height: 10 } }])).toBe(false);
+    expect(
+      nodeChangesCommit([
+        { id: 'and_1', type: 'select', selected: true },
+        { id: 'and_1', type: 'dimensions', dimensions: { width: 10, height: 10 } },
+      ]),
+    ).toBe(false);
   });
 
   it('adding, removing and replacing commit', () => {
@@ -69,11 +74,13 @@ describe('one drag is one undo step, and the selection comes back (LNG-010, WP-5
     let committed = document(nodes);
     const commit = (): void => {
       const next = document(nodes);
-      histories = recordVisualSnapshot(histories, key, committed, next, { selection: { before: ['block:and_1'], after: fbdSelection(nodes, wires) } }).histories;
+      histories = recordVisualSnapshot(histories, key, committed, next, {
+        selection: { before: ['block:and_1'], after: fbdSelection(nodes, wires) },
+      }).histories;
       committed = next;
     };
     for (let step = 1; step <= 30; step++) {
-      const changes = [move('and_1', true)].map((change) => ({ ...change, position: { x: step * 10, y: 0 } } as NodeChange));
+      const changes = [move('and_1', true)].map((change) => ({ ...change, position: { x: step * 10, y: 0 } }) as NodeChange);
       nodes = applyNodeChanges(changes, nodes);
       if (nodeChangesCommit(changes)) commit();
     }
@@ -91,8 +98,15 @@ describe('one drag is one undo step, and the selection comes back (LNG-010, WP-5
   it('the selection of blocks and wires is read from the canvas and put back after a rebuild', () => {
     const selected = fbdSelection(nodes0, [{ ...wires[0]!, selected: true }]);
     expect(selected).toEqual(['block:and_1', 'connection:w1']);
-    const rebuilt = applyFBDSelection(nodes0.map((node) => ({ ...node, selected: false })), wires, ['block:or_2', 'connection:w1', 'block:gone']);
-    expect(rebuilt.nodes.map((node) => [node.id, node.selected])).toEqual([['and_1', false], ['or_2', true]]);
+    const rebuilt = applyFBDSelection(
+      nodes0.map((node) => ({ ...node, selected: false })),
+      wires,
+      ['block:or_2', 'connection:w1', 'block:gone'],
+    );
+    expect(rebuilt.nodes.map((node) => [node.id, node.selected])).toEqual([
+      ['and_1', false],
+      ['or_2', true],
+    ]);
     expect(rebuilt.edges.map((edge) => edge.selected)).toEqual([true]);
   });
 });

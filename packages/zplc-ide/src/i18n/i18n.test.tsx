@@ -15,18 +15,29 @@ import { resolveLanguage } from './locale';
 import { format, translate } from './translate';
 
 // The theme control reaches the store, which imports the bundled-example loader that only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { AppPreferences } = await import('../components/settings/AppPreferences');
 
 const setLanguage = (language: 'auto' | 'en' | 'es') => useAppSettings.getState().update({ language });
-const setSystemLanguage = (value: string | undefined) => Object.defineProperty(globalThis.navigator, 'language', { value, configurable: true });
+const setSystemLanguage = (value: string | undefined) =>
+  Object.defineProperty(globalThis.navigator, 'language', { value, configurable: true });
 
 // bunfig.toml pins the system language of every test to English; each test restores it.
-afterEach(() => { setLanguage('auto'); setSystemLanguage('en-US'); });
+afterEach(() => {
+  setLanguage('auto');
+  setSystemLanguage('en-US');
+});
 
 describe('UX-016 the catalogs call the application ZPLC (decision D-03)', () => {
   it('UX-016 names it neither "ZPLC Studio", "ZPLC IDE" nor "Studio", in English or in Spanish', () => {
-    const naming = (catalog: Record<string, string>) => Object.entries(catalog).filter(([, text]) => /\bStudio\b|ZPLC IDE/.test(text)).map(([key]) => key);
+    const naming = (catalog: Record<string, string>) =>
+      Object.entries(catalog)
+        .filter(([, text]) => /\bStudio\b|ZPLC IDE/.test(text))
+        .map(([key]) => key);
     expect({ en: naming(en), es: naming(es) }).toEqual({ en: [], es: [] });
   });
 });
@@ -42,7 +53,11 @@ describe('UX-029 translation: interpolation, plural and fallback', () => {
     const english = translatorFor('en');
     const spanish = translatorFor('es');
     expect([1, 0, 4].map((count) => english.tn('preferences.tabSizeOption', count))).toEqual(['1 space', '0 spaces', '4 spaces']);
-    expect([1, 0, 1000000].map((count) => spanish.tn('preferences.tabSizeOption', count))).toEqual(['1 espacio', '0 espacios', '1000000 espacios']);
+    expect([1, 0, 1000000].map((count) => spanish.tn('preferences.tabSizeOption', count))).toEqual([
+      '1 espacio',
+      '0 espacios',
+      '1000000 espacios',
+    ]);
   });
 
   it('UX-029 falls back to English for a key a catalog lacks, and never renders the raw key silently', () => {
@@ -52,13 +67,17 @@ describe('UX-029 translation: interpolation, plural and fallback', () => {
       expect(translate('es', 'only.in.english.once')).toBe('only.in.english.once');
       expect(warn).toHaveBeenCalledTimes(1);
       expect(String(warn.mock.calls[0]?.[0])).toContain('only.in.english.once');
-    } finally { warn.mockRestore(); }
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
 describe('UX-029 the language setting: auto, en and es', () => {
   it('UX-029 resolves auto from the language of the system and falls back to English', () => {
-    const resolved = ['es-AR', 'es', 'es-419', 'ES-mx', 'en-US', 'pt-BR', 'fr', '', undefined].map((system) => resolveLanguage('auto', system));
+    const resolved = ['es-AR', 'es', 'es-419', 'ES-mx', 'en-US', 'pt-BR', 'fr', '', undefined].map((system) =>
+      resolveLanguage('auto', system),
+    );
     expect(resolved).toEqual(['es', 'es', 'es', 'es', 'en', 'en', 'en', 'en', 'en']);
     expect(resolveLanguage('en', 'es-AR')).toBe('en');
     expect(resolveLanguage('es', 'en-US')).toBe('es');
@@ -90,14 +109,35 @@ describe('UX-029 the catalogs', () => {
   it('UX-029 hold the same keys and the same {placeholders} in English and Spanish', () => {
     expect(Object.keys(es).sort()).toEqual(Object.keys(en).sort());
     const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
-    for (const key of Object.keys(en) as (keyof typeof en)[]) expect({ key, placeholders: placeholders(es[key]) }).toEqual({ key, placeholders: placeholders(en[key]) });
+    for (const key of Object.keys(en) as (keyof typeof en)[])
+      expect({ key, placeholders: placeholders(es[key]) }).toEqual({ key, placeholders: placeholders(en[key]) });
   });
 });
 
 describe('UX-029 migrated components render in the language of the setting', () => {
-  const dialog = () => renderToStaticMarkup(
-    <SerialPortDialog rows={[{ portId: 'a', name: 'Pico', usbId: '2E8A:000A', serialNumber: 'E661', boards: ['Raspberry Pi Pico (RP2040)'], ambiguous: false, vendor: null, kind: 'known-board' }]} selectedPortId="a" refreshing={false} onSelect={() => undefined} onChoose={() => undefined} onRefresh={() => undefined} onCancel={() => undefined} />,
-  );
+  const dialog = () =>
+    renderToStaticMarkup(
+      <SerialPortDialog
+        rows={[
+          {
+            portId: 'a',
+            name: 'Pico',
+            usbId: '2E8A:000A',
+            serialNumber: 'E661',
+            boards: ['Raspberry Pi Pico (RP2040)'],
+            ambiguous: false,
+            vendor: null,
+            kind: 'known-board',
+          },
+        ]}
+        selectedPortId="a"
+        refreshing={false}
+        onSelect={() => undefined}
+        onChoose={() => undefined}
+        onRefresh={() => undefined}
+        onCancel={() => undefined}
+      />,
+    );
 
   it('UX-029 draws the serial port dialog in English by default and in Spanish when the setting is es', () => {
     const english = dialog();
@@ -116,7 +156,12 @@ describe('UX-029 migrated components render in the language of the setting', () 
 
   it('UX-029 draws the update notice, its steps and the preferences in Spanish, with the plural of the tab size', () => {
     setLanguage('es');
-    const notice = renderToStaticMarkup(<UpdateNoticeView notice={{ current: '2.0.0', latest: '2.1.0', releaseUrl: 'https://example.invalid/r', steps: updateSteps('darwin', t) }} onDismiss={() => undefined} />);
+    const notice = renderToStaticMarkup(
+      <UpdateNoticeView
+        notice={{ current: '2.0.0', latest: '2.1.0', releaseUrl: 'https://example.invalid/r', steps: updateSteps('darwin', t) }}
+        onDismiss={() => undefined}
+      />,
+    );
     expect(notice).toContain('aria-label="Hay una versión más reciente de ZPLC disponible"');
     expect(notice).toContain('ZPLC 2.1.0 está disponible');
     expect(notice).toContain('Descargue el nuevo archivo');
@@ -131,11 +176,17 @@ describe('UX-029 migrated components render in the language of the setting', () 
   it('UX-029 offers the three language choices, and the English default leaves the preferences in English', () => {
     const preferences = renderToStaticMarkup(<AppPreferences includeTheme={false} />);
     expect(preferences).toContain('>Preferences<');
-    expect(preferences).toMatch(new RegExp(String.raw`data-setting="language"[\s\S]*?<option value="auto"[^>]*>Automatic \(system language\)<\/o` + String.raw`ption><option value="en"[^>]*>English<\/option><option value="es"[^>]*>Español<\/option>`));
+    expect(preferences).toMatch(
+      new RegExp(
+        String.raw`data-setting="language"[\s\S]*?<option value="auto"[^>]*>Automatic \(system language\)<\/o` +
+          String.raw`ption><option value="en"[^>]*>English<\/option><option value="es"[^>]*>Español<\/option>`,
+      ),
+    );
   });
 
   it('UX-029 draws the unsaved changes dialog with its default buttons in each language, and keeps the labels a caller passes', () => {
-    const draw = (extra: { saveLabel?: string } = {}) => renderToStaticMarkup(<UnsavedChangesDialog title="T" items={['Motor.st']} onChoice={() => undefined} {...extra} />);
+    const draw = (extra: { saveLabel?: string } = {}) =>
+      renderToStaticMarkup(<UnsavedChangesDialog title="T" items={['Motor.st']} onChoice={() => undefined} {...extra} />);
     expect(draw()).toContain('>Cancel<');
     expect(draw()).toContain('>Discard<');
     expect(draw()).toContain('>Save<');
@@ -150,11 +201,19 @@ describe('UX-029 migrated components render in the language of the setting', () 
 });
 
 describe('UX-029 the announcer says the result in the language of the setting', () => {
-  const report = (status: 'success' | 'error') => useNotifications.getState().report(status === 'success'
-    ? { kind: 'build', status, title: t('toolbarMsg.buildSucceeded'), details: 'output' }
-    : { kind: 'build', status, title: t('toolbarMsg.buildFailed'), detail: t('toolbarMsg.theCompilerCouldNot'), details: 'problems' });
+  const report = (status: 'success' | 'error') =>
+    useNotifications
+      .getState()
+      .report(
+        status === 'success'
+          ? { kind: 'build', status, title: t('toolbarMsg.buildSucceeded'), details: 'output' }
+          : { kind: 'build', status, title: t('toolbarMsg.buildFailed'), detail: t('toolbarMsg.theCompilerCouldNot'), details: 'problems' },
+      );
   // The notification store is shared by every test file of the run: leave it as it was found.
-  afterEach(() => { resetAnnouncements(); useNotifications.setState({ items: [] }); });
+  afterEach(() => {
+    resetAnnouncements();
+    useNotifications.setState({ items: [] });
+  });
 
   it('UX-029 announces a build result in English by default and in Spanish when the setting is es', () => {
     resetAnnouncements();
@@ -164,6 +223,8 @@ describe('UX-029 the announcer says the result in the language of the setting', 
     report('success');
     expect(announcementsSnapshot().polite.message).toBe('Compilación correcta');
     report('error');
-    expect(announcementsSnapshot().assertive.message).toBe('La compilación falló. El compilador no pudo terminar. El panel de problemas contiene lo que informó.');
+    expect(announcementsSnapshot().assertive.message).toBe(
+      'La compilación falló. El compilador no pudo terminar. El panel de problemas contiene lo que informó.',
+    );
   });
 });

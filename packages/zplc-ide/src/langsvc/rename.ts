@@ -21,12 +21,9 @@ export interface RenameEdit {
 }
 
 export type RenamePreparation =
-  | { ok: true; symbol: IndexedSymbol; line: number; column: number; length: number; placeholder: string }
-  | { ok: false; reason: string };
+  { ok: true; symbol: IndexedSymbol; line: number; column: number; length: number; placeholder: string } | { ok: false; reason: string };
 
-export type RenameResult =
-  | { ok: true; symbol: IndexedSymbol; edits: RenameEdit[]; files: string[] }
-  | { ok: false; reason: string };
+export type RenameResult = { ok: true; symbol: IndexedSymbol; edits: RenameEdit[]; files: string[] } | { ok: false; reason: string };
 
 /** Whether `name` is one identifier of the language: a letter or underscore, then letters, digits and underscores, and no keyword. */
 export function isRenameableName(name: string): boolean {
@@ -47,7 +44,10 @@ export function prepareRename(index: ProjectIndex, file: string, line: number, c
   const symbol = index.symbol(reference.symbol);
   if (!symbol) return { ok: false, reason: 'This name is not declared in the project, so there is nothing to rename.' };
   if (symbol.kind === 'program') {
-    return { ok: false, reason: `${symbol.name} is a program: the tasks of zplc.json run it by name, so rename it there and in its file together.` };
+    return {
+      ok: false,
+      reason: `${symbol.name} is a program: the tasks of zplc.json run it by name, so rename it there and in its file together.`,
+    };
   }
   return { ok: true, symbol, line: reference.line, column: reference.column, length: reference.length, placeholder: symbol.name };
 }
@@ -55,7 +55,9 @@ export function prepareRename(index: ProjectIndex, file: string, line: number, c
 /** The names, in upper case, that already mean something in a scope where `symbol` is used. */
 function taken(index: ProjectIndex, scope: number, symbol: IndexedSymbol): Set<string> {
   const names = new Set<string>();
-  const add = (other: IndexedSymbol): void => { if (other.id !== symbol.id) names.add(other.name.toUpperCase()); };
+  const add = (other: IndexedSymbol): void => {
+    if (other.id !== symbol.id) names.add(other.name.toUpperCase());
+  };
   for (const local of index.localsVisibleFrom(scope)) add(local);
   for (const global of index.globalSymbols()) add(global);
   for (const top of index.topLevelSymbols()) add(top);
@@ -66,11 +68,22 @@ export function renameSymbol(index: ProjectIndex, file: string, line: number, co
   const prepared = prepareRename(index, file, line, column);
   if (!prepared.ok) return prepared;
   const { symbol } = prepared;
-  if (!isRenameableName(newName)) return { ok: false, reason: `'${newName}' is not a valid name: use letters, digits and underscores, not starting with a digit, and not a keyword.` };
+  if (!isRenameableName(newName))
+    return {
+      ok: false,
+      reason: `'${newName}' is not a valid name: use letters, digits and underscores, not starting with a digit, and not a keyword.`,
+    };
   if (newName === symbol.name) return { ok: false, reason: 'The new name is the same as the old one.' };
   if (index.broken.length > 0) {
     const names = index.broken.slice(0, 3).join(', ');
-    return { ok: false, reason: `Rename needs every file of the project to be read, and ${names}${index.broken.length > 3 ? ' and others have' : index.broken.length > 1 ? ' have' : ' has'} a syntax error. Fix ${index.broken.length > 1 ? 'them' : 'it'} first.` };
+    return {
+      ok: false,
+      reason:
+        `Rename needs every file of the project to be read, ` +
+        `and ${names}${index.broken.length > 3 ? ' and others have' : index.broken.length > 1 ? ' have' : ' has'} a syntax error. Fix ${
+          index.broken.length > 1 ? 'them' : 'it'
+        } first.`,
+    };
   }
 
   const references = index.referencesTo(symbol.id);
@@ -82,26 +95,51 @@ export function renameSymbol(index: ProjectIndex, file: string, line: number, co
     for (const scope of scopes) {
       if (taken(index, scope, symbol).has(key)) {
         const where = index.symbol(scope);
-        return { ok: false, reason: `'${newName}' is already declared where ${symbol.name} is used${where ? ` (in ${where.name})` : ''}; renaming would make one of them mean the other.` };
+        return {
+          ok: false,
+          reason:
+            `'${newName}' is already declared where ${symbol.name} is used${where ? ` (in ${where.name})` : ''}; renaming would ` +
+            `make one of them mean the other.`,
+        };
       }
     }
     // a member: the block that declares it, the blocks that extend that block, and the structure it is a field of
     const owner = index.symbol(symbol.container);
     if (owner && ['functionBlock', 'interface', 'struct', 'enum', 'method', 'function', 'program'].includes(owner.kind)) {
-      const family = owner.kind === 'functionBlock' || owner.kind === 'interface'
-        ? [...index.blockChain(owner.id), ...index.topLevelSymbols().filter((candidate) => candidate.kind === 'functionBlock' && index.blockChain(candidate.id).some((base) => base.id === owner.id))]
-        : [owner];
+      const family =
+        owner.kind === 'functionBlock' || owner.kind === 'interface'
+          ? [
+              ...index.blockChain(owner.id),
+              ...index
+                .topLevelSymbols()
+                .filter(
+                  (candidate) => candidate.kind === 'functionBlock' && index.blockChain(candidate.id).some((base) => base.id === owner.id),
+                ),
+            ]
+          : [owner];
       for (const member of family.flatMap((each) => index.membersOfSymbol(each.id))) {
         if (member.id !== symbol.id && member.name.toUpperCase() === key) {
-          return { ok: false, reason: `'${newName}' is already a member of ${index.symbol(member.container)?.name ?? 'the same declaration'}.` };
+          return {
+            ok: false,
+            reason: `'${newName}' is already a member of ${index.symbol(member.container)?.name ?? 'the same declaration'}.`,
+          };
         }
       }
     }
   }
 
   const edits = references
-    .map((reference): RenameEdit => ({ file: reference.file, line: reference.line, column: reference.column, length: reference.length, newText: newName }))
-    .sort((first, second) => (first.file < second.file ? -1 : first.file > second.file ? 1 : 0) || first.line - second.line || first.column - second.column);
+    .map((reference): RenameEdit => ({
+      file: reference.file,
+      line: reference.line,
+      column: reference.column,
+      length: reference.length,
+      newText: newName,
+    }))
+    .sort(
+      (first, second) =>
+        (first.file < second.file ? -1 : first.file > second.file ? 1 : 0) || first.line - second.line || first.column - second.column,
+    );
   return { ok: true, symbol, edits, files: [...new Set(edits.map((edit) => edit.file))] };
 }
 

@@ -47,46 +47,43 @@ static char event_line[ZPLC_NATIVE_EVENT_MAX];
 #define ZPLC_TRACE_CAPACITY 512U
 
 typedef struct {
-    uint32_t kind; /* zplc_sched_trace_kind_t */
-    uint32_t task_id;
-    uint64_t a;
-    uint64_t b;
+  uint32_t kind; /* zplc_sched_trace_kind_t */
+  uint32_t task_id;
+  uint64_t a;
+  uint64_t b;
 } trace_record_t;
 
 static trace_record_t trace_records[ZPLC_TRACE_CAPACITY];
 static uint32_t trace_count;
 static int trace_enabled;
 
-static void trace_record(void *context, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b)
-{
-    (void)context;
-    if (trace_count < ZPLC_TRACE_CAPACITY) {
-        trace_records[trace_count].kind = (uint32_t)kind;
-        trace_records[trace_count].task_id = task_id;
-        trace_records[trace_count].a = a;
-        trace_records[trace_count].b = b;
-        trace_count++;
-    }
+static void trace_record(void *context, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b) {
+  (void)context;
+  if (trace_count < ZPLC_TRACE_CAPACITY) {
+    trace_records[trace_count].kind = (uint32_t)kind;
+    trace_records[trace_count].task_id = task_id;
+    trace_records[trace_count].a = a;
+    trace_records[trace_count].b = b;
+    trace_count++;
+  }
 }
 
 /* The core is initialised again whenever a program is loaded, which drops the sink: it is installed again after every
  * call that can have loaded one. */
-static void trace_attach(void)
-{
-    if (trace_enabled != 0) {
-        zplc_sched_core_set_trace(&session.core, trace_record, NULL);
-    }
+static void trace_attach(void) {
+  if (trace_enabled != 0) {
+    zplc_sched_core_set_trace(&session.core, trace_record, NULL);
+  }
 }
 
-void zplc_wasm_trace_enable(int32_t enabled)
-{
-    trace_enabled = enabled != 0;
-    trace_count = 0U;
-    if (trace_enabled != 0) {
-        trace_attach();
-    } else {
-        zplc_sched_core_set_trace(&session.core, NULL, NULL);
-    }
+void zplc_wasm_trace_enable(int32_t enabled) {
+  trace_enabled = enabled != 0;
+  trace_count = 0U;
+  if (trace_enabled != 0) {
+    trace_attach();
+  } else {
+    zplc_sched_core_set_trace(&session.core, NULL, NULL);
+  }
 }
 
 void zplc_wasm_trace_clear(void) { trace_count = 0U; }
@@ -107,26 +104,23 @@ const char *zplc_wasm_event_buffer(void) { return event_line; }
 /* A module has no network. Every communication block has a handler that says so: it fails the request at once with
  * STATUS 10 (UNAVAILABLE), the defined "this runtime cannot do it", so that no block reports success without acting
  * and a program is told the real reason, not "no handler". */
-static int comm_unavailable(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call)
-{
-    (void)kind;
-    (void)fb_mem;
-    (void)fb_len;
-    return call == ZPLC_COMM_CALL_RESET ? ZPLC_COMM_HANDLER_DONE : ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
+static int comm_unavailable(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
+  (void)kind;
+  (void)fb_mem;
+  (void)fb_len;
+  return call == ZPLC_COMM_CALL_RESET ? ZPLC_COMM_HANDLER_DONE : ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
 }
 
-#define ZPLC_REGISTER_UNAVAILABLE(name, kind, size) \
-    (void)zplc_comm_register_handler((zplc_comm_fb_kind_t)(kind), comm_unavailable);
+#define ZPLC_REGISTER_UNAVAILABLE(name, kind, size) (void)zplc_comm_register_handler((zplc_comm_fb_kind_t)(kind), comm_unavailable);
 
 /** The session starts with the clock of the host. */
-int32_t zplc_wasm_runtime_init(void)
-{
-    if (zplc_hal_init() != ZPLC_HAL_OK) {
-        return -1;
-    }
-    zplc_native_runtime_session_init(&session);
-    ZPLC_COMM_FB_TABLE(ZPLC_REGISTER_UNAVAILABLE)
-    return 0;
+int32_t zplc_wasm_runtime_init(void) {
+  if (zplc_hal_init() != ZPLC_HAL_OK) {
+    return -1;
+  }
+  zplc_native_runtime_session_init(&session);
+  ZPLC_COMM_FB_TABLE(ZPLC_REGISTER_UNAVAILABLE)
+  return 0;
 }
 
 /**
@@ -134,46 +128,33 @@ int32_t zplc_wasm_runtime_init(void)
  * It is the setting that ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK=1 gives the POSIX process, and like it a setting for
  * scenario tests: the host of a simulation that a person drives does not enable it.
  */
-void zplc_wasm_set_scenario_clock(int32_t enabled)
-{
-    zplc_native_runtime_session_set_scenario_clock_enabled(&session, enabled);
+void zplc_wasm_set_scenario_clock(int32_t enabled) { zplc_native_runtime_session_set_scenario_clock_enabled(&session, enabled); }
+
+int32_t zplc_wasm_request(void) {
+  response_line[0] = '\0';
+  event_line[0] = '\0';
+  request_line[sizeof(request_line) - 1U] = '\0';
+  (void)zplc_native_runtime_session_handle_request(&session, request_line, response_line, sizeof(response_line), event_line,
+                                                   sizeof(event_line));
+  trace_attach();
+  return (int32_t)strlen(response_line);
 }
 
-int32_t zplc_wasm_request(void)
-{
-    response_line[0] = '\0';
-    event_line[0] = '\0';
-    request_line[sizeof(request_line) - 1U] = '\0';
-    (void)zplc_native_runtime_session_handle_request(&session, request_line, response_line, sizeof(response_line),
-                                                     event_line, sizeof(event_line));
-    trace_attach();
-    return (int32_t)strlen(response_line);
+int32_t zplc_wasm_tick(uint32_t now_ms) {
+  event_line[0] = '\0';
+  (void)zplc_native_runtime_session_tick(&session, now_ms, event_line, sizeof(event_line));
+  return (int32_t)strlen(event_line);
 }
 
-int32_t zplc_wasm_tick(uint32_t now_ms)
-{
-    event_line[0] = '\0';
-    (void)zplc_native_runtime_session_tick(&session, now_ms, event_line, sizeof(event_line));
-    return (int32_t)strlen(event_line);
+int32_t zplc_wasm_event_length(void) { return (int32_t)strlen(event_line); }
+
+uint32_t zplc_wasm_poll_timeout_ms(uint32_t now_ms, uint32_t max_timeout_ms) {
+  return zplc_native_runtime_session_poll_timeout_ms(&session, now_ms, max_timeout_ms);
 }
 
-int32_t zplc_wasm_event_length(void)
-{
-    return (int32_t)strlen(event_line);
-}
+int32_t zplc_wasm_should_exit(void) { return zplc_native_runtime_session_should_exit(&session); }
 
-uint32_t zplc_wasm_poll_timeout_ms(uint32_t now_ms, uint32_t max_timeout_ms)
-{
-    return zplc_native_runtime_session_poll_timeout_ms(&session, now_ms, max_timeout_ms);
-}
-
-int32_t zplc_wasm_should_exit(void)
-{
-    return zplc_native_runtime_session_should_exit(&session);
-}
-
-void zplc_wasm_shutdown(void)
-{
-    zplc_native_runtime_session_shutdown(&session);
-    (void)zplc_hal_shutdown();
+void zplc_wasm_shutdown(void) {
+  zplc_native_runtime_session_shutdown(&session);
+  (void)zplc_hal_shutdown();
 }

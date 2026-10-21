@@ -26,8 +26,11 @@ export function getDebugCapabilitiesForAdapter(
   }
 
   // the native runtime and the WebAssembly runtime report their profile in the handshake of the same session protocol
-  if ((adapter.type === 'native' || adapter.type === 'wasm') && hasNativeCapabilityProfile(adapter)
-    && (adapter.capabilities !== null || adapter.type === 'native')) {
+  if (
+    (adapter.type === 'native' || adapter.type === 'wasm') &&
+    hasNativeCapabilityProfile(adapter) &&
+    (adapter.capabilities !== null || adapter.type === 'native')
+  ) {
     return getDebugCapabilitiesFromProfile(adapter.capabilities);
   }
 
@@ -72,9 +75,7 @@ export function getDebugFeatureActionability(
     return {
       allowed: false,
       support,
-      message: support.reason
-        ? `${actionLabel} unavailable: ${support.reason}`
-        : `${actionLabel} unavailable in the active runtime`,
+      message: support.reason ? `${actionLabel} unavailable: ${support.reason}` : `${actionLabel} unavailable in the active runtime`,
     };
   }
 

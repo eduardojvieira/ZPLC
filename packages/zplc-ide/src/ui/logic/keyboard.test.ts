@@ -120,23 +120,39 @@ describe('overlay placement (UX-001 stopgap)', () => {
   const size = { width: 200, height: 100 };
 
   it('opens below the anchor, left-aligned, when it fits', () => {
-    expect(placeOverlay({ anchor: { left: 100, top: 100, width: 80, height: 30 }, overlay: size, viewport, placement: 'bottom-start' }))
-      .toEqual({ left: 100, top: 136, placement: 'bottom-start' });
+    expect(
+      placeOverlay({ anchor: { left: 100, top: 100, width: 80, height: 30 }, overlay: size, viewport, placement: 'bottom-start' }),
+    ).toEqual({ left: 100, top: 136, placement: 'bottom-start' });
   });
 
   it('flips above the anchor when there is no room below', () => {
-    const placed = placeOverlay({ anchor: { left: 100, top: 640, width: 80, height: 30 }, overlay: size, viewport, placement: 'bottom-start' });
+    const placed = placeOverlay({
+      anchor: { left: 100, top: 640, width: 80, height: 30 },
+      overlay: size,
+      viewport,
+      placement: 'bottom-start',
+    });
     expect(placed.placement).toBe('top-start');
     expect(placed.top).toBe(640 - 100 - 6);
   });
 
   it('keeps the overlay inside the viewport horizontally', () => {
-    const placed = placeOverlay({ anchor: { left: 950, top: 100, width: 40, height: 30 }, overlay: size, viewport, placement: 'bottom-start' });
+    const placed = placeOverlay({
+      anchor: { left: 950, top: 100, width: 40, height: 30 },
+      overlay: size,
+      viewport,
+      placement: 'bottom-start',
+    });
     expect(placed.left + size.width).toBeLessThanOrEqual(viewport.width - 8);
   });
 
   it('centres a tooltip over its anchor', () => {
-    const placed = placeOverlay({ anchor: { left: 100, top: 300, width: 40, height: 30 }, overlay: { width: 80, height: 24 }, viewport, placement: 'top' });
+    const placed = placeOverlay({
+      anchor: { left: 100, top: 300, width: 40, height: 30 },
+      overlay: { width: 80, height: 24 },
+      viewport,
+      placement: 'top',
+    });
     expect(placed).toEqual({ left: 80, top: 300 - 24 - 6, placement: 'top' });
   });
 });

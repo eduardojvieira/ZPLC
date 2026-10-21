@@ -39,10 +39,16 @@ async function run(restore: boolean): Promise<{ count: number; total: number; ma
   try {
     await mkdir(join(root, 'src'));
     await writeFile(join(root, 'src', 'main.st'), SOURCE);
-    await writeFile(join(root, 'zplc.json'), JSON.stringify({
-      schemaVersion: 2, name: 'retain', version: '1.0.0', target: { board: 'posix' },
-      tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
-    }));
+    await writeFile(
+      join(root, 'zplc.json'),
+      JSON.stringify({
+        schemaVersion: 2,
+        name: 'retain',
+        version: '1.0.0',
+        target: { board: 'posix' },
+        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+      }),
+    );
     const compiled = await compilerCompile(root);
     if (!compiled.ok || !compiled.zplcFile) throw new Error(JSON.stringify(compiled.evidence.diagnostics));
     const vars = compiled.debugMap!.pou.Kept!.vars;
@@ -51,7 +57,12 @@ async function run(restore: boolean): Promise<{ count: number; total: number; ma
     const supervisor = new NativeSimulationSupervisor({
       clientName: 'zplc-retain',
       clientVersion: productManifest.version,
-      environment: { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persist, ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1' },
+      environment: {
+        ...process.env,
+        ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary,
+        ZPLC_PERSIST_ROOT: persist,
+        ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
+      },
     });
     const adapter = new NativeAdapter(supervisor);
     try {
@@ -59,7 +70,7 @@ async function run(restore: boolean): Promise<{ count: number; total: number; ma
       await adapter.loadProgram(compiled.zplcFile);
       if (restore) {
         // what a restored record looks like: the marker set, count 100 and total 1000
-        await adapter.pokeN(MARKER, new Uint8Array([1, 0, 0, 0, 100, 0, 0, 0, 0xE8, 0x03, 0, 0]));
+        await adapter.pokeN(MARKER, new Uint8Array([1, 0, 0, 0, 100, 0, 0, 0, 0xe8, 0x03, 0, 0]));
       }
       await adapter.scenarioStep(0);
       await adapter.scenarioStep(10);

@@ -15,9 +15,9 @@
 
 <!-- The command and what it printed. See CONTRIBUTING.md for the command of each layer. -->
 
-| Command | Result |
-|---|---|
-| `bun run test:ci` | |
+| Command           | Result |
+| ----------------- | ------ |
+| `bun run test:ci` |        |
 
 ## Evidence
 

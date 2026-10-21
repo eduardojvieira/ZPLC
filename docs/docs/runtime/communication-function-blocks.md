@@ -14,13 +14,13 @@ ZPLC provides twelve function blocks that talk to field devices, brokers and clo
 
 Every block starts with the same five pins.
 
-| Pin | Direction | Meaning |
-| --- | --- | --- |
-| `EN` | Input | A rising edge starts one request. |
-| `BUSY` | Output | `TRUE` from the request until its result. |
-| `DONE` | Output | `TRUE` when the request finished without error. |
-| `ERROR` | Output | `TRUE` when the request failed; `STATUS` says why. |
-| `STATUS` | Output | The status code of the last request. |
+| Pin      | Direction | Meaning                                            |
+| -------- | --------- | -------------------------------------------------- |
+| `EN`     | Input     | A rising edge starts one request.                  |
+| `BUSY`   | Output    | `TRUE` from the request until its result.          |
+| `DONE`   | Output    | `TRUE` when the request finished without error.    |
+| `ERROR`  | Output    | `TRUE` when the request failed; `STATUS` says why. |
+| `STATUS` | Output    | The status code of the last request.               |
 
 A block that makes **one request for each rising edge of `EN`** is a request block: the four Modbus blocks, `MQTT_PUBLISH`, `AZURE_DPS_PROV`, `AZURE_EG_PUB`, `AWS_FLEET_PROV` and `SPB_REBIRTH`. A block that **reports a state on every scan** is a service block: `MQTT_CONNECT`, `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV`.
 
@@ -49,40 +49,40 @@ The values are what the program reads after the call of the block in that scan. 
 
 The handler of a service block is called on every scan while `EN` is `TRUE` and its answer is the state of the block:
 
-| State | `BUSY` | `DONE` | `ERROR` | `STATUS` |
-| --- | --- | --- | --- | --- |
-| Not reached yet (connecting, subscribing) | `TRUE` | `FALSE` | `FALSE` | 1 |
-| Reached (the session is up, the subscription holds) | `FALSE` | `TRUE` | `FALSE` | 0 |
-| Lost or not available | `FALSE` | `FALSE` | `TRUE` | the code |
+| State                                               | `BUSY`  | `DONE`  | `ERROR` | `STATUS` |
+| --------------------------------------------------- | ------- | ------- | ------- | -------- |
+| Not reached yet (connecting, subscribing)           | `TRUE`  | `FALSE` | `FALSE` | 1        |
+| Reached (the session is up, the subscription holds) | `FALSE` | `TRUE`  | `FALSE` | 0        |
+| Lost or not available                               | `FALSE` | `FALSE` | `TRUE`  | the code |
 
 When `EN` falls, `BUSY`, `DONE` and `ERROR` are cleared and a received `PAYLOAD` goes with them. `VALID` of `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` is `TRUE` for exactly one scan, the scan a message is new in; `PAYLOAD` keeps the last message.
 
 ### Status codes
 
-| `STATUS` | Name | Meaning |
-| --- | --- | --- |
-| 0 | OK | The request finished. |
-| 1 | Busy | The request is in progress. |
-| 2 | Timeout | The peer did not answer, or the request outlived its time limit. |
-| 3 | No handler | This runtime has no handler for the block. |
-| 4 | Not connected | There is no connection to the peer. |
-| 5 | Queue full | Every request slot is in use. |
-| 6 | Invalid address | A pin holds a value the request cannot be made with. |
-| 7 | String overflow | A string is longer than the message can carry. |
-| 8 | Protocol error | The peer answered with something the protocol does not allow, or with an error. |
-| 9 | Authentication failed | The peer refused the credentials. |
-| 10 | Not available | The service of the block is not available in this runtime, or is off in the configuration. |
+| `STATUS` | Name                  | Meaning                                                                                    |
+| -------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| 0        | OK                    | The request finished.                                                                      |
+| 1        | Busy                  | The request is in progress.                                                                |
+| 2        | Timeout               | The peer did not answer, or the request outlived its time limit.                           |
+| 3        | No handler            | This runtime has no handler for the block.                                                 |
+| 4        | Not connected         | There is no connection to the peer.                                                        |
+| 5        | Queue full            | Every request slot is in use.                                                              |
+| 6        | Invalid address       | A pin holds a value the request cannot be made with.                                       |
+| 7        | String overflow       | A string is longer than the message can carry.                                             |
+| 8        | Protocol error        | The peer answered with something the protocol does not allow, or with an error.            |
+| 9        | Authentication failed | The peer refused the credentials.                                                          |
+| 10       | Not available         | The service of the block is not available in this runtime, or is off in the configuration. |
 
 ## Time limits
 
-| What | Limit |
-| --- | --- |
-| A call of a block in the scan | Takes a lock held for a few instructions and queues the request. It never waits for the network, a socket or a flash. |
-| A Modbus request | The client waits at most twice the configured timeout (to connect, then for the answer); the block reports `ERROR` with `STATUS` 2 at the latest `(2 x timeout + 100 ms) x 8` after the request, which is 8.8 s with the default timeout of 500 ms. |
-| `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH` | The client thread sends the message within one pass of its loop; `ERROR` with `STATUS` 2 after 5 s. |
-| A provisioning (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | The service waits for the broker for 30 s in each step; `ERROR` with `STATUS` 2 after 90 s. |
-| Loss of the broker session | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` report `ERROR` with `STATUS` 4 (or the code of the failure) on the scan after the client notices: at once for a connection that is closed or reset, and within the keep-alive interval for a silent loss. A message that was queued and not yet sent is failed, not sent on the next session. |
-| Reconnection | One attempt at a time. The client waits up to 5 s for the broker's answer and then waits 2 s, doubling up to 60 s, before the next attempt. |
+| What                                                | Limit                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A call of a block in the scan                       | Takes a lock held for a few instructions and queues the request. It never waits for the network, a socket or a flash.                                                                                                                                                                                                                               |
+| A Modbus request                                    | The client waits at most twice the configured timeout (to connect, then for the answer); the block reports `ERROR` with `STATUS` 2 at the latest `(2 x timeout + 100 ms) x 8` after the request, which is 8.8 s with the default timeout of 500 ms.                                                                                                 |
+| `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH`       | The client thread sends the message within one pass of its loop; `ERROR` with `STATUS` 2 after 5 s.                                                                                                                                                                                                                                                 |
+| A provisioning (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | The service waits for the broker for 30 s in each step; `ERROR` with `STATUS` 2 after 90 s.                                                                                                                                                                                                                                                         |
+| Loss of the broker session                          | `MQTT_CONNECT`, `MQTT_SUBSCRIBE` and `AZURE_C2D_RECV` report `ERROR` with `STATUS` 4 (or the code of the failure) on the scan after the client notices: at once for a connection that is closed or reset, and within the keep-alive interval for a silent loss. A message that was queued and not yet sent is failed, not sent on the next session. |
+| Reconnection                                        | One attempt at a time. The client waits up to 5 s for the broker's answer and then waits 2 s, doubling up to 60 s, before the next attempt.                                                                                                                                                                                                         |
 
 ## Supported function blocks
 
@@ -115,11 +115,11 @@ Used to interact with field devices without using implicit auto-mapping. `COUNT`
 
 The native runtime that the simulation and the command line drive runs the same Modbus and MQTT handlers as a controller, on a Modbus TCP client and an MQTT 3.1.1 client of the host (plain TCP). It is off until the session asks for it: a runtime that is started the old way answers every block `STATUS` 3 (no handler), as it always did.
 
-| Environment of the runtime | Meaning |
-| --- | --- |
-| `ZPLC_NATIVE_COMM=1` | Turns the communication blocks on. |
+| Environment of the runtime          | Meaning                                                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `ZPLC_NATIVE_COMM=1`                | Turns the communication blocks on.                                                                           |
 | `ZPLC_NATIVE_MQTT_BROKER=host:port` | The broker that `MQTT_CONNECT`, `MQTT_PUBLISH` and `MQTT_SUBSCRIBE` use. Without it they answer `STATUS` 10. |
-| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS` | The time a Modbus request waits to connect and again for the answer. 500 by default. |
+| `ZPLC_NATIVE_MODBUS_TIMEOUT_MS`     | The time a Modbus request waits to connect and again for the answer. 500 by default.                         |
 
 The ZPLC application starts the peers for you. A simulation session started by the application sets `ZPLC_NATIVE_COMM=1` and `ZPLC_NATIVE_LOOPBACK=1`, and the runtime then starts, inside its own process and on 127.0.0.1, a Modbus TCP server (1024 holding registers and 1024 coils) and an MQTT broker, so they end with the session and need no installed broker, Python or network. Every Modbus TCP request of a program reaches that server whatever host and port the block names (a simulation has no plant), the MQTT blocks use that broker, and a broker named in the environment of the application is ignored. The console of the session says which endpoints run. If one cannot start, all twelve blocks answer `STATUS` 10, "not available in simulation", the capability `communication-endpoints` of the session says `unavailable`, and no block reports success without acting. A Modbus request on RTU (there is no serial device) and every block of a cloud service (there is no service) answer `STATUS` 10 in simulation. `zplc_loopback`, built with the runtime, is the same pair of endpoints as a separate program for tests; it prints its ports as one line of JSON and ends when its standard input closes.
 
@@ -127,12 +127,12 @@ The ZPLC application starts the peers for you. A simulation session started by t
 
 No block was verified against a live service, and verifying one needs no paid subscription. The verification of each block is of one or two kinds: the **handler** (the pins, the handshake, the status codes and the hand-over to a worker, with the client replaced by a stand-in that answers what the test says) and a **protocol double** (the block against a server written for the test that speaks the protocol on a loopback socket). A local double proves the behaviour of the block and of the protocol. It does not prove that a real device, broker or cloud service accepts the exchange.
 
-| Block | Handler | Protocol double | Live service |
-| --- | --- | --- | --- |
-| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Yes | Modbus TCP: the transaction code of the client is one file compiled in the controller and in the simulation runtime, and runs against a server on loopback in both (native_sim and the host); success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy. RTU: only the interface parameters are checked (the timeout is given in the unit the Zephyr Modbus client reads); no serial device is used | No |
-| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` | Yes | The MQTT client of the simulation runtime, against a broker on loopback: session, publish, subscribe, loss of the session, reconnection, silent loss. The client of the controller (`zplc_mqtt.c`, the file a board runs) is also run on `native_sim` against a broker written for the test on the loopback interface: session, publish once per request, subscription and message, no `CONNACK` (error with a status), refused connection, lost session, reset while busy | No |
-| `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH` | Yes | The client of the controller on `native_sim` against the broker written for the test, with the profile of each service: a cloud-to-device message, one Event Grid message and one `NBIRTH` per request, `STATUS` 10 under a profile that does not offer the service, `NOT_CONNECTED` with no session, reset while busy. The exchange with the real Azure or Sparkplug service is not tested | No |
-| `AZURE_DPS_PROV`, `AWS_FLEET_PROV` | Yes, with the provisioning service replaced by one that waits | None in the test suite; `tools/connectivity/` has scripts that answer on a broker you run yourself, used by hand | No |
+| Block                                                            | Handler                                                       | Protocol double                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Live service |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL` | Yes                                                           | Modbus TCP: the transaction code of the client is one file compiled in the controller and in the simulation runtime, and runs against a server on loopback in both (native_sim and the host); success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy. RTU: only the interface parameters are checked (the timeout is given in the unit the Zephyr Modbus client reads); no serial device is used                         | No           |
+| `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`                 | Yes                                                           | The MQTT client of the simulation runtime, against a broker on loopback: session, publish, subscribe, loss of the session, reconnection, silent loss. The client of the controller (`zplc_mqtt.c`, the file a board runs) is also run on `native_sim` against a broker written for the test on the loopback interface: session, publish once per request, subscription and message, no `CONNACK` (error with a status), refused connection, lost session, reset while busy | No           |
+| `AZURE_C2D_RECV`, `AZURE_EG_PUB`, `SPB_REBIRTH`                  | Yes                                                           | The client of the controller on `native_sim` against the broker written for the test, with the profile of each service: a cloud-to-device message, one Event Grid message and one `NBIRTH` per request, `STATUS` 10 under a profile that does not offer the service, `NOT_CONNECTED` with no session, reset while busy. The exchange with the real Azure or Sparkplug service is not tested                                                                                | No           |
+| `AZURE_DPS_PROV`, `AWS_FLEET_PROV`                               | Yes, with the provisioning service replaced by one that waits | None in the test suite; `tools/connectivity/` has scripts that answer on a broker you run yourself, used by hand                                                                                                                                                                                                                                                                                                                                                           | No           |
 
 ## Language availability
 

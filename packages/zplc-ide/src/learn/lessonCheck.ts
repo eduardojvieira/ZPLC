@@ -28,9 +28,18 @@ import { parseScenarioFile } from './lessonPackage';
  * ponytail: the program is copied to a scratch folder because the Tool API reads scenarios from the folder it runs; a
  * `scenarios` option on `runWorkspaceScenarios` would avoid the copy, but toolApi.ts is above its size ratchet.
  */
-export async function runSuppliedScenario(root: string, scenario: { path: string; bytes: Uint8Array }, scenarioId: string, options: TestsRunOptions = {}): Promise<TestRunResult> {
+export async function runSuppliedScenario(
+  root: string,
+  scenario: { path: string; bytes: Uint8Array },
+  scenarioId: string,
+  options: TestsRunOptions = {},
+): Promise<TestRunResult> {
   const loaded = await readWorkspace(root);
-  if (!loaded.ok) return { ok: false, evidence: { schemaVersion: 1, operation: 'scenario-run', outcome: 'failed', diagnostics: loaded.diagnostics, artifacts: [] } };
+  if (!loaded.ok)
+    return {
+      ok: false,
+      evidence: { schemaVersion: 1, operation: 'scenario-run', outcome: 'failed', diagnostics: loaded.diagnostics, artifacts: [] },
+    };
   const scratch = await mkdtemp(join(tmpdir(), 'zplc-lesson-check-'));
   try {
     await writeFile(join(scratch, 'zplc.json'), loaded.workspace.manifestBytes, { mode: 0o600 });
@@ -67,7 +76,9 @@ function nativeRuntimeVersion(environment: NodeJS.ProcessEnv): Promise<string> {
     }
   })();
   runtimeVersionRead = { key, version };
-  version.catch(() => { if (runtimeVersionRead?.version === version) runtimeVersionRead = undefined; });
+  version.catch(() => {
+    if (runtimeVersionRead?.version === version) runtimeVersionRead = undefined;
+  });
   return version;
 }
 
@@ -98,16 +109,31 @@ export async function lessonCheck(root: string, lessonId: string, options: Lesso
   let trace: TraceSample[] = [];
   let assertions = result.preview?.scenarios[0]?.assertions ?? [];
   try {
-    const full = JSON.parse(new TextDecoder().decode(result.traceFile)) as { scenarios?: Array<{ id?: unknown; trace?: TraceSample[]; assertions?: Array<{ kind: string; passed: boolean; atMs?: number }> }> };
+    const full = JSON.parse(new TextDecoder().decode(result.traceFile)) as {
+      scenarios?: Array<{ id?: unknown; trace?: TraceSample[]; assertions?: Array<{ kind: string; passed: boolean; atMs?: number }> }>;
+    };
     const run = full.scenarios?.find((entry) => entry.id === lesson.scenario.id);
-    if (run?.trace && run.assertions) { trace = run.trace; assertions = run.assertions as typeof assertions; }
-  } catch { /* the preview holds the failing samples; the record then carries less of the trace */ }
+    if (run?.trace && run.assertions) {
+      trace = run.trace;
+      assertions = run.assertions as typeof assertions;
+    }
+  } catch {
+    /* the preview holds the failing samples; the record then carries less of the trace */
+  }
   if (trace.length === 0) trace = (result.preview?.scenarios[0]?.samples ?? []).map(({ atMs, outputs }) => ({ atMs, outputs }));
   if (assertions.length !== lesson.scenario.assertions) return { ok: false, reason: 'not-graded', evidence: result.evidence };
-  const runtimeVersion = options.runtimeVersion ?? await nativeRuntimeVersion(process.env);
+  const runtimeVersion = options.runtimeVersion ?? (await nativeRuntimeVersion(process.env));
   const record = gradeRecordOf({
-    lessonId: lesson.id, lessonVersion: lesson.version, scenario: parsed.scenario, scenarioSha256: lesson.scenario.sha256,
-    programSha256: zplc.sha256, runtimeVersion, time: (options.clock ?? (() => new Date()))(), assertions, trace, traceSha256: traceArtifact.sha256,
+    lessonId: lesson.id,
+    lessonVersion: lesson.version,
+    scenario: parsed.scenario,
+    scenarioSha256: lesson.scenario.sha256,
+    programSha256: zplc.sha256,
+    runtimeVersion,
+    time: (options.clock ?? (() => new Date()))(),
+    assertions,
+    trace,
+    traceSha256: traceArtifact.sha256,
   });
   return { ok: true, record, evidence: result.evidence };
 }

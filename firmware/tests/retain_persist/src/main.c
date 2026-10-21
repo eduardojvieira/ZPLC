@@ -27,18 +27,13 @@
 
 /* RETAIN[0..3] += 1 once per scan. */
 static const uint8_t counter_code[] = {
-    OP_LOAD32, ADDRESS_LOW(ZPLC_MEM_RETAIN_BASE), ADDRESS_HIGH(ZPLC_MEM_RETAIN_BASE),
-    OP_PUSH32, 1U, 0U, 0U, 0U,
-    OP_ADD,
-    OP_STORE32, ADDRESS_LOW(ZPLC_MEM_RETAIN_BASE), ADDRESS_HIGH(ZPLC_MEM_RETAIN_BASE),
-    OP_HALT,
+    OP_LOAD32,  ADDRESS_LOW(ZPLC_MEM_RETAIN_BASE), ADDRESS_HIGH(ZPLC_MEM_RETAIN_BASE), OP_PUSH32, 1U, 0U, 0U, 0U, OP_ADD,
+    OP_STORE32, ADDRESS_LOW(ZPLC_MEM_RETAIN_BASE), ADDRESS_HIGH(ZPLC_MEM_RETAIN_BASE), OP_HALT,
 };
 
 /* Another program: it never touches RETAIN. */
 static const uint8_t other_code[] = {
-    OP_PUSH8, 0x55U,
-    OP_STORE8, ADDRESS_LOW(ZPLC_MEM_WORK_BASE), ADDRESS_HIGH(ZPLC_MEM_WORK_BASE),
-    OP_HALT,
+    OP_PUSH8, 0x55U, OP_STORE8, ADDRESS_LOW(ZPLC_MEM_WORK_BASE), ADDRESS_HIGH(ZPLC_MEM_WORK_BASE), OP_HALT,
 };
 
 static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t length) {
@@ -111,8 +106,7 @@ static void load(const uint8_t *code, size_t code_size) {
 static uint32_t retain_counter(void) {
   const uint8_t *retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
 
-  return (uint32_t)retain[0] | ((uint32_t)retain[1] << 8) |
-         ((uint32_t)retain[2] << 16) | ((uint32_t)retain[3] << 24);
+  return (uint32_t)retain[0] | ((uint32_t)retain[1] << 8) | ((uint32_t)retain[2] << 16) | ((uint32_t)retain[3] << 24);
 }
 
 static zplc_retain_status_t retain_status(void) {
@@ -197,8 +191,7 @@ ZTEST(zplc_retain_persist, test_another_program_starts_from_an_initialised_regio
   power_cycle();
   load(other_code, sizeof(other_code));
   status = retain_status();
-  zassert_equal(status.reason, ZPLC_RETAIN_IDENTITY_MISMATCH,
-                "the identity of the record is not the identity of the program");
+  zassert_equal(status.reason, ZPLC_RETAIN_IDENTITY_MISMATCH, "the identity of the record is not the identity of the program");
   zassert_equal(retain_counter(), 0U, "the region is initialised");
 }
 
@@ -213,10 +206,8 @@ ZTEST(zplc_retain_persist, test_a_corrupt_record_initialises_the_region_and_says
 
   power_cycle();
   memset(junk, 0xA5, sizeof(junk));
-  zassert_equal(zplc_hal_persist_save("retain_a0", junk, sizeof(junk)), ZPLC_HAL_OK,
-                "damage slot a");
-  zassert_equal(zplc_hal_persist_save("retain_b0", junk, sizeof(junk)), ZPLC_HAL_OK,
-                "damage slot b");
+  zassert_equal(zplc_hal_persist_save("retain_a0", junk, sizeof(junk)), ZPLC_HAL_OK, "damage slot a");
+  zassert_equal(zplc_hal_persist_save("retain_b0", junk, sizeof(junk)), ZPLC_HAL_OK, "damage slot b");
   load(counter_code, sizeof(counter_code));
   status = retain_status();
   zassert_equal(status.reason, ZPLC_RETAIN_CORRUPT, "the damage is reported");

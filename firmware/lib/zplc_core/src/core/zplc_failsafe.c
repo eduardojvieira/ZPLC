@@ -36,8 +36,8 @@ static uint32_t record_checksum(const zplc_fault_record_t *record) {
   return zplc_crc32_update(0xFFFFFFFFU, (const uint8_t *)record, offsetof(zplc_fault_record_t, crc)) ^ 0xFFFFFFFFU;
 }
 
-void zplc_fault_record_make(zplc_fault_record_t *record, zplc_fault_kind_t kind, uint8_t reason, uint16_t task_id,
-                            uint32_t pc, uint32_t sequence) {
+void zplc_fault_record_make(zplc_fault_record_t *record, zplc_fault_kind_t kind, uint8_t reason, uint16_t task_id, uint32_t pc,
+                            uint32_t sequence) {
   memset(record, 0, sizeof(*record));
   record->magic = ZPLC_FAULT_RECORD_MAGIC;
   record->version = ZPLC_FAULT_RECORD_VERSION;

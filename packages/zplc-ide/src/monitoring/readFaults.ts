@@ -35,5 +35,7 @@ export function readFaultKeys(): ReadonlySet<string> {
 
 export function subscribeReadFaults(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }

@@ -23,7 +23,8 @@ describe('theme control choices', () => {
 
   it('ignores a value that is not one of the options', () => {
     const set: string[] = [];
-    for (const value of ['', 'system', 'Dark', 'solarized', '__proto__']) expect(chooseTheme(value, (theme) => set.push(theme))).toBe(false);
+    for (const value of ['', 'system', 'Dark', 'solarized', '__proto__'])
+      expect(chooseTheme(value, (theme) => set.push(theme))).toBe(false);
     expect(set).toEqual([]);
   });
 });

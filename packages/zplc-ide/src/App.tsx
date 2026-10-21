@@ -66,7 +66,10 @@ let workbenchParts: Promise<WorkbenchParts> | null = null;
 function loadWorkbench(): Promise<WorkbenchParts> {
   workbenchParts ??= Promise.all([import('./components/Toolbar'), import('./components/EditorArea'), import('./components/Console')])
     .then(([toolbar, editor, panels]) => ({ Toolbar: toolbar.Toolbar, EditorArea: editor.EditorArea, Console: panels.Console }))
-    .catch((error: unknown) => { workbenchParts = null; throw error; });
+    .catch((error: unknown) => {
+      workbenchParts = null;
+      throw error;
+    });
   return workbenchParts;
 }
 
@@ -100,7 +103,9 @@ function App() {
   useEffect(() => trackProjectSources(useIDEStore), []);
 
   // The window takes the page title: the open project's name before the product's (UX-016).
-  useEffect(() => { document.title = windowTitle(projectName); }, [projectName]);
+  useEffect(() => {
+    document.title = windowTitle(projectName);
+  }, [projectName]);
 
   // A change made outside ZPLC reloads an unmodified file and asks about a modified one (IDE-004).
   useEffect(() => startExternalChangeWatch(), []);
@@ -114,15 +119,22 @@ function App() {
     const unsubscribe = useAppSettings.subscribe((state, previous) => {
       if (state.settings.autosaveSeconds !== previous.settings.autosaveSeconds) autosave.settingsChanged();
     });
-    return () => { unsubscribe(); autosave.stop(); };
+    return () => {
+      unsubscribe();
+      autosave.stop();
+    };
   }, []);
 
   // The update check (IDE-010) runs only while the user has it turned on: at start, and when it is turned on.
   const checkForUpdates = useAppSettings((s) => s.settings.checkForUpdates);
-  useEffect(() => startUpdateCheck(checkForUpdates, window.electronAPI?.updateCheck, ZPLC_REPO_VERSION, (result) => {
-    // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
-    useUpdateNotice.getState().report(result);
-  }), [checkForUpdates]);
+  useEffect(
+    () =>
+      startUpdateCheck(checkForUpdates, window.electronAPI?.updateCheck, ZPLC_REPO_VERSION, (result) => {
+        // A newer release shows the dismissible notice; an answer that says nothing, or that could not be had, shows nothing (REL-021).
+        useUpdateNotice.getState().report(result);
+      }),
+    [checkForUpdates],
+  );
 
   // Modified files are kept in the main process a moment after the last keystroke, so that a crash loses nothing (IDE-006).
   useEffect(() => startRecoveryPersistence(useIDEStore), []);
@@ -132,10 +144,16 @@ function App() {
     if (!isProjectOpen || workbench) return undefined;
     let current = true;
     loadWorkbench().then(
-      (parts) => { if (current) setWorkbench(parts); },
-      (error: unknown) => { if (current) setWorkbenchFailure({ message: error instanceof Error ? error.message : String(error), attempt: workbenchAttempt }); },
+      (parts) => {
+        if (current) setWorkbench(parts);
+      },
+      (error: unknown) => {
+        if (current) setWorkbenchFailure({ message: error instanceof Error ? error.message : String(error), attempt: workbenchAttempt });
+      },
     );
-    return () => { current = false; };
+    return () => {
+      current = false;
+    };
   }, [isProjectOpen, workbench, workbenchAttempt]);
 
   if (!isProjectOpen) {
@@ -143,7 +161,13 @@ function App() {
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <WebBuildNotice />
         <UpdateNoticeBanner />
-        {learnHomeOpen ? <main aria-label={t('learn.home.title')} className="flex min-h-0 flex-1 flex-col"><LearnHome /></main> : <WelcomeScreen />}
+        {learnHomeOpen ? (
+          <main aria-label={t('learn.home.title')} className="flex min-h-0 flex-1 flex-col">
+            <LearnHome />
+          </main>
+        ) : (
+          <WelcomeScreen />
+        )}
         <CloseGuard />
         <SerialPortChooser />
         <CommandPalette />
@@ -163,9 +187,15 @@ function App() {
         <NewProjectDialog />
         <ShortcutReference />
         <div className="flex flex-1 items-center justify-center">
-          {failed
-            ? <ErrorState title={t('app.workbenchFailedTitle')} message={t('app.workbenchFailed', { message: workbenchFailure.message })} action={<Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>{t('common.retry')}</Button>} />
-            : <LoadingState label={t('app.workbenchLoading')} />}
+          {failed ? (
+            <ErrorState
+              title={t('app.workbenchFailedTitle')}
+              message={t('app.workbenchFailed', { message: workbenchFailure.message })}
+              action={<Button onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)}>{t('common.retry')}</Button>}
+            />
+          ) : (
+            <LoadingState label={t('app.workbenchLoading')} />
+          )}
         </div>
       </div>
     );
@@ -176,14 +206,14 @@ function App() {
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
       <SerialPortChooser />
-        <CommandPalette />
-        <NewProjectDialog />
-        <ShortcutReference />
+      <CommandPalette />
+      <NewProjectDialog />
+      <ShortcutReference />
       <RecoveryOffer />
       <ExternalChangePrompt />
       <ActionConfirmHost />
       <WebBuildNotice />
-        <UpdateNoticeBanner />
+      <UpdateNoticeBanner />
       {/* Unified Toolbar */}
       <ErrorBoundary region="Toolbar">
         <DevFaultProbe region="Toolbar" />

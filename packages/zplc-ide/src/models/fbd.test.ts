@@ -18,14 +18,24 @@ describe('FBD model validation', () => {
     const invalid = { ...model, connections: [{ id: 'wire', from: { block: 'missing', port: 'OUT' }, to: { block: 'sink', port: 'IN' } }] };
 
     expect(() => parseFBDModel(JSON.stringify(invalid))).toThrow('unknown source block');
-    expect(transpileFBDToST(invalid as never)).toMatchObject({ success: false, source: '', errors: [expect.stringContaining('unknown source block')] });
+    expect(transpileFBDToST(invalid as never)).toMatchObject({
+      success: false,
+      source: '',
+      errors: [expect.stringContaining('unknown source block')],
+    });
   });
 
   it('normalizes only omitted legacy ports and respects explicit empty ports', () => {
-    const parsed = parseFBDModel(JSON.stringify({ ...model, blocks: [
-      { id: 'source', type: 'constant', position: { x: 0, y: 0 } },
-      { id: 'sink', type: 'output', position: { x: 100, y: 0 }, inputs: [], outputs: [] },
-    ], connections: [] }));
+    const parsed = parseFBDModel(
+      JSON.stringify({
+        ...model,
+        blocks: [
+          { id: 'source', type: 'constant', position: { x: 0, y: 0 } },
+          { id: 'sink', type: 'output', position: { x: 100, y: 0 }, inputs: [], outputs: [] },
+        ],
+        connections: [],
+      }),
+    );
 
     expect(parsed.blocks[0]).toMatchObject({ inputs: [], outputs: [{ name: 'OUT', type: 'ANY' }] });
     expect(parsed.blocks[1]).toMatchObject({ inputs: [], outputs: [] });
@@ -36,20 +46,48 @@ describe('FBD model validation', () => {
     expect(() => parseFBDModel('null')).toThrow('top-level object');
     expect(() => parseFBDModel(JSON.stringify({ ...model, name: ' ', variables: { local: [], outputs: [] } }))).toThrow('name');
     expect(() => parseFBDModel(JSON.stringify({ ...model, variables: { local: {}, outputs: [] } }))).toThrow('variables.local');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, blocks: [...model.blocks, { ...model.blocks[0] }] }))).toThrow('duplicate block id');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, connections: [...model.connections, { ...model.connections[0] }] }))).toThrow('duplicate connection id');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, connections: [{ id: 'wire', from: { block: 'source', port: 'IN' }, to: { block: 'sink', port: 'IN' } }] }))).toThrow('unknown source output port');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, connections: [{ id: 'wire', from: { block: 'source', port: 'OUT' }, to: { block: 'sink', port: 'OUT' } }] }))).toThrow('unknown destination input port');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, connections: [
-      ...model.connections,
-      { id: 'wire-two', from: { block: 'source', port: 'OUT' }, to: { block: 'sink', port: 'IN' } },
-    ] }))).toThrow('multiple writers');
-    expect(() => parseFBDModel(JSON.stringify({ ...model, blocks: [{ ...model.blocks[0], outputs: [{ name: 'OUT', type: ' ' }] }, model.blocks[1]] }))).toThrow('outputs[0].type');
+    expect(() => parseFBDModel(JSON.stringify({ ...model, blocks: [...model.blocks, { ...model.blocks[0] }] }))).toThrow(
+      'duplicate block id',
+    );
+    expect(() => parseFBDModel(JSON.stringify({ ...model, connections: [...model.connections, { ...model.connections[0] }] }))).toThrow(
+      'duplicate connection id',
+    );
+    expect(() =>
+      parseFBDModel(
+        JSON.stringify({
+          ...model,
+          connections: [{ id: 'wire', from: { block: 'source', port: 'IN' }, to: { block: 'sink', port: 'IN' } }],
+        }),
+      ),
+    ).toThrow('unknown source output port');
+    expect(() =>
+      parseFBDModel(
+        JSON.stringify({
+          ...model,
+          connections: [{ id: 'wire', from: { block: 'source', port: 'OUT' }, to: { block: 'sink', port: 'OUT' } }],
+        }),
+      ),
+    ).toThrow('unknown destination input port');
+    expect(() =>
+      parseFBDModel(
+        JSON.stringify({
+          ...model,
+          connections: [
+            ...model.connections,
+            { id: 'wire-two', from: { block: 'source', port: 'OUT' }, to: { block: 'sink', port: 'IN' } },
+          ],
+        }),
+      ),
+    ).toThrow('multiple writers');
+    expect(() =>
+      parseFBDModel(JSON.stringify({ ...model, blocks: [{ ...model.blocks[0], outputs: [{ name: 'OUT', type: ' ' }] }, model.blocks[1]] })),
+    ).toThrow('outputs[0].type');
   });
 
   it('rejects collisions between distinct sanitized temporary names', () => {
     const collision = {
-      name: 'Collision', variables: { local: [], outputs: [] },
+      name: 'Collision',
+      variables: { local: [], outputs: [] },
       blocks: [
         { id: 'a.b', type: 'NOT', position: { x: 0, y: 0 }, inputs: [], outputs: [{ name: 'c', type: 'BOOL' }] },
         { id: 'a', type: 'NOT', position: { x: 0, y: 100 }, inputs: [], outputs: [{ name: 'b.c', type: 'BOOL' }] },
@@ -62,12 +100,17 @@ describe('FBD model validation', () => {
       ],
     };
 
-    expect(transpileFBDToST(collision as never)).toMatchObject({ success: false, source: '', errors: [expect.stringContaining('temporary name collision')] });
+    expect(transpileFBDToST(collision as never)).toMatchObject({
+      success: false,
+      source: '',
+      errors: [expect.stringContaining('temporary name collision')],
+    });
   });
 
   it('allows fan-out from one source endpoint to distinct inputs', () => {
     const fanOut = {
-      name: 'FanOut', variables: { local: [], outputs: [] },
+      name: 'FanOut',
+      variables: { local: [], outputs: [] },
       blocks: [
         { id: 'source', type: 'variable', variableName: 'Source', position: { x: 0, y: 0 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
         { id: 'left', type: 'output', variableName: 'Left', position: { x: 100, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }] },
@@ -83,6 +126,11 @@ describe('FBD model validation', () => {
   });
 
   it('rejects non-finite positions passed directly to the shared validator', () => {
-    expect(() => validateFBDModel({ ...model, blocks: [{ ...model.blocks[0], position: { x: Number.NaN, y: Number.POSITIVE_INFINITY } }, model.blocks[1]] })).toThrow('finite');
+    expect(() =>
+      validateFBDModel({
+        ...model,
+        blocks: [{ ...model.blocks[0], position: { x: Number.NaN, y: Number.POSITIVE_INFINITY } }, model.blocks[1]],
+      }),
+    ).toThrow('finite');
   });
 });

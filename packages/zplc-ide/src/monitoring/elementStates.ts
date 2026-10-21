@@ -13,7 +13,10 @@ export type Reading = number | boolean | string | undefined;
 export type Read = (variable: string) => Reading;
 
 /** How a variable is shown besides its value: the user forces it, or it could not be read (UX-009). */
-export interface SignalFlags { forced?: boolean; fault?: boolean }
+export interface SignalFlags {
+  forced?: boolean;
+  fault?: boolean;
+}
 export type FlagsOf = (variable: string) => SignalFlags | undefined;
 
 export interface ElementState {
@@ -44,7 +47,8 @@ export const truthy = (value: Reading): boolean | undefined => {
 /** The power an expression is, from the values read; undefined when a variable it needs was not read and nothing decides it. */
 export function evaluatePower(expression: PowerExpr, read: Read): boolean | undefined {
   switch (expression.op) {
-    case 'true': return true;
+    case 'true':
+      return true;
     case 'var': {
       const value = truthy(read(expression.variable));
       return value === undefined ? undefined : expression.not ? !value : value;
@@ -103,12 +107,28 @@ export function readElementStates(entries: readonly MonitorEntry[], read: Read, 
         state.power = entry.in ? evaluatePower(entry.in, read) : undefined;
         state.powerOut = entry.out ? evaluatePower(entry.out, read) : undefined;
         break;
-      case 'value': state.value = value; state.flags = flags; break;
-      case 'output': state.pins[entry.port ?? 'OUT'] = value; if (flags) state.pinFlags[entry.port ?? 'OUT'] = flags; break;
-      case 'step': state.active = truthy(value); state.flags = flags; break;
-      case 'time': state.time = typeof value === 'number' ? value : undefined; break;
-      case 'condition': state.condition = truthy(value); state.flags = flags; break;
-      case 'fired': state.fired = truthy(value); break;
+      case 'value':
+        state.value = value;
+        state.flags = flags;
+        break;
+      case 'output':
+        state.pins[entry.port ?? 'OUT'] = value;
+        if (flags) state.pinFlags[entry.port ?? 'OUT'] = flags;
+        break;
+      case 'step':
+        state.active = truthy(value);
+        state.flags = flags;
+        break;
+      case 'time':
+        state.time = typeof value === 'number' ? value : undefined;
+        break;
+      case 'condition':
+        state.condition = truthy(value);
+        state.flags = flags;
+        break;
+      case 'fired':
+        state.fired = truthy(value);
+        break;
     }
   }
   return states;

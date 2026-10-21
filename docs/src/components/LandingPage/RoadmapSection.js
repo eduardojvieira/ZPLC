@@ -29,11 +29,7 @@ export default function RoadmapSection() {
                 ))}
               </ul>
             </div>
-            {index < roadmapSection.phases.length - 1 ? (
-              <div className={styles.archFlowArrow}>
-                →
-              </div>
-            ) : null}
+            {index < roadmapSection.phases.length - 1 ? <div className={styles.archFlowArrow}>→</div> : null}
           </Fragment>
         ))}
       </div>

@@ -33,8 +33,8 @@ typedef enum {
 } zplc_wifi_state_t;
 
 typedef struct {
-  uint8_t state;      /**< zplc_wifi_state_t */
-  uint32_t failures;  /**< consecutive failures; 0 after a connection */
+  uint8_t state;     /**< zplc_wifi_state_t */
+  uint32_t failures; /**< consecutive failures; 0 after a connection */
 } zplc_wifi_link_t;
 
 /** @brief Ask the network layer to join the stored network. 0 when the request was accepted, negative otherwise. */
@@ -45,9 +45,7 @@ static inline void zplc_wifi_link_init(zplc_wifi_link_t *link) {
   link->failures = 0U;
 }
 
-static inline zplc_wifi_state_t zplc_wifi_link_state(const zplc_wifi_link_t *link) {
-  return (zplc_wifi_state_t)link->state;
-}
+static inline zplc_wifi_state_t zplc_wifi_link_state(const zplc_wifi_link_t *link) { return (zplc_wifi_state_t)link->state; }
 
 /** @brief The name the status reports. */
 static inline const char *zplc_wifi_state_name(zplc_wifi_state_t state) {
@@ -89,8 +87,7 @@ static inline uint32_t zplc_wifi_link_failed(zplc_wifi_link_t *link) {
  * @param connect    asks the network layer to join; called at most once per poll
  * @return the time in milliseconds to wait before the next poll
  */
-static inline uint32_t zplc_wifi_link_poll(zplc_wifi_link_t *link, bool configured, bool online,
-                                           zplc_wifi_connect_fn connect, void *ctx) {
+static inline uint32_t zplc_wifi_link_poll(zplc_wifi_link_t *link, bool configured, bool online, zplc_wifi_connect_fn connect, void *ctx) {
   if (!configured) {
     zplc_wifi_link_init(link);
     return ZPLC_WIFI_IDLE_MS;

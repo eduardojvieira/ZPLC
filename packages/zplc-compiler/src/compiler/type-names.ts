@@ -13,15 +13,7 @@
  */
 
 import { isArrayType } from './ast.ts';
-import type {
-    AliasDecl,
-    CompilationUnit,
-    Expression,
-    FunctionBlockDecl,
-    MethodDecl,
-    STDataType,
-    VarDecl,
-} from './ast.ts';
+import type { AliasDecl, CompilationUnit, Expression, FunctionBlockDecl, MethodDecl, STDataType, VarDecl } from './ast.ts';
 import type { SourceSpan } from './diagnostics.ts';
 import type { ErrorCode } from './error-codes.ts';
 
@@ -31,18 +23,61 @@ export interface AliasIssue extends SourceSpan {
 }
 
 /** The library function blocks, by upper-case name, as the types the code generator knows them by. */
-const LIBRARY_BLOCK_TYPES: Record<string, string> = Object.fromEntries([
-    'TON', 'TOF', 'TP', 'R_TRIG', 'F_TRIG', 'RS', 'SR', 'CTU', 'CTD', 'CTUD', 'BLINK', 'PWM', 'PULSE',
-    'HYSTERESIS', 'DEADBAND', 'LAG_FILTER', 'RAMP_REAL', 'INTEGRAL', 'DERIVATIVE', 'PID_Compact', 'FIFO', 'LIFO',
-].map((name) => [name.toUpperCase(), name]));
+const LIBRARY_BLOCK_TYPES: Record<string, string> = Object.fromEntries(
+    [
+        'TON',
+        'TOF',
+        'TP',
+        'R_TRIG',
+        'F_TRIG',
+        'RS',
+        'SR',
+        'CTU',
+        'CTD',
+        'CTUD',
+        'BLINK',
+        'PWM',
+        'PULSE',
+        'HYSTERESIS',
+        'DEADBAND',
+        'LAG_FILTER',
+        'RAMP_REAL',
+        'INTEGRAL',
+        'DERIVATIVE',
+        'PID_Compact',
+        'FIFO',
+        'LIFO',
+    ].map((name) => [name.toUpperCase(), name]),
+);
 
 /**
  * The elementary types a program may declare, by upper-case name. Type names are matched without regard to
  * case (CMP-004): `byte` is BYTE, and every later phase meets the upper-case spelling.
  */
 export const ELEMENTARY_TYPES: ReadonlySet<string> = new Set([
-    'BOOL', 'SINT', 'USINT', 'INT', 'UINT', 'DINT', 'UDINT', 'LINT', 'ULINT', 'REAL', 'LREAL', 'TIME',
-    'STRING', 'WSTRING', 'DATE', 'TIME_OF_DAY', 'TOD', 'DATE_AND_TIME', 'DT', 'BYTE', 'WORD', 'DWORD', 'LWORD',
+    'BOOL',
+    'SINT',
+    'USINT',
+    'INT',
+    'UINT',
+    'DINT',
+    'UDINT',
+    'LINT',
+    'ULINT',
+    'REAL',
+    'LREAL',
+    'TIME',
+    'STRING',
+    'WSTRING',
+    'DATE',
+    'TIME_OF_DAY',
+    'TOD',
+    'DATE_AND_TIME',
+    'DT',
+    'BYTE',
+    'WORD',
+    'DWORD',
+    'LWORD',
 ]);
 
 /** `STRING[20]` and `WSTRING(10)` as the parser writes them: the capacity is part of the type name. */
@@ -72,7 +107,12 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
     for (const alias of aliases) {
         const key = alias.name.toUpperCase();
         if (byName.has(key) || otherTypes.has(key)) {
-            issues.push({ code: 'DUPLICATE_DECLARATION', message: `The type name '${alias.name}' is already declared`, line: alias.line, column: alias.column });
+            issues.push({
+                code: 'DUPLICATE_DECLARATION',
+                message: `The type name '${alias.name}' is already declared`,
+                line: alias.line,
+                column: alias.column,
+            });
             continue;
         }
         byName.set(key, alias);
@@ -99,7 +139,12 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
         if (isArrayType(type)) {
             const element = resolveType(type.elementType, at);
             if (typeof element !== 'string') {
-                issues.push({ code: 'UNSUPPORTED_CONSTRUCT', message: `An array of '${type.elementType}' is an array of arrays; declare one ARRAY with several dimensions`, line: at.line, column: at.column });
+                issues.push({
+                    code: 'UNSUPPORTED_CONSTRUCT',
+                    message: `An array of '${type.elementType}' is an array of arrays; declare one ARRAY with several dimensions`,
+                    line: at.line,
+                    column: at.column,
+                });
                 return type;
             }
             return element === type.elementType ? type : { ...type, elementType: element as typeof type.elementType };
@@ -114,7 +159,12 @@ export function resolveTypeNames(unit: CompilationUnit): AliasIssue[] {
     const resolveAlias = (key: string, alias: AliasDecl): ResolvedAlias | null => {
         if (resolved.has(key)) return resolved.get(key)!;
         if (resolving.has(key)) {
-            issues.push({ code: 'CIRCULAR_TYPE_ALIAS', message: `The type alias '${alias.name}' refers to itself`, line: alias.line, column: alias.column });
+            issues.push({
+                code: 'CIRCULAR_TYPE_ALIAS',
+                message: `The type alias '${alias.name}' refers to itself`,
+                line: alias.line,
+                column: alias.column,
+            });
             return null;
         }
         resolving.add(key);

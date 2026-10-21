@@ -12,5 +12,9 @@ const subscribe = (listener: () => void): (() => void) => {
 };
 
 export function useShellDensity(): ShellDensity {
-  return useSyncExternalStore(subscribe, () => shellDensity(window.innerWidth), () => 'regular');
+  return useSyncExternalStore(
+    subscribe,
+    () => shellDensity(window.innerWidth),
+    () => 'regular',
+  );
 }

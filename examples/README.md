@@ -11,18 +11,18 @@ language and more. Studio copies one to a folder you choose.
 Each fixture is a pair: a hand-written `.asm` source and the `.zplc` binary
 assembled from it.
 
-| Fixture | What it exercises |
-|---|---|
-| `01_hello` | The smallest program the VM runs |
-| `02_addition` | Integer addition, `C = A + B` |
-| `03_conditional` | Conditional jumps |
-| `04_loop` | A counter loop |
-| `05_function_call` | `CALL` and `RET` |
-| `06_bitwise` | Bitwise operations |
-| `07_stack_ops` | Stack manipulation |
-| `08_float_math` | `REAL` arithmetic |
-| `09_type_conversions` | Conversions between types |
-| `10_64bit_operations` | 64-bit operations |
+| Fixture               | What it exercises                |
+| --------------------- | -------------------------------- |
+| `01_hello`            | The smallest program the VM runs |
+| `02_addition`         | Integer addition, `C = A + B`    |
+| `03_conditional`      | Conditional jumps                |
+| `04_loop`             | A counter loop                   |
+| `05_function_call`    | `CALL` and `RET`                 |
+| `06_bitwise`          | Bitwise operations               |
+| `07_stack_ops`        | Stack manipulation               |
+| `08_float_math`       | `REAL` arithmetic                |
+| `09_type_conversions` | Conversions between types        |
+| `10_64bit_operations` | 64-bit operations                |
 
 ## Who uses them
 

@@ -7,14 +7,14 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "REAL", "value": -3.0},
-    {"at": "%QD1", "type": "REAL", "value": 200.0},
-    {"at": "%QD2", "type": "REAL", "value": 60000.0},
-    {"at": "%QD3", "type": "REAL", "value": -70000.0},
-    {"at": "%QD4", "type": "REAL", "value": 3000000000.0},
-    {"at": "%QD5", "type": "REAL", "value": 40000.0},
-    {"at": "%QD6", "type": "REAL", "value": 2147483648.0},
-    {"at": "%QD7", "type": "REAL", "value": 255.0},
-    {"at": "%QD8", "type": "REAL", "value": 1.0}
+    { "at": "%QD0", "type": "REAL", "value": -3.0 },
+    { "at": "%QD1", "type": "REAL", "value": 200.0 },
+    { "at": "%QD2", "type": "REAL", "value": 60000.0 },
+    { "at": "%QD3", "type": "REAL", "value": -70000.0 },
+    { "at": "%QD4", "type": "REAL", "value": 3000000000.0 },
+    { "at": "%QD5", "type": "REAL", "value": 40000.0 },
+    { "at": "%QD6", "type": "REAL", "value": 2147483648.0 },
+    { "at": "%QD7", "type": "REAL", "value": 255.0 },
+    { "at": "%QD8", "type": "REAL", "value": 1.0 }
   ]
 }

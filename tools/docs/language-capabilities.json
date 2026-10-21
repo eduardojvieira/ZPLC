@@ -1,184 +1,175 @@
 {
- "capabilities": [
-  "edit",
-  "build",
-  "simulate",
-  "debug",
-  "pause",
-  "watch",
-  "force",
-  "deploy"
- ],
- "languages": {
-  "st": {
-   "edit": {
-    "kind": "journey",
-    "ref": "3 Edit Structured Text, save, reopen"
-   },
-   "build": {
-    "kind": "journey",
-    "ref": "64a Structured Text from a new project to a deployed program that is watched"
-   },
-   "simulate": {
-    "kind": "journey",
-    "ref": "64a Structured Text from a new project to a deployed program that is watched"
-   },
-   "debug": {
-    "kind": "journey",
-    "ref": "7 Breakpoint stops execution"
-   },
-   "pause": {
-    "kind": "journey",
-    "ref": "53e Pause, step one cycle and resume a Structured Text program"
-   },
-   "watch": {
-    "kind": "journey",
-    "ref": "28e Inline values in Structured Text come from the debug map"
-   },
-   "force": {
-    "kind": "journey",
-    "ref": "8 Force an input and release it"
-   },
-   "deploy": {
-    "kind": "journey",
-    "ref": "64a Structured Text from a new project to a deployed program that is watched"
-   }
-  },
-  "il": {
-   "edit": {
-    "kind": "journey",
-    "ref": "54 Instruction List is edited, saved and reopened"
-   },
-   "build": {
-    "kind": "journey",
-    "ref": "64b Instruction List from a new project to a deployed program that is watched"
-   },
-   "simulate": {
-    "kind": "journey",
-    "ref": "64b Instruction List from a new project to a deployed program that is watched"
-   },
-   "debug": {
-    "kind": "journey",
-    "ref": "28kc A breakpoint on an IL line stops execution"
-   },
-   "pause": {
-    "kind": "journey",
-    "ref": "53d Pause, step one cycle and resume an Instruction List program"
-   },
-   "watch": {
-    "kind": "journey",
-    "ref": "54b Instruction List values are watched and a variable is forced and released"
-   },
-   "force": {
-    "kind": "journey",
-    "ref": "54b Instruction List values are watched and a variable is forced and released"
-   },
-   "deploy": {
-    "kind": "journey",
-    "ref": "64b Instruction List from a new project to a deployed program that is watched"
-   }
-  },
-  "ld": {
-   "edit": {
-    "kind": "journey",
-    "ref": "28f A rung is built from the keyboard"
-   },
-   "build": {
-    "kind": "journey",
-    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
-   },
-   "simulate": {
-    "kind": "journey",
-    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
-   },
-   "debug": {
-    "kind": "journey",
-    "ref": "28 A breakpoint on a rung stops execution"
-   },
-   "pause": {
-    "kind": "journey",
-    "ref": "53a Pause, step one cycle and resume a Ladder program"
-   },
-   "watch": {
-    "kind": "journey",
-    "ref": "28b Online values of a rung come from the debug map"
-   },
-   "force": {
-    "kind": "journey",
-    "ref": "51d A forced variable is shown as forced in the Ladder"
-   },
-   "deploy": {
-    "kind": "journey",
-    "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
-   }
-  },
-  "fbd": {
-   "edit": {
-    "kind": "journey",
-    "ref": "28g A function block diagram is edited from the keyboard"
-   },
-   "build": {
-    "kind": "journey",
-    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
-   },
-   "simulate": {
-    "kind": "journey",
-    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
-   },
-   "debug": {
-    "kind": "journey",
-    "ref": "28ka A breakpoint on an FBD block stops execution"
-   },
-   "pause": {
-    "kind": "journey",
-    "ref": "53b Pause, step one cycle and resume a function block diagram"
-   },
-   "watch": {
-    "kind": "journey",
-    "ref": "28c Online values of an FBD come from the debug map"
-   },
-   "force": {
-    "kind": "journey",
-    "ref": "51 A forced variable is shown as forced in the function block diagram"
-   },
-   "deploy": {
-    "kind": "journey",
-    "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
-   }
-  },
-  "sfc": {
-   "edit": {
-    "kind": "journey",
-    "ref": "28h A sequential function chart is edited from the keyboard"
-   },
-   "build": {
-    "kind": "journey",
-    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
-   },
-   "simulate": {
-    "kind": "journey",
-    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
-   },
-   "debug": {
-    "kind": "journey",
-    "ref": "28kb A breakpoint on an SFC step stops execution"
-   },
-   "pause": {
-    "kind": "journey",
-    "ref": "53c Pause, step one cycle and resume a sequential function chart"
-   },
-   "watch": {
-    "kind": "journey",
-    "ref": "28d Online state of an SFC comes from the debug map"
-   },
-   "force": {
-    "kind": "journey",
-    "ref": "51b A forced variable is shown as forced in the sequential function chart"
-   },
-   "deploy": {
-    "kind": "journey",
-    "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
-   }
+  "capabilities": ["edit", "build", "simulate", "debug", "pause", "watch", "force", "deploy"],
+  "languages": {
+    "st": {
+      "edit": {
+        "kind": "journey",
+        "ref": "3 Edit Structured Text, save, reopen"
+      },
+      "build": {
+        "kind": "journey",
+        "ref": "64a Structured Text from a new project to a deployed program that is watched"
+      },
+      "simulate": {
+        "kind": "journey",
+        "ref": "64a Structured Text from a new project to a deployed program that is watched"
+      },
+      "debug": {
+        "kind": "journey",
+        "ref": "7 Breakpoint stops execution"
+      },
+      "pause": {
+        "kind": "journey",
+        "ref": "53e Pause, step one cycle and resume a Structured Text program"
+      },
+      "watch": {
+        "kind": "journey",
+        "ref": "28e Inline values in Structured Text come from the debug map"
+      },
+      "force": {
+        "kind": "journey",
+        "ref": "8 Force an input and release it"
+      },
+      "deploy": {
+        "kind": "journey",
+        "ref": "64a Structured Text from a new project to a deployed program that is watched"
+      }
+    },
+    "il": {
+      "edit": {
+        "kind": "journey",
+        "ref": "54 Instruction List is edited, saved and reopened"
+      },
+      "build": {
+        "kind": "journey",
+        "ref": "64b Instruction List from a new project to a deployed program that is watched"
+      },
+      "simulate": {
+        "kind": "journey",
+        "ref": "64b Instruction List from a new project to a deployed program that is watched"
+      },
+      "debug": {
+        "kind": "journey",
+        "ref": "28kc A breakpoint on an IL line stops execution"
+      },
+      "pause": {
+        "kind": "journey",
+        "ref": "53d Pause, step one cycle and resume an Instruction List program"
+      },
+      "watch": {
+        "kind": "journey",
+        "ref": "54b Instruction List values are watched and a variable is forced and released"
+      },
+      "force": {
+        "kind": "journey",
+        "ref": "54b Instruction List values are watched and a variable is forced and released"
+      },
+      "deploy": {
+        "kind": "journey",
+        "ref": "64b Instruction List from a new project to a deployed program that is watched"
+      }
+    },
+    "ld": {
+      "edit": {
+        "kind": "journey",
+        "ref": "28f A rung is built from the keyboard"
+      },
+      "build": {
+        "kind": "journey",
+        "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
+      },
+      "simulate": {
+        "kind": "journey",
+        "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
+      },
+      "debug": {
+        "kind": "journey",
+        "ref": "28 A breakpoint on a rung stops execution"
+      },
+      "pause": {
+        "kind": "journey",
+        "ref": "53a Pause, step one cycle and resume a Ladder program"
+      },
+      "watch": {
+        "kind": "journey",
+        "ref": "28b Online values of a rung come from the debug map"
+      },
+      "force": {
+        "kind": "journey",
+        "ref": "51d A forced variable is shown as forced in the Ladder"
+      },
+      "deploy": {
+        "kind": "journey",
+        "ref": "64c Ladder Diagram from a new project to a deployed program that is watched"
+      }
+    },
+    "fbd": {
+      "edit": {
+        "kind": "journey",
+        "ref": "28g A function block diagram is edited from the keyboard"
+      },
+      "build": {
+        "kind": "journey",
+        "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
+      },
+      "simulate": {
+        "kind": "journey",
+        "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
+      },
+      "debug": {
+        "kind": "journey",
+        "ref": "28ka A breakpoint on an FBD block stops execution"
+      },
+      "pause": {
+        "kind": "journey",
+        "ref": "53b Pause, step one cycle and resume a function block diagram"
+      },
+      "watch": {
+        "kind": "journey",
+        "ref": "28c Online values of an FBD come from the debug map"
+      },
+      "force": {
+        "kind": "journey",
+        "ref": "51 A forced variable is shown as forced in the function block diagram"
+      },
+      "deploy": {
+        "kind": "journey",
+        "ref": "64d Function Block Diagram from a new project to a deployed program that is watched"
+      }
+    },
+    "sfc": {
+      "edit": {
+        "kind": "journey",
+        "ref": "28h A sequential function chart is edited from the keyboard"
+      },
+      "build": {
+        "kind": "journey",
+        "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
+      },
+      "simulate": {
+        "kind": "journey",
+        "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
+      },
+      "debug": {
+        "kind": "journey",
+        "ref": "28kb A breakpoint on an SFC step stops execution"
+      },
+      "pause": {
+        "kind": "journey",
+        "ref": "53c Pause, step one cycle and resume a sequential function chart"
+      },
+      "watch": {
+        "kind": "journey",
+        "ref": "28d Online state of an SFC comes from the debug map"
+      },
+      "force": {
+        "kind": "journey",
+        "ref": "51b A forced variable is shown as forced in the sequential function chart"
+      },
+      "deploy": {
+        "kind": "journey",
+        "ref": "64e Sequential Function Chart from a new project to a deployed program that is watched"
+      }
+    }
   }
- }
 }

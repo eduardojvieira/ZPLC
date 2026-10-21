@@ -11,7 +11,11 @@ const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
 /** "just now", "5 minutes ago", "yesterday", "6 days ago", then the date ("12 Sep 2026"), in the language of the interface (UX-029). */
-export function formatLastOpened(lastOpenedAt: number, now: number, { t, tn }: Pick<Translator, 't' | 'tn'> = { t: translateNow, tn: pluralNow }): string {
+export function formatLastOpened(
+  lastOpenedAt: number,
+  now: number,
+  { t, tn }: Pick<Translator, 't' | 'tn'> = { t: translateNow, tn: pluralNow },
+): string {
   if (!Number.isFinite(lastOpenedAt)) return t('welcome.recent.earlier');
   const age = now - lastOpenedAt;
   if (age < MINUTE) return t('welcome.recent.justNow');
@@ -20,7 +24,11 @@ export function formatLastOpened(lastOpenedAt: number, now: number, { t, tn }: P
   if (age < 2 * DAY) return t('welcome.recent.yesterday');
   if (age < 7 * DAY) return tn('welcome.recent.daysAgo', Math.floor(age / DAY));
   const date = new Date(lastOpenedAt);
-  return t('welcome.recent.date', { day: date.getUTCDate(), month: t('welcome.recent.months').split(',')[date.getUTCMonth()]!, year: date.getUTCFullYear() });
+  return t('welcome.recent.date', {
+    day: date.getUTCDate(),
+    month: t('welcome.recent.months').split(',')[date.getUTCMonth()]!,
+    year: date.getUTCFullYear(),
+  });
 }
 
 export interface RecentRow {
@@ -32,7 +40,11 @@ export interface RecentRow {
   reason: string | null;
 }
 
-export function recentRows(projects: readonly RecentProject[], now: number, translator: Pick<Translator, 't' | 'tn'> = { t: translateNow, tn: pluralNow }): RecentRow[] {
+export function recentRows(
+  projects: readonly RecentProject[],
+  now: number,
+  translator: Pick<Translator, 't' | 'tn'> = { t: translateNow, tn: pluralNow },
+): RecentRow[] {
   return projects.map((project) => ({
     recentId: project.recentId,
     name: project.displayName || translator.t('welcome.recent.unnamed'),

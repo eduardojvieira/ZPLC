@@ -41,7 +41,17 @@ describe('FBD: a forced variable and a faulted pin reach the nodes and the wires
   const model = JSON.parse(text) as FBDModel;
   const { map, entries } = build(path, text, 'FBD');
   // one recorded scan of the blinker: the LED is on (forced by the user), the off timer runs
-  const trace: Record<string, Reading> = { LED_Output: true, _not_led_OUT: false, _ton_off_Q: false, 'OffTimer.ET': 120, _ton_on_Q: false, 'OnTimer.ET': 0, _not_on_done_OUT: true, _or_set_or_hold_OUT: false, _and_run_OUT: false };
+  const trace: Record<string, Reading> = {
+    LED_Output: true,
+    _not_led_OUT: false,
+    _ton_off_Q: false,
+    'OffTimer.ET': 120,
+    _ton_on_Q: false,
+    'OnTimer.ET': 0,
+    _not_on_done_OUT: true,
+    _or_set_or_hold_OUT: false,
+    _and_run_OUT: false,
+  };
   const forced = new Map([['LED_Output', { address: resolveVariable(map, path, 'LED_Output')!.address }]]);
   const faults = new Set([monitorKey(path, 'OffTimer.ET')]);
   const flagsOf = signalFlagsOf(map, path, forced, faults);
@@ -65,7 +75,17 @@ describe('FBD: a forced variable and a faulted pin reach the nodes and the wires
   });
 
   it('UX-009 draws the forced variable block amber with a diamond and the word FORCED', () => {
-    const markup = flow(<VariableNode {...nodeProps('var_led_read', { type: 'variable', variableName: 'LED_Output', debugActive: true, pinValues: pins.get('var_led_read'), pinFlags: flags.get('var_led_read') })} />);
+    const markup = flow(
+      <VariableNode
+        {...nodeProps('var_led_read', {
+          type: 'variable',
+          variableName: 'LED_Output',
+          debugActive: true,
+          pinValues: pins.get('var_led_read'),
+          pinFlags: flags.get('var_led_read'),
+        })}
+      />,
+    );
     expect(markup).toContain('data-signal="forced"');
     expect(markup).toContain('var(--signal-forced-fg)');
     expect(markup).toContain(SIGNAL_CUES.forced.glyph);
@@ -73,7 +93,17 @@ describe('FBD: a forced variable and a faulted pin reach the nodes and the wires
   });
 
   it('UX-009 draws the faulted pin of a timer red with a triangle and the word FAULT, and its Q as it was', () => {
-    const markup = flow(<FunctionBlockNode {...nodeProps('ton_off', { type: 'TON', instanceName: 'OffTimer', debugActive: true, pinValues: pins.get('ton_off'), pinFlags: flags.get('ton_off') })} />);
+    const markup = flow(
+      <FunctionBlockNode
+        {...nodeProps('ton_off', {
+          type: 'TON',
+          instanceName: 'OffTimer',
+          debugActive: true,
+          pinValues: pins.get('ton_off'),
+          pinFlags: flags.get('ton_off'),
+        })}
+      />,
+    );
     expect(markup).toContain('data-signal="fault"');
     expect(markup).toContain(SIGNAL_CUES.fault.glyph);
     // a pin says it for a screen reader in words; the pin of the other output keeps its own state
@@ -86,7 +116,17 @@ describe('FBD: a forced variable and a faulted pin reach the nodes and the wires
     const calm = readElementStates(entries, (variable) => trace[variable], signalFlagsOf(map, path, new Map(), new Set()));
     const calmFlags = pinFlagsOf(model.blocks, model.connections, calm);
     expect([...calmFlags.values()].every((pinsOf) => Object.keys(pinsOf).length === 0)).toBe(true);
-    const markup = flow(<FunctionBlockNode {...nodeProps('ton_off', { type: 'TON', instanceName: 'OffTimer', debugActive: true, pinValues: pinValuesOf(model.blocks, model.connections, calm).get('ton_off'), pinFlags: calmFlags.get('ton_off') })} />);
+    const markup = flow(
+      <FunctionBlockNode
+        {...nodeProps('ton_off', {
+          type: 'TON',
+          instanceName: 'OffTimer',
+          debugActive: true,
+          pinValues: pinValuesOf(model.blocks, model.connections, calm).get('ton_off'),
+          pinFlags: calmFlags.get('ton_off'),
+        })}
+      />,
+    );
     expect(markup).not.toContain('data-signal="fault"');
     expect(markup).not.toContain('data-signal="forced"');
   });
@@ -95,7 +135,8 @@ describe('FBD: a forced variable and a faulted pin reach the nodes and the wires
 describe('SFC: a forced input and a faulted step reach the steps and transitions', () => {
   const path = 'src/chart.sfc.json';
   const chart: SFCModel = {
-    name: 'Chart', variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
+    name: 'Chart',
+    variables: { local: [], inputs: [{ name: 'Go', type: 'BOOL', address: '%I0.0' }], outputs: [] },
     steps: [
       { id: 'idle', name: 'Idle', isInitial: true, position: { x: 0, y: 0 } },
       { id: 'work', name: 'Work', isInitial: false, position: { x: 0, y: 200 } },
@@ -107,7 +148,16 @@ describe('SFC: a forced input and a faulted step reach the steps and transitions
   } as SFCModel;
   const { map, entries } = build(path, JSON.stringify(chart), 'SFC');
   // a recorded scan: Idle is active and Go, which the user forces, holds TRUE; the flag of Work could not be read
-  const trace: Record<string, Reading> = { X_idle: true, 'T_idle.ET': 40, 'T_work.ET': 0, _C_start: true, _F_start: false, _C_finish: false, _F_finish: false, Go: true };
+  const trace: Record<string, Reading> = {
+    X_idle: true,
+    'T_idle.ET': 40,
+    'T_work.ET': 0,
+    _C_start: true,
+    _F_start: false,
+    _C_finish: false,
+    _F_finish: false,
+    Go: true,
+  };
   const forced = new Map([['Go', { address: resolveVariable(map, path, 'Go')!.address }]]);
   const faults = new Set([monitorKey(path, 'X_work')]);
   const flagsOf = signalFlagsOf(map, path, forced, faults);
@@ -119,7 +169,9 @@ describe('SFC: a forced input and a faulted step reach the steps and transitions
   it('UX-009 marks the step whose flag could not be read as a fault, and the others as nothing', () => {
     expect(stepInfo.get('work')?.fault).toBe(true);
     expect(stepInfo.get('idle')?.fault).toBeUndefined();
-    const markup = flow(<SFCStepNode {...nodeProps('work', { name: 'Work', isInitial: false, debugActive: true, ...stepDebugData(stepInfo.get('work')) })} />);
+    const markup = flow(
+      <SFCStepNode {...nodeProps('work', { name: 'Work', isInitial: false, debugActive: true, ...stepDebugData(stepInfo.get('work')) })} />,
+    );
     expect(markup).toContain('data-signal="fault"');
     expect(markup).toContain(SIGNAL_CUES.fault.glyph);
     expect(markup).toContain(SIGNAL_CUES.fault.label);
@@ -128,14 +180,25 @@ describe('SFC: a forced input and a faulted step reach the steps and transitions
   it('UX-009 marks every transition whose condition reads the forced input as forced, by the names the map resolves', () => {
     expect(transitionInfo.get('start')?.forced).toBe(true);
     expect(transitionInfo.get('finish')?.forced).toBe(true);
-    const markup = flow(<SFCTransitionNode {...nodeProps('start', { condition: 'Go', debugActive: true, ...transitionDebugData(transitionInfo.get('start')) })} />);
+    const markup = flow(
+      <SFCTransitionNode
+        {...nodeProps('start', { condition: 'Go', debugActive: true, ...transitionDebugData(transitionInfo.get('start')) })}
+      />,
+    );
     expect(markup).toContain('data-signal="forced"');
     expect(markup).toContain(SIGNAL_CUES.forced.glyph);
     expect(markup).toContain(SIGNAL_CUES.forced.label);
   });
 
   it('UX-009 does not call a transition forced because a word of its condition is a keyword or a literal', () => {
-    const other = transitionDebugInfoOf([{ id: 'x', fromStep: 'idle', toStep: 'work', condition: "NOT (Count > 3) AND T#5s > T#1s AND TRUE", position: { x: 0, y: 0 } }] as SFCModel['transitions'], states, active, flagsOf);
+    const other = transitionDebugInfoOf(
+      [
+        { id: 'x', fromStep: 'idle', toStep: 'work', condition: 'NOT (Count > 3) AND T#5s > T#1s AND TRUE', position: { x: 0, y: 0 } },
+      ] as SFCModel['transitions'],
+      states,
+      active,
+      flagsOf,
+    );
     expect(other.get('x')?.forced).toBeUndefined();
   });
 });
@@ -144,8 +207,13 @@ describe('Ladder: the same flags decide what a contact and a coil show', () => {
   it('UX-009 marks a forced variable forced and an unreadable one faulted in the values Ladder draws', () => {
     const values = debugValuesOf({
       active: true,
-      values: new Map([['StartPB', { reading: true, type: 'BOOL', known: true }], ['Overload', { reading: undefined, type: 'BOOL', known: true }], ['Motor', { reading: false, type: 'BOOL', known: true }]]),
-      flagsOf: (variable) => ({ StartPB: { forced: true }, Overload: { fault: true } } as Record<string, { forced?: boolean; fault?: boolean }>)[variable],
+      values: new Map([
+        ['StartPB', { reading: true, type: 'BOOL', known: true }],
+        ['Overload', { reading: undefined, type: 'BOOL', known: true }],
+        ['Motor', { reading: false, type: 'BOOL', known: true }],
+      ]),
+      flagsOf: (variable) =>
+        (({ StartPB: { forced: true }, Overload: { fault: true } }) as Record<string, { forced?: boolean; fault?: boolean }>)[variable],
     })!;
     expect(values.get('StartPB')).toMatchObject({ forced: true, error: null });
     expect(values.get('Overload')?.error).toBeTruthy();

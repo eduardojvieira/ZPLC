@@ -1,15 +1,5 @@
-import type {
-  RuntimeSnapshot,
-  RuntimeTaskSnapshot,
-  VMInfo,
-  VMState,
-  WatchForceEntry,
-} from './debugAdapter';
-import {
-  RUNTIME_SESSION_SOURCE,
-  WATCH_FORCE_STATE,
-  type RuntimeSessionSource,
-} from './debugAdapter';
+import type { RuntimeSnapshot, RuntimeTaskSnapshot, VMInfo, VMState, WatchForceEntry } from './debugAdapter';
+import { RUNTIME_SESSION_SOURCE, WATCH_FORCE_STATE, type RuntimeSessionSource } from './debugAdapter';
 import type { NativeCapabilityProfile, NativeRuntimeSnapshot } from './nativeProtocol';
 import type { StatusInfo } from './serialAdapter';
 import { deriveHardwareDebugState } from './debugStatus';
@@ -20,15 +10,21 @@ export function isNativeCapabilityProfile(value: unknown): value is NativeCapabi
   }
 
   const candidate = value as Partial<NativeCapabilityProfile>;
-  return typeof candidate.profile_id === 'string' && Array.isArray(candidate.features)
-    && candidate.features.every((feature) => {
+  return (
+    typeof candidate.profile_id === 'string' &&
+    Array.isArray(candidate.features) &&
+    candidate.features.every((feature) => {
       if (typeof feature !== 'object' || feature === null || Array.isArray(feature)) return false;
       const entry = feature as Partial<NativeCapabilityProfile['features'][number]>;
-      return typeof entry.name === 'string' && entry.name.length > 0
-        && (entry.status === 'supported' || entry.status === 'degraded' || entry.status === 'unavailable')
-        && (entry.reason === undefined || typeof entry.reason === 'string')
-        && (entry.recommended_action === undefined || typeof entry.recommended_action === 'string');
-    });
+      return (
+        typeof entry.name === 'string' &&
+        entry.name.length > 0 &&
+        (entry.status === 'supported' || entry.status === 'degraded' || entry.status === 'unavailable') &&
+        (entry.reason === undefined || typeof entry.reason === 'string') &&
+        (entry.recommended_action === undefined || typeof entry.recommended_action === 'string')
+      );
+    })
+  );
 }
 
 function mapForceEntries(

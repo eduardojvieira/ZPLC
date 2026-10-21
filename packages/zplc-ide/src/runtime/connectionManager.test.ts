@@ -18,8 +18,12 @@ function createAdapter(overrides: Partial<Record<string, unknown>> = {}) {
   const adapter = {
     connected: false,
     disableAutoPolling: false,
-    connect: async () => { adapter.connected = true; },
-    disconnect: async () => { adapter.connected = false; },
+    connect: async () => {
+      adapter.connected = true;
+    },
+    disconnect: async () => {
+      adapter.connected = false;
+    },
     setPassthroughMode: () => undefined,
     getSystemInfo: async () => validSystemInfo(),
     getCommunicationMap: async () => [],
@@ -37,9 +41,15 @@ function injectAdapter(manager: ConnectionManager, adapter: object): void {
 
 function validSystemInfo() {
   return {
-    board: 'stm32f746g_disco', board_profile: 'stm32f746g_disco/stm32f746xx',
-    zplc_version: '1.0.0', zephyr_version: '4.0.0', uptime_ms: 0, cpu_freq_mhz: 216,
-    device_protocol_version: 1, bytecode_abi_major: 1, bytecode_abi_minor: 0,
+    board: 'stm32f746g_disco',
+    board_profile: 'stm32f746g_disco/stm32f746xx',
+    zplc_version: '1.0.0',
+    zephyr_version: '4.0.0',
+    uptime_ms: 0,
+    cpu_freq_mhz: 216,
+    device_protocol_version: 1,
+    bytecode_abi_major: 1,
+    bytecode_abi_minor: 0,
     draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
     capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
     memory: { work_size: 1, retain_size: 1, ipi_size: 1, opi_size: 1 },
@@ -69,7 +79,12 @@ function readyManager(adapter: ReturnType<typeof createAdapter>): ConnectionMana
 describe('ConnectionManager lifecycle', () => {
   it('never starts a physical load for denied or stale hardware admission', async () => {
     let loads = 0;
-    const adapter = createAdapter({ connected: true, loadProgram: async () => { loads += 1; } });
+    const adapter = createAdapter({
+      connected: true,
+      loadProgram: async () => {
+        loads += 1;
+      },
+    });
     const manager = readyManager(adapter);
     await expect(manager.deployProgram(validArtifact(), 'nucleo_h743zi')).rejects.toThrow('ZPLC_DEVICE_BOARD_PROFILE_MISMATCH');
     await expect(manager.deployProgram(validArtifact(), undefined)).rejects.toThrow('ZPLC_DEVICE_PROJECT_TARGET_MISSING');
@@ -84,7 +99,12 @@ describe('ConnectionManager lifecycle', () => {
 
   it('never starts a physical load for another contract draft, and says which two (CMP-052)', async () => {
     let loads = 0;
-    const adapter = createAdapter({ connected: true, loadProgram: async () => { loads += 1; } });
+    const adapter = createAdapter({
+      connected: true,
+      loadProgram: async () => {
+        loads += 1;
+      },
+    });
     const manager = readyManager(adapter);
     const other = ZPLC_CONSTANTS.DRAFT_COUNTER + 2;
 
@@ -105,11 +125,17 @@ describe('ConnectionManager lifecycle', () => {
           delete withoutCounter.draft_counter;
           return { ...withoutCounter, ...reported };
         },
-        loadProgram: async () => { loads += 1; },
+        loadProgram: async () => {
+          loads += 1;
+        },
       });
-      const board = await readyManager(stale).deployProgram(validArtifact(), 'stm32f746g_disco').catch((error: unknown) => error);
+      const board = await readyManager(stale)
+        .deployProgram(validArtifact(), 'stm32f746g_disco')
+        .catch((error: unknown) => error);
       expect((board as DeviceAdmissionError).detail).toBe(
-        `Program was built for contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}, this runtime is draft ${'draft_counter' in reported ? other : 'none'}`,
+        `Program was built for contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER}, this runtime is draft ${
+          'draft_counter' in reported ? other : 'none'
+        }`,
       );
     }
     expect(loads).toBe(0);
@@ -120,13 +146,27 @@ describe('ConnectionManager lifecycle', () => {
     const adapter = createAdapter({
       connected: true,
       getSystemInfo: async () => ({ ...validSystemInfo(), board_profile: 'nucleo_h743zi/stm32h743xx' }),
-      loadProgram: async () => { loads += 1; },
+      loadProgram: async () => {
+        loads += 1;
+      },
     });
-    await expect(readyManager(adapter).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_BOARD_PROFILE_MISMATCH');
+    await expect(readyManager(adapter).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow(
+      'ZPLC_DEVICE_BOARD_PROFILE_MISMATCH',
+    );
     expect(loads).toBe(0);
 
-    const unavailable = createAdapter({ connected: true, getSystemInfo: async () => { throw new Error('unavailable'); }, loadProgram: async () => { loads += 1; } });
-    await expect(readyManager(unavailable).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_PREFLIGHT_STALE');
+    const unavailable = createAdapter({
+      connected: true,
+      getSystemInfo: async () => {
+        throw new Error('unavailable');
+      },
+      loadProgram: async () => {
+        loads += 1;
+      },
+    });
+    await expect(readyManager(unavailable).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow(
+      'ZPLC_DEVICE_PREFLIGHT_STALE',
+    );
     expect(loads).toBe(0);
   });
 
@@ -134,7 +174,13 @@ describe('ConnectionManager lifecycle', () => {
     const gate = deferred<void>();
     // Assigned inside the adapter callback, which the type narrowing cannot see.
     let loaded = null as Uint8Array | null;
-    const adapter = createAdapter({ connected: true, loadProgram: async (bytes: Uint8Array) => { loaded = bytes; await gate.promise; } });
+    const adapter = createAdapter({
+      connected: true,
+      loadProgram: async (bytes: Uint8Array) => {
+        loaded = bytes;
+        await gate.promise;
+      },
+    });
     const manager = readyManager(adapter);
     const bytes = validArtifact();
     const deploy = manager.deployProgram(bytes, 'stm32f746g_disco');
@@ -146,7 +192,12 @@ describe('ConnectionManager lifecycle', () => {
   });
   it('shares concurrent connects and publishes connected once', async () => {
     const gate = deferred<void>();
-    const adapter = createAdapter({ connect: async () => { await gate.promise; adapter.connected = true; } });
+    const adapter = createAdapter({
+      connect: async () => {
+        await gate.promise;
+        adapter.connected = true;
+      },
+    });
     const manager = new ConnectionManager();
     injectAdapter(manager, adapter);
     const notifications: boolean[] = [];
@@ -164,7 +215,12 @@ describe('ConnectionManager lifecycle', () => {
 
   it('cancels a deferred connect when disconnected and never publishes stale success', async () => {
     const gate = deferred<void>();
-    const adapter = createAdapter({ connect: async () => { await gate.promise; adapter.connected = true; } });
+    const adapter = createAdapter({
+      connect: async () => {
+        await gate.promise;
+        adapter.connected = true;
+      },
+    });
     const manager = new ConnectionManager();
     injectAdapter(manager, adapter);
     const notifications: boolean[] = [];
@@ -265,8 +321,14 @@ describe('ConnectionManager lifecycle', () => {
     const adapter = createAdapter({
       connected: true,
       getStatus: async () => status.promise,
-      getRuntimeSnapshot: async () => { snapshots += 1; return {}; },
-      getMqttStatus: async () => { mqtt += 1; return null; },
+      getRuntimeSnapshot: async () => {
+        snapshots += 1;
+        return {};
+      },
+      getMqttStatus: async () => {
+        mqtt += 1;
+        return null;
+      },
     });
     const manager = new ConnectionManager();
     injectAdapter(manager, adapter);
@@ -274,9 +336,11 @@ describe('ConnectionManager lifecycle', () => {
     const updates: unknown[] = [];
     manager.onStatusUpdate((value) => updates.push(value));
 
-    const poll = (manager as unknown as {
-      poll: (generation: number, currentAdapter: typeof adapter) => Promise<void>;
-    }).poll(0, adapter);
+    const poll = (
+      manager as unknown as {
+        poll: (generation: number, currentAdapter: typeof adapter) => Promise<void>;
+      }
+    ).poll(0, adapter);
     manager.enablePassthrough();
     status.resolve({ state: 'idle', uptime_ms: 0, stats: { cycles: 0 }, opi: [] });
     await poll;

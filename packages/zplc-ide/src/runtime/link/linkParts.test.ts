@@ -7,13 +7,24 @@ import { ShellLineTransport, bytesToLowerHex, hexToBytes, type ShellConsole } fr
 import type { HelloInfo } from './deviceLink';
 
 const hello = (overrides: Partial<HelloInfo> = {}): HelloInfo => ({
-  version: 1, transport: 'SERIAL', maxPayload: 512, sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30, signatureRequired: false,
-  capabilities: CAPABILITY.SESSION | CAPABILITY.MEMORY | CAPABILITY.EVENTS | CAPABILITY.PROGRAM, ...overrides,
+  version: 1,
+  transport: 'SERIAL',
+  maxPayload: 512,
+  sessionState: 'NONE',
+  keyProvisioned: false,
+  idleTimeoutS: 30,
+  signatureRequired: false,
+  capabilities: CAPABILITY.SESSION | CAPABILITY.MEMORY | CAPABILITY.EVENTS | CAPABILITY.PROGRAM,
+  ...overrides,
 });
 
 describe('which firmware this is (COM-029)', () => {
   it('a firmware that answers the hello speaks the link, and says what it gives', () => {
-    const report = describeFirmware({ studioVersion: '2.0.0', hello: hello(), systemInfo: { zplc_version: '2.0.0', device_protocol_version: 1 } });
+    const report = describeFirmware({
+      studioVersion: '2.0.0',
+      hello: hello(),
+      systemInfo: { zplc_version: '2.0.0', device_protocol_version: 1 },
+    });
     expect(report.protocol).toMatchObject({ kind: 'framed', version: 1 });
     expect(report.features).toEqual({ sessions: true, atomicWrite: true, events: true, checkedDownload: true });
     expect(report.action).toBe('use-link');
@@ -21,13 +32,21 @@ describe('which firmware this is (COM-029)', () => {
   });
 
   it('a firmware of another release is named with both versions', () => {
-    const report = describeFirmware({ studioVersion: '2.1.0', hello: hello(), systemInfo: { zplc_version: '2.0.0', device_protocol_version: 1 } });
+    const report = describeFirmware({
+      studioVersion: '2.1.0',
+      hello: hello(),
+      systemInfo: { zplc_version: '2.0.0', device_protocol_version: 1 },
+    });
     expect(report.message).toContain('version 2.0.0');
     expect(report.message).toContain('2.1.0');
   });
 
   it('a firmware that answers only the shell is the older protocol: what is missing, and which firmware to install', () => {
-    const report = describeFirmware({ studioVersion: '2.0.0-rc.3', hello: null, systemInfo: { zplc_version: '1.5.0', device_protocol_version: 1 } });
+    const report = describeFirmware({
+      studioVersion: '2.0.0-rc.3',
+      hello: null,
+      systemInfo: { zplc_version: '1.5.0', device_protocol_version: 1 },
+    });
     expect(report.protocol).toEqual({ kind: 'shell-only', shellProtocolVersion: 1 });
     expect(report.features).toEqual({ sessions: false, atomicWrite: false, events: false, checkedDownload: false });
     expect(report.action).toBe('use-shell-and-offer-update');
@@ -49,7 +68,15 @@ describe('the frames of the shell lines (COM-019)', () => {
     const handlers = new Set<(chunk: string) => void>();
     return {
       written,
-      shell: { writeText: async (text) => { written.push(text); }, onText: (handler) => { handlers.add(handler); return () => handlers.delete(handler); } },
+      shell: {
+        writeText: async (text) => {
+          written.push(text);
+        },
+        onText: (handler) => {
+          handlers.add(handler);
+          return () => handlers.delete(handler);
+        },
+      },
       feed: (text) => handlers.forEach((handler) => handler(text)),
     };
   };
@@ -109,7 +136,10 @@ describe('one router for what the device reports (COM-025)', () => {
     let polls = 0;
     const seen: string[] = [];
     router.subscribe((event) => seen.push(event));
-    router.usePolling(async () => { polls++; return `poll ${polls}`; });
+    router.usePolling(async () => {
+      polls++;
+      return `poll ${polls}`;
+    });
     expect(router.status().label).toBe('state polled every 5 ms: this firmware does not push events');
     await new Promise((resolve) => setTimeout(resolve, 40));
     router.stop();

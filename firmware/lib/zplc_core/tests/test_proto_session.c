@@ -33,13 +33,13 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    }                                                         \
   } while (0)
 
 /* ------------------------------------------------------------------------------------------------------------- */
@@ -108,7 +108,10 @@ typedef struct {
 
 static fake_t fake;
 
-static uint32_t port_now(void *c) { (void)c; return fake.now; }
+static uint32_t port_now(void *c) {
+  (void)c;
+  return fake.now;
+}
 
 static int port_random(void *c, uint8_t *out, size_t n) {
   size_t i;
@@ -398,8 +401,16 @@ static int port_config_set(void *c, const char *key, const uint8_t *value, uint1
   return 0;
 }
 
-static int port_config_save(void *c) { (void)c; fake.calls_config++; return 0; }
-static int port_config_reset(void *c) { (void)c; fake.calls_config++; return 0; }
+static int port_config_save(void *c) {
+  (void)c;
+  fake.calls_config++;
+  return 0;
+}
+static int port_config_reset(void *c) {
+  (void)c;
+  fake.calls_config++;
+  return 0;
+}
 
 static int port_cred_begin(void *c, uint8_t kind, uint16_t size) {
   (void)c;
@@ -418,8 +429,17 @@ static int port_cred_chunk(void *c, const uint8_t *data, uint16_t length) {
   return 0;
 }
 
-static int port_cred_commit(void *c) { (void)c; fake.calls_cred++; return 0; }
-static int port_cred_erase(void *c, uint8_t kind) { (void)c; (void)kind; fake.calls_cred++; return 0; }
+static int port_cred_commit(void *c) {
+  (void)c;
+  fake.calls_cred++;
+  return 0;
+}
+static int port_cred_erase(void *c, uint8_t kind) {
+  (void)c;
+  (void)kind;
+  fake.calls_cred++;
+  return 0;
+}
 static void port_cred_abort(void *c) { (void)c; }
 
 static int port_signing_key_load(void *c, uint8_t key[32]) {
@@ -448,8 +468,7 @@ static int port_signing_key_erase(void *c) {
 static int port_program_verify(void *c, const uint8_t key[32], const uint8_t signature[64]) {
   (void)c;
   fake.verifications++;
-  return zplc_ed25519_verify(signature, key, fake.staged, fake.staged_size) == 0 ? 0
-                                                                                  : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
+  return zplc_ed25519_verify(signature, key, fake.staged, fake.staged_size) == 0 ? 0 : (int)ZPLC_PROTO_ERR_SIGNATURE_INVALID;
 }
 
 static zplc_proto_ops_t full_ops(void) {
@@ -557,16 +576,12 @@ static void client_init(client_t *c, uint8_t transport) {
   c->next_sequence = 1U;
 }
 
-static void client_forget(client_t *c) {
-  c->seen_count = 0U;
-}
+static void client_forget(client_t *c) { c->seen_count = 0U; }
 
 /* Build and deliver a request; `key` signs it (NULL: no code). Returns the sequence number used. */
-static uint32_t send_with(client_t *c, uint8_t message, const uint8_t *payload, size_t length, const uint8_t *key,
-                          uint32_t sequence) {
+static uint32_t send_with(client_t *c, uint8_t message, const uint8_t *payload, size_t length, const uint8_t *key, uint32_t sequence) {
   uint8_t frame[ZPLC_PROTO_FRAME_MAX];
-  size_t used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, message, sequence, payload,
-                                 (uint16_t)length, key != NULL);
+  size_t used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, message, sequence, payload, (uint16_t)length, key != NULL);
   size_t total;
 
   if (key != NULL) {
@@ -592,9 +607,7 @@ static uint32_t send_session(client_t *c, uint8_t message, const uint8_t *payloa
   return send_with(c, message, payload, length, c->has_session_key ? c->session_key : NULL, c->next_sequence++);
 }
 
-static const seen_t *last_seen(const client_t *c) {
-  return c->seen_count == 0U ? NULL : &c->seen[c->seen_count - 1U];
-}
+static const seen_t *last_seen(const client_t *c) { return c->seen_count == 0U ? NULL : &c->seen[c->seen_count - 1U]; }
 
 static int last_status(const client_t *c) {
   const seen_t *s = last_seen(c);
@@ -619,7 +632,7 @@ static void open_serial_session(client_t *c, uint8_t flags) {
   (void)send_plain(c, ZPLC_PROTO_MSG_SESSION_OPEN, payload, sizeof(payload));
 }
 
-static const uint8_t TEST_KEY[32] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+static const uint8_t TEST_KEY[32] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
                                      17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 
 /* Network session: challenge, open under the device key, derive the session key as the definition says. */
@@ -696,8 +709,7 @@ static void test_open_messages_and_the_shape_of_a_response(void) {
   s = last_seen(&c);
   CHECK(s != NULL && s->kind == ZPLC_PROTO_KIND_RESPONSE && s->message == ZPLC_PROTO_MSG_HELLO && s->sequence == 1U,
         "a hello is answered with a response of its message and its sequence");
-  CHECK(s != NULL && s->payload[0] == ZPLC_PROTO_ERR_OK && s->length == ZPLC_PROTO_HELLO_RSP_FIXED,
-        "and its fields");
+  CHECK(s != NULL && s->payload[0] == ZPLC_PROTO_ERR_OK && s->length == ZPLC_PROTO_HELLO_RSP_FIXED, "and its fields");
   CHECK(s != NULL && s->payload[ZPLC_PROTO_HELLO_RSP_VERSION_OFF] == ZPLC_PROTO_VERSION &&
             s->payload[ZPLC_PROTO_HELLO_RSP_TRANSPORT_OFF] == ZPLC_PROTO_TRANSPORT_SERIAL,
         "the version and the kind of link");
@@ -711,8 +723,7 @@ static void test_open_messages_and_the_shape_of_a_response(void) {
   s = last_seen(&c);
   CHECK(s != NULL && s->payload[0] == 0U && memcmp(s->payload + ZPLC_PROTO_IDENTITY_RSP_BOARD_OFF, "fake_board", 10U) == 0,
         "the identity names the board");
-  CHECK(s != NULL && u32_at(s->payload + ZPLC_PROTO_IDENTITY_RSP_IO_HASH_OFF) == 0xA1B2C3D4U,
-        "and the hash of its I/O description");
+  CHECK(s != NULL && u32_at(s->payload + ZPLC_PROTO_IDENTITY_RSP_IO_HASH_OFF) == 0xA1B2C3D4U, "and the hash of its I/O description");
 
   client_forget(&c);
   (void)send_plain(&c, 0x7EU, NULL, 0U);
@@ -748,8 +759,7 @@ static void test_the_access_table_is_the_same_as_the_adapters(void) {
       /* a write or a force of a.length bytes; a length of 0 cannot be built as a frame with a tail of none */
       memset(big, 0xA5, sizeof(big));
       zplc_put_u16_le(big, a->address);
-      (void)send_plain(&c, a->kind == 1U ? ZPLC_PROTO_MSG_MEM_WRITE : ZPLC_PROTO_MSG_FORCE_SET, big,
-                       2U + (size_t)a->length);
+      (void)send_plain(&c, a->kind == 1U ? ZPLC_PROTO_MSG_MEM_WRITE : ZPLC_PROTO_MSG_FORCE_SET, big, 2U + (size_t)a->length);
     }
     s = last_seen(&c);
     status = last_status(&c);
@@ -830,11 +840,9 @@ static void test_state_changing_messages_need_a_session(void) {
   CHECK(last_status(&c) == ZPLC_PROTO_ERR_OK, "a session opens");
   CHECK(ask(&c, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == ZPLC_PROTO_ERR_OK && fake.calls_mem_write == 1U,
         "a write in a session reaches the port");
-  CHECK(ask(&c, ZPLC_PROTO_MSG_RUN, NULL, 0U) == ZPLC_PROTO_ERR_OK && fake.calls_run == 1U &&
-            fake.state == ZPLC_PROTO_RUN_STATE_RUNNING,
+  CHECK(ask(&c, ZPLC_PROTO_MSG_RUN, NULL, 0U) == ZPLC_PROTO_ERR_OK && fake.calls_run == 1U && fake.state == ZPLC_PROTO_RUN_STATE_RUNNING,
         "RUN in a session");
-  CHECK(ask(&c, ZPLC_PROTO_MSG_STOP, NULL, 0U) == ZPLC_PROTO_ERR_OK && fake.state == ZPLC_PROTO_RUN_STATE_STOPPED,
-        "STOP in a session");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_STOP, NULL, 0U) == ZPLC_PROTO_ERR_OK && fake.state == ZPLC_PROTO_RUN_STATE_STOPPED, "STOP in a session");
 }
 
 /* ---- COM-020: one session at a time; it ends by close, idle time, lost link and takeover, and its forces go with it ---- */
@@ -854,8 +862,7 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
   CHECK(last_status(&a) == 0, "the first link opens a session");
   open_serial_session(&b, 0U);
   CHECK(last_status(&b) == ZPLC_PROTO_ERR_SESSION_BUSY, "a second one is refused while it is open");
-  CHECK(ask(&b, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == ZPLC_PROTO_ERR_NO_SESSION,
-        "and the second link cannot write");
+  CHECK(ask(&b, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == ZPLC_PROTO_ERR_NO_SESSION, "and the second link cannot write");
   {
     client_t n;
     uint8_t p[ZPLC_PROTO_SESSION_OPEN_REQ_FIXED];
@@ -869,8 +876,7 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
   }
 
   /* forces set by the session end with it: through a takeover by a person at the serial link */
-  CHECK(ask(&a, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U,
-        "the session sets a force");
+  CHECK(ask(&a, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U, "the session sets a force");
   open_serial_session(&b, 1U);
   CHECK(last_status(&b) == ZPLC_PROTO_ERR_OK, "a takeover from the serial link opens a session");
   CHECK(forces_in_use() == 0U, "the forces of the session that was taken over are released");
@@ -884,12 +890,10 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
     }
     CHECK(found, "the link that was taken over is told why, and how many forces went with it");
   }
-  CHECK(ask(&a, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == ZPLC_PROTO_ERR_NO_SESSION,
-        "the first link has no session any more");
+  CHECK(ask(&a, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == ZPLC_PROTO_ERR_NO_SESSION, "the first link has no session any more");
 
   /* a force of the new session ends when it is closed */
-  CHECK(ask(&b, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U,
-        "the new session sets a force");
+  CHECK(ask(&b, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U, "the new session sets a force");
   CHECK(ask(&b, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == ZPLC_PROTO_ERR_OK, "it is closed");
   CHECK(forces_in_use() == 0U && !zplc_proto_session_is_open(&dev), "its force was released with it");
 
@@ -912,17 +916,14 @@ static void test_one_session_at_a_time_and_how_it_ends(void) {
 
   /* the link is lost */
   open_serial_session(&a, 0U);
-  CHECK(ask(&a, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U,
-        "a session sets a force");
+  CHECK(ask(&a, ZPLC_PROTO_MSG_FORCE_SET, addr_data, 3U) == ZPLC_PROTO_ERR_OK && forces_in_use() == 1U, "a session sets a force");
   zplc_proto_link_lost(&a.link);
-  CHECK(!zplc_proto_session_is_open(&dev) && forces_in_use() == 0U,
-        "a link that is lost ends its session and releases its forces");
+  CHECK(!zplc_proto_session_is_open(&dev) && forces_in_use() == 0U, "a link that is lost ends its session and releases its forces");
 
   /* a force that the shell set, outside a session, is not the session's to release */
   CHECK(port_force_set(NULL, 0x2010U, addr_data, 3U) == 0, "a force outside a session");
   open_serial_session(&a, 0U);
-  CHECK(ask(&a, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0 && forces_in_use() == 1U,
-        "stays when a session that did not set it ends");
+  CHECK(ask(&a, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0 && forces_in_use() == 1U, "stays when a session that did not set it ends");
 }
 
 /* What the shell of a port does for `zplc dbg force set`: open or join the session of its link, force, tell the engine. */
@@ -978,8 +979,7 @@ static void test_a_console_force_belongs_to_a_session(void) {
   /* the line under the link falls: the DTR of a USB CDC ACM port when the host closes it or the cable goes */
   CHECK(console_force(&a, 0x1000U, 0x0FU) == 0 && forces_in_use() == 1U, "a console force");
   zplc_proto_link_line(&a.link, 0);
-  CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U,
-        "a line that was never seen up is not a loss (a port that cannot tell)");
+  CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U, "a line that was never seen up is not a loss (a port that cannot tell)");
   zplc_proto_link_line(&a.link, 1);
   zplc_proto_link_line(&a.link, 1);
   CHECK(zplc_proto_session_is_open(&dev) && forces_in_use() == 1U, "a line that stays up keeps the session");
@@ -1028,26 +1028,22 @@ static void test_a_download_is_a_session_transaction(void) {
   zplc_put_u32_le(begin + 4U, zplc_crc32(program, sizeof(program)));
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U) == 0, "the transfer starts");
   s = last_seen(&c);
-  CHECK(s != NULL && zplc_get_u16_le(s->payload + 1U) == ZPLC_PROTO_PAYLOAD_MAX - 4U,
-        "and says how large a chunk may be");
+  CHECK(s != NULL && zplc_get_u16_le(s->payload + 1U) == ZPLC_PROTO_PAYLOAD_MAX - 4U, "and says how large a chunk may be");
 
   zplc_put_u32_le(chunk, 100U);
   memcpy(chunk + 4U, program + 100U, 100U);
-  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 104U) == ZPLC_PROTO_ERR_BAD_REQUEST,
-        "a chunk out of order is refused");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 104U) == ZPLC_PROTO_ERR_BAD_REQUEST, "a chunk out of order is refused");
   zplc_put_u32_le(chunk, 0U);
   memcpy(chunk + 4U, program, 200U);
-  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 204U) == 0 && u32_at(last_seen(&c)->payload + 1U) == 200U,
-        "the first chunk");
-  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == ZPLC_PROTO_ERR_STATE,
-        "a commit before the last byte is refused");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 204U) == 0 && u32_at(last_seen(&c)->payload + 1U) == 200U, "the first chunk");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == ZPLC_PROTO_ERR_STATE, "a commit before the last byte is refused");
   zplc_put_u32_le(chunk, 200U);
   memcpy(chunk + 4U, program + 200U, 100U);
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_CHUNK, chunk, 104U) == 0, "the last chunk");
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == 0, "the commit");
   s = last_seen(&c);
-  CHECK(s != NULL && u32_at(s->payload + 1U) == sizeof(program) &&
-            u32_at(s->payload + 5U) == zplc_crc32(program, sizeof(program)) && u32_at(s->payload + 9U) == 1U,
+  CHECK(s != NULL && u32_at(s->payload + 1U) == sizeof(program) && u32_at(s->payload + 5U) == zplc_crc32(program, sizeof(program)) &&
+            u32_at(s->payload + 9U) == 1U,
         "reports the size, the CRC-32 read back and the generation");
   CHECK(memcmp(fake.stored, program, sizeof(program)) == 0 && fake.state == ZPLC_PROTO_RUN_STATE_STOPPED,
         "the program is stored and the runtime is stopped: RUN is another request");
@@ -1097,15 +1093,13 @@ static void test_a_download_is_a_session_transaction(void) {
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U) == ZPLC_PROTO_ERR_STATE, "a download needs the runtime stopped");
   fake.state = ZPLC_PROTO_RUN_STATE_STOPPED;
   zplc_put_u32_le(begin, ZPLC_MEM_CODE_SIZE + 1U);
-  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U) == ZPLC_PROTO_ERR_TOO_LARGE,
-        "a program larger than the device accepts");
+  CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U) == ZPLC_PROTO_ERR_TOO_LARGE, "a program larger than the device accepts");
   zplc_put_u32_le(begin, 300U);
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_BEGIN, begin, 8U) == 0, "a transfer is started");
   {
     const unsigned aborts = fake.program_aborts;
 
-    CHECK(ask(&c, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0 && fake.program_aborts == aborts + 1U,
-          "and dropped when the session ends");
+    CHECK(ask(&c, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0 && fake.program_aborts == aborts + 1U, "and dropped when the session ends");
   }
 }
 
@@ -1122,8 +1116,8 @@ static void test_configuration_and_credentials_follow_the_session_rule(void) {
   memcpy(config, "wifi_ssid", 9U);
   memcpy(config + ZPLC_PROTO_CONFIG_SET_REQ_FIXED, "lab!", 4U);
   CHECK(ask(&c, ZPLC_PROTO_MSG_CONFIG_SET, config, sizeof(config)) == ZPLC_PROTO_ERR_NO_SESSION &&
-            ask(&c, ZPLC_PROTO_MSG_CRED_BEGIN, cred_begin, 3U) == ZPLC_PROTO_ERR_NO_SESSION &&
-            fake.calls_config == 0U && fake.calls_cred == 0U,
+            ask(&c, ZPLC_PROTO_MSG_CRED_BEGIN, cred_begin, 3U) == ZPLC_PROTO_ERR_NO_SESSION && fake.calls_config == 0U &&
+            fake.calls_cred == 0U,
         "without a session neither reaches the port");
   open_serial_session(&c, 0U);
   CHECK(ask(&c, ZPLC_PROTO_MSG_CONFIG_SET, config, sizeof(config)) == 0 && strcmp(fake.config_key, "wifi_ssid") == 0,
@@ -1147,8 +1141,8 @@ static void test_configuration_and_credentials_follow_the_session_rule(void) {
           "the configuration change is unsupported");
     client_forget(&c);
     (void)send_plain(&c, ZPLC_PROTO_MSG_HELLO, (const uint8_t[3]){1U, 0U, 2U}, 3U);
-    CHECK((u32_at(last_seen(&c)->payload + ZPLC_PROTO_HELLO_RSP_CAPABILITIES_OFF) &
-           (ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS)) == 0U,
+    CHECK((u32_at(last_seen(&c)->payload + ZPLC_PROTO_HELLO_RSP_CAPABILITIES_OFF) & (ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS)) ==
+              0U,
           "and the hello does not offer it");
   }
 }
@@ -1330,8 +1324,7 @@ static void test_serial_trust_and_key_provisioning(void) {
   /* a network link: HELLO is open, the rest is not */
   client_forget(&net);
   (void)send_plain(&net, ZPLC_PROTO_MSG_HELLO, (const uint8_t[3]){1U, 0U, 2U}, 3U);
-  CHECK(last_status(&net) == 0 && last_seen(&net)->payload[ZPLC_PROTO_HELLO_RSP_TRANSPORT_OFF] ==
-                                     ZPLC_PROTO_TRANSPORT_NETWORK,
+  CHECK(last_status(&net) == 0 && last_seen(&net)->payload[ZPLC_PROTO_HELLO_RSP_TRANSPORT_OFF] == ZPLC_PROTO_TRANSPORT_NETWORK,
         "a hello is answered on a network link, and says it is one");
   client_forget(&net);
   (void)send_plain(&net, ZPLC_PROTO_MSG_STATUS, NULL, 0U);
@@ -1344,16 +1337,14 @@ static void test_serial_trust_and_key_provisioning(void) {
   CHECK(ask(&serial, ZPLC_PROTO_MSG_KEY_SET, payload, 32U) == ZPLC_PROTO_ERR_NO_SESSION, "no key without a session");
   open_serial_session(&serial, 0U);
   memcpy(payload, key, sizeof(payload));
-  CHECK(ask(&serial, ZPLC_PROTO_MSG_KEY_SET, payload, 32U) == 0 && fake.key_set && memcmp(fake.key, key, 32U) == 0,
-        "the key is stored");
+  CHECK(ask(&serial, ZPLC_PROTO_MSG_KEY_SET, payload, 32U) == 0 && fake.key_set && memcmp(fake.key, key, 32U) == 0, "the key is stored");
   for (i = 0U; i + 32U <= serial.all_output_len; i++) {
     echoed |= memcmp(serial.all_output + i, key, 32U) == 0;
   }
   CHECK(!echoed, "and it is not in anything the device sent back");
   client_forget(&serial);
   (void)send_plain(&serial, ZPLC_PROTO_MSG_HELLO, (const uint8_t[3]){1U, 0U, 2U}, 3U);
-  CHECK(last_seen(&serial)->payload[ZPLC_PROTO_HELLO_RSP_KEY_PROVISIONED_OFF] == 1U,
-        "the hello says a key is held, and nothing more");
+  CHECK(last_seen(&serial)->payload[ZPLC_PROTO_HELLO_RSP_KEY_PROVISIONED_OFF] == 1U, "the hello says a key is held, and nothing more");
   CHECK(ask(&serial, ZPLC_PROTO_MSG_SESSION_CLOSE, NULL, 0U) == 0, "the serial session is closed");
 
   /* the key is refused over the network, whatever else is true */
@@ -1375,8 +1366,7 @@ static void test_a_network_session_authenticates_every_frame(void) {
   client_t net;
   client_t other;
   const uint8_t addr_data[3] = {0x00U, 0x20U, 0xAAU};
-  const uint8_t good_key[32] = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4,
-                                3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8};
+  const uint8_t good_key[32] = {9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8};
   uint8_t wrong_key[32];
   const seen_t *s;
   uint32_t drops_before;
@@ -1407,8 +1397,7 @@ static void test_a_network_session_authenticates_every_frame(void) {
   /* the open itself, replayed after it was used */
   CHECK(open_network_session(&net, good_key, 0) == 0, "the right key and challenge open a session");
   s = last_seen(&net);
-  CHECK(s != NULL && s->auth == 1U && s->mac_ok == 1U && s->payload[1U + 4U + 2U] == 1U,
-        "the response is authenticated under the new key");
+  CHECK(s != NULL && s->auth == 1U && s->mac_ok == 1U && s->payload[1U + 4U + 2U] == 1U, "the response is authenticated under the new key");
   {
     uint8_t captured[ZPLC_PROTO_FRAME_MAX];
     size_t captured_len;
@@ -1430,15 +1419,13 @@ static void test_a_network_session_authenticates_every_frame(void) {
   CHECK(open_network_session(&net, good_key, 0) == 0, "a session opens again, with a new challenge");
 
   /* inside the session: good frames */
-  CHECK(ask(&net, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == 0 && fake.calls_mem_write == 1U,
-        "an authenticated write is done");
+  CHECK(ask(&net, ZPLC_PROTO_MSG_MEM_WRITE, addr_data, 3U) == 0 && fake.calls_mem_write == 1U, "an authenticated write is done");
   s = last_seen(&net);
   CHECK(s != NULL && s->auth == 1U && s->mac_ok == 1U, "and answered under the session key");
   seq = net.next_sequence - 1U;
 
   /* a modified frame (one bit of the payload flipped, checksum repaired) */
-  used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, ZPLC_PROTO_MSG_MEM_WRITE, seq + 1U, addr_data,
-                          3U, 1);
+  used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, ZPLC_PROTO_MSG_MEM_WRITE, seq + 1U, addr_data, 3U, 1);
   zplc_hmac_sha256(net.session_key, 32U, frame, used, mac);
   frame[ZPLC_PROTO_HEADER_BYTES + 2U] ^= 0x01U; /* modified after it was signed */
   total = zplc_proto_finish(frame, used, mac);
@@ -1459,8 +1446,7 @@ static void test_a_network_session_authenticates_every_frame(void) {
         "a replayed frame is dropped and counted");
 
   /* out of order: ahead of the next */
-  used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, ZPLC_PROTO_MSG_MEM_WRITE, seq + 5U, addr_data,
-                          3U, 1);
+  used = zplc_proto_begin(frame, sizeof(frame), ZPLC_PROTO_KIND_REQUEST, ZPLC_PROTO_MSG_MEM_WRITE, seq + 5U, addr_data, 3U, 1);
   zplc_hmac_sha256(net.session_key, 32U, frame, used, mac);
   total = zplc_proto_finish(frame, used, mac);
   drops_before = net.link.stats.order_drops;
@@ -1585,8 +1571,7 @@ static void test_a_device_with_a_key_accepts_only_signed_programs(void) {
   CHECK(last_seen(&c)->payload[ZPLC_PROTO_HELLO_RSP_SIGNATURE_REQUIRED_OFF] == 1U, "and the hello says programs have to be signed");
 
   fake.verifications = 0U;
-  CHECK(transfer(&c, good->message, good->message_length, NULL) == ZPLC_PROTO_ERR_SIGNATURE_REQUIRED &&
-            fake.verifications == 0U,
+  CHECK(transfer(&c, good->message, good->message_length, NULL) == ZPLC_PROTO_ERR_SIGNATURE_REQUIRED && fake.verifications == 0U,
         "an unsigned program is refused, and nothing was verified");
   {
     /* the transfer is still open: the signature can follow, and the commit then goes through */
@@ -1596,8 +1581,7 @@ static void test_a_device_with_a_key_accepts_only_signed_programs(void) {
           "and the commit verifies it and activates the program");
   }
   fake.stored_size = 0U;
-  CHECK(transfer(&c, good->message, good->message_length, other->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID &&
-            fake.stored_size == 0U,
+  CHECK(transfer(&c, good->message, good->message_length, other->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID && fake.stored_size == 0U,
         "a signature that is not of this program is refused, with nothing stored");
   CHECK(ask(&c, ZPLC_PROTO_MSG_PROGRAM_COMMIT, NULL, 0U) == ZPLC_PROTO_ERR_STATE, "and the transfer is dropped");
   CHECK(transfer(&c, foreign->message, foreign->message_length, good->signature) == ZPLC_PROTO_ERR_SIGNATURE_INVALID,
@@ -1645,8 +1629,8 @@ static unsigned unsupported_warnings(const client_t *c, char *text, size_t text_
   for (i = 0U; i < c->seen_count; i++) {
     const seen_t *e = &c->seen[i];
 
-    if (e->kind == ZPLC_PROTO_KIND_EVENT && e->message == ZPLC_PROTO_EVT_LOG &&
-        e->payload[0] == ZPLC_PROTO_LOG_LEVEL_WARNING && e->length > 1U) {
+    if (e->kind == ZPLC_PROTO_KIND_EVENT && e->message == ZPLC_PROTO_EVT_LOG && e->payload[0] == ZPLC_PROTO_LOG_LEVEL_WARNING &&
+        e->length > 1U) {
       const size_t length = e->length - 1U < text_size - 1U ? e->length - 1U : text_size - 1U;
 
       memcpy(text, e->payload + 1U, length);
@@ -1710,8 +1694,8 @@ static void test_events(void) {
   reset_world(&ops);
   client_init(&c, ZPLC_PROTO_TRANSPORT_SERIAL);
   links[0] = &c.link;
-  zplc_put_u32_le(mask, ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT |
-                            ZPLC_PROTO_EVTMASK_FORCE | ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH);
+  zplc_put_u32_le(mask, ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT | ZPLC_PROTO_EVTMASK_FORCE |
+                            ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH);
   CHECK(ask(&c, ZPLC_PROTO_MSG_EVENTS_SET, mask, 4U) == 0, "events are asked for");
   zplc_proto_dev_service(&dev, links, 1U); /* the first look is the baseline */
   client_forget(&c);
@@ -1842,8 +1826,8 @@ static void test_a_hostile_stream_does_nothing(void) {
     }
     zplc_proto_link_feed(&c.link, junk, sizeof(junk));
   }
-  CHECK(!zplc_proto_session_is_open(&dev) && fake.calls_mem_write == 0U && fake.calls_run == 0U &&
-            fake.calls_force_set == 0U && fake.calls_program_begin == 0U && fake.calls_key == 0U,
+  CHECK(!zplc_proto_session_is_open(&dev) && fake.calls_mem_write == 0U && fake.calls_run == 0U && fake.calls_force_set == 0U &&
+            fake.calls_program_begin == 0U && fake.calls_key == 0U,
         "random bytes on a network link open no session and reach nothing");
 }
 

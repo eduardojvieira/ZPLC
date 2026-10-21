@@ -8,7 +8,9 @@
  * accepted before it exits.
  */
 
-export interface LifecycleEvent { preventDefault(): void }
+export interface LifecycleEvent {
+  preventDefault(): void;
+}
 
 /** The part of Electron's `app` that the application lifecycle uses. */
 export interface LifecycleApp {
@@ -32,7 +34,10 @@ export interface LifecycleOptions {
 /** How long the process waits for the writes of a closing window: a session is a few kilobytes. */
 export const QUIT_WRITE_WAIT_MS = 2_000;
 
-const sleep = (ms: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, ms).unref?.(); });
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms).unref?.();
+  });
 
 export function registerAppLifecycle(app: LifecycleApp, options: LifecycleOptions): void {
   const pause = options.pause ?? sleep;
@@ -52,6 +57,9 @@ export function registerAppLifecycle(app: LifecycleApp, options: LifecycleOption
     const settled = new Promise<void>((resolve) => setImmediate(resolve)).then(() => options.writesSettled());
     void Promise.race([settled, pause(options.maxWaitMs ?? QUIT_WRITE_WAIT_MS)])
       .catch(() => undefined)
-      .finally(() => { waited = true; app.quit(); });
+      .finally(() => {
+        waited = true;
+        app.quit();
+      });
   });
 }

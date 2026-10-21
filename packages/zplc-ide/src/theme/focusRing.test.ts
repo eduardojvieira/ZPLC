@@ -49,21 +49,24 @@ describe('focus ring (UX-005 stopgap: the visual editors still carry their own c
   for (const theme of THEME_IDS) {
     it(`has at least 3:1 contrast against the canvas, panel and node surfaces of the ${theme} theme`, () => {
       const tokens = resolveTokens(theme);
-      for (const surface of SURFACES) expect({ surface, ratio: contrastRatio(tokens['--focus-ring-color'], tokens[surface]) >= 3 }).toEqual({ surface, ratio: true });
+      for (const surface of SURFACES)
+        expect({ surface, ratio: contrastRatio(tokens['--focus-ring-color'], tokens[surface]) >= 3 }).toEqual({ surface, ratio: true });
     });
   }
 });
 
 /** UX-005 (visual editors): a node, an edge and a control of Ladder, FBD and SFC show the same ring as the rest of the shell. */
 describe('focus ring in the visual editors (UX-005)', () => {
-  const walk = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    return statSync(path).isDirectory() ? walk(path) : [path];
-  });
+  const walk = (dir: string): string[] =>
+    readdirSync(dir).flatMap((name) => {
+      const path = join(dir, name);
+      return statSync(path).isDirectory() ? walk(path) : [path];
+    });
   const editorsDir = new URL('../editors', import.meta.url).pathname;
   const sources = walk(editorsDir).filter((path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path));
   // a class that removes the ring or draws a second one
-  const OWN_FOCUS = /(?<![\w-])(?:outline-none|outline-hidden|(?:focus|focus-visible|focus-within):(?:outline|ring|border|shadow)[\w-]*)(?![\w-])/;
+  const OWN_FOCUS =
+    /(?<![\w-])(?:outline-none|outline-hidden|(?:focus|focus-visible|focus-within):(?:outline|ring|border|shadow)[\w-]*)(?![\w-])/;
 
   it('re-applies the shared ring to the nodes and edges that the diagram library switches off', () => {
     const rule = rules.find(({ selector, body }) => selector.includes(':focus-visible') && /outline/.test(body));
@@ -79,7 +82,10 @@ describe('focus ring in the visual editors (UX-005)', () => {
   });
 
   it('keeps no visual-editor source on the list of focus overrides of the kit guard', () => {
-    const listed = JSON.parse(readFileSync(new URL('../../../../tools/ci/ui-kit-offenders.json', import.meta.url), 'utf8')) as Array<{ file: string; rule: string }>;
+    const listed = JSON.parse(readFileSync(new URL('../../../../tools/ci/ui-kit-offenders.json', import.meta.url), 'utf8')) as Array<{
+      file: string;
+      rule: string;
+    }>;
     expect(listed.filter(({ file, rule }) => rule === 'focus-override' && file.includes('/src/editors/'))).toEqual([]);
   });
 });

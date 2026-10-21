@@ -26,22 +26,22 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define TEST_ASSERT(cond, msg)                              \
-  do {                                                      \
-    test_count++;                                           \
-    if (!(cond)) {                                          \
+#define TEST_ASSERT(cond, msg)                                \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
       fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
-      fail_count++;                                         \
-    } else {                                                \
-      printf("PASS: %s\n", msg);                            \
-    }                                                       \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 /* ---- clocks that are wrong, each in the way a port can be wrong ---- */
 static uint32_t fake_now;
-static uint32_t fake_step;   /* what one read of the tick adds */
-static uint32_t fake_scale;  /* what a sleep adds, for each millisecond it is asked for */
-static uint32_t fake_extra;  /* what a sleep of more than a millisecond adds on top */
+static uint32_t fake_step;  /* what one read of the tick adds */
+static uint32_t fake_scale; /* what a sleep adds, for each millisecond it is asked for */
+static uint32_t fake_extra; /* what a sleep of more than a millisecond adds on top */
 static int fake_flip;
 
 static uint32_t fake_tick(void) {
@@ -52,9 +52,7 @@ static uint32_t backwards_tick(void) {
   fake_flip = !fake_flip;
   return fake_flip ? 1000U : 900U;
 }
-static void fake_sleep(uint32_t ms) {
-  fake_now += ms * fake_scale + (ms > 1U ? fake_extra : 0U);
-}
+static void fake_sleep(uint32_t ms) { fake_now += ms * fake_scale + (ms > 1U ? fake_extra : 0U); }
 
 static void configure(uint32_t step, uint32_t scale, uint32_t extra) {
   fake_now = 100000U;
@@ -88,8 +86,8 @@ static void test_the_self_test_finds_a_broken_clock(void) {
   clock.tick = fake_tick;
   clock.sleep_ms = fake_sleep;
   configure(0U, 1U, 0U);
-  TEST_ASSERT(zplc_port_timing_selftest(&clock, why, sizeof(why), &report) == ZPLC_PORT_TIMING_OK &&
-                  report.resolution_ms == 1U && report.sleep_50_ms == 50U,
+  TEST_ASSERT(zplc_port_timing_selftest(&clock, why, sizeof(why), &report) == ZPLC_PORT_TIMING_OK && report.resolution_ms == 1U &&
+                  report.sleep_50_ms == 50U,
               "a clock that counts milliseconds and sleeps what it is told passes");
 
   clock.tick = backwards_tick;

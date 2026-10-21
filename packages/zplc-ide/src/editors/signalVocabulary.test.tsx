@@ -17,10 +17,22 @@ import { edgeSignal } from './fbd/edges/edgeSignal';
  */
 const FIVE = ['true', 'false', 'unknown', 'forced', 'fault'] as const satisfies readonly SignalTone[];
 
-const STOCK_STATE_COLOURS = new RegExp(String.raw`--color-accent-green|#22c55e|#ef4444|rgba\(34, 197, 94|(?:text|bg|border|ring|shadow|from|to)-(?:green|red|emerald|` + String.raw`rose|lime)-\d|drop-shadow`, 'i');
+const STOCK_STATE_COLOURS = new RegExp(
+  String.raw`--color-accent-green|#22c55e|#ef4444|rgba\(34, 197, 94|(?:text|bg|border|ring|shadow|from|to)-(?:green|red|emerald|` +
+    String.raw`rose|lime)-\d|drop-shadow`,
+  'i',
+);
 
 const sample = (over: Partial<DebugValueResult> & { forced?: boolean }): DebugValueResult & { forced?: boolean } => ({
-  value: false, type: 'BOOL', address: 0, region: null, size: 1, loading: false, exists: true, error: null, ...over,
+  value: false,
+  type: 'BOOL',
+  address: 0,
+  region: null,
+  size: 1,
+  loading: false,
+  exists: true,
+  error: null,
+  ...over,
 });
 
 const LD_SAMPLES: Record<(typeof FIVE)[number], DebugValueResult & { forced?: boolean }> = {
@@ -37,13 +49,22 @@ const coil: LDElementModel = { id: 'k1', type: 'coil', variable: 'Motor', row: 0
 const ldMarkup = (element: LDElementModel, tone: (typeof FIVE)[number], energized = false): string =>
   renderToStaticMarkup(
     <svg>
-      <LDElement element={element} x={0} y={0} energized={energized} debugValues={new Map([[element.variable!, LD_SAMPLES[tone]]]) as DebugValuesMap} />
+      <LDElement
+        element={element}
+        x={0}
+        y={0}
+        energized={energized}
+        debugValues={new Map([[element.variable!, LD_SAMPLES[tone]]]) as DebugValuesMap}
+      />
     </svg>,
   );
 
 describe('UX-009 Ladder shows the five signal states', () => {
   for (const tone of FIVE) {
-    for (const [name, element] of [['contact', contact], ['coil', coil]] as const) {
+    for (const [name, element] of [
+      ['contact', contact],
+      ['coil', coil],
+    ] as const) {
       it(`UX-009 draws a ${tone} ${name} with the ${tone} token and its glyph`, () => {
         const markup = ldMarkup(element, tone);
         expect(markup).toContain(`var(--signal-${tone}-fg)`);
@@ -67,7 +88,9 @@ describe('UX-009 Ladder shows the five signal states', () => {
 
   it('UX-009 keeps a number in the plain value tone, with no state glyph', () => {
     const markup = renderToStaticMarkup(
-      <svg><LDElement element={contact} x={0} y={0} debugValues={new Map([['Start', sample({ type: 'INT', value: 42 })]]) as DebugValuesMap} /></svg>,
+      <svg>
+        <LDElement element={contact} x={0} y={0} debugValues={new Map([['Start', sample({ type: 'INT', value: 42 })]]) as DebugValuesMap} />
+      </svg>,
     );
     expect(markup).toContain('var(--signal-value-fg)');
     expect(markup).toContain('data-signal="value"');
@@ -102,7 +125,13 @@ describe('UX-009 FBD shows the five signal states', () => {
   for (const tone of FIVE) {
     it(`UX-009 tells the wire of a ${tone} value apart by dash, weight and label as well as colour`, () => {
       const value = { true: true, false: false, unknown: null, forced: false, fault: true }[tone];
-      const edge = edgeSignal({ liveValue: value, dataType: 'BOOL', debugActive: true, forced: tone === 'forced', fault: tone === 'fault' });
+      const edge = edgeSignal({
+        liveValue: value,
+        dataType: 'BOOL',
+        debugActive: true,
+        forced: tone === 'forced',
+        fault: tone === 'fault',
+      });
       expect(edge.tone).toBe(tone);
       expect(edge.stroke).toBe(tone === 'false' || tone === 'unknown' ? 'var(--visual-wire)' : `var(--signal-${tone}-border)`);
       expect(edge.label).toContain(SIGNAL_CUES[tone].glyph);
@@ -118,8 +147,10 @@ describe('UX-009 FBD shows the five signal states', () => {
   });
 });
 
-const step = (data: Record<string, unknown>) => flow(<SFCStepNode {...nodeProps('s1', { name: 'Fill', isInitial: false, debugActive: true, ...data })} />);
-const transition = (data: Record<string, unknown>) => flow(<SFCTransitionNode {...nodeProps('t1', { condition: 'Full', debugActive: true, isArmed: true, ...data })} />);
+const step = (data: Record<string, unknown>) =>
+  flow(<SFCStepNode {...nodeProps('s1', { name: 'Fill', isInitial: false, debugActive: true, ...data })} />);
+const transition = (data: Record<string, unknown>) =>
+  flow(<SFCTransitionNode {...nodeProps('t1', { condition: 'Full', debugActive: true, isArmed: true, ...data })} />);
 
 const SFC: Record<(typeof FIVE)[number], { step: Record<string, unknown>; transition: Record<string, unknown> }> = {
   true: { step: { isActive: true }, transition: { conditionResult: true } },

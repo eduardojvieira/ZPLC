@@ -13,9 +13,15 @@
 
 import { PROJECT_ARCHIVE_CHANNEL } from './ipcContract.js';
 
-/** The channel names are defined once, in `ipcContract.ts`, and re-exported here for the callers that already import them from this module. */
+/**
+ * The channel names are defined once, in `ipcContract.ts`, and re-exported here for the callers that already import them from this module.
+ */
 export { PROJECT_ARCHIVE_CHANNEL };
-export const PROJECT_ARCHIVE_OPS = ['exportArchive', 'inspectArchive', 'extractArchive'] as const satisfies readonly (keyof typeof PROJECT_ARCHIVE_CHANNEL)[];
+export const PROJECT_ARCHIVE_OPS = [
+  'exportArchive',
+  'inspectArchive',
+  'extractArchive',
+] as const satisfies readonly (keyof typeof PROJECT_ARCHIVE_CHANNEL)[];
 
 /** Folders that are not part of a project: Studio's tree hides them and an archive leaves them out. */
 export const PROJECT_ARCHIVE_IGNORED_FOLDERS = ['node_modules', '.git', 'build', 'dist', '.vscode'] as const;
@@ -46,11 +52,21 @@ export type ProjectArchiveErrorCode =
 
 export type ProjectArchiveResult<T> = { ok: true; value: T } | { ok: false; code: ProjectArchiveErrorCode };
 
-export interface ArchiveExportRequest { rootId: string }
-export interface ArchiveExtractRequest { archiveId: string }
+export interface ArchiveExportRequest {
+  rootId: string;
+}
+export interface ArchiveExtractRequest {
+  archiveId: string;
+}
 
 /** What an export wrote. `skipped` counts links, which a project does not carry. */
-export interface ArchiveExported { fileName: string; fileCount: number; folderCount: number; bytes: number; skipped: number }
+export interface ArchiveExported {
+  fileName: string;
+  fileCount: number;
+  folderCount: number;
+  bytes: number;
+  skipped: number;
+}
 
 /** What the main process read from the archive the user chose: names and sizes, never the files' content. */
 export interface ArchiveSummary {
@@ -64,7 +80,10 @@ export interface ArchiveSummary {
   manifest: string | null;
 }
 
-export interface ArchiveImported { name: string; fileCount: number }
+export interface ArchiveImported {
+  name: string;
+  fileCount: number;
+}
 
 export type ProjectArchiveBridge = {
   /** `null` when the user cancels the save dialog. */
@@ -81,7 +100,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-const isId = (value: unknown): value is string => typeof value === 'string' && value.length >= 1 && value.length <= PROJECT_ARCHIVE_LIMITS.maxIdChars;
+const isId = (value: unknown): value is string =>
+  typeof value === 'string' && value.length >= 1 && value.length <= PROJECT_ARCHIVE_LIMITS.maxIdChars;
 
 /** `{ rootId }` and nothing else, or null. */
 export function parseExportRequest(args: readonly unknown[]): ArchiveExportRequest | null {
@@ -105,9 +125,15 @@ export function parseArchiveSummary(value: unknown): ArchiveSummary | null {
   const { archiveId, fileName, fileCount, folderCount, bytes, files, manifest } = value;
   if (!isId(archiveId) || typeof fileName !== 'string' || !count(fileCount) || !count(folderCount) || !count(bytes)) return null;
   if (manifest !== null && typeof manifest !== 'string') return null;
-  if (!Array.isArray(files) || !files.every((file) => isPlainObject(file) && typeof file.path === 'string' && count(file.size))) return null;
+  if (!Array.isArray(files) || !files.every((file) => isPlainObject(file) && typeof file.path === 'string' && count(file.size)))
+    return null;
   return {
-    archiveId, fileName, fileCount, folderCount, bytes, manifest,
+    archiveId,
+    fileName,
+    fileCount,
+    folderCount,
+    bytes,
+    manifest,
     files: files.map((file) => ({ path: (file as { path: string }).path, size: (file as { size: number }).size })),
   };
 }
@@ -126,7 +152,9 @@ export function parseArchiveResult<T>(value: unknown, parseValue: (value: unknow
 export const parseArchiveExported = (value: unknown): ArchiveExported | null => {
   if (!isPlainObject(value)) return null;
   const { fileName, fileCount, folderCount, bytes, skipped } = value;
-  return typeof fileName === 'string' && count(fileCount) && count(folderCount) && count(bytes) && count(skipped) ? { fileName, fileCount, folderCount, bytes, skipped } : null;
+  return typeof fileName === 'string' && count(fileCount) && count(folderCount) && count(bytes) && count(skipped)
+    ? { fileName, fileCount, folderCount, bytes, skipped }
+    : null;
 };
 
 export const parseArchiveImported = (value: unknown): ArchiveImported | null => {

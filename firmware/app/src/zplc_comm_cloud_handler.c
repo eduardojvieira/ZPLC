@@ -124,8 +124,7 @@ static void cloud_process(struct cloud_req *req) {
     return;
   }
   rc = cloud_run_request(req);
-  zplc_comm_req_finish(&s_pool, &req->head,
-                       rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
+  zplc_comm_req_finish(&s_pool, &req->head, rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
 }
 
 static void cloud_worker(void *p1, void *p2, void *p3) {
@@ -148,8 +147,7 @@ static void cloud_worker(void *p1, void *p2, void *p3) {
  */
 
 /* START: one request, for the provisioning blocks. */
-static int provision_start(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
-                           uint16_t fb_len, uint16_t input_offset) {
+static int provision_start(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem, uint16_t fb_len, uint16_t input_offset) {
   struct cloud_req *req;
 
   req = (struct cloud_req *)zplc_comm_req_claim(&s_pool, fb_mem, k_uptime_get_32());
@@ -157,8 +155,7 @@ static int provision_start(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
   }
   req->kind = kind;
-  (void)zplc_fb_string_copy(req->input, sizeof(req->input), fb_mem, fb_len, input_offset,
-                            FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(req->input, sizeof(req->input), fb_mem, fb_len, input_offset, FB_STRING_BYTES);
   req->output[0] = '\0';
   zplc_comm_req_submit(&s_pool, &req->head);
   if (k_msgq_put(&s_queue, (const void *)&req, K_NO_WAIT) != 0) {
@@ -171,14 +168,12 @@ static int provision_start(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
 /* POLL: the result of the request of this block; the output string of a finished one goes to the block. */
 static int provision_poll(uint8_t *fb_mem, uint16_t fb_len, uint16_t output_offset) {
   zplc_comm_req_t *slot = NULL;
-  const int result = zplc_comm_req_peek(&s_pool, fb_mem, k_uptime_get_32(),
-                                        CLOUD_REQ_TIMEOUT_MS, &slot);
+  const int result = zplc_comm_req_peek(&s_pool, fb_mem, k_uptime_get_32(), CLOUD_REQ_TIMEOUT_MS, &slot);
 
   if (result == ZPLC_COMM_HANDLER_DONE && slot != NULL) {
     const struct cloud_req *req = (const struct cloud_req *)slot;
 
-    (void)zplc_fb_string_set(fb_mem, fb_len, output_offset, FB_STRING_BYTES,
-                             (const uint8_t *)req->output, strlen(req->output));
+    (void)zplc_fb_string_set(fb_mem, fb_len, output_offset, FB_STRING_BYTES, (const uint8_t *)req->output, strlen(req->output));
     zplc_comm_req_release(&s_pool, slot);
   }
   return result;
@@ -189,12 +184,9 @@ static int event_grid_start(uint8_t *fb_mem, uint16_t fb_len) {
   char event_type[FB_STRING_CHARS + 1U];
   char payload[FB_STRING_CHARS + 1U];
 
-  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
-                            ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET, FB_STRING_BYTES);
-  (void)zplc_fb_string_copy(event_type, sizeof(event_type), fb_mem, fb_len,
-                            ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET, FB_STRING_BYTES);
-  (void)zplc_fb_string_copy(payload, sizeof(payload), fb_mem, fb_len,
-                            ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len, ZPLC_COMM_AZURE_EG_PUB_TOPIC_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(event_type, sizeof(event_type), fb_mem, fb_len, ZPLC_COMM_AZURE_EG_PUB_EVENT_TYPE_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(payload, sizeof(payload), fb_mem, fb_len, ZPLC_COMM_AZURE_EG_PUB_PAYLOAD_OFFSET, FB_STRING_BYTES);
   /* An empty TOPIC or EVENT_TYPE is the configured default of the client. */
   return zplc_mqtt_fb_event_grid(fb_mem, event_type, topic, payload);
 }
@@ -207,8 +199,7 @@ static int c2d_poll(uint8_t *fb_mem, uint16_t fb_len) {
 
   fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 0U;
   if (length >= 0) {
-    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET,
-                             FB_STRING_BYTES, message, (size_t)length);
+    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET, FB_STRING_BYTES, message, (size_t)length);
     fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 1U;
   }
   return result;
@@ -219,12 +210,10 @@ static int c2d_poll(uint8_t *fb_mem, uint16_t fb_len) {
  * ============================================================================
  */
 
-static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   uint16_t fb_len, zplc_comm_call_t call) {
+static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   /* A block of this kind is at least its table size; every offset used below
    * is inside it (COM-001). */
-  if (fb_mem == NULL || zplc_comm_fb_size((uint32_t)kind) == 0U ||
-      fb_len < zplc_comm_fb_size((uint32_t)kind)) {
+  if (fb_mem == NULL || zplc_comm_fb_size((uint32_t)kind) == 0U || fb_len < zplc_comm_fb_size((uint32_t)kind)) {
     return -EINVAL;
   }
 
@@ -232,13 +221,11 @@ static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     switch (kind) {
     case ZPLC_COMM_FB_AZURE_DPS_PROV:
       zplc_comm_req_abort(&s_pool, fb_mem);
-      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET,
-                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET, FB_STRING_BYTES, (const uint8_t *)"", 0U);
       break;
     case ZPLC_COMM_FB_AWS_FLEET_PROV:
       zplc_comm_req_abort(&s_pool, fb_mem);
-      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET,
-                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET, FB_STRING_BYTES, (const uint8_t *)"", 0U);
       break;
     case ZPLC_COMM_FB_AZURE_EG_PUB:
     case ZPLC_COMM_FB_SPB_REBIRTH:
@@ -247,8 +234,7 @@ static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     case ZPLC_COMM_FB_AZURE_C2D_RECV:
       zplc_mqtt_fb_unsubscribe(fb_mem);
       fb_mem[ZPLC_COMM_AZURE_C2D_RECV_VALID_OFFSET] = 0U;
-      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET,
-                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_AZURE_C2D_RECV_PAYLOAD_OFFSET, FB_STRING_BYTES, (const uint8_t *)"", 0U);
       break;
     default:
       break;
@@ -260,19 +246,15 @@ static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   case ZPLC_COMM_FB_AZURE_C2D_RECV:
     return c2d_poll(fb_mem, fb_len);
   case ZPLC_COMM_FB_AZURE_DPS_PROV:
-    return call == ZPLC_COMM_CALL_START
-               ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET)
-               : provision_poll(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET);
+    return call == ZPLC_COMM_CALL_START ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET)
+                                        : provision_poll(fb_mem, fb_len, ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET);
   case ZPLC_COMM_FB_AWS_FLEET_PROV:
-    return call == ZPLC_COMM_CALL_START
-               ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET)
-               : provision_poll(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET);
+    return call == ZPLC_COMM_CALL_START ? provision_start(kind, fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_TEMPLATE_NAME_OFFSET)
+                                        : provision_poll(fb_mem, fb_len, ZPLC_COMM_AWS_FLEET_PROV_THING_NAME_OFFSET);
   case ZPLC_COMM_FB_AZURE_EG_PUB:
-    return call == ZPLC_COMM_CALL_START ? event_grid_start(fb_mem, fb_len)
-                                        : zplc_mqtt_fb_poll(fb_mem);
+    return call == ZPLC_COMM_CALL_START ? event_grid_start(fb_mem, fb_len) : zplc_mqtt_fb_poll(fb_mem);
   case ZPLC_COMM_FB_SPB_REBIRTH:
-    return call == ZPLC_COMM_CALL_START ? zplc_mqtt_fb_rebirth(fb_mem)
-                                        : zplc_mqtt_fb_poll(fb_mem);
+    return call == ZPLC_COMM_CALL_START ? zplc_mqtt_fb_rebirth(fb_mem) : zplc_mqtt_fb_poll(fb_mem);
   default:
     return -EINVAL;
   }
@@ -287,33 +269,27 @@ int zplc_comm_cloud_handler_init(void) {
   int rc;
 
   k_msgq_init(&s_queue, (char *)s_queue_buf, sizeof(void *), CLOUD_REQ_MAX);
-  k_thread_create(&s_worker_thread, s_worker_stack, K_THREAD_STACK_SIZEOF(s_worker_stack),
-                  cloud_worker, NULL, NULL, NULL,
+  k_thread_create(&s_worker_thread, s_worker_stack, K_THREAD_STACK_SIZEOF(s_worker_stack), cloud_worker, NULL, NULL, NULL,
                   K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
   k_thread_name_set(&s_worker_thread, "cloud_fb_worker");
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_C2D_RECV,
-                                  zplc_comm_cloud_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_C2D_RECV, zplc_comm_cloud_handler);
   if (rc)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_DPS_PROV,
-                                  zplc_comm_cloud_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_DPS_PROV, zplc_comm_cloud_handler);
   if (rc)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_EG_PUB,
-                                  zplc_comm_cloud_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AZURE_EG_PUB, zplc_comm_cloud_handler);
   if (rc)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AWS_FLEET_PROV,
-                                  zplc_comm_cloud_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_AWS_FLEET_PROV, zplc_comm_cloud_handler);
   if (rc)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_SPB_REBIRTH,
-                                  zplc_comm_cloud_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_SPB_REBIRTH, zplc_comm_cloud_handler);
   if (rc)
     return rc;
 

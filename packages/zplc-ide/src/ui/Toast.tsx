@@ -30,5 +30,9 @@ export function Toast({ tone = 'info', children, action, dismissLabel, onDismiss
 
 /** Where toasts stack: a labelled region at a corner of the window. */
 export function ToastRegion({ label, children }: { label: string; children: ReactNode }) {
-  return <section aria-label={label} className="ui-toast-region">{children}</section>;
+  return (
+    <section aria-label={label} className="ui-toast-region">
+      {children}
+    </section>
+  );
 }

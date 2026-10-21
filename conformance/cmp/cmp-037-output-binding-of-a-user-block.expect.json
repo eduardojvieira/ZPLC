@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-037",
   "title": "=> copies the outputs of a user function block into the variables named",
-  "matrix": [
-    "pous.function-block-call-with-output-binding"
-  ],
+  "matrix": ["pous.function-block-call-with-output-binding"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

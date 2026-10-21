@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-043",
   "title": "a program that fills the WORK memory of the target exactly builds and runs",
-  "matrix": [
-    "configuration.ownership-and-memory-checks"
-  ],
+  "matrix": ["configuration.ownership-and-memory-checks"],
   "note": "CMP-043: 8191 bytes of variables and the one byte of the initialization flag are the 8192 bytes of the profile: the last element of the array is the last byte before the flag",
   "scans": 1,
   "scanMs": 10,

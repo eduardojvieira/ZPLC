@@ -24,32 +24,32 @@ Los mismos escenarios están en `tools/hil/software-review/scenarios.json`. Ese 
 
 Hay 116 escenarios.
 
-| Requisito | Tema | Escenarios |
-|---|---|---|
-| HIL-001 | packages/zplc-hil ejecuta la cadena real | 5 |
-| HIL-002 | Motor de escenarios en una placa | 7 |
-| HIL-005 | Fixtures de lenguaje en una placa | 5 |
-| HIL-010 | El registro de banco de cada placa de aprendizaje | 34 |
-| HIL-012 | Un comando por placa | 6 |
-| HIL-014 | La guía de banco | 6 |
-| HIL-015 | Simulación frente a hardware | 7 |
-| LRN-013 | Elegir una placa en Learn | 6 |
-| LRN-024 | Verificación en hardware, rotulada aparte | 7 |
-| RT-025 | RETAIN tras un ciclo de energía | 8 |
-| LNG-004 | Puntos de interrupción en elementos del fuente | 8 |
-| IO-006 | Entrada y salida analógica | 6 |
-| COM-016 | TLS y el generador aleatorio | 5 |
-| DOC-004 | Primera placa y compilar desde el código | 6 |
+| Requisito | Tema                                              | Escenarios |
+| --------- | ------------------------------------------------- | ---------- |
+| HIL-001   | packages/zplc-hil ejecuta la cadena real          | 5          |
+| HIL-002   | Motor de escenarios en una placa                  | 7          |
+| HIL-005   | Fixtures de lenguaje en una placa                 | 5          |
+| HIL-010   | El registro de banco de cada placa de aprendizaje | 34         |
+| HIL-012   | Un comando por placa                              | 6          |
+| HIL-014   | La guía de banco                                  | 6          |
+| HIL-015   | Simulación frente a hardware                      | 7          |
+| LRN-013   | Elegir una placa en Learn                         | 6          |
+| LRN-024   | Verificación en hardware, rotulada aparte         | 7          |
+| RT-025    | RETAIN tras un ciclo de energía                   | 8          |
+| LNG-004   | Puntos de interrupción en elementos del fuente    | 8          |
+| IO-006    | Entrada y salida analógica                        | 6          |
+| COM-016   | TLS y el generador aleatorio                      | 5          |
+| DOC-004   | Primera placa y compilar desde el código          | 6          |
 
 ## Resultados de la revisión
 
 Dos revisores juzgaron los 116 escenarios el 2026-10-20 leyendo el código y ejecutando lo que corre en un equipo de desarrollo (pruebas unitarias, de C y de native_sim, el runtime nativo, el banco emulado, QEMU y compilaciones del firmware). Los escenarios juzgados "no debería pasar" se corrigieron cuando la corrección era pequeña y una prueba podía demostrarla, y se juzgaron de nuevo sobre el árbol corregido: los veredictos de abajo son los finales. Los veredictos, con su razonamiento y el comando ejecutado, están en `tools/hil/software-review/verdicts.json`.
 
-| Veredicto | Escenarios |
-|---|---|
-| Debería pasar | 110 |
-| No debería pasar | 1 |
-| No se puede juzgar por software | 5 |
+| Veredicto                       | Escenarios |
+| ------------------------------- | ---------- |
+| Debería pasar                   | 110        |
+| No debería pasar                | 1          |
+| No se puede juzgar por software | 5          |
 
 No hay registrada ninguna corrida en un banco físico para estos escenarios.
 
@@ -101,9 +101,9 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-001.04 Cada archivo de pruebas de opcodes y bloques contiene pruebas que se ejecutan
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
-- **Código:** packages/zplc-hil/tests/opcodes/&#42;.test.ts; packages/zplc-hil/tests/blocks/&#42;.test.ts
+- **Código:** packages/zplc-hil/tests/opcodes/\*.test.ts; packages/zplc-hil/tests/blocks/\*.test.ts
 - **Simulación:**
-  - packages/zplc-hil/tests/**: `cd packages/zplc-hil && bun test `
+  - packages/zplc-hil/tests/\*\*: `cd packages/zplc-hil && bun test `
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
@@ -226,7 +226,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-005.05 Un fixture compilado para una placa usa los tamanos de memoria de esa placa
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
-- **Código:** `tools/hil/hil_steps.py:165` _build; `tools/hil/run_chain.py:64` _channels; `firmware/app/boards/boards.json` (memory.work_size)
+- **Código:** `tools/hil/hil_steps.py:165` \_build; `tools/hil/run_chain.py:64` \_channels; `firmware/app/boards/boards.json` (memory.work_size)
 - **Simulación:**
   - tools/hil/test_hil_bench.py CompilePerBoardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k every_step_program_compiles_for_both_learner_boards`
   - tools/hil/test_hil_chain.py PreflightTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k each_fixture_is_compiled_for_the_board_under_test`
@@ -409,7 +409,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-010.18 Salidas apagadas tras una falla por sobrepaso
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
-- **Código:** `tools/hil/hil_steps.py:492` overrun_fault; `tools/hil/hil_steps.py:461` _fault_leaves_outputs_off; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:460` zplc_sched_core_fault; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:476` zplc_sched_core_apply_safe_outputs; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2142` zplc_sched_enter_safe_error
+- **Código:** `tools/hil/hil_steps.py:492` overrun_fault; `tools/hil/hil_steps.py:461` \_fault_leaves_outputs_off; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:460` zplc_sched_core_fault; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:476` zplc_sched_core_apply_safe_outputs; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2142` zplc_sched_enter_safe_error
 - **Simulación:**
   - firmware/lib/zplc_core/tests/test_sched_core.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_sched_core)`
   - firmware/tests/scheduler_watchdog (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
@@ -546,7 +546,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-010.31 Intercambio de bus de campo: Modbus RTU en el Pico
 
 - **Placas:** Raspberry Pi Pico
-- **Código:** `tools/hil/hil_steps.py:706` _fieldbus_rtu; `firmware/app/src/zplc_modbus.c:658` zplc_modbus_rtu_init; `firmware/app/src/zplc_modbus_client.c:266` zplc_modbus_client_poll_tags
+- **Código:** `tools/hil/hil_steps.py:706` \_fieldbus_rtu; `firmware/app/src/zplc_modbus.c:658` zplc_modbus_rtu_init; `firmware/app/src/zplc_modbus_client.c:266` zplc_modbus_client_poll_tags
 - **Simulación:**
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_rtu_on_the_pico`
   - emulated Pico bench (UART1 on a host pty): read 0x5A17: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
@@ -556,7 +556,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-010.32 Intercambio de bus de campo: Modbus TCP en el ESP32-S3
 
 - **Placas:** ESP32-S3-DevKitC-1
-- **Código:** `tools/hil/hil_steps.py:734` _fieldbus_network; `firmware/app/src/zplc_modbus_tcp.c:122` zplc_modbus_tcp_process_adu; `firmware/app/src/shell_cmds.c:4937` wifi connect
+- **Código:** `tools/hil/hil_steps.py:734` \_fieldbus_network; `firmware/app/src/zplc_modbus_tcp.c:122` zplc_modbus_tcp_process_adu; `firmware/app/src/shell_cmds.c:4937` wifi connect
 - **Simulación:**
   - firmware/tests/modbus_tcp, modbus_client_tcp (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_tcp_and_mqtt_on_the_esp32s3`
@@ -567,7 +567,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-010.33 Intercambio de bus de campo: MQTT en el ESP32-S3
 
 - **Placas:** ESP32-S3-DevKitC-1
-- **Código:** `tools/hil/hil_steps.py:734` _fieldbus_network; `firmware/app/src/zplc_mqtt.c:2428` zplc_mqtt_fb_publish; `firmware/app/src/zplc_comm_mqtt_handler.c`
+- **Código:** `tools/hil/hil_steps.py:734` \_fieldbus_network; `firmware/app/src/zplc_mqtt.c:2428` zplc_mqtt_fb_publish; `firmware/app/src/zplc_comm_mqtt_handler.c`
 - **Simulación:**
   - firmware/tests/inbound_mqtt, mqtt_command, mqtt_broker_double (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated ESP32-S3: not emulable (no Wi-Fi): ninguna todavía
@@ -968,7 +968,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### RT-025.08 Las demas placas distribuidas tienen una particion para los registros y la opcion es un estado documentado
 
 - **Placas:** arduino_giga_r1, stm32f746g_disco, nucleo_h743zi, arduino_opta_wifi, waveshare_rp2040_zero
-- **Código:** `tools/hil/check_storage_partitions.py`; `firmware/zephyr/Kconfig:427`; firmware/app/boards/&#42;.conf; `firmware/app/boards/boards.json`
+- **Código:** `tools/hil/check_storage_partitions.py`; `firmware/zephyr/Kconfig:427`; firmware/app/boards/\*.conf; `firmware/app/boards/boards.json`
 - **Simulación:**
   - tools/hil/check_storage_partitions.py: `python3 tools/hil/check_storage_partitions.py`
 - **Solo el silicio:** comportamiento del controlador de flash de cada placa, ninguno medido

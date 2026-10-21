@@ -1,18 +1,9 @@
 {
   "requirement": "CMP-018",
   "title": "a negative constant assigned to an unsigned variable is rejected",
-  "matrix": [
-    "data-types.sint-int"
-  ],
+  "matrix": ["data-types.sint-int"],
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "CONSTANT_OUT_OF_RANGE"
-  ],
-  "messageIncludes": [
-    "-1",
-    "USINT"
-  ]
+  "lines": [5],
+  "codes": ["CONSTANT_OUT_OF_RANGE"],
+  "messageIncludes": ["-1", "USINT"]
 }

@@ -1,6 +1,6 @@
 /**
  * VariableNode - Custom ReactFlow node for variables (read/write)
- * 
+ *
  * Can act as:
  * - Input variable (read): has output handle only
  * - Output variable (write): has input handle only  
@@ -18,7 +18,7 @@ interface VariableData {
   type: 'variable' | 'input' | 'output';
   variableName?: string;
   dataType?: string;
-  address?: string;  // e.g., "%Q0.0" for physical I/O
+  address?: string; // e.g., "%Q0.0" for physical I/O
   comment?: string;
   onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
   readOnly?: boolean;
@@ -32,19 +32,30 @@ interface VariableData {
 }
 
 const VariableNode = memo(({ id, data, selected }: NodeProps) => {
-  const { 
-    type = 'variable', 
-    variableName = '???', 
+  const {
+    type = 'variable',
+    variableName = '???',
     dataType,
     address,
     comment,
-    onChangeData, readOnly, inputs, outputs, debugActive, pinValues, pinFlags,
+    onChangeData,
+    readOnly,
+    inputs,
+    outputs,
+    debugActive,
+    pinValues,
+    pinFlags,
   } = data as unknown as VariableData;
   // a value the map does not give is unavailable, shown with a dash and not as FALSE
   const live = pinValues?.OUT ?? pinValues?.IN;
   const liveText = live === undefined ? '—' : typeof live === 'boolean' ? (live ? 'TRUE' : 'FALSE') : String(live);
   const flags = pinFlags?.OUT ?? pinFlags?.IN;
-  const liveTone = sampleTone({ value: live, type: typeof live === 'boolean' ? 'BOOL' : dataType, forced: flags?.forced, error: flags?.fault ? 'fault' : null });
+  const liveTone = sampleTone({
+    value: live,
+    type: typeof live === 'boolean' ? 'BOOL' : dataType,
+    forced: flags?.forced,
+    error: flags?.fault ? 'fault' : null,
+  });
 
   const isInput = outputs ? outputs.length > 0 : type === 'input' || type === 'variable';
   const isOutput = inputs ? inputs.length > 0 : type === 'output' || type === 'variable';
@@ -78,19 +89,15 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
           {/* Header */}
           <div className={`${getHeaderColor()} px-2 py-1 flex items-center justify-center gap-1 rounded-t`}>
             <span className="text-[var(--text-primary)] text-xs">{getIcon()}</span>
-            <span className="text-[var(--text-primary)] font-mono text-xs font-medium">
-              {type.toUpperCase()}
-            </span>
+            <span className="text-[var(--text-primary)] font-mono text-xs font-medium">{type.toUpperCase()}</span>
           </div>
-  
+
           {/* Variable name */}
           <div className="px-3 py-2 text-center relative">
             <Tooltip content={variableName}>
-              <span className="block max-w-[156px] break-words text-[var(--text-primary)] font-mono text-sm">
-                {variableName}
-              </span>
+              <span className="block max-w-[156px] break-words text-[var(--text-primary)] font-mono text-sm">{variableName}</span>
             </Tooltip>
-            
+
             {/* Input handle (for output/variable types - receives data) */}
             {isOutput && (
               <Handle
@@ -100,7 +107,7 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
                 className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
               />
             )}
-  
+
             {/* Output handle (for input/variable types - provides data) */}
             {isInput && (
               <Handle
@@ -111,22 +118,30 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
               />
             )}
           </div>
-  
+
           {debugActive && (
-            <div className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]" data-live-value>
+            <div
+              className="px-2 py-0.5 text-center font-mono text-xs text-[var(--text-primary)] border-t border-[var(--border-color)]"
+              data-live-value
+            >
               {/* TRUE, FALSE and a dash say their state in words; a force and a fault also get the glyph and the word (UX-009) */}
-              {liveTone === 'forced' || liveTone === 'fault'
-                ? <SignalValue tone={liveTone}>{`${SIGNAL_CUES[liveTone].label} `}{liveText}</SignalValue>
-                : <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>{liveText}</span>}
+              {liveTone === 'forced' || liveTone === 'fault' ? (
+                <SignalValue tone={liveTone}>
+                  {`${SIGNAL_CUES[liveTone].label} `}
+                  {liveText}
+                </SignalValue>
+              ) : (
+                <span data-signal={liveTone} className={SIGNAL_TEXT_CLASS[liveTone]}>
+                  {liveText}
+                </span>
+              )}
             </div>
           )}
-  
+
           {/* Footer with type/address info */}
           {(dataType || address) && (
             <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-              <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
-                {address || dataType}
-              </span>
+              <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">{address || dataType}</span>
             </div>
           )}
         </div>

@@ -13,16 +13,25 @@ import { main } from './index';
 import { compilerCheck, compilerCompile, projectInspect, projectValidate } from './toolApi';
 
 const roots: string[] = [];
-afterAll(async () => { for (const root of roots) await rm(root, { recursive: true, force: true }); });
+afterAll(async () => {
+  for (const root of roots) await rm(root, { recursive: true, force: true });
+});
 
 const MOTOR = 'FUNCTION_BLOCK Motor\nVAR_INPUT run : BOOL; END_VAR\nVAR_OUTPUT on : BOOL; END_VAR\n    on := run;\nEND_FUNCTION_BLOCK\n';
-const MAIN = 'PROGRAM Main\nVAR m : Motor; start : BOOL; lamp AT %Q0.0 : BOOL; END_VAR\n    m(run := start);\n    lamp := m.on;\nEND_PROGRAM\n';
+const MAIN =
+  'PROGRAM Main\nVAR m : Motor; start : BOOL; lamp AT %Q0.0 : BOOL; END_VAR\n    m(run := start);\n    lamp := m.on;\nEND_PROGRAM\n';
 const PLAIN = 'PROGRAM Main\nVAR lamp AT %Q0.0 : BOOL; END_VAR\n    lamp := TRUE;\nEND_PROGRAM\n';
 
 async function workspace(files: Record<string, string>, manifest: Record<string, unknown> = {}): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-libraries-'));
   roots.push(root);
-  const project = { schemaVersion: 2, name: 'Lib', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }], ...manifest };
+  const project = {
+    schemaVersion: 2,
+    name: 'Lib',
+    version: '1.0.0',
+    tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }],
+    ...manifest,
+  };
   await mkdir(join(root, 'src'), { recursive: true });
   await writeFile(join(root, 'zplc.json'), JSON.stringify(project));
   for (const [path, content] of Object.entries(files)) {
@@ -49,7 +58,10 @@ describe('a library folder of the project (CMP-046)', () => {
   });
 
   it('is listed by the inspection with the folder it belongs to, and a task cannot run a program from it', async () => {
-    const root = await workspace({ 'src/Main.st': PLAIN, 'lib/motors/motor.st': MOTOR, 'lib/motors/Main.st': 'PROGRAM Main\nEND_PROGRAM\n' }, { libraries: ['lib/motors'] });
+    const root = await workspace(
+      { 'src/Main.st': PLAIN, 'lib/motors/motor.st': MOTOR, 'lib/motors/Main.st': 'PROGRAM Main\nEND_PROGRAM\n' },
+      { libraries: ['lib/motors'] },
+    );
     const inspected = await projectInspect(root);
     expect(inspected.ok && inspected.summary.sources).toEqual([
       { name: 'Main.st', language: 'ST' },
@@ -59,7 +71,10 @@ describe('a library folder of the project (CMP-046)', () => {
     // the task runs src/Main.st, never the file of the same name in the library
     const built = await compilerCompile(root);
     expect(built.ok).toBe(true);
-    const only = await workspace({ 'src/Other.st': 'PROGRAM Other\nEND_PROGRAM\n', 'lib/motors/Main.st': 'PROGRAM Main\nEND_PROGRAM\n' }, { libraries: ['lib/motors'] });
+    const only = await workspace(
+      { 'src/Other.st': 'PROGRAM Other\nEND_PROGRAM\n', 'lib/motors/Main.st': 'PROGRAM Main\nEND_PROGRAM\n' },
+      { libraries: ['lib/motors'] },
+    );
     expect((await projectValidate(only)).ok).toBe(false);
   });
 
@@ -74,7 +89,11 @@ describe('a library folder of the project (CMP-046)', () => {
   });
 
   it('a folder that is not listed is not compiled, and the build says which file it left out', async () => {
-    const root = await workspace({ 'src/Main.st': PLAIN, 'lib/motors/motor.st': MOTOR, 'lib/valves/valve.st': MOTOR.replace('Motor', 'Valve') });
+    const root = await workspace({
+      'src/Main.st': PLAIN,
+      'lib/motors/motor.st': MOTOR,
+      'lib/valves/valve.st': MOTOR.replace('Motor', 'Valve'),
+    });
     const built = await compilerCompile(root);
     expect(built.ok).toBe(true);
     const warnings = built.evidence.diagnostics.filter((diagnostic) => diagnostic.code === 'SOURCE_NOT_COMPILED');
@@ -82,7 +101,9 @@ describe('a library folder of the project (CMP-046)', () => {
     expect(warnings[0]!.message).toContain('libraries');
     // listing the folder is what makes it part of the build
     const listed = await workspace({ 'src/Main.st': PLAIN, 'lib/motors/motor.st': MOTOR }, { libraries: ['lib/motors'] });
-    expect((await compilerCompile(listed)).evidence.diagnostics.filter((diagnostic) => diagnostic.code === 'SOURCE_NOT_COMPILED')).toEqual([]);
+    expect((await compilerCompile(listed)).evidence.diagnostics.filter((diagnostic) => diagnostic.code === 'SOURCE_NOT_COMPILED')).toEqual(
+      [],
+    );
   });
 
   it.each([
@@ -127,7 +148,12 @@ describe('compiler.warnings (CMP-008)', () => {
     expect(none.ok && none.evidence.diagnostics).toEqual([]);
     const levelled = await compilerCheck(await workspace({ 'src/Main.st': UNUSED }, { compiler: { warnings: 'default' } }));
     expect(levelled.evidence.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(['UNUSED_VARIABLE']);
-    const all = await compilerCheck(await workspace({ 'src/Main.st': 'PROGRAM Main\nVAR lamp AT %Q0.0 : BOOL; w : INT; END_VAR\n    lamp := TRUE;\n    w := 1;\nEND_PROGRAM\n' }, { compiler: { warnings: 'all' } }));
+    const all = await compilerCheck(
+      await workspace(
+        { 'src/Main.st': 'PROGRAM Main\nVAR lamp AT %Q0.0 : BOOL; w : INT; END_VAR\n    lamp := TRUE;\n    w := 1;\nEND_PROGRAM\n' },
+        { compiler: { warnings: 'all' } },
+      ),
+    );
     expect(all.evidence.diagnostics.map((diagnostic) => diagnostic.code)).toEqual(['WRITE_ONLY_VARIABLE']);
   });
 
@@ -142,7 +168,8 @@ describe('compiler.warnings (CMP-008)', () => {
 });
 
 describe('the options compiler.strictTypes, compiler.debug, compiler.optimization and build.generateDebugInfo (CMP-059)', () => {
-  const NARROW = 'PROGRAM Main\nVAR lamp AT %Q0.0 : BOOL; i : INT; d : DINT; END_VAR\n    d := 70000;\n    i := d;\n    lamp := i > 0;\nEND_PROGRAM\n';
+  const NARROW =
+    'PROGRAM Main\nVAR lamp AT %Q0.0 : BOOL; i : INT; d : DINT; END_VAR\n    d := 70000;\n    i := d;\n    lamp := i > 0;\nEND_PROGRAM\n';
 
   it('strictTypes makes an implicit narrowing an error', async () => {
     const lenient = await compilerCheck(await workspace({ 'src/Main.st': NARROW }));
@@ -182,7 +209,9 @@ describe('the options compiler.strictTypes, compiler.debug, compiler.optimizatio
     const on = await workspace({ 'src/Main.st': PLAIN }, { build: { generateDebugInfo: true } });
     const output = join(on, 'out.zplc');
     const logs: string[] = [];
-    expect(await main(['compile', on, '--output', output], { log: (line: string) => logs.push(line), error: (line: string) => logs.push(line) })).toBe(0);
+    expect(
+      await main(['compile', on, '--output', output], { log: (line: string) => logs.push(line), error: (line: string) => logs.push(line) }),
+    ).toBe(0);
     const map = parseDebugMap(await readFile(`${output}.map.json`, 'utf8'));
     expect(map.programName).toBeTruthy();
     expect(Object.keys(map.pou)).toContain('Main');

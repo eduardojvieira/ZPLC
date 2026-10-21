@@ -5,17 +5,9 @@
   "order": 32,
   "module": 7,
   "level": "intermediate",
-  "prerequisites": [
-    "function-block-pump-pair",
-    "counter-batch-fbd"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["function-block-pump-pair", "counter-batch-fbd"],
+  "languages": ["FBD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

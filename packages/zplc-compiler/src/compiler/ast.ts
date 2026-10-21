@@ -30,7 +30,7 @@ export class NameMap<V> extends Map<string, V> {
     // A type is looked up by whatever the declaration holds, an array or a reference type included:
     // only a string is a name, anything else is never a key
     private spelled(name: string): string {
-        return typeof name === 'string' ? this.spelling.get(name.toUpperCase()) ?? name : name;
+        return typeof name === 'string' ? (this.spelling.get(name.toUpperCase()) ?? name) : name;
     }
 
     override get(name: string): V | undefined {
@@ -156,7 +156,7 @@ export const DataType = {
     LIFO: 'LIFO',
 } as const;
 
-export type DataTypeValue = typeof DataType[keyof typeof DataType];
+export type DataTypeValue = (typeof DataType)[keyof typeof DataType];
 
 /**
  * Represents any valid data type in ZPLC, including elementary types, array types,
@@ -208,7 +208,7 @@ export function getDataTypeSize(type: STDataType): number {
                 return STRING_LAYOUT.defaultTotalSize; // 4 byte header + 80 chars + 1 null
             case 'WSTRING':
                 return 166; // 4 byte header + 80 wchars + 2 null
-            
+
             // Standard FBs (for completeness/compatibility)
             case 'TON':
             case 'TOF':
@@ -259,7 +259,7 @@ export interface ArrayDimension {
 /**
  * Array type definition.
  * Supports 1D, 2D, and 3D arrays.
- * 
+ *
  * Examples:
  *   ARRAY[0..9] OF INT           -> 1D
  *   ARRAY[0..2, 0..2] OF REAL    -> 2D
@@ -267,7 +267,7 @@ export interface ArrayDimension {
  */
 export interface ArrayType {
     kind: 'ArrayType';
-    dimensions: ArrayDimension[];  // 1-3 elements
+    dimensions: ArrayDimension[]; // 1-3 elements
     elementType: DataTypeValue;
 }
 
@@ -277,7 +277,7 @@ export interface ArrayType {
 export function getArrayElementCount(arrayType: ArrayType): number {
     let count = 1;
     for (const dim of arrayType.dimensions) {
-        count *= (dim.upperBound - dim.lowerBound + 1);
+        count *= dim.upperBound - dim.lowerBound + 1;
     }
     return count;
 }
@@ -322,18 +322,18 @@ export const VarSection = {
     CONSTANT: 'CONSTANT',
 } as const;
 
-export type VarSectionValue = typeof VarSection[keyof typeof VarSection];
+export type VarSectionValue = (typeof VarSection)[keyof typeof VarSection];
 
 /**
  * I/O address (e.g., %Q0.0, %IW0).
  */
 export interface IOAddress {
-    type: 'I' | 'Q' | 'M';  // Area: Input, Output, Memory
+    type: 'I' | 'Q' | 'M'; // Area: Input, Output, Memory
     size: 'X' | 'B' | 'W' | 'D' | null; // Size: Bit, Byte, Word, Double
-    index: number;          // Main index (byte for X/B, word for W, etc.)
-    bitOffset: number;      // Bit offset (only valid for type X or implicit bit)
+    index: number; // Main index (byte for X/B, word for W, etc.)
+    bitOffset: number; // Bit offset (only valid for type X or implicit bit)
     // Legacy fields for backward compatibility
-    byteOffset: number;     // Canonical byte offset calculated from index/size
+    byteOffset: number; // Canonical byte offset calculated from index/size
 }
 
 /**
@@ -391,7 +391,7 @@ export function parseIOAddress(addr: string): IOAddress {
         size,
         index,
         bitOffset,
-        byteOffset
+        byteOffset,
     };
 }
 
@@ -401,9 +401,9 @@ export function parseIOAddress(addr: string): IOAddress {
 export interface VarDecl extends ASTNode {
     kind: 'VarDecl';
     name: string;
-    dataType: STDataType;  // Can be elementary type or array type or user-defined type
+    dataType: STDataType; // Can be elementary type or array type or user-defined type
     initialValue: InitialValue | null;
-    ioAddress: IOAddress | null;  // For I/O-mapped variables
+    ioAddress: IOAddress | null; // For I/O-mapped variables
     section: VarSectionValue;
     tags: Record<string, string | true>; // Optional attributes like {publish} or {modbus:40001}
     /** Declared in a `VAR RETAIN` block (`NON_RETAIN` and no qualifier are false/absent). */
@@ -486,7 +486,7 @@ export interface DereferenceExpr extends ASTNode {
 /**
  * Method call expression.
  * Syntax: instance.MethodName(args) or THIS.MethodName(args)
- * 
+ *
  * Examples:
  *   myMotor.Start(speed := 100);
  *   THIS.Calculate();
@@ -508,7 +508,7 @@ export interface ThisExpr extends ASTNode {
 
 /**
  * Array access expression.
- * 
+ *
  * Examples:
  *   Temps[0]         -> 1D access
  *   Matrix[i, j]     -> 2D access
@@ -516,13 +516,13 @@ export interface ThisExpr extends ASTNode {
  */
 export interface ArrayAccess extends ASTNode {
     kind: 'ArrayAccess';
-    array: Expression;  // Changed from Identifier to Expression for nested access
-    indices: Expression[];  // 1-3 elements, must match array dimensions
+    array: Expression; // Changed from Identifier to Expression for nested access
+    indices: Expression[]; // 1-3 elements, must match array dimensions
 }
 
 /**
  * Array literal for initialization.
- * 
+ *
  * Examples:
  *   [1, 2, 3, 4, 5]                    -> 1D
  *   [[1, 2], [3, 4]]                   -> 2D (nested)
@@ -530,7 +530,7 @@ export interface ArrayAccess extends ASTNode {
  */
 export interface ArrayLiteral extends ASTNode {
     kind: 'ArrayLiteral';
-    elements: (Expression | ArrayLiteral | StructInitializer | ArrayRepeat)[];  // Nested for multi-dimensional
+    elements: (Expression | ArrayLiteral | StructInitializer | ArrayRepeat)[]; // Nested for multi-dimensional
 }
 
 /**
@@ -579,7 +579,7 @@ export interface IntLiteral extends ASTNode {
  */
 export interface RealLiteral extends ASTNode {
     kind: 'RealLiteral';
-    value: number;  // Parsed float value
+    value: number; // Parsed float value
     /** The type a typed literal names: `LREAL#1.5` (CMP-031). */
     literalType?: string;
 }
@@ -589,7 +589,7 @@ export interface RealLiteral extends ASTNode {
  */
 export interface TimeLiteral extends ASTNode {
     kind: 'TimeLiteral';
-    valueMs: number;  // Always stored in milliseconds
+    valueMs: number; // Always stored in milliseconds
     rawValue: string; // Original string for display
 }
 
@@ -622,7 +622,7 @@ export interface DTLiteral extends ASTNode {
 }
 
 /** Largest TIME value in milliseconds: TIME is an unsigned 32-bit millisecond count (49d17h2m47s295ms). */
-export const TIME_MAX_MS = 0xFFFFFFFF;
+export const TIME_MAX_MS = 0xffffffff;
 
 const TIME_UNITS: ReadonlyArray<readonly [string, bigint]> = [
     ['d', 86_400_000_000_000n],
@@ -695,7 +695,9 @@ export function parseTimeLiteral(raw: string): number {
 
     const ms = sign * (totalNs / 1_000_000n);
     if (ms < 0n) {
-        throw new Error(`Time literal ${raw} is negative: TIME is an unsigned millisecond count, 0 to ${TIME_MAX_MS} ms (49d17h2m47s295ms)`);
+        throw new Error(
+            `Time literal ${raw} is negative: TIME is an unsigned millisecond count, 0 to ${TIME_MAX_MS} ms (49d17h2m47s295ms)`,
+        );
     }
     if (ms > BigInt(TIME_MAX_MS)) {
         throw new Error(`Time literal ${raw} is out of range: TIME holds 0 to ${TIME_MAX_MS} ms (49d17h2m47s295ms)`);
@@ -716,7 +718,7 @@ export interface Identifier extends ASTNode {
  */
 export interface MemberAccess extends ASTNode {
     kind: 'MemberAccess';
-    object: Expression;  // Changed from Identifier to Expression for nested access
+    object: Expression; // Changed from Identifier to Expression for nested access
     member: string;
 }
 
@@ -817,7 +819,7 @@ export interface IfStatement extends ASTNode {
     kind: 'IfStatement';
     condition: Expression;
     thenBranch: Statement[];
-    elsifBranches: ElsifClause[];  // NEW: ELSIF branches
+    elsifBranches: ElsifClause[]; // NEW: ELSIF branches
     elseBranch: Statement[] | null;
 }
 
@@ -847,9 +849,9 @@ export interface WhileStatement extends ASTNode {
  */
 export interface ForStatement extends ASTNode {
     kind: 'ForStatement';
-    counter: string;         // Loop variable name
-    start: Expression;       // Initial value
-    end: Expression;         // End value (inclusive)
+    counter: string; // Loop variable name
+    start: Expression; // Initial value
+    end: Expression; // End value (inclusive)
     step: Expression | null; // Step increment (null = default 1)
     body: Statement[];
 }
@@ -868,7 +870,7 @@ export interface ForStatement extends ASTNode {
 export interface RepeatStatement extends ASTNode {
     kind: 'RepeatStatement';
     body: Statement[];
-    condition: Expression;   // Exit when this becomes TRUE
+    condition: Expression; // Exit when this becomes TRUE
 }
 
 /**
@@ -1050,13 +1052,13 @@ export interface AliasDecl extends ASTNode {
  */
 export interface CompilationUnit extends ASTNode {
     kind: 'CompilationUnit';
-    globalVars: GlobalVarBlock[];   // NEW in v1.4.3
-    functions: FunctionDecl[];      // User-defined functions
+    globalVars: GlobalVarBlock[]; // NEW in v1.4.3
+    functions: FunctionDecl[]; // User-defined functions
     functionBlocks: FunctionBlockDecl[]; // NEW in v1.4.3
-    typeDefinitions: TypeDefinition[];  // NEW for Sprint 4
+    typeDefinitions: TypeDefinition[]; // NEW for Sprint 4
     /** Type aliases, already resolved in every declaration (CMP-030). */
     typeAliases?: AliasDecl[];
-    interfaces: InterfaceDecl[];    // NEW for OOP support
+    interfaces: InterfaceDecl[]; // NEW for OOP support
     programs: Program[];
     /**
      * The files a merged unit was read from, in the order their statements are annotated; absent for a unit
@@ -1071,7 +1073,7 @@ export interface CompilationUnit extends ASTNode {
 
 /**
  * User-defined function declaration.
- * 
+ *
  * Syntax:
  *   FUNCTION FunctionName : ReturnType
  *       VAR_INPUT ... END_VAR
@@ -1084,7 +1086,7 @@ export interface FunctionDecl extends ASTNode {
     kind: 'FunctionDecl';
     name: string;
     returnType: DataTypeValue;
-    inputs: VarDecl[];     // VAR_INPUT parameters
+    inputs: VarDecl[]; // VAR_INPUT parameters
     /** VAR, VAR_TEMP, VAR_OUTPUT and VAR_IN_OUT variables: a function keeps its outputs in static storage like its locals. */
     locals: VarDecl[];
     /** The VAR_OUTPUT declarations, which are also in `locals`. */
@@ -1102,12 +1104,12 @@ export interface FunctionDecl extends ASTNode {
 export interface FunctionBlockDecl extends ASTNode {
     kind: 'FunctionBlockDecl';
     name: string;
-    extends: string | null;        // Base FB name (inheritance)
-    implements: string[];          // List of interface names
-    inputs: VarDecl[];     // VAR_INPUT
-    outputs: VarDecl[];    // VAR_OUTPUT
-    inouts: VarDecl[];     // VAR_IN_OUT
-    locals: VarDecl[];     // VAR
+    extends: string | null; // Base FB name (inheritance)
+    implements: string[]; // List of interface names
+    inputs: VarDecl[]; // VAR_INPUT
+    outputs: VarDecl[]; // VAR_OUTPUT
+    inouts: VarDecl[]; // VAR_IN_OUT
+    locals: VarDecl[]; // VAR
     methods: MethodDecl[]; // Methods defined in this FB
     body: Statement[];
     /** `FUNCTION_BLOCK ABSTRACT Name`: it has no instances, and may have methods without a body. */
@@ -1127,7 +1129,7 @@ export type AccessSpecifier = 'PUBLIC' | 'PRIVATE' | 'PROTECTED' | 'INTERNAL';
 
 /**
  * Method declaration within a FUNCTION_BLOCK or INTERFACE.
- * 
+ *
  * Syntax:
  *   METHOD [access] [FINAL|ABSTRACT|OVERRIDE] MethodName : ReturnType
  *       VAR_INPUT ... END_VAR
@@ -1138,15 +1140,15 @@ export type AccessSpecifier = 'PUBLIC' | 'PRIVATE' | 'PROTECTED' | 'INTERNAL';
 export interface MethodDecl extends ASTNode {
     kind: 'MethodDecl';
     name: string;
-    returnType: STDataType | null;   // null for void methods
+    returnType: STDataType | null; // null for void methods
     accessSpecifier: AccessSpecifier;
-    isFinal: boolean;        // Cannot be overridden
-    isAbstract: boolean;     // No implementation (interface or abstract FB)
-    isOverride: boolean;     // Overrides a base method
-    inputs: VarDecl[];       // VAR_INPUT parameters
-    outputs: VarDecl[];      // VAR_OUTPUT parameters
-    locals: VarDecl[];       // VAR variables
-    body: Statement[];       // Empty if isAbstract
+    isFinal: boolean; // Cannot be overridden
+    isAbstract: boolean; // No implementation (interface or abstract FB)
+    isOverride: boolean; // Overrides a base method
+    inputs: VarDecl[]; // VAR_INPUT parameters
+    outputs: VarDecl[]; // VAR_OUTPUT parameters
+    locals: VarDecl[]; // VAR variables
+    body: Statement[]; // Empty if isAbstract
     /** Where the return type name was written (CMP-003). */
     returnTypeAt?: SourceSpan;
 }
@@ -1154,7 +1156,7 @@ export interface MethodDecl extends ASTNode {
 /**
  * Interface declaration.
  * Interfaces define method signatures without implementation.
- * 
+ *
  * Syntax:
  *   INTERFACE InterfaceName [EXTENDS BaseInterface1, BaseInterface2, ...]
  *       METHOD MethodName : ReturnType
@@ -1165,8 +1167,8 @@ export interface MethodDecl extends ASTNode {
 export interface InterfaceDecl extends ASTNode {
     kind: 'InterfaceDecl';
     name: string;
-    extends: string[];       // Base interfaces (multiple inheritance allowed)
-    methods: MethodDecl[];   // Method signatures (abstract, no body)
+    extends: string[]; // Base interfaces (multiple inheritance allowed)
+    methods: MethodDecl[]; // Method signatures (abstract, no body)
 }
 
 /**

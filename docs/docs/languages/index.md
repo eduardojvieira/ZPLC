@@ -13,13 +13,13 @@ Structured Text (ST) is ZPLC's central language frontend. The repository also ha
 
 ## Available workflows
 
-| Language | Current path |
-|---|---|
-| **Structured Text (ST)** | Central textual frontend for the compiler. |
-| **Instruction List (IL)** | Parsed and transpiled to ST before compilation. |
-| **Ladder Diagram (LD)** | Visual editor/transpiler workflow. |
-| **Function Block Diagram (FBD)** | Visual editor/transpiler workflow. |
-| **Sequential Function Chart (SFC)** | Visual editor/transpiler workflow. |
+| Language                            | Current path                                    |
+| ----------------------------------- | ----------------------------------------------- |
+| **Structured Text (ST)**            | Central textual frontend for the compiler.      |
+| **Instruction List (IL)**           | Parsed and transpiled to ST before compilation. |
+| **Ladder Diagram (LD)**             | Visual editor/transpiler workflow.              |
+| **Function Block Diagram (FBD)**    | Visual editor/transpiler workflow.              |
+| **Sequential Function Chart (SFC)** | Visual editor/transpiler workflow.              |
 
 ## What each language can do today
 

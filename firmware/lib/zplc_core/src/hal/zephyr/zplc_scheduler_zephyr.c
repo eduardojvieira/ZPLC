@@ -102,8 +102,7 @@
 #define ZPLC_DEADLINE_MISS_LIMIT ZPLC_SCHED_DEFAULT_MISS_LIMIT
 #endif
 
-BUILD_ASSERT(CONFIG_ZPLC_MAX_TASKS <= ZPLC_SCHED_CORE_MAX_SLOTS,
-             "CONFIG_ZPLC_MAX_TASKS exceeds the slots of the scheduler core");
+BUILD_ASSERT(CONFIG_ZPLC_MAX_TASKS <= ZPLC_SCHED_CORE_MAX_SLOTS, "CONFIG_ZPLC_MAX_TASKS exceeds the slots of the scheduler core");
 
 /* ============================================================================
  * Static Data
@@ -203,27 +202,17 @@ static uint64_t (*test_clock_us)(void);
  * save that finds the region unchanged writes nothing, so this is the worst case:
  * a region that changes in every interval.
  */
-#define ZPLC_RETAIN_RECORD_BYTES                                               \
-  ((uint64_t)ZPLC_RETAIN_HEADER_SIZE + ZPLC_MEM_RETAIN_SIZE +                  \
-   ZPLC_RETAIN_TRAILER_SIZE)
-#define ZPLC_RETAIN_RECORD_CHUNKS                                              \
-  ((ZPLC_RETAIN_RECORD_BYTES + ZPLC_RETAIN_CHUNK_SIZE - 1U) /                  \
-   ZPLC_RETAIN_CHUNK_SIZE)
-#define ZPLC_RETAIN_FLASH_BYTES_PER_SAVE                                       \
-  (ZPLC_RETAIN_RECORD_BYTES +                                                  \
-   ZPLC_RETAIN_RECORD_CHUNKS * CONFIG_ZPLC_RETAIN_ENTRY_OVERHEAD)
+#define ZPLC_RETAIN_RECORD_BYTES ((uint64_t)ZPLC_RETAIN_HEADER_SIZE + ZPLC_MEM_RETAIN_SIZE + ZPLC_RETAIN_TRAILER_SIZE)
+#define ZPLC_RETAIN_RECORD_CHUNKS ((ZPLC_RETAIN_RECORD_BYTES + ZPLC_RETAIN_CHUNK_SIZE - 1U) / ZPLC_RETAIN_CHUNK_SIZE)
+#define ZPLC_RETAIN_FLASH_BYTES_PER_SAVE (ZPLC_RETAIN_RECORD_BYTES + ZPLC_RETAIN_RECORD_CHUNKS * CONFIG_ZPLC_RETAIN_ENTRY_OVERHEAD)
 #define ZPLC_RETAIN_SECONDS_PER_YEAR 31557600ULL
 
-BUILD_ASSERT(ZPLC_RETAIN_RECORD_CHUNKS <= ZPLC_RETAIN_MAX_CHUNKS,
-             "CONFIG_ZPLC_RETAIN_CHUNK_SIZE is too small: the RETAIN region "
-             "needs more than the eight chunks a slot can name");
+BUILD_ASSERT(ZPLC_RETAIN_RECORD_CHUNKS <= ZPLC_RETAIN_MAX_CHUNKS, "CONFIG_ZPLC_RETAIN_CHUNK_SIZE is too small: the RETAIN region "
+                                                                  "needs more than the eight chunks a slot can name");
 BUILD_ASSERT(CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S == 0 ||
-                 (uint64_t)CONFIG_ZPLC_RETAIN_FLASH_ENDURANCE_CYCLES *
-                         CONFIG_ZPLC_RETAIN_FLASH_WEAR_BYTES *
+                 (uint64_t)CONFIG_ZPLC_RETAIN_FLASH_ENDURANCE_CYCLES * CONFIG_ZPLC_RETAIN_FLASH_WEAR_BYTES *
                          CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S >=
-                     (uint64_t)CONFIG_ZPLC_RETAIN_LIFE_YEARS *
-                         ZPLC_RETAIN_SECONDS_PER_YEAR *
-                         ZPLC_RETAIN_FLASH_BYTES_PER_SAVE,
+                     (uint64_t)CONFIG_ZPLC_RETAIN_LIFE_YEARS * ZPLC_RETAIN_SECONDS_PER_YEAR * ZPLC_RETAIN_FLASH_BYTES_PER_SAVE,
              "CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S wears the storage flash out "
              "before CONFIG_ZPLC_RETAIN_LIFE_YEARS: raise the interval, or fix "
              "the endurance and wear-bytes values of the board");
@@ -294,9 +283,7 @@ static void mem_unlock(void) { release_lock(&mem_mutex); }
 static int io_lock(void) { return take_lock(&io_mutex, ZPLC_LOCK_IO); }
 static void io_unlock(void) { release_lock(&io_mutex); }
 
-static int scheduler_slots_empty(void) {
-  return core.count == 0U;
-}
+static int scheduler_slots_empty(void) { return core.count == 0U; }
 
 /* ============================================================================
  * I/O Synchronization
@@ -323,8 +310,7 @@ static size_t channel_ordinal(const zplc_io_channel_t *channel, int direction, i
     if (candidate == channel) {
       break;
     }
-    if (candidate != NULL && candidate->direction == direction &&
-        (!digital_only || candidate->kind == ZPLC_IO_KIND_DIGITAL)) {
+    if (candidate != NULL && candidate->direction == direction && (!digital_only || candidate->kind == ZPLC_IO_KIND_DIGITAL)) {
       ordinal++;
     }
   }
@@ -554,8 +540,7 @@ static int watchdog_prepare(void) {
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
 #if defined(ZPLC_WATCHDOG_NODE)
-  static const struct device *const watchdog =
-      DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
+  static const struct device *const watchdog = DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
   struct wdt_timeout_cfg timeout = {
       .window = {.min = 0U, .max = timeout_ms},
       .flags = WDT_FLAG_RESET_SOC,
@@ -602,8 +587,7 @@ static int watchdog_feed_hardware(void) {
   return 0;
 #elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
 #if defined(ZPLC_WATCHDOG_NODE)
-  const struct device *const watchdog =
-      DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
+  const struct device *const watchdog = DEVICE_DT_GET(ZPLC_WATCHDOG_NODE);
   return wdt_feed(watchdog, hardware_watchdog_channel);
 #else
   return -ENODEV;
@@ -742,8 +726,7 @@ static scheduler_stamp_t scheduler_stamp_now(void) {
   return stamp;
 }
 
-static uint64_t scheduler_elapsed_cycles(const scheduler_stamp_t *start,
-                                         const scheduler_stamp_t *end) {
+static uint64_t scheduler_elapsed_cycles(const scheduler_stamp_t *start, const scheduler_stamp_t *end) {
   const uint64_t wrap = UINT64_C(1) << 32;
   uint64_t coarse_cycles;
   uint64_t candidate;
@@ -752,33 +735,26 @@ static uint64_t scheduler_elapsed_cycles(const scheduler_stamp_t *start,
   if (end->uptime_ms < start->uptime_ms) {
     return 0U;
   }
-  coarse_cycles =
-      k_ms_to_cyc_floor64((uint64_t)(end->uptime_ms - start->uptime_ms));
+  coarse_cycles = k_ms_to_cyc_floor64((uint64_t)(end->uptime_ms - start->uptime_ms));
   fine_cycles = (uint64_t)(uint32_t)(end->cycle32 - start->cycle32);
   candidate = (coarse_cycles & ~(wrap - 1U)) | fine_cycles;
 
   /* Pick the cycle32 epoch nearest the coarse monotonic uptime duration. */
-  if (candidate < coarse_cycles && coarse_cycles - candidate > wrap / 2U &&
-      candidate <= UINT64_MAX - wrap) {
+  if (candidate < coarse_cycles && coarse_cycles - candidate > wrap / 2U && candidate <= UINT64_MAX - wrap) {
     candidate += wrap;
-  } else if (candidate > coarse_cycles &&
-             candidate - coarse_cycles > wrap / 2U && candidate >= wrap) {
+  } else if (candidate > coarse_cycles && candidate - coarse_cycles > wrap / 2U && candidate >= wrap) {
     candidate -= wrap;
   }
   return candidate;
 }
 
-static uint64_t scheduler_elapsed_us(const scheduler_stamp_t *start,
-                                     const scheduler_stamp_t *end) {
+static uint64_t scheduler_elapsed_us(const scheduler_stamp_t *start, const scheduler_stamp_t *end) {
   return k_cyc_to_us_floor64(scheduler_elapsed_cycles(start, end));
 }
 
 #ifdef CONFIG_ZTEST
-static uint32_t scheduler_duration_us_u32(uint64_t duration_us) {
-  return duration_us > UINT32_MAX ? UINT32_MAX : (uint32_t)duration_us;
-}
+static uint32_t scheduler_duration_us_u32(uint64_t duration_us) { return duration_us > UINT32_MAX ? UINT32_MAX : (uint32_t)duration_us; }
 #endif
-
 
 /* ============================================================================
  * The port of the scheduler core
@@ -1019,9 +995,7 @@ static void retain_unlock(void) { mem_unlock(); }
 
 static void retain_arm_periodic(void) {
   if (CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S > 0) {
-    (void)k_work_reschedule_for_queue(
-        &normal_workq, &retain_work,
-        K_SECONDS(CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S));
+    (void)k_work_reschedule_for_queue(&normal_workq, &retain_work, K_SECONDS(CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S));
   }
 }
 
@@ -1032,10 +1006,8 @@ static void retain_arm_periodic(void) {
 static void retain_work_handler(struct k_work *work) {
   ARG_UNUSED(work);
   if (k_mutex_lock(&control_mutex, K_NO_WAIT) == 0) {
-    if (retain_active && core.state == ZPLC_SCHED_STATE_RUNNING &&
-        !scheduler_fault_is_latched()) {
-      (void)zplc_retain_save(&retain_identity, k_uptime_get_32(),
-                             ZPLC_RETAIN_SAVE_PERIODIC);
+    if (retain_active && core.state == ZPLC_SCHED_STATE_RUNNING && !scheduler_fault_is_latched()) {
+      (void)zplc_retain_save(&retain_identity, k_uptime_get_32(), ZPLC_RETAIN_SAVE_PERIODIC);
     }
     control_unlock();
   }
@@ -1053,7 +1025,6 @@ static void retain_program_loaded(const uint8_t *binary, size_t size) {
   }
 }
 #endif
-
 
 /* ============================================================================
  * Helper Functions
@@ -1100,27 +1071,17 @@ static void task_timer_handler(struct k_timer *timer) {
 }
 
 #ifdef CONFIG_ZTEST
-uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms,
-                                    uint32_t start_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32) {
-  scheduler_stamp_t start = {.uptime_ms = (int64_t)start_uptime_ms,
-                             .cycle32 = start_cycle32};
-  scheduler_stamp_t end = {.uptime_ms = (int64_t)end_uptime_ms,
-                           .cycle32 = end_cycle32};
+uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms, uint32_t start_cycle32, uint64_t end_uptime_ms, uint32_t end_cycle32) {
+  scheduler_stamp_t start = {.uptime_ms = (int64_t)start_uptime_ms, .cycle32 = start_cycle32};
+  scheduler_stamp_t end = {.uptime_ms = (int64_t)end_uptime_ms, .cycle32 = end_cycle32};
 
   return scheduler_duration_us_u32(scheduler_elapsed_us(&start, &end));
 }
 
-int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms,
-                                    uint32_t release_cycle32,
-                                    uint64_t end_uptime_ms,
-                                    uint32_t end_cycle32,
+int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms, uint32_t release_cycle32, uint64_t end_uptime_ms, uint32_t end_cycle32,
                                     uint32_t interval_us) {
-  scheduler_stamp_t release = {.uptime_ms = (int64_t)release_uptime_ms,
-                               .cycle32 = release_cycle32};
-  scheduler_stamp_t end = {.uptime_ms = (int64_t)end_uptime_ms,
-                           .cycle32 = end_cycle32};
+  scheduler_stamp_t release = {.uptime_ms = (int64_t)release_uptime_ms, .cycle32 = release_cycle32};
+  scheduler_stamp_t end = {.uptime_ms = (int64_t)end_uptime_ms, .cycle32 = end_cycle32};
 
   return zplc_sched_core_overrun_us(0U, scheduler_elapsed_us(&release, &end), interval_us) != 0U;
 }
@@ -1204,14 +1165,10 @@ static int lock_failure_fault(void) {
 
 /* Control path: the safe state of a STOP or of the removal of the last task. Returns 0 only when the outputs are
  * safe. */
-static int apply_safe_outputs_with_mem_lock(void) {
-  return zplc_sched_core_apply_safe_outputs(&core, &zephyr_port);
-}
+static int apply_safe_outputs_with_mem_lock(void) { return zplc_sched_core_apply_safe_outputs(&core, &zephyr_port); }
 
 /* The same for a pause: the pins only, the image and the forces stay. */
-static int drive_safe_outputs_with_mem_lock(void) {
-  return zplc_sched_core_drive_safe_outputs(&core, &zephyr_port);
-}
+static int drive_safe_outputs_with_mem_lock(void) { return zplc_sched_core_drive_safe_outputs(&core, &zephyr_port); }
 
 /* Prints what a scan recorded while it held the image lock. */
 static void print_scan_report(const zplc_sched_scan_report_t *report) {
@@ -1271,13 +1228,9 @@ void zplc_sched_test_hold_before_commit(void) {
   k_spin_unlock(&admission_lock, key);
 }
 
-int zplc_sched_test_wait_before_commit(int timeout_ms) {
-  return k_sem_take(&test_before_commit_entered, K_MSEC(timeout_ms));
-}
+int zplc_sched_test_wait_before_commit(int timeout_ms) { return k_sem_take(&test_before_commit_entered, K_MSEC(timeout_ms)); }
 
-void zplc_sched_test_release_before_commit(void) {
-  k_sem_give(&test_before_commit_release);
-}
+void zplc_sched_test_release_before_commit(void) { k_sem_give(&test_before_commit_release); }
 
 void zplc_sched_test_hold_output_write(void) {
   k_sem_reset(&test_output_write_entered);
@@ -1288,24 +1241,15 @@ void zplc_sched_test_hold_output_write(void) {
   k_spin_unlock(&admission_lock, key);
 }
 
-int zplc_sched_test_wait_output_write(int timeout_ms) {
-  return k_sem_take(&test_output_write_entered, K_MSEC(timeout_ms));
-}
+int zplc_sched_test_wait_output_write(int timeout_ms) { return k_sem_take(&test_output_write_entered, K_MSEC(timeout_ms)); }
 
-void zplc_sched_test_release_output_write(void) {
-  k_sem_give(&test_output_write_release);
-}
+void zplc_sched_test_release_output_write(void) { k_sem_give(&test_output_write_release); }
 
-void zplc_sched_test_reset_debug_before_mem(void) {
-  k_sem_reset(&test_debug_before_mem_entered);
-}
+void zplc_sched_test_reset_debug_before_mem(void) { k_sem_reset(&test_debug_before_mem_entered); }
 
-int zplc_sched_test_wait_debug_before_mem(int timeout_ms) {
-  return k_sem_take(&test_debug_before_mem_entered, K_MSEC(timeout_ms));
-}
+int zplc_sched_test_wait_debug_before_mem(int timeout_ms) { return k_sem_take(&test_debug_before_mem_entered, K_MSEC(timeout_ms)); }
 
-void zplc_sched_test_fail_next_output_commit(uint8_t channel,
-                                             zplc_hal_result_t result) {
+void zplc_sched_test_fail_next_output_commit(uint8_t channel, zplc_hal_result_t result) {
   k_spinlock_key_t key;
 
   if (mem_lock() != 0) {
@@ -1319,8 +1263,7 @@ void zplc_sched_test_fail_next_output_commit(uint8_t channel,
   mem_unlock();
 }
 
-void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
-                                         zplc_hal_result_t result) {
+void zplc_sched_test_fail_next_gpio_read(uint8_t channel, zplc_hal_result_t result) {
   k_spinlock_key_t key;
 
   if (mem_lock() != 0) {
@@ -1347,37 +1290,21 @@ uint8_t zplc_sched_test_output_commit_write_count(void) {
   return count;
 }
 
-void zplc_sched_test_fail_next_watchdog_prepare(int result) {
-  test_watchdog_prepare_failure = result;
-}
+void zplc_sched_test_fail_next_watchdog_prepare(int result) { test_watchdog_prepare_failure = result; }
 
-void zplc_sched_test_fail_next_watchdog_setup(int result) {
-  test_watchdog_setup_failure = result;
-}
+void zplc_sched_test_fail_next_watchdog_setup(int result) { test_watchdog_setup_failure = result; }
 
-void zplc_sched_test_fail_next_watchdog_feed(int result) {
-  test_watchdog_feed_failure = result;
-}
+void zplc_sched_test_fail_next_watchdog_feed(int result) { test_watchdog_feed_failure = result; }
 
-void zplc_sched_test_fail_next_watchdog_disarm(int result) {
-  test_watchdog_disarm_failure = result;
-}
+void zplc_sched_test_fail_next_watchdog_disarm(int result) { test_watchdog_disarm_failure = result; }
 
-void zplc_sched_test_fail_safe_outputs(int result) {
-  test_safe_output_failure = result;
-}
+void zplc_sched_test_fail_safe_outputs(int result) { test_safe_output_failure = result; }
 
-uint32_t zplc_sched_test_watchdog_prepare_count(void) {
-  return test_watchdog_prepare_count;
-}
+uint32_t zplc_sched_test_watchdog_prepare_count(void) { return test_watchdog_prepare_count; }
 
-uint32_t zplc_sched_test_watchdog_feed_count(void) {
-  return test_watchdog_feed_count;
-}
+uint32_t zplc_sched_test_watchdog_feed_count(void) { return test_watchdog_feed_count; }
 
-uint32_t zplc_sched_test_watchdog_disarm_count(void) {
-  return test_watchdog_disarm_count;
-}
+uint32_t zplc_sched_test_watchdog_disarm_count(void) { return test_watchdog_disarm_count; }
 
 uint32_t zplc_sched_test_watchdog_expired_count(void) { return test_watchdog_expired_count; }
 
@@ -1390,9 +1317,7 @@ void zplc_sched_test_set_watchdog_policy(uint8_t stop, uint8_t pause, uint8_t fa
   test_watchdog_policy_set = 1U;
 }
 
-void zplc_sched_test_force_next_deadline_miss(void) {
-  test_force_next_deadline_miss = 1U;
-}
+void zplc_sched_test_force_next_deadline_miss(void) { test_force_next_deadline_miss = 1U; }
 
 void zplc_sched_test_fail_next_lock(int result, int which) {
   test_lock_failure_kind = (uint8_t)which;
@@ -1413,7 +1338,6 @@ int zplc_sched_test_run_batch(void) {
 
 void zplc_sched_test_stop_timers(void) { stop_all_task_timers(); }
 #endif
-
 
 static void coordinator_work_handler(struct k_work *work) {
   uint8_t order[CONFIG_ZPLC_MAX_TASKS];
@@ -1452,14 +1376,12 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
     return ZPLC_SCHED_ERR_LOCK;
   }
   /* The view points into the artifact, not into the workspace: it is read after the scratch is given back. */
-  result = zplc_loader_verify(binary, size, workspace,
-                              ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &view);
+  result = zplc_loader_verify(binary, size, workspace, ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &view);
   zplc_verify_scratch_give();
   if (result != ZPLC_LOADER_OK) {
     return result;
   }
-  if (view.tasks == NULL || view.task_count == 0U ||
-      view.task_count > CONFIG_ZPLC_MAX_TASKS) {
+  if (view.tasks == NULL || view.task_count == 0U || view.task_count > CONFIG_ZPLC_MAX_TASKS) {
     return ZPLC_LOADER_ERR_TASK;
   }
   for (index = 0U; index < view.task_count; index++) {
@@ -1467,8 +1389,7 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
     uint8_t type = task[2];
     uint32_t interval_us = zplc_get_u32_le(task + 4U);
 
-    if (type != ZPLC_TASK_CYCLIC || interval_us < ZPLC_MIN_INTERVAL_US ||
-        interval_us > ZPLC_MAX_INTERVAL_US || interval_us % 1000U != 0U ||
+    if (type != ZPLC_TASK_CYCLIC || interval_us < ZPLC_MIN_INTERVAL_US || interval_us > ZPLC_MAX_INTERVAL_US || interval_us % 1000U != 0U ||
         zplc_get_u16_le(task + 8U) >= view.code_size) {
       return ZPLC_LOADER_ERR_TASK;
     }
@@ -1513,7 +1434,6 @@ static int reset_image_locked(void) {
   zplc_exchange_publish();
   return result;
 }
-
 
 static int stop_locked(void) {
   int index;
@@ -1626,8 +1546,7 @@ static int unregister_task_locked(int task_id) {
 
     for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
       if (slots[index].registered != 0U && slots[index].pending != 0U) {
-        (void)k_work_submit_to_queue(get_coordinator_workq(),
-                                     &coordinator_work);
+        (void)k_work_submit_to_queue(get_coordinator_workq(), &coordinator_work);
         break;
       }
     }
@@ -1682,8 +1601,7 @@ int zplc_sched_init(void) {
   }
 
   /* Initialize mutexes; a scheduler without them cannot run (RT-030). */
-  if (k_mutex_init(&mem_mutex) != 0 || k_mutex_init(&control_mutex) != 0 ||
-      k_mutex_init(&io_mutex) != 0) {
+  if (k_mutex_init(&mem_mutex) != 0 || k_mutex_init(&control_mutex) != 0 || k_mutex_init(&io_mutex) != 0) {
     return ZPLC_SCHED_ERR_LOCK;
   }
 
@@ -1694,16 +1612,13 @@ int zplc_sched_init(void) {
   if (!workqueues_started) {
     /* Initialize normal priority work queue */
     k_work_queue_init(&normal_workq);
-    k_work_queue_start(&normal_workq, normal_workq_stack,
-                       K_THREAD_STACK_SIZEOF(normal_workq_stack),
-                       CONFIG_ZPLC_SCHED_WORKQ_PRIORITY, NULL);
+    k_work_queue_start(&normal_workq, normal_workq_stack, K_THREAD_STACK_SIZEOF(normal_workq_stack), CONFIG_ZPLC_SCHED_WORKQ_PRIORITY,
+                       NULL);
 
 #ifdef CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ
     /* Initialize high priority work queue */
     k_work_queue_init(&high_workq);
-    k_work_queue_start(&high_workq, high_workq_stack,
-                       K_THREAD_STACK_SIZEOF(high_workq_stack),
-                       CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY, NULL);
+    k_work_queue_start(&high_workq, high_workq_stack, K_THREAD_STACK_SIZEOF(high_workq_stack), CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY, NULL);
 #endif
     workqueues_started = true;
   }
@@ -1771,8 +1686,7 @@ int zplc_sched_init(void) {
     retain_config.region_size = ZPLC_MEM_RETAIN_SIZE;
     retain_config.lock = retain_lock;
     retain_config.unlock = retain_unlock;
-    retain_config.min_interval_ms =
-        (uint32_t)CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S * 1000U;
+    retain_config.min_interval_ms = (uint32_t)CONFIG_ZPLC_RETAIN_SAVE_INTERVAL_S * 1000U;
     (void)zplc_retain_init(&retain_config);
   }
 #endif
@@ -1794,8 +1708,7 @@ int zplc_sched_shutdown(void) {
   int index;
   int result;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue()) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
     return -1;
   }
   if (control_lock() != 0) {
@@ -1831,8 +1744,7 @@ int zplc_sched_shutdown(void) {
   return 0;
 }
 
-int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
-                             size_t code_size) {
+int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code, size_t code_size) {
   int slot = -1;
   uint32_t total_code_size;
 
@@ -1844,8 +1756,7 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
     return ZPLC_SCHED_ERR_LOCK;
   }
 
-  if (def == NULL || code != NULL || code_size != 0U ||
-      core.state != ZPLC_SCHED_STATE_IDLE) {
+  if (def == NULL || code != NULL || code_size != 0U || core.state != ZPLC_SCHED_STATE_IDLE) {
     control_unlock();
     return -2;
   }
@@ -1856,11 +1767,8 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
   }
 
   /* Validate task configuration before materializing scheduler state. */
-  if (def->type != ZPLC_TASK_CYCLIC ||
-      def->interval_us < ZPLC_MIN_INTERVAL_US ||
-      def->interval_us > ZPLC_MAX_INTERVAL_US ||
-      def->interval_us % 1000U != 0U || def->stack_size == 0U ||
-      def->stack_size > ZPLC_STACK_MAX_DEPTH) {
+  if (def->type != ZPLC_TASK_CYCLIC || def->interval_us < ZPLC_MIN_INTERVAL_US || def->interval_us > ZPLC_MAX_INTERVAL_US ||
+      def->interval_us % 1000U != 0U || def->stack_size == 0U || def->stack_size > ZPLC_STACK_MAX_DEPTH) {
     control_unlock();
     return -4;
   }
@@ -1882,8 +1790,7 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
     k_spinlock_key_t key;
 
     zplc_vm_init(vm);
-    if (zplc_vm_set_entry(vm, def->entry_point,
-                          total_code_size - def->entry_point) != 0) {
+    if (zplc_vm_set_entry(vm, def->entry_point, total_code_size - def->entry_point) != 0) {
       control_unlock();
       return -2;
     }
@@ -1896,14 +1803,12 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
 
     key = k_spin_lock(&admission_lock);
     (void)zplc_sched_core_add_task(&core, def, vm);
-    slots[slot].task.code =
-        zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
+    slots[slot].task.code = zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
     slots[slot].task.code_size = total_code_size - def->entry_point;
     k_spin_unlock(&admission_lock, key);
   }
 
-  zplc_hal_log("[SCHED] Task %d registered: interval=%u us, priority=%d\n",
-               def->id, def->interval_us, def->priority);
+  zplc_hal_log("[SCHED] Task %d registered: interval=%u us, priority=%d\n", def->id, def->interval_us, def->priority);
 
   control_unlock();
   return slot;
@@ -1942,9 +1847,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     return ZPLC_SCHED_ERR_LOCK;
   }
 
-  if ((core.state != ZPLC_SCHED_STATE_IDLE &&
-       core.state != ZPLC_SCHED_STATE_ERROR) ||
-      !scheduler_slots_empty()) {
+  if ((core.state != ZPLC_SCHED_STATE_IDLE && core.state != ZPLC_SCHED_STATE_ERROR) || !scheduler_slots_empty()) {
     control_unlock();
     return -4;
   }
@@ -1966,8 +1869,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     control_unlock();
     return ZPLC_SCHED_ERR_LOCK;
   }
-  count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS,
-                               workspace, ZPLC_LOADER_VERIFY_WORKSPACE_SIZE);
+  count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS, workspace, ZPLC_LOADER_VERIFY_WORKSPACE_SIZE);
   zplc_verify_scratch_give();
   mem_unlock();
   if (count < 0) {
@@ -1983,8 +1885,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
   /* Get total code size (loaded by zplc_core_load_tasks) */
   total_code_size = zplc_mem_get_code_size();
 
-  zplc_hal_log("[SCHED] Loading %d tasks (code size: %u bytes)\n", count,
-               total_code_size);
+  zplc_hal_log("[SCHED] Loading %d tasks (code size: %u bytes)\n", count, total_code_size);
 
   /* Every descriptor was validated before the core commit. */
   for (int i = 0; i < count; i++) {
@@ -1993,8 +1894,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
 
     /* Initialize VM with entry point */
     zplc_vm_init(vm);
-    (void)zplc_vm_set_entry(vm, def->entry_point,
-                            total_code_size - def->entry_point);
+    (void)zplc_vm_set_entry(vm, def->entry_point, total_code_size - def->entry_point);
     vm->task_id = def->id;
     vm->priority = def->priority;
     vm->stack_limit = def->stack_size;
@@ -2005,14 +1905,12 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     key = k_spin_lock(&admission_lock);
     (void)zplc_sched_core_add_task(&core, def, vm);
     /* Point to code in shared segment (already loaded) */
-    slots[i].task.code =
-        zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
+    slots[i].task.code = zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
     slots[i].task.code_size = total_code_size - def->entry_point;
     k_spin_unlock(&admission_lock, key);
 
-    zplc_hal_log(
-        "[SCHED] Task %d loaded: entry=%u, interval=%u us, priority=%d\n",
-        def->id, def->entry_point, def->interval_us, def->priority);
+    zplc_hal_log("[SCHED] Task %d loaded: entry=%u, interval=%u us, priority=%d\n", def->id, def->entry_point, def->interval_us,
+                 def->priority);
   }
 
   /* A successful, fully materialized replacement is the only recovery path. */
@@ -2051,8 +1949,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
 int zplc_sched_unregister_task(int task_id) {
   int result;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue()) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
     return -1;
   }
   if (control_lock() != 0) {
@@ -2099,12 +1996,10 @@ int zplc_sched_start(void) {
   }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (slots[index].registered != 0U &&
-        (slots[index].task.state == ZPLC_TASK_STATE_READY ||
-         slots[index].task.state == ZPLC_TASK_STATE_PAUSED)) {
+        (slots[index].task.state == ZPLC_TASK_STATE_READY || slots[index].task.state == ZPLC_TASK_STATE_PAUSED)) {
       zplc_vm_reset_cycle(&vms[index]);
       memset(&slots[index].task.stats, 0, sizeof(zplc_task_stats_t));
-      k_timer_start(&timers[index],
-                    K_MSEC(slots[index].task.config.interval_us / 1000U),
+      k_timer_start(&timers[index], K_MSEC(slots[index].task.config.interval_us / 1000U),
                     K_MSEC(slots[index].task.config.interval_us / 1000U));
       started_count++;
     }
@@ -2129,9 +2024,7 @@ int zplc_sched_start(void) {
 
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (slots[index].registered != 0U) {
-      zplc_hal_log("[SCHED] Task %d started (interval=%u ms)\n",
-                   slots[index].task.config.id,
-                   slots[index].task.config.interval_us / 1000U);
+      zplc_hal_log("[SCHED] Task %d started (interval=%u ms)\n", slots[index].task.config.id, slots[index].task.config.interval_us / 1000U);
     }
   }
 
@@ -2151,8 +2044,7 @@ int zplc_sched_start(void) {
 int zplc_sched_stop(void) {
   int result;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue()) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
     return -1;
   }
   if (control_lock() != 0) {
@@ -2163,8 +2055,7 @@ int zplc_sched_stop(void) {
   /* The timers are stopped and the coordinator cancelled: no scan runs, so the
    * region holds the values of the last complete scan. A fault stores nothing. */
   if (retain_active && !scheduler_fault_is_latched()) {
-    (void)zplc_retain_save(&retain_identity, k_uptime_get_32(),
-                           ZPLC_RETAIN_SAVE_FORCED);
+    (void)zplc_retain_save(&retain_identity, k_uptime_get_32(), ZPLC_RETAIN_SAVE_FORCED);
   }
 #endif
   control_unlock();
@@ -2175,8 +2066,7 @@ int zplc_sched_enter_safe_error(void) {
   int safe_result;
   struct k_work_sync sync;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue()) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
     return -1;
   }
 
@@ -2198,8 +2088,7 @@ int zplc_sched_enter_safe_error(void) {
 int zplc_sched_pause(void) {
   int result;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue()) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
     return -1;
   }
   if (control_lock() != 0) {
@@ -2244,15 +2133,13 @@ int zplc_sched_resume(void) {
     return lock_failure_fault();
   }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
-    if (slots[index].registered != 0U &&
-        slots[index].task.state == ZPLC_TASK_STATE_PAUSED) {
+    if (slots[index].registered != 0U && slots[index].task.state == ZPLC_TASK_STATE_PAUSED) {
       /* Only a VM that stopped at a breakpoint holds an interrupted scan; one
        * paused between scans must keep its breakpoints armed. */
       if (zplc_vm_is_paused(&vms[index]) != 0) {
         (void)zplc_vm_resume(&vms[index]);
       }
-      k_timer_start(&timers[index],
-                    K_MSEC(slots[index].task.config.interval_us / 1000U),
+      k_timer_start(&timers[index], K_MSEC(slots[index].task.config.interval_us / 1000U),
                     K_MSEC(slots[index].task.config.interval_us / 1000U));
     }
   }
@@ -2287,15 +2174,13 @@ int zplc_sched_step(void) {
   int result;
   int index;
 
-  if (core.state != ZPLC_SCHED_STATE_PAUSED &&
-      core.state != ZPLC_SCHED_STATE_IDLE) {
+  if (core.state != ZPLC_SCHED_STATE_PAUSED && core.state != ZPLC_SCHED_STATE_IDLE) {
     return -1;
   }
   if (control_lock() != 0) {
     return ZPLC_SCHED_ERR_LOCK;
   }
-  if (core.state != ZPLC_SCHED_STATE_PAUSED &&
-      core.state != ZPLC_SCHED_STATE_IDLE) {
+  if (core.state != ZPLC_SCHED_STATE_PAUSED && core.state != ZPLC_SCHED_STATE_IDLE) {
     control_unlock();
     return -1;
   }
@@ -2311,8 +2196,7 @@ int zplc_sched_step(void) {
       control_unlock();
       return -1;
     }
-    count = zplc_sched_core_begin_step(&core, scheduler_now_us(), order,
-                                       CONFIG_ZPLC_MAX_TASKS);
+    count = zplc_sched_core_begin_step(&core, scheduler_now_us(), order, CONFIG_ZPLC_MAX_TASKS);
     k_spin_unlock(&admission_lock, key);
   }
   if (count == 0U) {
@@ -2417,9 +2301,7 @@ int zplc_sched_get_task_count(void) {
 static int scheduler_debug_lock_task(int task_id, zplc_vm_t **vm) {
   k_spinlock_key_t key;
 
-  if (core.state == ZPLC_SCHED_STATE_UNINIT ||
-      scheduler_called_from_workqueue() || task_id < 0 ||
-      task_id >= CONFIG_ZPLC_MAX_TASKS) {
+  if (core.state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue() || task_id < 0 || task_id >= CONFIG_ZPLC_MAX_TASKS) {
     return -1;
   }
   if (control_lock() != 0) {
@@ -2467,8 +2349,7 @@ int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot) {
   snapshot->halted = vm->halted;
   snapshot->paused = vm->paused;
   snapshot->breakpoint_count = vm->breakpoint_count;
-  memcpy(snapshot->breakpoints, vm->breakpoints,
-         sizeof(snapshot->breakpoints));
+  memcpy(snapshot->breakpoints, vm->breakpoints, sizeof(snapshot->breakpoints));
   scheduler_debug_unlock_task();
   return 0;
 }

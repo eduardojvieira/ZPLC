@@ -20,8 +20,10 @@ function snapshot(root: string, directory = root): Record<string, string | null>
   for (const name of readdirSync(directory).sort()) {
     const path = join(directory, name);
     const key = relative(root, path).split('\\').join('/');
-    if (statSync(path).isDirectory()) { found[`${key}/`] = null; Object.assign(found, snapshot(root, path)); }
-    else found[key] = readFileSync(path).toString('base64');
+    if (statSync(path).isDirectory()) {
+      found[`${key}/`] = null;
+      Object.assign(found, snapshot(root, path));
+    } else found[key] = readFileSync(path).toString('base64');
   }
   return found;
 }
@@ -31,14 +33,24 @@ let project: string;
 let answers: { save: string | null; open: string | null; folder: string | null };
 let asked: string[];
 
-const archive = () => createProjectArchive({
-  rootOf: (ownerId, rootId) => (ownerId === OWNER && rootId === 'root-1' ? project : null),
-  dialogs: {
-    saveFile: async (_owner, defaultName) => { asked.push(`save:${defaultName}`); return answers.save; },
-    openFile: async () => { asked.push('open'); return answers.open; },
-    chooseFolder: async () => { asked.push('folder'); return answers.folder; },
-  },
-});
+const archive = () =>
+  createProjectArchive({
+    rootOf: (ownerId, rootId) => (ownerId === OWNER && rootId === 'root-1' ? project : null),
+    dialogs: {
+      saveFile: async (_owner, defaultName) => {
+        asked.push(`save:${defaultName}`);
+        return answers.save;
+      },
+      openFile: async () => {
+        asked.push('open');
+        return answers.open;
+      },
+      chooseFolder: async () => {
+        asked.push('folder');
+        return answers.folder;
+      },
+    },
+  });
 
 beforeEach(() => {
   scratch = mkdtempSync(join(tmpdir(), 'zplc-archive-'));
@@ -72,7 +84,16 @@ describe('exporting a project (IDE-022)', () => {
     expect(asked).toEqual(['save:motor.zplc.zip']);
     expect(value).toMatchObject({ fileName: 'out.zip', fileCount: 5, folderCount: 3, skipped: 1 });
     const entries = readZip(readFileSync(join(scratch, 'out.zip')));
-    expect(entries.map((entry) => entry.path)).toEqual(['.gitignore', 'binary.dat', 'empty/', 'src/', 'src/Motor.st', 'src/drivers/', 'src/drivers/ñandú.st', 'zplc.json']);
+    expect(entries.map((entry) => entry.path)).toEqual([
+      '.gitignore',
+      'binary.dat',
+      'empty/',
+      'src/',
+      'src/Motor.st',
+      'src/drivers/',
+      'src/drivers/ñandú.st',
+      'zplc.json',
+    ]);
   });
 
   it('gives the same bytes when the same project is exported twice', async () => {
@@ -92,9 +113,15 @@ describe('exporting a project (IDE-022)', () => {
     expect(cancelled).toEqual({ ok: true, value: null });
   });
 
-  it('refuses a request for a folder that is not the window\'s, and a message of the wrong shape, before any dialog', async () => {
-    expect(await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'other' }])).toEqual({ ok: false, code: 'no-folder' });
-    expect(await archive().handle(OWNER + 1, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }])).toEqual({ ok: false, code: 'no-folder' });
+  it("refuses a request for a folder that is not the window's, and a message of the wrong shape, before any dialog", async () => {
+    expect(await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'other' }])).toEqual({
+      ok: false,
+      code: 'no-folder',
+    });
+    expect(await archive().handle(OWNER + 1, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }])).toEqual({
+      ok: false,
+      code: 'no-folder',
+    });
     for (const args of [[], [{}], [{ rootId: 'root-1', extra: 1 }], [{ rootId: 5 }], ['root-1'], [{ rootId: 'root-1' }, 1]]) {
       expect(await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, args)).toEqual({ ok: false, code: 'invalid-request' });
     }
@@ -103,7 +130,10 @@ describe('exporting a project (IDE-022)', () => {
 
   it('refuses a project that holds a file larger than the limit', async () => {
     writeFileSync(join(project, 'huge.bin'), Buffer.alloc(16 * 1024 * 1024 + 1));
-    expect(await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }])).toEqual({ ok: false, code: 'too-large' });
+    expect(await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }])).toEqual({
+      ok: false,
+      code: 'too-large',
+    });
     expect(existsSync(join(scratch, 'out.zip'))).toBe(false);
   });
 });
@@ -143,7 +173,11 @@ describe('importing an archive (IDE-022)', () => {
     mkdirSync(destination);
     answers.folder = destination;
     let clock = 1_000;
-    const importer = createProjectArchive({ rootOf: () => null, dialogs: { saveFile: async () => null, openFile: async () => answers.open, chooseFolder: async () => answers.folder }, now: () => clock });
+    const importer = createProjectArchive({
+      rootOf: () => null,
+      dialogs: { saveFile: async () => null, openFile: async () => answers.open, chooseFolder: async () => answers.folder },
+      now: () => clock,
+    });
     const summary = ((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.inspectArchive, [])) as { value: ArchiveSummary }).value;
     await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }]);
     expect(importer.takeImportedFolder(OWNER + 1)).toBeNull();
@@ -159,7 +193,10 @@ describe('importing an archive (IDE-022)', () => {
     answers.folder = destination;
     const importer = archive();
     const summary = ((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.inspectArchive, [])) as { value: ArchiveSummary }).value;
-    expect(await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({ ok: false, code: 'not-empty' });
+    expect(await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({
+      ok: false,
+      code: 'not-empty',
+    });
     expect(readdirSync(destination)).toEqual(['mine.txt']);
     expect(importer.takeImportedFolder(OWNER)).toBeNull();
   });
@@ -171,9 +208,15 @@ describe('importing an archive (IDE-022)', () => {
     answers.folder = destination;
     const importer = archive();
     const summary = ((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.inspectArchive, [])) as { value: ArchiveSummary }).value;
-    expect(await importer.handle(OWNER + 1, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({ ok: false, code: 'not-found' });
+    expect(await importer.handle(OWNER + 1, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
     expect((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).ok).toBe(true);
-    expect(await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({ ok: false, code: 'not-found' });
+    expect(await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.extractArchive, [{ archiveId: summary.archiveId }])).toEqual({
+      ok: false,
+      code: 'not-found',
+    });
   });
 
   it('says why an archive is refused, and holds nothing of it', async () => {
@@ -198,7 +241,10 @@ describe('importing an archive (IDE-022)', () => {
     answers.open = join(scratch, 'plain.zip');
     const plain = ((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.inspectArchive, [])) as { value: ArchiveSummary }).value;
     expect(plain.manifest).toBeNull();
-    writeFileSync(join(scratch, 'big.zip'), writeZip([{ path: 'zplc.json', kind: 'file', bytes: text(`{"pad":"${'x'.repeat(1024 * 1024)}"}`) }]));
+    writeFileSync(
+      join(scratch, 'big.zip'),
+      writeZip([{ path: 'zplc.json', kind: 'file', bytes: text(`{"pad":"${'x'.repeat(1024 * 1024)}"}`) }]),
+    );
     answers.open = join(scratch, 'big.zip');
     const big = ((await importer.handle(OWNER, PROJECT_ARCHIVE_CHANNEL.inspectArchive, [])) as { value: ArchiveSummary }).value;
     expect(big.manifest).toBeNull();

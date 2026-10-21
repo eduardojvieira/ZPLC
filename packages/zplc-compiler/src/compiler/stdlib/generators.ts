@@ -126,12 +126,12 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    ; OFF phase - check if time to switch to ON`);
         ctx.emit(`    GET_TICKS`);
         ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);              // elapsed = now - start
+        ctx.emit(`    SUB`); // elapsed = now - start
         ctx.emit(`    LOAD32 ${tOffAddr}`);
         ctx.emit(`    LTU                 ; elapsed < T, unsigned milliseconds`);
         ctx.emit(`    PUSH8 0`);
         ctx.emit(`    EQ                  ; elapsed >= T`);
-        ctx.emit(`    JZ ${blinkEnd}`);   // No, stay in OFF
+        ctx.emit(`    JZ ${blinkEnd}`); // No, stay in OFF
 
         // Time to switch to ON phase
         ctx.emit(`${startOnPhase}:`);
@@ -150,12 +150,12 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    ; ON phase - check if time to switch to OFF`);
         ctx.emit(`    GET_TICKS`);
         ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);              // elapsed = now - start
+        ctx.emit(`    SUB`); // elapsed = now - start
         ctx.emit(`    LOAD32 ${tOnAddr}`);
         ctx.emit(`    LTU                 ; elapsed < T, unsigned milliseconds`);
         ctx.emit(`    PUSH8 0`);
         ctx.emit(`    EQ                  ; elapsed >= T`);
-        ctx.emit(`    JZ ${blinkEnd}`);   // No, stay in ON
+        ctx.emit(`    JZ ${blinkEnd}`); // No, stay in ON
 
         // Time to switch to OFF phase
         ctx.emit(`${startOffPhase}:`);
@@ -275,32 +275,32 @@ export const PWM_FB: FunctionBlockDef = {
         // Calculate elapsed time in current cycle
         ctx.emit(`    GET_TICKS`);
         ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);              // elapsed = now - start
-        ctx.emit(`    DUP`);              // keep elapsed for comparison
-        
+        ctx.emit(`    SUB`); // elapsed = now - start
+        ctx.emit(`    DUP`); // keep elapsed for comparison
+
         // Check if we've completed a full period
         ctx.emit(`    LOAD32 ${periodAddr}`);
-        ctx.emit(`    LTU`);              // elapsed < PERIOD, unsigned milliseconds
+        ctx.emit(`    LTU`); // elapsed < PERIOD, unsigned milliseconds
         ctx.emit(`    JNZ ${checkOutput}`);
-        
+
         // Start new period
-        ctx.emit(`    DROP`);             // discard old elapsed
+        ctx.emit(`    DROP`); // discard old elapsed
         ctx.emit(`    GET_TICKS`);
         ctx.emit(`    STORE32 ${startAddr}`);
-        ctx.emit(`    PUSH32 0`);         // elapsed = 0 for new cycle
-        
+        ctx.emit(`    PUSH32 0`); // elapsed = 0 for new cycle
+
         ctx.emit(`${checkOutput}:`);
         // Stack: [elapsed]
         // ON while elapsed / PERIOD < DUTY. The ratio is compared with DUTY itself, not with a product
         // PERIOD * DUTY: 30 / 100 and 0.3 are the same REAL, so the pulse of a duty of 0.3 ends at 30 ms,
         // where 100 * 0.3 is a little above 30. A PERIOD of 0 has no ON phase (and no division).
         const zeroPeriod = ctx.newLabel('pwm_zero_period');
-        ctx.emit(`    I2F`);              // [elapsed_f]
+        ctx.emit(`    I2F`); // [elapsed_f]
         ctx.emit(`    LOAD32 ${periodAddr}`);
         ctx.emit(`    DUP`);
         ctx.emit(`    JZ ${zeroPeriod}`); // [elapsed_f PERIOD]
         ctx.emit(`    I2F`);
-        ctx.emit(`    DIVF`);             // [elapsed / PERIOD]
+        ctx.emit(`    DIVF`); // [elapsed / PERIOD]
         ctx.emit(`    LOAD32 ${dutyAddr}`); // DUTY is a REAL
         if (ctx.emitCompare) ctx.emitCompare('LT', 'REAL');
         else ctx.emit(`    LT`);
@@ -310,7 +310,7 @@ export const PWM_FB: FunctionBlockDef = {
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${qAddr}`);
         ctx.emit(`    JMP ${pwmEnd}`);
-        
+
         // A PERIOD of 0: nothing on the stack but the two values
         ctx.emit(`${zeroPeriod}:`);
         ctx.emit(`    DROP`);
@@ -423,9 +423,9 @@ export const PULSE_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${prevTrigAddr}`);
         ctx.emit(`    NOT`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);              // !prev_trig
-        ctx.emit(`    AND`);              // trig && !prev_trig
-        ctx.emit(`    JZ ${pulseEnd}`);   // No rising edge
+        ctx.emit(`    AND`); // !prev_trig
+        ctx.emit(`    AND`); // trig && !prev_trig
+        ctx.emit(`    JZ ${pulseEnd}`); // No rising edge
 
         // Rising edge detected - start pulse
         ctx.emit(`${startPulse}:`);
@@ -441,10 +441,10 @@ export const PULSE_FB: FunctionBlockDef = {
         ctx.emit(`${checkExpired}:`);
         ctx.emit(`    GET_TICKS`);
         ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);              // elapsed
+        ctx.emit(`    SUB`); // elapsed
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    LTU`);              // elapsed < PT, unsigned milliseconds
-        ctx.emit(`    JNZ ${pulseEnd}`);  // Yes, keep pulse active
+        ctx.emit(`    LTU`); // elapsed < PT, unsigned milliseconds
+        ctx.emit(`    JNZ ${pulseEnd}`); // Yes, keep pulse active
 
         // Pulse expired
         ctx.emit(`${endPulse}:`);

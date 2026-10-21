@@ -40,18 +40,21 @@ Inicie cada comando con `zplc`.
 Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a los puntos de parada.
 
 ### Puntos de parada (`bp`)
+
 - `zplc dbg bp list` - Lista los puntos de parada activos.
 - `zplc dbg bp add <pc>` - Agrega un punto de parada en la dirección indicada del contador de programa (PC).
 - `zplc dbg bp remove <pc>` - Elimina el punto de parada de la dirección indicada.
 - `zplc dbg bp clear` - Elimina todos los puntos de parada.
 
 ### Forzado de variables (`force`)
+
 - `zplc dbg force list` - Lista las direcciones de memoria forzadas.
 - `zplc dbg force set <addr> <hexbytes>` - Fuerza una dirección de memoria a mantener los bytes indicados, por encima de las asignaciones del propio programa.
 - `zplc dbg force clear <addr>` - Quita el forzado de una dirección.
 - `zplc dbg force clear_all` - Quita todos los forzados, de modo que el programa vuelve a controlar todas las direcciones.
 
 ### Control de la ejecución
+
 - `zplc dbg pause` - Pausa el planificador entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
 - `zplc dbg resume` - Reanuda. Un ciclo detenido en un punto de parada continúa desde donde se detuvo, y la primera confirmación de ciclo vuelve a energizar las salidas desde la imagen conservada.
 - `zplc dbg step` - Termina el ciclo detenido en un punto de parada, o ejecuta un ciclo completo, y se detiene en el siguiente límite de ciclo o en el siguiente punto de parada. La imagen muestra el ciclo ejecutado; las salidas quedan seguras.
@@ -59,6 +62,7 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 `zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Véase [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
 
 ### Inspección de memoria
+
 - `zplc dbg info` - Muestra el estado de la máquina virtual y el PC actual.
 - `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
 - `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
@@ -73,6 +77,7 @@ de entradas del siguiente ciclo por la interfaz que respeta los forzados: una di
 forzado. Mientras el runtime está detenido no hay ciclo y la escritura se aplica de inmediato.
 
 ### Ticks, tareas y temporizadores
+
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
 - `zplc dbg task <task_id>` - Muestra la definición y los límites de una tarea.
 - `zplc dbg timer <addr>` - Lee la instancia de 16 bytes de un `TON`, `TOF` o `TP` en la dirección e imprime `IN`, `Q`, `PT` y `ET` (en milisegundos) y si el temporizador está corriendo.

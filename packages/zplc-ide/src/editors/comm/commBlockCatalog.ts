@@ -41,8 +41,8 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       ...MB_HEADER_PORTS,
       { name: 'COUNT', direction: 'IN', dataType: 'UINT', required: true },
       { name: 'VALUE', direction: 'OUT', dataType: 'UINT', required: false },
-      ...MB_TCP_PORTS
-    ]
+      ...MB_TCP_PORTS,
+    ],
   },
   {
     kind: 0x0002,
@@ -54,8 +54,8 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       ...MB_HEADER_PORTS,
       { name: 'COUNT', direction: 'IN', dataType: 'UINT', required: true },
       { name: 'VALUE', direction: 'IN', dataType: 'UINT', required: true },
-      ...MB_TCP_PORTS
-    ]
+      ...MB_TCP_PORTS,
+    ],
   },
   {
     kind: 0x0003,
@@ -67,8 +67,8 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       ...MB_HEADER_PORTS,
       { name: 'COUNT', direction: 'IN', dataType: 'UINT', required: true },
       { name: 'VALUE', direction: 'OUT', dataType: 'BOOL', required: false },
-      ...MB_TCP_PORTS
-    ]
+      ...MB_TCP_PORTS,
+    ],
   },
   {
     kind: 0x0004,
@@ -80,11 +80,11 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       ...MB_HEADER_PORTS,
       { name: 'COUNT', direction: 'IN', dataType: 'UINT', required: true },
       { name: 'VALUE', direction: 'IN', dataType: 'BOOL', required: true },
-      ...MB_TCP_PORTS
-    ]
+      ...MB_TCP_PORTS,
+    ],
   },
   {
-    kind: 0x000A,
+    kind: 0x000a,
     name: 'MQTT_CONNECT',
     label: 'MQTT Connect',
     category: 'mqtt',
@@ -97,10 +97,10 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       { name: 'STATUS', direction: 'OUT', dataType: 'DINT', required: false },
       { name: 'PROFILE', direction: 'IN', dataType: 'USINT', required: true },
       { name: 'CONNECTED', direction: 'OUT', dataType: 'BOOL', required: false },
-    ]
+    ],
   },
   {
-    kind: 0x000B,
+    kind: 0x000b,
     name: 'MQTT_PUBLISH',
     label: 'MQTT Publish',
     category: 'mqtt',
@@ -115,10 +115,10 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       { name: 'RETAIN', direction: 'IN', dataType: 'BOOL', required: true },
       { name: 'TOPIC', direction: 'IN', dataType: 'STRING', required: true },
       { name: 'PAYLOAD', direction: 'IN', dataType: 'STRING', required: true },
-    ]
+    ],
   },
   {
-    kind: 0x000C,
+    kind: 0x000c,
     name: 'MQTT_SUBSCRIBE',
     label: 'MQTT Subscribe',
     category: 'mqtt',
@@ -133,6 +133,6 @@ export const COMM_BLOCK_CATALOG: CommBlockDef[] = [
       { name: 'VALID', direction: 'OUT', dataType: 'BOOL', required: false },
       { name: 'TOPIC', direction: 'IN', dataType: 'STRING', required: true },
       { name: 'PAYLOAD', direction: 'OUT', dataType: 'STRING', required: false },
-    ]
-  }
+    ],
+  },
 ];

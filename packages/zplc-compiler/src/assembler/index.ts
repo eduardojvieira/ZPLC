@@ -41,7 +41,18 @@ export type {
 } from './types';
 export { parseNumber, parse } from './parser';
 export type { ParseResult } from './parser';
-export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump, crc32, buildIdOf, readArtifact, safeProblem } from './codegen';
+export {
+    emitBytecode,
+    createZplcFile,
+    createMultiTaskZplcFile,
+    relocateBytecode,
+    disassemble,
+    hexDump,
+    crc32,
+    buildIdOf,
+    readArtifact,
+    safeProblem,
+} from './codegen';
 export type { ArtifactInfo } from './codegen';
 export { analyzeDepths, DepthError } from './depth';
 export type { TaskDepth } from './depth';

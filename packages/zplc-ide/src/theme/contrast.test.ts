@@ -9,15 +9,27 @@ const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 describe('theme token contrast (UX-024 stopgap: the main screens have no automated check yet)', () => {
   for (const theme of THEME_IDS) {
     it(`meets WCAG 2.2 AA for every declared pair in the ${theme} theme`, () => {
-      const failures = contrastResults(theme).filter((result) => !result.ok)
-        .map(({ pair, ratio }) => `${pair.fg} on ${pair.bg}${pair.over ? ` over ${pair.over}` : ''}: ${ratio.toFixed(2)}:1, needs ${pair.min}:1`);
+      const failures = contrastResults(theme)
+        .filter((result) => !result.ok)
+        .map(
+          ({ pair, ratio }) =>
+            `${pair.fg} on ${pair.bg}${pair.over ? ` over ${pair.over}` : ''}: ${ratio.toFixed(2)}:1, needs ${pair.min}:1`,
+        );
       expect(failures).toEqual([]);
     });
   }
 
   it('declares the pairs of the kit, the signals, the focus ring and the code editor', () => {
     const names = new Set(CONTRAST_PAIRS.flatMap((pair) => [pair.fg, pair.bg]));
-    for (const required of ['--button-fg', '--input-border', '--signal-true-fg', '--signal-fault-fg', '--focus-ring-color', '--syntax-keyword', '--tooltip-fg']) {
+    for (const required of [
+      '--button-fg',
+      '--input-border',
+      '--signal-true-fg',
+      '--signal-fault-fg',
+      '--focus-ring-color',
+      '--syntax-keyword',
+      '--tooltip-fg',
+    ]) {
       expect({ required, declared: names.has(required) }).toEqual({ required, declared: true });
     }
     expect(CONTRAST_PAIRS.every((pair) => pair.min === 3 || pair.min === 4.5)).toBe(true);
@@ -31,7 +43,11 @@ describe('theme token consistency (UX-003)', () => {
     expect(media).not.toBeNull();
     for (const excluded of ['.light', '.dark', '.high-contrast']) expect(media![1]).toContain(`:not(${excluded})`);
     const dark = /:root\.dark \{([^}]*)\}/.exec(rendered)![1];
-    const lines = (body: string) => body.split('\n').map((line) => line.trim()).filter(Boolean);
+    const lines = (body: string) =>
+      body
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
     expect(lines(media![2])).toEqual(lines(dark));
   });
 
@@ -46,7 +62,9 @@ describe('theme token consistency (UX-003)', () => {
   });
 
   it('gives text-white on a solid accent fill the on-accent colour of the theme until the kit replaces it', () => {
-    const bridge = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(([, selector]) => selector.includes('[class~="text-white"]') && selector.includes('bg-[var(--color-accent-'));
+    const bridge = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(
+      ([, selector]) => selector.includes('[class~="text-white"]') && selector.includes('bg-[var(--color-accent-'),
+    );
     expect(bridge?.[2]).toMatch(/color:\s*var\(--color-on-accent\)/);
   });
 });

@@ -130,8 +130,8 @@ static void start_taker(int mode) {
   atomic_set(&taker_finished, 0);
   taker_result = -99;
   taker_mode = mode;
-  (void)k_thread_create(&taker, taker_stack, K_THREAD_STACK_SIZEOF(taker_stack), taker_entry, NULL, NULL, NULL,
-                        K_PRIO_PREEMPT(8), 0U, K_NO_WAIT);
+  (void)k_thread_create(&taker, taker_stack, K_THREAD_STACK_SIZEOF(taker_stack), taker_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(8), 0U,
+                        K_NO_WAIT);
   zassert_ok(k_sem_take(&taker_started, K_MSEC(WAIT_MS)), "the thread did not start");
 }
 
@@ -214,8 +214,7 @@ ZTEST(verify_scratch, test_a_commit_and_a_validation_one_after_the_other_agree_w
   (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
   memset(store_workspace, 0, sizeof(store_workspace));
   memcpy(store_workspace, program, program_size);
-  zassert_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)),
-                ZPLC_PROGRAM_STORE_COMMIT_OK, "commits");
+  zassert_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)), ZPLC_PROGRAM_STORE_COMMIT_OK, "commits");
   zassert_equal(zplc_sched_validate_program(program, program_size), ZPLC_LOADER_OK, "valid after a commit");
 
   /* A damaged artifact is refused by both, and the refusal leaves the scratch free for the next one. */
@@ -224,8 +223,8 @@ ZTEST(verify_scratch, test_a_commit_and_a_validation_one_after_the_other_agree_w
   (void)zplc_program_store_prepare(store_workspace, sizeof(store_workspace));
   memset(store_workspace, 0, sizeof(store_workspace));
   memcpy(store_workspace, program, program_size);
-  zassert_not_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)),
-                    ZPLC_PROGRAM_STORE_COMMIT_OK, "a damaged artifact is not committed");
+  zassert_not_equal(zplc_program_store_commit(store_workspace, program_size, sizeof(store_workspace)), ZPLC_PROGRAM_STORE_COMMIT_OK,
+                    "a damaged artifact is not committed");
   program[program_size - 1U] ^= 0xFFU;
   zassert_equal(zplc_sched_validate_program(program, program_size), ZPLC_LOADER_OK, "valid again");
 

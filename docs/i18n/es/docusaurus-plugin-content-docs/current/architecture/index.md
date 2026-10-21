@@ -58,6 +58,7 @@ El compilador lleva todos los lenguajes IEC al mismo contrato de bytecode y runt
 ### 3. El núcleo del runtime
 
 El runtime (`libzplc_core`) es el límite de ejecución, escrito en C99 estricto. Se apoya en estos modelos operativos:
+
 - **Regiones de memoria compartida** definidas de forma global para entradas (IPI), salidas (OPI), trabajo, retención y código.
 - **Instancias de la máquina virtual** que guardan el estado de ejecución privado (punteros de pila y registros) de cada tarea.
 - **API del planificador** que registra las tareas, las consulta y gestiona la temporización cíclica.
@@ -66,6 +67,7 @@ El runtime (`libzplc_core`) es el límite de ejecución, escrito en C99 estricto
 
 La capa de abstracción de hardware (HAL) es el puente entre el núcleo determinista y los microcontroladores físicos.
 Para portar ZPLC a una arquitectura nueva basta con implementar `zplc_hal.h`:
+
 - Temporización (`zplc_hal_tick`, `zplc_hal_sleep`)
 - Manejo de E/S digitales y analógicas
 - Persistencia en NVS

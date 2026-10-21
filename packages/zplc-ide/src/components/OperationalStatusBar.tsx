@@ -8,7 +8,12 @@ import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
 import type { DebugAdapterType } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
-import { presentOperationalStatus, reportedBoardOf, type OperationalStatusPresentation, type OperationalStatusTone } from './operationalStatusPresentation';
+import {
+  presentOperationalStatus,
+  reportedBoardOf,
+  type OperationalStatusPresentation,
+  type OperationalStatusTone,
+} from './operationalStatusPresentation';
 
 interface OperationalStatusBarProps {
   mode: ExecutionMode;
@@ -34,7 +39,9 @@ function Detail({ label, value, numeric = false }: { label: string; value: strin
   return (
     <span className="flex items-center gap-1.5 text-xs">
       <span className="text-[var(--text-muted)]">{label}</span>
-      <span className={numeric ? 'font-mono tabular-nums text-[var(--color-surface-100)]' : 'text-[var(--color-surface-100)]'}>{value}</span>
+      <span className={numeric ? 'font-mono tabular-nums text-[var(--color-surface-100)]' : 'text-[var(--color-surface-100)]'}>
+        {value}
+      </span>
     </span>
   );
 }
@@ -72,25 +79,40 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
   });
   const protocol = linkInfo.firmware?.protocol.kind;
   const board = adapterType === 'serial' ? reportedBoardOf(controllerInfo) : undefined;
-  const indicator = presentConnection({
-    mode,
-    adapterType,
-    connected,
-    connecting,
-    faulted,
-    ...(board ? { board } : {}),
-    ...(protocol === 'framed' ? { link: 'framed' as const } : protocol === 'shell-only' ? { link: 'shell' as const } : {}),
-  }, t);
+  const indicator = presentConnection(
+    {
+      mode,
+      adapterType,
+      connected,
+      connecting,
+      faulted,
+      ...(board ? { board } : {}),
+      ...(protocol === 'framed' ? { link: 'framed' as const } : protocol === 'shell-only' ? { link: 'shell' as const } : {}),
+    },
+    t,
+  );
   // the debug state of the code editor (UX-034): it was drawn over the code before
-  const debug = debugMode === 'none' ? undefined : isPaused ? t('status.debug.paused', { line: currentLine ?? 0 }) : t('status.debug.attached');
+  const debug =
+    debugMode === 'none' ? undefined : isPaused ? t('status.debug.paused', { line: currentLine ?? 0 }) : t('status.debug.attached');
   return <OperationalStatusView presentation={presentation} indicator={indicator} debug={debug} />;
 }
 
 /** What the status bar shows, from values already worked out: the container above reads the store, this one only draws. */
-export function OperationalStatusView({ presentation, indicator, debug }: { presentation: OperationalStatusPresentation; indicator: ConnectionIndicatorView; debug?: string }) {
+export function OperationalStatusView({
+  presentation,
+  indicator,
+  debug,
+}: {
+  presentation: OperationalStatusPresentation;
+  indicator: ConnectionIndicatorView;
+  debug?: string;
+}) {
   const { t } = useT();
   return (
-    <section aria-label={t('status.label')} className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5">
+    <section
+      aria-label={t('status.label')}
+      className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5"
+    >
       <div className="overflow-x-auto [scrollbar-width:thin]">
         <div className="flex min-w-max items-center gap-3 whitespace-nowrap">
           <ConnectionIndicator indicator={indicator} />
@@ -100,14 +122,26 @@ export function OperationalStatusView({ presentation, indicator, debug }: { pres
           <Detail label={t('status.runtime')} value={presentation.runtime} />
           {presentation.target && <Detail label={t('status.target')} value={presentation.target} />}
           {debug !== undefined && <Detail label={t('status.debug')} value={debug} />}
-          <span role="status" aria-live="polite" aria-atomic="true" className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]">
-            <span className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`} aria-hidden="true" />
+          <span
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]"
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`}
+              aria-hidden="true"
+            />
             <span>{presentation.status.text}</span>
           </span>
           {presentation.cycles !== undefined && <Detail label={t('status.cycles')} value={presentation.cycles.toLocaleString()} numeric />}
-          {presentation.taskIntervalMs !== undefined && <Detail label={t('status.taskInterval')} value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />}
+          {presentation.taskIntervalMs !== undefined && (
+            <Detail label={t('status.taskInterval')} value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />
+          )}
           {presentation.taskCount !== undefined && <Detail label={t('status.tasks')} value={String(presentation.taskCount)} numeric />}
-          {presentation.overruns !== undefined && <Detail label={t('status.overruns')} value={presentation.overruns.toLocaleString()} numeric />}
+          {presentation.overruns !== undefined && (
+            <Detail label={t('status.overruns')} value={presentation.overruns.toLocaleString()} numeric />
+          )}
         </div>
         {presentation.limits && (
           <div role="note" className="mt-1 border-l-2 border-[var(--color-accent-orange)] px-2 text-xs text-[var(--color-surface-100)]">
@@ -115,7 +149,15 @@ export function OperationalStatusView({ presentation, indicator, debug }: { pres
           </div>
         )}
         {presentation.force && (
-          <div className={`mt-1 border-l-2 px-2 text-xs text-[var(--color-surface-100)] ${presentation.force.kind === 'unconfirmed' ? 'border-[var(--signal-fault-border)]' : 'border-[var(--signal-forced-border)]'}`} {...(presentation.force.kind === 'unconfirmed' ? { role: 'alert' } : {})}>
+          <div
+            className={
+              `mt-1 border-l-2 px-2 text-xs ` +
+              `text-[var(--color-surface-100)] ${
+                presentation.force.kind === 'unconfirmed' ? 'border-[var(--signal-fault-border)]' : 'border-[var(--signal-forced-border)]'
+              }`
+            }
+            {...(presentation.force.kind === 'unconfirmed' ? { role: 'alert' } : {})}
+          >
             {presentation.force.text}
           </div>
         )}

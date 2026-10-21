@@ -19,8 +19,20 @@ interface ParentPort {
 /** Electron's utility process has `process.parentPort`; a plain Node child (the tests) has the IPC channel of `fork`. */
 function openChannel(): { post(message: ToolWorkerReply): void; onMessage(listener: (message: unknown) => void): void } {
   const parentPort = (process as unknown as { parentPort?: ParentPort }).parentPort;
-  if (parentPort) return { post: (message) => parentPort.postMessage(message), onMessage: (listener) => parentPort.on('message', (event) => listener(event.data)) };
-  if (typeof process.send === 'function') return { post: (message) => { process.send!(message); }, onMessage: (listener) => { process.on('message', listener); } };
+  if (parentPort)
+    return {
+      post: (message) => parentPort.postMessage(message),
+      onMessage: (listener) => parentPort.on('message', (event) => listener(event.data)),
+    };
+  if (typeof process.send === 'function')
+    return {
+      post: (message) => {
+        process.send!(message);
+      },
+      onMessage: (listener) => {
+        process.on('message', listener);
+      },
+    };
   throw new Error('The tool worker was not started by a parent process');
 }
 
@@ -41,12 +53,18 @@ type RunCommand = Extract<ToolWorkerCommand, { type: 'run' }>;
 
 async function execute(command: RunCommand, signal: AbortSignal): Promise<unknown> {
   switch (command.operation) {
-    case 'compile': return plain(await compilerCompile(command.root));
-    case 'safety-check': return await safetyCheck(command.root);
-    case 'test': return await testsRun(command.root, { signal });
-    case 'scenario-run': return await scenarioRun(command.root, command.scenarioId, { signal });
-    case 'change-set-review': return await createCandidateChangeSet(command.root, command.edits, { signal });
-    case 'lesson-check': return await lessonCheck(command.root, command.lessonId, { signal });
+    case 'compile':
+      return plain(await compilerCompile(command.root));
+    case 'safety-check':
+      return await safetyCheck(command.root);
+    case 'test':
+      return await testsRun(command.root, { signal });
+    case 'scenario-run':
+      return await scenarioRun(command.root, command.scenarioId, { signal });
+    case 'change-set-review':
+      return await createCandidateChangeSet(command.root, command.edits, { signal });
+    case 'lesson-check':
+      return await lessonCheck(command.root, command.lessonId, { signal });
   }
 }
 
@@ -56,7 +74,10 @@ let started = false;
 
 channel.onMessage((message) => {
   const command = parseToolWorkerCommand(message);
-  if (command?.type === 'cancel') { controller.abort(); return; }
+  if (command?.type === 'cancel') {
+    controller.abort();
+    return;
+  }
   if (command?.type !== 'run' || started) {
     const id = typeof (message as { id?: unknown } | null)?.id === 'string' ? (message as { id: string }).id : '';
     channel.post({ type: 'error', id });

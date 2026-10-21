@@ -7,7 +7,13 @@ import { createLayoutStorage, useWorkspaceLayout, WORKSPACE_LAYOUT_ID } from './
 const KEY = `react-resizable-panels:${WORKSPACE_LAYOUT_ID}`;
 const memory = (initial: Record<string, string> = {}) => {
   const data = new Map(Object.entries(initial));
-  return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, data };
+  return {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      data.set(key, value);
+    },
+    data,
+  };
 };
 
 describe('layout storage wrapper', () => {
@@ -27,11 +33,20 @@ describe('layout storage wrapper', () => {
   });
 
   it('survives a storage that throws, as in a private window or with site data blocked', () => {
-    const blocked = { getItem: () => { throw new DOMException('denied', 'SecurityError'); }, setItem: () => { throw new DOMException('full', 'QuotaExceededError'); } };
+    const blocked = {
+      getItem: () => {
+        throw new DOMException('denied', 'SecurityError');
+      },
+      setItem: () => {
+        throw new DOMException('full', 'QuotaExceededError');
+      },
+    };
     const storage = createLayoutStorage(() => blocked);
     expect(storage.getItem(KEY)).toBeNull();
     expect(() => storage.setItem(KEY, '{"editor":50}')).not.toThrow();
-    const noAccessor = createLayoutStorage(() => { throw new DOMException('denied', 'SecurityError'); });
+    const noAccessor = createLayoutStorage(() => {
+      throw new DOMException('denied', 'SecurityError');
+    });
     expect(noAccessor.getItem(KEY)).toBeNull();
     expect(() => noAccessor.setItem(KEY, '{"editor":50}')).not.toThrow();
     expect(createLayoutStorage(() => undefined).getItem(KEY)).toBeNull();
@@ -40,18 +55,32 @@ describe('layout storage wrapper', () => {
 
 describe('workspace layout', () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
-  afterEach(() => { if (original) Object.defineProperty(globalThis, 'localStorage', original); else Reflect.deleteProperty(globalThis, 'localStorage'); });
-  const install = (value: unknown) => Object.defineProperty(globalThis, 'localStorage', { configurable: true, get: () => { if (value instanceof Error) throw value; return value; } });
+  afterEach(() => {
+    if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  });
+  const install = (value: unknown) =>
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get: () => {
+        if (value instanceof Error) throw value;
+        return value;
+      },
+    });
 
   function Workspace() {
     const { defaultLayout, onLayoutChanged } = useWorkspaceLayout();
-    return createElement(Group, { orientation: 'vertical', id: 'test-group', defaultLayout, onLayoutChanged },
+    return createElement(
+      Group,
+      { orientation: 'vertical', id: 'test-group', defaultLayout, onLayoutChanged },
       createElement(Panel, { id: 'editor', defaultSize: '72%' }, 'editor'),
       createElement(Separator, { id: 'divider' }),
-      createElement(Panel, { id: 'console', defaultSize: '28%' }, 'console'));
+      createElement(Panel, { id: 'console', defaultSize: '28%' }, 'console'),
+    );
   }
   /** A restored layout renders as flex-grow; the declared defaults render as a flex-basis percentage. */
-  const growth = (html: string, id: string): number => Number(new RegExp(`id="${id}"[^>]*flex-grow:\\s*([\\d.]+)`).exec(html)?.[1] ?? 'NaN');
+  const growth = (html: string, id: string): number =>
+    Number(new RegExp(`id="${id}"[^>]*flex-grow:\\s*([\\d.]+)`).exec(html)?.[1] ?? 'NaN');
   const basis = (html: string, id: string): string | undefined => new RegExp(`id="${id}"[^>]*flex-basis:\\s*([\\d.]+%)`).exec(html)?.[1];
 
   it('restores the saved panel sizes on the next start', () => {

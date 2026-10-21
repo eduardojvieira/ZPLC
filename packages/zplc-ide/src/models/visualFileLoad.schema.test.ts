@@ -9,10 +9,16 @@ import { loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
 const projects = join(import.meta.dir, '../../projects');
 const read = <T>(path: string): T => JSON.parse(readFileSync(join(projects, path), 'utf8')) as T;
 // only the parts these tests change are typed
-interface LdDocument { variables: { local: unknown }; rungs: Array<{ grid: Array<Array<{ element: { variable?: unknown } | null }>> }> }
-interface FbdDocument { variables: { local: unknown } }
+interface LdDocument {
+  variables: { local: unknown };
+  rungs: Array<{ grid: Array<Array<{ element: { variable?: unknown } | null }>> }>;
+}
+interface FbdDocument {
+  variables: { local: unknown };
+}
 interface SfcDocument {
-  variables?: unknown; actions?: unknown;
+  variables?: unknown;
+  actions?: unknown;
   steps: Array<{ position?: unknown; actions?: unknown }>;
   transitions: Array<{ condition?: unknown }>;
 }

@@ -31,7 +31,10 @@ export const INSTALL_METHOD: Record<InstallerFormat, InstallMethod> = {
 const RUNNER_OS: Record<InstallerOs, string> = { mac: 'macOS', win: 'Windows', linux: 'Linux' };
 const RUNNER_ARCH = { x64: 'X64', arm64: 'ARM64' } as const;
 
-export interface RunnerEnv { RUNNER_OS?: string; RUNNER_ARCH?: string }
+export interface RunnerEnv {
+  RUNNER_OS?: string;
+  RUNNER_ARCH?: string;
+}
 
 export interface InstallRecord {
   schemaVersion: 1;
@@ -46,7 +49,12 @@ const recordName = (installer: string) => `install-record-${installer}.json`;
 const sha256 = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 /** Writes the record of an installer that the calling step has just opened; the file name must be one of the fourteen. */
-export function writeInstallRecord(installerPath: string, version: string, outDirectory: string, env: RunnerEnv = process.env as RunnerEnv): InstallRecord {
+export function writeInstallRecord(
+  installerPath: string,
+  version: string,
+  outDirectory: string,
+  env: RunnerEnv = process.env as RunnerEnv,
+): InstallRecord {
   const name = basename(installerPath);
   const installer = installerNames(version).find((candidate) => candidate.name === name);
   if (installer === undefined) throw new Error(`${name} is not one of the installers named by ${SCHEME} for ${version}`);
@@ -65,25 +73,54 @@ export function writeInstallRecord(installerPath: string, version: string, outDi
 
 function files(directory: string): Array<{ name: string; path: string }> {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? files(join(directory, entry.name)) : [{ name: entry.name, path: join(directory, entry.name) }]);
+    entry.isDirectory() ? files(join(directory, entry.name)) : [{ name: entry.name, path: join(directory, entry.name) }],
+  );
 }
 
-/** What is wrong with the records for the installers of one system; an empty list means each was opened as its format is, on its own system. */
+/**
+ * What is wrong with the records for the installers of one system; an empty list means each was opened as its format is, on its own system.
+ */
 export function verifyInstallRecords(installersDirectory: string, recordsDirectory: string, version: string, os: InstallerOs): string[] {
   const problems: string[] = [];
-  const installers = new Map<string, Installer>(installerNames(version).filter((installer) => installer.os === os).map((installer) => [installer.name, installer]));
-  const produced = new Map(files(installersDirectory).filter((file) => installers.has(file.name)).map((file) => [file.name, file.path]));
-  const records = new Map(files(recordsDirectory).filter((file) => /^install-record-.+\.json$/.test(file.name)).map((file) => [file.name, file.path]));
+  const installers = new Map<string, Installer>(
+    installerNames(version)
+      .filter((installer) => installer.os === os)
+      .map((installer) => [installer.name, installer]),
+  );
+  const produced = new Map(
+    files(installersDirectory)
+      .filter((file) => installers.has(file.name))
+      .map((file) => [file.name, file.path]),
+  );
+  const records = new Map(
+    files(recordsDirectory)
+      .filter((file) => /^install-record-.+\.json$/.test(file.name))
+      .map((file) => [file.name, file.path]),
+  );
   for (const [name, installer] of installers) {
     const path = produced.get(name);
     const recordPath = records.get(recordName(name));
     if (path === undefined) continue; // a missing installer is verify-installers' finding, not a second one here
-    if (recordPath === undefined) { problems.push(`${name} has no record of being mounted or installed and launched`); continue; }
+    if (recordPath === undefined) {
+      problems.push(`${name} has no record of being mounted or installed and launched`);
+      continue;
+    }
     const record = JSON.parse(readFileSync(recordPath, 'utf8')) as Partial<InstallRecord>;
     if (record.sha256 !== sha256(path)) problems.push(`${name} is not the file that was launched (checksum differs from its record)`);
-    if (record.method !== INSTALL_METHOD[installer.format]) problems.push(`${name} was opened by ${record.method}, a .${installer.format === 'setup' || installer.format === 'portable' ? 'exe' : installer.format === 'appimage' ? 'AppImage' : installer.format} is ${INSTALL_METHOD[installer.format]}`);
-    if (record.runnerOs !== RUNNER_OS[os]) problems.push(`${name} was opened on ${record.runnerOs || 'an unknown system'}, not on ${RUNNER_OS[os]}`);
-    if (record.runnerArch !== RUNNER_ARCH[installer.arch]) problems.push(`${name} was opened on ${record.runnerArch || 'an unknown architecture'}, its name says ${installer.arch}`);
+    if (record.method !== INSTALL_METHOD[installer.format])
+      problems.push(
+        `${name} was opened by ${record.method}, a .${
+          installer.format === 'setup' || installer.format === 'portable'
+            ? 'exe'
+            : installer.format === 'appimage'
+              ? 'AppImage'
+              : installer.format
+        } is ${INSTALL_METHOD[installer.format]}`,
+      );
+    if (record.runnerOs !== RUNNER_OS[os])
+      problems.push(`${name} was opened on ${record.runnerOs || 'an unknown system'}, not on ${RUNNER_OS[os]}`);
+    if (record.runnerArch !== RUNNER_ARCH[installer.arch])
+      problems.push(`${name} was opened on ${record.runnerArch || 'an unknown architecture'}, its name says ${installer.arch}`);
   }
   for (const recordName of [...records.keys()].sort()) {
     const name = recordName.slice('install-record-'.length, -'.json'.length);
@@ -96,12 +133,29 @@ if (import.meta.main) {
   const { values, positionals } = parseArgs({
     args: Bun.argv.slice(2),
     allowPositionals: true,
-    options: { version: { type: 'string' }, out: { type: 'string' }, installers: { type: 'string' }, records: { type: 'string' }, os: { type: 'string' } },
+    options: {
+      version: { type: 'string' },
+      out: { type: 'string' },
+      installers: { type: 'string' },
+      records: { type: 'string' },
+      os: { type: 'string' },
+    },
   });
   const [command, ...paths] = positionals;
   if (command === 'write' && values.version && values.out && paths.length > 0) {
-    for (const path of paths) console.log(`install-record: ${writeInstallRecord(resolve(path), values.version, resolve(values.out)).installer} was opened by ${INSTALL_METHOD[installerNames(values.version).find((i) => i.name === basename(path))!.format]}`);
-  } else if (command === 'verify' && values.version && values.installers && values.records && ['mac', 'win', 'linux'].includes(values.os ?? '')) {
+    for (const path of paths)
+      console.log(
+        `install-record: ${writeInstallRecord(resolve(path), values.version, resolve(values.out)).installer} was opened by ${
+          INSTALL_METHOD[installerNames(values.version).find((i) => i.name === basename(path))!.format]
+        }`,
+      );
+  } else if (
+    command === 'verify' &&
+    values.version &&
+    values.installers &&
+    values.records &&
+    ['mac', 'win', 'linux'].includes(values.os ?? '')
+  ) {
     const problems = verifyInstallRecords(resolve(values.installers), resolve(values.records), values.version, values.os as InstallerOs);
     if (problems.length > 0) {
       console.error(problems.map((problem) => `install-record: ${problem}`).join('\n'));
@@ -109,7 +163,10 @@ if (import.meta.main) {
     }
     console.log(`install-record: every ${values.os} installer has the record of a launch on its own system`);
   } else {
-    console.error('usage: install-record.ts write --version <v> --out <folder> <installer>... | verify --installers <folder> --records <folder> --version <v> --os mac|win|linux');
+    console.error(
+      'usage: install-record.ts write --version <v> --out <folder> <installer>... | verify --installers <folder> --records <folder> ' +
+        '--version <v> --os mac|win|linux',
+    );
     process.exit(2);
   }
 }

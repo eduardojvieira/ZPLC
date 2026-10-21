@@ -27,7 +27,9 @@ function tokenTable(defs: readonly TokenDef[]): string[] {
       const value = resolved[theme][def.name];
       return cell(theme !== 'light' && value === resolved.light[def.name] ? '= light' : value);
     });
-    return `| ${cell(def.name)} | ${def.doc} | ${values.join(' | ')}${compact ? ` | ${def.compact === undefined ? '' : cell(def.compact)}` : ''} |`;
+    return `| ${cell(def.name)} | ${def.doc} | ${values.join(' | ')}${
+      compact ? ` | ${def.compact === undefined ? '' : cell(def.compact)}` : ''
+    } |`;
   });
   return [header, rule, ...rows];
 }
@@ -41,16 +43,40 @@ export function renderTokenTables(): string {
     for (const [group, items] of groupBy(defs, (def) => def.group)) out.push(`#### ${group}`, '', ...tokenTable(items), '');
   };
   tier('Tier 1: colour ramps', 'Raw values with no meaning. Only a role may name a ramp step; a component never does.', ['ramp']);
-  tier('Tier 2: semantic roles', 'What a colour is for, per theme. A value written `= light` is the light value; the dark and high-contrast themes override only what differs.', ['role']);
+  tier(
+    'Tier 2: semantic roles',
+    'What a colour is for, per theme. A value written `= light` is the light value; the dark and high-contrast themes override only what ' +
+      'differs.',
+    ['role'],
+  );
   tier('Tier 3: component tokens', 'What one component reads. They reference roles, so they follow every theme.', ['component']);
-  tier('Scales', 'Type, shape, elevation, icons, layers and density. The compact column is the value under the compact density.', ['scale']);
+  tier('Scales', 'Type, shape, elevation, icons, layers and density. The compact column is the value under the compact density.', [
+    'scale',
+  ]);
 
-  const results = Object.fromEntries(THEME_IDS.map((theme) => [theme, contrastResults(theme)])) as Record<ThemeId, ReturnType<typeof contrastResults>>;
-  out.push('### Contrast', '', `CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). ${CONTRAST_PAIRS.length} pairs are declared and listed here with their computed ratios.`, '');
-  out.push(`| Pair | Use | Minimum | ${THEME_IDS.map((theme) => THEME_TITLE[theme]).join(' | ')} |`, `|---|---|---|${THEME_IDS.map(() => '---').join('|')}|`);
+  const results = Object.fromEntries(THEME_IDS.map((theme) => [theme, contrastResults(theme)])) as Record<
+    ThemeId,
+    ReturnType<typeof contrastResults>
+  >;
+  out.push(
+    '### Contrast',
+    '',
+    `CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum ` +
+      `(4.5:1 for text, 3:1 for a graphic that carries meaning). ${CONTRAST_PAIRS.length} pairs are declared and listed here with their ` +
+      `computed ratios.`,
+    '',
+  );
+  out.push(
+    `| Pair | Use | Minimum | ${THEME_IDS.map((theme) => THEME_TITLE[theme]).join(' | ')} |`,
+    `|---|---|---|${THEME_IDS.map(() => '---').join('|')}|`,
+  );
   CONTRAST_PAIRS.forEach((pair, index) => {
     const ratios = THEME_IDS.map((theme) => results[theme][index].ratio.toFixed(2));
-    out.push(`| ${cell(pair.fg)} on ${cell(pair.bg)}${pair.over ? ` over ${cell(pair.over)}` : ''} | ${pair.use} | ${pair.min}:1 | ${ratios.map((ratio) => `${ratio}:1`).join(' | ')} |`);
+    out.push(
+      `| ${cell(pair.fg)} on ${cell(pair.bg)}${pair.over ? ` over ${cell(pair.over)}` : ''} | ${pair.use} | ${pair.min}:1 | ${ratios
+        .map((ratio) => `${ratio}:1`)
+        .join(' | ')} |`,
+    );
   });
   out.push('');
   return out.join('\n');
@@ -93,7 +119,9 @@ export function renderFrontMatter(): string {
     `  overlay: "${light['--radius-overlay']}"`,
     'spacing:',
     '  unit: "0.25rem (0.1875rem in compact density)"',
-    `  control-height: "${light['--control-height']} comfortable, ${TOKENS.find((def) => def.name === '--control-height')?.compact} compact"`,
+    `  control-height: "${light['--control-height']} comfortable, ${
+      TOKENS.find((def) => def.name === '--control-height')?.compact
+    } compact"`,
     'components:',
     '  button:',
     `    backgroundColor: "${light['--button-bg']}"`,

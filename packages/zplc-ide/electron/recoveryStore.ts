@@ -24,7 +24,12 @@ const LEFTOVER = /^\.[0-9a-f]{64}\.json\./;
 const fileNameOf = (relative: string) => `${createHash('sha256').update(relative, 'utf8').digest('hex')}.json`;
 
 async function isRealDirectory(directory: string): Promise<boolean> {
-  try { const status = await lstat(directory); return status.isDirectory() && !status.isSymbolicLink(); } catch { return false; }
+  try {
+    const status = await lstat(directory);
+    return status.isDirectory() && !status.isSymbolicLink();
+  } catch {
+    return false;
+  }
 }
 
 export function createRecoveryStore(userDataPath: string, now: () => number = Date.now) {
@@ -32,21 +37,25 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
   const directoryOf = (realPath: string) => path.join(root, projectKey(realPath));
   let pending: Promise<unknown> = Promise.resolve();
   /** Runs one change at a time, in the order they were asked; a failure rejects only its own caller. */
-  const serial = <T,>(task: () => Promise<T>): Promise<T> => {
+  const serial = <T>(task: () => Promise<T>): Promise<T> => {
     const result = pending.then(task, task);
     pending = result.catch(() => undefined);
     return result;
   };
 
   const names = async (directory: string): Promise<string[]> => {
-    try { return (await readdir(directory)).filter((name) => ENTRY_FILE.test(name)); } catch { return []; }
+    try {
+      return (await readdir(directory)).filter((name) => ENTRY_FILE.test(name));
+    } catch {
+      return [];
+    }
   };
 
   return {
     /** The kept content of every modified file of the project, by path. Never throws: what cannot be trusted is skipped. */
     async list(realPath: string): Promise<RecoveryEntry[]> {
       const directory = directoryOf(realPath);
-      if (!await isRealDirectory(root) || !await isRealDirectory(directory)) return [];
+      if (!(await isRealDirectory(root)) || !(await isRealDirectory(directory))) return [];
       const entries: RecoveryEntry[] = [];
       for (const name of await names(directory)) {
         try {
@@ -55,7 +64,9 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
           if (status.isSymbolicLink() || !status.isFile() || status.size > 4 * RECOVERY_LIMITS.maxContentChars) continue;
           const entry = parseRecoveryEntry(JSON.parse(await readFile(file, 'utf8')));
           if (entry && fileNameOf(entry.path) === name) entries.push(entry);
-        } catch { /* unreadable, torn or foreign: not an entry */ }
+        } catch {
+          /* unreadable, torn or foreign: not an entry */
+        }
       }
       return entries.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
     },
@@ -67,7 +78,7 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
       return serial(async () => {
         const directory = directoryOf(realPath);
         await mkdir(directory, { recursive: true, mode: 0o700 });
-        if (!await isRealDirectory(root) || !await isRealDirectory(directory)) throw new Error('Invalid recovery directory');
+        if (!(await isRealDirectory(root)) || !(await isRealDirectory(directory))) throw new Error('Invalid recovery directory');
         const file = path.join(directory, fileNameOf(entry.path));
         const document = JSON.stringify(entry);
         let others = 0;
@@ -77,7 +88,8 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
           others += 1;
           held += (await lstat(path.join(directory, name)).catch(() => ({ size: 0 }))).size;
         }
-        if (others >= RECOVERY_LIMITS.maxEntries || held + document.length > RECOVERY_LIMITS.maxProjectChars) throw new Error('Recovery store full');
+        if (others >= RECOVERY_LIMITS.maxEntries || held + document.length > RECOVERY_LIMITS.maxProjectChars)
+          throw new Error('Recovery store full');
         const temporary = path.join(directory, `.${path.basename(file)}.${randomUUID()}`);
         try {
           await writeFile(temporary, document, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
@@ -92,7 +104,7 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
     discard(realPath: string, relative: string | null): Promise<void> {
       return serial(async () => {
         const directory = directoryOf(realPath);
-        if (!await isRealDirectory(root) || !await isRealDirectory(directory)) return;
+        if (!(await isRealDirectory(root)) || !(await isRealDirectory(directory))) return;
         if (relative !== null) {
           await unlink(path.join(directory, fileNameOf(relative))).catch(() => undefined);
         } else {
@@ -110,12 +122,15 @@ export function createRecoveryStore(userDataPath: string, now: () => number = Da
      */
     prune(keep: ReadonlySet<string>): Promise<void> {
       return serial(async () => {
-        if (!await isRealDirectory(root)) return;
+        if (!(await isRealDirectory(root))) return;
         for (const name of await readdir(root)) {
           if (!PROJECT_DIRECTORY.test(name)) continue;
           const directory = path.join(root, name);
-          if (!keep.has(name)) { await rm(directory, { recursive: true, force: true }).catch(() => undefined); continue; }
-          if (!await isRealDirectory(directory)) continue;
+          if (!keep.has(name)) {
+            await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+            continue;
+          }
+          if (!(await isRealDirectory(directory))) continue;
           for (const leftover of await readdir(directory).catch(() => [] as string[])) {
             if (LEFTOVER.test(leftover)) await unlink(path.join(directory, leftover)).catch(() => undefined);
           }

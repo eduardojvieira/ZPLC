@@ -2,10 +2,6 @@
   "requirement": "CMP-019",
   "title": "a whole structure used where a number is expected is rejected",
   "build": "fails",
-  "lines": [
-    8
-  ],
-  "codes": [
-    "INVALID_MEMBER_ACCESS"
-  ]
+  "lines": [8],
+  "codes": ["INVALID_MEMBER_ACCESS"]
 }

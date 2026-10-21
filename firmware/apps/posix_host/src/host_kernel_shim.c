@@ -87,8 +87,8 @@ static void *thread_main(void *argument) {
   return NULL;
 }
 
-int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry,
-                    void *a, void *b, void *c, int priority, uint32_t options, int delay) {
+int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry, void *a, void *b, void *c, int priority,
+                    uint32_t options, int delay) {
   struct thread_start *start = malloc(sizeof(*start));
   int rc;
 

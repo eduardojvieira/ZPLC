@@ -6,7 +6,7 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 9},
-    {"at": "%QW1", "type": "INT", "value": 6}
+    { "at": "%QW0", "type": "INT", "value": 9 },
+    { "at": "%QW1", "type": "INT", "value": 6 }
   ]
 }

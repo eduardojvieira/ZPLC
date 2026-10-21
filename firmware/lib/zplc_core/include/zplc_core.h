@@ -74,46 +74,46 @@ extern "C" {
  * Allocate statically or dynamically, then call zplc_vm_init().
  */
 typedef struct {
-    /* Execution state */
-    uint16_t pc;                              /**< Program counter */
-    uint16_t sp;                              /**< Stack pointer */
-    uint16_t bp;                              /**< Base pointer */
-    uint8_t call_depth;                       /**< Current call nesting */
-    uint8_t flags;                            /**< Status flags */
-    uint8_t error;                            /**< Last error code */
-    uint8_t halted;                           /**< Execution stopped */
-    
-    /* Debugger state */
-    uint8_t paused;                           /**< Paused at breakpoint */
-    uint8_t resume_skip_breakpoint_once;      /**< Skip one breakpoint check after resume */
-    uint8_t scan_resumed;                     /**< A paused scan was resumed: the next zplc_vm_run_cycle()
-                                                   continues it instead of starting a new scan */
-    uint8_t breakpoint_count;                 /**< Number of active breakpoints */
-    uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
-    uint32_t scan_instructions;               /**< Budget units the interrupted scan already spent of
-                                                   ZPLC_VM_CYCLE_INSTRUCTION_BUDGET */
-    uint32_t step_charge;                     /**< Units the instruction just executed cost beyond its own
-                                                   one: the bytes a string opcode processed (RT-006) */
-    uint32_t run_charge;                      /**< Units the last zplc_vm_run() charged */
-    uint32_t scan_time_ms;                    /**< The time every instruction of the scan in progress sees
-                                                   (RT-006); valid while scan_time_set is non-zero */
-    uint8_t scan_time_set;                    /**< A scan is in progress and has latched its time */
-    uint8_t scan_time_preset;                 /**< The scheduler gave the time of the scan that starts next */
+  /* Execution state */
+  uint16_t pc;        /**< Program counter */
+  uint16_t sp;        /**< Stack pointer */
+  uint16_t bp;        /**< Base pointer */
+  uint8_t call_depth; /**< Current call nesting */
+  uint8_t flags;      /**< Status flags */
+  uint8_t error;      /**< Last error code */
+  uint8_t halted;     /**< Execution stopped */
 
-    /* Private stacks */
-    uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
-    uint16_t call_stack[ZPLC_CALL_STACK_MAX]; /**< Return addresses */
-    
-    /* Code reference (points into shared code segment) */
-    const uint8_t *code;                      /**< Pointer to bytecode */
-    uint32_t code_size;                       /**< Size of bytecode */
-    uint16_t entry_point;                     /**< Entry point offset */
-    
-    /* Task identification (set by scheduler) */
-    uint16_t task_id;                         /**< Task ID (0 = default) */
-    uint8_t priority;                         /**< Task priority */
-    uint8_t reserved;                         /**< Padding */
-    uint16_t stack_limit;                     /**< Per-task evaluation stack limit */
+  /* Debugger state */
+  uint8_t paused;                             /**< Paused at breakpoint */
+  uint8_t resume_skip_breakpoint_once;        /**< Skip one breakpoint check after resume */
+  uint8_t scan_resumed;                       /**< A paused scan was resumed: the next zplc_vm_run_cycle()
+                                                   continues it instead of starting a new scan */
+  uint8_t breakpoint_count;                   /**< Number of active breakpoints */
+  uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
+  uint32_t scan_instructions;                 /**< Budget units the interrupted scan already spent of
+                                                   ZPLC_VM_CYCLE_INSTRUCTION_BUDGET */
+  uint32_t step_charge;                       /**< Units the instruction just executed cost beyond its own
+                                                   one: the bytes a string opcode processed (RT-006) */
+  uint32_t run_charge;                        /**< Units the last zplc_vm_run() charged */
+  uint32_t scan_time_ms;                      /**< The time every instruction of the scan in progress sees
+                                                   (RT-006); valid while scan_time_set is non-zero */
+  uint8_t scan_time_set;                      /**< A scan is in progress and has latched its time */
+  uint8_t scan_time_preset;                   /**< The scheduler gave the time of the scan that starts next */
+
+  /* Private stacks */
+  uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
+  uint16_t call_stack[ZPLC_CALL_STACK_MAX]; /**< Return addresses */
+
+  /* Code reference (points into shared code segment) */
+  const uint8_t *code;  /**< Pointer to bytecode */
+  uint32_t code_size;   /**< Size of bytecode */
+  uint16_t entry_point; /**< Entry point offset */
+
+  /* Task identification (set by scheduler) */
+  uint16_t task_id;     /**< Task ID (0 = default) */
+  uint8_t priority;     /**< Task priority */
+  uint8_t reserved;     /**< Padding */
+  uint16_t stack_limit; /**< Per-task evaluation stack limit */
 } zplc_vm_t;
 
 /* ============================================================================
@@ -140,7 +140,7 @@ int zplc_mem_init(void);
  * @param base Base address (ZPLC_MEM_IPI_BASE, etc.)
  * @return Pointer to memory region, or NULL if invalid
  */
-uint8_t* zplc_mem_get_region(uint16_t base);
+uint8_t *zplc_mem_get_region(uint16_t base);
 
 /**
  * @brief Get pointer to code segment.
@@ -149,7 +149,7 @@ uint8_t* zplc_mem_get_region(uint16_t base);
  * @param size Size of code to access
  * @return Pointer to code, or NULL if out of bounds
  */
-const uint8_t* zplc_mem_get_code(uint16_t offset, size_t size);
+const uint8_t *zplc_mem_get_code(uint16_t offset, size_t size);
 
 /**
  * @brief Get current loaded code size.
@@ -521,8 +521,7 @@ uint8_t zplc_force_get_count(void);
  * @param bytes_capacity Capacity of @p bytes in bytes
  * @return 0 on success, negative on error
  */
-int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
-                   uint8_t *bytes, size_t bytes_capacity);
+int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size, uint8_t *bytes, size_t bytes_capacity);
 
 /**
  * @brief Write raw bytes then re-apply any overlapping force overrides.
@@ -575,7 +574,7 @@ uint16_t zplc_core_get_tag_count(void);
  * @param index Tag index (0 to count-1)
  * @return Pointer to tag entry, or NULL if out of bounds.
  */
-const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index);
+const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index);
 
 /* ============================================================================
  * Legacy Singleton API (zplc_core_*)
@@ -590,7 +589,7 @@ const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index);
  *
  * @return Version string in format "major.minor.patch"
  */
-const char* zplc_core_version(void);
+const char *zplc_core_version(void);
 
 /**
  * @brief Initialize the ZPLC core.
@@ -644,8 +643,7 @@ int zplc_core_shutdown(void);
  * On rejection it leaves the current core state intact. The artifact must not
  * overlap core-owned memory because the successful reset invalidates it.
  */
-int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
-                   size_t workspace_size);
+int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace, size_t workspace_size);
 
 /**
  * @brief The safe value the loaded program declares for one digital output (RT-023).
@@ -693,7 +691,7 @@ int zplc_core_run_cycle(void);
  * @return Pointer to VM state (legacy zplc_vm_state_t)
  * @deprecated Use zplc_vm_* API for new code
  */
-const zplc_vm_state_t* zplc_core_get_state(void);
+const zplc_vm_state_t *zplc_core_get_state(void);
 
 /**
  * @brief Get the current stack pointer.
@@ -764,7 +762,7 @@ uint32_t zplc_core_get_opi(uint16_t offset);
  *
  * @return Pointer to default VM
  */
-zplc_vm_t* zplc_core_get_default_vm(void);
+zplc_vm_t *zplc_core_get_default_vm(void);
 
 /* ============================================================================
  * Multi-Task Loading API
@@ -787,9 +785,8 @@ zplc_vm_t* zplc_core_get_default_vm(void);
  * @param workspace_size Size of @p workspace in bytes
  * @return Number of tasks loaded, or a ZPLC_LOADER_* error code
  */
-int zplc_core_load_tasks(const uint8_t *binary, size_t size,
-                         zplc_task_def_t *tasks, uint8_t max_tasks,
-                         uint8_t *workspace, size_t workspace_size);
+int zplc_core_load_tasks(const uint8_t *binary, size_t size, zplc_task_def_t *tasks, uint8_t max_tasks, uint8_t *workspace,
+                         size_t workspace_size);
 
 /**
  * @brief Get entry point for a loaded task.
@@ -797,9 +794,7 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
  * @param task Pointer to task definition
  * @return Entry point offset in code segment
  */
-static inline uint16_t zplc_task_get_entry(const zplc_task_def_t *task) {
-    return task->entry_point;
-}
+static inline uint16_t zplc_task_get_entry(const zplc_task_def_t *task) { return task->entry_point; }
 
 /**
  * @brief Get interval in microseconds for a task.
@@ -807,9 +802,7 @@ static inline uint16_t zplc_task_get_entry(const zplc_task_def_t *task) {
  * @param task Pointer to task definition
  * @return Interval in microseconds
  */
-static inline uint32_t zplc_task_get_interval_us(const zplc_task_def_t *task) {
-    return task->interval_us;
-}
+static inline uint32_t zplc_task_get_interval_us(const zplc_task_def_t *task) { return task->interval_us; }
 
 /**
  * @brief Get priority for a task.
@@ -817,9 +810,7 @@ static inline uint32_t zplc_task_get_interval_us(const zplc_task_def_t *task) {
  * @param task Pointer to task definition
  * @return Priority (0 = highest)
  */
-static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task) {
-    return task->priority;
-}
+static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task) { return task->priority; }
 
 #ifdef __cplusplus
 }

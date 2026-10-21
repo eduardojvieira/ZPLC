@@ -15,7 +15,14 @@ import { SUITES } from '../wasm-core/suites';
 const ROOT = new URL('../../', import.meta.url).pathname;
 const text = (path: string) => readFileSync(join(ROOT, path), 'utf8');
 
-interface Leg { ctest?: string[]; twister?: string[]; wasm?: string[]; freertos?: string[]; bun?: Array<{ file: string; test: string }>; open?: { en: string; es: string; owner: string } }
+interface Leg {
+  ctest?: string[];
+  twister?: string[];
+  wasm?: string[];
+  freertos?: string[];
+  bun?: Array<{ file: string; test: string }>;
+  open?: { en: string; es: string; owner: string };
+}
 interface Manifest {
   ports: Array<{ id: string; name: { en: string; es: string }; how: { en: string; es: string } }>;
   categories: Array<{ id: string; title: { en: string; es: string }; what: { en: string; es: string }; legs: Record<string, Leg> }>;
@@ -47,41 +54,68 @@ describe('port conformance suite: the legs name real checks (IO-013)', () => {
   it('gives every category a leg for every port: suites that exist, or the reason it is open and its owner', () => {
     const ports = manifest.ports.map((port) => port.id);
     for (const category of manifest.categories) {
-      expect({ category: category.id, ports: Object.keys(category.legs).sort() }).toEqual({ category: category.id, ports: [...ports].sort() });
+      expect({ category: category.id, ports: Object.keys(category.legs).sort() }).toEqual({
+        category: category.id,
+        ports: [...ports].sort(),
+      });
       for (const port of ports) {
         const leg = category.legs[port]!;
         if (leg.open) {
-          expect({ category: category.id, port, reason: leg.open.en.length > 20 && leg.open.es.length > 20, owner: leg.open.owner.length > 0 }).toEqual({ category: category.id, port, reason: true, owner: true });
-          expect({ category: category.id, port, alsoSuites: Boolean(leg.ctest ?? leg.twister ?? leg.wasm ?? leg.freertos ?? leg.bun) }).toEqual({ category: category.id, port, alsoSuites: false });
+          expect({
+            category: category.id,
+            port,
+            reason: leg.open.en.length > 20 && leg.open.es.length > 20,
+            owner: leg.open.owner.length > 0,
+          }).toEqual({ category: category.id, port, reason: true, owner: true });
+          expect({
+            category: category.id,
+            port,
+            alsoSuites: Boolean(leg.ctest ?? leg.twister ?? leg.wasm ?? leg.freertos ?? leg.bun),
+          }).toEqual({ category: category.id, port, alsoSuites: false });
         } else {
-          const count = (leg.ctest?.length ?? 0) + (leg.twister?.length ?? 0) + (leg.wasm?.length ?? 0) + (leg.freertos?.length ?? 0) + (leg.bun?.length ?? 0);
+          const count =
+            (leg.ctest?.length ?? 0) +
+            (leg.twister?.length ?? 0) +
+            (leg.wasm?.length ?? 0) +
+            (leg.freertos?.length ?? 0) +
+            (leg.bun?.length ?? 0);
           expect({ category: category.id, port, suites: count > 0 }).toEqual({ category: category.id, port, suites: true });
         }
       }
     }
   });
 
-  it('names only ctest tests that the core defines, Twister scenarios that firmware/tests defines, WebAssembly suites of the same category, and tests of files that hold them', () => {
-    const missing: string[] = [];
-    for (const category of manifest.categories) {
-      for (const leg of Object.values(category.legs)) {
-        for (const name of leg.ctest ?? []) if (!ctestNames.has(name)) missing.push(`${category.id}: ctest ${name}`);
-        for (const name of leg.twister ?? []) if (!scenarioNames.has(name)) missing.push(`${category.id}: scenario ${name}`);
-        for (const name of leg.wasm ?? []) {
-          if (SUITES.find((suite) => suite.name === name)?.category !== category.id) missing.push(`${category.id}: WebAssembly suite ${name}`);
-        }
-        for (const name of leg.freertos ?? []) if (!freertosSuites.has(name)) missing.push(`${category.id}: FreeRTOS suite ${name}`);
-        for (const { file, test } of leg.bun ?? []) {
-          if (!existsSync(join(ROOT, file)) || !text(file).includes(test)) missing.push(`${category.id}: ${file} > ${test}`);
+  it(
+    'names only ctest tests that the core defines, Twister scenarios that firmware/tests defines, WebAssembly suites of the same ' +
+      'category, and tests of files that hold them',
+    () => {
+      const missing: string[] = [];
+      for (const category of manifest.categories) {
+        for (const leg of Object.values(category.legs)) {
+          for (const name of leg.ctest ?? []) if (!ctestNames.has(name)) missing.push(`${category.id}: ctest ${name}`);
+          for (const name of leg.twister ?? []) if (!scenarioNames.has(name)) missing.push(`${category.id}: scenario ${name}`);
+          for (const name of leg.wasm ?? []) {
+            if (SUITES.find((suite) => suite.name === name)?.category !== category.id)
+              missing.push(`${category.id}: WebAssembly suite ${name}`);
+          }
+          for (const name of leg.freertos ?? []) if (!freertosSuites.has(name)) missing.push(`${category.id}: FreeRTOS suite ${name}`);
+          for (const { file, test } of leg.bun ?? []) {
+            if (!existsSync(join(ROOT, file)) || !text(file).includes(test)) missing.push(`${category.id}: ${file} > ${test}`);
+          }
         }
       }
-    }
-    expect(missing).toEqual([]);
-  });
+      expect(missing).toEqual([]);
+    },
+  );
 
   it('runs on every port in every category: no leg of the suite is open', () => {
     for (const category of manifest.categories) {
-      for (const port of manifest.ports.map((entry) => entry.id)) expect({ category: category.id, port, runs: category.legs[port]!.open === undefined }).toEqual({ category: category.id, port, runs: true });
+      for (const port of manifest.ports.map((entry) => entry.id))
+        expect({ category: category.id, port, runs: category.legs[port]!.open === undefined }).toEqual({
+          category: category.id,
+          port,
+          runs: true,
+        });
     }
   });
 
@@ -96,18 +130,23 @@ describe('port conformance suite: the legs name real checks (IO-013)', () => {
     expect(freertosCmake).toContain(`set_tests_properties(${RUNNER_SELF_CHECK} PROPERTIES WILL_FAIL TRUE)`);
   });
 
-  it('runs on the FreeRTOS port the same C suites of the core that ctest runs on the POSIX host, in every category that has any (IO-016)', () => {
-    // A suite that the POSIX leg runs and the FreeRTOS leg leaves out is a weaker port: it has to be one that tests the
-    // POSIX HAL itself (file layout, its own mutex, its own empty I/O table), which the FreeRTOS port replaces with
-    // suites of its own.
-    const posixOnly = new Set(['test_hal_posix_io_table', 'test_hal_posix_persist']);
-    const missing: string[] = [];
-    for (const category of manifest.categories) {
-      const freertos = new Set(category.legs.freertos?.freertos ?? []);
-      for (const name of category.legs.posix?.ctest ?? []) if (!freertos.has(name) && !posixOnly.has(name)) missing.push(`${category.id}: ${name}`);
-    }
-    expect(missing).toEqual([]);
-  });
+  it(
+    'runs on the FreeRTOS port the same C suites of the core that ctest runs on the POSIX host, in every category that has any ' +
+      '(IO-016)',
+    () => {
+      // A suite that the POSIX leg runs and the FreeRTOS leg leaves out is a weaker port: it has to be one that tests the
+      // POSIX HAL itself (file layout, its own mutex, its own empty I/O table), which the FreeRTOS port replaces with
+      // suites of its own.
+      const posixOnly = new Set(['test_hal_posix_io_table', 'test_hal_posix_persist']);
+      const missing: string[] = [];
+      for (const category of manifest.categories) {
+        const freertos = new Set(category.legs.freertos?.freertos ?? []);
+        for (const name of category.legs.posix?.ctest ?? [])
+          if (!freertos.has(name) && !posixOnly.has(name)) missing.push(`${category.id}: ${name}`);
+      }
+      expect(missing).toEqual([]);
+    },
+  );
 
   it('keeps the timing self-test on both ports with the one suite header, so that the two ports ask the same questions', () => {
     const posix = text('firmware/lib/zplc_core/tests/test_port_timing.c');

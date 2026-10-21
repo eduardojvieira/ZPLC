@@ -1,6 +1,6 @@
 /**
  * SFCToolbox - Sidebar with the elements of the SFC editor
- * 
+ *
  * Provides Steps and Transitions. An element is a button: dragging it onto the canvas places it there, and pressing it
  * (Enter, Space or a click) inserts it after the selected element (LNG-012). The search box filters the elements.
  */
@@ -29,7 +29,7 @@ interface SFCElementCategory {
 const SFC_CATEGORIES: SFCElementCategory[] = [
   { name: 'Steps', icon: <Circle size={14} /> },
   { name: 'Transitions', icon: <ArrowDown size={14} /> },
-].map((category) => ({ ...category, elements: SFC_PALETTE.filter((element) => element.category === category.name) } as SFCElementCategory));
+].map((category) => ({ ...category, elements: SFC_PALETTE.filter((element) => element.category === category.name) }) as SFCElementCategory);
 
 // =============================================================================
 // Component
@@ -42,9 +42,14 @@ interface SFCToolboxProps {
 
 export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
   const [query, setQuery] = useState('');
-  const found = new Set(filterItems(SFC_PALETTE.map((element) => ({ id: element.type, label: element.label, detail: element.description, group: element.category })), query).map((item) => item.id));
+  const found = new Set(
+    filterItems(
+      SFC_PALETTE.map((element) => ({ id: element.type, label: element.label, detail: element.description, group: element.category })),
+      query,
+    ).map((item) => item.id),
+  );
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['Steps', 'Transitions']) // Default expanded
+    new Set(['Steps', 'Transitions']), // Default expanded
   );
 
   const toggleCategory = (name: string) => {
@@ -68,9 +73,7 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
     <div className="zplc-visual-toolbox w-48 h-full border-r overflow-y-auto">
       {/* Header */}
       <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--color-surface-700)]">
-        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-          {t('editors.sfc.elements')}
-        </span>
+        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">{t('editors.sfc.elements')}</span>
       </div>
 
       <div className="px-2 pt-2">
@@ -86,73 +89,75 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
 
       {/* Categories */}
       <div className="py-1">
-        {SFC_CATEGORIES.map((category) => ({ ...category, elements: category.elements.filter((element) => found.has(element.type)) })).filter((category) => category.elements.length > 0).map((category) => {
-          const isExpanded = query.trim() !== '' || expandedCategories.has(category.name);
-          
-          return (
-            <div key={category.name} className="select-none">
-              {/* Category header */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleCategory(category.name)}
-                className="w-full justify-start gap-2 px-3 py-1.5 text-left"
-              >
-                <span className="text-[var(--text-tertiary)]">
-                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                </span>
-                <span className="text-[var(--text-tertiary)]">{category.icon}</span>
-                <span className="text-xs text-[var(--text-secondary)] font-medium">
-                  {category.name}
-                </span>
-              </Button>
+        {SFC_CATEGORIES.map((category) => ({ ...category, elements: category.elements.filter((element) => found.has(element.type)) }))
+          .filter((category) => category.elements.length > 0)
+          .map((category) => {
+            const isExpanded = query.trim() !== '' || expandedCategories.has(category.name);
 
-              {/* Elements */}
-              {isExpanded && (
-                <div className="pb-1">
-                  {category.elements.map((element) => (
-                    <Button
-                      size="sm"
-                      key={element.type}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, element.type)}
-                      onClick={() => onInsert?.(element.type)}
-                      data-sfc-toolbox-item={element.type}
-                      aria-label={t('editors.insert', { name: element.label })}
-                      tooltip={t('editors.sfc.insertTooltip', { name: element.description })}
-                      className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5
+            return (
+              <div key={category.name} className="select-none">
+                {/* Category header */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleCategory(category.name)}
+                  className="w-full justify-start gap-2 px-3 py-1.5 text-left"
+                >
+                  <span className="text-[var(--text-tertiary)]">{isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
+                  <span className="text-[var(--text-tertiary)]">{category.icon}</span>
+                  <span className="text-xs text-[var(--text-secondary)] font-medium">{category.name}</span>
+                </Button>
+
+                {/* Elements */}
+                {isExpanded && (
+                  <div className="pb-1">
+                    {category.elements.map((element) => (
+                      <Button
+                        size="sm"
+                        key={element.type}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, element.type)}
+                        onClick={() => onInsert?.(element.type)}
+                        data-sfc-toolbox-item={element.type}
+                        aria-label={t('editors.insert', { name: element.label })}
+                        tooltip={t('editors.sfc.insertTooltip', { name: element.description })}
+                        className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5
                                  text-left text-xs bg-[var(--color-surface-700)]
                                  hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing border
                                  border-transparent hover:border-[var(--color-accent-blue)]"
-                    >
-                      <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
-                      <div className={`${CAPTION} font-normal text-[var(--text-tertiary)] mt-0.5`}>
-                        {element.description}
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                      >
+                        <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
+                        <div className={`${CAPTION} font-normal text-[var(--text-tertiary)] mt-0.5`}>{element.description}</div>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </div>
 
       {/* Help text */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
-        <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>
-          {t('editors.sfc.help')}
-        </p>
+        <p className={`${CAPTION} text-[var(--text-tertiary)] leading-relaxed`}>{t('editors.sfc.help')}</p>
       </div>
 
       {/* Legend */}
       <div className="px-3 py-2 border-t border-[var(--border-color)]">
         <div className={`${CAPTION} text-[var(--text-tertiary)] mb-1`}>{t('editors.sfc.qualifiers')}</div>
         <div className={`grid grid-cols-2 gap-1 ${CAPTION}`}>
-          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</code> {t('editors.sfc.qualN')}</div>
-          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</code> {t('editors.sfc.qualS')}</div>
-          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</code> {t('editors.sfc.qualR')}</div>
-          <div className="text-[var(--text-tertiary)]"><code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</code> {t('editors.sfc.qualP')}</div>
+          <div className="text-[var(--text-tertiary)]">
+            <code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</code> {t('editors.sfc.qualN')}
+          </div>
+          <div className="text-[var(--text-tertiary)]">
+            <code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</code> {t('editors.sfc.qualS')}
+          </div>
+          <div className="text-[var(--text-tertiary)]">
+            <code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</code> {t('editors.sfc.qualR')}
+          </div>
+          <div className="text-[var(--text-tertiary)]">
+            <code className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</code> {t('editors.sfc.qualP')}
+          </div>
         </div>
       </div>
     </div>

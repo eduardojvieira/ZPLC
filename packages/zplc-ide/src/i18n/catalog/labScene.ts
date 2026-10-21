@@ -4,7 +4,8 @@ export const labSceneEn = {
   'labScene.clear': 'CLEAR',
   'labScene.detected': 'DETECTED',
   'labScene.motorLabel': 'Motor at {ms} milliseconds: command {command}, running {running}, at speed {atSpeed}, speed {speed} per mille',
-  'labScene.conveyorLabel': 'Conveyor at {ms} milliseconds: belt {belt}, diverter {diverter}, fault {fault}, classifier {classifier}, metal {metal}, diverter sensor {diverterSensor}, jam {jam}, classified {count}',
+  'labScene.conveyorLabel':
+    'Conveyor at {ms} milliseconds: belt {belt}, diverter {diverter}, fault {fault}, classifier {classifier}, metal {metal}, diverter sensor {diverterSensor}, jam {jam}, classified {count}',
   'labScene.tankLabel': 'Tank at {ms} milliseconds: level {level} per mille, pump {pump}, alarm {alarm}, low {low}, high {high}',
   'labScene.crossingLabel': 'Crossing at {ms} milliseconds: vehicle {vehicle}, pedestrian {pedestrian}, request {request}, phase {phase}',
   'labScene.motorCaption': 'CMD {command} · RUN {running}',
@@ -20,8 +21,10 @@ export const labSceneEs: Record<keyof typeof labSceneEn, string> = {
   'labScene.active': 'ACTIVO',
   'labScene.clear': 'LIBRE',
   'labScene.detected': 'DETECTADO',
-  'labScene.motorLabel': 'Motor a los {ms} milisegundos: orden {command}, en marcha {running}, a velocidad {atSpeed}, velocidad {speed} por mil',
-  'labScene.conveyorLabel': 'Cinta a los {ms} milisegundos: cinta {belt}, desviador {diverter}, falla {fault}, clasificador {classifier}, metal {metal}, sensor del desviador {diverterSensor}, atasco {jam}, clasificadas {count}',
+  'labScene.motorLabel':
+    'Motor a los {ms} milisegundos: orden {command}, en marcha {running}, a velocidad {atSpeed}, velocidad {speed} por mil',
+  'labScene.conveyorLabel':
+    'Cinta a los {ms} milisegundos: cinta {belt}, desviador {diverter}, falla {fault}, clasificador {classifier}, metal {metal}, sensor del desviador {diverterSensor}, atasco {jam}, clasificadas {count}',
   'labScene.tankLabel': 'Tanque a los {ms} milisegundos: nivel {level} por mil, bomba {pump}, alarma {alarm}, bajo {low}, alto {high}',
   'labScene.crossingLabel': 'Cruce a los {ms} milisegundos: vehículo {vehicle}, peatón {pedestrian}, solicitud {request}, fase {phase}',
   'labScene.motorCaption': 'ORDEN {command} · MARCHA {running}',

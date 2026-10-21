@@ -25,9 +25,18 @@ export function describeUpdateCheck(result: UpdateCheckResult, t: Translator['t'
  * reports the answer when it comes (a newer release shows the notice; "could not tell" shows nothing), and returns the
  * function that drops an answer that arrives after the setting changed or Studio closed.
  */
-export function startUpdateCheck(enabled: boolean, bridge: UpdateCheckBridge | undefined, current: string, report: (result: UpdateCheckResult) => void): () => void {
+export function startUpdateCheck(
+  enabled: boolean,
+  bridge: UpdateCheckBridge | undefined,
+  current: string,
+  report: (result: UpdateCheckResult) => void,
+): () => void {
   if (!enabled) return () => undefined;
   let live = true;
-  void runUpdateCheck(bridge, current).then((result) => { if (live) report(result); });
-  return () => { live = false; };
+  void runUpdateCheck(bridge, current).then((result) => {
+    if (live) report(result);
+  });
+  return () => {
+    live = false;
+  };
 }

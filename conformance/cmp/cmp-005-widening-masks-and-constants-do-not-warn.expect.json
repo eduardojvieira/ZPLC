@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-005",
   "title": "a widening, a mask, a remainder and a constant that fit build without a warning",
-  "matrix": [
-    "functions.implicit-widening-conversion"
-  ],
+  "matrix": ["functions.implicit-widening-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

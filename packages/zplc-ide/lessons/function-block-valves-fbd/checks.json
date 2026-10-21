@@ -7,9 +7,7 @@
         "src/Valves.st": "PROGRAM Valves\nVAR_INPUT FillPB AT %I0.0 : BOOL; DrainPB AT %I0.1 : BOOL; StopPB AT %I0.2 : BOOL; AirOk AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT FillValve AT %Q0.0 : BOOL; DrainValve AT %Q0.1 : BOOL; END_VAR\nVAR Fill : ValveCtl; Drain : ValveCtl; END_VAR\nFill(Open := FillPB, Close := StopPB, Permit := AirOk);\nDrain(Open := DrainPB, Close := StopPB, Permit := AirOk);\nFillValve := Fill.Cmd; DrainValve := Drain.Cmd;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"valves_fbd_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Valves.st\"]}]}"
       },
-      "remove": [
-        "src/Valves.fbd.json"
-      ]
+      "remove": ["src/Valves.fbd.json"]
     }
   ],
   "wrong": [

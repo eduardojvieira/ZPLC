@@ -25,7 +25,11 @@ export const RECOVERY_LIMITS = {
 } as const;
 
 /** What one modified file left behind: its project-relative path, its content, and when that content was kept. */
-export interface RecoveryEntry { path: string; content: string; savedAt: number }
+export interface RecoveryEntry {
+  path: string;
+  content: string;
+  savedAt: number;
+}
 
 export interface RecoveryRequests {
   write: { rootId: string; path: string; content: string };
@@ -80,6 +84,7 @@ export function parseRecoveryDiscard(value: unknown): RecoveryRequests['discard'
 export function parseRecoveryEntry(value: unknown): RecoveryEntry | null {
   if (!isPlainObject(value) || !hasExactKeys(value, ['path', 'content', 'savedAt'])) return null;
   const { path, content, savedAt } = value;
-  if (!isSessionPath(path) || !isRecoveryContent(content) || typeof savedAt !== 'number' || !Number.isFinite(savedAt) || savedAt < 0) return null;
+  if (!isSessionPath(path) || !isRecoveryContent(content) || typeof savedAt !== 'number' || !Number.isFinite(savedAt) || savedAt < 0)
+    return null;
   return { path, content, savedAt };
 }

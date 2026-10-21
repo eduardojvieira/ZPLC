@@ -17,12 +17,21 @@ async function openBlinky(app: BrowserApp): Promise<void> {
 
 /** Clicks the empty cell (`row`, `col`) of a rung with a real pointer: the cell is 80 px wide and 60 px high. */
 async function clickCell(app: BrowserApp, rung: string, row: number, col: number): Promise<void> {
-  const box = await app.eval<{ x: number; y: number }>(`(() => { const e = document.querySelector('[data-ld-rung-id="${rung}"] [data-ld-cell="0,0"]'); const r = e.getBoundingClientRect(); return { x: r.x + ${col} * 80 + 40, y: r.y + ${row} * 60 + 30 }; })()`);
+  const box = await app.eval<{ x: number; y: number }>(
+    `(() => { const e = document.querySelector('[data-ld-rung-id="${rung}"] [data-ld-cell="0,0"]'); const r = e.getBoundingClientRect(); ` +
+      `return { x: r.x + ${col} * 80 + 40, y: r.y + ${row} * 60 + 30 }; })()`,
+  );
   await app.clickAt(box.x, box.y);
 }
 
-const rungsOf = (app: BrowserApp): Promise<Array<{ id: string; comment: string; elements: string[] }>> => app.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs.map((r) => ({ id: r.id, comment: r.comment ?? '', elements: r.grid.flat().filter((c) => c.element).map((c) => c.element.type + '/' + (c.element.variable ?? '')) })); })`);
-const waitCursor = (app: BrowserApp, at: string) => app.until('the cursor on ' + at, `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === '${at}'`);
+const rungsOf = (app: BrowserApp): Promise<Array<{ id: string; comment: string; elements: string[] }>> =>
+  app.eval(
+    `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+      `JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs.map((r) => ({ id: r.id, comment: r.comment ?? '', elements: ` +
+      `r.grid.flat().filter((c) => c.element).map((c) => c.element.type + '/' + (c.element.variable ?? '')) })); })`,
+  );
+const waitCursor = (app: BrowserApp, at: string) =>
+  app.until('the cursor on ' + at, `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === '${at}'`);
 const SELECT = (kind: 'contact_nc' | 'contact_no' | 'coil_set', name: string) => `Select ${t(`ld.kind.${kind}` as const)} ${name}`;
 
 describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
@@ -30,7 +39,10 @@ describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
     const app = await browserApp();
     await openBlinky(app);
     await clickCell(app, 'rung_2', 0, 3);
-    await app.until('the cursor on the clicked cell', `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === 'rung_2:0,3'`);
+    await app.until(
+      'the cursor on the clicked cell',
+      `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === 'rung_2:0,3'`,
+    );
     expect(await app.axAbsent('textbox', t('a11y.ld.comment'))).toBe(true);
     const focused = await app.focused();
     expect(focused?.role).toBe('region');
@@ -41,29 +53,42 @@ describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
     const app = await browserApp();
     await openBlinky(app);
     await clickCell(app, 'rung_2', 0, 3);
-    await app.until('the cursor on the clicked cell', `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === 'rung_2:0,3'`);
+    await app.until(
+      'the cursor on the clicked cell',
+      `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === 'rung_2:0,3'`,
+    );
     await app.press('Shift+F2');
     const box = await app.axNode('textbox', t('a11y.ld.comment'));
     expect(box.value).toContain('ON phase');
-    await app.until('the focus in the comment', `document.activeElement?.getAttribute('aria-label') === ${JSON.stringify(t('a11y.ld.comment'))}`);
+    await app.until(
+      'the focus in the comment',
+      `document.activeElement?.getAttribute('aria-label') === ${JSON.stringify(t('a11y.ld.comment'))}`,
+    );
     await app.type(' (checked)');
     await app.press('Enter');
-    await app.until('the comment in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs[1].comment.endsWith('(checked)'); })`);
+    await app.until(
+      'the comment in the file',
+      `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+        `JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs[1].comment.endsWith('(checked)'); })`,
+    );
     expect(await app.axAbsent('textbox', t('a11y.ld.comment'))).toBe(true);
   });
 
-  test('is a named region with the toolbox, one rung per rung of the file and a named button for each element and rung command', async () => {
-    const app = await browserApp();
-    await openBlinky(app);
-    await app.axNode('region', t('ld.ladderDiagramEditor'));
-    await app.axNode('button', t('editors.insert', { name: 'NO contact' }));
-    await app.axNode('button', t('editors.insert', { name: 'TON' }));
-    await app.axNode('button', t('ld.addRung'));
-    for (const number of [1, 2, 3, 4]) await app.axNode('button', t('ld.breakpointOnRung', { number }));
-    await app.axNode('button', SELECT('contact_nc', 'LED_Output'));
-    await app.axNode('button', SELECT('coil_set', 'LED_Output'));
-    expect(await rungsOf(app)).toHaveLength(4);
-  });
+  test(
+    'is a named region with the toolbox, one rung per rung of the file and a named button for each element and rung ' + 'command',
+    async () => {
+      const app = await browserApp();
+      await openBlinky(app);
+      await app.axNode('region', t('ld.ladderDiagramEditor'));
+      await app.axNode('button', t('editors.insert', { name: 'NO contact' }));
+      await app.axNode('button', t('editors.insert', { name: 'TON' }));
+      await app.axNode('button', t('ld.addRung'));
+      for (const number of [1, 2, 3, 4]) await app.axNode('button', t('ld.breakpointOnRung', { number }));
+      await app.axNode('button', SELECT('contact_nc', 'LED_Output'));
+      await app.axNode('button', SELECT('coil_set', 'LED_Output'));
+      expect(await rungsOf(app)).toHaveLength(4);
+    },
+  );
 
   test('the c key inserts a contact at the cursor, asks for its variable in a named list, and Enter binds the chosen one', async () => {
     const app = await browserApp();
@@ -151,7 +176,10 @@ describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
     const name = t('ld.breakpointOnRung', { number: 1 });
     expect((await app.axNode('button', name)).properties.pressed).toBe('false');
     await app.click(`button[aria-label="${name}"]`);
-    await app.until('the button pressed', `document.querySelector('button[aria-label="${name}"]')?.getAttribute('aria-pressed') === 'true'`);
+    await app.until(
+      'the button pressed',
+      `document.querySelector('button[aria-label="${name}"]')?.getAttribute('aria-pressed') === 'true'`,
+    );
     expect((await app.axNode('button', name)).properties.pressed).toBe('true');
   });
 

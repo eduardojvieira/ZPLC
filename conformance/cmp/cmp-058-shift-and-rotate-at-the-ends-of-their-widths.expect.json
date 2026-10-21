@@ -6,13 +6,13 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "DWORD", "value": 2147483648},
-    {"at": "%QD1", "type": "DWORD", "value": 1},
-    {"at": "%QB8", "type": "BYTE", "value": 3},
-    {"at": "%QW5", "type": "WORD", "value": 32768},
-    {"at": "%QB12", "type": "BYTE", "value": 240},
-    {"at": "%QD4", "type": "DWORD", "value": 2147483648},
-    {"at": "%QB20", "type": "BYTE", "value": 129},
-    {"at": "%QB21", "type": "BYTE", "value": 129}
+    { "at": "%QD0", "type": "DWORD", "value": 2147483648 },
+    { "at": "%QD1", "type": "DWORD", "value": 1 },
+    { "at": "%QB8", "type": "BYTE", "value": 3 },
+    { "at": "%QW5", "type": "WORD", "value": 32768 },
+    { "at": "%QB12", "type": "BYTE", "value": 240 },
+    { "at": "%QD4", "type": "DWORD", "value": 2147483648 },
+    { "at": "%QB20", "type": "BYTE", "value": 129 },
+    { "at": "%QB21", "type": "BYTE", "value": 129 }
   ]
 }

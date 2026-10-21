@@ -169,24 +169,25 @@ describe('Communication tag admission', () => {
         ] as const;
 
         for (const [name, declaration, message] of cases) {
-            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name)
-                .toThrow(CompilerError);
-            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name)
-                .toThrow(message);
+            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name).toThrow(CompilerError);
+            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name).toThrow(message);
         }
     });
 
     // COM-013: a variable in the upper half of WORK is bound like any other; the adapters reach it through
     // the exchange with its whole address.
     it('binds a tag on a variable in the upper half of WORK', () => {
-        const result = compileToBinary(`
+        const result = compileToBinary(
+            `
             PROGRAM Tags
             VAR
                 Published : BOOL {publish};
                 Served : UINT {modbus:40001};
             END_VAR
             END_PROGRAM
-        `, { workMemoryBase: 0x3000 });
+        `,
+            { workMemoryBase: 0x3000 },
+        );
         expect(result.zplcFile.length).toBeGreaterThan(0);
     });
 });
@@ -194,7 +195,8 @@ describe('Communication tag admission', () => {
 describe('target memory profiles', () => {
     const source = 'PROGRAM Limits VAR Value : BOOL; END_VAR END_PROGRAM';
 
-    const programWithBytes = (count: number) => `PROGRAM Limits\nVAR\n${Array.from({ length: count }, (_, index) => `Value${index} : BOOL;`).join('\n')}\nEND_VAR\nEND_PROGRAM`;
+    const programWithBytes = (count: number) =>
+        `PROGRAM Limits\nVAR\n${Array.from({ length: count }, (_, index) => `Value${index} : BOOL;`).join('\n')}\nEND_VAR\nEND_PROGRAM`;
 
     it('keeps host defaults and publishes effective debug memory limits', () => {
         expect(compileToBinary(source).bytecode.length).toBeGreaterThan(0);
@@ -206,12 +208,16 @@ describe('target memory profiles', () => {
     });
 
     it('rejects WORK exhaustion and CODE above the target limit', () => {
-        expect(() => compileToBinary(source, {
-            memoryProfile: { workSize: 1, retainSize: 1024, codeSizeMax: 8192 },
-        })).toThrow(/WORK (allocation|symbol collides)/);
-        expect(() => compileToBinary(source, {
-            memoryProfile: { workSize: 2048, retainSize: 1024, codeSizeMax: 1 },
-        })).toThrow(/CODE exceeds/);
+        expect(() =>
+            compileToBinary(source, {
+                memoryProfile: { workSize: 1, retainSize: 1024, codeSizeMax: 8192 },
+            }),
+        ).toThrow(/WORK (allocation|symbol collides)/);
+        expect(() =>
+            compileToBinary(source, {
+                memoryProfile: { workSize: 2048, retainSize: 1024, codeSizeMax: 1 },
+            }),
+        ).toThrow(/CODE exceeds/);
     });
 
     it('takes as many programs as the profile has bytes for, and rejects the one that does not fit, with its source', () => {
@@ -235,8 +241,10 @@ describe('target memory profiles', () => {
         });
 
         // three of twenty bytes and the initialization flag are 61 of the 64 bytes
-        expect(compileMultiTaskProject(config(3), sources.slice(0, 3), { memoryProfile: profile }).debugMap.memoryLayout)
-            .toMatchObject({ workSize: 64, retainSize: 1024 });
+        expect(compileMultiTaskProject(config(3), sources.slice(0, 3), { memoryProfile: profile }).debugMap.memoryLayout).toMatchObject({
+            workSize: 64,
+            retainSize: 1024,
+        });
         try {
             compileMultiTaskProject(config(4), sources.slice(0, 4), { memoryProfile: profile });
             throw new Error('expected a WORK allocation failure');
@@ -249,11 +257,12 @@ describe('target memory profiles', () => {
     it('names the bytes required, the bytes available and the largest consumers when the unit does not fit', () => {
         // 250 BOOLs, then a STRING that straddles the end of a 256-byte profile.
         const overBudget = programWithBytes(250).replace('END_VAR', 'Big : STRING;\nEND_VAR');
-        const build = () => compileMultiTaskProject(
-            { name: 'Big', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/Big.st', content: overBudget }],
-            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
-        );
+        const build = () =>
+            compileMultiTaskProject(
+                { name: 'Big', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                [{ name: 'Main', sourceRef: 'src/Big.st', content: overBudget }],
+                { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 } },
+            );
         expect(build).toThrow(/WORK allocation exceeds the target memory profile: 338 bytes required, 256 bytes available/);
         expect(build).toThrow(/Largest consumers: Limits\.Big \(85 bytes\), Limits\.Value\d+ \(1 bytes\), Limits\.Value\d+ \(1 bytes\)/);
         try {
@@ -272,39 +281,58 @@ describe('target memory profiles', () => {
             { workSize: -1, retainSize: 1, codeSizeMax: 1 },
             { workSize: 0x2001, retainSize: 1, codeSizeMax: 1 },
             { workSize: 1, retainSize: 0x1001, codeSizeMax: 1 },
-            { workSize: 1, retainSize: 1, codeSizeMax: 0xB001 },
+            { workSize: 1, retainSize: 1, codeSizeMax: 0xb001 },
         ];
 
         for (const memoryProfile of invalidProfiles) {
             expect(() => compileToBinary(source, { memoryProfile })).toThrow(/Invalid target memory profile/);
         }
 
-        expect(() => compileMultiTaskProject(
-            { name: 'InvalidProfile', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/Main.st', content: source }],
-            { memoryProfile: invalidProfiles[0] },
-        )).toThrow(/Invalid target memory profile/);
+        expect(() =>
+            compileMultiTaskProject(
+                {
+                    name: 'InvalidProfile',
+                    version: '1.0.0',
+                    tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }],
+                },
+                [{ name: 'Main', sourceRef: 'src/Main.st', content: source }],
+                { memoryProfile: invalidProfiles[0] },
+            ),
+        ).toThrow(/Invalid target memory profile/);
     });
 
     it('reserves the init flag, validates direct WORK widths, and keeps declaration provenance', () => {
-        expect(() => compileToBinary(programWithBytes(255), {
-            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
-        })).not.toThrow();
-        expect(() => compileToBinary(programWithBytes(256), {
-            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
-        })).toThrow(/initialization flag/);
+        expect(() =>
+            compileToBinary(programWithBytes(255), {
+                memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 },
+            }),
+        ).not.toThrow();
+        expect(() =>
+            compileToBinary(programWithBytes(256), {
+                memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 },
+            }),
+        ).toThrow(/initialization flag/);
 
-        expect(() => compileToBinary(`PROGRAM Direct\nVAR\nValue AT %MD63 : DINT;\nEND_VAR\nEND_PROGRAM`, {
-            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
-            workMemorySize: 256,
-            initFlagAddress: 0x2000,
-        })).not.toThrow();
+        expect(() =>
+            compileToBinary(`PROGRAM Direct\nVAR\nValue AT %MD63 : DINT;\nEND_VAR\nEND_PROGRAM`, {
+                memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 },
+                workMemorySize: 256,
+                initFlagAddress: 0x2000,
+            }),
+        ).not.toThrow();
 
-        const directOverflow = () => compileMultiTaskProject(
-            { name: 'Direct', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/Direct.st', content: 'PROGRAM Direct\nVAR\nValue AT %MD64 : DINT;\nEND_VAR\nEND_PROGRAM' }],
-            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
-        );
+        const directOverflow = () =>
+            compileMultiTaskProject(
+                { name: 'Direct', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                [
+                    {
+                        name: 'Main',
+                        sourceRef: 'src/Direct.st',
+                        content: 'PROGRAM Direct\nVAR\nValue AT %MD64 : DINT;\nEND_VAR\nEND_PROGRAM',
+                    },
+                ],
+                { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 } },
+            );
         expect(directOverflow).toThrow(/WORK allocation/);
         try {
             directOverflow();
@@ -312,30 +340,34 @@ describe('target memory profiles', () => {
             expect(error).toMatchObject({ line: 3, sourceRef: 'src/Direct.st' });
         }
 
-        expect(() => compileToBinary(`PROGRAM Init\nVAR\nFlag AT %MB0 : BOOL;\nEND_VAR\nEND_PROGRAM`, {
-            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
-            workMemorySize: 8,
-            initFlagAddress: 0x2000,
-        })).toThrow(/initialization flag/);
-        expect(() => compileToBinary('PROGRAM Init VAR Flag : BOOL; END_VAR END_PROGRAM', {
-            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
-            workMemorySize: 8,
-            initFlagAddress: 0x2000,
-        })).toThrow(/initialization flag/);
-        expect(() => compileToBinary(source, {
-            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
-            workMemorySize: 8,
-            initFlagAddress: 0x2008,
-        })).toThrow(/initFlagAddress/);
-        for (const options of [
-            { workMemoryBase: Number.NaN },
-            { workMemorySize: 1.5 },
-            { initFlagAddress: 0x2000 + 0.5 },
-        ]) {
-            expect(() => compileToBinary(source, {
-                memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
-                ...options,
-            })).toThrow(/Invalid (WORK region options|initFlagAddress)/);
+        expect(() =>
+            compileToBinary(`PROGRAM Init\nVAR\nFlag AT %MB0 : BOOL;\nEND_VAR\nEND_PROGRAM`, {
+                memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xb000 },
+                workMemorySize: 8,
+                initFlagAddress: 0x2000,
+            }),
+        ).toThrow(/initialization flag/);
+        expect(() =>
+            compileToBinary('PROGRAM Init VAR Flag : BOOL; END_VAR END_PROGRAM', {
+                memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xb000 },
+                workMemorySize: 8,
+                initFlagAddress: 0x2000,
+            }),
+        ).toThrow(/initialization flag/);
+        expect(() =>
+            compileToBinary(source, {
+                memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xb000 },
+                workMemorySize: 8,
+                initFlagAddress: 0x2008,
+            }),
+        ).toThrow(/initFlagAddress/);
+        for (const options of [{ workMemoryBase: Number.NaN }, { workMemorySize: 1.5 }, { initFlagAddress: 0x2000 + 0.5 }]) {
+            expect(() =>
+                compileToBinary(source, {
+                    memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xb000 },
+                    ...options,
+                }),
+            ).toThrow(/Invalid (WORK region options|initFlagAddress)/);
         }
     });
 
@@ -344,13 +376,22 @@ describe('target memory profiles', () => {
         expect(() => compileToBinary('PROGRAM Output VAR Value AT %QW2047 : INT; END_VAR END_PROGRAM')).not.toThrow();
         expect(() => compileToBinary('PROGRAM InputOverflow VAR Value AT %IW2048 : INT; END_VAR END_PROGRAM')).toThrow(/IPI allocation/);
         expect(() => compileToBinary('PROGRAM OutputOverflow VAR Value AT %QW2048 : INT; END_VAR END_PROGRAM')).toThrow(/OPI allocation/);
-        expect(() => compileToBinary('PROGRAM BadBit VAR Value AT %IX0.8 : BOOL; END_VAR END_PROGRAM')).toThrow(/Invalid located bit address/);
-
-        const locatedInputOverflow = () => compileMultiTaskProject(
-            { name: 'LocatedInput', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/LocatedInput.st', content: 'PROGRAM LocatedInput\nVAR\nValue AT %IW2048 : INT;\nEND_VAR\nEND_PROGRAM' }],
-            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
+        expect(() => compileToBinary('PROGRAM BadBit VAR Value AT %IX0.8 : BOOL; END_VAR END_PROGRAM')).toThrow(
+            /Invalid located bit address/,
         );
+
+        const locatedInputOverflow = () =>
+            compileMultiTaskProject(
+                { name: 'LocatedInput', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                [
+                    {
+                        name: 'Main',
+                        sourceRef: 'src/LocatedInput.st',
+                        content: 'PROGRAM LocatedInput\nVAR\nValue AT %IW2048 : INT;\nEND_VAR\nEND_PROGRAM',
+                    },
+                ],
+                { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 } },
+            );
         expect(locatedInputOverflow).toThrow(/IPI allocation/);
         try {
             locatedInputOverflow();
@@ -370,16 +411,26 @@ describe('target memory profiles', () => {
     });
 
     it('rejects automatic WORK storage overlapping direct %M while preserving direct aliases', () => {
-        expect(() => compileToBinary('PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM'))
-            .toThrow(/automatic WORK symbol collides with located %M symbol/);
-        expect(() => compileToBinary('PROGRAM Adjacent\nVAR\nAuto : DINT;\nLocated AT %MD1 : DINT;\nEND_VAR\nEND_PROGRAM')).not.toThrow();
-        expect(() => compileToBinary('PROGRAM Alias\nVAR\nFirst AT %MD0 : DINT;\nSecond AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM')).not.toThrow();
-
-        const overlap = () => compileMultiTaskProject(
-            { name: 'Overlap', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/Overlap.st', content: 'PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM' }],
-            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
+        expect(() => compileToBinary('PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM')).toThrow(
+            /automatic WORK symbol collides with located %M symbol/,
         );
+        expect(() => compileToBinary('PROGRAM Adjacent\nVAR\nAuto : DINT;\nLocated AT %MD1 : DINT;\nEND_VAR\nEND_PROGRAM')).not.toThrow();
+        expect(() =>
+            compileToBinary('PROGRAM Alias\nVAR\nFirst AT %MD0 : DINT;\nSecond AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM'),
+        ).not.toThrow();
+
+        const overlap = () =>
+            compileMultiTaskProject(
+                { name: 'Overlap', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                [
+                    {
+                        name: 'Main',
+                        sourceRef: 'src/Overlap.st',
+                        content: 'PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM',
+                    },
+                ],
+                { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xb000 } },
+            );
         expect(overlap).toThrow(/automatic WORK symbol collides with located %M symbol/);
         try {
             overlap();
@@ -389,21 +440,33 @@ describe('target memory profiles', () => {
     });
 
     it('keeps pooled STRING and WSTRING storage inside WORK and away from direct locations', () => {
-        const profile = { workSize: 96, retainSize: 1, codeSizeMax: 0xB000 };
-        expect(() => compileToBinary(`PROGRAM Strings\nVAR\nSink : STRING;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
-        expect(() => compileToBinary(`PROGRAM WStrings\nVAR\nSink : WSTRING[5];\nEND_VAR\nSink := "x";\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
-        expect(() => compileToBinary(`PROGRAM Collision\nVAR\nSink : STRING;\nLocated AT %MB86 : BOOL;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).toThrow(/string literal pool collides with WORK symbol/);
+        const profile = { workSize: 96, retainSize: 1, codeSizeMax: 0xb000 };
+        expect(() =>
+            compileToBinary(`PROGRAM Strings\nVAR\nSink : STRING;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile }),
+        ).not.toThrow();
+        expect(() =>
+            compileToBinary(`PROGRAM WStrings\nVAR\nSink : WSTRING[5];\nEND_VAR\nSink := "x";\nEND_PROGRAM`, { memoryProfile: profile }),
+        ).not.toThrow();
+        expect(() =>
+            compileToBinary(`PROGRAM Collision\nVAR\nSink : STRING;\nLocated AT %MB86 : BOOL;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, {
+                memoryProfile: profile,
+            }),
+        ).toThrow(/string literal pool collides with WORK symbol/);
     });
 
     it('keeps profiles smaller than 256 bytes deterministic and preserves the first source that overflows', () => {
         const config = (programs: string[]) => ({
-            name: 'SmallProfile', version: '1.0.0', tasks: programs.map((name) => ({ name, trigger: 'cyclic' as const, interval: 10, programs: [name] })),
+            name: 'SmallProfile',
+            version: '1.0.0',
+            tasks: programs.map((name) => ({ name, trigger: 'cyclic' as const, interval: 10, programs: [name] })),
         });
         const sources = ['First', 'Second'].map((name) => ({
-            name, sourceRef: `src/${name}.st`, content: `PROGRAM ${name}\nVAR\nBuffer : ARRAY[0..59] OF BYTE;\nEND_VAR\nEND_PROGRAM`,
+            name,
+            sourceRef: `src/${name}.st`,
+            content: `PROGRAM ${name}\nVAR\nBuffer : ARRAY[0..59] OF BYTE;\nEND_VAR\nEND_PROGRAM`,
         }));
         // a profile of 100 bytes holds the first program, which a bucket of 256 bytes could not have been placed in
-        const profile = { workSize: 100, retainSize: 1, codeSizeMax: 0xB000 };
+        const profile = { workSize: 100, retainSize: 1, codeSizeMax: 0xb000 };
         expect(() => compileMultiTaskProject(config(['First']), sources.slice(0, 1), { memoryProfile: profile })).not.toThrow();
         const both = () => compileMultiTaskProject(config(['First', 'Second']), sources, { memoryProfile: profile });
         expect(both).toThrow(/121 bytes required, 100 bytes available/);
@@ -433,10 +496,14 @@ describe('RETAIN declarations (CMP-029)', () => {
     });
 
     it('places a RETAIN variable in the retentive region and the others in WORK', () => {
-        const result = compileMultiTaskProject(config, [{
-            name: 'Main',
-            content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nVAR\nLost : INT;\nEND_VAR\nKept := Kept + 1;\nLost := Kept;\nEND_PROGRAM',
-        }]);
+        const result = compileMultiTaskProject(config, [
+            {
+                name: 'Main',
+                content:
+                    'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nVAR\nLost : INT;\nEND_VAR\nKept := Kept + 1;\nLost := ' +
+                    'Kept;\nEND_PROGRAM',
+            },
+        ]);
         const vars = result.debugMap.pou.Main!.vars;
         expect(vars.Kept!.region).toBe('RETAIN');
         // the first bytes of the region hold the marker of the initial values
@@ -445,7 +512,9 @@ describe('RETAIN declarations (CMP-029)', () => {
     });
 
     it('applies the initial value of a RETAIN variable only when the retentive region holds no saved state', () => {
-        const content = 'PROGRAM Main\nVAR RETAIN\nKept : INT := 5;\nOther : DINT;\nEND_VAR\nVAR\nPlain : INT := 7;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM';
+        const content =
+            'PROGRAM Main\nVAR RETAIN\nKept : INT := 5;\nOther : DINT;\nEND_VAR\nVAR\nPlain : INT := 7;\nEND_VAR\nKept := Kept + ' +
+            '1;\nEND_PROGRAM';
         const assembly = compileMultiTaskProject(config, [{ name: 'Main', content }]).programDetails[0]!.assembly;
         const lines = assembly.split('\n').map((line) => line.trim());
         const guard = lines.indexOf('LOAD8 0x4000');
@@ -457,14 +526,19 @@ describe('RETAIN declarations (CMP-029)', () => {
         // the ordinary variable is initialised as before, outside the guard
         expect(lines.indexOf('STORE16 0x2000')).toBeLessThan(guard);
         // a program whose RETAIN variables have no initial value has no guard
-        const bare = compileMultiTaskProject(config, [{ name: 'Main', content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM' }]);
+        const bare = compileMultiTaskProject(config, [
+            { name: 'Main', content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM' },
+        ]);
         expect(bare.programDetails[0]!.assembly).not.toContain('LOAD8 0x4000');
     });
 
     it('refuses more retentive data than the target holds', () => {
         const content = 'PROGRAM Main\nVAR RETAIN\nBig : ARRAY[0..299] OF DINT;\nEND_VAR\nEND_PROGRAM';
-        expect(() => compileMultiTaskProject(config, [{ name: 'Main', content }], { memoryProfile: { workSize: 0x2000, retainSize: 256, codeSizeMax: 0xB000 } }))
-            .toThrow(/RETAIN allocation exceeds the target memory profile/);
+        expect(() =>
+            compileMultiTaskProject(config, [{ name: 'Main', content }], {
+                memoryProfile: { workSize: 0x2000, retainSize: 256, codeSizeMax: 0xb000 },
+            }),
+        ).toThrow(/RETAIN allocation exceeds the target memory profile/);
     });
 
     it('keeps retain as the name of a variable', () => {
@@ -777,10 +851,12 @@ describe('Canonical PROGRAM admission', () => {
 
     it('rejects invalid task program cardinality before source compilation', () => {
         for (const programs of [[], ['First', 'Second']]) {
-            expect(() => compileMultiTaskProject(
-                { name: 'InvalidTaskPrograms', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', programs }] },
-                [{ name: 'First', content: 'PROGRAM First END_PROGRAM' }],
-            )).toThrow(CompilerError);
+            expect(() =>
+                compileMultiTaskProject(
+                    { name: 'InvalidTaskPrograms', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', programs }] },
+                    [{ name: 'First', content: 'PROGRAM First END_PROGRAM' }],
+                ),
+            ).toThrow(CompilerError);
 
             try {
                 compileMultiTaskProject(
@@ -1011,17 +1087,19 @@ describe('Integration', () => {
         const asm = result.assembly;
 
         expect(asm).not.toContain('; ERROR:');
-        expect(asm.split('\n').filter(line => line.trim() === 'NOP')).toHaveLength(1);
+        expect(asm.split('\n').filter((line) => line.trim() === 'NOP')).toHaveLength(1);
         expect(result.bytecode.length).toBeGreaterThan(0);
 
         const lowercase = compileToBinary('PROGRAM Main watchdog_reset(); END_PROGRAM').assembly;
         expect(lowercase).not.toContain('; ERROR:');
-        expect(lowercase.split('\n').filter(line => line.trim() === 'NOP')).toHaveLength(1);
+        expect(lowercase.split('\n').filter((line) => line.trim() === 'NOP')).toHaveLength(1);
 
-        expect(() => compileToBinary('PROGRAM Main WATCHDOG_RESET(unused := 1); END_PROGRAM'))
-            .toThrow('WATCHDOG_RESET expects no parameters');
-        expect(() => compileToBinary('PROGRAM Main VAR x : INT; END_VAR x := WATCHDOG_RESET(); END_PROGRAM'))
-            .toThrow('WATCHDOG_RESET is statement-only');
+        expect(() => compileToBinary('PROGRAM Main WATCHDOG_RESET(unused := 1); END_PROGRAM')).toThrow(
+            'WATCHDOG_RESET expects no parameters',
+        );
+        expect(() => compileToBinary('PROGRAM Main VAR x : INT; END_VAR x := WATCHDOG_RESET(); END_PROGRAM')).toThrow(
+            'WATCHDOG_RESET is statement-only',
+        );
 
         const collidingInstance = compileToBinary(`
             PROGRAM Main
@@ -1092,9 +1170,9 @@ describe('Integration', () => {
 
         // Check .zplc file has proper header
         // Magic: 0x5A 0x50 0x4C 0x43 ("ZPLC")
-        expect(result.zplcFile[0]).toBe(0x5A);
+        expect(result.zplcFile[0]).toBe(0x5a);
         expect(result.zplcFile[1]).toBe(0x50);
-        expect(result.zplcFile[2]).toBe(0x4C);
+        expect(result.zplcFile[2]).toBe(0x4c);
         expect(result.zplcFile[3]).toBe(0x43);
     });
 });
@@ -1144,16 +1222,19 @@ import { ZPLC_CONSTANTS, TASK_TYPE } from '../assembler/index.ts';
 describe('Multi-Task Compiler', () => {
     it('keeps ST diagnostics attached to the physical source reference', () => {
         const config = {
-            name: 'DiagnosticProvenance', version: '1.0.0', tasks: [
-                { name: 'MotorTask', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['MotorTask'] },
-            ],
+            name: 'DiagnosticProvenance',
+            version: '1.0.0',
+            tasks: [{ name: 'MotorTask', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['MotorTask'] }],
         };
 
-        const lexerFailure = () => compileMultiTaskProject(config, [{
-            name: 'MotorTask',
-            sourceRef: 'src/Motor.st',
-            content: 'PROGRAM Motor\n@\nEND_PROGRAM',
-        }]);
+        const lexerFailure = () =>
+            compileMultiTaskProject(config, [
+                {
+                    name: 'MotorTask',
+                    sourceRef: 'src/Motor.st',
+                    content: 'PROGRAM Motor\n@\nEND_PROGRAM',
+                },
+            ]);
         expect(lexerFailure).toThrow(CompilerError);
         try {
             lexerFailure();
@@ -1165,11 +1246,14 @@ describe('Multi-Task Compiler', () => {
             expect(diagnostic.sourceRef).toBe('src/Motor.st');
         }
 
-        const parserFailure = () => compileMultiTaskProject(config, [{
-            name: 'MotorTask',
-            sourceRef: 'src/Motor.st',
-            content: 'PROGRAM Motor\nVAR\n  Start BOOL;\nEND_VAR\nEND_PROGRAM',
-        }]);
+        const parserFailure = () =>
+            compileMultiTaskProject(config, [
+                {
+                    name: 'MotorTask',
+                    sourceRef: 'src/Motor.st',
+                    content: 'PROGRAM Motor\nVAR\n  Start BOOL;\nEND_VAR\nEND_PROGRAM',
+                },
+            ]);
         expect(parserFailure).toThrow(CompilerError);
         try {
             parserFailure();
@@ -1183,14 +1267,24 @@ describe('Multi-Task Compiler', () => {
     });
 
     it('positions a generation error that has no position of its own at its statement (CMP-006)', () => {
-        expect(() => compileMultiTaskProject(
-            { name: 'GlobalDiagnostic', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
-            [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
-        )).toThrow(CompilerError);
+        expect(() =>
+            compileMultiTaskProject(
+                {
+                    name: 'GlobalDiagnostic',
+                    version: '1.0.0',
+                    tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }],
+                },
+                [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
+            ),
+        ).toThrow(CompilerError);
 
         try {
             compileMultiTaskProject(
-                { name: 'GlobalDiagnostic', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                {
+                    name: 'GlobalDiagnostic',
+                    version: '1.0.0',
+                    tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }],
+                },
                 [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
             );
         } catch (error) {
@@ -1203,7 +1297,11 @@ describe('Multi-Task Compiler', () => {
     });
 
     it('does not let source provenance alter compiled output', () => {
-        const config = { name: 'ProvenanceStable', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval: 10, programs: ['Main'] }] };
+        const config = {
+            name: 'ProvenanceStable',
+            version: '1.0.0',
+            tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval: 10, programs: ['Main'] }],
+        };
         const content = 'PROGRAM Main VAR Value : BOOL; END_VAR Value := TRUE; END_PROGRAM';
         const withoutSourceRef = compileMultiTaskProject(config, [{ name: 'Main', content }]);
         const withSourceRef = compileMultiTaskProject(config, [{ name: 'Main', sourceRef: 'src/Main.st', content }]);
@@ -1218,7 +1316,9 @@ describe('Multi-Task Compiler', () => {
         const slowSource = { name: 'Slow.st', content: 'PROGRAM Slow\nVAR y : BOOL; END_VAR\ny := FALSE;\nEND_PROGRAM' };
         const result = compileMultiTaskProject(
             {
-                name: 'DebugOffsets', version: '1.0.0', tasks: [
+                name: 'DebugOffsets',
+                version: '1.0.0',
+                tasks: [
                     { name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast.st'] },
                     { name: 'SlowTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Slow.st'] },
                 ],
@@ -1226,11 +1326,19 @@ describe('Multi-Task Compiler', () => {
             [fastSource, slowSource],
         );
         const fastOnly = compileMultiTaskProject(
-            { name: 'FastOnly', version: '1.0.0', tasks: [{ name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast.st'] }] },
+            {
+                name: 'FastOnly',
+                version: '1.0.0',
+                tasks: [{ name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast.st'] }],
+            },
             [fastSource],
         );
         const slowOnly = compileMultiTaskProject(
-            { name: 'SlowOnly', version: '1.0.0', tasks: [{ name: 'SlowTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Slow.st'] }] },
+            {
+                name: 'SlowOnly',
+                version: '1.0.0',
+                tasks: [{ name: 'SlowTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Slow.st'] }],
+            },
             [slowSource],
         );
         const fast = result.debugMap.pou.Fast!;
@@ -1273,13 +1381,14 @@ describe('Multi-Task Compiler', () => {
             version: '1.0.0',
             tasks: [{ name: 'MotorTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Motor.st'] }],
         };
-        const source = 'PROGRAM Motor VAR_INPUT Start AT %I0.0 : BOOL; END_VAR VAR_OUTPUT Forward AT %Q0.0 : BOOL; END_VAR Forward := Start; END_PROGRAM';
+        const source =
+            'PROGRAM Motor VAR_INPUT Start AT %I0.0 : BOOL; END_VAR VAR_OUTPUT Forward AT %Q0.0 : BOOL; END_VAR Forward := Start; ' +
+            'END_PROGRAM';
 
         const physicalRef = compileMultiTaskProject(config, [{ name: 'Motor.st', content: source }]);
-        const semanticRef = compileMultiTaskProject(
-            { ...config, tasks: [{ ...config.tasks[0], programs: ['Motor'] }] },
-            [{ name: 'Motor', content: source }],
-        );
+        const semanticRef = compileMultiTaskProject({ ...config, tasks: [{ ...config.tasks[0], programs: ['Motor'] }] }, [
+            { name: 'Motor', content: source },
+        ]);
 
         expect(physicalRef.programDetails[0]?.name).toBe('Motor.st');
         expect(physicalRef.tasks[0]?.entryPoint).toBe(physicalRef.programDetails[0]?.entryPoint);
@@ -1298,25 +1407,25 @@ describe('Multi-Task Compiler', () => {
             ],
         };
 
-        expect(() => compileMultiTaskProject(config, [
-            { name: 'Motor.st', content: 'PROGRAM Motor END_PROGRAM' },
-            { name: 'Backup.st', content: 'PROGRAM motor END_PROGRAM' },
-        ])).toThrow(/Duplicate PROGRAM name 'motor'/);
+        expect(() =>
+            compileMultiTaskProject(config, [
+                { name: 'Motor.st', content: 'PROGRAM Motor END_PROGRAM' },
+                { name: 'Backup.st', content: 'PROGRAM motor END_PROGRAM' },
+            ]),
+        ).toThrow(/Duplicate PROGRAM name 'motor'/);
     });
 
     it('compiles a single-task project', () => {
         const config: ZPLCProjectConfig = {
             name: 'SingleTask',
             version: '1.0.0',
-            tasks: [
-                { name: 'MainTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Main'] },
-            ],
+            tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Main'] }],
         };
 
         const sources: ProgramSource[] = [
-            { 
-                name: 'Main', 
-                content: 'PROGRAM Main VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
+            {
+                name: 'Main',
+                content: 'PROGRAM Main VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM',
             },
         ];
 
@@ -1348,13 +1457,13 @@ describe('Multi-Task Compiler', () => {
         };
 
         const sources: ProgramSource[] = [
-            { 
-                name: 'Fast', 
-                content: 'PROGRAM Fast VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
+            {
+                name: 'Fast',
+                content: 'PROGRAM Fast VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM',
             },
-            { 
-                name: 'Slow', 
-                content: 'PROGRAM Slow VAR y : INT; END_VAR y := 42; END_PROGRAM', 
+            {
+                name: 'Slow',
+                content: 'PROGRAM Slow VAR y : INT; END_VAR y := 42; END_PROGRAM',
             },
         ];
 
@@ -1404,10 +1513,11 @@ describe('Multi-Task Compiler', () => {
             ['a bit covered by a word', 'OutBit AT %Q0.0 : BOOL;', 'OutWord AT %QW0 : WORD;'],
             ['partially overlapping byte ranges', 'OutWord AT %QW1 : WORD;', 'OutDword AT %QD0 : DWORD;'],
         ])('rejects %s across PROGRAMs', (_label, firstDeclaration, secondDeclaration) => {
-            const compile = () => compileMultiTaskProject(configFor('First', 'Second'), [
-                sourceFor('First', firstDeclaration, 'src/First.st'),
-                sourceFor('Second', secondDeclaration, 'src/Second.st'),
-            ]);
+            const compile = () =>
+                compileMultiTaskProject(configFor('First', 'Second'), [
+                    sourceFor('First', firstDeclaration, 'src/First.st'),
+                    sourceFor('Second', secondDeclaration, 'src/Second.st'),
+                ]);
 
             expect(compile).toThrow(CompilerError);
             try {
@@ -1427,25 +1537,33 @@ describe('Multi-Task Compiler', () => {
         });
 
         it('allows adjacent non-overlapping physical outputs', () => {
-            expect(() => compileMultiTaskProject(configFor('First', 'Second'), [
-                sourceFor('First', 'OutA AT %QW0 : WORD;'),
-                sourceFor('Second', 'OutB AT %QD2 : DWORD;'),
-            ])).not.toThrow();
+            expect(() =>
+                compileMultiTaskProject(configFor('First', 'Second'), [
+                    sourceFor('First', 'OutA AT %QW0 : WORD;'),
+                    sourceFor('Second', 'OutB AT %QD2 : DWORD;'),
+                ]),
+            ).not.toThrow();
         });
 
         it('keeps explicit aliases within one PROGRAM compatible', () => {
-            expect(() => compileMultiTaskProject(configFor('Aliases'), [{
-                name: 'Aliases',
-                sourceRef: 'src/Aliases.st',
-                content: 'PROGRAM Aliases\nVAR_OUTPUT\n    First AT %Q0.0 : BOOL;\n    Second AT %Q0.0 : BOOL;\nEND_VAR\nEND_PROGRAM',
-            }])).not.toThrow();
+            expect(() =>
+                compileMultiTaskProject(configFor('Aliases'), [
+                    {
+                        name: 'Aliases',
+                        sourceRef: 'src/Aliases.st',
+                        content:
+                            'PROGRAM Aliases\nVAR_OUTPUT\n    First AT %Q0.0 : BOOL;\n    Second AT %Q0.0 : BOOL;\nEND_VAR\nEND_PROGRAM',
+                    },
+                ]),
+            ).not.toThrow();
         });
 
         it('rejects a non-BOOL bit address before it can overlap another PROGRAM', () => {
-            const compile = () => compileMultiTaskProject(configFor('Wide', 'Bit'), [
-                sourceFor('Wide', 'WideOutput AT %QX0.0 : INT;', 'src/Wide.st'),
-                sourceFor('Bit', 'BitOutput AT %QX0.1 : BOOL;', 'src/Bit.st'),
-            ]);
+            const compile = () =>
+                compileMultiTaskProject(configFor('Wide', 'Bit'), [
+                    sourceFor('Wide', 'WideOutput AT %QX0.0 : INT;', 'src/Wide.st'),
+                    sourceFor('Bit', 'BitOutput AT %QX0.1 : BOOL;', 'src/Bit.st'),
+                ]);
 
             expect(compile).toThrow(CompilerError);
             try {
@@ -1464,15 +1582,13 @@ describe('Multi-Task Compiler', () => {
         const config: ZPLCProjectConfig = {
             name: 'Test',
             version: '1.0.0',
-            tasks: [
-                { name: 'Task1', trigger: 'cyclic', interval: 50, priority: 1, programs: ['Prog1'] },
-            ],
+            tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 50, priority: 1, programs: ['Prog1'] }],
         };
 
         const sources: ProgramSource[] = [
-            { 
-                name: 'Prog1', 
-                content: 'PROGRAM Prog1 END_PROGRAM', 
+            {
+                name: 'Prog1',
+                content: 'PROGRAM Prog1 END_PROGRAM',
             },
         ];
 
@@ -1518,9 +1634,7 @@ describe('Multi-Task Compiler', () => {
         const config: ZPLCProjectConfig = {
             name: 'MissingSource',
             version: '1.0.0',
-            tasks: [
-                { name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['NonExistent'] },
-            ],
+            tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['NonExistent'] }],
         };
 
         const sources: ProgramSource[] = [];
@@ -1596,9 +1710,9 @@ describe('Multi-Task Compiler', () => {
         };
 
         const sources: ProgramSource[] = [
-            { 
-                name: 'Prog1', 
-                content: 'PROGRAM Prog1 END_PROGRAM', 
+            {
+                name: 'Prog1',
+                content: 'PROGRAM Prog1 END_PROGRAM',
             },
         ];
 
@@ -1611,19 +1725,24 @@ describe('Multi-Task Compiler', () => {
         expect(result.tasks[0].stackSize).toBeGreaterThanOrEqual(1);
         expect(result.tasks[0].stackSize).toBeLessThan(64);
 
-        const explicit = compileMultiTaskProject({
-            ...config,
-            tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Prog1'] }],
-        }, sources);
+        const explicit = compileMultiTaskProject(
+            {
+                ...config,
+                tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Prog1'] }],
+            },
+            sources,
+        );
         expect(result.zplcFile).toEqual(explicit.zplcFile);
     });
 
     it('validates task metadata before parsing program sources', () => {
-        const source = [{
-            name: 'Main',
-            sourceRef: 'src/Main.st',
-            content: 'PROGRAM Main END_PROGRAM',
-        }];
+        const source = [
+            {
+                name: 'Main',
+                sourceRef: 'src/Main.st',
+                content: 'PROGRAM Main END_PROGRAM',
+            },
+        ];
         const config = (task: Record<string, unknown>) => ({
             name: 'TaskMetadata',
             version: '1.0.0',
@@ -1639,18 +1758,24 @@ describe('Multi-Task Compiler', () => {
         expect(() => compileMultiTaskProject(config({ trigger: 'invalid' }) as any, source)).toThrow(/MainTask.*trigger/);
 
         for (const interval of [1, 3_600_000]) {
-            expect(compileMultiTaskProject(config({ interval, priority: 0 }) as any, source).tasks[0])
-                .toMatchObject({ intervalUs: interval * 1000, priority: 0 });
+            expect(compileMultiTaskProject(config({ interval, priority: 0 }) as any, source).tasks[0]).toMatchObject({
+                intervalUs: interval * 1000,
+                priority: 0,
+            });
         }
         expect(compileMultiTaskProject(config({ priority: 255 }) as any, source).tasks[0]?.priority).toBe(255);
     });
 
     it('reports task configuration failures as global codegen diagnostics', () => {
-        const compile = () => compileMultiTaskProject({
-            name: 'TaskMetadata',
-            version: '1.0.0',
-            tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 0, programs: ['Main'] }],
-        } as any, [{ name: 'Main', sourceRef: 'src/Main.st', content: 'not parsed' }]);
+        const compile = () =>
+            compileMultiTaskProject(
+                {
+                    name: 'TaskMetadata',
+                    version: '1.0.0',
+                    tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 0, programs: ['Main'] }],
+                } as any,
+                [{ name: 'Main', sourceRef: 'src/Main.st', content: 'not parsed' }],
+            );
 
         expect(compile).toThrow(CompilerError);
         try {
@@ -1675,30 +1800,30 @@ describe('STRING Type', () => {
     describe('Lexer', () => {
         it('tokenizes STRING keyword', () => {
             const tokens = tokenize('VAR s : STRING; END_VAR');
-            
-            expect(tokens.some(t => t.type === TokenType.STRING)).toBe(true);
+
+            expect(tokens.some((t) => t.type === TokenType.STRING)).toBe(true);
         });
 
         it('tokenizes string literals with single quotes', () => {
             const tokens = tokenize("s := 'Hello World';");
-            
-            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+
+            const stringLiteral = tokens.find((t) => t.type === TokenType.STRING_LITERAL);
             expect(stringLiteral).toBeDefined();
             expect(stringLiteral?.value).toBe('Hello World');
         });
 
         it('tokenizes empty string literal', () => {
             const tokens = tokenize("s := '';");
-            
-            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+
+            const stringLiteral = tokens.find((t) => t.type === TokenType.STRING_LITERAL);
             expect(stringLiteral).toBeDefined();
             expect(stringLiteral?.value).toBe('');
         });
 
         it('tokenizes string with escaped quotes', () => {
             const tokens = tokenize("s := 'It''s a test';");
-            
-            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+
+            const stringLiteral = tokens.find((t) => t.type === TokenType.STRING_LITERAL);
             expect(stringLiteral).toBeDefined();
             expect(stringLiteral?.value).toBe("It's a test");
         });
@@ -1789,14 +1914,14 @@ describe('STRING Type', () => {
             `);
 
             const asm = generate(ast.programs[0]);
-            
+
             // Should have string literal in memory map
             expect(asm).toContain('String Literals');
             expect(asm).toContain("'Hi'");
-            
+
             // Should initialize the literal (store length, capacity, chars)
             expect(asm).toContain('STORE16'); // Length
-            expect(asm).toContain('STORE8');  // Characters
+            expect(asm).toContain('STORE8'); // Characters
         });
 
         it('emits PUSH address for STRING identifiers', () => {
@@ -1811,9 +1936,9 @@ describe('STRING Type', () => {
             `);
 
             const asm = generate(ast.programs[0]);
-            
+
             // STRING identifiers should push address, not LOAD value
-            expect(asm).toContain('PUSH16 0x2000');  // &s1 address
+            expect(asm).toContain('PUSH16 0x2000'); // &s1 address
         });
 
         it('generates STRCMP for string equality', () => {
@@ -1828,7 +1953,7 @@ describe('STRING Type', () => {
             `);
 
             const asm = generate(ast.programs[0]);
-            
+
             // Should use STRCMP + EQ for string comparison
             expect(asm).toContain('String comparison');
             expect(asm).toContain('STRCMP');
@@ -1846,7 +1971,7 @@ describe('STRING Type', () => {
             `);
 
             const asm = generate(ast.programs[0]);
-            
+
             expect(asm).toContain('STRCMP');
             expect(asm).toContain('NE');
         });
@@ -1884,7 +2009,7 @@ describe('STRING Type', () => {
 
             const program = ast.programs[0];
             expect(program.statements.length).toBe(1);
-            
+
             const asm = generate(program);
             expect(asm).toContain('CONCAT');
             expect(asm).toContain('STRCAT');
@@ -1929,7 +2054,7 @@ describe('Type Inference', () => {
 
             const asm = generate(ast.programs[0]);
             expect(asm).toContain('ADDF');
-            expect(asm).not.toContain('    ADD\n');  // Should not have integer ADD
+            expect(asm).not.toContain('    ADD\n'); // Should not have integer ADD
         });
 
         it('uses SUBF for REAL - REAL', () => {
@@ -1993,7 +2118,7 @@ describe('Type Inference', () => {
             `);
 
             const asm = generate(ast.programs[0]);
-            expect(asm).toContain('ADDF');  // Type promotion: INT + REAL uses ADDF
+            expect(asm).toContain('ADDF'); // Type promotion: INT + REAL uses ADDF
         });
 
         it('promotes REAL + INT to float arithmetic', () => {

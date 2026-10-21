@@ -12,7 +12,9 @@ const mainSource = read('main.ts');
 describe('update check IPC boundary (IDE-010)', () => {
   it('is the only place in the main process that opens a network connection of its own, to one fixed address', () => {
     expect(mainSource).not.toMatch(/\bfetch\(\s*(?!url)/);
-    expect(read('updateCheck.ts')).toContain("export const UPDATE_CHECK_URL = 'https://api.github.com/repos/eduardojvieira/ZPLC/releases/latest';");
+    expect(read('updateCheck.ts')).toContain(
+      "export const UPDATE_CHECK_URL = 'https://api.github.com/repos/eduardojvieira/ZPLC/releases/latest';",
+    );
   });
 
   it('names its relative imports with the .js suffix and brings no npm runtime dependency', () => {

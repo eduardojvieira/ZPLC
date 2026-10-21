@@ -3,7 +3,7 @@ slug: /guides/scenario-tests
 id: scenario-tests
 title: Escribir y ejecutar pruebas de escenario
 sidebar_label: Pruebas de escenario
-description: "Compruebe lo que hace un programa con un escenario guionado: escriba el archivo, ejecútelo en ZPLC o desde la línea de comandos y lea el resultado."
+description: 'Compruebe lo que hace un programa con un escenario guionado: escriba el archivo, ejecútelo en ZPLC o desde la línea de comandos y lea el resultado.'
 tags: [how-to, tests, scenarios, simulation]
 ---
 
@@ -115,11 +115,11 @@ incluida `--json` para un resultado legible por máquina.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El escenario de arriba pasa contra el programa de arriba, y la verificación falla cuando una expectativa no se cumple | La verificación de la documentación lo ejecuta en el runtime nativo | Host |
-| El lector de escenarios rechaza un archivo malformado y aplica sus límites | Pruebas unitarias del motor de pruebas | Host |
-| El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad | No probado | Ninguno |
+| Parte                                                                                                                 | Verificado                                                          | Nivel   |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------- |
+| El escenario de arriba pasa contra el programa de arriba, y la verificación falla cuando una expectativa no se cumple | La verificación de la documentación lo ejecuta en el runtime nativo | Host    |
+| El lector de escenarios rechaza un archivo malformado y aplica sus límites                                            | Pruebas unitarias del motor de pruebas                              | Host    |
+| El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad                                 | No probado                                                          | Ninguno |
 
 Un escenario que pasa significa que la lógica hizo lo que usted escribió con el
 reloj virtual: [Seguridad y limitaciones](../safety-and-limitations.md).

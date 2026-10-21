@@ -11,7 +11,7 @@
  * - Bistables: R_TRIG, F_TRIG, RS, SR
  * - Counters: CTU, CTD, CTUD
  * - Generators: BLINK, PWM, PULSE
- * - Process Control: HYSTERESIS, DEADBAND, LAG_FILTER, RAMP_REAL, 
+ * - Process Control: HYSTERESIS, DEADBAND, LAG_FILTER, RAMP_REAL,
  *                    INTEGRAL, DERIVATIVE, PID_Compact
  * - System Buffers: FIFO, LIFO
  * - Selection: MAX, MIN, LIMIT, SEL, MUX
@@ -36,31 +36,48 @@ import { TON_FB, TOF_FB, TP_FB } from './timers.ts';
 import { R_TRIG_FB, F_TRIG_FB, RS_FB, SR_FB } from './bistables.ts';
 import { CTU_FB, CTD_FB, CTUD_FB } from './counters.ts';
 import { BLINK_FB, PWM_FB, PULSE_FB } from './generators.ts';
-import {
-    HYSTERESIS_FB, DEADBAND_FB, LAG_FILTER_FB, RAMP_REAL_FB,
-    INTEGRAL_FB, DERIVATIVE_FB, PID_COMPACT_FB
-} from './process.ts';
+import { HYSTERESIS_FB, DEADBAND_FB, LAG_FILTER_FB, RAMP_REAL_FB, INTEGRAL_FB, DERIVATIVE_FB, PID_COMPACT_FB } from './process.ts';
 
 // Import all Function implementations
 import { MAX_FN, MIN_FN, LIMIT_FN, SEL_FN, MUX_FN, NAND_FN, NOR_FN } from './functions.ts';
 import {
-    ROL_FN, ROR_FN, SHL_FN, SHR_FN,
-    AND_WORD_FN, OR_WORD_FN, XOR_WORD_FN, NOT_WORD_FN,
-    AND_DWORD_FN, OR_DWORD_FN, XOR_DWORD_FN, NOT_DWORD_FN
+    ROL_FN,
+    ROR_FN,
+    SHL_FN,
+    SHR_FN,
+    AND_WORD_FN,
+    OR_WORD_FN,
+    XOR_WORD_FN,
+    NOT_WORD_FN,
+    AND_DWORD_FN,
+    OR_DWORD_FN,
+    XOR_DWORD_FN,
+    NOT_DWORD_FN,
 } from './bitwise.ts';
 import {
-    ABS_FN, ABSF_FN, NEG_FN, NEGF_FN, MOD_FN, SQRT_FN, EXPT_FN,
-    TRUNC_FN, ROUND_FN,
-    SIN_FN, COS_FN, TAN_FN,
-    ASIN_FN, ACOS_FN, ATAN_FN, ATAN2_FN,
-    LN_FN, LOG_FN, EXP_FN
+    ABS_FN,
+    ABSF_FN,
+    NEG_FN,
+    NEGF_FN,
+    MOD_FN,
+    SQRT_FN,
+    EXPT_FN,
+    TRUNC_FN,
+    ROUND_FN,
+    SIN_FN,
+    COS_FN,
+    TAN_FN,
+    ASIN_FN,
+    ACOS_FN,
+    ATAN_FN,
+    ATAN2_FN,
+    LN_FN,
+    LOG_FN,
+    EXP_FN,
 } from './math.ts';
 import { NORM_X_FN, SCALE_X_FN } from './process.ts';
 import { CONVERSION_FNS } from './conversions.ts';
-import {
-    UPTIME_FN, CYCLE_TIME_FN, WATCHDOG_RESET_FN,
-    FIFO_FB, LIFO_FB
-} from './system.ts';
+import { UPTIME_FN, CYCLE_TIME_FN, WATCHDOG_RESET_FN, FIFO_FB, LIFO_FB } from './system.ts';
 import { STRING_FUNCTIONS } from './strings.ts';
 import { CommBlocks } from './communication.ts';
 
@@ -86,7 +103,7 @@ export function registerFB(fb: FunctionBlockDef): void {
 export function getFB(name: string | object): FunctionBlockDef | undefined {
     // Handle non-string types gracefully (e.g., PointerType objects)
     if (typeof name !== 'string') return undefined;
-    
+
     let fb = functionBlocks.get(name);
     if (fb) return fb;
     // Case-insensitive fallback
@@ -103,7 +120,7 @@ export function getFB(name: string | object): FunctionBlockDef | undefined {
 export function isFB(name: string | object): boolean {
     // Handle non-string types gracefully (e.g., PointerType objects)
     if (typeof name !== 'string') return false;
-    
+
     if (functionBlocks.has(name)) return true;
     const upper = name.toUpperCase();
     for (const key of functionBlocks.keys()) {
@@ -141,7 +158,7 @@ export function registerFn(fn: FunctionDef): void {
 export function getFn(name: string | object): FunctionDef | undefined {
     // Handle non-string types gracefully (e.g., PointerType objects)
     if (typeof name !== 'string') return undefined;
-    
+
     let fn = functions.get(name);
     if (fn) return fn;
     const upper = name.toUpperCase();
@@ -157,7 +174,7 @@ export function getFn(name: string | object): FunctionDef | undefined {
 export function isFn(name: string | object): boolean {
     // Handle non-string types gracefully (e.g., PointerType objects)
     if (typeof name !== 'string') return false;
-    
+
     if (functions.has(name)) return true;
     const upper = name.toUpperCase();
     for (const key of functions.keys()) {
@@ -221,7 +238,7 @@ function initRegistry(): void {
     // ===== Functions =====
 
     // Communication (NEW in v1.3)
-    Object.values(CommBlocks).forEach(fb => registerFB(fb));
+    Object.values(CommBlocks).forEach((fb) => registerFB(fb));
 
     // Selection functions
     registerFn(MAX_FN);
@@ -258,7 +275,7 @@ function initRegistry(): void {
     registerFn(EXPT_FN);
 
     // Type conversion functions: one for every ordered pair of different types (CMP-057)
-    CONVERSION_FNS.forEach(fn => registerFn(fn));
+    CONVERSION_FNS.forEach((fn) => registerFn(fn));
 
     // Rounding functions (NEW in v1.2)
     registerFn(TRUNC_FN);
@@ -290,7 +307,7 @@ function initRegistry(): void {
     registerFn(WATCHDOG_RESET_FN);
 
     // String functions (NEW in v1.2)
-    STRING_FUNCTIONS.forEach(fn => registerFn(fn));
+    STRING_FUNCTIONS.forEach((fn) => registerFn(fn));
 }
 
 // Initialize on module load

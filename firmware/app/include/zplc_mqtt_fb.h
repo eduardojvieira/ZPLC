@@ -43,12 +43,10 @@ zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error);
  * later), QUEUE_FULL, STRING_OVERFLOW. A request that the client thread has not
  * sent before the session goes down is failed, not kept for the next one.
  */
-int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload,
-                         size_t length, uint8_t qos, bool retain);
+int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload, size_t length, uint8_t qos, bool retain);
 
 /** The same for an Azure Event Grid event (the client builds the CloudEvent). */
-int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic,
-                            const char *data);
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic, const char *data);
 
 /** Ask the client to publish its Sparkplug B birth certificate again (UNAVAILABLE when the profile is another). */
 int zplc_mqtt_fb_rebirth(const void *owner);

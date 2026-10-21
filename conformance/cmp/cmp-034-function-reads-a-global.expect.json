@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-034",
   "title": "a function reads a VAR_GLOBAL through VAR_EXTERNAL",
-  "matrix": [
-    "pous.function"
-  ],
+  "matrix": ["pous.function"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

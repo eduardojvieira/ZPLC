@@ -21,23 +21,11 @@ export function resolveWatchCommitAction(
   return hasActiveSerialSession ? WATCH_COMMIT_ACTION.BLOCKED : WATCH_COMMIT_ACTION.SET;
 }
 
-export function canEditWatchValue(
-  action: WatchCommitAction,
-  hasSetValue: boolean,
-  hasToggleForceValue: boolean,
-): boolean {
-  return action === WATCH_COMMIT_ACTION.SET
-    ? hasSetValue
-    : action === WATCH_COMMIT_ACTION.UPDATE_FORCE
-      ? hasToggleForceValue
-      : false;
+export function canEditWatchValue(action: WatchCommitAction, hasSetValue: boolean, hasToggleForceValue: boolean): boolean {
+  return action === WATCH_COMMIT_ACTION.SET ? hasSetValue : action === WATCH_COMMIT_ACTION.UPDATE_FORCE ? hasToggleForceValue : false;
 }
 
-export function canReleaseForces(
-  hasActiveSerialSession: boolean,
-  hasForceEvidence: boolean,
-  busy = false,
-): boolean {
+export function canReleaseForces(hasActiveSerialSession: boolean, hasForceEvidence: boolean, busy = false): boolean {
   return hasActiveSerialSession && hasForceEvidence && !busy;
 }
 

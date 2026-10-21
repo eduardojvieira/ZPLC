@@ -7,7 +7,18 @@ const dom = await setupDom();
 
 function Harness() {
   const [value, setValue] = useState('st');
-  return <ToggleGroup label="Language" value={value} onValueChange={setValue} options={[{ value: 'st', label: 'ST' }, { value: 'il', label: 'IL', disabled: true }, { value: 'ld', label: 'LD' }]} />;
+  return (
+    <ToggleGroup
+      label="Language"
+      value={value}
+      onValueChange={setValue}
+      options={[
+        { value: 'st', label: 'ST' },
+        { value: 'il', label: 'IL', disabled: true },
+        { value: 'ld', label: 'LD' },
+      ]}
+    />
+  );
 }
 
 describe('ToggleGroup (UX-001) in a DOM', () => {

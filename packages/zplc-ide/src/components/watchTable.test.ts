@@ -49,7 +49,10 @@ describe('sorting the Watch rows (IDE-019)', () => {
     { path: 'a', result: { value: 30, type: 'REAL', address: 30 } },
     { path: 'c', result: { value: null, type: 'BOOL', address: 10 } },
   ];
-  const order = (key: Parameters<typeof sortWatchRows>[1], dir: Parameters<typeof sortWatchRows>[2]) => sortWatchRows(rows, key, dir).map((row) => row.path).join('');
+  const order = (key: Parameters<typeof sortWatchRows>[1], dir: Parameters<typeof sortWatchRows>[2]) =>
+    sortWatchRows(rows, key, dir)
+      .map((row) => row.path)
+      .join('');
   it('sorts by name, value, type and address, both ways, and leaves the order as added without a key', () => {
     expect(order('name', 'asc')).toBe('abc');
     expect(order('name', 'desc')).toBe('cba');

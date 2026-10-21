@@ -67,8 +67,22 @@ export interface FBDArgument {
 
 /** The commands of the table that act on the canvas; the editor itself runs the others. */
 export const FBD_MODEL_COMMANDS: readonly string[] = [
-  'focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', 'insertVariable', 'insertConstant', 'openPalette', 'insertElement',
-  'bindVariable', 'connect', 'disconnect', 'editComment', 'deleteSelection', ...ARRANGE_COMMANDS, ...EXTEND_COMMANDS,
+  'focusLeft',
+  'focusRight',
+  'focusUp',
+  'focusDown',
+  'focusFirst',
+  'insertVariable',
+  'insertConstant',
+  'openPalette',
+  'insertElement',
+  'bindVariable',
+  'connect',
+  'disconnect',
+  'editComment',
+  'deleteSelection',
+  ...ARRANGE_COMMANDS,
+  ...EXTEND_COMMANDS,
 ];
 
 /** The commands of the table that the editor runs because they need the screen: the clipboard, the breakpoint, the list. */
@@ -84,10 +98,17 @@ const blockType = (node: Node): string => String(data(node).type ?? '');
 /** What a block is called when it is announced or listed. */
 export function blockTitle(node: Node): string {
   const own = data(node);
-  const name = typeof own.variableName === 'string' && own.variableName !== '' ? own.variableName : typeof own.instanceName === 'string' && own.instanceName !== '' ? own.instanceName : undefined;
+  const name =
+    typeof own.variableName === 'string' && own.variableName !== ''
+      ? own.variableName
+      : typeof own.instanceName === 'string' && own.instanceName !== ''
+        ? own.instanceName
+        : undefined;
   if (name) return name;
   const type = blockType(node);
-  return type === 'constant' && own.value !== undefined ? `constant ${typeof own.value === 'string' && own.dataType === 'STRING' ? `'${own.value}'` : String(own.value)}` : type;
+  return type === 'constant' && own.value !== undefined
+    ? `constant ${typeof own.value === 'string' && own.dataType === 'STRING' ? `'${own.value}'` : String(own.value)}`
+    : type;
 }
 
 function currentModel(model: FBDModel, state: FBDState): FBDModel {
@@ -110,14 +131,26 @@ export function paletteChoices(projectBlocks: readonly ProjectBlock[]): PickerIt
     items.push({ id, label: id, group, ...(detail ? { detail } : {}) });
   };
   const project = projectPalette(projectBlocks);
-  if (project) for (const name of project.blocks) add(name, t('fbd.group.project'), findProjectBlock(projectBlocks, name)?.kind === 'FUNCTION' ? t('fbd.detail.function') : t('fbd.detail.functionBlock'));
+  if (project)
+    for (const name of project.blocks)
+      add(
+        name,
+        t('fbd.group.project'),
+        findProjectBlock(projectBlocks, name)?.kind === 'FUNCTION' ? t('fbd.detail.function') : t('fbd.detail.functionBlock'),
+      );
   for (const category of fbdPaletteCategories()) for (const name of category.blocks) add(name, category.name, category.name);
   for (const name of FBD_VALUE_BLOCKS) add(name, t('fbd.group.io'), name === 'constant' ? t('fbd.detail.value') : t('fbd.detail.variable'));
   return items;
 }
 
 /** The node of a new block: its ports are those of its type, and it has an instance name when its type is a function block. */
-export function newBlockNode(type: string, id: string, position: { x: number; y: number }, projectBlocks: readonly ProjectBlock[] | undefined, instanceName?: string): Node {
+export function newBlockNode(
+  type: string,
+  id: string,
+  position: { x: number; y: number },
+  projectBlocks: readonly ProjectBlock[] | undefined,
+  instanceName?: string,
+): Node {
   const ports = getDefaultPorts(type, projectBlocks);
   return {
     id,
@@ -146,7 +179,10 @@ export function placeBlock(
   position?: { x: number; y: number },
 ): { nodes: Node[]; edges: Edge[]; node: Node } {
   const anchor = cursorNode(state.nodes);
-  const id = freeId(type.toLowerCase().replace(/[^a-z0-9_]/g, '_'), state.nodes.map((node) => node.id));
+  const id = freeId(
+    type.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+    state.nodes.map((node) => node.id),
+  );
   // a block of a function block type is an instance the program declares: a timer, a Modbus or MQTT client, a block of the project
   const needsInstance = fbdNeedsInstance(type, projectBlocks);
   const node = newBlockNode(
@@ -202,23 +238,50 @@ function bindingOf(node: Node): Binding {
 function askBinding(model: FBDModel, state: FBDState, node: Node): FBDOutcome {
   const binding = bindingOf(node);
   const at = `${blockTitle(node)}`;
-  if (binding === 'none') return refuse(state, `${blockType(node)} has nothing to bind: it holds neither a variable, an instance nor a value.`);
+  if (binding === 'none')
+    return refuse(state, `${blockType(node)} has nothing to bind: it holds neither a variable, an instance nor a value.`);
   const symbols = declaredSymbols(model.variables);
   if (binding === 'constant') {
-    return { ...state, changed: false, say: t('fbd.constant.say', { at }), prompt: { kind: 'bind', blockId: node.id }, choices: [], allowFreeText: true, title: t('fbd.constant.title') };
+    return {
+      ...state,
+      changed: false,
+      say: t('fbd.constant.say', { at }),
+      prompt: { kind: 'bind', blockId: node.id },
+      choices: [],
+      allowFreeText: true,
+      title: t('fbd.constant.title'),
+    };
   }
   if (binding === 'instance') {
     const own = symbols.filter((symbol) => sameType(symbol.type, blockType(node)));
-    return { ...state, changed: false, say: t('fbd.instance.say', { type: blockType(node) }), prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(own), allowFreeText: true, title: t('fbd.instance.title', { type: blockType(node) }) };
+    return {
+      ...state,
+      changed: false,
+      say: t('fbd.instance.say', { type: blockType(node) }),
+      prompt: { kind: 'bind', blockId: node.id },
+      choices: symbolItems(own),
+      allowFreeText: true,
+      title: t('fbd.instance.title', { type: blockType(node) }),
+    };
   }
-  return { ...state, changed: false, say: t('fbd.bind.say', { at }), prompt: { kind: 'bind', blockId: node.id }, choices: symbolItems(symbols), allowFreeText: true, title: t('fbd.bind.title') };
+  return {
+    ...state,
+    changed: false,
+    say: t('fbd.bind.say', { at }),
+    prompt: { kind: 'bind', blockId: node.id },
+    choices: symbolItems(symbols),
+    allowFreeText: true,
+    title: t('fbd.bind.title'),
+  };
 }
 
 function bindTo(model: FBDModel, state: FBDState, node: Node, answer: string): FBDOutcome {
   const text = answer.trim();
   const binding = bindingOf(node);
   const patch = (fields: Record<string, unknown>, say: string): FBDOutcome => ({
-    nodes: state.nodes.map((candidate) => (candidate.id === node.id ? { ...candidate, data: { ...candidate.data, ...fields } } : candidate)),
+    nodes: state.nodes.map((candidate) =>
+      candidate.id === node.id ? { ...candidate, data: { ...candidate.data, ...fields } } : candidate,
+    ),
     edges: state.edges,
     changed: true,
     say,
@@ -226,19 +289,33 @@ function bindTo(model: FBDModel, state: FBDState, node: Node, answer: string): F
   if (binding === 'none') return refuse(state, `${blockType(node)} has nothing to bind.`);
   if (binding === 'constant') {
     const parsed = parseConstant(text);
-    if (!parsed) return refuse(state, `'${text}' is not a value: write TRUE, FALSE, a number, a time such as T#500ms, or a string in single quotes.`);
+    if (!parsed)
+      return refuse(state, `'${text}' is not a value: write TRUE, FALSE, a number, a time such as T#500ms, or a string in single quotes.`);
     return patch({ value: parsed.value, dataType: parsed.dataType }, `Set the constant to ${text}.`);
   }
   if (binding === 'instance') {
-    if (!IDENTIFIER.test(text)) return refuse(state, `'${text}' is not a name: use letters, digits and underscores, not starting with a digit.`);
-    if (state.nodes.some((candidate) => candidate.id !== node.id && typeof data(candidate).instanceName === 'string' && (data(candidate).instanceName as string).toLowerCase() === text.toLowerCase())) {
+    if (!IDENTIFIER.test(text))
+      return refuse(state, `'${text}' is not a name: use letters, digits and underscores, not starting with a digit.`);
+    if (
+      state.nodes.some(
+        (candidate) =>
+          candidate.id !== node.id &&
+          typeof data(candidate).instanceName === 'string' &&
+          (data(candidate).instanceName as string).toLowerCase() === text.toLowerCase(),
+      )
+    ) {
       return refuse(state, `${text} is already the instance name of another block.`);
     }
     return patch({ instanceName: text }, `Named the instance ${text}.`);
   }
   if (!REFERENCE.test(text)) return refuse(state, `'${text}' is not a variable: use a declared name, or a member such as Pump.Run.`);
   const declared = declaredSymbols(model.variables).find((symbol) => symbol.name === text);
-  return patch({ variableName: text, dataType: declared?.type, address: declared?.address ?? data(node).address }, declared ? `Bound ${blockType(node)} to ${text}, type ${declared.type}.` : `Bound ${blockType(node)} to ${text}, which is not declared in this file.`);
+  return patch(
+    { variableName: text, dataType: declared?.type, address: declared?.address ?? data(node).address },
+    declared
+      ? `Bound ${blockType(node)} to ${text}, type ${declared.type}.`
+      : `Bound ${blockType(node)} to ${text}, which is not declared in this file.`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -250,7 +327,8 @@ export interface WireChoice extends PickerItem {
   to: { block: string; port: string };
 }
 
-const wireId = (from: { block: string; port: string }, to: { block: string; port: string }): string => JSON.stringify([from.block, from.port, to.block, to.port]);
+const wireId = (from: { block: string; port: string }, to: { block: string; port: string }): string =>
+  JSON.stringify([from.block, from.port, to.block, to.port]);
 
 /**
  * The wires the block can have: each of its outputs to an input of another block that takes it, and each output of
@@ -288,8 +366,10 @@ export function wireChoices(model: FBDModel, blockId: string, projectBlocks?: re
   };
   for (const other of model.blocks) {
     if (other.id === blockId) continue;
-    for (const output of portsOf(blockId).outputs) for (const input of portsOf(other.id).inputs) consider({ block: blockId, port: output.name }, { block: other.id, port: input.name });
-    for (const output of portsOf(other.id).outputs) for (const input of portsOf(blockId).inputs) consider({ block: other.id, port: output.name }, { block: blockId, port: input.name });
+    for (const output of portsOf(blockId).outputs)
+      for (const input of portsOf(other.id).inputs) consider({ block: blockId, port: output.name }, { block: other.id, port: input.name });
+    for (const output of portsOf(other.id).outputs)
+      for (const input of portsOf(blockId).inputs) consider({ block: other.id, port: output.name }, { block: blockId, port: input.name });
   }
   return choices;
 }
@@ -300,7 +380,9 @@ function wiresOf(model: FBDModel, state: FBDState, blockId: string): PickerItem[
     .filter((edge) => edge.source === blockId || edge.target === blockId)
     .map((edge) => ({
       id: edge.id,
-      label: `${names.get(edge.source) ?? edge.source}.${edge.sourceHandle ?? 'OUT'} → ${names.get(edge.target) ?? edge.target}.${edge.targetHandle ?? 'IN'}`,
+      label: `${names.get(edge.source) ?? edge.source}.${edge.sourceHandle ?? 'OUT'} → ${
+        names.get(edge.target) ?? edge.target
+      }.${edge.targetHandle ?? 'IN'}`,
       detail: `${edge.source} → ${edge.target}`,
       group: t('keyboard.group.wires'),
     }));
@@ -320,7 +402,13 @@ export function runFBDCommand(
 ): FBDOutcome {
   if (isArrangeCommand(command)) {
     const arranged = arrangeSelection(state.nodes, command);
-    return { nodes: arranged.nodes, edges: state.edges, changed: arranged.changed, say: arranged.say, ...(arranged.refused ? { refused: true } : {}) };
+    return {
+      nodes: arranged.nodes,
+      edges: state.edges,
+      changed: arranged.changed,
+      say: arranged.say,
+      ...(arranged.refused ? { refused: true } : {}),
+    };
   }
   if (isExtendCommand(command)) {
     const extended = extendSelection(state.nodes, state.edges, command);
@@ -328,7 +416,10 @@ export function runFBDCommand(
   }
   const here = cursorNode(state.nodes);
   switch (command) {
-    case 'focusLeft': case 'focusRight': case 'focusUp': case 'focusDown': {
+    case 'focusLeft':
+    case 'focusRight':
+    case 'focusUp':
+    case 'focusDown': {
       const direction = command.slice('focus'.length).toLowerCase() as Direction;
       if (state.nodes.length === 0) return refuse(state, 'There are no blocks on the diagram.');
       if (!here) return select(state, firstNode(state.nodes)!);
@@ -339,11 +430,16 @@ export function runFBDCommand(
       const first = firstNode(state.nodes);
       return first ? select(state, first) : refuse(state, 'There are no blocks on the diagram.');
     }
-    case 'insertVariable': return insert(model, state, 'variable', argument, projectBlocks);
-    case 'insertConstant': return insert(model, state, 'constant', argument, projectBlocks);
+    case 'insertVariable':
+      return insert(model, state, 'variable', argument, projectBlocks);
+    case 'insertConstant':
+      return insert(model, state, 'constant', argument, projectBlocks);
     case 'insertElement':
-      return argument.blockType ? insert(model, state, argument.blockType, argument, projectBlocks) : refuse(state, 'Choose the block to insert.');
-    case 'openPalette': return { ...state, changed: false, say: t('keyboard.palette.block'), prompt: { kind: 'palette' } };
+      return argument.blockType
+        ? insert(model, state, argument.blockType, argument, projectBlocks)
+        : refuse(state, 'Choose the block to insert.');
+    case 'openPalette':
+      return { ...state, changed: false, say: t('keyboard.palette.block'), prompt: { kind: 'palette' } };
     case 'bindVariable': {
       if (!here) return refuse(state, 'Select a block first.');
       return argument.name === undefined ? askBinding(model, state, here) : bindTo(model, state, here, argument.name);
@@ -352,8 +448,20 @@ export function runFBDCommand(
       if (!here) return refuse(state, 'Select a block first: a wire is drawn from or to the selected block.');
       if (argument.wire === undefined) {
         const choices = wireChoices(currentModel(model, state), here.id, projectBlocks);
-        if (choices.length === 0) return refuse(state, `${blockTitle(here)} has no wire that can be drawn: every pin that fits is already wired, or no pin of another block takes its type.`);
-        return { ...state, changed: false, say: t('keyboard.wiresDrawable', { name: blockTitle(here), count: choices.length }), prompt: { kind: 'connect', blockId: here.id }, choices, title: t('keyboard.drawWireTitle', { name: blockTitle(here) }) };
+        if (choices.length === 0)
+          return refuse(
+            state,
+            `${blockTitle(here)} has no wire that can be drawn: every pin that fits is already wired, or no pin of another block takes ` +
+              `its type.`,
+          );
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.wiresDrawable', { name: blockTitle(here), count: choices.length }),
+          prompt: { kind: 'connect', blockId: here.id },
+          choices,
+          title: t('keyboard.drawWireTitle', { name: blockTitle(here) }),
+        };
       }
       return drawWire(model, state, argument.wire, projectBlocks);
     }
@@ -362,17 +470,37 @@ export function runFBDCommand(
       if (argument.edgeId === undefined) {
         const choices = wiresOf(currentModel(model, state), state, here.id);
         if (choices.length === 0) return refuse(state, `${blockTitle(here)} has no wire to remove.`);
-        return { ...state, changed: false, say: t('keyboard.wiresRemovable', { name: blockTitle(here), count: choices.length }), prompt: { kind: 'disconnect', blockId: here.id }, choices, title: t('keyboard.removeWireTitle', { name: blockTitle(here) }) };
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.wiresRemovable', { name: blockTitle(here), count: choices.length }),
+          prompt: { kind: 'disconnect', blockId: here.id },
+          choices,
+          title: t('keyboard.removeWireTitle', { name: blockTitle(here) }),
+        };
       }
       if (!state.edges.some((edge) => edge.id === argument.edgeId)) return refuse(state, 'That wire is not on the diagram any more.');
-      return { nodes: state.nodes, edges: state.edges.filter((edge) => edge.id !== argument.edgeId), changed: true, say: t('keyboard.wireRemoved') };
+      return {
+        nodes: state.nodes,
+        edges: state.edges.filter((edge) => edge.id !== argument.edgeId),
+        changed: true,
+        say: t('keyboard.wireRemoved'),
+      };
     }
     case 'editComment': {
       if (!here) return refuse(state, 'Select a block first.');
-      if (argument.text === undefined) return { ...state, changed: false, say: t('keyboard.commentOf', { name: blockTitle(here) }), prompt: { kind: 'comment', blockId: here.id } };
+      if (argument.text === undefined)
+        return {
+          ...state,
+          changed: false,
+          say: t('keyboard.commentOf', { name: blockTitle(here) }),
+          prompt: { kind: 'comment', blockId: here.id },
+        };
       const text = argument.text.trim();
       return {
-        nodes: state.nodes.map((node) => (node.id === here.id ? { ...node, data: { ...node.data, comment: text === '' ? undefined : text } } : node)),
+        nodes: state.nodes.map((node) =>
+          node.id === here.id ? { ...node, data: { ...node.data, comment: text === '' ? undefined : text } } : node,
+        ),
         edges: state.edges,
         changed: true,
         say: text === '' ? t('keyboard.commentCleared') : t('keyboard.commentSet'),
@@ -390,7 +518,8 @@ export function runFBDCommand(
         say: t('keyboard.deleted', { things: tn('keyboard.blocks', doomed.size), wires: tn('keyboard.wires', wires.length) }),
       };
     }
-    default: return refuse(state, `${command} is not a command of the function block editor.`);
+    default:
+      return refuse(state, `${command} is not a command of the function block editor.`);
   }
 }
 
@@ -399,13 +528,34 @@ function select(state: FBDState, node: Node): FBDOutcome {
   return { ...next, changed: false, say: t('keyboard.selected', { name: blockTitle(node) }) };
 }
 
-function insert(model: FBDModel, state: FBDState, type: string, argument: FBDArgument, projectBlocks?: readonly ProjectBlock[]): FBDOutcome {
+function insert(
+  model: FBDModel,
+  state: FBDState,
+  type: string,
+  argument: FBDArgument,
+  projectBlocks?: readonly ProjectBlock[],
+): FBDOutcome {
   const placed = placeBlock(state, type, projectBlocks, argument.position);
-  const outcome: FBDOutcome = { nodes: placed.nodes, edges: placed.edges, changed: true, say: t('fbd.inserted', { type, instance: typeof data(placed.node).instanceName === 'string' ? ` ${data(placed.node).instanceName as string}` : '' }) };
+  const outcome: FBDOutcome = {
+    nodes: placed.nodes,
+    edges: placed.edges,
+    changed: true,
+    say: t('fbd.inserted', {
+      type,
+      instance: typeof data(placed.node).instanceName === 'string' ? ` ${data(placed.node).instanceName as string}` : '',
+    }),
+  };
   // a variable or a constant is of no use until it holds something: what it holds is asked at once
   if (type === 'variable' || type === 'constant' || type === 'input' || type === 'output') {
     const asked = askBinding(model, { nodes: placed.nodes, edges: placed.edges }, placed.node);
-    return { ...outcome, say: `${outcome.say} ${asked.say}`, prompt: asked.prompt, choices: asked.choices, title: asked.title, allowFreeText: asked.allowFreeText };
+    return {
+      ...outcome,
+      say: `${outcome.say} ${asked.say}`,
+      prompt: asked.prompt,
+      choices: asked.choices,
+      title: asked.title,
+      allowFreeText: asked.allowFreeText,
+    };
   }
   return outcome;
 }
@@ -417,11 +567,23 @@ function drawWire(model: FBDModel, state: FBDState, wire: string, projectBlocks?
   } catch {
     return refuse(state, 'That wire is not one of the choices.');
   }
-  if (!Array.isArray(parsed) || parsed.length !== 4 || parsed.some((part) => typeof part !== 'string')) return refuse(state, 'That wire is not one of the choices.');
+  if (!Array.isArray(parsed) || parsed.length !== 4 || parsed.some((part) => typeof part !== 'string'))
+    return refuse(state, 'That wire is not one of the choices.');
   const [source, sourceHandle, target, targetHandle] = parsed as [string, string, string, string];
-  const result = connectBlocks(currentModel(model, state), state.nodes, state.edges, { source, sourceHandle, target, targetHandle }, projectBlocks);
+  const result = connectBlocks(
+    currentModel(model, state),
+    state.nodes,
+    state.edges,
+    { source, sourceHandle, target, targetHandle },
+    projectBlocks,
+  );
   if (result.refusal !== undefined) return refuse(state, `Wire refused: ${result.refusal}.`);
-  return { nodes: state.nodes, edges: result.edges, changed: true, say: t('fbd.wireDrawn', { source, target, sourceHandle, targetHandle }) };
+  return {
+    nodes: state.nodes,
+    edges: result.edges,
+    changed: true,
+    say: t('fbd.wireDrawn', { source, target, sourceHandle, targetHandle }),
+  };
 }
 
 /** What the canvas keyboard hook needs of the function block editor: the commands over its document, and its questions. */
@@ -432,7 +594,17 @@ export function fbdCanvasCommands(model: FBDModel, projectBlocks: readonly Proje
     palette: () => paletteChoices(projectBlocks),
     paletteTitle: t('fbd.paletteTitle'),
     palettePlaceholder: t('fbd.palettePlaceholder'),
-    readOnlyCommands: new Set(['focusLeft', 'focusRight', 'focusUp', 'focusDown', 'focusFirst', ...EXTEND_COMMANDS, 'toggleBreakpoint', 'showCommands', 'fitView']),
+    readOnlyCommands: new Set([
+      'focusLeft',
+      'focusRight',
+      'focusUp',
+      'focusDown',
+      'focusFirst',
+      ...EXTEND_COMMANDS,
+      'toggleBreakpoint',
+      'showCommands',
+      'fitView',
+    ]),
     answer: {
       palette: (id) => ({ blockType: id }),
       bind: (name) => ({ name }),

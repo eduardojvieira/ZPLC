@@ -1,7 +1,10 @@
 import { useDefaultLayout, type LayoutStorage } from 'react-resizable-panels';
 
 export const WORKSPACE_LAYOUT_ID = 'zplc-ide-workspace';
-/** The widths of the sidebars and the editor (UX-017). The version is in the id: a layout of another shape is a new id, and the old one is left unused. */
+/**
+ * The widths of the sidebars and the editor (UX-017). The version is in the id: a layout of another shape is a new id, and the old one is
+ * left unused.
+ */
 export const SHELL_LAYOUT_ID = 'zplc-ide-shell.v1';
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
@@ -10,8 +13,12 @@ type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 function isFlatLayout(raw: string): boolean {
   try {
     const parsed: unknown = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-      && Object.values(parsed).every((size) => typeof size === 'number' && Number.isFinite(size));
+    return (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed) &&
+      Object.values(parsed).every((size) => typeof size === 'number' && Number.isFinite(size))
+    );
   } catch {
     return false;
   }

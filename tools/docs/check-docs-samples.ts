@@ -27,7 +27,11 @@ import productManifest from '../../package.json';
 import { cellLocation, cellSize, type CellType } from '../../packages/zplc-ide/src/conformance/cases';
 
 export type SampleLanguage = 'st' | 'il';
-export interface Expected { name: string; type?: CellType; value: number | boolean }
+export interface Expected {
+  name: string;
+  type?: CellType;
+  value: number | boolean;
+}
 export interface Sample {
   page: string;
   /** 1-based line of the opening fence. */
@@ -39,7 +43,11 @@ export interface Sample {
   scans: number;
   scanMs: number;
 }
-export interface Unmarked { page: string; line: number; info: string }
+export interface Unmarked {
+  page: string;
+  line: number;
+  info: string;
+}
 
 const ROOT = new URL('../../', import.meta.url);
 const EN_DIR = 'docs/docs';
@@ -66,13 +74,22 @@ export function parseExpected(text: string, where: string): { expected: Expected
   const errors: string[] = [];
   for (const token of text.split(/\s+/).filter(Boolean)) {
     const match = /^([%A-Za-z_][\w.%]*?)(?::([A-Z]+))?=(.+)$/.exec(token);
-    if (!match) { errors.push(`${where}: expect entry "${token}" must look like Name=Value`); continue; }
+    if (!match) {
+      errors.push(`${where}: expect entry "${token}" must look like Name=Value`);
+      continue;
+    }
     const [, name, typeName, raw] = match as unknown as [string, string, string | undefined, string];
-    if (typeName !== undefined && !CELL_TYPES.includes(typeName as CellType)) { errors.push(`${where}: "${typeName}" in "${token}" is not a type (${CELL_TYPES.join(', ')})`); continue; }
+    if (typeName !== undefined && !CELL_TYPES.includes(typeName as CellType)) {
+      errors.push(`${where}: "${typeName}" in "${token}" is not a type (${CELL_TYPES.join(', ')})`);
+      continue;
+    }
     const type = typeName as CellType | undefined;
     const number = Number(raw);
     const value = /^(TRUE|true)$/.test(raw) ? true : /^(FALSE|false)$/.test(raw) ? false : Number.isFinite(number) ? number : undefined;
-    if (value === undefined) { errors.push(`${where}: value "${raw}" in "${token}" is neither TRUE, FALSE nor a number`); continue; }
+    if (value === undefined) {
+      errors.push(`${where}: value "${raw}" in "${token}" is neither TRUE, FALSE nor a number`);
+      continue;
+    }
     expected.push({ name, ...(type ? { type } : {}), value });
   }
   if (expected.length === 0) errors.push(`${where}: expect names no value`);
@@ -93,7 +110,10 @@ export function extractSamples(page: string, text: string): { samples: Sample[];
     let closed = false;
     for (index += 1; index < lines.length; index += 1) {
       const close = FENCE.exec(lines[index]!);
-      if (close && close[2]!.startsWith(fence[0]!) && close[2]!.length >= fence.length && close[3]!.trim() === '') { closed = true; break; }
+      if (close && close[2]!.startsWith(fence[0]!) && close[2]!.length >= fence.length && close[3]!.trim() === '') {
+        closed = true;
+        break;
+      }
       body.push(lines[index]!.startsWith(indent) ? lines[index]!.slice(indent.length) : lines[index]!);
     }
     const line = index - body.length;
@@ -104,13 +124,21 @@ export function extractSamples(page: string, text: string): { samples: Sample[];
       continue;
     }
     const sampleWhere = `${page}:${line}`;
-    if (!closed) { errors.push(`${sampleWhere}: the runnable block is never closed`); continue; }
-    if (language_ !== 'st' && language_ !== 'il') { errors.push(`${sampleWhere}: runnable needs an st, iecst or pascal fence, or language=il (found "${language || 'no language'}")`); continue; }
-    for (const key of attributes.keys()) if (!KEYS.includes(key)) errors.push(`${sampleWhere}: unknown fence attribute "${key}" (${KEYS.join(', ')})`);
+    if (!closed) {
+      errors.push(`${sampleWhere}: the runnable block is never closed`);
+      continue;
+    }
+    if (language_ !== 'st' && language_ !== 'il') {
+      errors.push(`${sampleWhere}: runnable needs an st, iecst or pascal fence, or language=il (found "${language || 'no language'}")`);
+      continue;
+    }
+    for (const key of attributes.keys())
+      if (!KEYS.includes(key)) errors.push(`${sampleWhere}: unknown fence attribute "${key}" (${KEYS.join(', ')})`);
     const scans = attributes.has('scans') ? Number(attributes.get('scans')) : 1;
     const scanMs = attributes.has('scan_ms') ? Number(attributes.get('scan_ms')) : 10;
     if (!Number.isInteger(scans) || scans < 1 || scans > 100_000) errors.push(`${sampleWhere}: scans must be an integer from 1 to 100000`);
-    if (!Number.isInteger(scanMs) || scanMs < 1 || scanMs > 60_000) errors.push(`${sampleWhere}: scan_ms must be an integer from 1 to 60000`);
+    if (!Number.isInteger(scanMs) || scanMs < 1 || scanMs > 60_000)
+      errors.push(`${sampleWhere}: scan_ms must be an integer from 1 to 60000`);
     let expected: Expected[] = [];
     if (attributes.has('expect')) {
       const parsed = parseExpected(attributes.get('expect')!, sampleWhere);
@@ -120,7 +148,14 @@ export function extractSamples(page: string, text: string): { samples: Sample[];
       errors.push(`${sampleWhere}: scans and scan_ms only mean something with expect`);
     }
     samples.push({
-      page, line, language: language_, fragment: attributes.has('fragment'), source: body.join('\n'), expected, scans, scanMs,
+      page,
+      line,
+      language: language_,
+      fragment: attributes.has('fragment'),
+      source: body.join('\n'),
+      expected,
+      scans,
+      scanMs,
     });
   }
   return { samples, unmarked, errors };
@@ -144,10 +179,12 @@ export function parityErrors(english: Map<string, Sample[]>, spanish: Map<string
       continue;
     }
     samples.forEach((sample, index) => {
-      if (signature(sample) !== signature(twin[index]!)) errors.push(`${locate(sample)} and ${locate(twin[index]!)} are marked differently (language, fragment, expect, scans or scan_ms)`);
+      if (signature(sample) !== signature(twin[index]!))
+        errors.push(`${locate(sample)} and ${locate(twin[index]!)} are marked differently (language, fragment, expect, scans or scan_ms)`);
     });
   }
-  for (const [page, samples] of spanish) if (!english.has(page) && samples.length > 0) errors.push(`${ES_DIR}/${page} has runnable samples and no English page does`);
+  for (const [page, samples] of spanish)
+    if (!english.has(page) && samples.length > 0) errors.push(`${ES_DIR}/${page} has runnable samples and no English page does`);
   return errors;
 }
 
@@ -165,7 +202,12 @@ export function markdownPages(root: string, base: string): string[] {
   return out.sort();
 }
 
-export interface Outcome { sample: Sample; compiled: boolean; executed: boolean; failures: string[] }
+export interface Outcome {
+  sample: Sample;
+  compiled: boolean;
+  executed: boolean;
+  failures: string[];
+}
 
 export async function compileAndRun(sample: Sample, binary: string): Promise<Outcome> {
   const [{ compilerCompile }, { NativeSimulationSupervisor }, { NativeAdapter }] = await Promise.all([
@@ -180,10 +222,15 @@ export async function compileAndRun(sample: Sample, binary: string): Promise<Out
     await mkdir(join(root, 'src'));
     await writeFile(join(root, 'src', program), programOf(sample));
     const tasks = [{ name: 'MainTask', trigger: 'cyclic', interval_ms: sample.scanMs, priority: 1, programs: [program] }];
-    await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'docs-sample', version: '1.0.0', target: { board: 'posix' }, tasks }));
+    await writeFile(
+      join(root, 'zplc.json'),
+      JSON.stringify({ schemaVersion: 2, name: 'docs-sample', version: '1.0.0', target: { board: 'posix' }, tasks }),
+    );
     const built = await compilerCompile(root);
     if (!built.ok || !built.zplcFile) {
-      const text = built.evidence.diagnostics.map((d) => `${d.code}${d.line === undefined ? '' : ` at line ${d.line}`}: ${d.message}`).join('; ');
+      const text = built.evidence.diagnostics
+        .map((d) => `${d.code}${d.line === undefined ? '' : ` at line ${d.line}`}: ${d.message}`)
+        .join('; ');
       outcome.failures.push(`does not compile: ${text || 'no diagnostic'}`);
       return outcome;
     }
@@ -191,7 +238,9 @@ export async function compileAndRun(sample: Sample, binary: string): Promise<Out
     if (sample.expected.length === 0) return outcome;
 
     if (!existsSync(binary)) {
-      outcome.failures.push(`has an expected result and the native runtime is missing: ${binary} (bun run build:runtime, or export ZPLC_NATIVE_SIM_BIN)`);
+      outcome.failures.push(
+        `has an expected result and the native runtime is missing: ${binary} (bun run build:runtime, or export ZPLC_NATIVE_SIM_BIN)`,
+      );
       return outcome;
     }
     const persist = await mkdtemp(join(tmpdir(), 'zplc-docs-run-'));
@@ -206,27 +255,57 @@ export async function compileAndRun(sample: Sample, binary: string): Promise<Out
       await adapter.loadProgram(built.zplcFile);
       for (let scan = 1; scan <= sample.scans; scan += 1) await adapter.scenarioStep((scan - 1) * sample.scanMs);
       for (const want of sample.expected) {
-        const entry = want.name.startsWith('%') ? undefined : Object.values(built.debugMap?.pou ?? {}).map((pou) => pou.vars[want.name]).find(Boolean);
-        if (!want.name.startsWith('%') && !entry) { outcome.failures.push(`${want.name}: the debug map has no such variable`); continue; }
+        const entry = want.name.startsWith('%')
+          ? undefined
+          : Object.values(built.debugMap?.pou ?? {})
+              .map((pou) => pou.vars[want.name])
+              .find(Boolean);
+        if (!want.name.startsWith('%') && !entry) {
+          outcome.failures.push(`${want.name}: the debug map has no such variable`);
+          continue;
+        }
         let type: CellType;
         let location: { address: number; bit?: number };
         if (entry) {
           type = (want.type ?? entry.type) as CellType;
-          if (!CELL_TYPES.includes(type)) { outcome.failures.push(`${want.name}: a variable of type ${entry.type} cannot be compared; name a type with ${want.name}:TYPE`); continue; }
+          if (!CELL_TYPES.includes(type)) {
+            outcome.failures.push(`${want.name}: a variable of type ${entry.type} cannot be compared; name a type with ${want.name}:TYPE`);
+            continue;
+          }
           location = { address: entry.addr, ...(entry.bitOffset === undefined ? {} : { bit: entry.bitOffset }) };
         } else {
           const width = /^%[IQM]([XBWD])/.exec(want.name)?.[1];
           type = want.type ?? WIDTH_TYPE[width ?? ''] ?? 'INT';
-          try { location = cellLocation(want.name, type); } catch (error) { outcome.failures.push((error as Error).message); continue; }
+          try {
+            location = cellLocation(want.name, type);
+          } catch (error) {
+            outcome.failures.push((error as Error).message);
+            continue;
+          }
         }
         const bytes = await adapter.peek(location.address, cellSize(type));
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        const observed: number | boolean = type === 'BOOL' ? (bytes[0]! & (1 << (location.bit ?? 0))) !== 0
-          : type === 'SINT' ? view.getInt8(0) : type === 'USINT' || type === 'BYTE' ? view.getUint8(0)
-            : type === 'INT' ? view.getInt16(0, true) : type === 'UINT' || type === 'WORD' ? view.getUint16(0, true)
-              : type === 'DINT' ? view.getInt32(0, true) : type === 'REAL' ? view.getFloat32(0, true) : view.getUint32(0, true);
+        const observed: number | boolean =
+          type === 'BOOL'
+            ? (bytes[0]! & (1 << (location.bit ?? 0))) !== 0
+            : type === 'SINT'
+              ? view.getInt8(0)
+              : type === 'USINT' || type === 'BYTE'
+                ? view.getUint8(0)
+                : type === 'INT'
+                  ? view.getInt16(0, true)
+                  : type === 'UINT' || type === 'WORD'
+                    ? view.getUint16(0, true)
+                    : type === 'DINT'
+                      ? view.getInt32(0, true)
+                      : type === 'REAL'
+                        ? view.getFloat32(0, true)
+                        : view.getUint32(0, true);
         const wanted = type === 'REAL' ? Math.fround(want.value as number) : want.value;
-        if (observed !== wanted) outcome.failures.push(`${want.name} expected ${want.value}, observed ${observed} after ${sample.scans} scan(s) of ${sample.scanMs} ms`);
+        if (observed !== wanted)
+          outcome.failures.push(
+            `${want.name} expected ${want.value}, observed ${observed} after ${sample.scans} scan(s) of ${sample.scanMs} ms`,
+          );
       }
       outcome.executed = true;
     } catch (error) {
@@ -246,9 +325,15 @@ export async function checkRepository(options: { list: boolean }): Promise<{ lin
   const root = ROOT.pathname;
   const binary = process.env.ZPLC_NATIVE_SIM_BIN ?? join(root, 'firmware/lib/zplc_core/build/zplc_runtime');
   const errors: string[] = [];
-  const found = new Map<string, Map<string, Sample[]>>([['en', new Map()], ['es', new Map()]]);
+  const found = new Map<string, Map<string, Sample[]>>([
+    ['en', new Map()],
+    ['es', new Map()],
+  ]);
   const unmarked: Unmarked[] = [];
-  for (const [language, base] of [['en', EN_DIR], ['es', ES_DIR]] as const) {
+  for (const [language, base] of [
+    ['en', EN_DIR],
+    ['es', ES_DIR],
+  ] as const) {
     for (const page of markdownPages(root, base)) {
       const result = extractSamples(`${base}/${page}`, await readFile(join(root, base, page), 'utf8'));
       errors.push(...result.errors);
@@ -261,16 +346,26 @@ export async function checkRepository(options: { list: boolean }): Promise<{ lin
   const samples = [...found.get('en')!.values(), ...found.get('es')!.values()].flat();
   const lines: string[] = [];
   if (options.list) {
-    for (const sample of samples) lines.push(`${locate(sample)}  ${sample.language}  ${sample.expected.length > 0 ? `expect ${sample.expected.length}` : 'compile only'}`);
+    for (const sample of samples)
+      lines.push(
+        `${locate(sample)}  ${sample.language}  ${sample.expected.length > 0 ? `expect ${sample.expected.length}` : 'compile only'}`,
+      );
   } else {
     // ponytail: one project and one runtime process per sample (tens of milliseconds each); batch them if the docs grow to hundreds.
     for (const sample of samples) {
       const outcome = await compileAndRun(sample, binary);
-      lines.push(`${locate(sample)}  ${sample.language}  compiled ${outcome.compiled ? 'yes' : 'NO'}  executed ${sample.expected.length === 0 ? 'n/a' : outcome.executed ? 'yes' : 'NO'}`);
+      lines.push(
+        `${locate(sample)}  ${sample.language}  compiled ${outcome.compiled ? 'yes' : 'NO'}  executed ${
+          sample.expected.length === 0 ? 'n/a' : outcome.executed ? 'yes' : 'NO'
+        }`,
+      );
       for (const failure of outcome.failures) errors.push(`${locate(sample)}: ${failure}`);
     }
   }
-  lines.push(`${samples.length} runnable samples; ${unmarked.length} other ST or IL blocks are not marked runnable${unmarked.length > 0 ? ` (${unmarked.map((u) => `${u.page}:${u.line}`).join(', ')})` : ''}`);
+  lines.push(
+    `${samples.length} runnable samples; ${unmarked.length} other ST or IL blocks are not marked ` +
+      `runnable${unmarked.length > 0 ? ` (${unmarked.map((u) => `${u.page}:${u.line}`).join(', ')})` : ''}`,
+  );
   return { lines, errors };
 }
 

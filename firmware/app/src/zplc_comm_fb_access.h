@@ -35,8 +35,7 @@
  *
  * The arithmetic cannot wrap: count is compared with what is left after offset.
  */
-static inline bool zplc_fb_fits(uint16_t fb_len, uint32_t offset,
-                                uint32_t count) {
+static inline bool zplc_fb_fits(uint16_t fb_len, uint32_t offset, uint32_t count) {
   return offset <= fb_len && count <= (uint32_t)fb_len - offset;
 }
 
@@ -44,8 +43,7 @@ static inline bool zplc_fb_fits(uint16_t fb_len, uint32_t offset,
  * @brief Read an unsigned 16-bit member, little endian; 0 when it is outside
  *        the block.
  */
-static inline uint16_t zplc_fb_get_u16(const uint8_t *fb_mem, uint16_t fb_len,
-                                       uint16_t offset) {
+static inline uint16_t zplc_fb_get_u16(const uint8_t *fb_mem, uint16_t fb_len, uint16_t offset) {
   if (!zplc_fb_fits(fb_len, offset, 2U)) {
     return 0U;
   }
@@ -60,14 +58,11 @@ static inline uint16_t zplc_fb_get_u16(const uint8_t *fb_mem, uint16_t fb_len,
  * terminator included) and by what is left of the block after its header.
  * A header that does not fit gives 0.
  */
-static inline uint16_t zplc_fb_string_chars(const uint8_t *fb_mem,
-                                            uint16_t fb_len, uint16_t offset,
-                                            uint16_t member_bytes) {
+static inline uint16_t zplc_fb_string_chars(const uint8_t *fb_mem, uint16_t fb_len, uint16_t offset, uint16_t member_bytes) {
   uint32_t length;
   uint32_t room;
 
-  if (member_bytes <= ZPLC_FB_STR_DATA + 1U ||
-      !zplc_fb_fits(fb_len, offset, ZPLC_FB_STR_DATA)) {
+  if (member_bytes <= ZPLC_FB_STR_DATA + 1U || !zplc_fb_fits(fb_len, offset, ZPLC_FB_STR_DATA)) {
     return 0U;
   }
   length = zplc_fb_get_u16(fb_mem, fb_len, (uint16_t)(offset + ZPLC_FB_STR_LEN));
@@ -88,9 +83,7 @@ static inline uint16_t zplc_fb_string_chars(const uint8_t *fb_mem,
  *
  * @return number of characters copied
  */
-static inline uint16_t zplc_fb_string_copy(char *dest, size_t dest_size,
-                                           const uint8_t *fb_mem,
-                                           uint16_t fb_len, uint16_t offset,
+static inline uint16_t zplc_fb_string_copy(char *dest, size_t dest_size, const uint8_t *fb_mem, uint16_t fb_len, uint16_t offset,
                                            uint16_t member_bytes) {
   uint16_t chars = zplc_fb_string_chars(fb_mem, fb_len, offset, member_bytes);
 
@@ -118,14 +111,11 @@ static inline uint16_t zplc_fb_string_copy(char *dest, size_t dest_size,
  *
  * @return number of characters stored
  */
-static inline uint16_t zplc_fb_string_set(uint8_t *fb_mem, uint16_t fb_len,
-                                          uint16_t offset,
-                                          uint16_t member_bytes,
-                                          const uint8_t *src, size_t len) {
+static inline uint16_t zplc_fb_string_set(uint8_t *fb_mem, uint16_t fb_len, uint16_t offset, uint16_t member_bytes, const uint8_t *src,
+                                          size_t len) {
   uint32_t room;
 
-  if (member_bytes <= ZPLC_FB_STR_DATA + 1U ||
-      !zplc_fb_fits(fb_len, offset, ZPLC_FB_STR_DATA + 1U)) {
+  if (member_bytes <= ZPLC_FB_STR_DATA + 1U || !zplc_fb_fits(fb_len, offset, ZPLC_FB_STR_DATA + 1U)) {
     return 0U;
   }
   room = (uint32_t)member_bytes - ZPLC_FB_STR_DATA - 1U;

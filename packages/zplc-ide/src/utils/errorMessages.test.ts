@@ -18,7 +18,9 @@ describe('folder error reason', () => {
   });
 
   it('passes through the message of any other error, first line only and bounded', () => {
-    expect(folderErrorReason(new Error('A destination file already exists: src/Motor.st'))).toBe('A destination file already exists: src/Motor.st');
+    expect(folderErrorReason(new Error('A destination file already exists: src/Motor.st'))).toBe(
+      'A destination file already exists: src/Motor.st',
+    );
     expect(folderErrorReason(new Error('first line\nsecond line'))).toBe('first line');
     expect(folderErrorReason(new Error('x'.repeat(400)))).toBe(`${'x'.repeat(199)}…`);
   });
@@ -33,7 +35,9 @@ describe('folder error reason', () => {
 
 describe('render error description', () => {
   it('shows the message of an error and of a thrown string', () => {
-    expect(describeRenderError(new TypeError("Cannot read properties of undefined (reading 'length')"))).toBe("Cannot read properties of undefined (reading 'length')");
+    expect(describeRenderError(new TypeError("Cannot read properties of undefined (reading 'length')"))).toBe(
+      "Cannot read properties of undefined (reading 'length')",
+    );
     expect(describeRenderError('boom')).toBe('boom');
   });
 

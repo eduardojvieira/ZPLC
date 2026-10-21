@@ -3,12 +3,24 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  DEFAULT_SHELL_PREFERENCES, SHELL_PREFERENCES_FILENAME, WINDOW_SURFACE, createShellPreferencesStore, parseShellPreferences, readShellPreferences, windowSurface,
+  DEFAULT_SHELL_PREFERENCES,
+  SHELL_PREFERENCES_FILENAME,
+  WINDOW_SURFACE,
+  createShellPreferencesStore,
+  parseShellPreferences,
+  readShellPreferences,
+  windowSurface,
 } from './shellPreferences';
 
 const directories: string[] = [];
-const scratch = async (): Promise<string> => { const directory = await mkdtemp(path.join(os.tmpdir(), 'zplc-shell-')); directories.push(directory); return directory; };
-afterEach(async () => { await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });
+const scratch = async (): Promise<string> => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'zplc-shell-'));
+  directories.push(directory);
+  return directory;
+};
+afterEach(async () => {
+  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
 
 describe('window colour from the stored theme (UX-016)', () => {
   it('UX-016 takes the canvas of the chosen theme, whatever the system mode', () => {
@@ -26,7 +38,16 @@ describe('window colour from the stored theme (UX-016)', () => {
 describe('what the window reports (UX-014, UX-016)', () => {
   it('UX-014 accepts exactly a language and a theme of the lists', () => {
     expect(parseShellPreferences({ language: 'es', theme: 'dark' })).toEqual({ language: 'es', theme: 'dark' });
-    for (const bad of [null, 'es', [], {}, { language: 'fr', theme: 'dark' }, { language: 'es', theme: 'blue' }, { language: 'es', theme: 'dark', extra: 1 }, { language: 'es' }]) {
+    for (const bad of [
+      null,
+      'es',
+      [],
+      {},
+      { language: 'fr', theme: 'dark' },
+      { language: 'es', theme: 'blue' },
+      { language: 'es', theme: 'dark', extra: 1 },
+      { language: 'es' },
+    ]) {
       expect(parseShellPreferences(bad)).toBeNull();
     }
   });
@@ -35,7 +56,9 @@ describe('what the window reports (UX-014, UX-016)', () => {
     expect(readShellPreferences('{"language":"es","theme":"light"}')).toEqual({ language: 'es', theme: 'light' });
     expect(readShellPreferences('not json')).toEqual(DEFAULT_SHELL_PREFERENCES);
     expect(readShellPreferences('{"language":"xx","theme":"light"}')).toEqual(DEFAULT_SHELL_PREFERENCES);
-    expect(readShellPreferences(JSON.stringify({ language: 'es', theme: 'light', pad: 'x'.repeat(2000) }))).toEqual(DEFAULT_SHELL_PREFERENCES);
+    expect(readShellPreferences(JSON.stringify({ language: 'es', theme: 'light', pad: 'x'.repeat(2000) }))).toEqual(
+      DEFAULT_SHELL_PREFERENCES,
+    );
   });
 });
 
@@ -52,7 +75,10 @@ describe('the stored preferences (UX-014, UX-016)', () => {
     expect(store.save({ language: 'es', theme: 'high-contrast' })).toBe(true);
     expect(store.save({ language: 'es', theme: 'high-contrast' })).toBe(false);
     await store.settled();
-    expect(JSON.parse(await readFile(path.join(directory, SHELL_PREFERENCES_FILENAME), 'utf8'))).toEqual({ language: 'es', theme: 'high-contrast' });
+    expect(JSON.parse(await readFile(path.join(directory, SHELL_PREFERENCES_FILENAME), 'utf8'))).toEqual({
+      language: 'es',
+      theme: 'high-contrast',
+    });
     const next = createShellPreferencesStore(directory);
     expect(await next.load()).toEqual({ language: 'es', theme: 'high-contrast' });
   });

@@ -43,12 +43,12 @@ carpeta del proyecto como estaba. Se revisa el archivo y, si se acepta, se copia
 
 ## Qué cambia
 
-| Área | Comportamiento v2 |
-| --- | --- |
-| Modelo de proyecto | Un guardado explícito escribe `schemaVersion: 2` en el `zplc.json` del espacio de trabajo. |
-| Carpeta original | No cambia durante la vista previa; guardar actualiza el `zplc.json` original del espacio de trabajo seleccionado. |
-| Vista previa | ZPLC muestra una vista previa; no promete soporte de cada construcción heredada. |
-| Evidencia | Los resultados de la compilación, de las pruebas y de la simulación POSIX corresponden al espacio de trabajo guardado y solo son evidencia de host. |
+| Área               | Comportamiento v2                                                                                                                                   |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Modelo de proyecto | Un guardado explícito escribe `schemaVersion: 2` en el `zplc.json` del espacio de trabajo.                                                          |
+| Carpeta original   | No cambia durante la vista previa; guardar actualiza el `zplc.json` original del espacio de trabajo seleccionado.                                   |
+| Vista previa       | ZPLC muestra una vista previa; no promete soporte de cada construcción heredada.                                                                    |
+| Evidencia          | Los resultados de la compilación, de las pruebas y de la simulación POSIX corresponden al espacio de trabajo guardado y solo son evidencia de host. |
 
 ## Alcance de los proyectos de referencia
 
@@ -67,12 +67,12 @@ diagnóstico.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| `migrate-preview` no escribe nada, y `migrate` escribe solo el archivo de `--output` y deja la carpeta idéntica byte a byte | Pruebas unitarias de la línea de comandos, y los dos comandos de arriba ejecutados sobre una copia del proyecto incluido `motor_start_stop` sin su `schemaVersion` | Host |
-| ZPLC muestra la diferencia antes de escribir, y la aplica con **Aplicar migración** | Recorrido 31 en la aplicación real | Host |
-| La forma versión 2 guardada conserva lo que hace el proyecto | Una prueba exporta la migración del proyecto de arranque y parada de motor y comprueba que su escenario golden da el mismo observable en el runtime nativo | Host |
-| El proyecto migrado se comporta igual en una placa | No se afirma: no hay equivalencia de destino, eléctrica ni de tiempos | Ninguno |
+| Parte                                                                                                                       | Verificado                                                                                                                                                         | Nivel   |
+| --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `migrate-preview` no escribe nada, y `migrate` escribe solo el archivo de `--output` y deja la carpeta idéntica byte a byte | Pruebas unitarias de la línea de comandos, y los dos comandos de arriba ejecutados sobre una copia del proyecto incluido `motor_start_stop` sin su `schemaVersion` | Host    |
+| ZPLC muestra la diferencia antes de escribir, y la aplica con **Aplicar migración**                                         | Recorrido 31 en la aplicación real                                                                                                                                 | Host    |
+| La forma versión 2 guardada conserva lo que hace el proyecto                                                                | Una prueba exporta la migración del proyecto de arranque y parada de motor y comprueba que su escenario golden da el mismo observable en el runtime nativo         | Host    |
+| El proyecto migrado se comporta igual en una placa                                                                          | No se afirma: no hay equivalencia de destino, eléctrica ni de tiempos                                                                                              | Ninguno |
 
 ## Próximo paso
 

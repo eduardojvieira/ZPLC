@@ -20,7 +20,13 @@ END_PROGRAM
 
 function memoryCase(expected: number[]): HILTestCase {
   return {
-    id: 'runner.add', name: 'a program that adds', category: 'language', language: 'ST', source: ADD, debugMode: 'off', timeout: 300,
+    id: 'runner.add',
+    name: 'a program that adds',
+    category: 'language',
+    language: 'ST',
+    source: ADD,
+    debugMode: 'off',
+    timeout: 300,
     assertions: [{ type: 'memory', address: 0x1000, expected }],
   };
 }
@@ -33,7 +39,9 @@ describe('the runner compiles, deploys, starts and observes (HIL-001)', () => {
   });
 
   test('a program the compiler refuses is an error that carries the compiler message', () => {
-    expect(() => compileSource({ text: 'PROGRAM Main\nVAR x AT %Q0.0 : INT; END_VAR\nEND_PROGRAM\n', extension: '.st' })).toThrow(CompileFailure);
+    expect(() => compileSource({ text: 'PROGRAM Main\nVAR x AT %Q0.0 : INT; END_VAR\nEND_PROGRAM\n', extension: '.st' })).toThrow(
+      CompileFailure,
+    );
   });
 
   test('the artifact is deployed through the link, started, observed while it runs, and stopped', async () => {
@@ -70,15 +78,19 @@ describe('the runner compiles, deploys, starts and observes (HIL-001)', () => {
     expect(result.attempts).toBe(3);
   });
 
-  itNative('on the native runtime of this tree: compile, deploy, run and read back, with nothing mocked', async () => {
-    const link = await HostRuntimeLink.open(nativeRuntime);
-    try {
-      const result = await run(memoryCase([7, 0, 42, 0]), link, { settleMs: 1500 });
-      expect(result).toMatchObject({ status: 'pass' });
-      const wrong = await run(memoryCase([7, 0, 43, 0]), link, { settleMs: 1500 });
-      expect(wrong.status).toBe('fail');
-    } finally {
-      await link.close();
-    }
-  }, 60_000);
+  itNative(
+    'on the native runtime of this tree: compile, deploy, run and read back, with nothing mocked',
+    async () => {
+      const link = await HostRuntimeLink.open(nativeRuntime);
+      try {
+        const result = await run(memoryCase([7, 0, 42, 0]), link, { settleMs: 1500 });
+        expect(result).toMatchObject({ status: 'pass' });
+        const wrong = await run(memoryCase([7, 0, 43, 0]), link, { settleMs: 1500 });
+        expect(wrong.status).toBe('fail');
+      } finally {
+        await link.close();
+      }
+    },
+    60_000,
+  );
 });

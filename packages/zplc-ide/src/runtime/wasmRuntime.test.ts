@@ -68,7 +68,11 @@ describe('the module of the WebAssembly runtime (IDE-025)', () => {
 
   itWasm('says which build it is: the commit and the contract draft it was built from', async () => {
     const { api } = open();
-    const hello = await api.startSession() as unknown as { runtime_kind: string; draft_counter: number; build: { board: string; commit: string; draft_counter: number; version: string } };
+    const hello = (await api.startSession()) as unknown as {
+      runtime_kind: string;
+      draft_counter: number;
+      build: { board: string; commit: string; draft_counter: number; version: string };
+    };
     expect(hello.build.board).toBe('wasm');
     expect(hello.build.commit).toBe(builtWasmModule().manifest.commit);
     expect(hello.build.version).toBe(builtWasmModule().manifest.version);
@@ -79,11 +83,18 @@ describe('the module of the WebAssembly runtime (IDE-025)', () => {
 
   itWasm('reports itself as the browser runtime with the capability profile of spec 009', async () => {
     const { api } = open({ retainStorage: 'project' });
-    const hello = await api.startSession() as unknown as { runtime_kind: string; capability_profile: { profile_id: string; features: Array<{ name: string; status: string; reason?: string; recommended_action?: string }> } };
+    const hello = (await api.startSession()) as unknown as {
+      runtime_kind: string;
+      capability_profile: {
+        profile_id: string;
+        features: Array<{ name: string; status: string; reason?: string; recommended_action?: string }>;
+      };
+    };
     expect(hello.runtime_kind).toBe('wasm');
     expect(hello.capability_profile.profile_id).toBe('wasm-browser');
     const features = new Map(hello.capability_profile.features.map((feature) => [feature.name, feature]));
-    for (const name of ['pause', 'resume', 'step', 'breakpoints', 'simulation-inputs']) expect(features.get(name)?.status).toBe('supported');
+    for (const name of ['pause', 'resume', 'step', 'breakpoints', 'simulation-inputs'])
+      expect(features.get(name)?.status).toBe('supported');
     for (const name of ['tasks', 'timing', 'retentive-memory']) expect(features.get(name)?.status).toBe('degraded');
     for (const name of ['modbus', 'mqtt', 'cloud', 'serial', 'physical-io']) expect(features.get(name)?.status).toBe('unavailable');
     // spec 009: a feature that is not supported says why and what to do instead
@@ -161,8 +172,14 @@ describe('a program on the WebAssembly runtime, through the adapter (IDE-025)', 
     const api = createWasmSimulationApi({
       loadModule: async () => builtWasmModule().bytes,
       clock: () => 0,
-      schedule: () => { issued += 1; live.add(issued); return issued; },
-      cancel: (handle) => { live.delete(handle as number); },
+      schedule: () => {
+        issued += 1;
+        live.add(issued);
+        return issued;
+      },
+      cancel: (handle) => {
+        live.delete(handle as number);
+      },
     });
     await api.startSession();
     await api.startSession();
@@ -173,7 +190,9 @@ describe('a program on the WebAssembly runtime, through the adapter (IDE-025)', 
 
   itWasm('answers a request that is too long with the error of the native runtime and keeps running', async () => {
     const runtime = await WasmRuntime.instantiate(builtWasmModule().bytes, { clock: () => 0 });
-    const answer = runtime.request(`{"id":"x","type":"request","method":"program.load","params":{"bytecode_hex":"${'AB'.repeat(200_000)}"}}`);
+    const answer = runtime.request(
+      `{"id":"x","type":"request","method":"program.load","params":{"bytecode_hex":"${'AB'.repeat(200_000)}"}}`,
+    );
     expect(JSON.parse(answer.response).error.code).toBe('INVALID_REQUEST');
     expect(JSON.parse(runtime.request('{"id":"y","type":"request","method":"status.get","params":{}}').response).result.state).toBe('idle');
   });
@@ -183,7 +202,10 @@ describe('a program on the WebAssembly runtime, through the adapter (IDE-025)', 
 // RT-008: the decisions of the scheduler core
 // ---------------------------------------------------------------------------------------------------------------------
 
-const traceHeader = readFileSync(new URL('../../../../firmware/lib/zplc_core/tests/include/zplc_sched_trace_cases.h', import.meta.url), 'utf8');
+const traceHeader = readFileSync(
+  new URL('../../../../firmware/lib/zplc_core/tests/include/zplc_sched_trace_cases.h', import.meta.url),
+  'utf8',
+);
 
 /** The text between the first `open` after `name` and the `close` that ends the initialiser: one array of the trace file. */
 function arrayOf(name: string): string {
@@ -193,12 +215,24 @@ function arrayOf(name: string): string {
   return traceHeader.slice(traceHeader.indexOf('{', start), end);
 }
 
-interface TraceTask { id: number; priority: number; intervalMs: number; output: number }
-interface TraceBatch { atMs: number; reads: number[] }
+interface TraceTask {
+  id: number;
+  priority: number;
+  intervalMs: number;
+  output: number;
+}
+interface TraceBatch {
+  atMs: number;
+  reads: number[];
+}
 
 function parseTasks(): TraceTask[] {
-  return [...arrayOf('ZPLC_TRACE_TASKS[').matchAll(/\{(\d+)U, (\d+)U, (\d+)U, (0x[0-9A-Fa-f]+)U\}/g)]
-    .map((match) => ({ id: Number(match[1]), priority: Number(match[2]), intervalMs: Number(match[3]), output: Number(match[4]) }));
+  return [...arrayOf('ZPLC_TRACE_TASKS[').matchAll(/\{(\d+)U, (\d+)U, (\d+)U, (0x[0-9A-Fa-f]+)U\}/g)].map((match) => ({
+    id: Number(match[1]),
+    priority: Number(match[2]),
+    intervalMs: Number(match[3]),
+    output: Number(match[4]),
+  }));
 }
 
 function parseBatches(): TraceBatch[] {
@@ -218,25 +252,43 @@ function traceProgram(tasks: TraceTask[]): Uint8Array {
   tasks.forEach((task, index) => {
     bytecode.set([0x40, task.output, 0x84, (OPI + index) & 0xff, (OPI + index) >> 8, 0x01], index * 6);
   });
-  return createMultiTaskZplcFile(bytecode, tasks.map((task, index) => ({
-    id: task.id, type: TASK_TYPE.CYCLIC, priority: task.priority, intervalUs: task.intervalMs * 1000, entryPoint: index * 6, stackSize: 16,
-  })));
+  return createMultiTaskZplcFile(
+    bytecode,
+    tasks.map((task, index) => ({
+      id: task.id,
+      type: TASK_TYPE.CYCLIC,
+      priority: task.priority,
+      intervalUs: task.intervalMs * 1000,
+      entryPoint: index * 6,
+      stackSize: 16,
+    })),
+  );
 }
 
 /** The text of a decision, as zplc_trace_render() of the trace cases writes it. */
 export function render(decision: SchedulerDecision): string {
   const t = `t${decision.taskId}`;
   switch (decision.kind) {
-    case SCHEDULER_TRACE_KIND.ADMIT: return `ADMIT ${t} ${decision.a}`;
-    case SCHEDULER_TRACE_KIND.COALESCE: return `COALESCE ${t}`;
-    case SCHEDULER_TRACE_KIND.ORDER: return `ORDER ${t} ${decision.a}`;
-    case SCHEDULER_TRACE_KIND.LATCH: return `LATCH ${decision.a}`;
-    case SCHEDULER_TRACE_KIND.TASK: return `TASK ${t} ${decision.a} ${decision.b}`;
-    case SCHEDULER_TRACE_KIND.MISS: return `MISS ${t} ${decision.a} ${decision.b}`;
-    case SCHEDULER_TRACE_KIND.FAULT: return `FAULT ${t} ${decision.a}`;
-    case SCHEDULER_TRACE_KIND.COMMIT: return `COMMIT ${decision.a}`;
-    case SCHEDULER_TRACE_KIND.PAUSE: return 'PAUSE';
-    default: return '?';
+    case SCHEDULER_TRACE_KIND.ADMIT:
+      return `ADMIT ${t} ${decision.a}`;
+    case SCHEDULER_TRACE_KIND.COALESCE:
+      return `COALESCE ${t}`;
+    case SCHEDULER_TRACE_KIND.ORDER:
+      return `ORDER ${t} ${decision.a}`;
+    case SCHEDULER_TRACE_KIND.LATCH:
+      return `LATCH ${decision.a}`;
+    case SCHEDULER_TRACE_KIND.TASK:
+      return `TASK ${t} ${decision.a} ${decision.b}`;
+    case SCHEDULER_TRACE_KIND.MISS:
+      return `MISS ${t} ${decision.a} ${decision.b}`;
+    case SCHEDULER_TRACE_KIND.FAULT:
+      return `FAULT ${t} ${decision.a}`;
+    case SCHEDULER_TRACE_KIND.COMMIT:
+      return `COMMIT ${decision.a}`;
+    case SCHEDULER_TRACE_KIND.PAUSE:
+      return 'PAUSE';
+    default:
+      return '?';
   }
 }
 
@@ -275,11 +327,15 @@ describe('the scheduler of the WebAssembly runtime decides what the native runti
     const idLine = /#define ZPLC_TRACE_ONE_TASK_ID (\d+)U/.exec(traceHeader)!;
     const interval = /#define ZPLC_TRACE_ONE_INTERVAL_MS (\d+)U/.exec(traceHeader)!;
     const output = /#define ZPLC_TRACE_ONE_OUTPUT (0x[0-9A-Fa-f]+)U/.exec(traceHeader)!;
-    const batches = [...arrayOf('ZPLC_TRACE_ONE_BATCHES[').matchAll(/\{(\d+)U, (\d+)U, (\d+)U\}/g)]
-      .map((match) => ({ atMs: Number(match[1]), reads: [Number(match[2]), Number(match[3])] }));
+    const batches = [...arrayOf('ZPLC_TRACE_ONE_BATCHES[').matchAll(/\{(\d+)U, (\d+)U, (\d+)U\}/g)].map((match) => ({
+      atMs: Number(match[1]),
+      reads: [Number(match[2]), Number(match[3])],
+    }));
     expect(batches).toHaveLength(7);
     await adapter.connect();
-    await adapter.loadProgram(traceProgram([{ id: Number(idLine[1]), priority: 0, intervalMs: Number(interval[1]), output: Number(output[1]) }]));
+    await adapter.loadProgram(
+      traceProgram([{ id: Number(idLine[1]), priority: 0, intervalMs: Number(interval[1]), output: Number(output[1]) }]),
+    );
     api.runtime!.traceEnable(true);
     await adapter.start();
     const decisions: SchedulerDecision[] = [];
@@ -333,56 +389,69 @@ describe('the process image of the WebAssembly runtime (RT-009)', () => {
 });
 
 describe('the communication blocks of the WebAssembly runtime (IDE-025)', () => {
-  itWasm('answer STATUS 10 (UNAVAILABLE): a browser module has no network', async () => {
-    // a Modbus block with EN true: the request fails at once, in the scan of the edge, with the code of the table
-    const { compilerCompile } = await import('../cli/toolApi');
-    const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises');
-    const { tmpdir } = await import('node:os');
-    const { join } = await import('node:path');
-    const root = await mkdtemp(join(tmpdir(), 'zplc-wasm-comm-'));
-    try {
-      await mkdir(join(root, 'src'));
-      await writeFile(join(root, 'src', 'main.st'), [
-        'PROGRAM Link',
-        'VAR',
-        '  Pub : MQTT_PUBLISH;',
-        '  Rd : MB_READ_HREG;',
-        '  Code AT %QD1 : DINT;',
-        '  Err AT %QX0.0 : BOOL;',
-        '  Done AT %QX0.1 : BOOL;',
-        '  Other AT %QD2 : DINT;',
-        'END_VAR',
-        "  Rd(EN := TRUE, PROTO := 1, SLAVE_ID := 1, ADDR := 0, COUNT := 1, HOST := '127.0.0.1', PORT := 502);",
-        "  Pub(EN := TRUE, QOS := 0, RETAIN := FALSE, TOPIC := 'a', PAYLOAD := 'b');",
-        '  Code := Rd.STATUS;',
-        '  Other := Pub.STATUS;',
-        '  Err := Rd.ERROR;',
-        '  Done := Rd.DONE;',
-        'END_PROGRAM',
-        '',
-      ].join('\n'));
-      await writeFile(join(root, 'zplc.json'), JSON.stringify({
-        schemaVersion: 2, name: 'comm', version: '1.0.0', target: { board: 'posix' },
-        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
-      }));
-      const built = await compilerCompile(root);
-      expect(built.ok).toBe(true);
-      const { adapter, poll } = open();
-      await adapter.connect();
-      await adapter.loadProgram(built.zplcFile!);
-      await adapter.start();
-      poll(10);
-      const bytes = await adapter.peek(OPI, 12);
-      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      expect(view.getInt32(4, true)).toBe(10);
-      expect(view.getInt32(8, true)).toBe(10);
-      expect(bytes[0]! & 1).toBe(1); // ERROR
-      expect(bytes[0]! & 2).toBe(0); // DONE: no block reports success without acting
-      await adapter.disconnect();
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
-    // the test compiles a project and starts a module; under the load of a full run that alone can pass five seconds,
-    // and the time is not what it measures
-  }, 60_000);
+  itWasm(
+    'answer STATUS 10 (UNAVAILABLE): a browser module has no network',
+    async () => {
+      // a Modbus block with EN true: the request fails at once, in the scan of the edge, with the code of the table
+      const { compilerCompile } = await import('../cli/toolApi');
+      const { mkdtemp, mkdir, writeFile, rm } = await import('node:fs/promises');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const root = await mkdtemp(join(tmpdir(), 'zplc-wasm-comm-'));
+      try {
+        await mkdir(join(root, 'src'));
+        await writeFile(
+          join(root, 'src', 'main.st'),
+          [
+            'PROGRAM Link',
+            'VAR',
+            '  Pub : MQTT_PUBLISH;',
+            '  Rd : MB_READ_HREG;',
+            '  Code AT %QD1 : DINT;',
+            '  Err AT %QX0.0 : BOOL;',
+            '  Done AT %QX0.1 : BOOL;',
+            '  Other AT %QD2 : DINT;',
+            'END_VAR',
+            "  Rd(EN := TRUE, PROTO := 1, SLAVE_ID := 1, ADDR := 0, COUNT := 1, HOST := '127.0.0.1', PORT := 502);",
+            "  Pub(EN := TRUE, QOS := 0, RETAIN := FALSE, TOPIC := 'a', PAYLOAD := 'b');",
+            '  Code := Rd.STATUS;',
+            '  Other := Pub.STATUS;',
+            '  Err := Rd.ERROR;',
+            '  Done := Rd.DONE;',
+            'END_PROGRAM',
+            '',
+          ].join('\n'),
+        );
+        await writeFile(
+          join(root, 'zplc.json'),
+          JSON.stringify({
+            schemaVersion: 2,
+            name: 'comm',
+            version: '1.0.0',
+            target: { board: 'posix' },
+            tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+          }),
+        );
+        const built = await compilerCompile(root);
+        expect(built.ok).toBe(true);
+        const { adapter, poll } = open();
+        await adapter.connect();
+        await adapter.loadProgram(built.zplcFile!);
+        await adapter.start();
+        poll(10);
+        const bytes = await adapter.peek(OPI, 12);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        expect(view.getInt32(4, true)).toBe(10);
+        expect(view.getInt32(8, true)).toBe(10);
+        expect(bytes[0]! & 1).toBe(1); // ERROR
+        expect(bytes[0]! & 2).toBe(0); // DONE: no block reports success without acting
+        await adapter.disconnect();
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+      // the test compiles a project and starts a module; under the load of a full run that alone can pass five seconds,
+      // and the time is not what it measures
+    },
+    60_000,
+  );
 });

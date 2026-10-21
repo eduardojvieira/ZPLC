@@ -64,7 +64,10 @@ function validateFrozenLockfileGuards(workflowPath, workflow, expectedInstallCou
     assert.notEqual(runLineIndex, -1, `${workflowPath} frozen Bun install must use a block run step`);
     const runIndent = lines[runLineIndex].match(/^\s*/)?.[0].length ?? 0;
     assert.ok(
-      installIndent > runIndent && lines.slice(runLineIndex + 1, index + 1).every((candidate) => !candidate.trim() || (candidate.match(/^\s*/)?.[0].length ?? 0) > runIndent),
+      installIndent > runIndent &&
+        lines
+          .slice(runLineIndex + 1, index + 1)
+          .every((candidate) => !candidate.trim() || (candidate.match(/^\s*/)?.[0].length ?? 0) > runIndent),
       `${workflowPath} lockfile guard and frozen Bun install must remain in the same run block`,
     );
   }
@@ -77,17 +80,21 @@ function validateJobEnvContexts(workflowPath, workflow) {
     for (let nested = index + 1; nested < lines.length; nested += 1) {
       const line = lines[nested];
       if (line.trim() && (line.match(/^\s*/)?.[0].length ?? 0) <= 4) break;
-      assert.doesNotMatch(
-        line,
-        /\$\{\{\s*runner\./,
-        `${workflowPath}:${nested + 1} cannot use the runner context in job-level env`,
-      );
+      assert.doesNotMatch(line, /\$\{\{\s*runner\./, `${workflowPath}:${nested + 1} cannot use the runner context in job-level env`);
     }
   }
 }
 
 function validateCiCheckoutsUseExactSha(workflow) {
-  const checkouts = [...workflow.matchAll(new RegExp(String.raw`^\s*uses:\s*actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.3\.0\n(?:\s+with:\n)?(?:\s+ref:\s*\$\{\{ github\.sha \}\}\n)` + String.raw`?(?:\s+path:\s*zplc\n)?`, 'gm'))];
+  const checkouts = [
+    ...workflow.matchAll(
+      new RegExp(
+        String.raw`^\s*uses:\s*actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.3\.0\n(?:\s+with:\n)?(?:\s+ref:\s*\$\{\{ github\.sha \}\}\n)` +
+          String.raw`?(?:\s+path:\s*zplc\n)?`,
+        'gm',
+      ),
+    ),
+  ];
   // Seven since the FreeRTOS port job (IO-016) joined the workflow; each one is still bound to the caller SHA below.
   assert.equal(checkouts.length, 8, 'CI must keep exactly eight pinned checkout steps');
   for (const checkout of checkouts) {
@@ -99,9 +106,7 @@ test('pins every third-party action in CI, release, and docs workflows to its ap
   const foundActions = new Set();
   for (const workflowPath of workflows) {
     const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), 'utf8');
-    const usesLines = workflow.split('\n').filter(
-      (line) => /^\s*uses:/.test(line) && !/^\s*uses:\s*\.\//.test(line),
-    );
+    const usesLines = workflow.split('\n').filter((line) => /^\s*uses:/.test(line) && !/^\s*uses:\s*\.\//.test(line));
     for (const action of validateUsesLines(workflowPath, usesLines)) foundActions.add(action);
   }
   for (const expectedAction of approvedActions.keys()) {
@@ -131,11 +136,7 @@ test('requires every frozen Bun install to guard the checked-out root lockfile',
 });
 
 test('rejects a frozen Bun install without its immediate lockfile guard', () => {
-  const workflow = [
-    '      - name: Install dependencies',
-    '        run: |',
-    '          bun install --frozen-lockfile',
-  ].join('\n');
+  const workflow = ['      - name: Install dependencies', '        run: |', '          bun install --frozen-lockfile'].join('\n');
   assert.throws(() => validateFrozenLockfileGuards('fixture.yml', workflow, 1));
 });
 
@@ -143,10 +144,7 @@ test('limits Windows release installs to the IDE and compiler workspaces', async
   const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
   const windowsJob = workflow.match(/^  build-windows:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[1] ?? '';
 
-  assert.match(
-    windowsJob,
-    /test -f bun\.lock\n\s+bun install --filter '@zplc\/ide' --filter '@zplc\/compiler' --frozen-lockfile/,
-  );
+  assert.match(windowsJob, /test -f bun\.lock\n\s+bun install --filter '@zplc\/ide' --filter '@zplc\/compiler' --frozen-lockfile/);
   assert.doesNotMatch(windowsJob, /--filter '!\.\//);
 });
 
@@ -183,10 +181,20 @@ test('keeps nightly quality read-only: extended fuzzing, repeated native simulat
 
 test('keeps ESP32 blob admission explicit and all Twister targets 64-bit native', async () => {
   const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  const testcases = await Promise.all([
-    'azure_sas', 'hal_gpio_policy', 'legacy_program_admission', 'modbus_override', 'modbus_tcp',
-    'mqtt_command', 'program_boot_restore', 'program_store', 'scheduler_admission', 'tls_credentials',
-  ].map((name) => readFile(new URL(`../firmware/tests/${name}/testcase.yaml`, import.meta.url), 'utf8')));
+  const testcases = await Promise.all(
+    [
+      'azure_sas',
+      'hal_gpio_policy',
+      'legacy_program_admission',
+      'modbus_override',
+      'modbus_tcp',
+      'mqtt_command',
+      'program_boot_restore',
+      'program_store',
+      'scheduler_admission',
+      'tls_credentials',
+    ].map((name) => readFile(new URL(`../firmware/tests/${name}/testcase.yaml`, import.meta.url), 'utf8')),
+  );
 
   assert.match(ci, /if: matrix\.id == 'esp32s3-devkitc'\n\s+run: west blobs fetch hal_espressif/);
   assert.doesNotMatch(ci, /BUILD_ONLY_NO_BLOBS/);
@@ -205,8 +213,14 @@ test('prepares the development Electron sandbox without disabling it', async () 
   assert.match(ci, /sudo chown root:root "\$sandbox"/);
   assert.match(ci, /sudo chmod 4755 "\$sandbox"/);
   assert.match(ci, /stat -c '%U:%G:%a' "\$sandbox"\)" = 'root:root:4755'/);
-  assert.match(ci, /Install Electron smoke display[\s\S]*?sudo apt-get update[\s\S]*?sudo apt-get install -y xvfb[\s\S]*?command -v xvfb-run/);
+  assert.match(
+    ci,
+    /Install Electron smoke display[\s\S]*?sudo apt-get update[\s\S]*?sudo apt-get install -y xvfb[\s\S]*?command -v xvfb-run/,
+  );
   assert.match(ci, /xvfb-run --auto-servernum bun run --cwd packages\/zplc-ide smoke:desktop/);
-  assert.ok(ci.indexOf('sudo apt-get install -y xvfb') < ci.indexOf('xvfb-run --auto-servernum'), 'xvfb must be installed before the desktop smoke');
+  assert.ok(
+    ci.indexOf('sudo apt-get install -y xvfb') < ci.indexOf('xvfb-run --auto-servernum'),
+    'xvfb must be installed before the desktop smoke',
+  );
   assert.doesNotMatch(ci, /--no-sandbox/);
 });

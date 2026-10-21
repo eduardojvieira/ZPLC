@@ -25,14 +25,19 @@ export function createSessionStore(userDataPath: string) {
   let pending: Promise<unknown> = Promise.resolve();
 
   const validDirectory = async (): Promise<boolean> => {
-    try { const status = await lstat(directory); return status.isDirectory() && !status.isSymbolicLink(); } catch { return false; }
+    try {
+      const status = await lstat(directory);
+      return status.isDirectory() && !status.isSymbolicLink();
+    } catch {
+      return false;
+    }
   };
 
   return {
     /** The saved session of a project, or null when there is none or it cannot be trusted. Never throws. */
     async load(realPath: string): Promise<SessionState | null> {
       try {
-        if (!await validDirectory()) return null;
+        if (!(await validDirectory())) return null;
         const file = fileOf(realPath);
         const status = await lstat(file);
         if (status.isSymbolicLink() || !status.isFile() || status.size > SESSION_LIMITS.maxBytes) return null;
@@ -49,7 +54,7 @@ export function createSessionStore(userDataPath: string) {
       if (!state) return Promise.reject(new Error('Invalid session'));
       const write = async () => {
         await mkdir(directory, { recursive: true, mode: 0o700 });
-        if (!await validDirectory()) throw new Error('Invalid session directory');
+        if (!(await validDirectory())) throw new Error('Invalid session directory');
         const file = fileOf(realPath);
         const temporary = path.join(directory, `.${path.basename(file)}.${randomUUID()}`);
         try {
@@ -77,7 +82,7 @@ export function createSessionStore(userDataPath: string) {
      * writes, so the directory cannot grow without bound. Files it did not create are left alone.
      */
     async prune(keep: ReadonlySet<string>): Promise<void> {
-      if (!await validDirectory()) return;
+      if (!(await validDirectory())) return;
       for (const name of await readdir(directory)) {
         const orphan = SESSION_FILE.test(name) ? !keep.has(name.slice(0, -'.json'.length)) : LEFTOVER.test(name);
         if (orphan) await unlink(path.join(directory, name)).catch(() => undefined);

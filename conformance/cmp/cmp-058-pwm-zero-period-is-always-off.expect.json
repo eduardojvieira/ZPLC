@@ -5,11 +5,9 @@
   "note": "Not an IEC block: a period of 0 has no ON phase; the output stays FALSE for any duty and the VM does not fault",
   "scans": 3,
   "scanMs": 10,
-  "inputs": [
-    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1}
-  ],
+  "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 }],
   "expect": [
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 3}
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 3 }
   ]
 }

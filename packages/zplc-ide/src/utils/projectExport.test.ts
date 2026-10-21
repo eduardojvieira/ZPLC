@@ -18,9 +18,12 @@ function file(path: string, content?: string): FileTreeNode {
     path,
     type: 'file',
     language: 'ST',
-    handle: content === undefined ? undefined : {
-      getFile: async () => ({ text: async () => content }),
-    } as unknown as FileSystemFileHandle,
+    handle:
+      content === undefined
+        ? undefined
+        : ({
+            getFile: async () => ({ text: async () => content }),
+          } as unknown as FileSystemFileHandle),
   };
 }
 
@@ -41,7 +44,9 @@ function unreadableFile(path: string): FileTreeNode {
   return {
     ...node,
     handle: {
-      getFile: async () => { throw new Error('permission revoked'); },
+      getFile: async () => {
+        throw new Error('permission revoked');
+      },
     } as unknown as FileSystemFileHandle,
   };
 }
@@ -129,11 +134,18 @@ describe('collectProjectFilesForExport', () => {
     const main = file('src/main.st', 'disk main');
     const helper = file('src/helpers/helper.st', 'disk helper');
     const tree: FileTreeNode = {
-      id: 'dir:/', name: 'project', path: '/', type: 'directory', children: [
-        { id: 'dir:src', name: 'src', path: 'src', type: 'directory', children: [
-          main,
-          { id: 'dir:src/helpers', name: 'helpers', path: 'src/helpers', type: 'directory', children: [helper] },
-        ] },
+      id: 'dir:/',
+      name: 'project',
+      path: '/',
+      type: 'directory',
+      children: [
+        {
+          id: 'dir:src',
+          name: 'src',
+          path: 'src',
+          type: 'directory',
+          children: [main, { id: 'dir:src/helpers', name: 'helpers', path: 'src/helpers', type: 'directory', children: [helper] }],
+        },
       ],
     };
 
@@ -149,7 +161,11 @@ describe('collectProjectFilesForExport', () => {
     const readable = file('src/main.st', 'main');
     const broken = unreadableFile('src/broken.st');
     const tree: FileTreeNode = {
-      id: 'dir:/', name: 'project', path: '/', type: 'directory', children: [readable, broken],
+      id: 'dir:/',
+      name: 'project',
+      path: '/',
+      type: 'directory',
+      children: [readable, broken],
     };
 
     await expect(collectProjectFilesForExport(tree, new Map())).rejects.toThrow('src/broken.st: permission revoked');
@@ -165,7 +181,11 @@ describe('collectProjectFilesForExport', () => {
     const first = file('src/main.st', 'first');
     const duplicate = file('src/main.st', 'second');
     const tree: FileTreeNode = {
-      id: 'dir:/', name: 'project', path: '/', type: 'directory', children: [first, duplicate],
+      id: 'dir:/',
+      name: 'project',
+      path: '/',
+      type: 'directory',
+      children: [first, duplicate],
     };
 
     await expect(collectProjectFilesForExport(tree, new Map())).rejects.toThrow('Duplicate project file: src/main.st');

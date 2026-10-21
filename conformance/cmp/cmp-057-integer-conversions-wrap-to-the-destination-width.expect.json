@@ -6,17 +6,17 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QB0", "type": "SINT", "value": 44},
-    {"at": "%QW1", "type": "INT", "value": 4464},
-    {"at": "%QW2", "type": "INT", "value": -1},
-    {"at": "%QB6", "type": "USINT", "value": 255},
-    {"at": "%QW4", "type": "UINT", "value": 65535},
-    {"at": "%QW5", "type": "UINT", "value": 65535},
-    {"at": "%QD3", "type": "UDINT", "value": 4294967295},
-    {"at": "%QD4", "type": "DINT", "value": -1},
-    {"at": "%QW10", "type": "WORD", "value": 22136},
-    {"at": "%QB22", "type": "BYTE", "value": 120},
-    {"at": "%QB23", "type": "BYTE", "value": 205},
-    {"at": "%QW12", "type": "INT", "value": -21555}
+    { "at": "%QB0", "type": "SINT", "value": 44 },
+    { "at": "%QW1", "type": "INT", "value": 4464 },
+    { "at": "%QW2", "type": "INT", "value": -1 },
+    { "at": "%QB6", "type": "USINT", "value": 255 },
+    { "at": "%QW4", "type": "UINT", "value": 65535 },
+    { "at": "%QW5", "type": "UINT", "value": 65535 },
+    { "at": "%QD3", "type": "UDINT", "value": 4294967295 },
+    { "at": "%QD4", "type": "DINT", "value": -1 },
+    { "at": "%QW10", "type": "WORD", "value": 22136 },
+    { "at": "%QB22", "type": "BYTE", "value": 120 },
+    { "at": "%QB23", "type": "BYTE", "value": 205 },
+    { "at": "%QW12", "type": "INT", "value": -21555 }
   ]
 }

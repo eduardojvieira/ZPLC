@@ -8,21 +8,46 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { FrameDecoder, PARSE_ERROR, beginFrame, encodeFrame, finishFrame, parseFrame } from '../../packages/zplc-ide/src/runtime/link/frame.ts';
+import {
+  FrameDecoder,
+  PARSE_ERROR,
+  beginFrame,
+  encodeFrame,
+  finishFrame,
+  parseFrame,
+} from '../../packages/zplc-ide/src/runtime/link/frame.ts';
 import { decodeFields, decodeResponse, encodeFields, errorName } from '../../packages/zplc-ide/src/runtime/link/messages.ts';
 import { ERROR, EVENTS, LIMITS, MESSAGES, type FieldSpec } from '../../packages/zplc-ide/src/runtime/link/protocol.generated.ts';
 
 interface VectorFrame {
-  name: string; kind: number; message: number; sequence: number; auth: boolean; payload: string; wire: string;
+  name: string;
+  kind: number;
+  message: number;
+  sequence: number;
+  auth: boolean;
+  payload: string;
+  wire: string;
   fields: Record<string, number | string>;
 }
-interface SignatureCase { name: string; public: string; message: string; signature: string; valid: boolean }
+interface SignatureCase {
+  name: string;
+  public: string;
+  message: string;
+  signature: string;
+  valid: boolean;
+}
 interface VectorStream {
-  name: string; hex: string; delivered: string[];
+  name: string;
+  hex: string;
+  delivered: string[];
   counters: { crc_errors: number; version_errors: number; malformed: number; oversize: number; resyncs: number };
 }
 const vectors = JSON.parse(readFileSync(new URL('./golden/protocol-vectors.json', import.meta.url), 'utf8')) as {
-  payloadMax: number; keyHex: string; frames: VectorFrame[]; streams: VectorStream[]; signatures: SignatureCase[];
+  payloadMax: number;
+  keyHex: string;
+  frames: VectorFrame[];
+  streams: VectorStream[];
+  signatures: SignatureCase[];
 };
 const bytes = (hex: string) => Uint8Array.from(Buffer.from(hex, 'hex'));
 const hex = (data: Uint8Array) => Buffer.from(data).toString('hex');
@@ -54,7 +79,10 @@ describe('the frames the generator wrote, in TypeScript (COM-019)', () => {
       expect(frame.sequence).toBe(vector.sequence);
       expect(frame.authenticated).toBe(vector.auth);
       expect(hex(frame.payload)).toBe(vector.payload);
-      const again = finishFrame(beginFrame(frame.kind, frame.message, frame.sequence, frame.payload, frame.authenticated), frame.mac ?? undefined);
+      const again = finishFrame(
+        beginFrame(frame.kind, frame.message, frame.sequence, frame.payload, frame.authenticated),
+        frame.mac ?? undefined,
+      );
       expect(hex(again)).toBe(vector.wire);
       if (!vector.auth) expect(hex(encodeFrame(frame.kind, frame.message, frame.sequence, frame.payload))).toBe(vector.wire);
     });
@@ -93,7 +121,9 @@ describe('the streams the generator wrote, whole and byte by byte (COM-019)', ()
       const delivered: string[] = [];
       for (const chunk of chunks) {
         for (const frame of decoder.push(chunk)) {
-          const wire = hex(finishFrame(beginFrame(frame.kind, frame.message, frame.sequence, frame.payload, frame.authenticated), frame.mac ?? undefined));
+          const wire = hex(
+            finishFrame(beginFrame(frame.kind, frame.message, frame.sequence, frame.payload, frame.authenticated), frame.mac ?? undefined),
+          );
           delivered.push(vectors.frames.find((vector) => vector.wire === wire)?.name ?? 'stream:?');
         }
       }
@@ -132,13 +162,37 @@ describe('parseFrame names why a buffer is not a frame (COM-019)', () => {
   test('every reason', () => {
     expect(parseFrame(good.subarray(0, good.length - 1))).toEqual({ error: PARSE_ERROR.SHORT });
     expect(parseFrame(new Uint8Array([...good, 0]))).toEqual({ error: PARSE_ERROR.LENGTH });
-    expect(mutate((c) => { c[0]! ^= 0xff; })).toEqual({ error: PARSE_ERROR.SYNC });
-    expect(mutate((c) => { c[2] = 2; })).toEqual({ error: PARSE_ERROR.VERSION });
-    expect(mutate((c) => { c[3]! |= 0x08; })).toEqual({ error: PARSE_ERROR.MALFORMED });
-    expect(mutate((c) => { c[3] = 3; })).toEqual({ error: PARSE_ERROR.MALFORMED });
+    expect(
+      mutate((c) => {
+        c[0]! ^= 0xff;
+      }),
+    ).toEqual({ error: PARSE_ERROR.SYNC });
+    expect(
+      mutate((c) => {
+        c[2] = 2;
+      }),
+    ).toEqual({ error: PARSE_ERROR.VERSION });
+    expect(
+      mutate((c) => {
+        c[3]! |= 0x08;
+      }),
+    ).toEqual({ error: PARSE_ERROR.MALFORMED });
+    expect(
+      mutate((c) => {
+        c[3] = 3;
+      }),
+    ).toEqual({ error: PARSE_ERROR.MALFORMED });
     expect(parseFrame(good, 2)).toEqual({ error: PARSE_ERROR.OVERSIZE });
-    expect(mutate((c) => { c[c.length - 1]! ^= 1; })).toEqual({ error: PARSE_ERROR.CRC });
-    expect(mutate((c) => { c[11]! ^= 1; })).toEqual({ error: PARSE_ERROR.CRC });
+    expect(
+      mutate((c) => {
+        c[c.length - 1]! ^= 1;
+      }),
+    ).toEqual({ error: PARSE_ERROR.CRC });
+    expect(
+      mutate((c) => {
+        c[11]! ^= 1;
+      }),
+    ).toEqual({ error: PARSE_ERROR.CRC });
   });
 });
 

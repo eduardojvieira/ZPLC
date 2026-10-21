@@ -6,7 +6,14 @@ await stubProjectLoader();
 const { useIDEStore } = await import('../store/useIDEStore');
 const { OperationalStatusBar, OperationalStatusView } = await import('./OperationalStatusBar');
 
-const idle = { mode: 'simulate' as const, adapterType: null, connected: false, status: { text: 'Ready', tone: 'neutral' as const }, connecting: false, faulted: false };
+const idle = {
+  mode: 'simulate' as const,
+  adapterType: null,
+  connected: false,
+  status: { text: 'Ready', tone: 'neutral' as const },
+  connecting: false,
+  faulted: false,
+};
 
 describe('Operational status bar and force banner (IDE-029, UX-018) in a DOM', () => {
   it('shows nothing until a project is open', () => {
@@ -36,28 +43,55 @@ describe('Operational status bar and force banner (IDE-029, UX-018) in a DOM', (
 
   it('announces unconfirmed forces as an alert, and active forces as a note without alert', () => {
     dom.patchStore(useIDEStore, { isProjectOpen: true });
-    dom.render(<OperationalStatusView
-      indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
-      presentation={{ mode: 'Simulation', runtime: 'Native', status: { text: 'Running', tone: 'success' }, force: { kind: 'unconfirmed', text: 'Force state unconfirmed' } } as never}
-    />);
+    dom.render(
+      <OperationalStatusView
+        indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
+        presentation={
+          {
+            mode: 'Simulation',
+            runtime: 'Native',
+            status: { text: 'Running', tone: 'success' },
+            force: { kind: 'unconfirmed', text: 'Force state unconfirmed' },
+          } as never
+        }
+      />,
+    );
     expect(dom.screen.getByRole('alert').textContent).toBe('Force state unconfirmed');
   });
 
   it('an active force is shown without raising an alert', () => {
-    dom.render(<OperationalStatusView
-      indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
-      presentation={{ mode: 'Simulation', runtime: 'Native', status: { text: 'Running', tone: 'success' }, force: { kind: 'active', text: '2 active forces' } } as never}
-    />);
+    dom.render(
+      <OperationalStatusView
+        indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
+        presentation={
+          {
+            mode: 'Simulation',
+            runtime: 'Native',
+            status: { text: 'Running', tone: 'success' },
+            force: { kind: 'active', text: '2 active forces' },
+          } as never
+        }
+      />,
+    );
     expect(dom.screen.queryByRole('alert')).toBeNull();
     expect(dom.screen.getByText('2 active forces')).toBeTruthy();
   });
 
   it('shows the debug state and the limits note when given', () => {
-    dom.render(<OperationalStatusView
-      indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
-      debug="Paused at line 4"
-      presentation={{ mode: 'Simulation', runtime: 'Native', status: { text: 'Paused', tone: 'attention' }, limits: 'Timing is not real time' } as never}
-    />);
+    dom.render(
+      <OperationalStatusView
+        indicator={{ state: 'simulation', label: 'Simulation', tone: 'info', icon: 'monitor' } as never}
+        debug="Paused at line 4"
+        presentation={
+          {
+            mode: 'Simulation',
+            runtime: 'Native',
+            status: { text: 'Paused', tone: 'attention' },
+            limits: 'Timing is not real time',
+          } as never
+        }
+      />,
+    );
     expect(dom.screen.getByText('Paused at line 4')).toBeTruthy();
     expect(dom.screen.getByRole('note').textContent).toBe('Timing is not real time');
   });

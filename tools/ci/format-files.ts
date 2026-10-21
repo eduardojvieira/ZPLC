@@ -24,7 +24,10 @@ export const GUARDED_FILE = /\.(?:ts|tsx|js|mjs|cjs|css|c|h)$/;
  * paragraph of Markdown, a message is prose, and it is shown to a person whole.
  */
 export const LINE_LENGTH_EXEMPT: ReadonlyArray<{ pattern: RegExp; reason: string }> = [
-  { pattern: /^packages\/zplc-ide\/src\/i18n\/(?:catalog\/[^/]+|en|es)\.ts$/, reason: 'a catalog message is a literal type that t() reads' },
+  {
+    pattern: /^packages\/zplc-ide\/src\/i18n\/(?:catalog\/[^/]+|en|es)\.ts$/,
+    reason: 'a catalog message is a literal type that t() reads',
+  },
 ];
 
 export const isLengthExempt = (file: string): boolean => LINE_LENGTH_EXEMPT.some(({ pattern }) => pattern.test(file));

@@ -27,12 +27,17 @@ END_PROGRAM
 
 /** A debug map from the real compiler, so that the listing is exercised on what Studio really receives. */
 function compiled(): DebugMap {
-  const project = { name: 't', version: '1', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant'] }] } as never;
-  return compileMultiTaskProject(project, [{ name: 'Plant', content: SOURCE, language: 'ST', sourceRef: 'src/Plant.st' } as never]).debugMap as unknown as DebugMap;
+  const project = {
+    name: 't',
+    version: '1',
+    tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant'] }],
+  } as never;
+  return compileMultiTaskProject(project, [{ name: 'Plant', content: SOURCE, language: 'ST', sourceRef: 'src/Plant.st' } as never])
+    .debugMap as unknown as DebugMap;
 }
 
 describe('the I/O map of a program (LRN-017, IDE-024)', () => {
-  it('lists every output mapped to the output image, whatever its name, and no variable that is only the program\'s own', () => {
+  it("lists every output mapped to the output image, whatever its name, and no variable that is only the program's own", () => {
     const outputs = listDeclaredOutputs(compiled());
     expect(outputs.map((output) => output.name).sort()).toEqual(['Beacon', 'Dose', 'Level']);
     expect(outputs.find((output) => output.name === 'Beacon')).toMatchObject({ path: 'Plant.Beacon', type: 'BOOL', bitOffset: 5, size: 1 });
@@ -57,7 +62,16 @@ describe('the I/O map of a program (LRN-017, IDE-024)', () => {
 });
 
 describe('the range of an input that has a slider (LRN-017)', () => {
-  const input = (type: string) => ({ path: 'P.X', pou: 'P', name: 'X', type, region: 'IPI' as const, address: 0, size: 2, origin: 'mapped' as const });
+  const input = (type: string) => ({
+    path: 'P.X',
+    pou: 'P',
+    name: 'X',
+    type,
+    region: 'IPI' as const,
+    address: 0,
+    size: 2,
+    origin: 'mapped' as const,
+  });
   it('comes from the type for the integers up to 16 bits, and there is none for the rest', () => {
     expect(inputRange(input('INT'))).toEqual({ min: -32768, max: 32767 });
     expect(inputRange(input('BYTE'))).toEqual({ min: 0, max: 255 });

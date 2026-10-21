@@ -3,7 +3,7 @@ slug: /getting-started/install
 id: install
 title: Instalar ZPLC
 sidebar_label: Instalar
-description: "Descargue, verifique, abra, actualice y quite ZPLC en Windows, macOS y Linux, desde los canales que existen hoy."
+description: 'Descargue, verifique, abra, actualice y quite ZPLC en Windows, macOS y Linux, desde los canales que existen hoy.'
 tags: [install, download, verify]
 ---
 
@@ -50,12 +50,12 @@ Los pasos de cada sistema están en [Primer inicio](#primer-inicio).
 
 ## Canales
 
-| Canal | Estado | Qué es |
-| --- | --- | --- |
-| [Versiones de GitHub](https://github.com/eduardojvieira/ZPLC/releases) | Activo | Instaladores para Windows, macOS y Linux, la línea de comandos y el servidor MCP independientes, una lista de materiales y sumas de verificación. |
-| Compilar desde el código fuente | Funciona en Linux y macOS | El camino de [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). |
-| Homebrew cask, Arch User Repository | Todavía no está activo | El canal puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
-| Microsoft Store, winget | Todavía no se puede enviar | Los canales necesitan una identidad de firma o una cuenta que el proyecto no tiene. |
+| Canal                                                                  | Estado                     | Qué es                                                                                                                                                                                                    |
+| ---------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Versiones de GitHub](https://github.com/eduardojvieira/ZPLC/releases) | Activo                     | Instaladores para Windows, macOS y Linux, la línea de comandos y el servidor MCP independientes, una lista de materiales y sumas de verificación.                                                         |
+| Compilar desde el código fuente                                        | Funciona en Linux y macOS  | El camino de [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente).                                                                                                     |
+| Homebrew cask, Arch User Repository                                    | Todavía no está activo     | El canal puede escribir ambos para cada versión publicada ([más abajo](#homebrew-y-arch-linux-todavía-no-están-activos)); no hay nada que instalar hasta que el proyecto cree el tap y el paquete de AUR. |
+| Microsoft Store, winget                                                | Todavía no se puede enviar | Los canales necesitan una identidad de firma o una cuenta que el proyecto no tiene.                                                                                                                       |
 
 No instale ZPLC desde un gestor de paquetes ni una tienda: mientras un canal de la
 tabla no esté activo, cualquier paquete que diga ser ZPLC no salió de este
@@ -84,6 +84,7 @@ así que no los busque hoy.
   la atestación de compilación de la versión. Si prefiere los diálogos, use el DMG
   y sus pasos de arriba. Si el gestor de paquetes empieza a rechazar los cask que
   hacen esto, el cask ya no quitará la marca y valdrán los pasos del DMG.
+
 - **Arch Linux (todavía no activo).** Hasta que exista el paquete de AUR, no se
   instala nada desde él. El paquete, `zplc-bin`, reempaquetará el `.deb` de la
   versión para `x86_64` y `aarch64`, con la suma de verificación de la versión y la
@@ -96,11 +97,11 @@ versión, estén o no activos estos canales.
 
 ## Qué está firmado
 
-| Sistema | Firma del instalador | Qué hace el sistema |
-| --- | --- | --- |
-| Windows | Ninguna. El nombre del archivo dice `unsigned`. | SmartScreen advierte; Smart App Control, cuando está activo, bloquea el archivo. |
-| macOS | Ad hoc: el paquete está sellado pero no tiene identidad de desarrollador y nunca se notariza. | Gatekeeper lo trata como una aplicación de un desarrollador no identificado. |
-| Linux | Ninguna. | Nada le pregunta; compruebe usted mismo la suma de verificación. |
+| Sistema | Firma del instalador                                                                          | Qué hace el sistema                                                              |
+| ------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Windows | Ninguna. El nombre del archivo dice `unsigned`.                                               | SmartScreen advierte; Smart App Control, cuando está activo, bloquea el archivo. |
+| macOS   | Ad hoc: el paquete está sellado pero no tiene identidad de desarrollador y nunca se notariza. | Gatekeeper lo trata como una aplicación de un desarrollador no identificado.     |
+| Linux   | Ninguna.                                                                                      | Nada le pregunta; compruebe usted mismo la suma de verificación.                 |
 
 La integridad viene de las sumas de verificación y de una atestación de
 procedencia de compilación, que puede comprobar como se muestra [más abajo](#verificar-la-descarga).
@@ -114,15 +115,15 @@ elija una versión cuyo nombre empiece por `ZPLC v2.0`. Mientras la 2.0 sea una
 versión preliminar, GitHub sigue marcando como Latest la versión 1.5.0, más
 antigua; desplácese hasta la versión preliminar 2.0.
 
-| Su sistema | Archivo de la versión rc.3 |
-| --- | --- |
-| Windows, Intel o AMD | `ZPLC.IDE-2.0.0-rc.3-win-x64-Setup.exe`, o `...-win-x64-Portable.exe` para ejecutar sin instalar |
-| Windows en ARM | `ZPLC.IDE-2.0.0-rc.3-win-arm64-Setup.exe` |
-| macOS, Apple silicon | `ZPLC.IDE-2.0.0-rc.3-mac-arm64.dmg` |
-| macOS, Intel | `ZPLC.IDE-2.0.0-rc.3-mac-x64.dmg` |
-| Linux, familia Fedora | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm` |
-| Linux, Ubuntu | `ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb` |
-| Linux, otras distribuciones | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
+| Su sistema                  | Archivo de la versión rc.3                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Windows, Intel o AMD        | `ZPLC.IDE-2.0.0-rc.3-win-x64-Setup.exe`, o `...-win-x64-Portable.exe` para ejecutar sin instalar |
+| Windows en ARM              | `ZPLC.IDE-2.0.0-rc.3-win-arm64-Setup.exe`                                                        |
+| macOS, Apple silicon        | `ZPLC.IDE-2.0.0-rc.3-mac-arm64.dmg`                                                              |
+| macOS, Intel                | `ZPLC.IDE-2.0.0-rc.3-mac-x64.dmg`                                                                |
+| Linux, familia Fedora       | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm`                                                           |
+| Linux, Ubuntu               | `ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb`                                                            |
+| Linux, otras distribuciones | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage`                                                      |
 
 Los archivos de rc.3 se construyeron con una compilación preliminar y se
 subieron a mano. Las versiones que hace el canal de publicación nombran los
@@ -296,14 +297,14 @@ clave guardada del asistente de IA.
 
 ## Desinstalar
 
-| Sistema | Cómo |
-| --- | --- |
+| Sistema             | Cómo                                                               |
+| ------------------- | ------------------------------------------------------------------ |
 | Windows, instalador | **Settings**, **Apps**, **Installed apps** y luego quite **ZPLC**. |
-| Windows, portable | Elimine el archivo `Portable.exe`. |
-| macOS | Arrastre **ZPLC** de Aplicaciones a la Papelera. |
-| Linux, RPM | `sudo dnf remove zplc` |
-| Linux, DEB | `sudo apt remove zplc` |
-| Linux, AppImage | Elimine el archivo. |
+| Windows, portable   | Elimine el archivo `Portable.exe`.                                 |
+| macOS               | Arrastre **ZPLC** de Aplicaciones a la Papelera.                   |
+| Linux, RPM          | `sudo dnf remove zplc`                                             |
+| Linux, DEB          | `sudo apt remove zplc`                                             |
+| Linux, AppImage     | Elimine el archivo.                                                |
 
 ZPLC guarda sus preferencias, los proyectos recientes, el progreso de las
 lecciones y las copias de recuperación en la carpeta de datos de usuario de la
@@ -312,17 +313,17 @@ proyectos nunca están dentro de ella.
 
 ## Solución de problemas
 
-| Lo que ve | Por qué | Qué hacer |
-| --- | --- | --- |
-| **Windows protected your PC** | SmartScreen: el archivo no está firmado. | **More info** y luego **Run anyway**, después de que la suma de verificación coincidió. |
-| Windows bloquea el archivo y no hay **Run anyway** | Smart App Control está activado. | Desactívelo en Windows Security o ejecute desde el código fuente. |
-| macOS dice que no pudo verificar la aplicación | La aplicación no tiene identidad de desarrollador y no está notarizada. | **Open Anyway** en **Privacy & Security**. |
-| macOS dice que la aplicación está dañada | La marca de cuarentena de la descarga, en una aplicación que no está notarizada. | Compruebe la suma de verificación y luego quite la marca con `xattr`. |
-| La suma de verificación no coincide | La descarga está incompleta, o no es el archivo publicado. | Descárguelo de nuevo. Si sigue siendo distinto, no lo abra. |
-| `gh attestation verify` falla | El archivo no lo construyó el flujo de trabajo del proyecto, o es un archivo de una versión hecha a mano, como rc.3. | Compruebe la suma de verificación y descargue desde la página de versiones de este repositorio. |
-| El AppImage no inicia | Otros AppImage de Electron necesitan `libfuse2` en Ubuntu 22.10 y posteriores, y ajustes adicionales para el sandbox de Chromium en Ubuntu 24.04 y posteriores. Ninguno de los dos casos se probó con ZPLC. | Use el `.rpm` o el `.deb` donde su sistema lo admita, o ejecute ZPLC desde el código fuente. |
-| Se rechaza el puerto de una placa | Su usuario no está en el grupo del puerto serie. | Vea [Linux: acceso al puerto serie](#linux-acceso-al-puerto-serie). |
-| La aplicación ZPLC no puede conectarse al simulador, en una compilación desde el código fuente | El runtime nativo es un programa aparte. | Constrúyalo primero y apunte la aplicación a él, como en [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). |
+| Lo que ve                                                                                      | Por qué                                                                                                                                                                                                     | Qué hacer                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Windows protected your PC**                                                                  | SmartScreen: el archivo no está firmado.                                                                                                                                                                    | **More info** y luego **Run anyway**, después de que la suma de verificación coincidió.                                                           |
+| Windows bloquea el archivo y no hay **Run anyway**                                             | Smart App Control está activado.                                                                                                                                                                            | Desactívelo en Windows Security o ejecute desde el código fuente.                                                                                 |
+| macOS dice que no pudo verificar la aplicación                                                 | La aplicación no tiene identidad de desarrollador y no está notarizada.                                                                                                                                     | **Open Anyway** en **Privacy & Security**.                                                                                                        |
+| macOS dice que la aplicación está dañada                                                       | La marca de cuarentena de la descarga, en una aplicación que no está notarizada.                                                                                                                            | Compruebe la suma de verificación y luego quite la marca con `xattr`.                                                                             |
+| La suma de verificación no coincide                                                            | La descarga está incompleta, o no es el archivo publicado.                                                                                                                                                  | Descárguelo de nuevo. Si sigue siendo distinto, no lo abra.                                                                                       |
+| `gh attestation verify` falla                                                                  | El archivo no lo construyó el flujo de trabajo del proyecto, o es un archivo de una versión hecha a mano, como rc.3.                                                                                        | Compruebe la suma de verificación y descargue desde la página de versiones de este repositorio.                                                   |
+| El AppImage no inicia                                                                          | Otros AppImage de Electron necesitan `libfuse2` en Ubuntu 22.10 y posteriores, y ajustes adicionales para el sandbox de Chromium en Ubuntu 24.04 y posteriores. Ninguno de los dos casos se probó con ZPLC. | Use el `.rpm` o el `.deb` donde su sistema lo admita, o ejecute ZPLC desde el código fuente.                                                      |
+| Se rechaza el puerto de una placa                                                              | Su usuario no está en el grupo del puerto serie.                                                                                                                                                            | Vea [Linux: acceso al puerto serie](#linux-acceso-al-puerto-serie).                                                                               |
+| La aplicación ZPLC no puede conectarse al simulador, en una compilación desde el código fuente | El runtime nativo es un programa aparte.                                                                                                                                                                    | Constrúyalo primero y apunte la aplicación a él, como en [Ejecutar ZPLC desde el código fuente](./index.md#ejecutar-zplc-desde-el-código-fuente). |
 
 Si su problema no está aquí, abra una incidencia desde la plantilla de informe de
 error del [repositorio](https://github.com/eduardojvieira/ZPLC/issues). No incluya

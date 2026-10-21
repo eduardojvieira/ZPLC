@@ -2,11 +2,7 @@
   "recordedOn": "2026-10-20",
   "source": "https://releases.electronjs.org/schedule, https://releases.electronjs.org/releases.json and the versions of the electron package on npm (npm view electron versions)",
   "policy": "Electron supports its latest three stable major versions (https://www.electronjs.org/docs/latest/tutorial/electron-timelines). Update this file at each release, before the tag: the supported majors from the schedule and the latest patch of each from npm.",
-  "supportedMajors": [
-    42,
-    43,
-    44
-  ],
+  "supportedMajors": [42, 43, 44],
   "endOfLife": {
     "42": "2026-10-20",
     "43": "2027-01-05",

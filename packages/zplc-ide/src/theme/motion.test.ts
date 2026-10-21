@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { animationMs, prefersReducedMotion } from './motion';
 
-
 const withMedia = (reduced: boolean) => {
-  (globalThis as { window?: unknown }).window = { matchMedia: (query: string) => ({ matches: reduced && query.includes('prefers-reduced-motion') }) };
+  (globalThis as { window?: unknown }).window = {
+    matchMedia: (query: string) => ({ matches: reduced && query.includes('prefers-reduced-motion') }),
+  };
 };
-afterEach(() => { delete (globalThis as { window?: unknown }).window; });
+afterEach(() => {
+  delete (globalThis as { window?: unknown }).window;
+});
 
 /** UX-027: the animations that script starts take their length from here; the stylesheet and the editors are checked in journey 46. */
 describe('reduced motion (UX-027)', () => {

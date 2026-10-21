@@ -10,13 +10,8 @@
     "rpi-pico-rp2040": {
       "zephyr_board": "rpi_pico/rp2040",
       "regions": {
-        "flash": [
-          "BOOT_FLASH",
-          "FLASH"
-        ],
-        "ram": [
-          "RAM"
-        ]
+        "flash": ["BOOT_FLASH", "FLASH"],
+        "ram": ["RAM"]
       },
       "measured": {
         "flash": 177848,
@@ -30,19 +25,8 @@
     "arduino-giga-r1-m7": {
       "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
       "regions": {
-        "flash": [
-          "FLASH"
-        ],
-        "ram": [
-          "RAM",
-          "ITCM",
-          "DTCM",
-          "SRAM0",
-          "SRAM1",
-          "SRAM2",
-          "SRAM3",
-          "SRAM4"
-        ]
+        "flash": ["FLASH"],
+        "ram": ["RAM", "ITCM", "DTCM", "SRAM0", "SRAM1", "SRAM2", "SRAM3", "SRAM4"]
       },
       "measured": {
         "flash": 217920,
@@ -56,15 +40,8 @@
     "esp32-s3-devkitc": {
       "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
       "regions": {
-        "flash": [
-          "FLASH"
-        ],
-        "ram": [
-          "iram0_0_seg",
-          "dram0_0_seg",
-          "ext_dram_seg",
-          "rtc_slow_seg"
-        ]
+        "flash": ["FLASH"],
+        "ram": ["iram0_0_seg", "dram0_0_seg", "ext_dram_seg", "rtc_slow_seg"]
       },
       "measured": {
         "flash": 1010708,
@@ -78,14 +55,8 @@
     "stm32f746g-disco": {
       "zephyr_board": "stm32f746g_disco/stm32f746xx",
       "regions": {
-        "flash": [
-          "FLASH"
-        ],
-        "ram": [
-          "RAM",
-          "SRAM0",
-          "DTCM"
-        ]
+        "flash": ["FLASH"],
+        "ram": ["RAM", "SRAM0", "DTCM"]
       },
       "measured": {
         "flash": 304836,
@@ -99,20 +70,8 @@
     "nucleo-h743zi": {
       "zephyr_board": "nucleo_h743zi/stm32h743xx",
       "regions": {
-        "flash": [
-          "FLASH"
-        ],
-        "ram": [
-          "BACKUP_SRAM",
-          "RAM",
-          "ITCM",
-          "DTCM",
-          "SRAM0",
-          "SRAM1",
-          "SRAM2",
-          "SRAM3",
-          "SRAM4"
-        ]
+        "flash": ["FLASH"],
+        "ram": ["BACKUP_SRAM", "RAM", "ITCM", "DTCM", "SRAM0", "SRAM1", "SRAM2", "SRAM3", "SRAM4"]
       },
       "measured": {
         "flash": 361816,
@@ -126,19 +85,8 @@
     "arduino-opta-wifi-m7": {
       "zephyr_board": "arduino_opta/stm32h747xx/m7",
       "regions": {
-        "flash": [
-          "FLASH"
-        ],
-        "ram": [
-          "RAM",
-          "ITCM",
-          "DTCM",
-          "SRAM0",
-          "SRAM1",
-          "SRAM2",
-          "SRAM3",
-          "SRAM4"
-        ]
+        "flash": ["FLASH"],
+        "ram": ["RAM", "ITCM", "DTCM", "SRAM0", "SRAM1", "SRAM2", "SRAM3", "SRAM4"]
       },
       "measured": {
         "flash": 381432,
@@ -152,13 +100,8 @@
     "waveshare-rp2040-zero": {
       "zephyr_board": "rp2040_zero/rp2040",
       "regions": {
-        "flash": [
-          "BOOT_FLASH",
-          "FLASH"
-        ],
-        "ram": [
-          "RAM"
-        ]
+        "flash": ["BOOT_FLASH", "FLASH"],
+        "ram": ["RAM"]
       },
       "measured": {
         "flash": 172576,

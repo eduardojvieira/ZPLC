@@ -22,9 +22,20 @@ export interface ArchiveReview {
 }
 
 export function reviewArchive(summary: ArchiveSummary): ArchiveReview {
-  const base = { name: null, version: null, schemaVersion: null, fileCount: summary.fileCount, folderCount: summary.folderCount, difference: null } as const;
+  const base = {
+    name: null,
+    version: null,
+    schemaVersion: null,
+    fileCount: summary.fileCount,
+    folderCount: summary.folderCount,
+    difference: null,
+  } as const;
   if (summary.manifest === null) {
-    return { ...base, openable: false, problem: 'The archive has no zplc.json at its root, or it is larger than a project file may be: it is not a ZPLC project.' };
+    return {
+      ...base,
+      openable: false,
+      problem: 'The archive has no zplc.json at its root, or it is larger than a project file may be: it is not a ZPLC project.',
+    };
   }
   let parsed: unknown;
   try {
@@ -35,7 +46,11 @@ export function reviewArchive(summary: ArchiveSummary): ArchiveReview {
   const result = parseAndMigrateProject(parsed);
   if (!result.ok) {
     const first = result.diagnostics[0];
-    return { ...base, openable: false, problem: first ? `ZPLC would not open this project: ${first.path}: ${first.message}.` : 'ZPLC would not open this project.' };
+    return {
+      ...base,
+      openable: false,
+      problem: first ? `ZPLC would not open this project: ${first.path}: ${first.message}.` : 'ZPLC would not open this project.',
+    };
   }
   return {
     ...base,

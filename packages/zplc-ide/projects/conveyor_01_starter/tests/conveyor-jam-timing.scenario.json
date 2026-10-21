@@ -4,7 +4,18 @@
   "tickMs": 10,
   "durationMs": 100,
   "events": [
-    { "atMs": 0, "set": { "Conveyor.Start": true, "Conveyor.Stop": false, "Conveyor.Reset": false, "Conveyor.PartAtClassifier": false, "Conveyor.MetalDetected": false, "Conveyor.PartAtDiverter": false, "Conveyor.JamDetected": false } },
+    {
+      "atMs": 0,
+      "set": {
+        "Conveyor.Start": true,
+        "Conveyor.Stop": false,
+        "Conveyor.Reset": false,
+        "Conveyor.PartAtClassifier": false,
+        "Conveyor.MetalDetected": false,
+        "Conveyor.PartAtDiverter": false,
+        "Conveyor.JamDetected": false
+      }
+    },
     { "atMs": 10, "set": { "Conveyor.Start": false } },
     { "atMs": 30, "set": { "Conveyor.JamDetected": true } },
     { "atMs": 40, "set": { "Conveyor.Reset": true } },

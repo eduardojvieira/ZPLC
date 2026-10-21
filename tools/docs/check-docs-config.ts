@@ -58,7 +58,8 @@ interface Schema {
   definitions?: Record<string, Schema>;
 }
 
-const kindOf = (value: unknown): string => (value === null ? 'null' : Array.isArray(value) ? 'array' : Number.isInteger(value) ? 'integer' : typeof value);
+const kindOf = (value: unknown): string =>
+  value === null ? 'null' : Array.isArray(value) ? 'array' : Number.isInteger(value) ? 'integer' : typeof value;
 
 /**
  * The errors of a value against the JSON schema of the project file. Stricter than the schema in one place: a property
@@ -71,13 +72,17 @@ export function schemaErrors(value: unknown, schema: Schema, root: Schema, path 
     return schemaErrors(value, target, root, path);
   }
   if (schema.anyOf) {
-    return schema.anyOf.some((option) => schemaErrors(value, option, root, path).length === 0) ? [] : [`${path}: matches none of the shapes the schema allows`];
+    return schema.anyOf.some((option) => schemaErrors(value, option, root, path).length === 0)
+      ? []
+      : [`${path}: matches none of the shapes the schema allows`];
   }
   const errors: string[] = [];
   const kind = kindOf(value);
   const allowed = schema.type === undefined ? undefined : Array.isArray(schema.type) ? schema.type : [schema.type];
-  if (allowed && !allowed.includes(kind) && !(kind === 'integer' && allowed.includes('number'))) return [`${path}: is ${kind}, the schema wants ${allowed.join(' or ')}`];
-  if (schema.enum && !schema.enum.includes(value)) errors.push(`${path}: ${JSON.stringify(value)} is not one of ${schema.enum.map((option) => JSON.stringify(option)).join(', ')}`);
+  if (allowed && !allowed.includes(kind) && !(kind === 'integer' && allowed.includes('number')))
+    return [`${path}: is ${kind}, the schema wants ${allowed.join(' or ')}`];
+  if (schema.enum && !schema.enum.includes(value))
+    errors.push(`${path}: ${JSON.stringify(value)} is not one of ${schema.enum.map((option) => JSON.stringify(option)).join(', ')}`);
   if (typeof value === 'string') {
     if (schema.minLength !== undefined && value.length < schema.minLength) errors.push(`${path}: is shorter than ${schema.minLength}`);
     if (schema.maxLength !== undefined && value.length > schema.maxLength) errors.push(`${path}: is longer than ${schema.maxLength}`);
@@ -91,7 +96,10 @@ export function schemaErrors(value: unknown, schema: Schema, root: Schema, path 
     if (schema.minItems !== undefined && value.length < schema.minItems) errors.push(`${path}: has fewer than ${schema.minItems} items`);
     if (schema.maxItems !== undefined && value.length > schema.maxItems) errors.push(`${path}: has more than ${schema.maxItems} items`);
     const items = schema.items;
-    if (items) value.forEach((item, position) => errors.push(...schemaErrors(item, Array.isArray(items) ? items[position] ?? {} : items, root, `${path}[${position}]`)));
+    if (items)
+      value.forEach((item, position) =>
+        errors.push(...schemaErrors(item, Array.isArray(items) ? (items[position] ?? {}) : items, root, `${path}[${position}]`)),
+      );
   }
   if (kind === 'object') {
     const object = value as Record<string, unknown>;
@@ -130,22 +138,44 @@ export function extractFragments(page: string, text: string): { fragments: Fragm
     let closed = false;
     for (index += 1; index < lines.length; index += 1) {
       const close = FENCE.exec(lines[index]!);
-      if (close && close[2]!.startsWith(fence[0]!) && close[2]!.length >= fence.length && close[3]!.trim() === '') { closed = true; break; }
+      if (close && close[2]!.startsWith(fence[0]!) && close[2]!.length >= fence.length && close[3]!.trim() === '') {
+        closed = true;
+        break;
+      }
       body.push(lines[index]!.startsWith(indent) ? lines[index]!.slice(indent.length) : lines[index]!);
     }
     const words = info.trim().split(/\s+/);
-    if (['st', 'iecst', 'pascal'].includes(words[0]!) && words.includes('runnable') && !words.includes('fragment') && closed && program === undefined) program = body.join('\n');
-    const kind = words[0] !== 'json' ? undefined
-      : words.includes('zplc-fragment') ? 'fragment'
-      : words.includes('zplc-scenario') ? 'scenario'
-      : words.includes('zplc-board') ? 'board'
-      : undefined;
+    if (
+      ['st', 'iecst', 'pascal'].includes(words[0]!) &&
+      words.includes('runnable') &&
+      !words.includes('fragment') &&
+      closed &&
+      program === undefined
+    )
+      program = body.join('\n');
+    const kind =
+      words[0] !== 'json'
+        ? undefined
+        : words.includes('zplc-fragment')
+          ? 'fragment'
+          : words.includes('zplc-scenario')
+            ? 'scenario'
+            : words.includes('zplc-board')
+              ? 'board'
+              : undefined;
     if (kind === undefined) continue;
     const line = index - body.length + 1;
-    if (!closed) { errors.push(`${page}:${line}: the ${kind} is never closed`); continue; }
+    if (!closed) {
+      errors.push(`${page}:${line}: the ${kind} is never closed`);
+      continue;
+    }
     const board = words.find((word) => word.startsWith('board='))?.slice('board='.length) ?? 'posix';
-    for (const word of words.slice(1)) if (word !== `zplc-${kind}` && !word.startsWith('board=')) errors.push(`${page}:${line}: unknown fence attribute "${word}"`);
-    if (kind === 'scenario' && program === undefined) { errors.push(`${page}:${line}: a scenario needs a runnable Structured Text program earlier on the same page`); continue; }
+    for (const word of words.slice(1))
+      if (word !== `zplc-${kind}` && !word.startsWith('board=')) errors.push(`${page}:${line}: unknown fence attribute "${word}"`);
+    if (kind === 'scenario' && program === undefined) {
+      errors.push(`${page}:${line}: a scenario needs a runnable Structured Text program earlier on the same page`);
+      continue;
+    }
     fragments.push({ page, line, board, source: body.join('\n'), kind, ...(kind === 'scenario' ? { program } : {}) });
   }
   return { fragments, errors };
@@ -157,14 +187,21 @@ export function parityErrors(english: Map<string, Fragment[]>, spanish: Map<stri
   const signature = (fragment: Fragment) => JSON.stringify([fragment.kind, fragment.board, JSON.parse(fragment.source)]);
   for (const [page, fragments] of english) {
     const twin = spanish.get(page) ?? [];
-    if (twin.length !== fragments.length) { errors.push(`${EN_DIR}/${page} has ${fragments.length} configuration fragment(s) and its Spanish page has ${twin.length}`); continue; }
+    if (twin.length !== fragments.length) {
+      errors.push(`${EN_DIR}/${page} has ${fragments.length} configuration fragment(s) and its Spanish page has ${twin.length}`);
+      continue;
+    }
     fragments.forEach((fragment, position) => {
       try {
-        if (signature(fragment) !== signature(twin[position]!)) errors.push(`${fragment.page}:${fragment.line} and ${twin[position]!.page}:${twin[position]!.line} show different fragments`);
-      } catch { /* a fragment that is not JSON is reported by its own check */ }
+        if (signature(fragment) !== signature(twin[position]!))
+          errors.push(`${fragment.page}:${fragment.line} and ${twin[position]!.page}:${twin[position]!.line} show different fragments`);
+      } catch {
+        /* a fragment that is not JSON is reported by its own check */
+      }
     });
   }
-  for (const [page, fragments] of spanish) if (!english.has(page) && fragments.length > 0) errors.push(`${ES_DIR}/${page} has configuration fragments and no English page does`);
+  for (const [page, fragments] of spanish)
+    if (!english.has(page) && fragments.length > 0) errors.push(`${ES_DIR}/${page} has configuration fragments and no English page does`);
   return errors;
 }
 
@@ -173,10 +210,14 @@ export function projectOf(fragment: Fragment): { manifest: Record<string, unknow
   const parsed = JSON.parse(fragment.source) as Record<string, unknown>;
   const names = new Set<string>();
   const communication = parsed.communication as { bindings?: Array<{ symbol?: string }>; tags?: Array<{ symbol?: string }> } | undefined;
-  for (const binding of [...(communication?.bindings ?? []), ...(communication?.tags ?? [])]) if (typeof binding.symbol === 'string') names.add(binding.symbol);
+  for (const binding of [...(communication?.bindings ?? []), ...(communication?.tags ?? [])])
+    if (typeof binding.symbol === 'string') names.add(binding.symbol);
   const io = parsed.io as { inputs?: Array<{ name?: string }>; outputs?: Array<{ name?: string }> } | undefined;
   for (const entry of [...(io?.inputs ?? []), ...(io?.outputs ?? [])]) if (typeof entry.name === 'string') names.add(entry.name);
-  const declarations = [...names].filter((name) => /^[A-Za-z_]\w*$/.test(name)).map((name) => `    ${name} : BOOL;`).join('\n');
+  const declarations = [...names]
+    .filter((name) => /^[A-Za-z_]\w*$/.test(name))
+    .map((name) => `    ${name} : BOOL;`)
+    .join('\n');
   const program = `PROGRAM Main\n${declarations ? `VAR\n${declarations}\nEND_VAR\n` : ''}END_PROGRAM\n`;
   const manifest = {
     schemaVersion: 2,
@@ -195,11 +236,15 @@ export function projectOf(fragment: Fragment): { manifest: Record<string, unknow
  * (`posix`, the simulator) has no description to hold the addresses to.
  */
 export function addressesWithoutChannel(fragment: Record<string, unknown>, board: string): string[] {
-  const boards = JSON.parse(readFileSync(join(ROOT, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{ ide_id: string; io: { channels: Array<{ address: string }> } }>;
+  const boards = JSON.parse(readFileSync(join(ROOT, 'firmware/app/boards/boards.json'), 'utf8')) as Array<{
+    ide_id: string;
+    io: { channels: Array<{ address: string }> };
+  }>;
   const described = boards.find((entry) => entry.ide_id === board);
   if (!described) return [];
   const channels = new Set(described.io.channels.map((channel) => channel.address));
-  const io = fragment.io as { inputs?: Array<{ address?: string }>; outputs?: Array<{ address?: string }>; virtual?: Array<{ address?: string }> } | undefined;
+  const io = fragment.io as
+    { inputs?: Array<{ address?: string }>; outputs?: Array<{ address?: string }>; virtual?: Array<{ address?: string }> } | undefined;
   const virtual = new Set((io?.virtual ?? []).map((entry) => entry.address));
   const normal = (address: string) => address.replace(/^%([IQ])(\d)/, '%$1X$2');
   return [...(io?.inputs ?? []), ...(io?.outputs ?? [])]
@@ -216,15 +261,23 @@ async function scenarioProblems(fragment: Fragment, scenario: { id?: string; tic
     await mkdir(join(root, 'tests'));
     await writeFile(join(root, 'src', 'main.st'), fragment.program!);
     const manifest = {
-      schemaVersion: 2, name: 'docs-scenario', version: '1.0.0', target: { board: 'posix' },
+      schemaVersion: 2,
+      name: 'docs-scenario',
+      version: '1.0.0',
+      target: { board: 'posix' },
       tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scenario.tickMs ?? 10, priority: 1, programs: ['main.st'] }],
     };
     await writeFile(join(root, 'zplc.json'), JSON.stringify(manifest, null, 2));
     await writeFile(join(root, 'tests', `${scenario.id ?? 'docs'}.scenario.json`), fragment.source);
     const result = await testsRun(root);
     if (result.ok) return [];
-    return [`does not pass against the program of the page: ${result.evidence.diagnostics.map((d) => `${d.code}: ${d.message}`).join('; ') || 'no diagnostic'}`];
-  } finally { await rm(root, { recursive: true, force: true }); }
+    return [
+      `does not pass against the program of the ` +
+        `page: ${result.evidence.diagnostics.map((d) => `${d.code}: ${d.message}`).join('; ') || 'no diagnostic'}`,
+    ];
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 }
 
 /** What the validator of the board manifest says about an entry, shown beside the manifest of this repository: empty when it accepts it. */
@@ -246,7 +299,11 @@ export function boardProblems(source: string): string[] {
 /** What the validation and the build say about a fragment: empty when the project that holds it builds. */
 export async function problemsOf(fragment: Fragment): Promise<string[]> {
   let parsed: unknown;
-  try { parsed = JSON.parse(fragment.source); } catch (error) { return [`is not JSON: ${(error as Error).message}`]; }
+  try {
+    parsed = JSON.parse(fragment.source);
+  } catch (error) {
+    return [`is not JSON: ${(error as Error).message}`];
+  }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return ['must be a JSON object'];
   if (fragment.kind === 'scenario') return scenarioProblems(fragment, parsed as { id?: string; tickMs?: number });
   if (fragment.kind === 'board') return boardProblems(fragment.source);
@@ -256,7 +313,10 @@ export async function problemsOf(fragment: Fragment): Promise<string[]> {
   const violations = schemaErrors(manifest, schema, schema);
   if (violations.length > 0) return [`does not follow ${SCHEMA}: ${violations.join('; ')}`];
   const unmapped = addressesWithoutChannel(parsed as Record<string, unknown>, fragment.board);
-  if (unmapped.length > 0) return [`maps ${unmapped.join(', ')}, which board ${fragment.board} has no channel for and the fragment does not list under io.virtual`];
+  if (unmapped.length > 0)
+    return [
+      `maps ${unmapped.join(', ')}, which board ${fragment.board} has no channel for and the fragment does not list under io.virtual`,
+    ];
   const root = await mkdtemp(join(tmpdir(), 'zplc-docs-fragment-'));
   try {
     await mkdir(join(root, 'src'));
@@ -269,7 +329,9 @@ export async function problemsOf(fragment: Fragment): Promise<string[]> {
     const built = await compilerCompile(root);
     if (!built.ok) return [`does not build: ${diagnostics(built).join('; ') || 'no diagnostic'}`];
     return [];
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 }
 
 if (import.meta.main) {
@@ -278,7 +340,10 @@ if (import.meta.main) {
   const spanish = new Map<string, Fragment[]>();
   const errors: string[] = [];
   let checked = 0;
-  for (const [base, into] of [[EN_DIR, english], [ES_DIR, spanish]] as const) {
+  for (const [base, into] of [
+    [EN_DIR, english],
+    [ES_DIR, spanish],
+  ] as const) {
     for (const file of markdownFiles(ROOT, base)) {
       const found = extractFragments(file, readFileSync(join(ROOT, file), 'utf8'));
       errors.push(...found.errors);
@@ -288,11 +353,17 @@ if (import.meta.main) {
   for (const fragments of [...english.values(), ...spanish.values()]) {
     for (const fragment of fragments) {
       checked += 1;
-      if (listOnly) { console.log(`${fragment.page}:${fragment.line}  board=${fragment.board}`); continue; }
+      if (listOnly) {
+        console.log(`${fragment.page}:${fragment.line}  board=${fragment.board}`);
+        continue;
+      }
       for (const problem of await problemsOf(fragment)) errors.push(`${fragment.page}:${fragment.line}: the ${fragment.kind} ${problem}`);
     }
   }
   errors.push(...parityErrors(english, spanish));
-  if (errors.length > 0) { console.error(errors.map((message) => `docs-config: ${message}`).join('\n')); process.exit(1); }
+  if (errors.length > 0) {
+    console.error(errors.map((message) => `docs-config: ${message}`).join('\n'));
+    process.exit(1);
+  }
   console.log(`docs-config: ${checked} configuration fragment(s) and scenario(s) of ${english.size} page(s) are valid, build and pass`);
 }

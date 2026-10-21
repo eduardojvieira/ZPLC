@@ -6,8 +6,17 @@ import { artifactDraftCounter, draftMismatchMessage } from './draftCounter';
 
 const MAX_TEXT_LENGTH = 128;
 const REQUIRED_ROOT_KEYS = [
-  'board', 'board_profile', 'zplc_version', 'zephyr_version', 'uptime_ms', 'cpu_freq_mhz',
-  'device_protocol_version', 'bytecode_abi_major', 'bytecode_abi_minor', 'capabilities', 'memory',
+  'board',
+  'board_profile',
+  'zplc_version',
+  'zephyr_version',
+  'uptime_ms',
+  'cpu_freq_mhz',
+  'device_protocol_version',
+  'bytecode_abi_major',
+  'bytecode_abi_minor',
+  'capabilities',
+  'memory',
 ] as const;
 /**
  * Firmware images from before the draft counter (CMP-052) do not report it; Studio refuses to deploy to them.
@@ -86,8 +95,12 @@ export interface DeviceSystemInfo {
   io?: { schema: number; board_id: string; hash: string; channels: number; input_bytes: number; output_bytes: number };
   capabilities: { fpu: boolean; mpu: boolean; scheduler: boolean; max_tasks: number };
   memory: {
-    work_size: number; retain_size: number; ipi_size: number; opi_size: number;
-    code_size?: number; max_artifact_size?: number;
+    work_size: number;
+    retain_size: number;
+    ipi_size: number;
+    opi_size: number;
+    code_size?: number;
+    max_artifact_size?: number;
   };
 }
 
@@ -143,31 +156,57 @@ function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null 
   if (!root || !exactKeys(root, REQUIRED_ROOT_KEYS, OPTIONAL_ROOT_KEYS)) return null;
   const capabilities = snapshotRecord(root.capabilities);
   const memory = snapshotRecord(root.memory);
-  if (!capabilities || !memory || !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) || !exactKeys(memory, REQUIRED_MEMORY_KEYS, OPTIONAL_MEMORY_KEYS)) return null;
+  if (
+    !capabilities ||
+    !memory ||
+    !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) ||
+    !exactKeys(memory, REQUIRED_MEMORY_KEYS, OPTIONAL_MEMORY_KEYS)
+  )
+    return null;
   const io = Object.hasOwn(root, 'io') ? parseDeviceIo(root.io) : undefined;
   if (io === null) return null;
-  if (!(typeof capabilities.fpu === 'boolean' && typeof capabilities.mpu === 'boolean' && typeof capabilities.scheduler === 'boolean'
-    && readInteger(capabilities.max_tasks, 1024) !== null
-    && REQUIRED_MEMORY_KEYS.every((key) => readInteger(memory[key], 0xffffffff) !== null)
-    && OPTIONAL_MEMORY_KEYS.every((key) => !Object.hasOwn(memory, key) || readInteger(memory[key], 0xffffffff) !== null)
-    && readText(root.board) !== null && readText(root.board_profile) !== null
-    && readText(root.zplc_version) !== null && readText(root.zephyr_version) !== null
-    && readInteger(root.uptime_ms, 0xffffffff) !== null && readInteger(root.cpu_freq_mhz, 1_000_000) !== null
-    && readInteger(root.device_protocol_version, 0xffff) !== null
-    && readInteger(root.bytecode_abi_major, 0xffff) !== null && readInteger(root.bytecode_abi_minor, 0xffff) !== null
-    && (!Object.hasOwn(root, 'draft_counter') || readInteger(root.draft_counter, 0xffffffff) !== null))) return null;
+  if (!(
+    typeof capabilities.fpu === 'boolean' &&
+    typeof capabilities.mpu === 'boolean' &&
+    typeof capabilities.scheduler === 'boolean' &&
+    readInteger(capabilities.max_tasks, 1024) !== null &&
+    REQUIRED_MEMORY_KEYS.every((key) => readInteger(memory[key], 0xffffffff) !== null) &&
+    OPTIONAL_MEMORY_KEYS.every((key) => !Object.hasOwn(memory, key) || readInteger(memory[key], 0xffffffff) !== null) &&
+    readText(root.board) !== null &&
+    readText(root.board_profile) !== null &&
+    readText(root.zplc_version) !== null &&
+    readText(root.zephyr_version) !== null &&
+    readInteger(root.uptime_ms, 0xffffffff) !== null &&
+    readInteger(root.cpu_freq_mhz, 1_000_000) !== null &&
+    readInteger(root.device_protocol_version, 0xffff) !== null &&
+    readInteger(root.bytecode_abi_major, 0xffff) !== null &&
+    readInteger(root.bytecode_abi_minor, 0xffff) !== null &&
+    (!Object.hasOwn(root, 'draft_counter') || readInteger(root.draft_counter, 0xffffffff) !== null)
+  ))
+    return null;
   return {
-    board: root.board as string, board_profile: root.board_profile as string,
-    zplc_version: root.zplc_version as string, zephyr_version: root.zephyr_version as string,
-    uptime_ms: root.uptime_ms as number, cpu_freq_mhz: root.cpu_freq_mhz as number,
+    board: root.board as string,
+    board_profile: root.board_profile as string,
+    zplc_version: root.zplc_version as string,
+    zephyr_version: root.zephyr_version as string,
+    uptime_ms: root.uptime_ms as number,
+    cpu_freq_mhz: root.cpu_freq_mhz as number,
     device_protocol_version: root.device_protocol_version as number,
-    bytecode_abi_major: root.bytecode_abi_major as number, bytecode_abi_minor: root.bytecode_abi_minor as number,
+    bytecode_abi_major: root.bytecode_abi_major as number,
+    bytecode_abi_minor: root.bytecode_abi_minor as number,
     ...(Object.hasOwn(root, 'draft_counter') ? { draft_counter: root.draft_counter as number } : {}),
     ...(io ? { io } : {}),
-    capabilities: { fpu: capabilities.fpu, mpu: capabilities.mpu, scheduler: capabilities.scheduler, max_tasks: capabilities.max_tasks as number },
+    capabilities: {
+      fpu: capabilities.fpu,
+      mpu: capabilities.mpu,
+      scheduler: capabilities.scheduler,
+      max_tasks: capabilities.max_tasks as number,
+    },
     memory: {
-      work_size: memory.work_size as number, retain_size: memory.retain_size as number,
-      ipi_size: memory.ipi_size as number, opi_size: memory.opi_size as number,
+      work_size: memory.work_size as number,
+      retain_size: memory.retain_size as number,
+      ipi_size: memory.ipi_size as number,
+      opi_size: memory.opi_size as number,
       ...(Object.hasOwn(memory, 'code_size') ? { code_size: memory.code_size as number } : {}),
       ...(Object.hasOwn(memory, 'max_artifact_size') ? { max_artifact_size: memory.max_artifact_size as number } : {}),
     },
@@ -186,7 +225,14 @@ export function parseDeviceHandshake(value: unknown): DeviceHandshake {
     draftCounter: info.draft_counter ?? null,
     maxArtifactBytes: info.memory.max_artifact_size ?? null,
     io: info.io
-      ? { schema: info.io.schema, boardId: info.io.board_id, hash: info.io.hash, channels: info.io.channels, inputBytes: info.io.input_bytes, outputBytes: info.io.output_bytes }
+      ? {
+          schema: info.io.schema,
+          boardId: info.io.board_id,
+          hash: info.io.hash,
+          channels: info.io.channels,
+          inputBytes: info.io.input_bytes,
+          outputBytes: info.io.output_bytes,
+        }
       : null,
   };
 }
@@ -245,18 +291,31 @@ export function validateHardwareDeployAdmission(
   }
   // COM-028: the size is part of the preflight, against what this device says it accepts
   if (handshake.maxArtifactBytes !== null && bytes.byteLength > handshake.maxArtifactBytes) {
-    fail(DEVICE_ADMISSION_CODE.ARTIFACT_TOO_LARGE,
-      `The program is ${bytes.byteLength} bytes and this device accepts at most ${handshake.maxArtifactBytes}.`);
+    fail(
+      DEVICE_ADMISSION_CODE.ARTIFACT_TOO_LARGE,
+      `The program is ${bytes.byteLength} bytes and this device accepts at most ${handshake.maxArtifactBytes}.`,
+    );
   }
-  if (artifact.major !== ZPLC_CONSTANTS.VERSION_MAJOR || artifact.minor !== ZPLC_CONSTANTS.VERSION_MINOR
-    || handshake.bytecodeAbiMajor !== ZPLC_CONSTANTS.VERSION_MAJOR || handshake.bytecodeAbiMinor !== ZPLC_CONSTANTS.VERSION_MINOR
-    || artifact.major !== handshake.bytecodeAbiMajor || artifact.minor !== handshake.bytecodeAbiMinor) {
+  if (
+    artifact.major !== ZPLC_CONSTANTS.VERSION_MAJOR ||
+    artifact.minor !== ZPLC_CONSTANTS.VERSION_MINOR ||
+    handshake.bytecodeAbiMajor !== ZPLC_CONSTANTS.VERSION_MAJOR ||
+    handshake.bytecodeAbiMinor !== ZPLC_CONSTANTS.VERSION_MINOR ||
+    artifact.major !== handshake.bytecodeAbiMajor ||
+    artifact.minor !== handshake.bytecodeAbiMinor
+  ) {
     fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH);
   }
   // IO-004: the I/O the program uses is compared with the description of the board the firmware was built for
   const io = checkProgramIo({ accesses: processImageAccesses(bytes), board: projectBoard, device: handshake.io });
-  if (!io.ok) fail(io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING' ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISSING
-    : io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH' ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISMATCH
-      : DEVICE_ADMISSION_CODE.PROGRAM_IO_MISMATCH, io.detail);
+  if (!io.ok)
+    fail(
+      io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING'
+        ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISSING
+        : io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH'
+          ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISMATCH
+          : DEVICE_ADMISSION_CODE.PROGRAM_IO_MISMATCH,
+      io.detail,
+    );
   return handshake;
 }

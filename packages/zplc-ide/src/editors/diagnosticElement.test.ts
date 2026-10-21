@@ -14,7 +14,10 @@ const read = <T>(path: string): T => JSON.parse(readFileSync(join(projects, path
 function build(language: PLCLanguage, extension: string, content: string): CompilerError[] {
   const sources: ProgramSource[] = [{ name: 'main', content, language, sourceRef: `src/main${extension}` }];
   try {
-    compileMultiTaskProject({ name: 'P', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main'] }] }, sources);
+    compileMultiTaskProject(
+      { name: 'P', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main'] }] },
+      sources,
+    );
   } catch (error) {
     if (error instanceof CompilerError) return error.errors;
   }
@@ -46,18 +49,25 @@ describe('LNG-003 Problems selects the element that the build named', () => {
   });
 
   it('finds the action and the transition of an SFC chart', () => {
-    const model = read<{ actions: Array<{ id: string; body: string }>; transitions: Array<{ id: string; condition: string }> }>('blinky_sfc/src/main.sfc.json');
+    const model = read<{ actions: Array<{ id: string; body: string }>; transitions: Array<{ id: string; condition: string }> }>(
+      'blinky_sfc/src/main.sfc.json',
+    );
     model.actions[0]!.body = 'Undeclared := TRUE;';
     model.transitions[0]!.condition = 'AlsoUndeclared';
     const content = JSON.stringify(model);
     const errors = build('SFC', '.sfc.json', content);
     expect(errors.map((error) => error.element)).toEqual([`action:${model.actions[0]!.id}`, `transition:${model.transitions[0]!.id}`]);
-    for (const error of errors) expect(elementOfDiagnostic({ language: 'SFC', content }, { message: error.detail, line: error.line })).toBe(error.element);
+    for (const error of errors)
+      expect(elementOfDiagnostic({ language: 'SFC', content }, { message: error.detail, line: error.line })).toBe(error.element);
   });
 
   it('finds the rung and the cell of a Ladder diagram', () => {
-    const model = read<{ rungs: Array<{ id: string; grid: Array<Array<{ element: { type: string; variable?: string } | null }>> }> }>('blinky/src/main.ld.json');
-    const col = model.rungs[0]!.grid[0]!.findIndex((cell) => cell.element?.variable !== undefined && cell.element.type.startsWith('contact'));
+    const model = read<{ rungs: Array<{ id: string; grid: Array<Array<{ element: { type: string; variable?: string } | null }>> }> }>(
+      'blinky/src/main.ld.json',
+    );
+    const col = model.rungs[0]!.grid[0]!.findIndex(
+      (cell) => cell.element?.variable !== undefined && cell.element.type.startsWith('contact'),
+    );
     model.rungs[0]!.grid[0]![col]!.element!.variable = 'Missing';
     const content = JSON.stringify(model);
     const [error] = build('LD', '.ld.json', content);
@@ -70,7 +80,9 @@ describe('LNG-003 Problems selects the element that the build named', () => {
     expect(elementOfDiagnostic({ language: 'IL', content: 'LD x' }, { message: 'x', line: 1 })).toBeUndefined();
     const model = read<{ connections: unknown[] }>('blinky_fbd/src/main.fbd.json');
     model.connections = [];
-    expect(elementOfDiagnostic({ language: 'FBD', content: JSON.stringify(model) }, { message: 'something else entirely' })).toBeUndefined();
+    expect(
+      elementOfDiagnostic({ language: 'FBD', content: JSON.stringify(model) }, { message: 'something else entirely' }),
+    ).toBeUndefined();
   });
 });
 

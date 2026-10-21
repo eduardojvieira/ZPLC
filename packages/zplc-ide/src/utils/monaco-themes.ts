@@ -9,7 +9,11 @@ import { resolveTokens, type ThemeId, type TokenMap } from '../theme/tokens';
  */
 const hex = (value: string): string => {
   const colour = parseColor(value);
-  return colour.a < 1 ? `${toHex(colour)}${Math.round(colour.a * 255).toString(16).padStart(2, '0')}` : toHex(colour);
+  return colour.a < 1
+    ? `${toHex(colour)}${Math.round(colour.a * 255)
+        .toString(16)
+        .padStart(2, '0')}`
+    : toHex(colour);
 };
 
 /** A token rule's foreground is the colour without the leading `#`. */

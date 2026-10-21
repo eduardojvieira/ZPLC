@@ -18,19 +18,45 @@ const t0 = 1_000;
 describe('the notification model (IDE-021)', () => {
   it('shows a long operation as running, with progress and a cancel action, until it ends', () => {
     let cancelled = 0;
-    const list = beginNotification([], { ...base, cancel: () => { cancelled += 1; } }, 'a', t0);
+    const list = beginNotification(
+      [],
+      {
+        ...base,
+        cancel: () => {
+          cancelled += 1;
+        },
+      },
+      'a',
+      t0,
+    );
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({ id: 'a', kind: 'build', status: 'running', details: 'output', startedAt: t0 });
     list[0]!.cancel?.();
     expect(cancelled).toBe(1);
-    const done = finishNotification(list, 'a', { kind: 'build', status: 'success', title: 'Build succeeded', detail: 'Motor.zplc, 420 bytes', details: 'output' }, t0 + 50);
+    const done = finishNotification(
+      list,
+      'a',
+      { kind: 'build', status: 'success', title: 'Build succeeded', detail: 'Motor.zplc, 420 bytes', details: 'output' },
+      t0 + 50,
+    );
     expect(done).toHaveLength(1);
-    expect(done[0]).toMatchObject({ id: 'a', status: 'success', title: 'Build succeeded', detail: 'Motor.zplc, 420 bytes', finishedAt: t0 + 50 });
+    expect(done[0]).toMatchObject({
+      id: 'a',
+      status: 'success',
+      title: 'Build succeeded',
+      detail: 'Motor.zplc, 420 bytes',
+      finishedAt: t0 + 50,
+    });
     expect(done[0]!.cancel).toBeUndefined();
   });
 
   it('links every result to the panel that holds its details', () => {
-    const failed = finishNotification(beginNotification([], base, 'a', t0), 'a', { kind: 'build', status: 'error', title: 'Build failed', details: 'problems' }, t0 + 5);
+    const failed = finishNotification(
+      beginNotification([], base, 'a', t0),
+      'a',
+      { kind: 'build', status: 'error', title: 'Build failed', details: 'problems' },
+      t0 + 5,
+    );
     expect(failed[0]).toMatchObject({ status: 'error', details: 'problems' });
     const saved = finishNotification([], 'b', { kind: 'save', status: 'success', title: 'Saved Motor.st', details: 'output' }, t0);
     expect(saved[0]).toMatchObject({ id: 'b', kind: 'save', status: 'success', details: 'output' });
@@ -40,7 +66,12 @@ describe('the notification model (IDE-021)', () => {
     const running = beginNotification([], base, 'a', t0);
     const dismissed = dismissNotification(running, 'a');
     expect(dismissed).toEqual([]);
-    const result = finishNotification(dismissed, 'a', { kind: 'build', status: 'error', title: 'Build failed', details: 'problems' }, t0 + 10);
+    const result = finishNotification(
+      dismissed,
+      'a',
+      { kind: 'build', status: 'error', title: 'Build failed', details: 'problems' },
+      t0 + 10,
+    );
     expect(result.map((entry) => entry.status)).toEqual(['error']);
   });
 
@@ -57,7 +88,12 @@ describe('the notification model (IDE-021)', () => {
   it('is bounded: the oldest finished results go first', () => {
     let list: AppNotification[] = [];
     for (let index = 0; index < NOTIFICATION_LIMIT + 4; index += 1) {
-      list = finishNotification(list, `n${index}`, { kind: index % 2 === 0 ? 'tests' : 'deploy', status: 'error', title: `Result ${index}`, details: 'output' }, t0 + index);
+      list = finishNotification(
+        list,
+        `n${index}`,
+        { kind: index % 2 === 0 ? 'tests' : 'deploy', status: 'error', title: `Result ${index}`, details: 'output' },
+        t0 + index,
+      );
     }
     expect(list.length).toBeLessThanOrEqual(NOTIFICATION_LIMIT);
     expect(list.at(-1)!.title).toBe(`Result ${NOTIFICATION_LIMIT + 3}`);
@@ -103,17 +139,21 @@ describe('what the notification store says to the shared announcer (UX-026)', ()
   beforeEach(resetAnnouncements);
   afterEach(() => useNotifications.getState().clear());
 
-  it('announces the start of a long operation, and its result with the detail, for a build, a save, a deploy, a connection and a test run', () => {
-    const store = useNotifications.getState();
-    const id = store.begin({ kind: 'build', title: 'Building project', details: 'output' });
-    expect(announcementsSnapshot().polite.message).toBe('Building project');
-    store.finish(id, { kind: 'build', status: 'success', title: 'Build succeeded', detail: 'main.st compiled', details: 'output' });
-    expect(announcementsSnapshot().polite.message).toBe('Build succeeded. main.st compiled');
-    for (const kind of ['save', 'deploy', 'connection', 'tests'] as const) {
-      store.report({ kind, status: 'success', title: `Result of ${kind}`, details: 'output' });
-      expect(announcementsSnapshot().polite.message).toBe(`Result of ${kind}`);
-    }
-  });
+  it(
+    'announces the start of a long operation, and its result with the detail, for a build, a save, a deploy, a connection and a test ' +
+      'run',
+    () => {
+      const store = useNotifications.getState();
+      const id = store.begin({ kind: 'build', title: 'Building project', details: 'output' });
+      expect(announcementsSnapshot().polite.message).toBe('Building project');
+      store.finish(id, { kind: 'build', status: 'success', title: 'Build succeeded', detail: 'main.st compiled', details: 'output' });
+      expect(announcementsSnapshot().polite.message).toBe('Build succeeded. main.st compiled');
+      for (const kind of ['save', 'deploy', 'connection', 'tests'] as const) {
+        store.report({ kind, status: 'success', title: `Result of ${kind}`, details: 'output' });
+        expect(announcementsSnapshot().polite.message).toBe(`Result of ${kind}`);
+      }
+    },
+  );
 
   it('raises an error as a fault, in the assertive region, and a warning or a cancellation politely', () => {
     const store = useNotifications.getState();
@@ -128,7 +168,12 @@ describe('what the notification store says to the shared announcer (UX-026)', ()
 describe('a failure offers its way back (IDE-021, UX-021)', () => {
   it('keeps the recovery action of a failure, and drops it from a success', () => {
     let tried = 0;
-    const recover = { label: 'Try again', run: () => { tried += 1; } };
+    const recover = {
+      label: 'Try again',
+      run: () => {
+        tried += 1;
+      },
+    };
     const failed = finishNotification([], 'a', { kind: 'save', status: 'error', title: 'Could not save', details: 'output', recover }, t0);
     failed[0]!.recover?.run();
     expect(failed[0]!.recover?.label).toBe('Try again');

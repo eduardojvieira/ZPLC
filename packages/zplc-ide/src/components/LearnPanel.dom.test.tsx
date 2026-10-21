@@ -18,17 +18,27 @@ const es = learnLessonCatalog.es;
 // What lets a lesson workspace open is the folder access of the host: another test file of the same run can leave it on the window,
 // so the test that needs none removes it for its own duration.
 const restores: Array<() => void> = [];
-afterEach(() => { while (restores.length > 0) restores.pop()!(); });
+afterEach(() => {
+  while (restores.length > 0) restores.pop()!();
+});
 function withoutFolderAccess(): void {
   const host = window as unknown as Record<string, unknown>;
   const before = Object.fromEntries(['electronAPI', 'showDirectoryPicker'].filter((key) => key in host).map((key) => [key, host[key]]));
   delete host.electronAPI;
   delete host.showDirectoryPicker;
-  restores.push(() => { Object.assign(host, before); });
+  restores.push(() => {
+    Object.assign(host, before);
+  });
 }
 
 function show(over: { unlockAll?: boolean; hideSolutions?: boolean; selected?: string | null } = {}) {
-  dom.patchStore(useAppSettings, { settings: { ...useAppSettings.getState().settings, unlockAllLessons: over.unlockAll ?? true, hideSolutions: over.hideSolutions ?? false } } as never);
+  dom.patchStore(useAppSettings, {
+    settings: {
+      ...useAppSettings.getState().settings,
+      unlockAllLessons: over.unlockAll ?? true,
+      hideSolutions: over.hideSolutions ?? false,
+    },
+  } as never);
   // choosing a lesson is noted as the last one worked on: every test starts from a progress with nothing in it
   dom.patchStore(useLearnProgress, { document: null, loaded: true, failed: false } as never);
   dom.patchStore(useLearnUi, { selected: over.selected ?? null, starting: false, workspace: null } as never);
@@ -36,7 +46,8 @@ function show(over: { unlockAll?: boolean; hideSolutions?: boolean; selected?: s
 }
 
 /** The lesson that a button of the lesson toggle group stands for: its label is the title and the state of the lesson. */
-const lessonOf = (button: HTMLElement, catalog: typeof en) => catalog.find((lesson) => (button.textContent ?? '').startsWith(`${lesson.title} (`))!;
+const lessonOf = (button: HTMLElement, catalog: typeof en) =>
+  catalog.find((lesson) => (button.textContent ?? '').startsWith(`${lesson.title} (`))!;
 const lessonButtons = () => dom.within(dom.screen.getByRole('group', { name: dom.t('learn.lesson') })).getAllByRole('button');
 
 describe('Learn lesson panel in a DOM (VF-007, LRN-004)', () => {
@@ -44,8 +55,12 @@ describe('Learn lesson panel in a DOM (VF-007, LRN-004)', () => {
     show();
     const lesson = lessonOf(lessonButtons()[0]!, en);
     expect(dom.screen.getByRole('heading', { level: 2, name: lesson.title })).toBeTruthy();
-    expect(dom.screen.getByRole('list', { name: dom.t('learn.learningObjectives') }).querySelectorAll('li')).toHaveLength(lesson.objectives.length);
-    expect(dom.screen.getByRole('list', { name: dom.t('learn.lessonSteps') }).querySelectorAll(':scope > li')).toHaveLength(lesson.stages.length);
+    expect(dom.screen.getByRole('list', { name: dom.t('learn.learningObjectives') }).querySelectorAll('li')).toHaveLength(
+      lesson.objectives.length,
+    );
+    expect(dom.screen.getByRole('list', { name: dom.t('learn.lessonSteps') }).querySelectorAll(':scope > li')).toHaveLength(
+      lesson.stages.length,
+    );
     expect(dom.screen.getByRole('region', { name: dom.t('learn.hints') })).toBeTruthy();
     expect(dom.screen.getByRole('region', { name: dom.t('learn.lessonEvidence') })).toBeTruthy();
   });
@@ -77,7 +92,9 @@ describe('Learn lesson panel in a DOM (VF-007, LRN-004)', () => {
     const lesson = lessonOf(lessonButtons()[0]!, en);
     const group = dom.screen.getByRole('group', { name: dom.t('learn.lessonLanguage') });
     await user.click(dom.within(group).getByRole('button', { name: 'Español' }));
-    await dom.waitFor(() => expect(dom.screen.getByRole('heading', { level: 2, name: es.find((candidate) => candidate.id === lesson.id)!.title })).toBeTruthy());
+    await dom.waitFor(() =>
+      expect(dom.screen.getByRole('heading', { level: 2, name: es.find((candidate) => candidate.id === lesson.id)!.title })).toBeTruthy(),
+    );
     expect(useAppSettings.getState().settings.language).toBe('es');
     expect(dom.screen.getByRole('region', { name: dom.tFor('es')('learn.hints') })).toBeTruthy();
   });

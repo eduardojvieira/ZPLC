@@ -33,11 +33,12 @@ END_VAR
 END_FUNCTION_BLOCK
 `;
 
-const withBuffer = (buffer: string) => buildProjectIndex([
-  { path: 'src/types.st', content: TYPES },
-  { path: 'src/lib/blocks.st', content: LIB },
-  { path: 'src/main.st', content: buffer },
-]);
+const withBuffer = (buffer: string) =>
+  buildProjectIndex([
+    { path: 'src/types.st', content: TYPES },
+    { path: 'src/lib/blocks.st', content: LIB },
+    { path: 'src/main.st', content: buffer },
+  ]);
 
 const PREAMBLE = `PROGRAM Main
 VAR
@@ -202,16 +203,25 @@ END_TYPE
   });
 
   it('offers the function blocks, functions and types the project declares, with their kind and file', () => {
-    const index = buildProjectIndex([{ path: 'src/main.st', content: main }, { path: 'lib/Library.st', content: library }]);
+    const index = buildProjectIndex([
+      { path: 'src/main.st', content: main },
+      { path: 'lib/Library.st', content: library },
+    ]);
     const items = completionsAt(index, 'src/main.st', 5, 1, main);
-    expect(items.find((item) => item.label === 'Debounce')).toMatchObject({ kind: 'functionBlock', detail: 'FUNCTION_BLOCK, lib/Library.st' });
+    expect(items.find((item) => item.label === 'Debounce')).toMatchObject({
+      kind: 'functionBlock',
+      detail: 'FUNCTION_BLOCK, lib/Library.st',
+    });
     expect(items.find((item) => item.label === 'Scale')).toMatchObject({ kind: 'function', detail: 'FUNCTION : REAL, lib/Library.st' });
     expect(items.find((item) => item.label === 'Point')).toMatchObject({ kind: 'type', detail: 'STRUCT, lib/Library.st' });
   });
 
   it('keeps the variable of the buffer when a project declaration has the same name', () => {
     const clash = 'FUNCTION Local : INT\nEND_FUNCTION\n';
-    const index = buildProjectIndex([{ path: 'src/main.st', content: main }, { path: 'lib/x.st', content: clash }]);
+    const index = buildProjectIndex([
+      { path: 'src/main.st', content: main },
+      { path: 'lib/x.st', content: clash },
+    ]);
     expect(completionsAt(index, 'src/main.st', 5, 1, main).find((item) => item.label === 'Local')?.kind).toBe('variable');
   });
 });
@@ -219,7 +229,10 @@ END_TYPE
 describe('hover over a name of the project and of the library (IDE-023)', () => {
   const library = 'FUNCTION_BLOCK Debounce\nVAR_INPUT In : BOOL; END_VAR\nEND_FUNCTION_BLOCK\n';
   const main = 'PROGRAM Main\nVAR\n  D : Debounce;\n  T : TON;\n  V : INT;\nEND_VAR\n  V := MUX(0, 1, 2);\n  V := Nobody;\nEND_PROGRAM\n';
-  const index = buildProjectIndex([{ path: 'src/main.st', content: main }, { path: 'lib/Library.st', content: library }]);
+  const index = buildProjectIndex([
+    { path: 'src/main.st', content: main },
+    { path: 'lib/Library.st', content: library },
+  ]);
   const over = (text: string): { value: string } | null => {
     const found = main.indexOf(text);
     const before = main.slice(0, found);

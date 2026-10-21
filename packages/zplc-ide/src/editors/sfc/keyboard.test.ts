@@ -6,19 +6,16 @@ import { SFC_PALETTE } from '../../models/sfcSupport';
 import { transpileSFCToST } from '../../transpiler/sfcToST';
 import { actionFor, actionsOf, parseChord } from '../keymap';
 import { nodesToSteps, nodesToTransitions } from './graphModel';
-import {
-  paletteChoices,
-  runSFCCommand,
-  SFC_EDITOR_COMMANDS,
-  SFC_MODEL_COMMANDS,
-  type SFCOutcome,
-  type SFCState,
-} from './keyboard';
+import { paletteChoices, runSFCCommand, SFC_EDITOR_COMMANDS, SFC_MODEL_COMMANDS, type SFCOutcome, type SFCState } from './keyboard';
 
 const document = (): SFCModel => ({
   name: 'Main',
   variables: {
-    inputs: [{ name: 'Start', type: 'BOOL' }, { name: 'Done', type: 'BOOL' }, { name: 'Level', type: 'INT' }],
+    inputs: [
+      { name: 'Start', type: 'BOOL' },
+      { name: 'Done', type: 'BOOL' },
+      { name: 'Level', type: 'INT' },
+    ],
     outputs: [{ name: 'Lamp', type: 'BOOL' }],
     local: [{ name: 'Motor', type: 'BOOL' }],
   },
@@ -44,7 +41,8 @@ function take(session: Session, outcome: SFCOutcome): SFCOutcome {
   return outcome;
 }
 
-const run = (session: Session, command: string, argument = {}) => take(session, runSFCCommand(session.model, session.state, command, argument));
+const run = (session: Session, command: string, argument = {}) =>
+  take(session, runSFCCommand(session.model, session.state, command, argument));
 
 function press(session: Session, keys: string[]): Session {
   for (const chord of keys) {
@@ -57,7 +55,8 @@ function press(session: Session, keys: string[]): Session {
 
 const selected = (session: Session): Node | undefined => session.state.nodes.find((node) => node.selected);
 const data = (node: Node | undefined) => (node?.data ?? {}) as Record<string, unknown>;
-const stepNamed = (session: Session, name: string): Node => session.state.nodes.find((node) => node.type === 'step' && data(node).name === name)!;
+const stepNamed = (session: Session, name: string): Node =>
+  session.state.nodes.find((node) => node.type === 'step' && data(node).name === name)!;
 const documentOf = (session: Session): SFCModel => ({
   ...session.model,
   steps: nodesToSteps(session.state.nodes),
@@ -84,7 +83,10 @@ describe('LNG-012 sequential function chart keyboard authoring', () => {
     run(session, 'connect', { wire: back.id });
 
     const model = documentOf(session);
-    expect(model.steps.map((step) => [step.name, step.isInitial])).toEqual([['Init', true], ['Run', false]]);
+    expect(model.steps.map((step) => [step.name, step.isInitial])).toEqual([
+      ['Init', true],
+      ['Run', false],
+    ]);
     expect(model.transitions.map((transition) => [transition.fromStep, transition.toStep, transition.condition])).toEqual([
       [stepNamed(session, 'Init').id, stepNamed(session, 'Run').id, 'Start'],
       [stepNamed(session, 'Run').id, stepNamed(session, 'Init').id, 'Done'],
@@ -102,12 +104,17 @@ describe('LNG-012 sequential function chart keyboard authoring', () => {
     const transition = selected(session)!;
     expect(transition.type).toBe('transition');
     expect(transition.position.y).toBeGreaterThan(step.position.y);
-    expect(session.state.edges.map((edge) => [edge.source, edge.sourceHandle, edge.target, edge.targetHandle])).toEqual([[step.id, 'out', transition.id, 'in']]);
+    expect(session.state.edges.map((edge) => [edge.source, edge.sourceHandle, edge.target, edge.targetHandle])).toEqual([
+      [step.id, 'out', transition.id, 'in'],
+    ]);
     press(session, ['S']);
     const next = selected(session)!;
     expect(next.type).toBe('step');
     expect(data(next).isInitial).toBe(false);
-    expect(session.state.edges.map((edge) => [edge.source, edge.target])).toEqual([[step.id, transition.id], [transition.id, next.id]]);
+    expect(session.state.edges.map((edge) => [edge.source, edge.target])).toEqual([
+      [step.id, transition.id],
+      [transition.id, next.id],
+    ]);
   });
 
   it('gives the new steps and transitions names and ids that nothing else has', () => {
@@ -221,7 +228,10 @@ describe('LNG-012 connecting and deleting in the chart from the keyboard', () =>
     run(session, 'insertElement', { elementType: 'step' });
     // select the transition and ask for its wires: the second step could feed it, replacing the initial step
     const transition = session.state.nodes.find((node) => node.type === 'transition')!;
-    session.state = { nodes: session.state.nodes.map((node) => ({ ...node, selected: node.id === transition.id })), edges: session.state.edges };
+    session.state = {
+      nodes: session.state.nodes.map((node) => ({ ...node, selected: node.id === transition.id })),
+      edges: session.state.edges,
+    };
     const choices = run(session, 'connect').choices!;
     const replacing = choices.find((item) => item.label.startsWith('Step_'));
     expect(replacing?.detail).toContain('replaces');
@@ -252,11 +262,17 @@ describe('LNG-012 connecting and deleting in the chart from the keyboard', () =>
 
 describe('LNG-012 sequential function chart palette', () => {
   it('offers every element of the palette of the editor', () => {
-    expect(paletteChoices().map((item) => item.id).sort()).toEqual(SFC_PALETTE.map((element) => element.type).sort());
+    expect(
+      paletteChoices()
+        .map((item) => item.id)
+        .sort(),
+    ).toEqual(SFC_PALETTE.map((element) => element.type).sort());
   });
 
   it('has a command for every key of the table and a key for every command', () => {
-    const ids = actionsOf('sfc').map((action) => action.id).sort();
+    const ids = actionsOf('sfc')
+      .map((action) => action.id)
+      .sort();
     const commands = [...SFC_MODEL_COMMANDS, ...SFC_EDITOR_COMMANDS].filter((id) => id !== 'insertElement').sort();
     expect(ids).toEqual(commands);
   });
@@ -267,9 +283,30 @@ describe('UX-033 aligning and distributing steps and transitions from the keyboa
     const session = start();
     session.state = {
       nodes: [
-        { id: 'one', type: 'step', position: { x: 100, y: 0 }, measured: { width: 100, height: 60 }, selected: true, data: { name: 'One' } },
-        { id: 'two', type: 'step', position: { x: 160, y: 200 }, measured: { width: 100, height: 60 }, selected: true, data: { name: 'Two' } },
-        { id: 't1', type: 'transition', position: { x: 300, y: 100 }, measured: { width: 120, height: 80 }, selected: true, data: { condition: 'Go' } },
+        {
+          id: 'one',
+          type: 'step',
+          position: { x: 100, y: 0 },
+          measured: { width: 100, height: 60 },
+          selected: true,
+          data: { name: 'One' },
+        },
+        {
+          id: 'two',
+          type: 'step',
+          position: { x: 160, y: 200 },
+          measured: { width: 100, height: 60 },
+          selected: true,
+          data: { name: 'Two' },
+        },
+        {
+          id: 't1',
+          type: 'transition',
+          position: { x: 300, y: 100 },
+          measured: { width: 120, height: 80 },
+          selected: true,
+          data: { condition: 'Go' },
+        },
       ],
       edges: [],
     };
@@ -295,7 +332,14 @@ describe('UX-033 aligning and distributing steps and transitions from the keyboa
 describe('LNG-012 selecting more than one element of the chart from the keyboard', () => {
   it('LNG-012 extends the selection down the chart and aligns the two elements with keys alone, as one gesture', () => {
     const session = start();
-    const at = (id: string, x: number, y: number, selected = false): Node => ({ id, type: 'step', position: { x, y }, measured: { width: 60, height: 20 }, selected, data: { name: id } });
+    const at = (id: string, x: number, y: number, selected = false): Node => ({
+      id,
+      type: 'step',
+      position: { x, y },
+      measured: { width: 60, height: 20 },
+      selected,
+      data: { name: id },
+    });
     session.state = { nodes: [at('S1', 0, 0, true), at('S2', 80, 100)], edges: [] };
     press(session, ['Ctrl+Alt+ArrowDown']);
     expect(session.state.nodes.filter((node) => node.selected).map((node) => node.id)).toEqual(['S1', 'S2']);

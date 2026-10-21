@@ -3,7 +3,7 @@ slug: /guides/cloud-blocks
 id: cloud-blocks
 title: Use the cloud blocks
 sidebar_label: Cloud blocks
-description: "Provision a device and exchange messages with Azure and AWS from the program, with what each block has not been tested against."
+description: 'Provision a device and exchange messages with Azure and AWS from the program, with what each block has not been tested against.'
 tags: [how-to, cloud, azure, aws, sparkplug]
 ---
 
@@ -25,13 +25,13 @@ against a service until its row says so.
 
 ## What each block does
 
-| Block | What it does | Configuration it needs |
-| --- | --- | --- |
+| Block            | What it does                                                                                 | Configuration it needs                                         |
+| ---------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `AZURE_DPS_PROV` | Registers the device with the Azure Device Provisioning Service and returns the assigned hub | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
-| `AZURE_C2D_RECV` | Receives a cloud-to-device message of Azure IoT Hub | `azureC2dEnabled`, profile `azure-iot-hub` |
-| `AZURE_EG_PUB` | Publishes an event to an Azure Event Grid topic | profile `azure-event-grid-mqtt`, `azureEventGridTopic` |
-| `AWS_FLEET_PROV` | Provisions the device through AWS IoT fleet provisioning | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath` |
-| `SPB_REBIRTH` | Asks the Sparkplug B session to publish its birth messages again | profile `sparkplug-b` |
+| `AZURE_C2D_RECV` | Receives a cloud-to-device message of Azure IoT Hub                                          | `azureC2dEnabled`, profile `azure-iot-hub`                     |
+| `AZURE_EG_PUB`   | Publishes an event to an Azure Event Grid topic                                              | profile `azure-event-grid-mqtt`, `azureEventGridTopic`         |
+| `AWS_FLEET_PROV` | Provisions the device through AWS IoT fleet provisioning                                     | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath`  |
+| `SPB_REBIRTH`    | Asks the Sparkplug B session to publish its birth messages again                             | profile `sparkplug-b`                                          |
 
 The pins of every block, with their types, are in the
 [function block reference](../reference/function-blocks.md#azure_c2d_recv).
@@ -165,13 +165,13 @@ shadow and jobs messages are only logged
 
 ## What is verified, block by block
 
-| Block | A real service | An emulator or a local double | A recorded exchange | What was tested instead |
-| --- | --- | --- | --- | --- |
-| `AZURE_C2D_RECV` | No | No | None recorded | The handler (pins, handshake, status codes, `VALID` for one scan) and the layout of the block with its bounds, against a stand-in |
-| `AZURE_DPS_PROV` | No | A manual helper exists; no executed test uses it | None recorded | The handler, with the provisioning service replaced by one that waits; the shared-access-signature token generator, against a known vector |
-| `AZURE_EG_PUB` | No | A manual helper exists; no executed test uses it | None recorded | The handler and the layout of the block with the bounds of its text, against a stand-in |
-| `AWS_FLEET_PROV` | No | A manual helper exists; no executed test uses it | None recorded | The handler, with the provisioning service replaced by one that waits |
-| `SPB_REBIRTH` | No | No | None recorded | The handler; a rebirth command delivered to the client does nothing but publish the birth messages again |
+| Block            | A real service | An emulator or a local double                    | A recorded exchange | What was tested instead                                                                                                                    |
+| ---------------- | -------------- | ------------------------------------------------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AZURE_C2D_RECV` | No             | No                                               | None recorded       | The handler (pins, handshake, status codes, `VALID` for one scan) and the layout of the block with its bounds, against a stand-in          |
+| `AZURE_DPS_PROV` | No             | A manual helper exists; no executed test uses it | None recorded       | The handler, with the provisioning service replaced by one that waits; the shared-access-signature token generator, against a known vector |
+| `AZURE_EG_PUB`   | No             | A manual helper exists; no executed test uses it | None recorded       | The handler and the layout of the block with the bounds of its text, against a stand-in                                                    |
+| `AWS_FLEET_PROV` | No             | A manual helper exists; no executed test uses it | None recorded       | The handler, with the provisioning service replaced by one that waits                                                                      |
+| `SPB_REBIRTH`    | No             | No                                               | None recorded       | The handler; a rebirth command delivered to the client does nothing but publish the birth messages again                                   |
 
 The manual helpers are in `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` and `inspect_event_grid.py` run against a local broker and

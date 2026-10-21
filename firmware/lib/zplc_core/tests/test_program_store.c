@@ -36,15 +36,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 #define MAX_ARTIFACT ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE
@@ -110,9 +110,7 @@ static void build(uint8_t *out, size_t size, uint8_t seed) {
   zplc_put_u32_le(out + 12U, crc);
 }
 
-static void key_path(const char *key, char *out, size_t cap) {
-  (void)snprintf(out, cap, "%s/%s.bin", root, key);
-}
+static void key_path(const char *key, char *out, size_t cap) { (void)snprintf(out, cap, "%s/%s.bin", root, key); }
 
 static void remove_root(void) {
   DIR *directory;
@@ -270,8 +268,7 @@ static int snapshot_same(const struct snapshot *a, const struct snapshot *b) {
     return 0;
   }
   for (size_t i = 0U; i < a->count; i++) {
-    if (strcmp(a->name[i], b->name[i]) != 0 || a->length[i] != b->length[i] ||
-        memcmp(a->data[i], b->data[i], a->length[i]) != 0) {
+    if (strcmp(a->name[i], b->name[i]) != 0 || a->length[i] != b->length[i] || memcmp(a->data[i], b->data[i], a->length[i]) != 0) {
       return 0;
     }
   }
@@ -286,17 +283,9 @@ static int snapshot_same(const struct snapshot *a, const struct snapshot *b) {
 static void test_sizes_round_trip(void) {
   const size_t chunk = ZPLC_PROGRAM_STORE_CHUNK_SIZE;
   const size_t footer = ZPLC_PROGRAM_STORE_FOOTER_SIZE;
-  const size_t sizes[] = {ZPLC_FILE_HEADER_SIZE,
-                          100U,
-                          chunk - footer - 1U,
-                          chunk - footer,
-                          chunk - footer + 1U,
-                          chunk,
-                          2U * chunk - footer,
-                          2U * chunk - footer + 1U,
-                          5000U,
-                          MAX_ARTIFACT / 2U,
-                          MAX_ARTIFACT};
+  const size_t sizes[] = {
+      ZPLC_FILE_HEADER_SIZE,    100U,  chunk - footer - 1U, chunk - footer, chunk - footer + 1U, chunk, 2U * chunk - footer,
+      2U * chunk - footer + 1U, 5000U, MAX_ARTIFACT / 2U,   MAX_ARTIFACT};
   size_t index;
 
   printf("\n=== Test: artifacts of every size round-trip, up to the code size (RT-028) ===\n");
@@ -310,22 +299,18 @@ static void test_sizes_round_trip(void) {
     build(expect_a, size, (uint8_t)index);
     CHECK(commit(expect_a, size) == ZPLC_PROGRAM_STORE_COMMIT_OK, message);
     (void)snprintf(message, sizeof(message), "and restores to the same %zu bytes", size);
-    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == size &&
-              memcmp(workspace, expect_a, size) == 0,
-          message);
+    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == size && memcmp(workspace, expect_a, size) == 0, message);
   }
 
   /* The count of keys follows the size: one chunk is one key, the largest artifact is many. */
   CHECK(fresh_root() == 0, "a clean store");
   build(expect_a, chunk - footer, 1U);
-  CHECK(commit(expect_a, chunk - footer) == ZPLC_PROGRAM_STORE_COMMIT_OK &&
-            key_exists("program_v1_slot_a_payload") &&
+  CHECK(commit(expect_a, chunk - footer) == ZPLC_PROGRAM_STORE_COMMIT_OK && key_exists("program_v1_slot_a_payload") &&
             !key_exists("program_v1_slot_a_payload_1"),
         "an artifact that fits one chunk is stored under the one key of the first version of the store");
   CHECK(fresh_root() == 0, "a clean store");
   build(expect_a, MAX_ARTIFACT, 2U);
-  CHECK(commit(expect_a, MAX_ARTIFACT) == ZPLC_PROGRAM_STORE_COMMIT_OK &&
-            key_exists("program_v1_slot_a_payload") &&
+  CHECK(commit(expect_a, MAX_ARTIFACT) == ZPLC_PROGRAM_STORE_COMMIT_OK && key_exists("program_v1_slot_a_payload") &&
             key_exists("program_v1_slot_a_payload_1"),
         "the largest artifact is stored in chunks");
 }
@@ -339,8 +324,7 @@ static void test_largest_artifact_is_the_code_size(void) {
   CHECK(fresh_root() == 0, "a clean store");
   build(expect_a, MAX_ARTIFACT, 3U);
   CHECK(commit(expect_a, MAX_ARTIFACT) == ZPLC_PROGRAM_STORE_COMMIT_OK, "an artifact of exactly that size commits");
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == MAX_ARTIFACT &&
-            memcmp(workspace, expect_a, MAX_ARTIFACT) == 0,
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == MAX_ARTIFACT && memcmp(workspace, expect_a, MAX_ARTIFACT) == 0,
         "and restores");
 
   /* One byte more is refused, and nothing was written for it. */
@@ -349,12 +333,10 @@ static void test_largest_artifact_is_the_code_size(void) {
   {
     zplc_pstore_config_t c = config(0U);
 
-    CHECK(zplc_pstore_commit(&c, workspace, MAX_ARTIFACT + 1U, sizeof(workspace)) ==
-              ZPLC_PROGRAM_STORE_COMMIT_ERROR,
+    CHECK(zplc_pstore_commit(&c, workspace, MAX_ARTIFACT + 1U, sizeof(workspace)) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
           "an artifact one byte over the code size is refused");
   }
-  CHECK(!key_exists("program_v1_slot_a_payload") && !key_exists("program_v1_active"),
-        "and the store holds nothing of it");
+  CHECK(!key_exists("program_v1_slot_a_payload") && !key_exists("program_v1_active"), "and the store holds nothing of it");
 }
 
 /* A store written by the first version of the firmware: the whole payload under one key, whatever its length. */
@@ -398,15 +380,13 @@ static void test_store_of_the_first_version_is_read(void) {
   CHECK(fresh_root() == 0, "a clean store");
   build(expect_a, 3000U, 5U);
   write_first_version_store(expect_a, 3000U, 7U);
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3000U &&
-            memcmp(workspace, expect_a, 3000U) == 0,
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3000U && memcmp(workspace, expect_a, 3000U) == 0,
         "a 3000 byte program under one key restores");
 
   /* A deploy over it goes to the other slot and the old one stays the rollback. */
   build(expect_b, 4000U, 6U);
   CHECK(commit(expect_b, 4000U) == ZPLC_PROGRAM_STORE_COMMIT_OK, "a deploy over it commits");
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 4000U &&
-            memcmp(workspace, expect_b, 4000U) == 0,
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 4000U && memcmp(workspace, expect_b, 4000U) == 0,
         "and the new program is the one restored");
   CHECK(key_exists("program_v1_slot_b_payload_1"), "written in chunks, in slot B");
 }
@@ -420,16 +400,13 @@ static void test_a_to_b_and_back(void) {
   build(expect_a, 2500U, 1U);
   build(expect_b, 3500U, 2U);
   CHECK(commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0, "two deploys");
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3500U &&
-            memcmp(workspace, expect_b, 3500U) == 0,
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3500U && memcmp(workspace, expect_b, 3500U) == 0,
         "the second is the one restored");
-  CHECK(key_exists("program_v1_slot_a_payload_2") && key_exists("program_v1_slot_b_payload_3"),
-        "each slot holds its chunks");
+  CHECK(key_exists("program_v1_slot_a_payload_2") && key_exists("program_v1_slot_b_payload_3"), "each slot holds its chunks");
 
   memset(damaged, 0xFF, sizeof(damaged));
   CHECK(write_file("program_v1_active", damaged, sizeof(damaged)) == 0, "the active record is damaged");
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3500U &&
-            memcmp(workspace, expect_b, 3500U) == 0,
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 3500U && memcmp(workspace, expect_b, 3500U) == 0,
         "the newest committed slot is restored without it");
 
   /* A chunk of the newest slot is damaged: the older program is the rollback. */
@@ -438,8 +415,7 @@ static void test_a_to_b_and_back(void) {
 
     memset(chunk, 0x55, sizeof(chunk));
     CHECK(write_file("program_v1_slot_b_payload_2", chunk, sizeof(chunk)) == 0, "a chunk of slot B is damaged");
-    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 2500U &&
-              memcmp(workspace, expect_a, 2500U) == 0,
+    CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 2500U && memcmp(workspace, expect_a, 2500U) == 0,
           "the older complete program is restored");
   }
 }
@@ -474,13 +450,11 @@ static void test_first_deploy_power_cut_sweep(void) {
     result = restore(&restored);
     if (result == ZPLC_PROGRAM_STORE_EMPTY) {
       saw_empty = 1;
-    } else if (result == ZPLC_PROGRAM_STORE_OK && restored == 3100U &&
-               memcmp(workspace, expect_b, 3100U) == 0) {
+    } else if (result == ZPLC_PROGRAM_STORE_OK && restored == 3100U && memcmp(workspace, expect_b, 3100U) == 0) {
       saw_program = 1;
     } else {
       never_garbage = 0;
-      fprintf(stderr, "first deploy cut at operation %lu restored result %d size %zu\n", cut, (int)result,
-              restored);
+      fprintf(stderr, "first deploy cut at operation %lu restored result %d size %zu\n", cut, (int)result, restored);
     }
   }
   CHECK(never_garbage, "every cut leaves an empty store or exactly the new program, never anything else");
@@ -521,10 +495,8 @@ static void test_redeploy_power_cut_sweep(void) {
     (void)commit(expect_b, new_size);
     zplc_hal_persist_test_fail_at(0UL);
     result = restore(&restored);
-    is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size &&
-             memcmp(workspace, expect_b, new_size) == 0;
-    is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size &&
-             memcmp(workspace, expect_a, old_size) == 0;
+    is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size && memcmp(workspace, expect_b, new_size) == 0;
+    is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
     if (!is_new && !is_old) {
       only_old_or_new = 0;
       fprintf(stderr, "redeploy cut at operation %lu restored result %d size %zu\n", cut, (int)result, restored);
@@ -584,14 +556,12 @@ static void test_torn_write_sweep(void) {
       tears++;
       zplc_hal_persist_test_fail_at(0UL);
       result = restore(&restored);
-      is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size &&
-               memcmp(workspace, expect_b, new_size) == 0;
-      is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size &&
-               memcmp(workspace, expect_a, old_size) == 0;
+      is_new = result == ZPLC_PROGRAM_STORE_OK && restored == new_size && memcmp(workspace, expect_b, new_size) == 0;
+      is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
       if (!is_new && !is_old) {
         only_old_or_new = 0;
-        fprintf(stderr, "write torn at operation %lu after %zu bytes restored result %d size %zu\n", at,
-                prefixes[index], (int)result, restored);
+        fprintf(stderr, "write torn at operation %lu after %zu bytes restored result %d size %zu\n", at, prefixes[index], (int)result,
+                restored);
       }
     }
   }
@@ -659,14 +629,11 @@ static void test_a_mixture_of_two_programs_is_never_restored(void) {
       (void)write_file("program_v1_active", chunk, 16U);
 
       result = restore(&restored);
-      matches_first = result == ZPLC_PROGRAM_STORE_OK && restored == sizes[0] &&
-                      memcmp(workspace, expect_a, sizes[0]) == 0;
-      matches_third = result == ZPLC_PROGRAM_STORE_OK && restored == sizes[2] &&
-                      memcmp(workspace, third, sizes[2]) == 0;
+      matches_first = result == ZPLC_PROGRAM_STORE_OK && restored == sizes[0] && memcmp(workspace, expect_a, sizes[0]) == 0;
+      matches_third = result == ZPLC_PROGRAM_STORE_OK && restored == sizes[2] && memcmp(workspace, third, sizes[2]) == 0;
       if (!matches_first && !matches_third && result != ZPLC_PROGRAM_STORE_UNVERIFIABLE) {
         never_a_mixture = 0;
-        fprintf(stderr, "variant %u at operation %lu restored result %d size %zu\n", variant, point, (int)result,
-                restored);
+        fprintf(stderr, "variant %u at operation %lu restored result %d size %zu\n", variant, point, (int)result, restored);
       }
     }
   }
@@ -705,10 +672,8 @@ static void test_legacy_program(void) {
   CHECK(fresh_root() == 0, "a clean store");
   build(expect_a, 700U, 31U);
   zplc_put_u32_le(length_bytes, length);
-  CHECK(write_file("code_len", length_bytes, 4U) == 0 && write_file("code", expect_a, 700U) == 0,
-        "the legacy keys hold a program");
-  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_LEGACY && restored == 700U &&
-            memcmp(workspace, expect_a, 700U) == 0,
+  CHECK(write_file("code_len", length_bytes, 4U) == 0 && write_file("code", expect_a, 700U) == 0, "the legacy keys hold a program");
+  CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_LEGACY && restored == 700U && memcmp(workspace, expect_a, 700U) == 0,
         "restore returns it as legacy");
   CHECK(commit(expect_a, 700U) == ZPLC_PROGRAM_STORE_COMMIT_OK, "committing it migrates it");
   CHECK(!key_exists("code") && !key_exists("code_len"), "and the legacy keys are gone");
@@ -758,8 +723,19 @@ static void test_inadmissible_programs_never_persist(void) {
 /* The rollback found before the upload (WS-42)                                */
 /* ------------------------------------------------------------------------- */
 
-enum { STATE_EMPTY, STATE_ONE, STATE_TWO, STATE_ACTIVE_DAMAGED, STATE_NEWER_PAYLOAD_DAMAGED, STATE_BOTH_DAMAGED,
-       STATE_LEGACY, STATE_LEGACY_AND_DAMAGED_V1, STATE_ORPHAN_PAYLOAD, STATE_ONLY_PAYLOAD_DAMAGED, STATE_COUNT };
+enum {
+  STATE_EMPTY,
+  STATE_ONE,
+  STATE_TWO,
+  STATE_ACTIVE_DAMAGED,
+  STATE_NEWER_PAYLOAD_DAMAGED,
+  STATE_BOTH_DAMAGED,
+  STATE_LEGACY,
+  STATE_LEGACY_AND_DAMAGED_V1,
+  STATE_ORPHAN_PAYLOAD,
+  STATE_ONLY_PAYLOAD_DAMAGED,
+  STATE_COUNT
+};
 
 static int make_state(int state) {
   uint8_t damaged[32];
@@ -779,9 +755,7 @@ static int make_state(int state) {
   case STATE_TWO:
     return commit(expect_a, 2500U) == 0 ? commit(expect_b, 3500U) : -1;
   case STATE_ACTIVE_DAMAGED:
-    return commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0
-               ? write_file("program_v1_active", damaged, sizeof(damaged))
-               : -1;
+    return commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0 ? write_file("program_v1_active", damaged, sizeof(damaged)) : -1;
   case STATE_NEWER_PAYLOAD_DAMAGED:
     return commit(expect_a, 2500U) == 0 && commit(expect_b, 3500U) == 0
                ? write_file("program_v1_slot_b_payload_2", damaged, sizeof(damaged))
@@ -838,8 +812,7 @@ static void test_probed_commit_is_the_commit_for_every_state(void) {
 
     if (plain != early || result_plain != result_probed || restored_plain != restored_probed) {
       same_answer = 0;
-      fprintf(stderr, "state %d: commit %d / %d, restore %d / %d\n", state, plain, early, (int)result_plain,
-              (int)result_probed);
+      fprintf(stderr, "state %d: commit %d / %d, restore %d / %d\n", state, plain, early, (int)result_plain, (int)result_probed);
     }
     if (!snapshot_same(&with_scratch, &probed)) {
       same = 0;
@@ -886,8 +859,7 @@ static void test_probed_commit_refuses_a_store_that_changed_since_the_probe(void
   /* Another deploy goes in between (this is what the single writer of the records does). */
   CHECK(commit(expect_b, 1700U) == 0, "a second deploy commits");
   CHECK(snapshot_take(&before) == 0, "the files are read");
-  CHECK(commit_probed(&rollback, expect_a, 1200U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
-        "the old answer is refused");
+  CHECK(commit_probed(&rollback, expect_a, 1200U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "the old answer is refused");
   CHECK(snapshot_take(&after) == 0 && snapshot_same(&before, &after), "and nothing was written");
   CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 1700U && memcmp(workspace, expect_b, 1700U) == 0,
         "the program of the second deploy is the one stored");
@@ -910,16 +882,13 @@ static void test_a_store_that_cannot_be_verified_gives_no_rollback(void) {
   build(candidate, 500U, 81U);
   CHECK(make_state(STATE_BOTH_DAMAGED) == 0, "a store with a damaged record and nothing behind it");
   CHECK(snapshot_take(&before) == 0, "its files are read");
-  CHECK(probe(&rollback) == ZPLC_PROGRAM_STORE_COMMIT_ERROR && rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE,
-        "the probe finds no rollback");
+  CHECK(probe(&rollback) == ZPLC_PROGRAM_STORE_COMMIT_ERROR && rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE, "the probe finds no rollback");
   CHECK(commit_probed(&rollback, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "a commit with it refuses");
-  CHECK(commit_probed(&none, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
-        "so does a commit with no answer at all (a zeroed one)");
+  CHECK(commit_probed(&none, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR, "so does a commit with no answer at all (a zeroed one)");
   CHECK(snapshot_take(&after) == 0 && snapshot_same(&before, &after), "and the evidence is still there");
 
   /* An answer that says nothing was found is never used, even for a store whose records are what it was read from. */
-  CHECK(fresh_root() == 0 && probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_EMPTY,
-        "an empty store has an empty rollback");
+  CHECK(fresh_root() == 0 && probe(&rollback) == 0 && rollback.kind == ZPLC_PSTORE_ROLLBACK_EMPTY, "an empty store has an empty rollback");
   rollback.kind = ZPLC_PSTORE_ROLLBACK_NONE;
   CHECK(commit_probed(&rollback, candidate, 500U) == ZPLC_PROGRAM_STORE_COMMIT_ERROR,
         "and 'nothing found' is refused by its kind, not by the records");
@@ -964,8 +933,7 @@ static void test_probed_redeploy_power_cut_sweep(void) {
     is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
     if (!is_new && !is_old) {
       only_old_or_new = 0;
-      fprintf(stderr, "probed redeploy cut at operation %lu restored result %d size %zu\n", cut, (int)result,
-              restored);
+      fprintf(stderr, "probed redeploy cut at operation %lu restored result %d size %zu\n", cut, (int)result, restored);
     }
     if (is_old) {
       saw_old = 1;
@@ -1022,8 +990,8 @@ static void test_probed_torn_write_sweep(void) {
       is_old = result == ZPLC_PROGRAM_STORE_OK && restored == old_size && memcmp(workspace, expect_a, old_size) == 0;
       if (!is_new && !is_old) {
         only_old_or_new = 0;
-        fprintf(stderr, "write torn at operation %lu after %zu bytes restored result %d size %zu\n", at,
-                prefixes[index], (int)result, restored);
+        fprintf(stderr, "write torn at operation %lu after %zu bytes restored result %d size %zu\n", at, prefixes[index], (int)result,
+                restored);
       }
     }
   }
@@ -1039,19 +1007,16 @@ static void test_the_legacy_rollback_comes_with_the_restore(void) {
   printf("\n=== Test: the program of the first firmware is its own rollback when it migrates (WS-42) ===\n");
   CHECK(make_state(STATE_LEGACY) == 0, "a store that holds the single-key program");
   memset(workspace, 0x5A, sizeof(workspace));
-  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) ==
-                ZPLC_PROGRAM_STORE_LEGACY &&
+  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) == ZPLC_PROGRAM_STORE_LEGACY &&
             restored == 2500U && rollback.kind == ZPLC_PSTORE_ROLLBACK_LEGACY,
         "restore returns it with its rollback");
-  CHECK(zplc_pstore_commit_probed(&c, &rollback, workspace, 2500U, sizeof(workspace)) ==
-            ZPLC_PROGRAM_STORE_COMMIT_OK,
+  CHECK(zplc_pstore_commit_probed(&c, &rollback, workspace, 2500U, sizeof(workspace)) == ZPLC_PROGRAM_STORE_COMMIT_OK,
         "committing it migrates it with no scratch");
   CHECK(!key_exists("code") && !key_exists("code_len"), "and the legacy keys are gone");
   CHECK(restore(&restored) == ZPLC_PROGRAM_STORE_OK && restored == 2500U, "after which it restores from a slot");
 
   /* Any other result leaves no answer: the upload finds its own. */
-  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) ==
-                ZPLC_PROGRAM_STORE_OK &&
+  CHECK(zplc_pstore_restore_probed(&c, workspace, sizeof(workspace), &restored, &rollback) == ZPLC_PROGRAM_STORE_OK &&
             rollback.kind == ZPLC_PSTORE_ROLLBACK_NONE,
         "a restore of a slot gives none");
 }

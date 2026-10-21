@@ -7,15 +7,15 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "REAL", "value": 256.0},
-    {"at": "%QD1", "type": "REAL", "value": 1.0},
-    {"at": "%QD2", "type": "REAL", "value": 1.0},
-    {"at": "%QD3", "type": "REAL", "value": 1.0},
-    {"at": "%QD4", "type": "REAL", "value": 0.25},
-    {"at": "%QD5", "type": "REAL", "value": -27.0},
-    {"at": "%QD6", "type": "REAL", "value": 9.0},
-    {"at": "%QD7", "type": "REAL", "value": 1024.0},
-    {"at": "%QD8", "type": "REAL", "value": 0.0},
-    {"at": "%QD9", "type": "REAL", "value": 160.0}
+    { "at": "%QD0", "type": "REAL", "value": 256.0 },
+    { "at": "%QD1", "type": "REAL", "value": 1.0 },
+    { "at": "%QD2", "type": "REAL", "value": 1.0 },
+    { "at": "%QD3", "type": "REAL", "value": 1.0 },
+    { "at": "%QD4", "type": "REAL", "value": 0.25 },
+    { "at": "%QD5", "type": "REAL", "value": -27.0 },
+    { "at": "%QD6", "type": "REAL", "value": 9.0 },
+    { "at": "%QD7", "type": "REAL", "value": 1024.0 },
+    { "at": "%QD8", "type": "REAL", "value": 0.0 },
+    { "at": "%QD9", "type": "REAL", "value": 160.0 }
   ]
 }

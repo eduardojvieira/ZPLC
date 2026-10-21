@@ -4,8 +4,16 @@
  */
 import type { RecoveryEntry } from '../../electron/recoveryStoreProtocol';
 
-export interface OfferRow { path: string; name: string; content: string; savedAt: number }
-export interface Offer { rows: OfferRow[]; /** Paths whose entry is of no use: remove them without asking. */ drop: string[] }
+export interface OfferRow {
+  path: string;
+  name: string;
+  content: string;
+  savedAt: number;
+}
+export interface Offer {
+  rows: OfferRow[];
+  /** Paths whose entry is of no use: remove them without asking. */ drop: string[];
+}
 
 /**
  * `disk` holds the current content of each file the entries name: a missing key means it could not be read (the entry
@@ -18,7 +26,8 @@ export function offerRows(entries: readonly RecoveryEntry[], disk: ReadonlyMap<s
   for (const entry of [...entries].sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0))) {
     const current = disk.get(entry.path);
     if (current === undefined) continue; // not readable now: neither offered nor removed, so that the next start can try again
-    if (current !== null && current !== entry.content) rows.push({ path: entry.path, name: entry.path.split('/').at(-1) ?? entry.path, content: entry.content, savedAt: entry.savedAt });
+    if (current !== null && current !== entry.content)
+      rows.push({ path: entry.path, name: entry.path.split('/').at(-1) ?? entry.path, content: entry.content, savedAt: entry.savedAt });
     else drop.push(entry.path);
   }
   return { rows, drop };
@@ -28,7 +37,8 @@ export function offerRows(entries: readonly RecoveryEntry[], disk: ReadonlyMap<s
 export function formatKeptAt(savedAt: number, now: number = Date.now()): string {
   const moment = new Date(savedAt);
   const today = new Date(now);
-  const sameDay = moment.getFullYear() === today.getFullYear() && moment.getMonth() === today.getMonth() && moment.getDate() === today.getDate();
+  const sameDay =
+    moment.getFullYear() === today.getFullYear() && moment.getMonth() === today.getMonth() && moment.getDate() === today.getDate();
   return sameDay
     ? moment.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : moment.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });

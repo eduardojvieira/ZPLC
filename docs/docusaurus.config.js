@@ -11,7 +11,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 // REL-033: the footer names the latest published release. The deploy workflow passes its tag in ZPLC_RELEASE_TAG; a build
 // without it names the version of this tree.
-const releaseTag = process.env.ZPLC_RELEASE_TAG || `v${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
+const releaseTag =
+  process.env.ZPLC_RELEASE_TAG || `v${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -99,8 +100,18 @@ const config = {
       // Replace with your project's social card
       image: 'img/social-card.png',
       metadata: [
-        { name: 'keywords', content: 'plc, iec 61131-3, structured text, ladder diagram, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt' },
-        { name: 'description', content: 'ZPLC is an open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE. Write, test and simulate PLC programs on your computer, and build the runtime for Zephyr boards.' },
+        {
+          name: 'keywords',
+          content:
+            'plc, iec 61131-3, structured text, ladder diagram, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry ' +
+            'pi pico, modbus, mqtt',
+        },
+        {
+          name: 'description',
+          content:
+            'ZPLC is an open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE. Write, test and simulate PLC programs on ' +
+            'your computer, and build the runtime for Zephyr boards.',
+        },
       ],
       colorMode: {
         defaultMode: 'dark',

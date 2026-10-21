@@ -51,9 +51,9 @@ export interface FirmwareObservation {
 }
 
 const WHAT_IS_MISSING =
-  'Sessions (one writer at a time, released when the link is lost), whole multi-byte writes, device events and a '
-  + 'downloaded program that is checked and read back are not available: ZPLC writes a multi-byte value one byte at a '
-  + 'time, polls the device for its state and trusts the text answer of the shell for a download.';
+  'Sessions (one writer at a time, released when the link is lost), whole multi-byte writes, device events and a ' +
+  'downloaded program that is checked and read back are not available: ZPLC writes a multi-byte value one byte at a ' +
+  'time, polls the device for its state and trusts the text answer of the shell for a download.';
 
 /** Decide, from what the firmware answered, what it speaks and what Studio does. Deterministic: no clock, no I/O. */
 export function describeFirmware(observation: FirmwareObservation): FirmwareReport {
@@ -71,21 +71,24 @@ export function describeFirmware(observation: FirmwareObservation): FirmwareRepo
       },
       action: 'use-link',
       firmwareVersion,
-      message: `This firmware speaks the framed device link (protocol ${hello.version}).`
-        + (firmwareVersion !== null && firmwareVersion !== studioVersion
+      message:
+        `This firmware speaks the framed device link (protocol ${hello.version}).` +
+        (firmwareVersion !== null && firmwareVersion !== studioVersion
           ? ` It is version ${firmwareVersion} and this ZPLC is ${studioVersion}.`
           : ''),
     };
   }
   if (systemInfo !== null) {
-    const updated = `Install the firmware of release ${studioVersion}, the one built from the same source as this ZPLC, `
-      + 'and connect again. The text shell of this firmware keeps working until then.';
+    const updated =
+      `Install the firmware of release ${studioVersion}, the one built from the same source as this ZPLC, ` +
+      'and connect again. The text shell of this firmware keeps working until then.';
     return {
       protocol: { kind: 'shell-only', shellProtocolVersion: systemInfo.device_protocol_version },
       features: NO_FEATURES,
       action: 'use-shell-and-offer-update',
       firmwareVersion,
-      message: `This firmware (version ${systemInfo.zplc_version}) speaks only the older text shell protocol. ${WHAT_IS_MISSING} ${updated}`,
+      message:
+        `This firmware (version ${systemInfo.zplc_version}) speaks only the older text shell ` + `protocol. ${WHAT_IS_MISSING} ${updated}`,
     };
   }
   return {
@@ -93,8 +96,9 @@ export function describeFirmware(observation: FirmwareObservation): FirmwareRepo
     features: NO_FEATURES,
     action: 'cannot-talk',
     firmwareVersion: null,
-    message: 'The device answered neither the framed device link nor `zplc sys info`. It is not a ZPLC runtime, or its firmware '
-      + 'is older than the text shell this ZPLC reads. Check the port and install firmware of release '
-      + `${studioVersion}.`,
+    message:
+      'The device answered neither the framed device link nor `zplc sys info`. It is not a ZPLC runtime, or its firmware ' +
+      'is older than the text shell this ZPLC reads. Check the port and install firmware of release ' +
+      `${studioVersion}.`,
   };
 }

@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: "Los pasos para compilar el firmware, grabarlo, conectar ZPLC, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa."
+description: 'Los pasos para compilar el firmware, grabarlo, conectar ZPLC, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa.'
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -30,14 +30,14 @@ lo cual está verificado.
 
 ## Qué necesita
 
-| | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
-| --- | --- | --- |
-| Destino de compilación | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
-| Placa en ZPLC | `rpi_pico` | `esp32s3_devkitc` |
-| Proyecto de ejemplo | `pico_blinky` | `esp32s3_blinky` |
-| Primera salida digital | `DO0`, `%QX0.0`, pin GP0 (pin 1 del conector) | `DO0`, `%QX0.0`, pin GPIO15 (pin 8 del conector J1) |
-| Qué cablear | Un LED y una resistencia de 330 Ω del pin a GND (pin 3 del conector) | Un LED y una resistencia de 330 Ω del pin a GND (pin 22 del conector J1) |
-| Interfaz con ZPLC | El cable USB de la placa | El cable USB, en el puerto marcado USB (no UART) |
+|                        | Raspberry Pi Pico                                                    | ESP32-S3-DevKitC-1 (N8R8)                                                |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Destino de compilación | `rpi_pico/rp2040`                                                    | `esp32s3_devkitc/esp32s3/procpu`                                         |
+| Placa en ZPLC          | `rpi_pico`                                                           | `esp32s3_devkitc`                                                        |
+| Proyecto de ejemplo    | `pico_blinky`                                                        | `esp32s3_blinky`                                                         |
+| Primera salida digital | `DO0`, `%QX0.0`, pin GP0 (pin 1 del conector)                        | `DO0`, `%QX0.0`, pin GPIO15 (pin 8 del conector J1)                      |
+| Qué cablear            | Un LED y una resistencia de 330 Ω del pin a GND (pin 3 del conector) | Un LED y una resistencia de 330 Ω del pin a GND (pin 22 del conector J1) |
+| Interfaz con ZPLC      | El cable USB de la placa                                             | El cable USB, en el puerto marcado USB (no UART)                         |
 
 Los canales y el valor seguro de cada salida, las notas eléctricas y qué pines
 demuestra el devicetree de la placa están en [Placas soportadas](../reference/boards.md).
@@ -130,13 +130,13 @@ su estado seguro, apagado
 
 ## Qué está verificado
 
-| Paso | Evidencia hoy | Estado |
-| --- | --- | --- |
-| 1. Obtenga el firmware | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
-| 2. Grábelo | Ninguna | Aún no verificado en hardware |
-| 3. Conecte ZPLC | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado | Aún no verificado en hardware |
-| 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa | Aún no verificado en hardware |
-| 5. Observe | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física | Aún no verificado en hardware |
+| Paso                    | Evidencia hoy                                                                                                                    | Estado                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1. Obtenga el firmware  | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
+| 2. Grábelo              | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
+| 3. Conecte ZPLC         | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado                                            | Aún no verificado en hardware                  |
+| 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
+| 5. Observe              | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
 
 ## Qué puede informar
 

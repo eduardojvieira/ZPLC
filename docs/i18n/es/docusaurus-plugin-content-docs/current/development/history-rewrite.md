@@ -26,11 +26,11 @@ espejo y el nuevo SHA de la línea base cuando termine.
 La lista está en `tools/history/removed-paths.txt`, una ruta por línea con su
 motivo. Solo se elimina contenido de dos tipos.
 
-| Ruta | Tipo | Tamaño en el historial | Motivo |
-|---|---|---|---|
-| `Screenshots/mb1940-n657x0q-c02-schematic.pdf` | Esquemático de terceros | 34 MB | El archivo no es nuestro para redistribuirlo. |
+| Ruta                                                                                                                                  | Tipo                                                              | Tamaño en el historial         | Motivo                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                                        | Esquemático de terceros                                           | 34 MB                          | El archivo no es nuestro para redistribuirlo.                                                                                  |
 | Cuatro directorios de compilación de Zephyr bajo `firmware/app`: `build_esp32s3`, `build_verify_esp32s3`, `build_disco`, `build_giga` | Árboles de compilación de Zephyr (ELF, map, bibliotecas, objetos) | unos 390 MB antes de comprimir | Las salidas de compilación nunca son código fuente. Se confirmaron una vez y siguen en el historial de las etiquetas `v1.5.0`. |
-| El directorio `build_tests` bajo `firmware/app` | Salida de configuración de CMake | 8 KB | Es un directorio de compilación; todavía está versionado en algunas ramas. |
+| El directorio `build_tests` bajo `firmware/app`                                                                                       | Salida de configuración de CMake                                  | 8 KB                           | Es un directorio de compilación; todavía está versionado en algunas ramas.                                                     |
 
 Todo lo demás permanece, incluidas las imágenes de la documentación, los
 archivos de prueba que leen los tests, las capturas de `Screenshots/` y el

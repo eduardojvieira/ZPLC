@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { counts, failingCases, loadContext, render, stateOf, validate, type Context, type Defect, type DefectFile } from './conformance-defects';
+import {
+  counts,
+  failingCases,
+  loadContext,
+  render,
+  stateOf,
+  validate,
+  type Context,
+  type Defect,
+  type DefectFile,
+} from './conformance-defects';
 
 const good: Defect = { id: 'CMP-D01a', severity: 'Blocker', defect: 'A thing goes wrong.', fixedBy: ['CMP-001'], cases: ['cmp/cmp-001-a'] };
 const context: Context = {
@@ -17,17 +27,25 @@ const context: Context = {
 const check = (...defects: Defect[]) => validate({ schema: 1, defects }, context);
 
 describe('the map of defects and cases (VF-004)', () => {
-  it('accepts a defect that a case shows, that a test shows, that no program shows with a requirement that has a check, and an open one', () => {
-    expect(check(
-      good,
-      { ...good, id: 'CMP-D01b', cases: undefined, tests: [{ file: 'tests/a.test.ts', test: 'names the defect' }] },
-      { ...good, id: 'RT-D01a', fixedBy: ['RT-001'], cases: undefined, hostless: 'a thread, not a program' },
-      { ...good, id: 'RT-D03a', fixedBy: ['RT-019'], cases: undefined, open: 'no executed check yet' },
-    )).toEqual([]);
-  });
+  it(
+    'accepts a defect that a case shows, that a test shows, that no program shows with a requirement that has a check, and an open ' +
+      'one',
+    () => {
+      expect(
+        check(
+          good,
+          { ...good, id: 'CMP-D01b', cases: undefined, tests: [{ file: 'tests/a.test.ts', test: 'names the defect' }] },
+          { ...good, id: 'RT-D01a', fixedBy: ['RT-001'], cases: undefined, hostless: 'a thread, not a program' },
+          { ...good, id: 'RT-D03a', fixedBy: ['RT-019'], cases: undefined, open: 'no executed check yet' },
+        ),
+      ).toEqual([]);
+    },
+  );
 
   it('refuses a case that does not exist, and a case filed under a requirement that does not fix the defect', () => {
-    expect(check({ ...good, cases: ['cmp/missing'] })).toEqual(['defects.json: CMP-D01a: the case cmp/missing does not exist under conformance/']);
+    expect(check({ ...good, cases: ['cmp/missing'] })).toEqual([
+      'defects.json: CMP-D01a: the case cmp/missing does not exist under conformance/',
+    ]);
     expect(check({ ...good, cases: ['cmp/cmp-002-b'] })[0]).toContain('is filed under CMP-002, which is not one of CMP-001');
   });
 
@@ -61,7 +79,10 @@ describe('the map of defects and cases (VF-004)', () => {
 
   it('reports the cases of the map that the expected-failure list holds, and counts the states', () => {
     const file: DefectFile = { schema: 1, defects: [good, { ...good, id: 'CMP-D01b', cases: undefined, open: 'later' }] };
-    const listed = { ...context, listed: ['packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-001 a thing is refused'] };
+    const listed = {
+      ...context,
+      listed: ['packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-001 a thing is refused'],
+    };
     expect(failingCases(file, listed)).toEqual(['cmp/cmp-001-a']);
     expect(counts(file)).toEqual({ case: 1, test: 0, hostless: 0, open: 1 });
     expect(stateOf(file.defects[1]!)).toBe('open');

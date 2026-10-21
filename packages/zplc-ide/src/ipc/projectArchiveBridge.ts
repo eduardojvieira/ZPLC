@@ -17,10 +17,7 @@ import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { t, type MessageKey } from '../i18n';
 
 export type ArchiveOutcome<T> =
-  | { status: 'unavailable' }
-  | { status: 'cancelled' }
-  | { status: 'failed'; message: string }
-  | { status: 'done'; value: T };
+  { status: 'unavailable' } | { status: 'cancelled' } | { status: 'failed'; message: string } | { status: 'done'; value: T };
 
 const CODES: readonly string[] = [
   'invalid-request',
@@ -39,12 +36,10 @@ const CODES: readonly string[] = [
   'failed',
 ];
 
-export const archiveFailureMessage = (code: ProjectArchiveErrorCode): string => t(CODES.includes(code) ? (`archive.${code}` as MessageKey) : 'archive.failed');
+export const archiveFailureMessage = (code: ProjectArchiveErrorCode): string =>
+  t(CODES.includes(code) ? (`archive.${code}` as MessageKey) : 'archive.failed');
 
-async function run<T>(
-  call: (() => Promise<unknown>) | undefined,
-  parseValue: (value: unknown) => T | null,
-): Promise<ArchiveOutcome<T>> {
+async function run<T>(call: (() => Promise<unknown>) | undefined, parseValue: (value: unknown) => T | null): Promise<ArchiveOutcome<T>> {
   if (!call) return { status: 'unavailable' };
   try {
     const answer = parseArchiveResult(await call(), parseValue);

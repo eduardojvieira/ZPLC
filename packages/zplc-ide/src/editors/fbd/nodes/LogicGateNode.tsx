@@ -1,6 +1,6 @@
 /**
  * LogicGateNode - Custom ReactFlow node for logic gates
- * 
+ *
  * Renders AND, OR, NOT, XOR, NAND, NOR gates with IEC-style symbols.
  */
 
@@ -24,13 +24,20 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
   // Gate symbol
   const getSymbol = () => {
     switch (type) {
-      case 'AND': return '&';
-      case 'OR': return '≥1';
-      case 'NOT': return '1';
-      case 'XOR': return '=1';
-      case 'NAND': return '&';
-      case 'NOR': return '≥1';
-      default: return '?';
+      case 'AND':
+        return '&';
+      case 'OR':
+        return '≥1';
+      case 'NOT':
+        return '1';
+      case 'XOR':
+        return '=1';
+      case 'NAND':
+        return '&';
+      case 'NOR':
+        return '≥1';
+      default:
+        return '?';
     }
   };
 
@@ -45,18 +52,12 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
         <div
           className={`
             w-16 rounded border-2 
-            ${selected 
-              ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
-              : 'border-[var(--border-color)]'
-            }
+            ${selected ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' : 'border-[var(--border-color)]'}
             zplc-visual-card relative bg-[var(--visual-node)]
           `}
         >
           {/* Gate body */}
-          <div 
-            className="relative flex items-center justify-center"
-            style={{ height: bodyHeight }}
-          >
+          <div className="relative flex items-center justify-center" style={{ height: bodyHeight }}>
             {/* Input handles */}
             {ports.inputs.map((port, idx) => (
               <Handle
@@ -65,22 +66,18 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
                 position={Position.Left}
                 id={port.name}
                 className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-                style={{ 
-                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
+                style={{
+                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2,
                 }}
               />
             ))}
-  
+
             {/* Symbol */}
-            <span className="text-xl font-bold text-[var(--text-primary)]">
-              {getSymbol()}
-            </span>
-  
+            <span className="text-xl font-bold text-[var(--text-primary)]">{getSymbol()}</span>
+
             {/* Output handle with optional inversion bubble */}
             <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
-              {isInverted && (
-                <div className="w-2 h-2 rounded-full border-2 border-[var(--text-primary)] bg-[var(--visual-node)] -mr-1" />
-              )}
+              {isInverted && <div className="w-2 h-2 rounded-full border-2 border-[var(--text-primary)] bg-[var(--visual-node)] -mr-1" />}
               <Handle
                 type="source"
                 position={Position.Right}
@@ -89,12 +86,10 @@ const LogicGateNode = memo(({ id, data, selected }: NodeProps) => {
               />
             </div>
           </div>
-  
+
           {/* Type label */}
           <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
-              {type}
-            </span>
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">{type}</span>
           </div>
         </div>
       </Tooltip>

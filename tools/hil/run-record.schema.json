@@ -29,37 +29,19 @@
       "pattern": "^[0-9a-f]{32}$"
     },
     "kind": {
-      "enum": [
-        "chain",
-        "scenario",
-        "script"
-      ]
+      "enum": ["chain", "scenario", "script"]
     },
     "evidence": {
-      "enum": [
-        "hardware",
-        "emulated",
-        "host-runtime",
-        "fake"
-      ],
+      "enum": ["hardware", "emulated", "host-runtime", "fake"],
       "$comment": "What ran: hardware only for a run through a serial link to a board a person handles (the human bench); emulated for a run on an emulator bench. A run on the host runtime or a fake is a test of the harness and is never evidence for a board."
     },
     "evidence_level": {
-      "enum": [
-        "hardware",
-        "emulated",
-        "community-reported",
-        null
-      ],
+      "enum": ["hardware", "emulated", "community-reported", null],
       "$comment": "The evidence level of the HIL contract. Only hardware feeds a board's support level; emulated never does. It follows `evidence` (hil_record.py and record.ts check the pairing): a hardware run is hardware (or community-reported), an emulated run is emulated, and a run on the host runtime or a fake has no level (null)."
     },
     "emulator": {
       "type": "object",
-      "required": [
-        "name",
-        "version",
-        "patch_sha256"
-      ],
+      "required": ["name", "version", "patch_sha256"],
       "additionalProperties": false,
       "$comment": "Required on an emulated record and absent on any other: the emulator and the version or patch it ran.",
       "properties": {
@@ -72,20 +54,13 @@
           "minLength": 1
         },
         "patch_sha256": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[0-9a-f]{64}$"
         }
       }
     },
     "result": {
-      "enum": [
-        "pass",
-        "fail",
-        "incomplete"
-      ]
+      "enum": ["pass", "fail", "incomplete"]
     },
     "started_at": {
       "type": "string",
@@ -97,9 +72,7 @@
     },
     "board": {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -107,23 +80,14 @@
           "minLength": 1
         },
         "zephyr_board": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "board_id": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "$comment": "board_id of boards.json: the id the evidence records of the manifest name"
         },
         "io": {
-          "type": [
-            "object",
-            "null"
-          ],
+          "type": ["object", "null"],
           "additionalProperties": false,
           "$comment": "what boards.json says the board has: the hash of its description and the channel counts",
           "properties": {
@@ -165,9 +129,7 @@
     },
     "device": {
       "type": "object",
-      "required": [
-        "reported_board"
-      ],
+      "required": ["reported_board"],
       "additionalProperties": false,
       "properties": {
         "reported_board": {
@@ -175,47 +137,25 @@
           "minLength": 1
         },
         "board_profile": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "zplc_version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "zephyr_version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "serial_hash": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[0-9a-f]{64}$",
           "$comment": "SHA-256 of vid:pid:serial number of the USB device, so that a record names a unit without publishing its serial number."
         },
         "link": {
-          "enum": [
-            "serial",
-            "host-runtime",
-            "fake"
-          ]
+          "enum": ["serial", "host-runtime", "fake"]
         },
         "io": {
           "type": "object",
-          "required": [
-            "board_id",
-            "hash",
-            "channels",
-            "input_bytes",
-            "output_bytes"
-          ],
+          "required": ["board_id", "hash", "channels", "input_bytes", "output_bytes"],
           "additionalProperties": false,
           "$comment": "`zplc sys io --json` (IO-004): the board I/O description the image was built from",
           "properties": {
@@ -249,90 +189,51 @@
       "$comment": "As the image reports them with `zplc sys build --json` (REL-023: version, commit, dirty, board, abi_major, abi_minor, draft_counter, options_hash, options) and as the person who flashed it says. All optional: an image that does not report its build gives null, and a value that is absent was not known, not assumed.",
       "properties": {
         "commit": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "image_sha256": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[0-9a-f]{64}$"
         },
         "abi_major": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "abi_minor": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "draft_counter": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "build_options": {
-          "type": [
-            "object",
-            "null"
-          ]
+          "type": ["object", "null"]
         },
         "dirty": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": ["boolean", "null"]
         },
         "board_target": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "$comment": "the `board` of the identity: CONFIG_BOARD_TARGET of a Zephyr image, the name of the host runtime otherwise"
         },
         "options_hash": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "pattern": "^[0-9a-f]{8}$"
         },
         "options": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "$comment": "the options text of the identity: sorted SYMBOL=value pairs of the CONFIG_ZPLC_* symbols without that prefix"
         },
         "hil_trace": {
-          "type": [
-            "boolean",
-            "null"
-          ],
+          "type": ["boolean", "null"],
           "$comment": "whether the image was built with CONFIG_ZPLC_HIL_DEBUG, read from the options; null when the options cannot say"
         },
         "build_command": {
-          "type": [
-            "string",
-            "null"
-          ],
+          "type": ["string", "null"],
           "$comment": "the build command the chain told the person to run for the image under test; the tool cannot see what was run, and the options hash is how the image is told apart"
         }
       }
@@ -341,10 +242,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "sha256"
-        ],
+        "required": ["id", "sha256"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -360,10 +258,7 @@
     },
     "scenario": {
       "type": "object",
-      "required": [
-        "id",
-        "sha256"
-      ],
+      "required": ["id", "sha256"],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -386,25 +281,16 @@
       "additionalProperties": false,
       "properties": {
         "commit": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "dirty": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": ["boolean", "null"]
         }
       }
     },
     "tools": {
       "type": "object",
-      "required": [
-        "harness",
-        "platform"
-      ],
+      "required": ["harness", "platform"],
       "additionalProperties": false,
       "properties": {
         "harness": {
@@ -416,31 +302,20 @@
           "minLength": 1
         },
         "python": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "bun": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         },
         "compiler_draft_counter": {
-          "type": [
-            "integer",
-            "null"
-          ],
+          "type": ["integer", "null"],
           "minimum": 0
         }
       }
     },
     "operator": {
       "type": "object",
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "additionalProperties": false,
       "properties": {
         "name": {
@@ -453,12 +328,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "title",
-          "kind",
-          "result"
-        ],
+        "required": ["id", "title", "kind", "result"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -470,26 +340,13 @@
             "minLength": 1
           },
           "kind": {
-            "enum": [
-              "automatic",
-              "physical"
-            ]
+            "enum": ["automatic", "physical"]
           },
           "result": {
-            "enum": [
-              "pass",
-              "fail",
-              "error",
-              "skipped",
-              "pending",
-              "not-emulable"
-            ]
+            "enum": ["pass", "fail", "error", "skipped", "pending", "not-emulable"]
           },
           "requirement": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "started_at": {
             "type": "string"
@@ -517,10 +374,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "id",
-          "result"
-        ],
+        "required": ["id", "result"],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -531,11 +385,7 @@
             "type": "string"
           },
           "result": {
-            "enum": [
-              "pass",
-              "fail",
-              "skipped"
-            ]
+            "enum": ["pass", "fail", "skipped"]
           },
           "detail": {
             "type": "string"
@@ -571,10 +421,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "name",
-          "text"
-        ],
+        "required": ["name", "text"],
         "additionalProperties": false,
         "properties": {
           "name": {

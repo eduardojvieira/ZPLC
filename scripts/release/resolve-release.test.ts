@@ -33,13 +33,22 @@ describe('a rehearsal publishes nothing (REL-030)', () => {
   });
 
   test('the push of a version tag publishes, and its tag must be the canonical version', () => {
-    const push: ReleaseEvent = { eventName: 'push', ref: 'refs/tags/v2.0.0-rc.4', refName: 'v2.0.0-rc.4', requestedVersion: '', rehearsal: false, canonicalVersion: '2.0.0-rc.4' };
+    const push: ReleaseEvent = {
+      eventName: 'push',
+      ref: 'refs/tags/v2.0.0-rc.4',
+      refName: 'v2.0.0-rc.4',
+      requestedVersion: '',
+      rehearsal: false,
+      canonicalVersion: '2.0.0-rc.4',
+    };
     expect(resolveRelease(push).publishing).toBe(true);
     expect(() => resolveRelease({ ...push, refName: 'v2.0.0-rc.5', ref: 'refs/tags/v2.0.0-rc.5' })).toThrow(/does not match/);
   });
 
   test('a requested version that is not the version of package.json is refused', () => {
-    expect(() => resolveRelease({ ...base, requestedVersion: '2.0.0-rc.5' })).toThrow(/does not match canonical package\.json version 2\.0\.0-rc\.4/);
+    expect(() => resolveRelease({ ...base, requestedVersion: '2.0.0-rc.5' })).toThrow(
+      /does not match canonical package\.json version 2\.0\.0-rc\.4/,
+    );
   });
 });
 
@@ -49,7 +58,9 @@ describe('prerelease tags continue the rc sequence (REL-031)', () => {
   });
 
   test('refuses an rc number below the last tagged one of 2.0.0', () => {
-    expect(() => resolveRelease({ ...base, requestedVersion: '2.0.0-rc.2', canonicalVersion: '2.0.0-rc.2' })).toThrow(/after 2\.0\.0-rc\.3/);
+    expect(() => resolveRelease({ ...base, requestedVersion: '2.0.0-rc.2', canonicalVersion: '2.0.0-rc.2' })).toThrow(
+      /after 2\.0\.0-rc\.3/,
+    );
   });
 
   test.each(['2.0.0-rc.3', '2.0.0-rc.4', '2.0.0-rc.12', '2.0.0', '2.1.0-rc.1'])('accepts %s', (version) => {
@@ -71,13 +82,25 @@ describe('the command line (REL-030)', () => {
   const canonical = (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string }).version;
 
   test('writes version, tag and publishing to GITHUB_OUTPUT for a rehearsal', () => {
-    const result = run({ EVENT_NAME: 'workflow_dispatch', EVENT_REF: 'refs/heads/some-branch', REF_NAME: 'some-branch', REQUESTED_VERSION: canonical, REHEARSAL: 'true' });
+    const result = run({
+      EVENT_NAME: 'workflow_dispatch',
+      EVENT_REF: 'refs/heads/some-branch',
+      REF_NAME: 'some-branch',
+      REQUESTED_VERSION: canonical,
+      REHEARSAL: 'true',
+    });
     expect(result.status, result.stderr).toBe(0);
     expect(result.outputs).toBe(`version=${canonical}\ntag=v${canonical}\npublishing=false\n`);
   });
 
   test('exits 1 and writes nothing when a manual run would publish from a branch', () => {
-    const result = run({ EVENT_NAME: 'workflow_dispatch', EVENT_REF: 'refs/heads/some-branch', REF_NAME: 'some-branch', REQUESTED_VERSION: canonical, REHEARSAL: 'false' });
+    const result = run({
+      EVENT_NAME: 'workflow_dispatch',
+      EVENT_REF: 'refs/heads/some-branch',
+      REF_NAME: 'some-branch',
+      REQUESTED_VERSION: canonical,
+      REHEARSAL: 'false',
+    });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(`refs/tags/v${canonical}`);
     expect(result.outputs).toBe('');

@@ -11,7 +11,11 @@ export const APP_PREFIX = '/ZPLC/app/';
 export function appFile(appDir: string, pathname: string): string | null {
   if (!pathname.startsWith(APP_PREFIX)) return null;
   let relative: string;
-  try { relative = decodeURIComponent(pathname.slice(APP_PREFIX.length)); } catch { return null; }
+  try {
+    relative = decodeURIComponent(pathname.slice(APP_PREFIX.length));
+  } catch {
+    return null;
+  }
   const file = normalize(join(appDir, relative === '' ? 'index.html' : relative));
   if (file !== appDir && !file.startsWith(appDir + sep)) return null;
   return existsSync(file) && statSync(file).isFile() ? file : null;
@@ -44,7 +48,10 @@ export function secretsIn(directory: string): string[] {
   const walk = (folder: string, prefix: string) => {
     for (const entry of readdirSync(folder, { withFileTypes: true })) {
       const path = join(folder, entry.name);
-      if (entry.isDirectory()) { walk(path, `${prefix}${entry.name}/`); continue; }
+      if (entry.isDirectory()) {
+        walk(path, `${prefix}${entry.name}/`);
+        continue;
+      }
       if (!/\.(js|mjs|html|json|css|svg|txt)$/i.test(entry.name)) continue;
       const text = readFileSync(path, 'latin1');
       for (const [shape, pattern] of SECRET_SHAPES) if (pattern.test(text)) found.push(`${prefix}${entry.name}: ${shape}`);

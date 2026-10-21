@@ -10,7 +10,7 @@ export const modbusEn = {
   'modbus.rtuParityNone': 'RTU parity: none',
   'modbus.rtuParityEven': 'RTU parity: even',
   'modbus.rtuParityOdd': 'RTU parity: odd',
-  'modbus.rtuUsesTheBoard': 'RTU uses the board\'s configured `zephyr,modbus-serial` UART.',
+  'modbus.rtuUsesTheBoard': "RTU uses the board's configured `zephyr,modbus-serial` UART.",
   'modbus.modbusTcpRequiresA': 'Modbus TCP requires a network-capable board profile in the supported-board list.',
   'modbus.rtuClient': 'RTU client',
   'modbus.rtuSlaveId': 'RTU slave ID',
@@ -25,7 +25,8 @@ export const modbusEn = {
 
 export const modbusEs: Record<keyof typeof modbusEn, string> = {
   'modbus.modbus': 'Modbus',
-  'modbus.configureTheOnboardModbus': 'Configure primero los servidores Modbus TCP/RTU integrados y, después, el sondeo opcional como cliente.',
+  'modbus.configureTheOnboardModbus':
+    'Configure primero los servidores Modbus TCP/RTU integrados y, después, el sondeo opcional como cliente.',
   'modbus.rtu': 'RTU',
   'modbus.unitId': 'ID de unidad',
   'modbus.pollMs': 'Sondeo (ms)',

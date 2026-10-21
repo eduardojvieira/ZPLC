@@ -1,6 +1,6 @@
 /**
  * File System Access API Type Declarations
- * 
+ *
  * These types are not included in TypeScript's lib.dom.d.ts by default.
  * They define the browser's File System Access API for reading/writing files.
  */

@@ -4,15 +4,27 @@ import { DataGrid } from './index';
 
 const dom = await setupDom();
 
-interface Row { id: string; name: string; value: number }
-const ROWS: Row[] = [{ id: 'a', name: 'Speed', value: 30 }, { id: 'b', name: 'Level', value: 10 }, { id: 'c', name: 'Temp', value: 20 }];
+interface Row {
+  id: string;
+  name: string;
+  value: number;
+}
+const ROWS: Row[] = [
+  { id: 'a', name: 'Speed', value: 30 },
+  { id: 'b', name: 'Level', value: 10 },
+  { id: 'c', name: 'Temp', value: 20 },
+];
 const COLUMNS = [
   { id: 'name', header: 'Name', cell: (row: Row) => row.name, sortKey: (row: Row) => row.name },
   { id: 'value', header: 'Value', cell: (row: Row) => row.value, sortKey: (row: Row) => row.value, numeric: true },
   { id: 'note', header: 'Note', cell: () => '-' },
 ];
 
-const names = (): string[] => dom.screen.getAllByRole('row').slice(1).map((row) => row.querySelector('td')?.textContent ?? '');
+const names = (): string[] =>
+  dom.screen
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => row.querySelector('td')?.textContent ?? '');
 
 describe('DataGrid (UX-001) in a DOM', () => {
   it('is a named grid with a column header per column and a row per record', () => {

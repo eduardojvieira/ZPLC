@@ -32,8 +32,16 @@ describe('diagnosing a progress file', () => {
     const damaged = JSON.parse(valid) as { lessons: Record<string, { hintsShown: number[] }> };
     damaged.lessons['motor-start-stop-safe']!.hintsShown = [7];
     expect(diagnoseProgressFile(JSON.stringify(damaged))).toEqual({ ok: false, problem: 'malformed', version: 4 });
-    expect(diagnoseProgressFile('{"kind":"zplc-learn-progress","schemaVersion":3,"last":null,"lessons":{"x":{}}}')).toEqual({ ok: false, problem: 'malformed', version: 3 });
-    expect(diagnoseProgressFile('{"kind":"zplc-learn-progress","schemaVersion":2,"last":null,"lessons":{"x":{}}}')).toEqual({ ok: false, problem: 'malformed', version: 2 });
+    expect(diagnoseProgressFile('{"kind":"zplc-learn-progress","schemaVersion":3,"last":null,"lessons":{"x":{}}}')).toEqual({
+      ok: false,
+      problem: 'malformed',
+      version: 3,
+    });
+    expect(diagnoseProgressFile('{"kind":"zplc-learn-progress","schemaVersion":2,"last":null,"lessons":{"x":{}}}')).toEqual({
+      ok: false,
+      problem: 'malformed',
+      version: 2,
+    });
     expect(diagnoseProgressFile('{"schemaVersion":1,"mastered":["Bad Id"]}')).toEqual({ ok: false, problem: 'malformed', version: 1 });
   });
 });

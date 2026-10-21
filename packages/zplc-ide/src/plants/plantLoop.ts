@@ -64,7 +64,10 @@ export function createPlantLoop({ run, resolved, read, write, cycles }: PlantLoo
       await sync();
     },
     /** Forget what was written, so the next pass writes every sensor again (after a reset or a reload). */
-    forget(): void { written.clear(); last = null; },
+    forget(): void {
+      written.clear();
+      last = null;
+    },
   };
   return loop;
 }

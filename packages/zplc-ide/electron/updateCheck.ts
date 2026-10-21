@@ -10,7 +10,10 @@ export const UPDATE_CHECK_URL = 'https://api.github.com/repos/eduardojvieira/ZPL
 export const UPDATE_CHECK_LIMITS = { timeoutMs: 8_000, maxBytes: 128 * 1024 } as const;
 
 /** The part of `fetch` the check uses, so that a test supplies the answer. */
-export type UpdateFetch = (url: string, init: { headers: Record<string, string>; signal: AbortSignal }) => Promise<{
+export type UpdateFetch = (
+  url: string,
+  init: { headers: Record<string, string>; signal: AbortSignal },
+) => Promise<{
   ok: boolean;
   status: number;
   text(): Promise<string>;
@@ -55,7 +58,13 @@ export function parseLatestRelease(body: unknown): { version: string; url: strin
   return isVersion(version) && isReleaseUrl(url) ? { version, url } : null;
 }
 
-export async function checkForUpdate({ currentVersion, fetch }: { currentVersion: string; fetch: UpdateFetch }): Promise<UpdateCheckResult> {
+export async function checkForUpdate({
+  currentVersion,
+  fetch,
+}: {
+  currentVersion: string;
+  fetch: UpdateFetch;
+}): Promise<UpdateCheckResult> {
   const unavailable: UpdateCheckResult = { status: 'unavailable', current: currentVersion };
   try {
     const response = await fetch(UPDATE_CHECK_URL, {

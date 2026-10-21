@@ -8,7 +8,10 @@ import type { MonitorEntry, PowerExpr } from '../models/sourceElements';
 import { evaluatePower, readElementStates, truthy, variablesOf, type Read } from './elementStates';
 import { monitorKey, parseMonitorKey, resolveVariable } from './debugVariables';
 
-const reads = (values: Record<string, number | boolean | string>): Read => (variable) => values[variable];
+const reads =
+  (values: Record<string, number | boolean | string>): Read =>
+  (variable) =>
+    values[variable];
 
 describe('the power of a rung from the values read (LNG-006)', () => {
   const start: PowerExpr = { op: 'var', variable: 'Start' };
@@ -52,7 +55,10 @@ describe('the states of elements from monitor entries (LNG-006)', () => {
   ];
 
   it('reads each state from the variable the entry names', () => {
-    const states = readElementStates(entries, reads({ Start: true, 'T1.Q': false, 'T1.ET': 1200, X_s1: true, 'T_s1.ET': 340, _C_t1: false, _F_t1: false }));
+    const states = readElementStates(
+      entries,
+      reads({ Start: true, 'T1.Q': false, 'T1.ET': 1200, X_s1: true, 'T_s1.ET': 340, _C_t1: false, _F_t1: false }),
+    );
     expect(states.get('rung:r1/cell:0,0')).toMatchObject({ power: true, powerOut: true, value: true });
     expect(states.get('block:t1')!.pins).toEqual({ Q: false, ET: 1200 });
     expect(states.get('step:s1')).toMatchObject({ active: true, time: 340 });
@@ -74,11 +80,15 @@ describe('the states of elements from monitor entries (LNG-006)', () => {
 });
 
 describe('a variable is read from the program of its own file (LNG-006)', () => {
-  const programOf = (name: string, extra: string) => `PROGRAM ${name}\nVAR\n  Local : INT;\n${extra}END_VAR\n  Local := Local + 1;\nEND_PROGRAM\n`;
+  const programOf = (name: string, extra: string) =>
+    `PROGRAM ${name}\nVAR\n  Local : INT;\n${extra}END_VAR\n  Local := Local + 1;\nEND_PROGRAM\n`;
   const map = compileSingleFileWithTask(programOf('Main', ''), 'ST', { sourceRef: 'src/main.st', programName: 'Main' }).debugMap;
 
   it('finds a variable of the file, and a member of a block instance, by the program of the file', () => {
-    const withTimer = compileSingleFileWithTask(programOf('Main', '  T : TON;\n'), 'ST', { sourceRef: 'src/main.st', programName: 'Main' }).debugMap;
+    const withTimer = compileSingleFileWithTask(programOf('Main', '  T : TON;\n'), 'ST', {
+      sourceRef: 'src/main.st',
+      programName: 'Main',
+    }).debugMap;
     expect(resolveVariable(withTimer, 'src/main.st', 'Local')).toMatchObject({ path: 'Local', type: 'INT' });
     expect(resolveVariable(withTimer, './src/main.st', 'T.Q')).toMatchObject({ path: 'T.Q', type: 'BOOL' });
   });
@@ -90,7 +100,10 @@ describe('a variable is read from the program of its own file (LNG-006)', () => 
   });
 
   it('keys a variable by its file, so the same name in two programs is two values', () => {
-    expect(parseMonitorKey(monitorKey('src/a.ld.json', '_rung1_result'))).toEqual({ sourceRef: 'src/a.ld.json', variable: '_rung1_result' });
+    expect(parseMonitorKey(monitorKey('src/a.ld.json', '_rung1_result'))).toEqual({
+      sourceRef: 'src/a.ld.json',
+      variable: '_rung1_result',
+    });
     expect(monitorKey('src/a.ld.json', 'X')).not.toBe(monitorKey('src/b.ld.json', 'X'));
     expect(parseMonitorKey('Count')).toBeNull();
   });
@@ -106,11 +119,18 @@ describe('every variable that a translated source says it reads exists in the de
 
   // A diagram is built with the Structured Text files beside it, as its project builds it (CMP-042): a function block that
   // one of them declares is a block the diagram may place.
-  const declarationsBeside = (path: string) => readdirSync(join(root, dirname(path))).filter((file) => file.endsWith('.st')).map((file) => {
-    const sourceRef = `${dirname(path)}/${file}`;
-    return { name: sourceRef, content: readFileSync(join(root, sourceRef), 'utf8'), language: 'ST' as PLCLanguage, sourceRef };
-  });
-  const project = { name: 'Diagram', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval_ms: 10, priority: 1, programs: ['Main'] }] };
+  const declarationsBeside = (path: string) =>
+    readdirSync(join(root, dirname(path)))
+      .filter((file) => file.endsWith('.st'))
+      .map((file) => {
+        const sourceRef = `${dirname(path)}/${file}`;
+        return { name: sourceRef, content: readFileSync(join(root, sourceRef), 'utf8'), language: 'ST' as PLCLanguage, sourceRef };
+      });
+  const project = {
+    name: 'Diagram',
+    version: '1.0.0',
+    tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval_ms: 10, priority: 1, programs: ['Main'] }],
+  };
 
   for (const path of sources) {
     it(`${path}: each entry names a variable of its program`, () => {
@@ -135,7 +155,14 @@ describe('forced and faulted variables reach the state of the element that shows
     { element: 'transition:t', role: 'condition', variable: '_C_t' },
     { element: 'transition:t', role: 'fired', variable: '_F_t' },
   ];
-  const flags: Record<string, { forced?: boolean; fault?: boolean }> = { Run: { forced: true }, 'T1.ET': { fault: true }, Lamp: { forced: true }, X_s: { fault: true }, _C_t: { forced: true }, 'T_s.ET': { fault: true } };
+  const flags: Record<string, { forced?: boolean; fault?: boolean }> = {
+    Run: { forced: true },
+    'T1.ET': { fault: true },
+    Lamp: { forced: true },
+    X_s: { fault: true },
+    _C_t: { forced: true },
+    'T_s.ET': { fault: true },
+  };
 
   it('puts the flags of the variable each pin, value, step and condition names on that element', () => {
     const states = readElementStates(entries, reads({ Run: true, Lamp: false }), (variable) => flags[variable]);

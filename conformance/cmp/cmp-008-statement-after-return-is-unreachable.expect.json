@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-008",
   "title": "a statement after RETURN is reported as unreachable and never runs",
-  "matrix": [
-    "statements.return"
-  ],
+  "matrix": ["statements.return"],
   "note": "CMP-008: UNREACHABLE_STATEMENT at the first statement that follows a RETURN, EXIT or CONTINUE of the same list",
   "scans": 1,
   "scanMs": 10,

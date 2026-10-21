@@ -87,7 +87,12 @@ export class EventRouter<E> {
     this.stopPolling();
     this.source = 'polling';
     this.timer = setInterval(() => {
-      void poll().then((event) => { if (event !== null) this.push(event); }, () => undefined);
+      void poll().then(
+        (event) => {
+          if (event !== null) this.push(event);
+        },
+        () => undefined,
+      );
     }, this.pollIntervalMs);
   }
 
@@ -99,11 +104,12 @@ export class EventRouter<E> {
   }
 
   status(): RouterStatus {
-    const label = this.source === 'events'
-      ? 'state pushed by the device'
-      : this.source === 'polling'
-        ? `state polled every ${this.pollIntervalMs} ms: this firmware does not push events`
-        : 'no device';
+    const label =
+      this.source === 'events'
+        ? 'state pushed by the device'
+        : this.source === 'polling'
+          ? `state polled every ${this.pollIntervalMs} ms: this firmware does not push events`
+          : 'no device';
     return { source: this.source, label, delivered: this.delivered, dropped: this.dropped, lostByDevice: this.lostByDevice };
   }
 

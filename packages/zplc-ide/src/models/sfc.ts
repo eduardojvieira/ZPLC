@@ -1,9 +1,9 @@
 /**
  * SFC (Sequential Function Chart) Model Types
- * 
+ *
  * TypeScript types matching the SFC JSON schema used for visual editing.
  * Based on IEC 61131-3 SFC language specification.
- * 
+ *
  * SFC represents sequential control flow as a state machine:
  * - Steps: States with associated actions
  * - Transitions: Conditions to move between steps
@@ -20,7 +20,7 @@ export interface SFCVariable {
   name: string;
   type: string;
   initialValue?: unknown;
-  address?: string;        // e.g., "%Q0.0" for physical outputs
+  address?: string; // e.g., "%Q0.0" for physical outputs
   comment?: string;
 }
 
@@ -48,19 +48,18 @@ export interface Position {
  *
  * The transpiler translates N, S, R, L, D, P, P0 and P1; SD, DS and SL are rejected with an error.
  */
-export type ActionQualifier = 
-  | 'N'  // Non-stored (action runs while step is active)
-  | 'S'  // Set (action is stored: it keeps running after the step is left, until an R)
-  | 'R'  // Reset (stops the stored action)
-  | 'L'  // Time Limited (runs while the step is active, for at most `time`)
-  | 'D'  // Time Delayed (runs while the step is active, once `time` has passed)
-  | 'P'  // Pulse (one scan, when the step becomes active; the same as P1)
+export type ActionQualifier =
+  | 'N' // Non-stored (action runs while step is active)
+  | 'S' // Set (action is stored: it keeps running after the step is left, until an R)
+  | 'R' // Reset (stops the stored action)
+  | 'L' // Time Limited (runs while the step is active, for at most `time`)
+  | 'D' // Time Delayed (runs while the step is active, once `time` has passed)
+  | 'P' // Pulse (one scan, when the step becomes active; the same as P1)
   | 'SD' // Stored and time Delayed
   | 'DS' // Delayed and Stored
   | 'SL' // Stored and time Limited
   | 'P0' // Pulse on the falling edge (one scan, when the step is left)
-  | 'P1' // Pulse on the rising edge (one scan, when the step becomes active)
-;
+  | 'P1'; // Pulse on the rising edge (one scan, when the step becomes active)
 
 /**
  * Action association within a step
@@ -68,7 +67,7 @@ export type ActionQualifier =
 export interface StepAction {
   qualifier: ActionQualifier;
   actionName: string;
-  time?: string;       // For timed qualifiers (L, D, SD, DS, SL): a TIME literal such as T#2s
+  time?: string; // For timed qualifiers (L, D, SD, DS, SL): a TIME literal such as T#2s
   comment?: string;
 }
 
@@ -93,8 +92,8 @@ export interface SFCStep {
  */
 export interface SFCTransition {
   id: string;
-  fromStep: string;    // Step ID
-  toStep: string;      // Step ID
+  fromStep: string; // Step ID
+  toStep: string; // Step ID
   /**
    * All the steps the transition leaves, when there are several (a simultaneous convergence: the
    * transition fires when every one of them is active). The first is `fromStep`.
@@ -111,7 +110,7 @@ export interface SFCTransition {
    * a number the order of the transitions in the file decides.
    */
   priority?: number;
-  condition: string;   // Boolean expression in ST syntax
+  condition: string; // Boolean expression in ST syntax
   position?: Position;
   comment?: string;
 }
@@ -132,7 +131,7 @@ export interface SFCAction {
   id: string;
   name: string;
   type: ActionType;
-  body: string;        // Code in the specified language
+  body: string; // Code in the specified language
   comment?: string;
 }
 
@@ -158,13 +157,13 @@ export interface SFCModel {
   name: string;
   description?: string;
   version?: string;
-  
+
   variables?: SFCVariables;
-  
+
   steps: SFCStep[];
   transitions: SFCTransition[];
   actions?: SFCAction[];
-  
+
   metadata?: SFCMetadata;
 }
 
@@ -194,22 +193,22 @@ export function validateSFCModel(obj: unknown): SFCModel {
   if (!obj || typeof obj !== 'object') {
     throw new Error('SFC model must be an object');
   }
-  
+
   const model = obj as Record<string, unknown>;
-  
+
   // Required fields
   if (typeof model.name !== 'string') {
     throw new Error('SFC model must have a name');
   }
-  
+
   if (!Array.isArray(model.steps)) {
     throw new Error('SFC model must have steps array');
   }
-  
+
   if (!Array.isArray(model.transitions)) {
     throw new Error('SFC model must have transitions array');
   }
-  
+
   // Validate steps
   for (const step of model.steps) {
     if (!step || typeof step !== 'object') {
@@ -220,7 +219,7 @@ export function validateSFCModel(obj: unknown): SFCModel {
       throw new Error('Each step must have id and name');
     }
   }
-  
+
   // Validate transitions
   for (const trans of model.transitions) {
     if (!trans || typeof trans !== 'object') {
@@ -231,13 +230,13 @@ export function validateSFCModel(obj: unknown): SFCModel {
       throw new Error('Each transition must have id, fromStep, and toStep');
     }
   }
-  
+
   // Check for at least one initial step
-  const initialSteps = (model.steps as SFCStep[]).filter(s => s.isInitial);
+  const initialSteps = (model.steps as SFCStep[]).filter((s) => s.isInitial);
   if (initialSteps.length === 0) {
     throw new Error('SFC model must have at least one initial step');
   }
-  
+
   return model as unknown as SFCModel;
 }
 
@@ -249,28 +248,28 @@ export function validateSFCModel(obj: unknown): SFCModel {
  * Find the initial step(s) in an SFC model.
  */
 export function getInitialSteps(model: SFCModel): SFCStep[] {
-  return model.steps.filter(s => s.isInitial);
+  return model.steps.filter((s) => s.isInitial);
 }
 
 /**
  * Get all transitions from a specific step.
  */
 export function getTransitionsFromStep(model: SFCModel, stepId: string): SFCTransition[] {
-  return model.transitions.filter(t => t.fromStep === stepId);
+  return model.transitions.filter((t) => t.fromStep === stepId);
 }
 
 /**
  * Get all transitions to a specific step.
  */
 export function getTransitionsToStep(model: SFCModel, stepId: string): SFCTransition[] {
-  return model.transitions.filter(t => t.toStep === stepId);
+  return model.transitions.filter((t) => t.toStep === stepId);
 }
 
 /**
  * Find an action by name.
  */
 export function findAction(model: SFCModel, actionName: string): SFCAction | undefined {
-  return model.actions?.find(a => a.name === actionName || a.id === actionName);
+  return model.actions?.find((a) => a.name === actionName || a.id === actionName);
 }
 
 /**

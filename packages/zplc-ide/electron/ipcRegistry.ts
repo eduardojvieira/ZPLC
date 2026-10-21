@@ -61,7 +61,7 @@ export function registerIpcHandlers<Owner>(ipc: IpcMainLike, table: IpcHandlerTa
       try {
         answer = await handler.run(owner, args);
       } catch {
-        throw new Error(guard.isCurrent(owner) ? handler.failure ?? IPC_DENIED : IPC_DENIED);
+        throw new Error(guard.isCurrent(owner) ? (handler.failure ?? IPC_DENIED) : IPC_DENIED);
       }
       if (!guard.isCurrent(owner)) throw new Error(IPC_DENIED);
       return answer;

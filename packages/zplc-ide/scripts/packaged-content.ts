@@ -15,7 +15,11 @@ import { LEARNER_BOARDS, verifyFirmwareFolder, type ReleaseManifest } from '../.
 import { discoverUnpackedResources } from './smoke-desktop-builds';
 import { listAsarFiles } from './run-packaged-desktop-smoke';
 
-interface AsarNode { files?: Record<string, AsarNode>; size?: number; offset?: string }
+interface AsarNode {
+  files?: Record<string, AsarNode>;
+  size?: number;
+  offset?: string;
+}
 
 function asarHeader(asar: Uint8Array): { root: AsarNode; dataStart: number } {
   const view = new DataView(asar.buffer, asar.byteOffset, asar.byteLength);
@@ -113,11 +117,13 @@ export function checkFirmware(resources: string, required: boolean): string[] {
   const manifest = JSON.parse(readFileSync(join(folder, manifestName), 'utf8')) as ReleaseManifest;
   const expected = new Set(manifest.images.filter((image) => image.learner && image.role === 'flash').map((image) => image.file));
   for (const board of LEARNER_BOARDS) {
-    if (!manifest.images.some((image) => image.board === board && image.learner && image.role === 'flash')) problems.push(`firmware/ manifest names no image for the learner board ${board}`);
+    if (!manifest.images.some((image) => image.board === board && image.learner && image.role === 'flash'))
+      problems.push(`firmware/ manifest names no image for the learner board ${board}`);
   }
   for (const file of expected) if (!existsSync(join(folder, file))) problems.push(`firmware/${file} is not in the resources`);
   for (const name of readdirSync(folder)) {
-    if (name !== manifestName && !expected.has(name)) problems.push(`firmware/${name} is in the resources and is not a learner-board image of the manifest`);
+    if (name !== manifestName && !expected.has(name))
+      problems.push(`firmware/${name} is in the resources and is not a learner-board image of the manifest`);
   }
   return problems;
 }
@@ -140,7 +146,8 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
   // the example projects: every file of projects/, byte for byte as the loader reads it
   const projects = join(packageRoot, 'projects');
   for (const file of existsSync(projects) ? walk(projects) : []) {
-    if (!inBundle(readFileSync(file, 'utf8'))) problems.push(`example project file projects/${posix(relative(projects, file))} is not in the renderer bundle`);
+    if (!inBundle(readFileSync(file, 'utf8')))
+      problems.push(`example project file projects/${posix(relative(projects, file))} is not in the renderer bundle`);
   }
 
   // the course: every lesson id the repository has
@@ -150,10 +157,15 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
 
   // the bytecode examples, copied beside the archive by extraResources
   const examples = join(repoRoot, 'examples');
-  for (const name of existsSync(examples) ? readdirSync(examples).filter((entry) => /\.(zplc|st)$/.test(entry)).sort() : []) {
+  for (const name of existsSync(examples)
+    ? readdirSync(examples)
+        .filter((entry) => /\.(zplc|st)$/.test(entry))
+        .sort()
+    : []) {
     const shipped = join(resources, 'examples', name);
     if (!existsSync(shipped)) problems.push(`examples/${name} is not in the resources`);
-    else if (!readFileSync(shipped).equals(readFileSync(join(examples, name)))) problems.push(`examples/${name} in the resources differs from the repository file`);
+    else if (!readFileSync(shipped).equals(readFileSync(join(examples, name))))
+      problems.push(`examples/${name} in the resources differs from the repository file`);
   }
 
   // the licence notices: shipped, and naming every package and font that the archive holds
@@ -171,7 +183,8 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
       if (!notices.includes(`${name}@`)) problems.push(`node_modules/${name} of app.asar has no entry in THIRD-PARTY-NOTICES.txt`);
     }
     for (const file of files.filter((candidate) => /\.(ttf|otf|woff2?|eot)$/i.test(candidate))) {
-      if (!notices.includes(file.slice(file.lastIndexOf('/') + 1))) problems.push(`font ${file} of app.asar has no entry in THIRD-PARTY-NOTICES.txt`);
+      if (!notices.includes(file.slice(file.lastIndexOf('/') + 1)))
+        problems.push(`font ${file} of app.asar has no entry in THIRD-PARTY-NOTICES.txt`);
     }
   }
   // The Linux desktop identity (REL-011, decision D-03): Electron gives the window the desktopName of the manifest it packs as
@@ -185,15 +198,19 @@ export function checkPackagedContent({ resources, repoRoot, requireFirmware = fa
     const identity = JSON.parse(readFileSync(join(repoRoot, identityFile), 'utf8')) as { desktopName: string; executableName: string };
     const manifest = JSON.parse(Buffer.from(readAsarFile(asar, 'package.json')).toString('utf8')) as { desktopName?: unknown };
     const desktopName = typeof manifest.desktopName === 'string' ? manifest.desktopName.replace(/\.desktop$/, '') : '';
-    if (desktopName === '') problems.push('the package.json of app.asar has no desktopName: the window and the desktop entry would not match');
-    else if (desktopName !== identity.desktopName) problems.push(`desktopName ${desktopName} of app.asar is not ${identity.desktopName}, the desktop name of ${identityFile}`);
+    if (desktopName === '')
+      problems.push('the package.json of app.asar has no desktopName: the window and the desktop entry would not match');
+    else if (desktopName !== identity.desktopName)
+      problems.push(`desktopName ${desktopName} of app.asar is not ${identity.desktopName}, the desktop name of ${identityFile}`);
     const executable = join(unpacked, identity.executableName);
-    if (!existsSync(executable) || !statSync(executable).isFile()) problems.push(`the unpacked package has no executable ${identity.executableName}, the executable name of ${identityFile}`);
+    if (!existsSync(executable) || !statSync(executable).isFile())
+      problems.push(`the unpacked package has no executable ${identity.executableName}, the executable name of ${identityFile}`);
   }
   // Electron's own notices come with its distribution, beside the executable. Where a macOS bundle keeps them is not
   // something this check has been run against (it has only been run on Linux), so a bundle is not asked for them.
   const inMacBundle = /\.app[\\/]Contents[\\/]Resources$/.test(resources);
-  const electronNotices = inMacBundle || [resources, dirname(resources)].some((folder) => existsSync(join(folder, 'LICENSES.chromium.html')));
+  const electronNotices =
+    inMacBundle || [resources, dirname(resources)].some((folder) => existsSync(join(folder, 'LICENSES.chromium.html')));
   if (!electronNotices) problems.push('LICENSES.chromium.html of Electron is not shipped with the application');
   return problems;
 }
@@ -202,7 +219,7 @@ function main(argv: string[]): number {
   const packageRoot = resolve(import.meta.dir, '..');
   const repoRoot = resolve(packageRoot, '..', '..');
   const flag = argv.indexOf('--dist');
-  const dist = resolve(flag >= 0 ? argv[flag + 1] ?? '' : process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
+  const dist = resolve(flag >= 0 ? (argv[flag + 1] ?? '') : (process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron')));
   const resources = discoverUnpackedResources(dist);
   if (resources.length === 0) {
     console.error(`Packaged content check: no unpacked application found under ${dist}`);
@@ -214,7 +231,11 @@ function main(argv: string[]): number {
     for (const problem of problems) console.error(`Packaged content check (${folder}): ${problem}`);
     failed += problems.length;
   }
-  if (failed === 0) console.log(`Packaged content check passed for ${resources.length} unpacked application(s): example projects, lessons, bytecode examples and licence notices are in the package.`);
+  if (failed === 0)
+    console.log(
+      `Packaged content check passed for ${resources.length} unpacked application(s): example projects, lessons, bytecode examples and ` +
+        `licence notices are in the package.`,
+    );
   return failed === 0 ? 0 : 1;
 }
 

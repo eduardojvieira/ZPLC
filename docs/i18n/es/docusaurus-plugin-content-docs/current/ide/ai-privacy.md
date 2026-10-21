@@ -21,13 +21,13 @@ cambio candidato; no aprueba su propio resultado ni opera equipos físicos.
 
 ## Límite de datos
 
-| Elemento | Comportamiento de ZPLC |
-| --- | --- |
-| Clave del proveedor | Se guarda en el almacén seguro del sistema operativo. |
-| Contexto automático | Contexto ST acotado; si contiene un patrón sensible conocido, ZPLC rechaza la solicitud antes de llamar al proveedor. |
-| Aviso en la consulta | ZPLC advierte que no se peguen secretos. |
-| Cambio candidato | Permanece aislado hasta que una persona lo revisa y lo guarda. |
-| Mensaje de éxito | Se deriva de la evidencia del compilador, de las pruebas y de la simulación, no del texto del proveedor. |
+| Elemento             | Comportamiento de ZPLC                                                                                                |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Clave del proveedor  | Se guarda en el almacén seguro del sistema operativo.                                                                 |
+| Contexto automático  | Contexto ST acotado; si contiene un patrón sensible conocido, ZPLC rechaza la solicitud antes de llamar al proveedor. |
+| Aviso en la consulta | ZPLC advierte que no se peguen secretos.                                                                              |
+| Cambio candidato     | Permanece aislado hasta que una persona lo revisa y lo guarda.                                                        |
+| Mensaje de éxito     | Se deriva de la evidencia del compilador, de las pruebas y de la simulación, no del texto del proveedor.              |
 
 ## Límite importante
 

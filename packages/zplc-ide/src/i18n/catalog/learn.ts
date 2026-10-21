@@ -43,9 +43,11 @@ export const learnEn = {
   'learn.grade.unavailable.title': 'Evidence is incomplete',
   'learn.grade.unavailable.body': 'The result lacks the complete saved evidence this lesson requires.',
   'learn.grade.changed.title': 'The scenario was changed',
-  'learn.grade.changed.body': 'The recorded assertions are not those of the lesson\'s {scenario} scenario; restore the original scenario and run it again.',
+  'learn.grade.changed.body':
+    "The recorded assertions are not those of the lesson's {scenario} scenario; restore the original scenario and run it again.",
   'learn.grade.notChecked.title': 'Not checked yet',
-  'learn.grade.notChecked.body': 'Save your changes and press “Check”: your program is graded against the lesson\'s own scenario, not the one in your folder.',
+  'learn.grade.notChecked.body':
+    "Save your changes and press “Check”: your program is graded against the lesson's own scenario, not the one in your folder.",
   'learn.grade.notRecorded.title': 'No recorded scenario',
   'learn.grade.notRecorded.body': 'Run {scenario} from Tests to record evidence.',
   'learn.refusal': 'The program could not be graded ({reason}); fix the build or check that the simulator is available.',
@@ -100,9 +102,11 @@ export const learnEs: Record<keyof typeof learnEn, string> = {
   'learn.grade.unavailable.title': 'Evidencia incompleta',
   'learn.grade.unavailable.body': 'El resultado no tiene la evidencia guardada completa que requiere esta lección.',
   'learn.grade.changed.title': 'El escenario fue modificado',
-  'learn.grade.changed.body': 'Las aserciones registradas no son las del escenario {scenario} de la lección; restaure el escenario original y ejecútelo de nuevo.',
+  'learn.grade.changed.body':
+    'Las aserciones registradas no son las del escenario {scenario} de la lección; restaure el escenario original y ejecútelo de nuevo.',
   'learn.grade.notChecked.title': 'Sin comprobar',
-  'learn.grade.notChecked.body': 'Guarde los cambios y pulse “Comprobar”: el programa se califica contra el escenario de la lección, no contra el de su carpeta.',
+  'learn.grade.notChecked.body':
+    'Guarde los cambios y pulse “Comprobar”: el programa se califica contra el escenario de la lección, no contra el de su carpeta.',
   'learn.grade.notRecorded.title': 'Sin escenario registrado',
   'learn.grade.notRecorded.body': 'Ejecute {scenario} desde “Pruebas” para registrar evidencia.',
   'learn.refusal': 'No se pudo calificar el programa ({reason}); corrija la compilación o compruebe que el simulador esté disponible.',

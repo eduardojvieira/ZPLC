@@ -26,17 +26,34 @@ class ProcessTransport implements LinkTransport {
 
   constructor(args: string[], environment: Record<string, string>) {
     this.child = spawn(nativeRuntimeBinary, args, { env: { ...process.env, ...environment }, stdio: ['pipe', 'pipe', 'pipe'] });
-    this.child.stdout.on('data', (chunk: Buffer) => { for (const handler of this.handlers) handler(new Uint8Array(chunk)); });
-    this.child.stderr.on('data', (chunk: Buffer) => { this.stderr += chunk.toString('utf8'); });
-    this.child.on('close', (code) => { for (const handler of this.closers) handler(`exit ${code}`); });
+    this.child.stdout.on('data', (chunk: Buffer) => {
+      for (const handler of this.handlers) handler(new Uint8Array(chunk));
+    });
+    this.child.stderr.on('data', (chunk: Buffer) => {
+      this.stderr += chunk.toString('utf8');
+    });
+    this.child.on('close', (code) => {
+      for (const handler of this.closers) handler(`exit ${code}`);
+    });
   }
 
-  write(bytes: Uint8Array): void { this.child.stdin.write(bytes); }
-  onData(handler: (bytes: Uint8Array) => void): () => void { this.handlers.add(handler); return () => this.handlers.delete(handler); }
-  onClose(handler: (reason: string) => void): () => void { this.closers.add(handler); return () => this.closers.delete(handler); }
+  write(bytes: Uint8Array): void {
+    this.child.stdin.write(bytes);
+  }
+  onData(handler: (bytes: Uint8Array) => void): () => void {
+    this.handlers.add(handler);
+    return () => this.handlers.delete(handler);
+  }
+  onClose(handler: (reason: string) => void): () => void {
+    this.closers.add(handler);
+    return () => this.closers.delete(handler);
+  }
   close(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.child.exitCode !== null) { resolve(); return; }
+      if (this.child.exitCode !== null) {
+        resolve();
+        return;
+      }
       this.child.once('close', () => resolve());
       this.child.stdin.end();
       setTimeout(() => this.child.kill('SIGTERM'), 1000).unref();
@@ -74,155 +91,226 @@ async function until<T>(read: () => Promise<T> | T, ok: (value: T) => boolean, w
   }
 }
 
-describe('the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)', () => {
-  itNative('a hello and an identity recognise the device (COM-019, COM-029)', async () => {
-    const { link } = await start(['--device-link']);
-    const hello = await link.hello();
-    expect(hello).toMatchObject({ version: 1, transport: 'SERIAL', sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30 });
-    for (const capability of ['SESSION', 'MEMORY', 'FORCE', 'RUN_CONTROL', 'BREAKPOINTS', 'PROGRAM', 'EVENTS', 'WATCH', 'AUTH'] as const) {
-      expect(link.has(capability)).toBe(true);
-    }
-    expect(link.has('CONFIG')).toBe(false);
-    expect(link.has('CREDENTIALS')).toBe(false);
-    const identity = await link.request('IDENTITY', {});
-    expect(identity).toMatchObject({ abi_major: ZPLC_CONSTANTS.VERSION_MAJOR, abi_minor: ZPLC_CONSTANTS.VERSION_MINOR, draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER });
-    expect(identity.board).toBe('native-posix');
-    expect(identity.code_size_max).toBeGreaterThan(0);
-  });
+describe(
+  'the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, ' + 'COM-028)',
+  () => {
+    itNative('a hello and an identity recognise the device (COM-019, COM-029)', async () => {
+      const { link } = await start(['--device-link']);
+      const hello = await link.hello();
+      expect(hello).toMatchObject({ version: 1, transport: 'SERIAL', sessionState: 'NONE', keyProvisioned: false, idleTimeoutS: 30 });
+      for (const capability of [
+        'SESSION',
+        'MEMORY',
+        'FORCE',
+        'RUN_CONTROL',
+        'BREAKPOINTS',
+        'PROGRAM',
+        'EVENTS',
+        'WATCH',
+        'AUTH',
+      ] as const) {
+        expect(link.has(capability)).toBe(true);
+      }
+      expect(link.has('CONFIG')).toBe(false);
+      expect(link.has('CREDENTIALS')).toBe(false);
+      const identity = await link.request('IDENTITY', {});
+      expect(identity).toMatchObject({
+        abi_major: ZPLC_CONSTANTS.VERSION_MAJOR,
+        abi_minor: ZPLC_CONSTANTS.VERSION_MINOR,
+        draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
+      });
+      expect(identity.board).toBe('native-posix');
+      expect(identity.code_size_max).toBeGreaterThan(0);
+    });
 
-  itNative('nothing that changes the device works without a session, and nothing of it reaches the runtime (COM-020)', async () => {
-    const { link } = await start(['--device-link']);
-    await link.hello();
-    const refused = async (run: () => Promise<unknown>) => {
-      const error = await run().then(() => null, (reason: unknown) => reason);
-      expect(error).toBeInstanceOf(LinkError);
-      expect((error as LinkError).errorName).toBe('NO_SESSION');
-    };
-    await refused(() => link.request('MEM_WRITE', { address: 0x2000, data: new Uint8Array([1, 2, 3, 4]) }));
-    await refused(() => link.request('FORCE_SET', { address: 0x2000, data: new Uint8Array([1]) }));
-    await refused(() => link.request('RUN', {}));
-    await refused(() => link.request('STOP', {}));
-    await refused(() => link.request('PROGRAM_BEGIN', { size: 16, crc32: 0 }));
-    await refused(() => link.request('BP_ADD', { pc: 4 }));
-    await refused(() => link.request('KEY_SET', { key: KEY }));
-    // reads are open on the serial link, and show nothing was changed
-    const memory = await link.request('MEM_READ', { address: 0x2000, length: 4 });
-    expect([...memory.data]).toEqual([0, 0, 0, 0]);
-    expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
-    expect(await link.request('STATUS', {})).toMatchObject({ state: ENUMS.RUN_STATE.STOPPED, forces: 0 });
-    expect(link.snapshot().crcErrors).toBe(0);
-  });
+    itNative('nothing that changes the device works without a session, and nothing of it reaches the runtime (COM-020)', async () => {
+      const { link } = await start(['--device-link']);
+      await link.hello();
+      const refused = async (run: () => Promise<unknown>) => {
+        const error = await run().then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect(error).toBeInstanceOf(LinkError);
+        expect((error as LinkError).errorName).toBe('NO_SESSION');
+      };
+      await refused(() => link.request('MEM_WRITE', { address: 0x2000, data: new Uint8Array([1, 2, 3, 4]) }));
+      await refused(() => link.request('FORCE_SET', { address: 0x2000, data: new Uint8Array([1]) }));
+      await refused(() => link.request('RUN', {}));
+      await refused(() => link.request('STOP', {}));
+      await refused(() => link.request('PROGRAM_BEGIN', { size: 16, crc32: 0 }));
+      await refused(() => link.request('BP_ADD', { pc: 4 }));
+      await refused(() => link.request('KEY_SET', { key: KEY }));
+      // reads are open on the serial link, and show nothing was changed
+      const memory = await link.request('MEM_READ', { address: 0x2000, length: 4 });
+      expect([...memory.data]).toEqual([0, 0, 0, 0]);
+      expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
+      expect(await link.request('STATUS', {})).toMatchObject({ state: ENUMS.RUN_STATE.STOPPED, forces: 0 });
+      expect(link.snapshot().crcErrors).toBe(0);
+    });
 
-  itNative('in a session: an atomic write, a refused range with its region, a force that ends with the session (COM-020, COM-023, COM-024)', async () => {
-    const { link } = await start(['--device-link']);
-    await link.hello();
-    const events: LinkEvent[] = [];
-    link.onEvent((event) => events.push(event));
-    expect(await link.request('EVENTS_SET', { mask: EVENT_MASK.FORCE | EVENT_MASK.STATUS })).toMatchObject({ mask: EVENT_MASK.FORCE | EVENT_MASK.STATUS });
-    const session = await link.openSession({ name: 'unit test' });
-    expect(session).toMatchObject({ authenticated: false, idleTimeoutS: 30 });
+    itNative(
+      'in a session: an atomic write, a refused range with its region, a force that ends with the session (COM-020, COM-023, COM-024)',
+      async () => {
+        const { link } = await start(['--device-link']);
+        await link.hello();
+        const events: LinkEvent[] = [];
+        link.onEvent((event) => events.push(event));
+        expect(await link.request('EVENTS_SET', { mask: EVENT_MASK.FORCE | EVENT_MASK.STATUS })).toMatchObject({
+          mask: EVENT_MASK.FORCE | EVENT_MASK.STATUS,
+        });
+        const session = await link.openSession({ name: 'unit test' });
+        expect(session).toMatchObject({ authenticated: false, idleTimeoutS: 30 });
 
-    await link.request('MEM_WRITE', { address: 0x2010, data: new Uint8Array([0x78, 0x56, 0x34, 0x12]) });
-    expect([...(await link.request('MEM_READ', { address: 0x2010, length: 4 })).data]).toEqual([0x78, 0x56, 0x34, 0x12]);
+        await link.request('MEM_WRITE', { address: 0x2010, data: new Uint8Array([0x78, 0x56, 0x34, 0x12]) });
+        expect([...(await link.request('MEM_READ', { address: 0x2010, length: 4 })).data]).toEqual([0x78, 0x56, 0x34, 0x12]);
 
-    // COM-024 on the device: the refusal names the address, the length and the region
-    const error = await link.request('MEM_WRITE', { address: 0x3ffe, data: new Uint8Array(4) }).then(() => null, (reason: unknown) => reason);
-    expect(error).toBeInstanceOf(LinkError);
-    expect((error as LinkError).range).toEqual({ address: 0x3ffe, length: 4, regionStart: 0x2000, regionEnd: 0x4000 });
-    const outside = await link.request('MEM_READ', { address: 0x5000, length: 1 }).then(() => null, (reason: unknown) => reason);
-    expect((outside as LinkError).range).toEqual({ address: 0x5000, length: 1, regionStart: 0xffff, regionEnd: 0xffff });
-    const output = await link.request('MEM_WRITE', { address: 0x1000, data: new Uint8Array([1]) }).then(() => null, (reason: unknown) => reason);
-    expect((output as LinkError).errorName).toBe('RANGE');
+        // COM-024 on the device: the refusal names the address, the length and the region
+        const error = await link.request('MEM_WRITE', { address: 0x3ffe, data: new Uint8Array(4) }).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect(error).toBeInstanceOf(LinkError);
+        expect((error as LinkError).range).toEqual({ address: 0x3ffe, length: 4, regionStart: 0x2000, regionEnd: 0x4000 });
+        const outside = await link.request('MEM_READ', { address: 0x5000, length: 1 }).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect((outside as LinkError).range).toEqual({ address: 0x5000, length: 1, regionStart: 0xffff, regionEnd: 0xffff });
+        const output = await link.request('MEM_WRITE', { address: 0x1000, data: new Uint8Array([1]) }).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect((output as LinkError).errorName).toBe('RANGE');
 
-    expect(await link.request('FORCE_SET', { address: 0x2020, data: new Uint8Array([0xaa, 0xbb]) })).toMatchObject({ forces: 1 });
-    const listed = await link.request('FORCE_LIST', {});
-    expect(listed.count).toBe(1);
-    expect([...listed.entries]).toEqual([0x20, 0x20, 0x02, 0x00, 0xaa, 0xbb]);
+        expect(await link.request('FORCE_SET', { address: 0x2020, data: new Uint8Array([0xaa, 0xbb]) })).toMatchObject({ forces: 1 });
+        const listed = await link.request('FORCE_LIST', {});
+        expect(listed.count).toBe(1);
+        expect([...listed.entries]).toEqual([0x20, 0x20, 0x02, 0x00, 0xaa, 0xbb]);
 
-    expect(await link.closeSession()).toBe(1);
-    expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
-    await until(() => events, (seen) => seen.some((event) => event.name === 'EVT_FORCE' && (event.values as { change: number }).change === ENUMS.FORCE_CHANGE.RELEASED), 'the event that the forces were released');
-    // after the close the same write is refused again
-    const again = await link.request('MEM_WRITE', { address: 0x2010, data: new Uint8Array([1]) }).then(() => null, (reason: unknown) => reason);
-    expect((again as LinkError).errorName).toBe('NO_SESSION');
-  });
+        expect(await link.closeSession()).toBe(1);
+        expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
+        await until(
+          () => events,
+          (seen) =>
+            seen.some((event) => event.name === 'EVT_FORCE' && (event.values as { change: number }).change === ENUMS.FORCE_CHANGE.RELEASED),
+          'the event that the forces were released',
+        );
+        // after the close the same write is refused again
+        const again = await link.request('MEM_WRITE', { address: 0x2010, data: new Uint8Array([1]) }).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect((again as LinkError).errorName).toBe('NO_SESSION');
+      },
+    );
 
-  itNative('one session at a time, replaced by its own link, and taken over from the serial link (COM-020)', async () => {
-    const { link } = await start(['--device-link']);
-    await link.hello();
-    await link.openSession({ name: 'first' });
-    // the same link opening again is its own session, replaced
-    await link.openSession({ name: 'again' });
-    expect(await link.request('FORCE_SET', { address: 0x2020, data: new Uint8Array([1]) })).toMatchObject({ forces: 1 });
-    await link.openSession({ name: 'again', takeover: true });
-    expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
-  });
+    itNative('one session at a time, replaced by its own link, and taken over from the serial link (COM-020)', async () => {
+      const { link } = await start(['--device-link']);
+      await link.hello();
+      await link.openSession({ name: 'first' });
+      // the same link opening again is its own session, replaced
+      await link.openSession({ name: 'again' });
+      expect(await link.request('FORCE_SET', { address: 0x2020, data: new Uint8Array([1]) })).toMatchObject({ forces: 1 });
+      await link.openSession({ name: 'again', takeover: true });
+      expect(await link.request('FORCE_LIST', {})).toMatchObject({ count: 0 });
+    });
 
-  itNative('a download: chunks with progress, a read-back that is the announced CRC-32, STOP afterwards, RUN as its own request (COM-028, COM-025)', async () => {
-    const { link } = await start(['--device-link']);
-    const hello = await link.hello();
-    await link.openSession({ name: 'deploy' });
-    const bytes = program();
-    const announced = crc32(bytes);
-    const begun = await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: announced });
-    expect(begun.chunk_max).toBeGreaterThan(0);
-    const chunk = Math.min(begun.chunk_max, hello.maxPayload - 4, 64);
-    let received = 0;
-    const progress: number[] = [];
-    while (received < bytes.length) {
-      const part = bytes.subarray(received, received + chunk);
-      const answer = await link.request('PROGRAM_CHUNK', { offset: received, data: part });
-      received = answer.received;
-      progress.push(received);
-    }
-    expect(received).toBe(bytes.length);
-    expect(progress.length).toBeGreaterThan(1);
-    const committed = await link.request('PROGRAM_COMMIT', {});
-    expect(committed).toMatchObject({ size: bytes.length, crc32: announced });
-    expect(committed.generation).toBeGreaterThan(0);
-    expect(await link.request('PROGRAM_INFO', {})).toMatchObject({ loaded: 1, size: bytes.length, crc32: announced });
-    expect(await link.request('STATUS', {})).toMatchObject({ state: ENUMS.RUN_STATE.STOPPED, program_loaded: 1 });
+    itNative(
+      'a download: chunks with progress, a read-back that is the announced CRC-32, STOP afterwards, RUN as its own request (COM-028, ' +
+        'COM-025)',
+      async () => {
+        const { link } = await start(['--device-link']);
+        const hello = await link.hello();
+        await link.openSession({ name: 'deploy' });
+        const bytes = program();
+        const announced = crc32(bytes);
+        const begun = await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: announced });
+        expect(begun.chunk_max).toBeGreaterThan(0);
+        const chunk = Math.min(begun.chunk_max, hello.maxPayload - 4, 64);
+        let received = 0;
+        const progress: number[] = [];
+        while (received < bytes.length) {
+          const part = bytes.subarray(received, received + chunk);
+          const answer = await link.request('PROGRAM_CHUNK', { offset: received, data: part });
+          received = answer.received;
+          progress.push(received);
+        }
+        expect(received).toBe(bytes.length);
+        expect(progress.length).toBeGreaterThan(1);
+        const committed = await link.request('PROGRAM_COMMIT', {});
+        expect(committed).toMatchObject({ size: bytes.length, crc32: announced });
+        expect(committed.generation).toBeGreaterThan(0);
+        expect(await link.request('PROGRAM_INFO', {})).toMatchObject({ loaded: 1, size: bytes.length, crc32: announced });
+        expect(await link.request('STATUS', {})).toMatchObject({ state: ENUMS.RUN_STATE.STOPPED, program_loaded: 1 });
 
-    // RUN is its own request; status events are pushed
-    const events: LinkEvent[] = [];
-    link.onEvent((event) => events.push(event));
-    await link.request('EVENTS_SET', { mask: EVENT_MASK.STATUS });
-    await link.request('RUN', {});
-    await until(() => events, (seen) => seen.some((event) => event.name === 'EVT_STATUS' && (event.values as { state: number }).state === ENUMS.RUN_STATE.RUNNING), 'the event of the state change');
-    const status = await until(() => link.request('STATUS', {}), (value) => value.cycles > 2, 'scans');
-    expect(status.state).toBe(ENUMS.RUN_STATE.RUNNING);
-    await link.request('STOP', {});
-    await until(() => events, (seen) => seen.some((event) => event.name === 'EVT_STATUS' && (event.values as { state: number }).state === ENUMS.RUN_STATE.STOPPED), 'the event of the stop');
+        // RUN is its own request; status events are pushed
+        const events: LinkEvent[] = [];
+        link.onEvent((event) => events.push(event));
+        await link.request('EVENTS_SET', { mask: EVENT_MASK.STATUS });
+        await link.request('RUN', {});
+        await until(
+          () => events,
+          (seen) =>
+            seen.some((event) => event.name === 'EVT_STATUS' && (event.values as { state: number }).state === ENUMS.RUN_STATE.RUNNING),
+          'the event of the state change',
+        );
+        const status = await until(
+          () => link.request('STATUS', {}),
+          (value) => value.cycles > 2,
+          'scans',
+        );
+        expect(status.state).toBe(ENUMS.RUN_STATE.RUNNING);
+        await link.request('STOP', {});
+        await until(
+          () => events,
+          (seen) =>
+            seen.some((event) => event.name === 'EVT_STATUS' && (event.values as { state: number }).state === ENUMS.RUN_STATE.STOPPED),
+          'the event of the stop',
+        );
 
-    // a program that is not what was announced
-    await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: (announced ^ 1) >>> 0 });
-    for (let at = 0; at < bytes.length; at += chunk) await link.request('PROGRAM_CHUNK', { offset: at, data: bytes.subarray(at, at + chunk) });
-    const bad = await link.request('PROGRAM_COMMIT', {}).then(() => null, (reason: unknown) => reason);
-    expect((bad as LinkError).errorName).toBe('CRC');
-    // a download is not accepted while the runtime runs
-    await link.request('RUN', {});
-    const running = await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: announced }).then(() => null, (reason: unknown) => reason);
-    expect((running as LinkError).errorName).toBe('STATE');
-  });
+        // a program that is not what was announced
+        await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: (announced ^ 1) >>> 0 });
+        for (let at = 0; at < bytes.length; at += chunk)
+          await link.request('PROGRAM_CHUNK', { offset: at, data: bytes.subarray(at, at + chunk) });
+        const bad = await link.request('PROGRAM_COMMIT', {}).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect((bad as LinkError).errorName).toBe('CRC');
+        // a download is not accepted while the runtime runs
+        await link.request('RUN', {});
+        const running = await link.request('PROGRAM_BEGIN', { size: bytes.length, crc32: announced }).then(
+          () => null,
+          (reason: unknown) => reason,
+        );
+        expect((running as LinkError).errorName).toBe('STATE');
+      },
+    );
 
-  itNative('breakpoints, and a watch batch with the values of one scan (COM-025)', async () => {
-    const { link } = await start(['--device-link']);
-    await link.hello();
-    await link.openSession({});
-    expect(await link.request('BP_ADD', { pc: 4 })).toMatchObject({ count: 1 });
-    expect(await link.request('BP_LIST', {})).toMatchObject({ count: 1 });
-    expect(await link.request('BP_CLEAR', {})).toEqual({});
-    const events: LinkEvent[] = [];
-    link.onEvent((event) => events.push(event));
-    await link.request('MEM_WRITE', { address: 0x2000, data: new Uint8Array([9, 0, 0, 0]) });
-    await link.request('EVENTS_SET', { mask: EVENT_MASK.WATCH });
-    const entries = new Uint8Array([0x00, 0x20, 0x04]);
-    expect(await link.request('WATCH_SET', { period_ms: 0, entries })).toMatchObject({ count: 1 });
-    const batch = await until(() => events, (seen) => seen.some((event) => event.name === 'EVT_WATCH'), 'a watch batch');
-    const first = batch.find((event) => event.name === 'EVT_WATCH')!.values as { data: Uint8Array };
-    expect([...first.data]).toEqual([9, 0, 0, 0]);
-  });
-});
+    itNative('breakpoints, and a watch batch with the values of one scan (COM-025)', async () => {
+      const { link } = await start(['--device-link']);
+      await link.hello();
+      await link.openSession({});
+      expect(await link.request('BP_ADD', { pc: 4 })).toMatchObject({ count: 1 });
+      expect(await link.request('BP_LIST', {})).toMatchObject({ count: 1 });
+      expect(await link.request('BP_CLEAR', {})).toEqual({});
+      const events: LinkEvent[] = [];
+      link.onEvent((event) => events.push(event));
+      await link.request('MEM_WRITE', { address: 0x2000, data: new Uint8Array([9, 0, 0, 0]) });
+      await link.request('EVENTS_SET', { mask: EVENT_MASK.WATCH });
+      const entries = new Uint8Array([0x00, 0x20, 0x04]);
+      expect(await link.request('WATCH_SET', { period_ms: 0, entries })).toMatchObject({ count: 1 });
+      const batch = await until(
+        () => events,
+        (seen) => seen.some((event) => event.name === 'EVT_WATCH'),
+        'a watch batch',
+      );
+      const first = batch.find((event) => event.name === 'EVT_WATCH')!.values as { data: Uint8Array };
+      expect([...first.data]).toEqual([9, 0, 0, 0]);
+    });
+  },
+);
 
 describe('the device link over the network rules, every session authenticated (COM-021)', () => {
   itNative('a session needs the key, and a wrong key is not answered (COM-021)', async () => {
@@ -232,14 +320,23 @@ describe('the device link over the network rules, every session authenticated (C
 
     // open messages are answered; the rest of it is not, without a session
     expect(await link.request('IDENTITY', {})).toMatchObject({ board: 'native-posix' });
-    const unauthenticatedRead = await link.request('STATUS', {}).then(() => null, (reason: unknown) => reason);
+    const unauthenticatedRead = await link.request('STATUS', {}).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     expect((unauthenticatedRead as LinkError).errorName).toBe('AUTH_REQUIRED');
-    const unauthenticatedOpen = await link.openSession({}).then(() => null, (reason: unknown) => reason);
+    const unauthenticatedOpen = await link.openSession({}).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     expect((unauthenticatedOpen as LinkError).errorName).toBe('AUTH_REQUIRED');
 
     // a wrong key is not answered at all
     const wrong = new DeviceLink(transport, { requestTimeoutMs: 400 });
-    const rejected = await wrong.openSession({ key: new Uint8Array(32).fill(1) }).then(() => null, (reason: unknown) => reason);
+    const rejected = await wrong.openSession({ key: new Uint8Array(32).fill(1) }).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     expect(rejected).toBeInstanceOf(Error);
     expect((rejected as Error).name).toBe('LinkTimeoutError');
     await wrong.close();
@@ -268,10 +365,16 @@ describe('the device link over the network rules, every session authenticated (C
     expect(await link.request('STATUS', {})).toMatchObject({ state: ENUMS.RUN_STATE.STOPPED });
 
     // the key is provisioned over the serial link only
-    const key = await link.request('KEY_SET', { key: new Uint8Array(32) }).then(() => null, (reason: unknown) => reason);
+    const key = await link.request('KEY_SET', { key: new Uint8Array(32) }).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     expect((key as LinkError).errorName).toBe('REFUSED');
     await link.closeSession();
-    const after = await link.request('STATUS', {}).then(() => null, (reason: unknown) => reason);
+    const after = await link.request('STATUS', {}).then(
+      () => null,
+      (reason: unknown) => reason,
+    );
     expect((after as LinkError).errorName).toBe('AUTH_REQUIRED');
     expect(link.has('AUTH')).toBe(true);
     expect(CAPABILITY.AUTH).toBeGreaterThan(0);
@@ -289,12 +392,16 @@ describe('signed programs against the real native runtime (COM-026)', () => {
     const bytes = program();
     const send = async (signature: Uint8Array | null, content: Uint8Array = bytes) => {
       await link.request('PROGRAM_BEGIN', { size: content.length, crc32: crc32(content) });
-      for (let at = 0; at < content.length; at += 64) await link.request('PROGRAM_CHUNK', { offset: at, data: content.subarray(at, at + 64) });
+      for (let at = 0; at < content.length; at += 64)
+        await link.request('PROGRAM_CHUNK', { offset: at, data: content.subarray(at, at + 64) });
       if (signature !== null) await link.request('PROGRAM_SIGN', { signature });
       return link.request('PROGRAM_COMMIT', {});
     };
     const refusal = async (run: () => Promise<unknown>) => {
-      const error = await run().then(() => null, (reason: unknown) => reason);
+      const error = await run().then(
+        () => null,
+        (reason: unknown) => reason,
+      );
       expect(error).toBeInstanceOf(LinkError);
       return (error as LinkError).errorName;
     };

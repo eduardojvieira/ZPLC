@@ -88,8 +88,7 @@ export interface WatchVariable {
    * Data type. LINT, ULINT and LWORD are 8 bytes and LREAL is an IEEE 754 double: a 64-bit integer is a
    * number while it is exact as one (within 2^53) and its decimal text beyond (see bytesToValue).
    */
-  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING'
-    | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
+  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING' | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
   /** Current value (updated by polling) */
   value?: number | boolean | string;
   /** Whether value can be forced */
@@ -123,8 +122,7 @@ export const RUNTIME_SESSION_SOURCE = {
   WASM: 'wasm',
 } as const;
 
-export type RuntimeSessionSource =
-  (typeof RUNTIME_SESSION_SOURCE)[keyof typeof RUNTIME_SESSION_SOURCE];
+export type RuntimeSessionSource = (typeof RUNTIME_SESSION_SOURCE)[keyof typeof RUNTIME_SESSION_SOURCE];
 
 export interface RuntimeTaskSnapshot {
   taskId: number;
@@ -479,11 +477,7 @@ const MAX_SAFE_WIDE = BigInt(Number.MAX_SAFE_INTEGER);
 /**
  * Convert raw bytes to a typed value
  */
-export function bytesToValue(
-  bytes: Uint8Array,
-  type: WatchVariable['type'],
-  bitOffset?: number,
-): number | boolean | string {
+export function bytesToValue(bytes: Uint8Array, type: WatchVariable['type'], bitOffset?: number): number | boolean | string {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
   switch (type) {
@@ -532,11 +526,7 @@ export function bytesToValue(
 /**
  * Convert a typed value to bytes
  */
-export function valueToBytes(
-  value: number | boolean | string,
-  type: WatchVariable['type'],
-  maxLength?: number
-): Uint8Array {
+export function valueToBytes(value: number | boolean | string, type: WatchVariable['type'], maxLength?: number): Uint8Array {
   // Handle string separately
   if (type === 'STRING') {
     const strValue = String(value);

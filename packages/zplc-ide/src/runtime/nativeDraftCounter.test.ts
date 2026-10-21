@@ -46,7 +46,10 @@ async function withSession<T>(
   });
   let hello: unknown;
   const adapter = new NativeAdapter({
-    startSession: async () => { hello = await supervisor.startSession(); return hello as never; },
+    startSession: async () => {
+      hello = await supervisor.startSession();
+      return hello as never;
+    },
     stopSession: () => supervisor.stopSession(),
     request: async (request) => {
       if (!isAllowedNativeSimulationRequest(request)) throw new Error('Request denied');
@@ -64,44 +67,61 @@ async function withSession<T>(
 }
 
 describe('native simulation and the draft contract counter', () => {
-  itNative('reports its own counter in the hello, and that is the counter the compiler writes', async () => {
-    await withSession(async ({ hello }) => {
-      expect((hello as { draft_counter?: number }).draft_counter).toBe(OWN);
-    });
-  }, 30_000);
+  itNative(
+    'reports its own counter in the hello, and that is the counter the compiler writes',
+    async () => {
+      await withSession(async ({ hello }) => {
+        expect((hello as { draft_counter?: number }).draft_counter).toBe(OWN);
+      });
+    },
+    30_000,
+  );
 
-  itNative('loads a program of its own draft and runs it', async () => {
-    await withSession(async ({ adapter }) => {
-      await adapter.loadProgram(builtForDraft(OWN));
-      await adapter.start();
-      await adapter.stop();
-    });
-  }, 30_000);
+  itNative(
+    'loads a program of its own draft and runs it',
+    async () => {
+      await withSession(async ({ adapter }) => {
+        await adapter.loadProgram(builtForDraft(OWN));
+        await adapter.start();
+        await adapter.stop();
+      });
+    },
+    30_000,
+  );
 
-  itNative('refuses a program built for another draft or before the counter, with both numbers', async () => {
-    await withSession(async ({ adapter, supervisor }) => {
-      const other = OWN + 5;
-      const message = (built: string) => `Program was built for contract draft ${built}, this runtime is draft ${OWN}`;
+  itNative(
+    'refuses a program built for another draft or before the counter, with both numbers',
+    async () => {
+      await withSession(async ({ adapter, supervisor }) => {
+        const other = OWN + 5;
+        const message = (built: string) => `Program was built for contract draft ${built}, this runtime is draft ${OWN}`;
 
-      await adapter.loadProgram(builtForDraft(OWN));
+        await adapter.loadProgram(builtForDraft(OWN));
 
-      // Studio says it before anything is sent.
-      await expect(adapter.loadProgram(builtForDraft(other))).rejects.toThrow(message(String(other)));
-      await expect(adapter.loadProgram(builtForDraft(0))).rejects.toThrow(message('none'));
+        // Studio says it before anything is sent.
+        await expect(adapter.loadProgram(builtForDraft(other))).rejects.toThrow(message(String(other)));
+        await expect(adapter.loadProgram(builtForDraft(0))).rejects.toThrow(message('none'));
 
-      // The runtime says the same when a client skips Studio (a script, the CLI).
-      for (const [id, draft, built] of [['other', other, String(other)], ['none', 0, 'none']] as const) {
-        await expect(supervisor.request({
-          id: `direct-${id}`,
-          type: 'request',
-          method: 'program.load',
-          params: { bytecode_hex: bytesToHex(builtForDraft(draft)) },
-        })).rejects.toThrow(message(built));
-      }
+        // The runtime says the same when a client skips Studio (a script, the CLI).
+        for (const [id, draft, built] of [
+          ['other', other, String(other)],
+          ['none', 0, 'none'],
+        ] as const) {
+          await expect(
+            supervisor.request({
+              id: `direct-${id}`,
+              type: 'request',
+              method: 'program.load',
+              params: { bytecode_hex: bytesToHex(builtForDraft(draft)) },
+            }),
+          ).rejects.toThrow(message(built));
+        }
 
-      // The refusals left the session as it was: the program of its own draft is still loaded and runs.
-      await adapter.start();
-      await adapter.stop();
-    });
-  }, 30_000);
+        // The refusals left the session as it was: the program of its own draft is still loaded and runs.
+        await adapter.start();
+        await adapter.stop();
+      });
+    },
+    30_000,
+  );
 });

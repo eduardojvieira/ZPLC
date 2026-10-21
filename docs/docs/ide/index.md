@@ -21,13 +21,13 @@ and reviewing PLC projects in a folder selected by the user.
 
 ## What the workbench owns
 
-| Surface | Current role |
-| --- | --- |
-| Project | Folder-backed files, schema v2 export, migration diff. |
-| Editors | ST is the primary text path; LD/FBD/SFC preserve their semantic visual models. |
+| Surface    | Current role                                                                     |
+| ---------- | -------------------------------------------------------------------------------- |
+| Project    | Folder-backed files, schema v2 export, migration diff.                           |
+| Editors    | ST is the primary text path; LD/FBD/SFC preserve their semantic visual models.   |
 | Validation | Compiler diagnostics, temporal tests, safety rules, trace, and POSIX simulation. |
-| Evidence | Records tool results and their scope; it does not promote host results to HIL. |
-| Hardware | Connect and deploy remain explicit human actions after compatibility checks. |
+| Evidence   | Records tool results and their scope; it does not promote host results to HIL.   |
+| Hardware   | Connect and deploy remain explicit human actions after compatibility checks.     |
 
 ## Important boundaries
 

@@ -61,7 +61,14 @@ function reportDuplicates(declarations: Declaration[], describe: (kind: string) 
     for (const group of groups.values()) {
         if (group.length < 2) continue;
         for (const site of group) {
-            const error = new CodegenError('DUPLICATE_DECLARATION', duplicateMessage(group, site, describe(site.kind)), site.line, site.column, site.endLine, site.endColumn);
+            const error = new CodegenError(
+                'DUPLICATE_DECLARATION',
+                duplicateMessage(group, site, describe(site.kind)),
+                site.line,
+                site.column,
+                site.endLine,
+                site.endColumn,
+            );
             error.sourceRef = site.ref;
             errors.push(error);
         }
@@ -88,8 +95,12 @@ export function mergeUnits(sources: UnitSource[]): MergedUnit {
     };
     const types: Declaration[] = [];
     const globals: Declaration[] = [];
-    const site = (kind: string, name: string, ref: string, at: { line: number; column: number; endLine?: number; endColumn?: number }): Declaration =>
-        ({ kind, name, ref, line: at.line, column: at.column, endLine: at.endLine, endColumn: at.endColumn });
+    const site = (
+        kind: string,
+        name: string,
+        ref: string,
+        at: { line: number; column: number; endLine?: number; endColumn?: number },
+    ): Declaration => ({ kind, name, ref, line: at.line, column: at.column, endLine: at.endLine, endColumn: at.endColumn });
 
     for (const { ref, unit, program } of sources) {
         for (const block of unit.globalVars) {
@@ -151,7 +162,11 @@ export function mergeUnits(sources: UnitSource[]): MergedUnit {
 
     // in the order of the files, and in each file in the order of the lines
     const rank = new Map(sources.map((source, index) => [source.ref, index] as const));
-    errors.sort((first, second) => (rank.get(first.sourceRef ?? '') ?? 0) - (rank.get(second.sourceRef ?? '') ?? 0)
-        || first.line - second.line || first.column - second.column);
+    errors.sort(
+        (first, second) =>
+            (rank.get(first.sourceRef ?? '') ?? 0) - (rank.get(second.sourceRef ?? '') ?? 0) ||
+            first.line - second.line ||
+            first.column - second.column,
+    );
     return { unit: merged, errors };
 }

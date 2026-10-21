@@ -28,7 +28,7 @@ export async function collectProjectFilesForExport(
     let file = loadedFiles.get(node.id);
     if (!file) {
       try {
-        file = await loadFileFromTree(node) ?? undefined;
+        file = (await loadFileFromTree(node)) ?? undefined;
       } catch (error) {
         throw new Error(`Could not read project file ${node.path}: ${error instanceof Error ? error.message : String(error)}`);
       }

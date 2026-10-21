@@ -3,7 +3,7 @@ slug: /learn/hardware-track
 id: hardware-track
 title: Hardware track
 sidebar_label: Hardware track
-description: "The hardware track of Learn, for a Raspberry Pi Pico or an ESP32-S3-DevKitC-1 of your own: choosing the board, what a lesson shows for it, who starts each physical operation, and how a check on the board is made and labelled. No board has a hardware record yet."
+description: 'The hardware track of Learn, for a Raspberry Pi Pico or an ESP32-S3-DevKitC-1 of your own: choosing the board, what a lesson shows for it, who starts each physical operation, and how a check on the board is made and labelled. No board has a hardware record yet.'
 tags: [learn, lessons, hardware]
 ---
 

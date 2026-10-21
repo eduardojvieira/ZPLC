@@ -100,40 +100,38 @@
 #define ZPLC_VERIFY_MAX_FRAMES ((ZPLC_MEM_CODE_SIZE) / 128U + 32U)
 #define ZPLC_VERIFY_FRAME_BYTES 7U
 #define ZPLC_VERIFY_STEPS_PER_BYTE 64U
-#define ZPLC_LOADER_VERIFY_WORKSPACE_SIZE                                      \
-  (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) +                                          \
-   2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) +                                 \
-   2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U +        \
-   ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)
+#define ZPLC_LOADER_VERIFY_WORKSPACE_SIZE                                                                        \
+  (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + 2U * ZPLC_VERIFY_MAX_LEADERS + \
+   (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)
 
 typedef struct {
-    uint16_t type;
-    uint16_t flags;
-    const uint8_t *data;
-    uint32_t size;
+  uint16_t type;
+  uint16_t flags;
+  const uint8_t *data;
+  uint32_t size;
 } zplc_program_segment_t;
 
 typedef struct {
-    const uint8_t *binary;
-    size_t binary_size;
-    const uint8_t *code;
-    uint32_t code_size;
-    const uint8_t *tasks;
-    uint32_t task_count;
-    const uint8_t *tags;
-    uint32_t tag_count;
-    uint16_t entry_point;
-    uint32_t flags;
-    uint16_t segment_count;
-    zplc_program_segment_t segments[5];
-    /** Build identity of the artifact (CMP-056); 0 when it carries none. */
-    uint32_t build_id;
-    /** Declared safe values of digital outputs (RT-023): safe_count entries of
+  const uint8_t *binary;
+  size_t binary_size;
+  const uint8_t *code;
+  uint32_t code_size;
+  const uint8_t *tasks;
+  uint32_t task_count;
+  const uint8_t *tags;
+  uint32_t tag_count;
+  uint16_t entry_point;
+  uint32_t flags;
+  uint16_t segment_count;
+  zplc_program_segment_t segments[5];
+  /** Build identity of the artifact (CMP-056); 0 when it carries none. */
+  uint32_t build_id;
+  /** Declared safe values of digital outputs (RT-023): safe_count entries of
      *  ZPLC_SAFE_ENTRY_SIZE bytes, each checked to name one bit of the output
      *  image, with the value 0 or 1, once. NULL and 0 when the artifact
      *  declares none: every output is then off in the safe state. */
-    const uint8_t *safe;
-    uint32_t safe_count;
+  const uint8_t *safe;
+  uint32_t safe_count;
 } zplc_program_view_t;
 
 /**
@@ -167,8 +165,7 @@ typedef struct {
  *
  * @pre @p workspace, @p out, and data[0..len) do not overlap.
  */
-int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace,
-                       size_t workspace_size, zplc_program_view_t *out);
+int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace, size_t workspace_size, zplc_program_view_t *out);
 
 /**
  * @brief Draft contract counter recorded in an artifact header (CMP-052).

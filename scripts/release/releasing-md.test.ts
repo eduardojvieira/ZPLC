@@ -16,7 +16,10 @@ function tableAfter(heading: string): string[][] {
   for (const line of lines.slice(start + 1)) {
     if (line.startsWith('## ') && rows.length > 0) break;
     if (!line.startsWith('|')) continue;
-    const cells = line.split('|').slice(1, -1).map((cell) => cell.trim());
+    const cells = line
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim());
     if (cells.every((cell) => /^-+$/.test(cell))) continue;
     rows.push(cells);
   }
@@ -36,7 +39,10 @@ describe('the checklist of a release (REL-029)', () => {
       '### 8. Channels that follow a published release',
     ];
     const positions = order.map((heading) => releasing.indexOf(`\n${heading}\n`));
-    expect(positions.every((position) => position > 0), order.join(', ')).toBe(true);
+    expect(
+      positions.every((position) => position > 0),
+      order.join(', '),
+    ).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
 
@@ -61,8 +67,19 @@ describe('the external services of the release (REL-035)', () => {
   });
 
   test('names the registries and hosts that the jobs fetch from', () => {
-    const text = services.map((row) => row.join(' ')).join('\n').toLowerCase();
-    for (const service of ['github actions', 'bun runtime', 'npm registry', 'docker hub', 'python package index', 'github pages', 'sigstore']) {
+    const text = services
+      .map((row) => row.join(' '))
+      .join('\n')
+      .toLowerCase();
+    for (const service of [
+      'github actions',
+      'bun runtime',
+      'npm registry',
+      'docker hub',
+      'python package index',
+      'github pages',
+      'sigstore',
+    ]) {
       expect(text, service).toContain(service);
     }
   });

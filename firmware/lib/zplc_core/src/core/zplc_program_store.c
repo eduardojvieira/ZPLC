@@ -28,10 +28,8 @@ static const uint8_t META_MAGIC[4] = {'Z', 'P', 'S', '1'};
 static const uint8_t ACTIVE_MAGIC[4] = {'Z', 'P', 'A', '1'};
 static const uint8_t FOOTER_MAGIC[4] = {'Z', 'P', 'E', '1'};
 
-static const char *const payload_keys[] = {"program_v1_slot_a_payload",
-                                           "program_v1_slot_b_payload"};
-static const char *const meta_keys[] = {"program_v1_slot_a_meta",
-                                        "program_v1_slot_b_meta"};
+static const char *const payload_keys[] = {"program_v1_slot_a_payload", "program_v1_slot_b_payload"};
+static const char *const meta_keys[] = {"program_v1_slot_a_meta", "program_v1_slot_b_meta"};
 
 /* ----------------------------------------------------------------------------
  * Payload chunks
@@ -59,16 +57,13 @@ static void payload_key(unsigned slot, size_t chunk, char *out) {
   out[length] = '\0';
 }
 
-static zplc_hal_result_t payload_save(unsigned slot, const uint8_t *data,
-                                      size_t total) {
+static zplc_hal_result_t payload_save(unsigned slot, const uint8_t *data, size_t total) {
   size_t offset;
   size_t chunk = 0U;
 
   for (offset = 0U; offset < total; offset += ZPLC_PROGRAM_STORE_CHUNK_SIZE) {
     const size_t remaining = total - offset;
-    const size_t length = remaining < ZPLC_PROGRAM_STORE_CHUNK_SIZE
-                              ? remaining
-                              : ZPLC_PROGRAM_STORE_CHUNK_SIZE;
+    const size_t length = remaining < ZPLC_PROGRAM_STORE_CHUNK_SIZE ? remaining : ZPLC_PROGRAM_STORE_CHUNK_SIZE;
     char key[ZPLC_PROGRAM_STORE_KEY_MAX];
     zplc_hal_result_t result;
 
@@ -82,8 +77,7 @@ static zplc_hal_result_t payload_save(unsigned slot, const uint8_t *data,
 }
 
 static int footer_is(const uint8_t *buffer, size_t length) {
-  return memcmp(buffer + length, FOOTER_MAGIC, sizeof(FOOTER_MAGIC)) == 0 &&
-         zplc_get_u32_le(buffer + length + 4U) == length;
+  return memcmp(buffer + length, FOOTER_MAGIC, sizeof(FOOTER_MAGIC)) == 0 && zplc_get_u32_le(buffer + length + 4U) == length;
 }
 
 /* Loads the payload of a slot into buffer (total bytes, zeroed first by the caller).
@@ -91,8 +85,7 @@ static int footer_is(const uint8_t *buffer, size_t length) {
  * Chunk 0 is read asking for the whole payload: a store written by the first version holds the payload in that one
  * key, whatever its length, and a chunked payload leaves the rest of the buffer untouched. When the footer is not
  * where the length says, the other chunks are read. A key that is absent or damaged is the result of that key. */
-static zplc_hal_result_t payload_load(unsigned slot, uint8_t *buffer,
-                                      size_t total) {
+static zplc_hal_result_t payload_load(unsigned slot, uint8_t *buffer, size_t total) {
   const size_t length = total - ZPLC_PROGRAM_STORE_FOOTER_SIZE;
   char key[ZPLC_PROGRAM_STORE_KEY_MAX];
   zplc_hal_result_t result;
@@ -107,12 +100,9 @@ static zplc_hal_result_t payload_load(unsigned slot, uint8_t *buffer,
   if (total <= ZPLC_PROGRAM_STORE_CHUNK_SIZE || footer_is(buffer, length)) {
     return ZPLC_HAL_OK;
   }
-  for (offset = ZPLC_PROGRAM_STORE_CHUNK_SIZE; offset < total;
-       offset += ZPLC_PROGRAM_STORE_CHUNK_SIZE) {
+  for (offset = ZPLC_PROGRAM_STORE_CHUNK_SIZE; offset < total; offset += ZPLC_PROGRAM_STORE_CHUNK_SIZE) {
     const size_t remaining = total - offset;
-    const size_t piece = remaining < ZPLC_PROGRAM_STORE_CHUNK_SIZE
-                             ? remaining
-                             : ZPLC_PROGRAM_STORE_CHUNK_SIZE;
+    const size_t piece = remaining < ZPLC_PROGRAM_STORE_CHUNK_SIZE ? remaining : ZPLC_PROGRAM_STORE_CHUNK_SIZE;
 
     payload_key(slot, chunk++, key);
     result = zplc_hal_persist_load(key, buffer + offset, piece);
@@ -128,30 +118,21 @@ static zplc_hal_result_t payload_load(unsigned slot, uint8_t *buffer,
  * ----------------------------------------------------------------------------
  */
 
-static int admits(const zplc_pstore_config_t *config,
-                  const uint8_t *program, size_t length) {
+static int admits(const zplc_pstore_config_t *config, const uint8_t *program, size_t length) {
   return config->admit(program, length, config->admit_context) == 0;
 }
 
-static int absent_or_corrupt(zplc_hal_result_t result) {
-  return result == ZPLC_HAL_NOT_IMPL || result == ZPLC_HAL_CORRUPT;
-}
+static int absent_or_corrupt(zplc_hal_result_t result) { return result == ZPLC_HAL_NOT_IMPL || result == ZPLC_HAL_CORRUPT; }
 
-static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot,
-                      int allow_prepared, uint32_t *generation,
-                      uint32_t *length, uint32_t *file_crc) {
+static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot, int allow_prepared, uint32_t *generation, uint32_t *length,
+                      uint32_t *file_crc) {
   const uint8_t state = meta[7];
 
-  if (memcmp(meta, META_MAGIC, sizeof(META_MAGIC)) != 0 ||
-      zplc_get_u16_le(meta + 4U) != STORE_FORMAT_VERSION || meta[6] != slot ||
-      (state != STORE_SLOT_COMMITTED &&
-       (allow_prepared == 0 || state != STORE_SLOT_PREPARED)) ||
-      zplc_get_u32_le(meta + 8U) == 0U || zplc_get_u32_le(meta + 12U) == 0U ||
-      zplc_get_u32_le(meta + 12U) > ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE ||
-      zplc_get_u16_le(meta + 20U) != ZPLC_VERSION_MAJOR ||
-      zplc_get_u16_le(meta + 22U) != ZPLC_VERSION_MINOR ||
-      zplc_get_u32_le(meta + 24U) != 0U ||
-      zplc_get_u32_le(meta + 28U) != zplc_crc32(meta, 28U)) {
+  if (memcmp(meta, META_MAGIC, sizeof(META_MAGIC)) != 0 || zplc_get_u16_le(meta + 4U) != STORE_FORMAT_VERSION || meta[6] != slot ||
+      (state != STORE_SLOT_COMMITTED && (allow_prepared == 0 || state != STORE_SLOT_PREPARED)) || zplc_get_u32_le(meta + 8U) == 0U ||
+      zplc_get_u32_le(meta + 12U) == 0U || zplc_get_u32_le(meta + 12U) > ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE ||
+      zplc_get_u16_le(meta + 20U) != ZPLC_VERSION_MAJOR || zplc_get_u16_le(meta + 22U) != ZPLC_VERSION_MINOR ||
+      zplc_get_u32_le(meta + 24U) != 0U || zplc_get_u32_le(meta + 28U) != zplc_crc32(meta, 28U)) {
     return 0;
   }
   *generation = zplc_get_u32_le(meta + 8U);
@@ -163,8 +144,7 @@ static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot,
 }
 
 /* 0: a valid record; 1: absent or invalid; -1: the backend failed. */
-static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation,
-                     uint32_t *length, uint32_t *file_crc) {
+static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation, uint32_t *length, uint32_t *file_crc) {
   uint8_t meta[STORE_META_SIZE];
   zplc_hal_result_t result;
 
@@ -176,9 +156,7 @@ static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation,
   if (result != ZPLC_HAL_OK) {
     return -1;
   }
-  return valid_meta(meta, slot, allow_prepared, generation, length, file_crc)
-             ? 0
-             : 1;
+  return valid_meta(meta, slot, allow_prepared, generation, length, file_crc) ? 0 : 1;
 }
 
 static int read_active(unsigned *slot, uint32_t *generation) {
@@ -193,10 +171,8 @@ static int read_active(unsigned *slot, uint32_t *generation) {
   if (result != ZPLC_HAL_OK) {
     return -1;
   }
-  if (memcmp(active, ACTIVE_MAGIC, sizeof(ACTIVE_MAGIC)) != 0 ||
-      zplc_get_u16_le(active + 4U) != STORE_FORMAT_VERSION || active[6] > 1U ||
-      active[7] != 0U || zplc_get_u32_le(active + 8U) == 0U ||
-      zplc_get_u32_le(active + 12U) != zplc_crc32(active, 12U)) {
+  if (memcmp(active, ACTIVE_MAGIC, sizeof(ACTIVE_MAGIC)) != 0 || zplc_get_u16_le(active + 4U) != STORE_FORMAT_VERSION || active[6] > 1U ||
+      active[7] != 0U || zplc_get_u32_le(active + 8U) == 0U || zplc_get_u32_le(active + 12U) != zplc_crc32(active, 12U)) {
     return 1;
   }
   *slot = active[6];
@@ -204,9 +180,8 @@ static int read_active(unsigned *slot, uint32_t *generation) {
   return 0;
 }
 
-static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot,
-                      uint8_t state, uint32_t generation,
-                      const uint8_t *program, size_t length) {
+static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot, uint8_t state, uint32_t generation, const uint8_t *program,
+                      size_t length) {
   memset(meta, 0, STORE_META_SIZE);
   memcpy(meta, META_MAGIC, sizeof(META_MAGIC));
   zplc_put_u16_le(meta + 4U, STORE_FORMAT_VERSION);
@@ -220,8 +195,7 @@ static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot,
   zplc_put_u32_le(meta + 28U, zplc_crc32(meta, 28U));
 }
 
-static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot,
-                        uint32_t generation) {
+static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot, uint32_t generation) {
   memset(active, 0, STORE_ACTIVE_SIZE);
   memcpy(active, ACTIVE_MAGIC, sizeof(ACTIVE_MAGIC));
   zplc_put_u16_le(active + 4U, STORE_FORMAT_VERSION);
@@ -231,14 +205,11 @@ static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot,
 }
 
 /* Serial-number arithmetic: the generation wraps, and 0 is never a generation. */
-static int generation_is_newer(uint32_t candidate, uint32_t current) {
-  return candidate != current && candidate - current < 0x80000000U;
-}
+static int generation_is_newer(uint32_t candidate, uint32_t current) { return candidate != current && candidate - current < 0x80000000U; }
 
 /* 0: the slot holds a program that its record and the admission check accept; 1: it does not; -1: backend failure.
  * The buffer needs length + footer bytes; it is cleared first so that a short read cannot pass for a long one. */
-static int read_slot(const zplc_pstore_config_t *config, unsigned slot,
-                     int allow_prepared, uint8_t *buffer, size_t capacity,
+static int read_slot(const zplc_pstore_config_t *config, unsigned slot, int allow_prepared, uint8_t *buffer, size_t capacity,
                      size_t *program_size, uint32_t *generation) {
   uint32_t length;
   uint32_t header_crc;
@@ -248,22 +219,18 @@ static int read_slot(const zplc_pstore_config_t *config, unsigned slot,
   if (result != 0) {
     return result;
   }
-  if (length < ZPLC_FILE_HEADER_SIZE ||
-      length > capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
+  if (length < ZPLC_FILE_HEADER_SIZE || length > capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
     return 1;
   }
   memset(buffer, 0, (size_t)length + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
-  load = payload_load(slot, buffer,
-                      (size_t)length + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  load = payload_load(slot, buffer, (size_t)length + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   if (absent_or_corrupt(load)) {
     return 1;
   }
   if (load != ZPLC_HAL_OK) {
     return -1;
   }
-  if (!footer_is(buffer, length) ||
-      zplc_get_u32_le(buffer + 12U) != header_crc ||
-      !admits(config, buffer, length)) {
+  if (!footer_is(buffer, length) || zplc_get_u32_le(buffer + 12U) != header_crc || !admits(config, buffer, length)) {
     return 1;
   }
   *program_size = length;
@@ -276,22 +243,19 @@ static int legacy_rollback_available(const zplc_pstore_config_t *config) {
   uint32_t legacy_length = 0U;
   zplc_hal_result_t result;
 
-  result = zplc_hal_persist_load(STORE_LEGACY_LEN, &legacy_length,
-                                 sizeof(legacy_length));
+  result = zplc_hal_persist_load(STORE_LEGACY_LEN, &legacy_length, sizeof(legacy_length));
   if (absent_or_corrupt(result)) {
     return 1;
   }
   if (result != ZPLC_HAL_OK) {
     return -1;
   }
-  if (legacy_length < ZPLC_FILE_HEADER_SIZE ||
-      legacy_length > config->scratch_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
+  if (legacy_length < ZPLC_FILE_HEADER_SIZE || legacy_length > config->scratch_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
       legacy_length > ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE) {
     return 1;
   }
   memset(config->scratch, 0, legacy_length);
-  result = zplc_hal_persist_load(STORE_LEGACY_CODE, config->scratch,
-                                 legacy_length);
+  result = zplc_hal_persist_load(STORE_LEGACY_CODE, config->scratch, legacy_length);
   if (absent_or_corrupt(result)) {
     return 1;
   }
@@ -321,8 +285,7 @@ static int durable_record_exists(const char *key) {
  * publication, nothing that was ever the program to restore and nothing a new commit could destroy. */
 static int durable_state_exists(void) {
   static const char *const record_keys[] = {
-      STORE_ACTIVE, "program_v1_slot_a_meta", "program_v1_slot_b_meta",
-      STORE_LEGACY_LEN, STORE_LEGACY_CODE,
+      STORE_ACTIVE, "program_v1_slot_a_meta", "program_v1_slot_b_meta", STORE_LEGACY_LEN, STORE_LEGACY_CODE,
   };
   size_t index;
 
@@ -356,16 +319,14 @@ static int highest_structural_generation(uint32_t *generation) {
   if (meta < 0) {
     return -1;
   }
-  if (meta == 0 &&
-      (*generation == 0U || generation_is_newer(candidate, *generation))) {
+  if (meta == 0 && (*generation == 0U || generation_is_newer(candidate, *generation))) {
     *generation = candidate;
   }
   meta = read_meta(1U, 1, &candidate, &length, NULL);
   if (meta < 0) {
     return -1;
   }
-  if (meta == 0 &&
-      (*generation == 0U || generation_is_newer(candidate, *generation))) {
+  if (meta == 0 && (*generation == 0U || generation_is_newer(candidate, *generation))) {
     *generation = candidate;
   }
   return 0;
@@ -373,8 +334,7 @@ static int highest_structural_generation(uint32_t *generation) {
 
 /* Determine a real rollback before writing C. Returns 0 with a v1 slot, 1 for an unequivocally empty store, 2 for a
  * verified legacy rollback, and -1 for I/O or corruption states that must fail closed. */
-static int discover_rollback_slot(const zplc_pstore_config_t *config,
-                                  unsigned *slot, uint32_t *generation) {
+static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *slot, uint32_t *generation) {
   unsigned active_slot;
   uint32_t active_generation;
   uint32_t generation_a = 0U;
@@ -390,8 +350,7 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config,
     return -1;
   }
   if (active == 0) {
-    a = read_slot(config, active_slot, 1, config->scratch,
-                  config->scratch_capacity, &length, &generation_a);
+    a = read_slot(config, active_slot, 1, config->scratch, config->scratch_capacity, &length, &generation_a);
     if (a < 0) {
       return -1;
     }
@@ -402,10 +361,8 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config,
     }
   }
 
-  a = read_slot(config, 0U, 0, config->scratch, config->scratch_capacity,
-                &length, &generation_a);
-  b = read_slot(config, 1U, 0, config->scratch, config->scratch_capacity,
-                &length, &generation_b);
+  a = read_slot(config, 0U, 0, config->scratch, config->scratch_capacity, &length, &generation_a);
+  b = read_slot(config, 1U, 0, config->scratch, config->scratch_capacity, &length, &generation_b);
   if (a < 0 || b < 0) {
     return -1;
   }
@@ -439,8 +396,8 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config,
  * when there is none), read it back, verify it, prepare, publish, commit the metadata. `current` is the result of
  * discover_rollback_slot() (0: a v1 slot, with its number and generation; 1: an empty store; 2: a verified legacy
  * program). The caller has admitted the artifact. */
-static int commit_after_discovery(const zplc_pstore_config_t *config, int current, unsigned prior_slot,
-                                  uint32_t generation, uint8_t *workspace, size_t program_size) {
+static int commit_after_discovery(const zplc_pstore_config_t *config, int current, unsigned prior_slot, uint32_t generation,
+                                  uint8_t *workspace, size_t program_size) {
   uint8_t meta[STORE_META_SIZE];
   uint8_t active[STORE_ACTIVE_SIZE];
   unsigned slot;
@@ -464,8 +421,7 @@ static int commit_after_discovery(const zplc_pstore_config_t *config, int curren
   }
   memset(workspace, 0, total);
   result = payload_load(slot, workspace, total);
-  if (result != ZPLC_HAL_OK || !footer_is(workspace, program_size) ||
-      zplc_get_u32_le(workspace + 12U) != expected_header_crc ||
+  if (result != ZPLC_HAL_OK || !footer_is(workspace, program_size) || zplc_get_u32_le(workspace + 12U) != expected_header_crc ||
       !admits(config, workspace, program_size)) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
@@ -505,22 +461,18 @@ static int commit_after_discovery(const zplc_pstore_config_t *config, int curren
 
 static int artifact_fits(size_t program_size, size_t workspace_capacity) {
   return program_size != 0U && program_size <= ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE &&
-         workspace_capacity >= ZPLC_PROGRAM_STORE_FOOTER_SIZE &&
-         program_size <= workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE && program_size >= ZPLC_FILE_HEADER_SIZE;
+         workspace_capacity >= ZPLC_PROGRAM_STORE_FOOTER_SIZE && program_size <= workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE &&
+         program_size >= ZPLC_FILE_HEADER_SIZE;
 }
 
-int zplc_pstore_commit(const zplc_pstore_config_t *config,
-                              uint8_t *workspace, size_t program_size,
-                              size_t workspace_capacity) {
+int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, size_t program_size, size_t workspace_capacity) {
   uint32_t generation = 0U;
   unsigned prior_slot = 0U;
   int current;
 
   if (config == NULL || config->admit == NULL || config->scratch == NULL ||
-      config->scratch_capacity <
-          ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE ||
-      workspace == NULL || !artifact_fits(program_size, workspace_capacity) ||
-      !admits(config, workspace, program_size)) {
+      config->scratch_capacity < ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE || workspace == NULL ||
+      !artifact_fits(program_size, workspace_capacity) || !admits(config, workspace, program_size)) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
 
@@ -542,8 +494,7 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config,
  * commit can be disturbed by (it is the only writer). A record carries its own CRC-32, so a CRC-32 over the records
  * would be the same for every valid one: the digest is FNV-1a. */
 static int records_digest(uint32_t *digest) {
-  static const char *const keys[] = {STORE_ACTIVE, "program_v1_slot_a_meta", "program_v1_slot_b_meta",
-                                     STORE_LEGACY_LEN, STORE_LEGACY_CODE};
+  static const char *const keys[] = {STORE_ACTIVE, "program_v1_slot_a_meta", "program_v1_slot_b_meta", STORE_LEGACY_LEN, STORE_LEGACY_CODE};
   uint32_t hash = 2166136261U;
   size_t index;
 
@@ -555,8 +506,7 @@ static int records_digest(uint32_t *digest) {
     memset(record, 0, sizeof(record));
     /* The last key is the whole program of the first version: it is asked for one byte, which says that it is there
      * (an answer of "too large" is that too) and does not need a buffer of its size. */
-    result = zplc_hal_persist_load(keys[index], record + 1U,
-                                   index + 1U < sizeof(keys) / sizeof(keys[0]) ? STORE_META_SIZE : 1U);
+    result = zplc_hal_persist_load(keys[index], record + 1U, index + 1U < sizeof(keys) / sizeof(keys[0]) ? STORE_META_SIZE : 1U);
     if (result != ZPLC_HAL_OK && !absent_or_corrupt(result)) {
       return -1;
     }
@@ -571,8 +521,7 @@ static int records_digest(uint32_t *digest) {
 
 static void rollback_clear(zplc_pstore_rollback_t *rollback) { memset(rollback, 0, sizeof(*rollback)); }
 
-int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity,
-                      zplc_pstore_rollback_t *rollback) {
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity, zplc_pstore_rollback_t *rollback) {
   zplc_pstore_config_t local;
   unsigned slot = 0U;
   uint32_t generation = 0U;
@@ -594,16 +543,14 @@ int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_
     rollback_clear(rollback);
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
-  rollback->kind = found == 0 ? ZPLC_PSTORE_ROLLBACK_SLOT
-                              : (found == 1 ? ZPLC_PSTORE_ROLLBACK_EMPTY : ZPLC_PSTORE_ROLLBACK_LEGACY);
+  rollback->kind = found == 0 ? ZPLC_PSTORE_ROLLBACK_SLOT : (found == 1 ? ZPLC_PSTORE_ROLLBACK_EMPTY : ZPLC_PSTORE_ROLLBACK_LEGACY);
   rollback->slot = (uint8_t)slot;
   rollback->generation = generation;
   return 0;
 }
 
-zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace,
-                                                        size_t workspace_capacity, size_t *program_size,
-                                                        zplc_pstore_rollback_t *rollback) {
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity,
+                                                        size_t *program_size, zplc_pstore_rollback_t *rollback) {
   zplc_program_store_restore_t result;
 
   result = zplc_pstore_restore(config, workspace, workspace_capacity, program_size);
@@ -622,8 +569,8 @@ zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config
   return result;
 }
 
-int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback,
-                              uint8_t *workspace, size_t program_size, size_t workspace_capacity) {
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback, uint8_t *workspace,
+                              size_t program_size, size_t workspace_capacity) {
   uint32_t digest;
   int current;
 
@@ -686,8 +633,7 @@ static int only_orphan_prepared_slots(void) {
 }
 
 /* Rewrites the records of the slot just restored as the committed ones; a failure is not a restore failure. */
-static void repair_records(unsigned slot, uint32_t generation,
-                           const uint8_t *program, size_t length) {
+static void repair_records(unsigned slot, uint32_t generation, const uint8_t *program, size_t length) {
   uint8_t active[STORE_ACTIVE_SIZE];
   uint8_t meta[STORE_META_SIZE];
 
@@ -699,9 +645,8 @@ static void repair_records(unsigned slot, uint32_t generation,
   }
 }
 
-zplc_program_store_restore_t zplc_pstore_restore(
-    const zplc_pstore_config_t *config, uint8_t *workspace,
-    size_t workspace_capacity, size_t *program_size) {
+zplc_program_store_restore_t zplc_pstore_restore(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity,
+                                                 size_t *program_size) {
   unsigned active_slot;
   uint32_t active_generation;
   uint32_t generation_a = 0U;
@@ -716,8 +661,7 @@ zplc_program_store_restore_t zplc_pstore_restore(
   zplc_hal_result_t legacy;
   int orphan_prepared;
 
-  if (config == NULL || config->admit == NULL || workspace == NULL ||
-      program_size == NULL ||
+  if (config == NULL || config->admit == NULL || workspace == NULL || program_size == NULL ||
       workspace_capacity < ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
     return ZPLC_PROGRAM_STORE_ERROR;
   }
@@ -727,8 +671,7 @@ zplc_program_store_restore_t zplc_pstore_restore(
     return ZPLC_PROGRAM_STORE_ERROR;
   }
   if (active == 0) {
-    result = read_slot(config, active_slot, 1, workspace, workspace_capacity,
-                       program_size, &generation_a);
+    result = read_slot(config, active_slot, 1, workspace, workspace_capacity, program_size, &generation_a);
     if (result < 0) {
       return ZPLC_PROGRAM_STORE_ERROR;
     }
@@ -746,14 +689,10 @@ zplc_program_store_restore_t zplc_pstore_restore(
     return ZPLC_PROGRAM_STORE_ERROR;
   }
   if (a == 0 || b == 0) {
-    unsigned slot =
-        (b == 0 && (a != 0 || generation_is_newer(generation_b, generation_a)))
-            ? 1U
-            : 0U;
+    unsigned slot = (b == 0 && (a != 0 || generation_is_newer(generation_b, generation_a))) ? 1U : 0U;
     uint32_t wanted = slot == 0U ? generation_a : generation_b;
 
-    result = read_slot(config, slot, 0, workspace, workspace_capacity,
-                       program_size, &wanted);
+    result = read_slot(config, slot, 0, workspace, workspace_capacity, program_size, &wanted);
     if (result < 0) {
       return ZPLC_PROGRAM_STORE_ERROR;
     }
@@ -767,8 +706,7 @@ zplc_program_store_restore_t zplc_pstore_restore(
     if (a == 0 && b == 0) {
       slot ^= 1U;
       wanted = slot == 0U ? generation_a : generation_b;
-      result = read_slot(config, slot, 0, workspace, workspace_capacity,
-                         program_size, &wanted);
+      result = read_slot(config, slot, 0, workspace, workspace_capacity, program_size, &wanted);
       if (result < 0) {
         return ZPLC_PROGRAM_STORE_ERROR;
       }
@@ -782,10 +720,8 @@ zplc_program_store_restore_t zplc_pstore_restore(
     *program_size = 0U;
   }
 
-  legacy = zplc_hal_persist_load(STORE_LEGACY_LEN, &legacy_length,
-                                 sizeof(legacy_length));
-  if (legacy == ZPLC_HAL_OK && legacy_length != 0U &&
-      legacy_length <= workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE &&
+  legacy = zplc_hal_persist_load(STORE_LEGACY_LEN, &legacy_length, sizeof(legacy_length));
+  if (legacy == ZPLC_HAL_OK && legacy_length != 0U && legacy_length <= workspace_capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE &&
       legacy_length <= ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE) {
     memset(workspace, 0, legacy_length);
     legacy = zplc_hal_persist_load(STORE_LEGACY_CODE, workspace, legacy_length);
@@ -806,6 +742,5 @@ zplc_program_store_restore_t zplc_pstore_restore(
   }
   /* A blank device is different from durable data that cannot be verified. The boot path must not silently treat
    * the latter as a first boot. */
-  return durable_state_exists() == 0 ? ZPLC_PROGRAM_STORE_EMPTY
-                                     : ZPLC_PROGRAM_STORE_UNVERIFIABLE;
+  return durable_state_exists() == 0 ? ZPLC_PROGRAM_STORE_EMPTY : ZPLC_PROGRAM_STORE_UNVERIFIABLE;
 }

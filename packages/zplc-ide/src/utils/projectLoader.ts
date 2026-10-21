@@ -1,9 +1,9 @@
 /**
  * ZPLC Project Loader
- * 
+ *
  * Handles loading project files from the projects/ directory.
  * Uses Vite's import.meta.glob for build-time file discovery.
- * 
+ *
  * Project structure:
  *   projects/
  *     <project-id>/
@@ -15,13 +15,7 @@
  *         *.sfc.json
  */
 
-import type {
-  ProjectFile,
-  ProjectConfig,
-  LoadedProject,
-  PLCLanguage,
-  ZPLCConfig,
-} from '../types';
+import type { ProjectFile, ProjectConfig, LoadedProject, PLCLanguage, ZPLCConfig } from '../types';
 import { getLanguageFromFilename } from '../types';
 import { fileTreeFileId, type ProjectCopyFile } from './fileSystem';
 import { parseAndMigrateProject } from '../project/projectModel';
@@ -40,32 +34,27 @@ type LoadedProjectWithMigration = LoadedProject & {
 // =============================================================================
 
 // Import all zplc.json files (new format)
-const projectConfigModules = import.meta.glob<string>(
-  '/projects/*/zplc.json',
-  { query: '?raw', import: 'default', eager: true }
-);
+const projectConfigModules = import.meta.glob<string>('/projects/*/zplc.json', { query: '?raw', import: 'default', eager: true });
 
 // Import all source files from projects/*/src/
-const projectSourceModules = import.meta.glob<string>(
-  '/projects/*/src/*.{st,il,ld.json,fbd.json,sfc.json}',
-  { query: '?raw', import: 'default', eager: true }
-);
+const projectSourceModules = import.meta.glob<string>('/projects/*/src/*.{st,il,ld.json,fbd.json,sfc.json}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 
-const projectAssetModules = import.meta.glob<string>(
-  '/projects/**/*',
-  { query: '?raw', import: 'default', eager: true }
-);
+const projectAssetModules = import.meta.glob<string>('/projects/**/*', { query: '?raw', import: 'default', eager: true });
 
 // =============================================================================
 // Project Discovery
 // =============================================================================
 
 export interface ProjectInfo {
-  id: string;           // Folder name (e.g., "blinky")
-  name: string;         // Display name from zplc.json
+  id: string; // Folder name (e.g., "blinky")
+  name: string; // Display name from zplc.json
   description?: string;
   version: string;
-  path: string;         // Full path to project folder
+  path: string; // Full path to project folder
 }
 
 /**
@@ -136,11 +125,14 @@ export function loadProject(projectId: string): LoadedProjectWithMigration | nul
       zplcConfig,
       files,
       config,
-      migrationPreview: parsed.changes.length > 0 ? {
-        sourceSchemaVersion: parsed.sourceSchemaVersion,
-        targetSchemaVersion: 2,
-        changes: parsed.changes,
-      } : null,
+      migrationPreview:
+        parsed.changes.length > 0
+          ? {
+              sourceSchemaVersion: parsed.sourceSchemaVersion,
+              targetSchemaVersion: 2,
+              changes: parsed.changes,
+            }
+          : null,
     };
   } catch {
     console.error('Failed to load project configuration', { projectId });
@@ -151,7 +143,7 @@ export function loadProject(projectId: string): LoadedProjectWithMigration | nul
 /** Return every bundled file except the manifest, preserving its project-relative path. */
 export function loadProjectAssets(projectId: string): ProjectCopyFile[] | null {
   const prefix = `/projects/${projectId}/`;
-  if (!( `${prefix}zplc.json` in projectAssetModules)) return null;
+  if (!(`${prefix}zplc.json` in projectAssetModules)) return null;
   const files = Object.entries(projectAssetModules)
     .filter(([path]) => path.startsWith(prefix) && path !== `${prefix}zplc.json`)
     .map(([path, content]) => ({ path: path.substring(prefix.length), content }));
@@ -180,7 +172,7 @@ function loadProjectFiles(projectId: string): ProjectFile[] {
       language,
       content,
       isModified: false,
-      path: `src/${filename}`,    // Store relative path from project root
+      path: `src/${filename}`, // Store relative path from project root
     });
   }
 
@@ -271,11 +263,17 @@ export { getLanguageFromFilename };
  */
 export function getFileExtension(language: PLCLanguage): string {
   switch (language) {
-    case 'ST': return '.st';
-    case 'IL': return '.il';
-    case 'LD': return '.ld.json';
-    case 'FBD': return '.fbd.json';
-    case 'SFC': return '.sfc.json';
-    default: return '.st';
+    case 'ST':
+      return '.st';
+    case 'IL':
+      return '.il';
+    case 'LD':
+      return '.ld.json';
+    case 'FBD':
+      return '.fbd.json';
+    case 'SFC':
+      return '.sfc.json';
+    default:
+      return '.st';
   }
 }

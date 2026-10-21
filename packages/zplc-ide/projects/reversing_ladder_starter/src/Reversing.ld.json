@@ -55,10 +55,7 @@
           "id": "branch_1",
           "startCol": 1,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ],
       "gridConfig": {
@@ -177,10 +174,7 @@
           "id": "branch_2",
           "startCol": 1,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ],
       "gridConfig": {

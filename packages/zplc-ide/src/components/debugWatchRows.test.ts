@@ -42,13 +42,7 @@ const DEBUG_MAP: DebugMap = {
 
 describe('buildDebugWatchRows', () => {
   it('uses live values from the store for existing watch variables', () => {
-    const rows = buildDebugWatchRows(
-      ['Counter'],
-      DEBUG_MAP,
-      new Map([['Counter', 42]]),
-      new Map(),
-      true,
-    );
+    const rows = buildDebugWatchRows(['Counter'], DEBUG_MAP, new Map([['Counter', 42]]), new Map(), true);
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.result.value).toBe(42);
@@ -73,13 +67,7 @@ describe('buildDebugWatchRows', () => {
       state: WATCH_FORCE_STATE.FORCED,
     };
 
-    const rows = buildDebugWatchRows(
-      ['Counter'],
-      DEBUG_MAP,
-      new Map([['Counter', 42]]),
-      new Map([['Counter', forceEntry]]),
-      false,
-    );
+    const rows = buildDebugWatchRows(['Counter'], DEBUG_MAP, new Map([['Counter', 42]]), new Map([['Counter', forceEntry]]), false);
 
     expect(rows[0]?.result.forced).toBe(true);
     expect(rows[0]?.result.forceEntry).toEqual(forceEntry);

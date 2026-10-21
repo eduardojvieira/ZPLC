@@ -1,10 +1,10 @@
 ---
 name: zplc-plc-programmer
-description: "Trigger: ZPLC PLC program, Structured Text, Ladder, FBD, SFC, scenario, PLC test. Safely inspect, edit, validate, compile, and test a ZPLC workspace."
+description: 'Trigger: ZPLC PLC program, Structured Text, Ladder, FBD, SFC, scenario, PLC test. Safely inspect, edit, validate, compile, and test a ZPLC workspace.'
 license: MIT
 metadata:
-  author: "eduardojvieira"
-  version: "1.2"
+  author: 'eduardojvieira'
+  version: '1.2'
 ---
 
 ## Activation Contract
@@ -17,15 +17,15 @@ Stay inside the approved workspace/change set; never read or disclose secrets. N
 
 ## Decision Gates
 
-| Need | Do |
-| --- | --- |
-| Project is pre-v2 | Run migration preview; show the diff before edits. |
-| Language is LD/FBD/SFC/IL | Preserve its semantic source; validate its generated-ST compiler result, never promise round-trip. |
-| Test/simulation evidence | Require 1 to 16 cyclic tasks, each running exactly one program, with `interval_ms` from 1 to 3 600 000; use `test` or `scenario-run` on native POSIX. |
-| Variables at pins | Read the board's I/O description (`firmware/app/boards/boards.json`) before you place a variable at an address: an address the board has no channel for is a build error unless it is listed under `io.virtual`. |
-| Modbus, MQTT, cloud blocks | Read the how-to page of the protocol under `docs/docs/guides/`; say which part is verified and at which level, and that no exchange with a real device or service is. A network message never changes RUN or STOP, a force or the loaded program. |
-| A hardware record or a flash is needed | Stop and ask a person: the agent cannot make HIL evidence, and every physical operation is human. |
-| Firmware artifact requested by a human | Use authorized typed `firmware-build` only; it is a local cross-build, not flash or qualification. |
+| Need                                   | Do                                                                                                                                                                                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project is pre-v2                      | Run migration preview; show the diff before edits.                                                                                                                                                                                                |
+| Language is LD/FBD/SFC/IL              | Preserve its semantic source; validate its generated-ST compiler result, never promise round-trip.                                                                                                                                                |
+| Test/simulation evidence               | Require 1 to 16 cyclic tasks, each running exactly one program, with `interval_ms` from 1 to 3 600 000; use `test` or `scenario-run` on native POSIX.                                                                                             |
+| Variables at pins                      | Read the board's I/O description (`firmware/app/boards/boards.json`) before you place a variable at an address: an address the board has no channel for is a build error unless it is listed under `io.virtual`.                                  |
+| Modbus, MQTT, cloud blocks             | Read the how-to page of the protocol under `docs/docs/guides/`; say which part is verified and at which level, and that no exchange with a real device or service is. A network message never changes RUN or STOP, a force or the loaded program. |
+| A hardware record or a flash is needed | Stop and ask a person: the agent cannot make HIL evidence, and every physical operation is human.                                                                                                                                                 |
+| Firmware artifact requested by a human | Use authorized typed `firmware-build` only; it is a local cross-build, not flash or qualification.                                                                                                                                                |
 
 ## Execution Steps
 

@@ -84,7 +84,10 @@ const rel = (path: string): string => relative(ROOT, path);
 
 export function scanRepository(): NameOffender[] {
   const found: NameOffender[] = [];
-  for (const [name, catalog] of [['en', en], ['es', es]] as const) {
+  for (const [name, catalog] of [
+    ['en', en],
+    ['es', es],
+  ] as const) {
     for (const [key, value] of Object.entries(catalog)) found.push(...scanText(`catalog:${name}:${key}`, String(value)));
   }
   const pages = [
@@ -93,7 +96,12 @@ export function scanRepository(): NameOffender[] {
   ].map(rel);
   for (const page of [...pages, 'README.md', 'RELEASING.md']) found.push(...scanText(page, markdownProse(read(page))));
   found.push(...scanText('CHANGELOG.md', markdownProse(unreleasedSection(read('CHANGELOG.md')))));
-  for (const file of ['packages/zplc-ide/electron-builder.yml', 'docs/docusaurus.config.js', 'docs/sidebars.js', 'docs/src/components/LandingPage/content.js']) {
+  for (const file of [
+    'packages/zplc-ide/electron-builder.yml',
+    'docs/docusaurus.config.js',
+    'docs/sidebars.js',
+    'docs/src/components/LandingPage/content.js',
+  ]) {
     found.push(...scanText(file, configLines(read(file))));
   }
   for (const file of walk(join(ROOT, 'docs/i18n/es'), (p) => p.endsWith('.json')).map(rel)) {

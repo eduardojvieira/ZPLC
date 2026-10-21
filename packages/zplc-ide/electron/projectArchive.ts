@@ -49,7 +49,12 @@ class Refusal extends Error {
 }
 
 const ERRNO_CODES: Record<string, ProjectArchiveErrorCode> = {
-  ENOENT: 'not-found', EACCES: 'denied', EPERM: 'denied', EROFS: 'denied', ENOTEMPTY: 'not-empty', ENAMETOOLONG: 'invalid-path',
+  ENOENT: 'not-found',
+  EACCES: 'denied',
+  EPERM: 'denied',
+  EROFS: 'denied',
+  ENOTEMPTY: 'not-empty',
+  ENAMETOOLONG: 'invalid-path',
 };
 
 function codeOf(error: unknown): ProjectArchiveErrorCode {
@@ -62,7 +67,10 @@ function codeOf(error: unknown): ProjectArchiveErrorCode {
 const IMPORTED_FOLDER_TTL_MS = 30_000;
 const IGNORED = new Set<string>(PROJECT_ARCHIVE_IGNORED_FOLDERS);
 
-interface Collected { entries: ZipEntry[]; skipped: number }
+interface Collected {
+  entries: ZipEntry[];
+  skipped: number;
+}
 
 /** The files and folders of a project folder, as archive entries; links are skipped, not followed. */
 async function collectProject(root: string): Promise<Collected> {
@@ -73,7 +81,10 @@ async function collectProject(root: string): Promise<Collected> {
       const absolute = path.join(directory, name);
       const relative = `${prefix}${name}`;
       const info = await lstat(absolute);
-      if (info.isSymbolicLink()) { skipped += 1; continue; }
+      if (info.isSymbolicLink()) {
+        skipped += 1;
+        continue;
+      }
       if (info.isDirectory()) {
         if (IGNORED.has(name)) continue;
         if (entries.length >= ZIP_LIMITS.maxEntries) throw new Refusal('too-many');
@@ -142,7 +153,8 @@ export function createProjectArchive(deps: ProjectArchiveDeps) {
       folderCount: entries.length - files.length,
       bytes: info.size,
       files: files.map((entry) => ({ path: entry.path, size: entry.bytes.length })),
-      manifest: manifest && manifest.bytes.length <= PROJECT_ARCHIVE_LIMITS.maxManifestBytes ? new TextDecoder().decode(manifest.bytes) : null,
+      manifest:
+        manifest && manifest.bytes.length <= PROJECT_ARCHIVE_LIMITS.maxManifestBytes ? new TextDecoder().decode(manifest.bytes) : null,
     };
     pending.set(ownerId, { id: summary.archiveId, fileName: summary.fileName, entries });
     return summary;
@@ -162,12 +174,16 @@ export function createProjectArchive(deps: ProjectArchiveDeps) {
     try {
       for (const entry of held.entries) {
         const target = path.join(destination, ...entry.path.split('/').filter((segment) => segment !== ''));
-        if (entry.kind === 'directory') { await mkdir(target, { recursive: true }); continue; }
+        if (entry.kind === 'directory') {
+          await mkdir(target, { recursive: true });
+          continue;
+        }
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, entry.bytes, { flag: 'wx' });
       }
     } catch (error) {
-      for (const name of await readdir(destination).catch(() => [] as string[])) await rm(path.join(destination, name), { recursive: true, force: true }).catch(() => undefined);
+      for (const name of await readdir(destination).catch(() => [] as string[]))
+        await rm(path.join(destination, name), { recursive: true, force: true }).catch(() => undefined);
       throw error;
     }
     imported.set(ownerId, { folder: destination, at: now() });

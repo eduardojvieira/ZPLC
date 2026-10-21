@@ -2,13 +2,7 @@
   "requirement": "CMP-017",
   "title": "a negative TIME literal is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "INVALID_TIME_LITERAL"
-  ],
-  "messageIncludes": [
-    "negative"
-  ]
+  "lines": [5],
+  "codes": ["INVALID_TIME_LITERAL"],
+  "messageIncludes": ["negative"]
 }

@@ -36,9 +36,17 @@ export function DataGrid<T>({ label, columns, rows, rowId, emptyText, className 
             const direction = sort.column === column.id ? sort.direction : 'none';
             return (
               <th key={column.id} scope="col" aria-sort={column.sortKey ? direction : undefined} data-numeric={column.numeric || undefined}>
-                {column.sortKey
-                  ? <button type="button" className="ui-grid-sort" onClick={() => setSort({ column: column.id, direction: nextSort(direction) })}>{column.header}</button>
-                  : column.header}
+                {column.sortKey ? (
+                  <button
+                    type="button"
+                    className="ui-grid-sort"
+                    onClick={() => setSort({ column: column.id, direction: nextSort(direction) })}
+                  >
+                    {column.header}
+                  </button>
+                ) : (
+                  column.header
+                )}
               </th>
             );
           })}
@@ -47,10 +55,20 @@ export function DataGrid<T>({ label, columns, rows, rowId, emptyText, className 
       <tbody>
         {shown.map((row) => (
           <tr key={rowId(row)}>
-            {columns.map((column) => <td key={column.id} className={column.numeric ? 'ui-tabular' : undefined} data-numeric={column.numeric || undefined}>{column.cell(row)}</td>)}
+            {columns.map((column) => (
+              <td key={column.id} className={column.numeric ? 'ui-tabular' : undefined} data-numeric={column.numeric || undefined}>
+                {column.cell(row)}
+              </td>
+            ))}
           </tr>
         ))}
-        {shown.length === 0 && emptyText && <tr><td colSpan={columns.length} className="ui-grid-empty">{emptyText}</td></tr>}
+        {shown.length === 0 && emptyText && (
+          <tr>
+            <td colSpan={columns.length} className="ui-grid-empty">
+              {emptyText}
+            </td>
+          </tr>
+        )}
       </tbody>
     </table>
   );

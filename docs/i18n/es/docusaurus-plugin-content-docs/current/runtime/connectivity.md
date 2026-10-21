@@ -32,6 +32,7 @@ El firmware implementa:
 ## Configurar la conectividad
 
 La conectividad se define en el archivo `zplc.json` de su proyecto. A través de ZPLC, puede:
+
 1. Configurar redes Modbus RTU/TCP (velocidades en baudios, direcciones IP, identificadores de nodo).
 2. Configurar credenciales de brokers MQTT y certificados.
 3. Asignar variables internas del PLC directamente a registros y bobinas Modbus o a temas MQTT mediante **enlaces de comunicación**.
@@ -42,13 +43,13 @@ El runtime maneja automáticamente la retransmisión del protocolo por debajo mi
 
 Las cuatro áreas de un servidor Modbus son cuatro espacios de direcciones: una bobina, una entrada discreta, un registro de entrada y un registro de retención con el mismo número son cuatro variables distintas. El número de la etiqueta `{modbus:N}` de una variable dice cuál es, en la notación del mundo Modbus:
 
-| `N` | Área | Dirección en el cable | Un cliente puede |
-| --- | --- | --- | --- |
-| 10001 a 19999 | Entrada discreta | `N - 10001` | leerla (función 2) |
-| 30001 a 39999 | Registro de entrada | `N - 30001` | leerlo (función 4) |
-| 40001 a 49999 | Registro de retención | `N - 40001` | leerlo (función 3) y escribirlo (6, 16) |
-| cualquier otro número, un `BOOL` | Bobina | `N` | leerla (función 1) y escribirla (5, 15) |
-| cualquier otro número, otro tipo | Registro de retención | `N` | leerlo (función 3) y escribirlo (6, 16) |
+| `N`                              | Área                  | Dirección en el cable | Un cliente puede                        |
+| -------------------------------- | --------------------- | --------------------- | --------------------------------------- |
+| 10001 a 19999                    | Entrada discreta      | `N - 10001`           | leerla (función 2)                      |
+| 30001 a 39999                    | Registro de entrada   | `N - 30001`           | leerlo (función 4)                      |
+| 40001 a 49999                    | Registro de retención | `N - 40001`           | leerlo (función 3) y escribirlo (6, 16) |
+| cualquier otro número, un `BOOL` | Bobina                | `N`                   | leerla (función 1) y escribirla (5, 15) |
+| cualquier otro número, otro tipo | Registro de retención | `N`                   | leerlo (función 3) y escribirlo (6, 16) |
 
 Una variable se sirve en una sola área. Una solicitud de una dirección que ninguna variable tiene en el área que pide se responde con la excepción 2 (dirección de datos ilegal), aunque otra área tenga una variable con ese número. Las entradas discretas y los registros de entrada no tienen función de escritura, y el servidor no los escribe. Una variable de 32 bits ocupa dos registros consecutivos; un área de bits lleva un bit por variable.
 
@@ -90,14 +91,14 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 
 Ningún mensaje que llegue desde Modbus, MQTT o un servicio en la nube cambia RUN/STOP, fija o borra un forzado, ni descarga un programa. Esas acciones existen solo en el shell de diagnóstico y en la aplicación ZPLC, por el enlace serie.
 
-| Origen | Qué puede cambiar | Qué no alcanza |
-| --- | --- | --- |
-| Servidor Modbus TCP y RTU | Los bytes de las variables que se enlazaron con `{modbus}`, a través del mapeo del servidor y de la escritura del intercambio que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
-| Temas MQTT de variables suscritas (`DCMD`, temas de comando) | Los bytes de las variables que se marcaron con `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
-| Rebirth `NCMD`/`DCMD` de Sparkplug B | Hace que el nodo publique de nuevo sus certificados de nacimiento | RUN/STOP, forzados, descarga de programa |
-| Mensaje de Azure de nube a dispositivo | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa | RUN/STOP, forzados, descarga de programa |
-| Direct methods y device twin de Azure, shadow y jobs de AWS | Nada: se registran, y un direct method se responde `501` (no implementado) | RUN/STOP, forzados, descarga de programa |
-| Respuesta de aprovisionamiento (Azure DPS, AWS fleet) | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas | RUN/STOP, forzados, descarga de programa |
+| Origen                                                       | Qué puede cambiar                                                                                                                                                                                   | Qué no alcanza                           |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Servidor Modbus TCP y RTU                                    | Los bytes de las variables que se enlazaron con `{modbus}`, a través del mapeo del servidor y de la escritura del intercambio que respeta forzados: una dirección con un forzado activo lo conserva | RUN/STOP, forzados, descarga de programa |
+| Temas MQTT de variables suscritas (`DCMD`, temas de comando) | Los bytes de las variables que se marcaron con `{subscribe}`, con la escritura que respeta forzados: una dirección con un forzado activo lo conserva                                                | RUN/STOP, forzados, descarga de programa |
+| Rebirth `NCMD`/`DCMD` de Sparkplug B                         | Hace que el nodo publique de nuevo sus certificados de nacimiento                                                                                                                                   | RUN/STOP, forzados, descarga de programa |
+| Mensaje de Azure de nube a dispositivo                       | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa                                                                                                                                    | RUN/STOP, forzados, descarga de programa |
+| Direct methods y device twin de Azure, shadow y jobs de AWS  | Nada: se registran, y un direct method se responde `501` (no implementado)                                                                                                                          | RUN/STOP, forzados, descarga de programa |
+| Respuesta de aprovisionamiento (Azure DPS, AWS fleet)        | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas                                                                                                       | RUN/STOP, forzados, descarga de programa |
 
 Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la imagen de cada placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, lo ejecuta `run.sh size`): ninguno referencia start, stop, pause, resume, step o load del planificador, las llamadas que fijan y borran forzados, el cargador o el almacén de programas, ni un reinicio, y el objeto del intercambio por el que escriben se mide con la misma lista. Y dos pruebas ponen el código de entrada delante de un núcleo cuyas entradas de autoridad cuentan sus llamadas: una envía cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`), y otra entrega temas y contenidos hostiles (órdenes de stop, run, force y load en texto y JSON, cada valor de byte, el contenido más largo, métricas de control de nodo de Sparkplug B) al cliente MQTT del producto con cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue una escritura a una variable enlazada, encolada a través del intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
 
@@ -107,4 +108,3 @@ Esto se verifica en dos lugares. Los archivos objeto de los manejadores de la im
 
 - Una placa cuyo almacén no se puede montar no puede guardar ajustes: la Nucleo-H743ZI guarda su almacenamiento en un solo sector de 128 KB, que el almacén no puede usar (IO-008). `config save` ahí informa un error; ya no dice `OK`.
 - El guardado escribe las entradas una tras otra. Un corte de energía a mitad deja algunos ajustes nuevos y otros viejos, cada uno válido por sí solo.
-

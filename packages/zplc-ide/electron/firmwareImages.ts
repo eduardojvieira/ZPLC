@@ -27,7 +27,11 @@ async function bundledState(folder: string, image: Omit<FirmwareImage, 'bundled'
     const status = await lstat(path);
     if (!status.isFile() || status.isSymbolicLink()) return 'changed';
     if (status.size !== image.bytes) return 'changed';
-    return createHash('sha256').update(await readFile(path)).digest('hex') === image.sha256 ? 'verified' : 'changed';
+    return createHash('sha256')
+      .update(await readFile(path))
+      .digest('hex') === image.sha256
+      ? 'verified'
+      : 'changed';
   } catch {
     return 'missing';
   }
@@ -46,9 +50,22 @@ export async function loadFirmwareImages(folder: string): Promise<FirmwareImages
     const path = join(folder, manifests[0]!);
     const status = await lstat(path);
     if (!status.isFile() || status.isSymbolicLink() || status.size > MANIFEST_MAX_BYTES) return { status: 'invalid' };
-    const manifest = JSON.parse(await readFile(path, 'utf8')) as { schema?: unknown; version?: unknown; commit?: unknown; images?: unknown };
-    if (manifest.schema !== FIRMWARE_MANIFEST_SCHEMA || typeof manifest.version !== 'string' || !VERSION.test(manifest.version)) return { status: 'invalid' };
-    if (typeof manifest.commit !== 'string' || !COMMIT.test(manifest.commit) || !Array.isArray(manifest.images) || manifest.images.length === 0 || manifest.images.length > 64) return { status: 'invalid' };
+    const manifest = JSON.parse(await readFile(path, 'utf8')) as {
+      schema?: unknown;
+      version?: unknown;
+      commit?: unknown;
+      images?: unknown;
+    };
+    if (manifest.schema !== FIRMWARE_MANIFEST_SCHEMA || typeof manifest.version !== 'string' || !VERSION.test(manifest.version))
+      return { status: 'invalid' };
+    if (
+      typeof manifest.commit !== 'string' ||
+      !COMMIT.test(manifest.commit) ||
+      !Array.isArray(manifest.images) ||
+      manifest.images.length === 0 ||
+      manifest.images.length > 64
+    )
+      return { status: 'invalid' };
     if (manifests[0] !== `zplc-runtime-${manifest.version}.manifest.json`) return { status: 'invalid' };
     const images: FirmwareImage[] = [];
     for (const entry of manifest.images) {

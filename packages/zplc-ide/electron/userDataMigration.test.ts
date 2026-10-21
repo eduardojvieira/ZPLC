@@ -8,7 +8,9 @@ import { join } from 'node:path';
 import { MIGRATED_MARKER, migrateUserData } from './userDataMigration';
 
 const roots: string[] = [];
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 /** An appData folder with the folder of a release candidate in it, holding a few of the stores and a Chromium lock. */
 function appDataWithOldFolder(): { appData: string; old: string; userData: string } {
@@ -78,19 +80,30 @@ describe('the userData folder of the release candidates moves to the one of ZPLC
   });
 
   // As root a folder with no permissions is still readable, so the failure cannot be made this way.
-  it.skipIf(process.getuid?.() === 0)('logs a failure and returns, so that the application still starts, with no half-copied folder and no marker', () => {
-    const { appData, old, userData } = appDataWithOldFolder();
-    const unreadable = join(old, 'learn-workspaces');
-    chmodSync(unreadable, 0o000);
-    const logged: string[] = [];
-    try {
-      expect(migrateUserData({ appData, userData, log: (message) => { logged.push(message); } })).toBe('failed');
-    } finally {
-      chmodSync(unreadable, 0o755);
-    }
-    expect(logged).toHaveLength(1);
-    expect(logged[0]).toContain(old);
-    expect(readdirSync(appData)).toEqual(['ZPLC IDE']);
-    expect(existsSync(join(old, MIGRATED_MARKER))).toBe(false);
-  });
+  it.skipIf(process.getuid?.() === 0)(
+    'logs a failure and returns, so that the application still starts, with no half-copied folder and no marker',
+    () => {
+      const { appData, old, userData } = appDataWithOldFolder();
+      const unreadable = join(old, 'learn-workspaces');
+      chmodSync(unreadable, 0o000);
+      const logged: string[] = [];
+      try {
+        expect(
+          migrateUserData({
+            appData,
+            userData,
+            log: (message) => {
+              logged.push(message);
+            },
+          }),
+        ).toBe('failed');
+      } finally {
+        chmodSync(unreadable, 0o755);
+      }
+      expect(logged).toHaveLength(1);
+      expect(logged[0]).toContain(old);
+      expect(readdirSync(appData)).toEqual(['ZPLC IDE']);
+      expect(existsSync(join(old, MIGRATED_MARKER))).toBe(false);
+    },
+  );
 });

@@ -67,8 +67,7 @@ static void test_the_life_of_a_request(void) {
   zplc_comm_req_release(&pool, got);
   assert(in_use() == 0U);
   /* nothing is left for the block: a block that is BUSY with no request is a lost one */
-  assert(zplc_comm_req_peek(&pool, &a, 500U, 1000U, &got) ==
-         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNKNOWN));
+  assert(zplc_comm_req_peek(&pool, &a, 500U, 1000U, &got) == ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNKNOWN));
 }
 
 static void test_a_failed_request_is_freed_with_its_status(void) {
@@ -82,8 +81,7 @@ static void test_a_failed_request_is_freed_with_its_status(void) {
   zplc_comm_req_submit(&pool, slot);
   assert(zplc_comm_req_begin(&pool, slot) == 1);
   zplc_comm_req_finish(&pool, slot, ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED));
-  assert(zplc_comm_req_peek(&pool, &a, 1U, 1000U, &got) ==
-         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED));
+  assert(zplc_comm_req_peek(&pool, &a, 1U, 1000U, &got) == ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED));
   assert(got == NULL && in_use() == 0U);
 }
 
@@ -99,8 +97,7 @@ static void test_a_request_older_than_its_timeout_is_dropped(void) {
   zplc_comm_req_submit(&pool, slot);
   assert(zplc_comm_req_begin(&pool, slot) == 1);
   assert(zplc_comm_req_peek(&pool, &a, 1000U + 500U, 500U, &got) == ZPLC_COMM_HANDLER_PENDING);
-  assert(zplc_comm_req_peek(&pool, &a, 1000U + 501U, 500U, &got) ==
-         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT));
+  assert(zplc_comm_req_peek(&pool, &a, 1000U + 501U, 500U, &got) == ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT));
   assert(slot->state == ZPLC_COMM_REQ_ABANDONED && slot->owner == NULL);
   /* the worker answers late: nothing is delivered, the slot is free, another block cannot get the answer */
   zplc_comm_req_finish(&pool, slot, ZPLC_COMM_HANDLER_DONE);
@@ -115,8 +112,7 @@ static void test_a_request_older_than_its_timeout_is_dropped(void) {
   slot = zplc_comm_req_claim(&pool, &a, 0xFFFFFF00U);
   zplc_comm_req_submit(&pool, slot);
   assert(zplc_comm_req_peek(&pool, &a, 0x00000010U, 1000U, &got) == ZPLC_COMM_HANDLER_PENDING);
-  assert(zplc_comm_req_peek(&pool, &a, 0x00000500U, 1000U, &got) ==
-         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT));
+  assert(zplc_comm_req_peek(&pool, &a, 0x00000500U, 1000U, &got) == ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT));
 }
 
 /* COM-008: let go of while running, the slot stays taken until the worker is through. */
@@ -198,8 +194,14 @@ static void test_the_platform_errors_map_to_the_documented_codes(void) {
 
 /* --- two threads: the scan and a worker on one pool ------------------------- */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static void lock_fn(void *context) { (void)context; pthread_mutex_lock(&mutex); }
-static void unlock_fn(void *context) { (void)context; pthread_mutex_unlock(&mutex); }
+static void lock_fn(void *context) {
+  (void)context;
+  pthread_mutex_lock(&mutex);
+}
+static void unlock_fn(void *context) {
+  (void)context;
+  pthread_mutex_unlock(&mutex);
+}
 static const zplc_comm_req_pool_t shared = {slots, sizeof(slot_t), SLOTS, lock_fn, unlock_fn, NULL};
 
 #define OWNERS 3
@@ -257,8 +259,7 @@ static void test_scan_and_worker_on_one_pool(void) {
 
       if (r == ZPLC_COMM_HANDLER_DONE) {
         /* the answer is the answer to *this* block's request, and only once */
-        if (((slot_t *)got)->answer != ((slot_t *)got)->serial * 2 + 1 ||
-            ((slot_t *)got)->serial != pending[o]) {
+        if (((slot_t *)got)->answer != ((slot_t *)got)->serial * 2 + 1 || ((slot_t *)got)->serial != pending[o]) {
           delivered_wrong++;
         }
         delivered++;

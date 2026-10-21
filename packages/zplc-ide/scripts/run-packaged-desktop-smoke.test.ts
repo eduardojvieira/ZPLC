@@ -6,13 +6,10 @@ import { discoverPackagedExecutable, installedExecutable } from './run-packaged-
 import { compactSource } from '../src/i18n/inlineMessages';
 
 function unpacked(root: string, platform: NodeJS.Platform, name: string): string {
-  const directory = platform === 'darwin'
-    ? join(root, name, 'ZPLC.app')
-    : join(root, name);
+  const directory = platform === 'darwin' ? join(root, name, 'ZPLC.app') : join(root, name);
   mkdirSync(directory, { recursive: true });
-  const executable = platform === 'darwin'
-    ? join(directory, 'Contents', 'MacOS', 'ZPLC')
-    : join(directory, platform === 'win32' ? 'zplc.exe' : 'zplc');
+  const executable =
+    platform === 'darwin' ? join(directory, 'Contents', 'MacOS', 'ZPLC') : join(directory, platform === 'win32' ? 'zplc.exe' : 'zplc');
   mkdirSync(join(executable, '..'), { recursive: true });
   writeFileSync(executable, 'binary');
   if (platform !== 'win32') chmodSync(executable, 0o755);
@@ -20,14 +17,17 @@ function unpacked(root: string, platform: NodeJS.Platform, name: string): string
 }
 
 test('discovers exactly one real platform executable and rejects unsafe candidates', () => {
-  for (const [platform, name] of [['linux', 'linux-unpacked'], ['win32', 'win-unpacked'], ['darwin', 'mac']] as const) {
+  for (const [platform, name] of [
+    ['linux', 'linux-unpacked'],
+    ['win32', 'win-unpacked'],
+    ['darwin', 'mac'],
+  ] as const) {
     const root = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
     try {
       expect(() => discoverPackagedExecutable(root, platform)).toThrow('exactly one');
       const app = unpacked(root, platform, name);
-      const executable = platform === 'darwin'
-        ? join(app, 'Contents', 'MacOS', 'ZPLC')
-        : join(app, platform === 'win32' ? 'zplc.exe' : 'zplc');
+      const executable =
+        platform === 'darwin' ? join(app, 'Contents', 'MacOS', 'ZPLC') : join(app, platform === 'win32' ? 'zplc.exe' : 'zplc');
       expect(discoverPackagedExecutable(root, platform)).toBe(executable);
       if (platform !== 'win32') {
         chmodSync(executable, 0o644);
@@ -85,13 +85,17 @@ test('release runs the packaged launch smoke in every native matrix lane', () =>
   expect(sandbox).toContain('find "$unpacked" -type f -name chrome-sandbox -print');
   expect(sandbox).toContain('sudo chown root:root "$sandbox"');
   expect(sandbox).toContain('sudo chmod 4755 "$sandbox"');
-  expect(sandbox).toContain("stat -c '%U:%G:%a' \"$sandbox\"");
+  expect(sandbox).toContain('stat -c \'%U:%G:%a\' "$sandbox"');
   expect(linux).toContain('sudo apt-get install -y rpm xvfb');
   expect(launch).toContain('run: xvfb-run --auto-servernum bun run smoke:desktop-packaged');
   expect(launch).not.toContain('if:');
   expect(linux).not.toContain('--no-sandbox');
 
-  for (const [jobName, platform] of [['build-macos', 'macOS'], ['build-windows', 'Windows'], ['build-linux', 'Linux']] as const) {
+  for (const [jobName, platform] of [
+    ['build-macos', 'macOS'],
+    ['build-windows', 'Windows'],
+    ['build-linux', 'Linux'],
+  ] as const) {
     const job = releaseJob(jobName);
     const validation = `- name: Validate ${platform} build artifacts`;
     const launchName = `- name: Launch packaged ${platform} app`;
@@ -107,17 +111,17 @@ test('desktop smoke exercises real renderer accessibility and packaged isolation
   const developmentSmoke = readFileSync(join(import.meta.dir, 'run-desktop-smoke.ts'), 'utf8');
   const packagedSmoke = compactSource(readFileSync(join(import.meta.dir, 'run-packaged-desktop-smoke.ts'), 'utf8'));
 
-  expect(developmentSmoke).toContain("Emulation.setEmulatedMedia");
-  expect(developmentSmoke).toContain("prefers-reduced-motion");
-  expect(developmentSmoke).toContain("forced-colors");
-  expect(developmentSmoke).toContain("select[data-theme-control]");
-  expect(developmentSmoke).toContain("Learn keyboard selection");
+  expect(developmentSmoke).toContain('Emulation.setEmulatedMedia');
+  expect(developmentSmoke).toContain('prefers-reduced-motion');
+  expect(developmentSmoke).toContain('forced-colors');
+  expect(developmentSmoke).toContain('select[data-theme-control]');
+  expect(developmentSmoke).toContain('Learn keyboard selection');
   expect(developmentSmoke).not.toContain('nativeVirtualKeyCode');
-  expect(packagedSmoke).toContain("Node globals leaked into packaged renderer");
-  expect(packagedSmoke).toContain("Unexpected packaged preload surface");
+  expect(packagedSmoke).toContain('Node globals leaked into packaged renderer');
+  expect(packagedSmoke).toContain('Unexpected packaged preload surface');
   expect(packagedSmoke).toContain("'isElectron', 'learnProgress', 'nativeSimulation'");
-  expect(packagedSmoke).toContain("Packaged renderer opened a new window");
-  expect(packagedSmoke).toContain("select[data-theme-control]");
+  expect(packagedSmoke).toContain('Packaged renderer opened a new window');
+  expect(packagedSmoke).toContain('select[data-theme-control]');
   expect(packagedSmoke).not.toContain('nativeVirtualKeyCode');
   expect(packagedSmoke).toContain("await waitFor('packaged high-contrast keyboard activation'");
 });

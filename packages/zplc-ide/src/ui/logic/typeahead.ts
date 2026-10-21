@@ -1,5 +1,8 @@
 /** Type-ahead search over the labels of a list or menu: the typed characters form a buffer that expires. */
-export interface TypeaheadState { buffer: string; at: number }
+export interface TypeaheadState {
+  buffer: string;
+  at: number;
+}
 
 export const TYPEAHEAD_TIMEOUT_MS = 700;
 

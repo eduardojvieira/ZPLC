@@ -1,4 +1,6 @@
-/** The tab of one configuration editor in the tab bar of the editor area, and the question asked when its close would lose edits (UX-013). */
+/**
+ * The tab of one configuration editor in the tab bar of the editor area, and the question asked when its close would lose edits (UX-013).
+ */
 import { X } from 'lucide-react';
 import { useT } from '../i18n';
 import { UnsavedChangesDialog } from '../components/UnsavedChangesDialog';
@@ -24,7 +26,14 @@ export function ConfigEditorTab({ kind, selected, panelId, onSelect, onClose, on
     <div
       role="presentation"
       data-config-tab={kind}
-      className={`group flex h-full select-none items-center gap-1 border-r border-[var(--color-surface-600)] pl-2 pr-1 transition-colors ${selected ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]' : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}
+      className={
+        `group flex h-full select-none items-center gap-1 border-r border-[var(--color-surface-600)] pl-2 pr-1 ` +
+        `transition-colors ${
+          selected
+            ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+            : 'bg-[var(--color-surface-800)] ' + 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'
+        }`
+      }
     >
       <Button
         id={`editor-tab-${viewId}`}
@@ -49,5 +58,12 @@ export function ConfigEditorTab({ kind, selected, panelId, onSelect, onClose, on
 /** Save, discard or keep editing, as the alert dialog the file tabs use. */
 export function ConfigCloseDialog({ busy, onChoice }: { busy: boolean; onChoice: (choice: 'save' | 'discard' | 'cancel') => void }) {
   const { t } = useT();
-  return <UnsavedChangesDialog title={t('configEditor.closeDialogTitle')} items={[t('configEditor.closeDialogItem')]} busy={busy} onChoice={onChoice} />;
+  return (
+    <UnsavedChangesDialog
+      title={t('configEditor.closeDialogTitle')}
+      items={[t('configEditor.closeDialogItem')]}
+      busy={busy}
+      onChoice={onChoice}
+    />
+  );
 }

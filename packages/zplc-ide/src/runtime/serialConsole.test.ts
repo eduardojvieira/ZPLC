@@ -37,10 +37,7 @@ describe('consumeSerialConsoleChunk', () => {
     expect(first.lines).toEqual([]);
     const second = consumeSerialConsoleChunk(first.remainder, 'secret"\nnormal line\n');
 
-    expect(second.lines.map(sanitizeUploadTraceText)).toEqual([
-      'zplc config set wifi_pass "***"',
-      'normal line',
-    ]);
+    expect(second.lines.map(sanitizeUploadTraceText)).toEqual(['zplc config set wifi_pass "***"', 'normal line']);
   });
 });
 

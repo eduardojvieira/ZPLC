@@ -9,23 +9,47 @@ import type { HardwareDeployConfirmation } from './hardwareDeployConfirmation';
 const dom = await setupDom();
 
 const facts: DeployFacts = {
-  project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR, draft: ZPLC_CONSTANTS.DRAFT_COUNTER }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 },
-  device: { board: 'stm32f746g_disco', boardProfile: 'stm32f746g_disco/stm32f746xx', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR }, draft: ZPLC_CONSTANTS.DRAFT_COUNTER, maxArtifactBytes: 4096, maxTasks: 4 },
+  project: {
+    name: 'Pump station',
+    board: 'STM32F746G Discovery',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR, draft: ZPLC_CONSTANTS.DRAFT_COUNTER },
+    sha256: 'a1b2c3d4e5f6a7b8c9d0',
+    byteLength: 512,
+    taskCount: 2,
+  },
+  device: {
+    board: 'stm32f746g_disco',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    zplcVersion: '1.0.0',
+    zephyrVersion: '4.0.0',
+    abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR },
+    draft: ZPLC_CONSTANTS.DRAFT_COUNTER,
+    maxArtifactBytes: 4096,
+    maxTasks: 4,
+  },
   declaredSafe: [],
   transfer: 'framed',
 };
-const confirmation = (over: Partial<DeployFacts['device']> = {}) => ({ facts: { ...facts, device: { ...facts.device, ...over } } }) as HardwareDeployConfirmation;
+const confirmation = (over: Partial<DeployFacts['device']> = {}) =>
+  ({ facts: { ...facts, device: { ...facts.device, ...over } } }) as HardwareDeployConfirmation;
 
 describe('Hardware deploy admission and confirmation (COM-028, UX-019) in a DOM', () => {
-  it('asks in an alert dialog named by the deploy question, with the project compared to the device in a table, and the safe answer focused', async () => {
-    dom.render(<ActionConfirmHost />);
-    void confirmDeploy(confirmation(), false);
-    const dialog = await dom.screen.findByRole('alertdialog', { name: dom.t('deploy.title') });
-    expect(dom.within(dialog).getByRole('table', { name: dom.t('deploy.table.caption') })).toBeTruthy();
-    expect(dom.within(dialog).getAllByRole('columnheader').length).toBeGreaterThanOrEqual(3);
-    expect(document.activeElement?.textContent).toBe(dom.t('common.cancel'));
-    await dom.act(async () => { dom.screen.getByRole('button', { name: dom.t('common.cancel') }).click(); });
-  });
+  it(
+    'asks in an alert dialog named by the deploy question, with the project compared to the device in a table, and the safe answer ' +
+      'focused',
+    async () => {
+      dom.render(<ActionConfirmHost />);
+      void confirmDeploy(confirmation(), false);
+      const dialog = await dom.screen.findByRole('alertdialog', { name: dom.t('deploy.title') });
+      expect(dom.within(dialog).getByRole('table', { name: dom.t('deploy.table.caption') })).toBeTruthy();
+      expect(dom.within(dialog).getAllByRole('columnheader').length).toBeGreaterThanOrEqual(3);
+      expect(document.activeElement?.textContent).toBe(dom.t('common.cancel'));
+      await dom.act(async () => {
+        dom.screen.getByRole('button', { name: dom.t('common.cancel') }).click();
+      });
+    },
+  );
 
   it('answers yes when the deploy action is chosen and no when Cancel is', async () => {
     const { user } = dom.render(<ActionConfirmHost />);

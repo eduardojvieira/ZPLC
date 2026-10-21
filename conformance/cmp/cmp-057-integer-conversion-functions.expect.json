@@ -6,11 +6,11 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": -3},
-    {"at": "%QW1", "type": "INT", "value": -300},
-    {"at": "%QD1", "type": "DINT", "value": -300},
-    {"at": "%QD2", "type": "DINT", "value": 65535},
-    {"at": "%QW8", "type": "INT", "value": 200},
-    {"at": "%QD3", "type": "DINT", "value": 40000}
+    { "at": "%QW0", "type": "INT", "value": -3 },
+    { "at": "%QW1", "type": "INT", "value": -300 },
+    { "at": "%QD1", "type": "DINT", "value": -300 },
+    { "at": "%QD2", "type": "DINT", "value": 65535 },
+    { "at": "%QW8", "type": "INT", "value": 200 },
+    { "at": "%QD3", "type": "DINT", "value": 40000 }
   ]
 }

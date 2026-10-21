@@ -10,135 +10,105 @@
       "surface": "Welcome screen",
       "where": "components/WelcomeScreen.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Command bar (build, deploy, run controls, mode)",
       "where": "components/Toolbar.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Toolbar.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Toolbar.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Operational status bar and force banner",
       "where": "components/OperationalStatusBar.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Structured Text editor and language service",
       "where": "components/CodeEditor.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/CodeEditor.browser.test.ts"
-      ],
+      "tests": ["packages/zplc-ide/src/components/CodeEditor.browser.test.ts"],
       "reason": ""
     },
     {
       "surface": "Instruction List editor",
       "where": "components/CodeEditor.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/CodeEditor.browser.test.ts"
-      ],
+      "tests": ["packages/zplc-ide/src/components/CodeEditor.browser.test.ts"],
       "reason": ""
     },
     {
       "surface": "Ladder editor",
       "where": "editors/ld/",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts"
-      ],
+      "tests": ["packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts"],
       "reason": ""
     },
     {
       "surface": "FBD editor",
       "where": "editors/fbd/",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts"
-      ],
+      "tests": ["packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts"],
       "reason": ""
     },
     {
       "surface": "SFC editor",
       "where": "editors/sfc/",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/editors/sfc/SFCEditor.browser.test.ts"
-      ],
+      "tests": ["packages/zplc-ide/src/editors/sfc/SFCEditor.browser.test.ts"],
       "reason": ""
     },
     {
       "surface": "Explorer (project tree)",
       "where": "components/Sidebar.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Sidebar.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Sidebar.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Inspector",
       "where": "components/WorkbenchInspector.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/WorkbenchInspector.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/WorkbenchInspector.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Output",
       "where": "components/Console.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Console.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Problems",
       "where": "components/Console.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Console.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Tests (scenario runs)",
       "where": "components/Console.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Console.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Lab (recorded plant replay)",
       "where": "components/LabPanel.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/LabPanel.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/LabPanel.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Learn",
       "where": "components/LearnPanel.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/LearnPanel.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/LearnPanel.dom.test.tsx"],
       "reason": ""
     },
     {
@@ -155,9 +125,7 @@
       "surface": "Agent (optional AI provider)",
       "where": "components/Console.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/Console.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
     },
     {
@@ -174,99 +142,77 @@
       "surface": "Watch and force",
       "where": "components/DebugWatchPanel.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/DebugWatchPanel.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Terminal",
       "where": "components/TerminalTab.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/TerminalTab.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/TerminalTab.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Task configuration",
       "where": "components/settings/TasksSection.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/settings/TasksSection.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/settings/TasksSection.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "I/O mapping",
       "where": "components/settings/IOSection.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/settings/IOSection.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/settings/IOSection.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Network settings",
       "where": "components/settings/NetworkSection.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/settings/NetworkSection.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Communication settings (Modbus, MQTT, cloud)",
       "where": "components/settings/CommunicationSection.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/settings/CommunicationSection.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Target selection",
       "where": "components/settings/TargetSection.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/settings/TargetSection.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Controller view",
       "where": "components/ControllerView.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/ControllerView.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/ControllerView.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Function-block instance monitor",
       "where": "editors/fbd/InstanceMonitor.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/editors/fbd/InstanceMonitor.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Generated code and assembly view",
       "where": "components/GeneratedCodeDialog.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/GeneratedCodeDialog.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/GeneratedCodeDialog.dom.test.tsx"],
       "reason": ""
     },
     {
       "surface": "Hardware deploy admission and confirmation",
       "where": "components/DeployDialog.tsx, components/ActionConfirmHost.tsx, components/deployConfirm.ts",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/DeployDialog.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/DeployDialog.dom.test.tsx"],
       "reason": ""
     },
     {
@@ -280,9 +226,7 @@
       "surface": "Project export",
       "where": "components/ProjectExportItems.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx"],
       "reason": ""
     },
     {
@@ -296,9 +240,7 @@
       "surface": "Declared-interlock coverage check",
       "where": "components/InterlockCoverage.tsx",
       "state": "tested",
-      "tests": [
-        "packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx"
-      ],
+      "tests": ["packages/zplc-ide/src/components/InterlockCoverage.dom.test.tsx"],
       "reason": ""
     },
     {

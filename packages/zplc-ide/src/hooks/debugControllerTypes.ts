@@ -42,12 +42,7 @@ export interface DebugControllerActions {
   /** Reset VM */
   reset: () => Promise<void>;
   /** Force a value in IPI */
-  setValue: (
-    address: number,
-    value: number | boolean | string,
-    type: WatchVariable['type'],
-    maxLength?: number
-  ) => Promise<void>;
+  setValue: (address: number, value: number | boolean | string, type: WatchVariable['type'], maxLength?: number) => Promise<void>;
   /** Enable or disable a runtime-owned forced value (a release needs no value, a force needs one) */
   toggleForceValue: (
     path: string,
@@ -55,7 +50,7 @@ export interface DebugControllerActions {
     value: number | boolean | string | null,
     type: WatchVariable['type'],
     force: boolean,
-    maxLength?: number
+    maxLength?: number,
   ) => Promise<void>;
   /** Clear all forced values before disconnecting */
   clearAllForcedValues: () => Promise<void>;

@@ -34,20 +34,31 @@ export function loadSchema(): Schema {
 
 function is(value: unknown, name: string): boolean {
   switch (name) {
-    case 'object': return typeof value === 'object' && value !== null && !Array.isArray(value);
-    case 'array': return Array.isArray(value);
-    case 'string': return typeof value === 'string';
-    case 'integer': return Number.isInteger(value);
-    case 'number': return typeof value === 'number';
-    case 'boolean': return typeof value === 'boolean';
-    case 'null': return value === null;
-    default: return false;
+    case 'object':
+      return typeof value === 'object' && value !== null && !Array.isArray(value);
+    case 'array':
+      return Array.isArray(value);
+    case 'string':
+      return typeof value === 'string';
+    case 'integer':
+      return Number.isInteger(value);
+    case 'number':
+      return typeof value === 'number';
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'null':
+      return value === null;
+    default:
+      return false;
   }
 }
 
 /** The evidence levels a run of each kind may carry (HIL contract): only a hardware run is hardware evidence. */
 export const LEVELS_OF_EVIDENCE: Readonly<Record<RunRecord['evidence'], ReadonlyArray<RunRecord['evidence_level']>>> = {
-  hardware: ['hardware', 'community-reported'], emulated: ['emulated'], 'host-runtime': [null], fake: [null],
+  hardware: ['hardware', 'community-reported'],
+  emulated: ['emulated'],
+  'host-runtime': [null],
+  fake: [null],
 };
 
 /** What the schema cannot say: the level must follow what ran, and only an emulated record names its emulator. */
@@ -58,8 +69,10 @@ export function evidenceLevelProblems(value: unknown): string[] {
   if (allowed === undefined || !('evidence_level' in record)) return [];
   const level = record.evidence_level as RunRecord['evidence_level'];
   const problems: string[] = [];
-  if (!allowed.includes(level)) problems.push(`$.evidence_level: a run on ${String(record.evidence)} cannot be ${JSON.stringify(level)} evidence`);
-  if (level === 'emulated' && !('emulator' in record)) problems.push('$: an emulated record names its emulator (name, version, patch_sha256)');
+  if (!allowed.includes(level))
+    problems.push(`$.evidence_level: a run on ${String(record.evidence)} cannot be ${JSON.stringify(level)} evidence`);
+  if (level === 'emulated' && !('emulator' in record))
+    problems.push('$: an emulated record names its emulator (name, version, patch_sha256)');
   if (level !== 'emulated' && 'emulator' in record) problems.push('$.emulator: only an emulated record names an emulator');
   return problems;
 }
@@ -78,7 +91,8 @@ export function validate(value: unknown, schema?: Schema, path = '$'): string[] 
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path}: does not match ${schema.pattern}`);
     if (value.length < (schema.minLength ?? 0)) errors.push(`${path}: must not be shorter than ${schema.minLength}`);
   }
-  if (typeof value === 'number' && schema.minimum !== undefined && value < schema.minimum) errors.push(`${path}: must be at least ${schema.minimum}`);
+  if (typeof value === 'number' && schema.minimum !== undefined && value < schema.minimum)
+    errors.push(`${path}: must be at least ${schema.minimum}`);
   if (is(value, 'object')) {
     const object = value as Record<string, unknown>;
     for (const name of schema.required ?? []) if (!(name in object)) errors.push(`${path}: ${name} is required`);
@@ -107,23 +121,53 @@ export function serialHash(vid: string | undefined, pid: string | undefined, ser
 }
 
 export interface RunStep {
-  id: string; title: string; kind: 'automatic' | 'physical'; result: 'pass' | 'fail' | 'error' | 'skipped' | 'pending' | 'not-emulable';
-  requirement?: string; started_at?: string; ended_at?: string; confirmed_at?: string; confirmed_identity?: string; detail?: string;
+  id: string;
+  title: string;
+  kind: 'automatic' | 'physical';
+  result: 'pass' | 'fail' | 'error' | 'skipped' | 'pending' | 'not-emulable';
+  requirement?: string;
+  started_at?: string;
+  ended_at?: string;
+  confirmed_at?: string;
+  confirmed_identity?: string;
+  detail?: string;
   measurements?: Record<string, Json>;
 }
 
 export interface RunRecord {
-  schema: 'zplc.hil.run-record/1'; run_id: string; kind: 'chain' | 'scenario' | 'script'; evidence: 'hardware' | 'emulated' | 'host-runtime' | 'fake';
+  schema: 'zplc.hil.run-record/1';
+  run_id: string;
+  kind: 'chain' | 'scenario' | 'script';
+  evidence: 'hardware' | 'emulated' | 'host-runtime' | 'fake';
   /** The HIL contract's level: only `hardware` feeds a board's support level; null for a run on the host runtime or a fake. */
   evidence_level: 'hardware' | 'emulated' | 'community-reported' | null;
   emulator?: { name: string; version: string; patch_sha256: string | null };
-  result: 'pass' | 'fail' | 'incomplete'; started_at: string; ended_at: string;
+  result: 'pass' | 'fail' | 'incomplete';
+  started_at: string;
+  ended_at: string;
   board: { id: string; zephyr_board?: string | null };
-  device: { reported_board: string; board_profile?: string | null; zplc_version?: string | null; zephyr_version?: string | null; serial_hash?: string | null; link?: 'serial' | 'host-runtime' | 'fake' };
+  device: {
+    reported_board: string;
+    board_profile?: string | null;
+    zplc_version?: string | null;
+    zephyr_version?: string | null;
+    serial_hash?: string | null;
+    link?: 'serial' | 'host-runtime' | 'fake';
+  };
   firmware: {
-    commit?: string | null; version?: string | null; image_sha256?: string | null; abi_major?: number | null; abi_minor?: number | null; draft_counter?: number | null;
-    dirty?: boolean | null; board_target?: string | null; options_hash?: string | null; options?: string | null; build_options?: Record<string, string> | null;
-    hil_trace?: boolean | null; build_command?: string | null;
+    commit?: string | null;
+    version?: string | null;
+    image_sha256?: string | null;
+    abi_major?: number | null;
+    abi_minor?: number | null;
+    draft_counter?: number | null;
+    dirty?: boolean | null;
+    board_target?: string | null;
+    options_hash?: string | null;
+    options?: string | null;
+    build_options?: Record<string, string> | null;
+    hil_trace?: boolean | null;
+    build_command?: string | null;
   };
   programs?: Array<{ id: string; sha256: string }>;
   scenario?: { id: string; sha256: string; tolerance_ms?: number };
@@ -173,6 +217,7 @@ export function firmwareIdentity(build: BuildIdentity | undefined): RunRecord['f
 
 /** pass when something ran and nothing failed, fail on any failure, incomplete when nothing ran. A pending step was not run. */
 export function summarize(record: Pick<RunRecord, 'steps' | 'tests'>): RunRecord['result'] {
-  if (record.steps.some((step) => step.result === 'fail' || step.result === 'error') || record.tests.some((test) => test.result === 'fail')) return 'fail';
+  if (record.steps.some((step) => step.result === 'fail' || step.result === 'error') || record.tests.some((test) => test.result === 'fail'))
+    return 'fail';
   return record.steps.some((step) => step.result === 'pass') ? 'pass' : 'incomplete';
 }

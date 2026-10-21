@@ -5,15 +5,9 @@
   "order": 26,
   "module": 11,
   "level": "advanced",
-  "prerequisites": [
-    "conveyor-two-parts-diagnosis"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["conveyor-two-parts-diagnosis"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

@@ -14,7 +14,7 @@ END_PROGRAM`;
         const ast = parse(source);
         const code = generate(ast);
         expect(code).toContain('PUSH32'); // Address of string (pointer)
-        expect(code).toContain('STORE'); 
+        expect(code).toContain('STORE');
     });
 
     it('should compile DATE literal', () => {
@@ -60,7 +60,7 @@ END_PROGRAM`;
         // High 32-bit: 0x92 = 146
         // ISA doesn't have PUSH64, so we use two PUSH32 (low first, then high)
         // Then STORE64 pops high first, then low
-        expect(code).toContain('PUSH32');  // Two PUSH32 for 64-bit value
+        expect(code).toContain('PUSH32'); // Two PUSH32 for 64-bit value
         expect(code).toContain('STORE64 0x2000'); // 64-bit store
     });
 });

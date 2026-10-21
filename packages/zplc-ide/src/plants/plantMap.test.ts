@@ -3,8 +3,26 @@ import { describe, expect, it } from 'bun:test';
 import type { IoMap } from '../runtime/ioMap';
 import { resolvePlantMap, validatePlantMap, type PlantMap } from './plantMap';
 
-const input = (name: string) => ({ path: `Motor.${name}`, pou: 'Motor', name, type: 'BOOL', region: 'IPI' as const, address: 0, size: 1, bitOffset: 0 });
-const output = (name: string) => ({ path: `Motor.${name}`, pou: 'Motor', name, type: 'BOOL', region: 'OPI' as const, address: 0, size: 1, bitOffset: 0 });
+const input = (name: string) => ({
+  path: `Motor.${name}`,
+  pou: 'Motor',
+  name,
+  type: 'BOOL',
+  region: 'IPI' as const,
+  address: 0,
+  size: 1,
+  bitOffset: 0,
+});
+const output = (name: string) => ({
+  path: `Motor.${name}`,
+  pou: 'Motor',
+  name,
+  type: 'BOOL',
+  region: 'OPI' as const,
+  address: 0,
+  size: 1,
+  bitOffset: 0,
+});
 const ioMap = { inputs: [input('Spd')], outputs: [output('Cmd')] } as unknown as IoMap;
 const map: PlantMap = { schemaVersion: 1, plant: 'motor-v1', reads: { command: 'Motor.Cmd' }, drives: { atSpeed: 'Motor.Spd' } };
 

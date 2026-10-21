@@ -21,25 +21,83 @@ describe('the size of a 64-bit watch variable', () => {
 
 describe('reading a 64-bit value', () => {
   it('reads an LREAL as an IEEE 754 double, not as the REAL of its low word', () => {
-    const value = bytesToValue(bytes((view) => view.setFloat64(0, 0.1 + 0.2, true)), 'LREAL');
+    const value = bytesToValue(
+      bytes((view) => view.setFloat64(0, 0.1 + 0.2, true)),
+      'LREAL',
+    );
     expect(value).toBe(0.30000000000000004);
-    expect(bytesToValue(bytes((view) => view.setFloat64(0, -1.5e300, true)), 'LREAL')).toBe(-1.5e300);
-    expect(bytesToValue(bytes((view) => view.setFloat64(0, Number.POSITIVE_INFINITY, true)), 'LREAL')).toBe(Infinity);
-    expect(bytesToValue(bytes((view) => view.setFloat64(0, Number.NaN, true)), 'LREAL')).toBeNaN();
+    expect(
+      bytesToValue(
+        bytes((view) => view.setFloat64(0, -1.5e300, true)),
+        'LREAL',
+      ),
+    ).toBe(-1.5e300);
+    expect(
+      bytesToValue(
+        bytes((view) => view.setFloat64(0, Number.POSITIVE_INFINITY, true)),
+        'LREAL',
+      ),
+    ).toBe(Infinity);
+    expect(
+      bytesToValue(
+        bytes((view) => view.setFloat64(0, Number.NaN, true)),
+        'LREAL',
+      ),
+    ).toBeNaN();
   });
 
   it('reads a LINT as a number while it is exact as one, and as its decimal text beyond 2^53', () => {
-    expect(bytesToValue(bytes((view) => view.setBigInt64(0, -5n, true)), 'LINT')).toBe(-5);
-    expect(bytesToValue(bytes((view) => view.setBigInt64(0, 4294967296n, true)), 'LINT')).toBe(4294967296);
-    expect(bytesToValue(bytes((view) => view.setBigInt64(0, 9223372036854775807n, true)), 'LINT')).toBe('9223372036854775807');
-    expect(bytesToValue(bytes((view) => view.setBigInt64(0, -9223372036854775808n, true)), 'LINT')).toBe('-9223372036854775808');
-    expect(bytesToValue(bytes((view) => view.setBigInt64(0, 9007199254740993n, true)), 'LINT')).toBe('9007199254740993');
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigInt64(0, -5n, true)),
+        'LINT',
+      ),
+    ).toBe(-5);
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigInt64(0, 4294967296n, true)),
+        'LINT',
+      ),
+    ).toBe(4294967296);
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigInt64(0, 9223372036854775807n, true)),
+        'LINT',
+      ),
+    ).toBe('9223372036854775807');
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigInt64(0, -9223372036854775808n, true)),
+        'LINT',
+      ),
+    ).toBe('-9223372036854775808');
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigInt64(0, 9007199254740993n, true)),
+        'LINT',
+      ),
+    ).toBe('9007199254740993');
   });
 
   it('reads a ULINT and an LWORD as unsigned values', () => {
-    expect(bytesToValue(bytes((view) => view.setBigUint64(0, 18446744073709551615n, true)), 'ULINT')).toBe('18446744073709551615');
-    expect(bytesToValue(bytes((view) => view.setBigUint64(0, 9223372036854775808n, true)), 'LWORD')).toBe('9223372036854775808');
-    expect(bytesToValue(bytes((view) => view.setBigUint64(0, 7n, true)), 'ULINT')).toBe(7);
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigUint64(0, 18446744073709551615n, true)),
+        'ULINT',
+      ),
+    ).toBe('18446744073709551615');
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigUint64(0, 9223372036854775808n, true)),
+        'LWORD',
+      ),
+    ).toBe('9223372036854775808');
+    expect(
+      bytesToValue(
+        bytes((view) => view.setBigUint64(0, 7n, true)),
+        'ULINT',
+      ),
+    ).toBe(7);
   });
 });
 
@@ -102,15 +160,26 @@ describe('polling a 64-bit variable', () => {
       },
     },
     memoryLayout: {
-      ipiBase: 0, ipiSize: 0x1000, opiBase: 0x1000, opiSize: 0x1000, workBase: 0x2000, workSize: 0x2000,
-      retainBase: 0x4000, retainSize: 0x1000, codeBase: 0x5000, codeSize: 128,
+      ipiBase: 0,
+      ipiSize: 0x1000,
+      opiBase: 0x1000,
+      opiSize: 0x1000,
+      workBase: 0x2000,
+      workSize: 0x2000,
+      retainBase: 0x4000,
+      retainSize: 0x1000,
+      codeBase: 0x5000,
+      codeSize: 128,
     },
   };
 
-  it.each([['Wide', 'LINT'], ['Big', 'ULINT'], ['Bits', 'LWORD'], ['Precise', 'LREAL'], ['Single', 'REAL']] as const)(
-    '%s is polled as %s, at its own width',
-    (name, type) => {
-      expect(describePolledDebugVariable(map, name)?.type).toBe(type);
-    },
-  );
+  it.each([
+    ['Wide', 'LINT'],
+    ['Big', 'ULINT'],
+    ['Bits', 'LWORD'],
+    ['Precise', 'LREAL'],
+    ['Single', 'REAL'],
+  ] as const)('%s is polled as %s, at its own width', (name, type) => {
+    expect(describePolledDebugVariable(map, name)?.type).toBe(type);
+  });
 });

@@ -5,7 +5,14 @@ import { Tree } from './index';
 const dom = await setupDom();
 
 const NODES = [
-  { id: 'src', label: 'src', children: [{ id: 'main', label: 'main.st' }, { id: 'motor', label: 'motor.st' }] },
+  {
+    id: 'src',
+    label: 'src',
+    children: [
+      { id: 'main', label: 'main.st' },
+      { id: 'motor', label: 'motor.st' },
+    ],
+  },
   { id: 'readme', label: 'README' },
 ];
 

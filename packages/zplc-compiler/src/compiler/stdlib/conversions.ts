@@ -75,7 +75,9 @@ export function conversionResultType(functionName: string): string | undefined {
     const match = /^([A-Z0-9]+)_TO_([A-Z0-9]+)$/.exec(functionName.toUpperCase());
     if (!match) return undefined;
     const [, from, to] = match;
-    return (CONVERSION_TYPES as readonly string[]).includes(from!) && (CONVERSION_TYPES as readonly string[]).includes(to!) && from !== to ? to : undefined;
+    return (CONVERSION_TYPES as readonly string[]).includes(from!) && (CONVERSION_TYPES as readonly string[]).includes(to!) && from !== to
+        ? to
+        : undefined;
 }
 
 /** The shortest PUSH of a small integer constant. */
@@ -182,7 +184,8 @@ function emitConversion(ctx: CodeGenContext, from: string, to: string): void {
             return;
         }
         if (target.bits === 32 && !target.signed) {
-            if (!ctx.callRoutine) ctx.fail('the conversion of a REAL to an unsigned integer needs the routine linker', 'INTERNAL_COMPILER_ERROR');
+            if (!ctx.callRoutine)
+                ctx.fail('the conversion of a REAL to an unsigned integer needs the routine linker', 'INTERNAL_COMPILER_ERROR');
             ctx.callRoutine(F2U32_LABEL);
             return;
         }

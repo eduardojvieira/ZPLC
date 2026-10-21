@@ -4,16 +4,39 @@ import { parseFBDModel, serializeFBDModel, type FBDModel } from '../../models/fb
 import { connectBlocks, copyFBDFragment, pasteFBDFragment } from './graphModel';
 
 const model: FBDModel = {
-  name: 'copy', variables: { local: [], outputs: [] },
+  name: 'copy',
+  variables: { local: [], outputs: [] },
   blocks: [
-    { id: 'timer', type: 'TON', instanceName: 'Timer', position: { x: 0, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }], outputs: [{ name: 'Q', type: 'BOOL' }], comment: 'timer' },
-    { id: 'output', type: 'output', position: { x: 100, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }], outputs: [], variableName: 'Output', address: '%Q0.0' },
+    {
+      id: 'timer',
+      type: 'TON',
+      instanceName: 'Timer',
+      position: { x: 0, y: 0 },
+      inputs: [{ name: 'IN', type: 'BOOL' }],
+      outputs: [{ name: 'Q', type: 'BOOL' }],
+      comment: 'timer',
+    },
+    {
+      id: 'output',
+      type: 'output',
+      position: { x: 100, y: 0 },
+      inputs: [{ name: 'IN', type: 'BOOL' }],
+      outputs: [],
+      variableName: 'Output',
+      address: '%Q0.0',
+    },
     { id: 'outside', type: 'constant', position: { x: 200, y: 0 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }], value: true },
   ],
   connections: [{ id: 'internal', from: { block: 'timer', port: 'Q' }, to: { block: 'output', port: 'IN' } }],
 };
 
-const nodes: Node[] = model.blocks.map((block, index) => ({ id: block.id, type: 'block', position: block.position, selected: index < 2, data: { ...block, debugActive: true, callback: () => undefined } }));
+const nodes: Node[] = model.blocks.map((block, index) => ({
+  id: block.id,
+  type: 'block',
+  position: block.position,
+  selected: index < 2,
+  data: { ...block, debugActive: true, callback: () => undefined },
+}));
 const edges: Edge[] = [
   { id: 'internal', source: 'timer', sourceHandle: 'Q', target: 'output', targetHandle: 'IN' },
   { id: 'boundary', source: 'outside', sourceHandle: 'OUT', target: 'timer', targetHandle: 'IN' },
@@ -33,7 +56,11 @@ describe('FBD copy/paste graph model', () => {
       { id: 'timer_copy', instanceName: 'Timer_copy', position: { x: 40, y: 40 } },
       { id: 'output_copy', variableName: 'Output', address: '%Q0.0', position: { x: 140, y: 40 } },
     ]);
-    expect(pasted?.connections[1]).toEqual({ id: 'internal_copy', from: { block: 'timer_copy', port: 'Q' }, to: { block: 'output_copy', port: 'IN' } });
+    expect(pasted?.connections[1]).toEqual({
+      id: 'internal_copy',
+      from: { block: 'timer_copy', port: 'Q' },
+      to: { block: 'output_copy', port: 'IN' },
+    });
     expect(parseFBDModel(serializeFBDModel(pasted!))).toEqual(pasted!);
 
     const repeated = pasteFBDFragment(pasted!, fragment!);
@@ -44,9 +71,21 @@ describe('FBD copy/paste graph model', () => {
   });
 
   it('fails closed for an empty selection or malformed fragment', () => {
-    expect(copyFBDFragment(nodes.map((node) => ({ ...node, selected: false })), edges)).toBeUndefined();
-    expect(pasteFBDFragment(model, { blocks: [{ ...model.blocks[0]!, position: { x: Number.NaN, y: 0 } }], connections: [] })).toBeUndefined();
-    expect(pasteFBDFragment({ ...model, blocks: [...model.blocks, { ...model.blocks[0]!, id: 'timer_two', instanceName: 'timer' }] }, copyFBDFragment(nodes, edges)!)).toBeUndefined();
+    expect(
+      copyFBDFragment(
+        nodes.map((node) => ({ ...node, selected: false })),
+        edges,
+      ),
+    ).toBeUndefined();
+    expect(
+      pasteFBDFragment(model, { blocks: [{ ...model.blocks[0]!, position: { x: Number.NaN, y: 0 } }], connections: [] }),
+    ).toBeUndefined();
+    expect(
+      pasteFBDFragment(
+        { ...model, blocks: [...model.blocks, { ...model.blocks[0]!, id: 'timer_two', instanceName: 'timer' }] },
+        copyFBDFragment(nodes, edges)!,
+      ),
+    ).toBeUndefined();
   });
 });
 
@@ -55,8 +94,24 @@ describe('LNG-013 drawing a wire between two pins', () => {
     name: 'pins',
     variables: { local: [{ name: 'Level', type: 'REAL' }], outputs: [{ name: 'Lamp', type: 'BOOL' }] },
     blocks: [
-      { id: 'level', type: 'variable', variableName: 'Level', position: { x: 0, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [{ name: 'OUT', type: 'ANY' }] },
-      { id: 'gate', type: 'AND', position: { x: 100, y: 0 }, inputs: [{ name: 'IN1', type: 'BOOL' }, { name: 'IN2', type: 'BOOL' }], outputs: [{ name: 'OUT', type: 'BOOL' }] },
+      {
+        id: 'level',
+        type: 'variable',
+        variableName: 'Level',
+        position: { x: 0, y: 0 },
+        inputs: [{ name: 'IN', type: 'ANY' }],
+        outputs: [{ name: 'OUT', type: 'ANY' }],
+      },
+      {
+        id: 'gate',
+        type: 'AND',
+        position: { x: 100, y: 0 },
+        inputs: [
+          { name: 'IN1', type: 'BOOL' },
+          { name: 'IN2', type: 'BOOL' },
+        ],
+        outputs: [{ name: 'OUT', type: 'BOOL' }],
+      },
       { id: 'lamp', type: 'output', variableName: 'Lamp', position: { x: 200, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [] },
     ],
     connections: [],
@@ -80,7 +135,12 @@ describe('LNG-013 drawing a wire between two pins', () => {
 
   it('refuses a second wire into an input that already has one', () => {
     const first = connectBlocks(diagram, flowNodes, [], { source: 'gate', sourceHandle: 'OUT', target: 'lamp', targetHandle: 'IN' });
-    const second = connectBlocks(diagram, flowNodes, first.edges, { source: 'level', sourceHandle: 'OUT', target: 'lamp', targetHandle: 'IN' });
+    const second = connectBlocks(diagram, flowNodes, first.edges, {
+      source: 'level',
+      sourceHandle: 'OUT',
+      target: 'lamp',
+      targetHandle: 'IN',
+    });
     expect(second.refusal).toContain("input 'lamp.IN' already has a wire");
     expect(second.edges).toBe(first.edges);
   });

@@ -5,16 +5,9 @@
   "order": 5,
   "module": 1,
   "level": "foundation",
-  "prerequisites": [
-    "scan-cycle-one-scan-memory"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["scan-cycle-one-scan-memory"],
+  "languages": ["LD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

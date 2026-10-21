@@ -13,13 +13,13 @@ El texto estructurado (ST) es el frontend de lenguaje central de ZPLC. El reposi
 
 ## Flujos disponibles
 
-| Lenguaje | Ruta actual |
-|---|---|
-| **Texto estructurado (ST)** | Frontend textual central del compilador. |
-| **Lista de instrucciones (IL)** | Se analiza y se transpila a ST antes de compilar. |
-| **Diagrama de escalera (LD)** | Flujo de editor y transpilador visual. |
-| **Diagrama de bloques de función (FBD)** | Flujo de editor y transpilador visual. |
-| **Diagrama funcional secuencial (SFC)** | Flujo de editor y transpilador visual. |
+| Lenguaje                                 | Ruta actual                                       |
+| ---------------------------------------- | ------------------------------------------------- |
+| **Texto estructurado (ST)**              | Frontend textual central del compilador.          |
+| **Lista de instrucciones (IL)**          | Se analiza y se transpila a ST antes de compilar. |
+| **Diagrama de escalera (LD)**            | Flujo de editor y transpilador visual.            |
+| **Diagrama de bloques de función (FBD)** | Flujo de editor y transpilador visual.            |
+| **Diagrama funcional secuencial (SFC)**  | Flujo de editor y transpilador visual.            |
 
 ## Qué puede hacer hoy cada lenguaje
 

@@ -3,11 +3,6 @@
   "title": "an error in an SFC action body is reported against the action",
   "build": "fails",
   "codes": ["UNKNOWN_IDENTIFIER"],
-  "elements": [
-    "action:mark"
-  ],
-  "messageIncludes": [
-    "SFC action 'mark' body",
-    "'Undeclared'"
-  ]
+  "elements": ["action:mark"],
+  "messageIncludes": ["SFC action 'mark' body", "'Undeclared'"]
 }

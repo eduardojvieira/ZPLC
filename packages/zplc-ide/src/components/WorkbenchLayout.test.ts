@@ -13,6 +13,7 @@ describe('Workbench lower-ledger layout', () => {
     expect(store).not.toContain('closeWorkbenchDrawer');
     expect(app).not.toContain('WorkbenchDrawer');
     expect(app).toContain('<WorkbenchShell');
-    for (const region of ['<ActivityRail', 'id="primary"', 'id="center"', 'id="editor"', 'id="console"', 'id="secondary"', '<Console']) expect(shell).toContain(region);
+    for (const region of ['<ActivityRail', 'id="primary"', 'id="center"', 'id="editor"', 'id="console"', 'id="secondary"', '<Console'])
+      expect(shell).toContain(region);
   });
 });

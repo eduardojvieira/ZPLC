@@ -27,8 +27,16 @@ function systemInfo(board: string): Record<string, unknown> {
   const io = getBoardIoIdentity(board);
   if (!profile || !io) throw new Error(`The board ${board} has no profile or no I/O description to emulate.`);
   return {
-    board: profile.split('/')[0], board_profile: profile, zplc_version: '2.0.0', zephyr_version: '4.0.0', uptime_ms: 1, cpu_freq_mhz: 1,
-    device_protocol_version: 1, bytecode_abi_major: ZPLC_CONSTANTS.VERSION_MAJOR, bytecode_abi_minor: ZPLC_CONSTANTS.VERSION_MINOR, draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
+    board: profile.split('/')[0],
+    board_profile: profile,
+    zplc_version: '2.0.0',
+    zephyr_version: '4.0.0',
+    uptime_ms: 1,
+    cpu_freq_mhz: 1,
+    device_protocol_version: 1,
+    bytecode_abi_major: ZPLC_CONSTANTS.VERSION_MAJOR,
+    bytecode_abi_minor: ZPLC_CONSTANTS.VERSION_MINOR,
+    draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
     capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
     memory: { work_size: 8192, retain_size: 4096, ipi_size: 4096, opi_size: 4096, code_size: 45056, max_artifact_size: 45056 },
     io: { schema: 1, board_id: io.boardId, hash: io.hash, channels: 0, input_bytes: io.inputBytes, output_bytes: io.outputBytes },
@@ -38,13 +46,19 @@ function systemInfo(board: string): Record<string, unknown> {
 /** Starts the device and gives the page a serial port to it, as the one `navigator.serial.requestPort()` returns. */
 export async function attachEmulatedDevice(app: App, runtime: string, board: string): Promise<EmulatedDevice> {
   const persist = mkdtempSync(join(tmpdir(), 'zplc-emulated-device-'));
-  const child: ChildProcessWithoutNullStreams = spawn(runtime, ['--device-link'], { env: { ...process.env, ZPLC_PERSIST_ROOT: persist }, stdio: ['pipe', 'pipe', 'pipe'] });
+  const child: ChildProcessWithoutNullStreams = spawn(runtime, ['--device-link'], {
+    env: { ...process.env, ZPLC_PERSIST_ROOT: persist },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
   child.stderr.on('data', () => undefined);
   const transcript: string[] = [];
   const info = JSON.stringify(systemInfo(board));
-  const toPage = (text: string) => { void app.eval(`window.__emulatedDevicePush(${JSON.stringify(text)})`).catch(() => undefined); };
+  const toPage = (text: string) => {
+    void app.eval(`window.__emulatedDevicePush(${JSON.stringify(text)})`).catch(() => undefined);
+  };
   // what the runtime says of its own state, read from the frames it writes: the text `zplc status` of the shell must tell the same
-  let state = 'idle'; let cycles = 0;
+  let state = 'idle';
+  let cycles = 0;
   const frames = new FrameDecoder();
   const NAMES = ['idle', 'running', 'paused', 'error'];
   // a frame the device writes is a line of the shell, after a newline
@@ -53,11 +67,12 @@ export async function attachEmulatedDevice(app: App, runtime: string, board: str
     for (const frame of frames.push(bytes)) {
       if (frame.kind === KIND.EVENT && eventNameOf(frame.message) === 'EVT_STATUS') {
         const values = decodeEvent('EVT_STATUS', frame.payload);
-        state = NAMES[values.state] ?? 'error'; cycles = values.cycles;
+        state = NAMES[values.state] ?? 'error';
+        cycles = values.cycles;
       } else if (frame.kind === KIND.RESPONSE) {
         const name = messageNameOf(frame.message);
         const answer = name === null ? null : decodeResponse(name, frame.payload);
-        const values = answer?.ok ? answer.values as { state?: number; cycles?: number } : null;
+        const values = answer?.ok ? (answer.values as { state?: number; cycles?: number }) : null;
         if (typeof values?.state === 'number') state = NAMES[values.state] ?? 'error';
         if (typeof values?.cycles === 'number') cycles = values.cycles;
       }
@@ -78,13 +93,24 @@ export async function attachEmulatedDevice(app: App, runtime: string, board: str
       else toPage('OK: accepted\r\n');
     }
   });
-  await app.eval(`(() => {
+  await app.eval(
+    `(() => {
     const encoder = new TextEncoder(); const decoder = new TextDecoder(); let controller;
     const readable = new ReadableStream({ start(c) { controller = c; } });
     window.__emulatedDevicePush = (text) => controller.enqueue(encoder.encode(text));
     const writable = new WritableStream({ write(chunk) { window.__emulatedDeviceWrite(decoder.decode(chunk)); } });
-    const port = { readable, writable, open: async () => undefined, close: async () => undefined, getInfo: () => ({ usbVendorId: 0x2e8a, usbProductId: 0x000a }) };
-    Object.defineProperty(navigator, 'serial', { configurable: true, value: { requestPort: async () => port, getPorts: async () => [port], addEventListener() {}, removeEventListener() {} } });
-  })()`);
-  return { transcript, stop: () => { child.stdin.end(); setTimeout(() => child.kill('SIGTERM'), 500).unref(); rmSync(persist, { recursive: true, force: true }); } };
+    const port = { readable, writable, open: async () => undefined, close: async () => undefined, getInfo: () => ({ usbVendorId: 0x2e8a, ` +
+      `usbProductId: 0x000a }) };
+    Object.defineProperty(navigator, 'serial', { configurable: true, value: { requestPort: async () => port, getPorts: async () => ` +
+      `[port], addEventListener() {}, removeEventListener() {} } });
+  })()`,
+  );
+  return {
+    transcript,
+    stop: () => {
+      child.stdin.end();
+      setTimeout(() => child.kill('SIGTERM'), 500).unref();
+      rmSync(persist, { recursive: true, force: true });
+    },
+  };
 }

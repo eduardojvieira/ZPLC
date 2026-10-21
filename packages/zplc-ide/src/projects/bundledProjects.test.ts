@@ -33,19 +33,29 @@ const ANNOTATIONS = new Set(['$schema', '$id', 'title', 'description', 'default'
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const typeMatches = (type: string, value: unknown): boolean => {
   switch (type) {
-    case 'object': return isRecord(value);
-    case 'array': return Array.isArray(value);
-    case 'string': return typeof value === 'string';
-    case 'boolean': return typeof value === 'boolean';
-    case 'integer': return Number.isInteger(value);
-    case 'number': return typeof value === 'number';
-    default: throw new Error(`unsupported JSON Schema type '${type}'`);
+    case 'object':
+      return isRecord(value);
+    case 'array':
+      return Array.isArray(value);
+    case 'string':
+      return typeof value === 'string';
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'integer':
+      return Number.isInteger(value);
+    case 'number':
+      return typeof value === 'number';
+    default:
+      throw new Error(`unsupported JSON Schema type '${type}'`);
   }
 };
 
 function violations(node: Schema, value: unknown, at = '$'): string[] {
   if (typeof node.$ref === 'string') {
-    const target = node.$ref.replace(/^#\//, '').split('/').reduce<unknown>((current, key) => (isRecord(current) ? current[key] : undefined), schema);
+    const target = node.$ref
+      .replace(/^#\//, '')
+      .split('/')
+      .reduce<unknown>((current, key) => (isRecord(current) ? current[key] : undefined), schema);
     if (!isRecord(target)) throw new Error(`unresolved $ref ${node.$ref} at ${at}`);
     return violations(target, value, at);
   }
@@ -53,15 +63,33 @@ function violations(node: Schema, value: unknown, at = '$'): string[] {
   for (const [keyword, rule] of Object.entries(node)) {
     if (ANNOTATIONS.has(keyword)) continue;
     switch (keyword) {
-      case 'type': if (!typeMatches(rule as string, value)) found.push(`${at}: expected ${String(rule)}`); break;
-      case 'enum': if (!(rule as unknown[]).includes(value)) found.push(`${at}: ${JSON.stringify(value)} is not one of ${JSON.stringify(rule)}`); break;
-      case 'pattern': if (typeof value === 'string' && !new RegExp(rule as string).test(value)) found.push(`${at}: does not match ${String(rule)}`); break;
-      case 'minLength': if (typeof value === 'string' && value.length < (rule as number)) found.push(`${at}: shorter than ${String(rule)}`); break;
-      case 'maxLength': if (typeof value === 'string' && value.length > (rule as number)) found.push(`${at}: longer than ${String(rule)}`); break;
-      case 'minimum': if (typeof value === 'number' && value < (rule as number)) found.push(`${at}: below ${String(rule)}`); break;
-      case 'maximum': if (typeof value === 'number' && value > (rule as number)) found.push(`${at}: above ${String(rule)}`); break;
-      case 'minItems': if (Array.isArray(value) && value.length < (rule as number)) found.push(`${at}: fewer than ${String(rule)} items`); break;
-      case 'maxItems': if (Array.isArray(value) && value.length > (rule as number)) found.push(`${at}: more than ${String(rule)} items`); break;
+      case 'type':
+        if (!typeMatches(rule as string, value)) found.push(`${at}: expected ${String(rule)}`);
+        break;
+      case 'enum':
+        if (!(rule as unknown[]).includes(value)) found.push(`${at}: ${JSON.stringify(value)} is not one of ${JSON.stringify(rule)}`);
+        break;
+      case 'pattern':
+        if (typeof value === 'string' && !new RegExp(rule as string).test(value)) found.push(`${at}: does not match ${String(rule)}`);
+        break;
+      case 'minLength':
+        if (typeof value === 'string' && value.length < (rule as number)) found.push(`${at}: shorter than ${String(rule)}`);
+        break;
+      case 'maxLength':
+        if (typeof value === 'string' && value.length > (rule as number)) found.push(`${at}: longer than ${String(rule)}`);
+        break;
+      case 'minimum':
+        if (typeof value === 'number' && value < (rule as number)) found.push(`${at}: below ${String(rule)}`);
+        break;
+      case 'maximum':
+        if (typeof value === 'number' && value > (rule as number)) found.push(`${at}: above ${String(rule)}`);
+        break;
+      case 'minItems':
+        if (Array.isArray(value) && value.length < (rule as number)) found.push(`${at}: fewer than ${String(rule)} items`);
+        break;
+      case 'maxItems':
+        if (Array.isArray(value) && value.length > (rule as number)) found.push(`${at}: more than ${String(rule)} items`);
+        break;
       case 'items':
         if (!isRecord(rule)) throw new Error(`unsupported tuple 'items' at ${at}`);
         if (Array.isArray(value)) value.forEach((item, index) => found.push(...violations(rule, item, `${at}[${index}]`)));
@@ -70,16 +98,22 @@ function violations(node: Schema, value: unknown, at = '$'): string[] {
         if (isRecord(value)) for (const key of rule as string[]) if (!(key in value)) found.push(`${at}: missing required '${key}'`);
         break;
       case 'properties':
-        if (isRecord(value)) for (const [key, child] of Object.entries(rule as Record<string, Schema>)) if (key in value) found.push(...violations(child, value[key], `${at}.${key}`));
+        if (isRecord(value))
+          for (const [key, child] of Object.entries(rule as Record<string, Schema>))
+            if (key in value) found.push(...violations(child, value[key], `${at}.${key}`));
         break;
       case 'additionalProperties':
         if (rule !== false) throw new Error(`unsupported additionalProperties at ${at}`);
-        if (isRecord(value)) for (const key of Object.keys(value)) if (!(key in ((node.properties as Record<string, unknown> | undefined) ?? {}))) found.push(`${at}: unexpected '${key}'`);
+        if (isRecord(value))
+          for (const key of Object.keys(value))
+            if (!(key in ((node.properties as Record<string, unknown> | undefined) ?? {}))) found.push(`${at}: unexpected '${key}'`);
         break;
       case 'anyOf':
-        if (!(rule as Schema[]).some((alternative) => violations(alternative, value, at).length === 0)) found.push(`${at}: matches none of anyOf`);
+        if (!(rule as Schema[]).some((alternative) => violations(alternative, value, at).length === 0))
+          found.push(`${at}: matches none of anyOf`);
         break;
-      default: throw new Error(`unsupported JSON Schema keyword '${keyword}' at ${at}`);
+      default:
+        throw new Error(`unsupported JSON Schema keyword '${keyword}' at ${at}`);
     }
   }
   return found;
@@ -102,8 +136,9 @@ const SESSION_ENVIRONMENT = { ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_NAT
 const withNativeRuntime = async <T>(run: () => Promise<T>): Promise<T> => {
   const previous = Object.fromEntries(Object.keys(SESSION_ENVIRONMENT).map((name) => [name, process.env[name]]));
   Object.assign(process.env, SESSION_ENVIRONMENT);
-  try { return await run(); }
-  finally {
+  try {
+    return await run();
+  } finally {
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name];
       else process.env[name] = value;
@@ -122,12 +157,15 @@ async function orphanSources(root: string): Promise<string[]> {
   if (!loaded.ok) throw new Error(JSON.stringify(loaded.diagnostics));
   const { project, sources } = loaded.workspace;
   // the unit as the Tool API gives it to the compiler: the task programs, then every Structured Text file no task runs
-  const programs = project.tasks.flatMap((task) => task.programs).flatMap((program) => {
-    const source = resolveProgramSource(program, sources);
-    return source ? [{ ...source, name: program }] : [];
-  });
+  const programs = project.tasks
+    .flatMap((task) => task.programs)
+    .flatMap((program) => {
+      const source = resolveProgramSource(program, sources);
+      return source ? [{ ...source, name: program }] : [];
+    });
   const run = new Set(programs.map((program) => program.sourceRef));
-  const declarations = sources.filter((source) => source.language === 'ST' && !run.has(source.path))
+  const declarations = sources
+    .filter((source) => source.language === 'ST' && !run.has(source.path))
     .map((source) => ({ name: source.path, content: source.content, language: 'ST' as const, sourceRef: source.path }));
   const { debugMap } = compileMultiTaskProject(project, [...programs, ...declarations]);
   const built = new Set(Object.values(debugMap.pou).flatMap((pou) => pou.sourceRef ?? []));
@@ -138,22 +176,41 @@ describe('the orphan check used by this file (CMP-042)', () => {
   const fixture = (): string => {
     const root = mkdtempSync(join(tmpdir(), 'zplc-orphans-'));
     mkdirSync(join(root, 'src'));
-    writeFileSync(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'orphans', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
-    writeFileSync(join(root, 'src', 'Main.st'), 'PROGRAM Main\nVAR Run : BOOL; Hold : Latch; END_VAR\nHold(S := Run);\nRun := Twice(1) > 1;\nEND_PROGRAM\n');
-    writeFileSync(join(root, 'src', 'Latch.st'), 'FUNCTION_BLOCK Latch\nVAR_INPUT S : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Q OR S;\nEND_FUNCTION_BLOCK\n');
+    writeFileSync(
+      join(root, 'zplc.json'),
+      JSON.stringify({
+        schemaVersion: 2,
+        name: 'orphans',
+        version: '1.0.0',
+        target: { board: 'posix' },
+        tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }],
+      }),
+    );
+    writeFileSync(
+      join(root, 'src', 'Main.st'),
+      'PROGRAM Main\nVAR Run : BOOL; Hold : Latch; END_VAR\nHold(S := Run);\nRun := Twice(1) > 1;\nEND_PROGRAM\n',
+    );
+    writeFileSync(
+      join(root, 'src', 'Latch.st'),
+      'FUNCTION_BLOCK Latch\nVAR_INPUT S : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Q OR S;\nEND_FUNCTION_BLOCK\n',
+    );
     writeFileSync(join(root, 'src', 'Twice.st'), 'FUNCTION Twice : INT\nVAR_INPUT V : INT; END_VAR\nTwice := V * 2;\nEND_FUNCTION\n');
     writeFileSync(join(root, 'src', 'Stray.st'), 'PROGRAM Stray\nVAR Y : BOOL; END_VAR\nY := NOT Y;\nEND_PROGRAM\n');
     return root;
   };
 
-  it('CMP-042 counts a Structured Text file that only declares a function block or a function as built, and still finds a PROGRAM that no task runs', async () => {
-    const root = fixture();
-    try {
-      expect(await orphanSources(root)).toEqual(['src/Stray.st']);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
+  it(
+    'CMP-042 counts a Structured Text file that only declares a function block or a function as built, and still finds a PROGRAM that ' +
+      'no task runs',
+    async () => {
+      const root = fixture();
+      try {
+        expect(await orphanSources(root)).toEqual(['src/Stray.st']);
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe('bundled example projects', () => {
@@ -183,13 +240,18 @@ describe('bundled example projects', () => {
         expect(await orphanSources(rootOf(name))).toEqual(KNOWN_ORPHANS[name] ?? []);
       });
 
-      const hasScenarios = existsSync(join(rootOf(name), 'tests')) && readdirSync(join(rootOf(name), 'tests')).some((file) => file.endsWith('.scenario.json'));
+      const hasScenarios =
+        existsSync(join(rootOf(name), 'tests')) && readdirSync(join(rootOf(name), 'tests')).some((file) => file.endsWith('.scenario.json'));
       if (hasScenarios) {
-        itNative('passes every scenario under tests/ on the native runtime', async () => {
-          const result = await withNativeRuntime(() => testsRun(rootOf(name)));
-          expect(result.evidence.diagnostics).toEqual([]);
-          expect(result.ok).toBe(true);
-        }, 30_000);
+        itNative(
+          'passes every scenario under tests/ on the native runtime',
+          async () => {
+            const result = await withNativeRuntime(() => testsRun(rootOf(name)));
+            expect(result.evidence.diagnostics).toEqual([]);
+            expect(result.ok).toBe(true);
+          },
+          30_000,
+        );
       }
     });
   }
@@ -217,8 +279,12 @@ describe('Blinky language tour', () => {
 
       // A blink and a one-scan blip are told apart by long FOR windows: the LED must be seen ON, and OFF, for 400 ms or more.
       const scenarioFile = readdirSync(join(rootOf(project), 'tests')).find((file) => file.endsWith('.scenario.json'));
-      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as { expectations: Array<{ kind: string; forMs?: number; condition: Record<string, boolean> }> };
-      const held = scenario.expectations.filter((expectation) => expectation.kind === 'FOR' && expectation.forMs! >= 400).map((expectation) => expectation.condition['Blinky.LED_Output']);
+      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as {
+        expectations: Array<{ kind: string; forMs?: number; condition: Record<string, boolean> }>;
+      };
+      const held = scenario.expectations
+        .filter((expectation) => expectation.kind === 'FOR' && expectation.forMs! >= 400)
+        .map((expectation) => expectation.condition['Blinky.LED_Output']);
       expect(held).toContain(true);
       expect(held).toContain(false);
     });
@@ -241,15 +307,23 @@ describe('Opta LED chaser', () => {
       const built = manifest.tasks.flatMap((task) => task.programs).flatMap((name) => resolveProgramSource(name, sources)?.sourceRef ?? []);
       expect(built).toEqual([source]);
 
-      const outputs = new Set([...readFileSync(join(rootOf(project), source), 'utf8').matchAll(/%Q0\.(\d+)/g)].map((match) => Number(match[1])));
+      const outputs = new Set(
+        [...readFileSync(join(rootOf(project), source), 'utf8').matchAll(/%Q0\.(\d+)/g)].map((match) => Number(match[1])),
+      );
       expect([...outputs].sort()).toEqual([0, 1, 2, 3]);
 
       const scenarioFile = readdirSync(join(rootOf(project), 'tests')).find((file) => file.endsWith('.scenario.json'));
-      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as { expectations: Array<{ kind: string; condition: Record<string, boolean> }> };
-      const litAlone = new Set(scenario.expectations.filter((expectation) => expectation.kind === 'AT').flatMap((expectation) => {
-        const lit = [0, 1, 2, 3].filter((led) => expectation.condition[`${program}.LED_D${led}`] === true);
-        return lit.length === 1 && [0, 1, 2, 3].every((led) => `${program}.LED_D${led}` in expectation.condition) ? lit : [];
-      }));
+      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as {
+        expectations: Array<{ kind: string; condition: Record<string, boolean> }>;
+      };
+      const litAlone = new Set(
+        scenario.expectations
+          .filter((expectation) => expectation.kind === 'AT')
+          .flatMap((expectation) => {
+            const lit = [0, 1, 2, 3].filter((led) => expectation.condition[`${program}.LED_D${led}`] === true);
+            return lit.length === 1 && [0, 1, 2, 3].every((led) => `${program}.LED_D${led}` in expectation.condition) ? lit : [];
+          }),
+      );
       expect([...litAlone].sort()).toEqual([0, 1, 2, 3]);
     });
   }

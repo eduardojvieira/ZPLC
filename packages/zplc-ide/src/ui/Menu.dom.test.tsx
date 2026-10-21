@@ -45,7 +45,12 @@ describe('Menu button (UX-001) in a DOM', () => {
   });
 
   it('a click outside closes it', async () => {
-    const { user } = dom.render(<><MenuButton label="File" items={items(() => undefined)} /><p>elsewhere</p></>);
+    const { user } = dom.render(
+      <>
+        <MenuButton label="File" items={items(() => undefined)} />
+        <p>elsewhere</p>
+      </>,
+    );
     await user.click(dom.screen.getByRole('button', { name: 'File' }));
     await user.click(dom.screen.getByText('elsewhere'));
     expect(dom.screen.queryByRole('menu')).toBeNull();
@@ -53,7 +58,9 @@ describe('Menu button (UX-001) in a DOM', () => {
 
   it('marks a disabled item and gives its reason; choosing it does nothing', async () => {
     const onSelect = mock(() => undefined);
-    const { user } = dom.render(<MenuButton label="File" items={[{ id: 'a', label: 'Rename', disabled: true, disabledReason: 'Read-only project', onSelect }]} />);
+    const { user } = dom.render(
+      <MenuButton label="File" items={[{ id: 'a', label: 'Rename', disabled: true, disabledReason: 'Read-only project', onSelect }]} />,
+    );
     await user.click(dom.screen.getByRole('button', { name: 'File' }));
     const item = dom.screen.getByRole('menuitem', { name: /Rename/ });
     expect(item.getAttribute('aria-disabled')).toBe('true');
@@ -74,7 +81,11 @@ describe('Menu button (UX-001) in a DOM', () => {
 describe('Context menu (UX-001) in a DOM', () => {
   it('opens a named menu where the right button is pressed and closes on Escape', async () => {
     const onSelect = mock(() => undefined);
-    const { user } = dom.render(<ContextMenu label="Item actions" items={items(onSelect)}><p>row</p></ContextMenu>);
+    const { user } = dom.render(
+      <ContextMenu label="Item actions" items={items(onSelect)}>
+        <p>row</p>
+      </ContextMenu>,
+    );
     expect(dom.screen.queryByRole('menu')).toBeNull();
     await user.pointer({ keys: '[MouseRight]', target: dom.screen.getByText('row') });
     expect(dom.screen.getByRole('menu', { name: 'Item actions' })).toBeTruthy();

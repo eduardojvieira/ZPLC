@@ -83,7 +83,9 @@ export function findAppBundle(distDir: string): string {
     if (!entry.isDirectory()) continue;
     const directory = join(distDir, entry.name);
     if (entry.name.endsWith('.app')) found.push(directory);
-    else for (const child of readdirSync(directory, { withFileTypes: true })) if (child.isDirectory() && child.name.endsWith('.app')) found.push(join(directory, child.name));
+    else
+      for (const child of readdirSync(directory, { withFileTypes: true }))
+        if (child.isDirectory() && child.name.endsWith('.app')) found.push(join(directory, child.name));
   }
   if (found.length !== 1) throw new Error(`Expected exactly one .app bundle under ${distDir}, found ${found.length}`);
   return found[0]!;
@@ -110,5 +112,8 @@ if (import.meta.main) {
     console.error(`macOS bundle signature check failed for ${arch}:\n${problems.map((problem) => `  - ${problem}`).join('\n')}`);
     process.exit(1);
   }
-  console.log(`macOS bundle signature check passed for ${arch}: ${app} is ad-hoc signed, sealed and hardened, and its native runtime is signed with it. Host evidence only; not notarization or Gatekeeper evidence.`);
+  console.log(
+    `macOS bundle signature check passed for ${arch}: ${app} is ad-hoc signed, sealed and hardened, and its native runtime is signed ` +
+      `with it. Host evidence only; not notarization or Gatekeeper evidence.`,
+  );
 }

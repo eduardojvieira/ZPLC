@@ -87,8 +87,12 @@ describe('malformed Ladder files are rejected with the file name and the first v
 
   it('rejects a rung with neither a grid nor elements, and a grid cell that is not an object', () => {
     const model = valid() as { rungs: Array<Record<string, unknown>> };
-    expect(failure(loadLDFile('a.ld.json', JSON.stringify({ ...model, rungs: [{ id: 'r1', number: 1 }] }))).violations[0]).toContain('grid or elements');
-    expect(failure(loadLDFile('a.ld.json', JSON.stringify({ ...model, rungs: [{ id: 'r1', number: 1, grid: [[null]] }] }))).violations[0]).toMatch(/^rungs\[0\]\.grid\[0\]\[0\]: /);
+    expect(failure(loadLDFile('a.ld.json', JSON.stringify({ ...model, rungs: [{ id: 'r1', number: 1 }] }))).violations[0]).toContain(
+      'grid or elements',
+    );
+    expect(
+      failure(loadLDFile('a.ld.json', JSON.stringify({ ...model, rungs: [{ id: 'r1', number: 1, grid: [[null]] }] }))).violations[0],
+    ).toMatch(/^rungs\[0\]\.grid\[0\]\[0\]: /);
   });
 
   it('reports at most the first few violations and counts the rest', () => {
@@ -131,7 +135,8 @@ describe('malformed FBD and SFC files are rejected the same way', () => {
 describe('the editor opens visual files through the validating loaders', () => {
   it('no longer parses a visual model inline', () => {
     const source = readFileSync(join(import.meta.dir, '../components/EditorArea.tsx'), 'utf8');
-    for (const loader of ['loadLDFile', 'loadFBDFile', 'loadSFCFile']) expect(source).toContain(`${loader}(activeFile.path || activeFile.name, activeFile.content)`);
+    for (const loader of ['loadLDFile', 'loadFBDFile', 'loadSFCFile'])
+      expect(source).toContain(`${loader}(activeFile.path || activeFile.name, activeFile.content)`);
     for (const parser of ['parseLDModel(', 'parseFBDModel(', 'parseSFCModel(']) expect(source).not.toContain(parser);
     expect(source).toContain('data-file-error');
   });

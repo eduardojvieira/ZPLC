@@ -95,7 +95,9 @@ export class ProjectRecordStore implements WasmRecordStore {
 
   private enqueue(what: string, write: () => Promise<void>): void {
     this.writes = this.writes.then(write).catch((error: unknown) => {
-      this.onError(`Retained values could not be kept with the project (${what}): ${error instanceof Error ? error.message : String(error)}`);
+      this.onError(
+        `Retained values could not be kept with the project (${what}): ${error instanceof Error ? error.message : String(error)}`,
+      );
     });
   }
 }

@@ -59,11 +59,12 @@ function IDESection() {
             </div>
           ))}
         </div>
-        <div className={styles.ideScreenshot} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f1a' }}>
+        <div
+          className={styles.ideScreenshot}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f1a' }}
+        >
           <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-            <pre style={{ textAlign: 'left', background: 'transparent', border: 'none', margin: 0 }}>
-              {ideSection.snippet}
-            </pre>
+            <pre style={{ textAlign: 'left', background: 'transparent', border: 'none', margin: 0 }}>{ideSection.snippet}</pre>
           </div>
         </div>
       </div>
@@ -83,7 +84,12 @@ function CTASection() {
           <Link className={`button button--primary button--lg ${styles.ctaButton}`} to={ctaSection.primaryTo}>
             {ctaSection.primaryCta}
           </Link>
-          <a className={`button button--secondary button--lg ${styles.ctaButton}`} href="https://github.com/eduardojvieira/ZPLC" target="_blank" rel="noopener noreferrer">
+          <a
+            className={`button button--secondary button--lg ${styles.ctaButton}`}
+            href="https://github.com/eduardojvieira/ZPLC"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {ctaSection.secondaryCta}
           </a>
         </div>

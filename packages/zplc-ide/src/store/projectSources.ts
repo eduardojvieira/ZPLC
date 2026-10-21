@@ -14,7 +14,12 @@ import { loadFileFromTree } from '../utils/fileSystem';
 import { setCurrentProject } from '../langsvc/session';
 import type { FileTreeNode, ProjectFileWithHandle } from '../types';
 
-export interface ProjectSource { path: string; name: string; content: string; language: string }
+export interface ProjectSource {
+  path: string;
+  name: string;
+  content: string;
+  language: string;
+}
 
 interface ProjectSourcesState {
   sources: ProjectSource[];
@@ -39,15 +44,17 @@ export interface ReadProjectSourcesInput {
 export async function readProjectSources({ tree, libraries, loaded, read }: ReadProjectSourcesInput): Promise<ProjectSource[]> {
   const nodes = projectSourceFiles(tree, libraries).slice(0, MAX_FILES);
   const found = new Map<string, ProjectSource>();
-  const results = await Promise.all(nodes.map(async (node): Promise<ProjectSource | null> => {
-    const open = loaded.get(node.id);
-    if (open) return { path: node.path, name: node.name, content: open.content, language: 'ST' };
-    try {
-      return { path: node.path, name: node.name, content: await read(node), language: 'ST' };
-    } catch {
-      return null;
-    }
-  }));
+  const results = await Promise.all(
+    nodes.map(async (node): Promise<ProjectSource | null> => {
+      const open = loaded.get(node.id);
+      if (open) return { path: node.path, name: node.name, content: open.content, language: 'ST' };
+      try {
+        return { path: node.path, name: node.name, content: await read(node), language: 'ST' };
+      } catch {
+        return null;
+      }
+    }),
+  );
   for (const source of results) if (source) found.set(source.path, source);
   return [...found.values()];
 }
@@ -88,13 +95,19 @@ export function trackProjectSources(
     useProjectSources.setState({ sources, declarations, unlisted });
     setProjectDeclarations(declarations.flatMap((group) => group.declarations));
     // the language service reads the same files: its index is the project with the buffer of the editor in place
-    setCurrentProject(sources.map(({ path, content }) => ({ path, content })), session);
+    setCurrentProject(
+      sources.map(({ path, content }) => ({ path, content })),
+      session,
+    );
   };
 
   const run = async () => {
     const mine = ++generation;
     const { isProjectOpen, fileTree, loadedFiles, projectConfig, projectSession } = store.getState();
-    if (!isProjectOpen || !fileTree) { publish([]); return; }
+    if (!isProjectOpen || !fileTree) {
+      publish([]);
+      return;
+    }
     const libraries = configuredLibraries(projectConfig);
     const [sources, unlisted] = await Promise.all([
       readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
@@ -105,12 +118,19 @@ export function trackProjectSources(
 
   const schedule = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => { void run(); }, delay);
+    timer = setTimeout(() => {
+      void run();
+    }, delay);
   };
 
   const unsubscribe = store.subscribe((state, previous) => {
-    if (state.isProjectOpen !== previous.isProjectOpen || state.fileTree !== previous.fileTree
-      || state.loadedFiles !== previous.loadedFiles || state.projectConfig !== previous.projectConfig) schedule();
+    if (
+      state.isProjectOpen !== previous.isProjectOpen ||
+      state.fileTree !== previous.fileTree ||
+      state.loadedFiles !== previous.loadedFiles ||
+      state.projectConfig !== previous.projectConfig
+    )
+      schedule();
   });
   schedule();
   return () => {
@@ -120,4 +140,3 @@ export function trackProjectSources(
     publish([]);
   };
 }
-

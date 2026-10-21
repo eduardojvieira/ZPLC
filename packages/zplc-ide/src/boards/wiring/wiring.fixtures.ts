@@ -7,12 +7,29 @@ import { readBoardIo, type BoardIoDescription } from '../boardIo';
 import type { WiringBoard, WiringFile } from './wiring';
 
 const digital = (id: string, direction: 'input' | 'output', address: string, pin: string, location: string) => ({
-  id, direction, kind: 'digital', address, pin, location, electrical: '3.3 V logic. Not 5 V tolerant.', pin_status: 'devicetree', source: 'fixture',
+  id,
+  direction,
+  kind: 'digital',
+  address,
+  pin,
+  location,
+  electrical: '3.3 V logic. Not 5 V tolerant.',
+  pin_status: 'devicetree',
+  source: 'fixture',
   ...(direction === 'output' ? { safe: 0 } : {}),
 });
 const analog = (id: string, pin: string, location: string) => ({
-  id, direction: 'input', kind: 'analog', address: '%IW4', pin, location, electrical: '0 V to 3.3 V.', pin_status: 'devicetree', source: 'fixture',
-  resolution_bits: 12, range: { raw_min: 0, raw_max: 4095, eng_min: 0, eng_max: 3.3, unit: 'V' },
+  id,
+  direction: 'input',
+  kind: 'analog',
+  address: '%IW4',
+  pin,
+  location,
+  electrical: '0 V to 3.3 V.',
+  pin_status: 'devicetree',
+  source: 'fixture',
+  resolution_bits: 12,
+  range: { raw_min: 0, raw_max: 4095, eng_min: 0, eng_max: 3.3, unit: 'V' },
 });
 const io = (channels: unknown[]): BoardIoDescription => readBoardIo({ schema_version: 1, channels, unmapped: [] })!;
 

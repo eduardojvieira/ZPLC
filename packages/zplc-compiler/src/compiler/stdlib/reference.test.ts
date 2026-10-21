@@ -17,7 +17,15 @@ import { BLOCK_CATEGORIES, BLOCK_DOCS, FUNCTION_CATEGORIES, FUNCTION_DOCS } from
 
 /** Bytes of a member of each IEC type that a pin table may name. */
 const TYPE_SIZE: Record<string, number> = {
-    BOOL: 1, USINT: 1, INT: 2, UINT: 2, DINT: 4, UDINT: 4, REAL: 4, TIME: 4, STRING: 85,
+    BOOL: 1,
+    USINT: 1,
+    INT: 2,
+    UINT: 2,
+    DINT: 4,
+    UDINT: 4,
+    REAL: 4,
+    TIME: 4,
+    STRING: 85,
 };
 
 const documentedFunctions = getAllFnNames().filter((name) => conversionResultType(name) === undefined);
@@ -36,10 +44,20 @@ describe('standard library reference data: every registered name has an entry (D
         const functionCategories = new Set(FUNCTION_CATEGORIES.map((category) => category.id));
         const blockCategories = new Set(BLOCK_CATEGORIES.map((category) => category.id));
         for (const [name, entry] of Object.entries(FUNCTION_DOCS)) {
-            expect([name, entry.en.trim() !== '', entry.es.trim() !== '', functionCategories.has(entry.category)]).toEqual([name, true, true, true]);
+            expect([name, entry.en.trim() !== '', entry.es.trim() !== '', functionCategories.has(entry.category)]).toEqual([
+                name,
+                true,
+                true,
+                true,
+            ]);
         }
         for (const [name, entry] of Object.entries(BLOCK_DOCS)) {
-            expect([name, entry.en.trim() !== '', entry.es.trim() !== '', blockCategories.has(entry.category)]).toEqual([name, true, true, true]);
+            expect([name, entry.en.trim() !== '', entry.es.trim() !== '', blockCategories.has(entry.category)]).toEqual([
+                name,
+                true,
+                true,
+                true,
+            ]);
         }
     });
 });
@@ -48,7 +66,11 @@ describe('standard library reference data: signatures and pin tables follow the 
     test('the parameters of a function are as many as the registry takes', () => {
         for (const [name, entry] of Object.entries(FUNCTION_DOCS)) {
             const registered = getFn(name);
-            const ok = registered !== undefined && (registered.variadic ? entry.variadic === true && entry.params.length >= registered.argCount : entry.params.length === registered.argCount);
+            const ok =
+                registered !== undefined &&
+                (registered.variadic
+                    ? entry.variadic === true && entry.params.length >= registered.argCount
+                    : entry.params.length === registered.argCount);
             expect([name, ok]).toEqual([name, true]);
         }
     });
@@ -76,7 +98,10 @@ describe('standard library reference data: the examples are programs (DOC-007)',
 
     test('every example states the value it must hold', () => {
         for (const [name, entry] of [...Object.entries(FUNCTION_DOCS), ...Object.entries(BLOCK_DOCS)]) {
-            expect([name, /^[A-Za-z_][\w]*(:[A-Z]+)?=\S+( [A-Za-z_][\w]*(:[A-Z]+)?=\S+)*$/.test(entry.example.expect)]).toEqual([name, true]);
+            expect([name, /^[A-Za-z_][\w]*(:[A-Z]+)?=\S+( [A-Za-z_][\w]*(:[A-Z]+)?=\S+)*$/.test(entry.example.expect)]).toEqual([
+                name,
+                true,
+            ]);
         }
     });
 });

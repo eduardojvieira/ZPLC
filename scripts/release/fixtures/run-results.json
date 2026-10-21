@@ -50,7 +50,11 @@
     { "suite": "studio", "job": "typescript", "executed": 1200, "failed": 0, "skipped": 0 }
   ],
   "knownFailures": [
-    { "id": "conformance/lng/LNG-017 il jump", "summary": "an Instruction List jump to a label past a call lands one instruction late", "tracking": "LNG-018" }
+    {
+      "id": "conformance/lng/LNG-017 il jump",
+      "summary": "an Instruction List jump to a label past a call lands one instruction late",
+      "tracking": "LNG-018"
+    }
   ],
   "channels": [
     { "channel": "Microsoft Store (MSIX package)", "state": "not yet submittable" },
@@ -60,7 +64,5 @@
     "ZPLC shows the compiler message, line and column of a build error.",
     "The CLI and the MCP server are published as standalone executables."
   ],
-  "knownIssues": [
-    "ZPLC cannot open a project folder whose path holds a newline."
-  ]
+  "knownIssues": ["ZPLC cannot open a project folder whose path holds a newline."]
 }

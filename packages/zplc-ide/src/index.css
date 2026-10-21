@@ -9,34 +9,113 @@
    are rendered to src/theme/tokens.generated.css; this file holds the rules that read them. Never declare a colour here.
    ============================================================================= */
 
-.zplc-visual-editor { background: var(--visual-canvas); color: var(--text-primary); }
-.zplc-visual-toolbox { background: var(--visual-panel); border-color: var(--border-color); color: var(--text-primary); }
-.zplc-visual-node { position: relative; background: transparent; border-color: transparent; color: var(--text-primary); }
-.zplc-visual-card { position: relative; background: var(--visual-node); border-color: var(--border-color); color: var(--text-primary); }
-.sfc-step-box { position: relative; background: var(--visual-node); color: var(--text-primary); }
-.sfc-step-node .react-flow__handle, .sfc-transition-node .react-flow__handle { opacity: 0; }
-.sfc-step-node:hover .react-flow__handle, .sfc-step-node:focus-within .react-flow__handle, .sfc-transition-node:hover .react-flow__handle, .sfc-transition-node:focus-within .react-flow__handle, .react-flow__node.selected .sfc-step-node .react-flow__handle, .react-flow__node.selected .sfc-transition-node .react-flow__handle, .react-flow__handle.connecting, .react-flow__handle.valid { opacity: 1 !important; }
-.sfc-edge-path { fill: none; stroke-linejoin: miter; stroke-linecap: square; }
-.zplc-visual-editor .react-flow__container, .zplc-visual-editor .react-flow__pane { background: var(--visual-canvas) !important; }
-.zplc-visual-editor .react-flow__edge-path { stroke: var(--visual-wire); }
-.zplc-visual-editor .react-flow__controls, .zplc-visual-editor .react-flow__minimap { background: var(--visual-panel); border: 1px solid var(--border-color); fill: var(--visual-panel); }
-.zplc-visual-editor .react-flow__controls-button { background: var(--visual-panel); border-bottom-color: var(--border-color); color: var(--text-primary); fill: currentColor; }
-.zplc-visual-editor .react-flow__controls-button:hover { background: var(--visual-node); }
-.zplc-visual-editor .react-flow__controls-button svg { fill: currentColor; }
+.zplc-visual-editor {
+  background: var(--visual-canvas);
+  color: var(--text-primary);
+}
+.zplc-visual-toolbox {
+  background: var(--visual-panel);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.zplc-visual-node {
+  position: relative;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-primary);
+}
+.zplc-visual-card {
+  position: relative;
+  background: var(--visual-node);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.sfc-step-box {
+  position: relative;
+  background: var(--visual-node);
+  color: var(--text-primary);
+}
+.sfc-step-node .react-flow__handle,
+.sfc-transition-node .react-flow__handle {
+  opacity: 0;
+}
+.sfc-step-node:hover .react-flow__handle,
+.sfc-step-node:focus-within .react-flow__handle,
+.sfc-transition-node:hover .react-flow__handle,
+.sfc-transition-node:focus-within .react-flow__handle,
+.react-flow__node.selected .sfc-step-node .react-flow__handle,
+.react-flow__node.selected .sfc-transition-node .react-flow__handle,
+.react-flow__handle.connecting,
+.react-flow__handle.valid {
+  opacity: 1 !important;
+}
+.sfc-edge-path {
+  fill: none;
+  stroke-linejoin: miter;
+  stroke-linecap: square;
+}
+.zplc-visual-editor .react-flow__container,
+.zplc-visual-editor .react-flow__pane {
+  background: var(--visual-canvas) !important;
+}
+.zplc-visual-editor .react-flow__edge-path {
+  stroke: var(--visual-wire);
+}
+.zplc-visual-editor .react-flow__controls,
+.zplc-visual-editor .react-flow__minimap {
+  background: var(--visual-panel);
+  border: 1px solid var(--border-color);
+  fill: var(--visual-panel);
+}
+.zplc-visual-editor .react-flow__controls-button {
+  background: var(--visual-panel);
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+  fill: currentColor;
+}
+.zplc-visual-editor .react-flow__controls-button:hover {
+  background: var(--visual-node);
+}
+.zplc-visual-editor .react-flow__controls-button svg {
+  fill: currentColor;
+}
 
 @media (forced-colors: active) {
-  .zplc-visual-editor, .zplc-visual-toolbox, .zplc-visual-card, .sfc-step-box, .zplc-visual-editor .react-flow__container, .zplc-visual-editor .react-flow__controls, .zplc-visual-editor .react-flow__minimap { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
-  .zplc-visual-editor .react-flow__edge-path { stroke: CanvasText !important; }
-  .sfc-transition-axis { border-color: CanvasText !important; }
-  .zplc-visual-editor .react-flow__controls-button { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
-  .zplc-visual-editor .react-flow__controls-button:hover { background: Highlight !important; color: HighlightText !important; }
+  .zplc-visual-editor,
+  .zplc-visual-toolbox,
+  .zplc-visual-card,
+  .sfc-step-box,
+  .zplc-visual-editor .react-flow__container,
+  .zplc-visual-editor .react-flow__controls,
+  .zplc-visual-editor .react-flow__minimap {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+  }
+  .zplc-visual-editor .react-flow__edge-path {
+    stroke: CanvasText !important;
+  }
+  .sfc-transition-axis {
+    border-color: CanvasText !important;
+  }
+  .zplc-visual-editor .react-flow__controls-button {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+  }
+  .zplc-visual-editor .react-flow__controls-button:hover {
+    background: Highlight !important;
+    color: HighlightText !important;
+  }
 }
 
 /* =============================================================================
    Base Styles
    ============================================================================= */
 
-html, body, #root {
+html,
+body,
+#root {
   @apply h-full w-full m-0 p-0;
   background-color: var(--color-surface-900);
   color: var(--color-surface-100);
@@ -273,25 +352,86 @@ html, body, #root {
    ============================================================================= */
 
 /* Wiring Ledger shell: flat technical regions, not a card dashboard. */
-.ledger-workspace { min-width: 0; }
-.ledger-inspector { height: 100%; overflow: auto; background: var(--color-surface-800); color: var(--text-primary); }
-.ledger-index { color: var(--text-tertiary); font-family: var(--font-mono); font-weight: 500; }
-.ledger-inspector section { border-bottom: 1px solid var(--border-color); padding: 10px; }
-.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: var(--font-size-caption); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.ledger-inspector p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
-.ledger-inspector dl { margin: 0; }
-.ledger-inspector-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 3px 0; font-size: 12px; line-height: 1.35; }
-.ledger-inspector-row dt { color: var(--text-tertiary); }
-.ledger-inspector-row dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--text-primary); }
-.ledger-inspector-note { margin-top: 8px !important; color: var(--text-tertiary) !important; }
+.ledger-workspace {
+  min-width: 0;
+}
+.ledger-inspector {
+  height: 100%;
+  overflow: auto;
+  background: var(--color-surface-800);
+  color: var(--text-primary);
+}
+.ledger-index {
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.ledger-inspector section {
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px;
+}
+.ledger-inspector h2 {
+  margin: 0 0 7px;
+  color: var(--color-accent-blue);
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ledger-inspector p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ledger-inspector dl {
+  margin: 0;
+}
+.ledger-inspector-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.ledger-inspector-row dt {
+  color: var(--text-tertiary);
+}
+.ledger-inspector-row dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
+.ledger-inspector-note {
+  margin-top: 8px !important;
+  color: var(--text-tertiary) !important;
+}
 
 /* Stopgap: buttons and badges put text-white on a solid accent fill, which fails contrast on the light accents of the dark
    and high-contrast themes. They take the on-accent token until the component kit (WP-39) uses it directly. */
-[class~="text-white"][class*="bg-[var(--color-accent-"] { color: var(--color-on-accent); }
+[class~="text-white"][class*="bg-[var(--color-accent-"] {
+  color: var(--color-on-accent);
+}
 
-button, [role="button"], [role="tab"] { transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+button,
+[role="button"],
+[role="tab"] {
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Let Windows High Contrast supply the palette while preserving the ledger's structure. */
@@ -306,9 +446,18 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
   .ledger-inspector h2,
   .ledger-inspector-row dt,
   .ledger-inspector p,
-  .ledger-index { color: CanvasText; }
-  [data-separator] { background-color: CanvasText; background-image: none; }
-  [data-separator="hover"], [data-separator="active"], [data-separator="focus"] { background-color: Highlight; }
+  .ledger-index {
+    color: CanvasText;
+  }
+  [data-separator] {
+    background-color: CanvasText;
+    background-image: none;
+  }
+  [data-separator="hover"],
+  [data-separator="active"],
+  [data-separator="focus"] {
+    background-color: Highlight;
+  }
 }
 
 /* =============================================================================
@@ -322,10 +471,17 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
    Activity rail (UX-011). The selected activity is marked by a bar at the edge and a filled button, and
    `aria-current` says it to assistive technology: the colour is not the only sign.
    ============================================================================= */
-.activity-rail { width: 3.5rem; }
-.activity-rail[data-density="compact"] { width: 2.75rem; }
+.activity-rail {
+  width: 3.5rem;
+}
+.activity-rail[data-density="compact"] {
+  width: 2.75rem;
+}
 
-.activity-rail-item { position: relative; padding-block: 2px; }
+.activity-rail-item {
+  position: relative;
+  padding-block: 2px;
+}
 
 .activity-rail-item[data-active]::before {
   content: "";

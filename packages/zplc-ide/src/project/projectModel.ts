@@ -29,12 +29,14 @@ function isObject(value: unknown): value is JsonObject {
 
 function sameJson(left: unknown, right: unknown): boolean {
   if (left === right) return true;
-  if (Array.isArray(left) && Array.isArray(right)) return left.length === right.length && left.every((value, index) => sameJson(value, right[index]));
+  if (Array.isArray(left) && Array.isArray(right))
+    return left.length === right.length && left.every((value, index) => sameJson(value, right[index]));
   if (!isObject(left) || !isObject(right)) return false;
   const leftKeys = Object.keys(left).sort();
   const rightKeys = Object.keys(right).sort();
-  return leftKeys.length === rightKeys.length
-    && leftKeys.every((key, index) => key === rightKeys[index] && sameJson(left[key], right[key]));
+  return (
+    leftKeys.length === rightKeys.length && leftKeys.every((key, index) => key === rightKeys[index] && sameJson(left[key], right[key]))
+  );
 }
 
 function invalid(path: string, message: string): ProjectModelResult {
@@ -55,15 +57,23 @@ function isPriority(value: unknown): value is number {
 
 function validateSafety(value: unknown): ProjectModelResult | undefined {
   if (value === undefined) return undefined;
-  if (!isObject(value) || Object.keys(value).length !== 1 || !Object.hasOwn(value, 'incompatibleOutputs')) return invalid('safety', 'Safety declaration is invalid');
+  if (!isObject(value) || Object.keys(value).length !== 1 || !Object.hasOwn(value, 'incompatibleOutputs'))
+    return invalid('safety', 'Safety declaration is invalid');
   const pairs = value.incompatibleOutputs;
-  if (!Array.isArray(pairs) || pairs.length === 0 || pairs.length > PROJECT_MAX_INCOMPATIBLE_OUTPUTS) return invalid('safety.incompatibleOutputs', 'Safety incompatible output pairs are invalid');
+  if (!Array.isArray(pairs) || pairs.length === 0 || pairs.length > PROJECT_MAX_INCOMPATIBLE_OUTPUTS)
+    return invalid('safety.incompatibleOutputs', 'Safety incompatible output pairs are invalid');
   const seen = new Set<string>();
   for (let index = 0; index < pairs.length; index += 1) {
     const pair = pairs[index];
-    if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((signal) => typeof signal === 'string' && signal.length <= 128 && PROJECT_SIGNAL.test(signal))) return invalid(`safety.incompatibleOutputs[${index}]`, 'Safety incompatible output pair is invalid');
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      !pair.every((signal) => typeof signal === 'string' && signal.length <= 128 && PROJECT_SIGNAL.test(signal))
+    )
+      return invalid(`safety.incompatibleOutputs[${index}]`, 'Safety incompatible output pair is invalid');
     const [left, right] = pair as [string, string];
-    if (left === right) return invalid(`safety.incompatibleOutputs[${index}]`, 'Safety incompatible output pair must contain distinct outputs');
+    if (left === right)
+      return invalid(`safety.incompatibleOutputs[${index}]`, 'Safety incompatible output pair must contain distinct outputs');
     const key = [left, right].sort().join('\u0000');
     if (seen.has(key)) return invalid(`safety.incompatibleOutputs[${index}]`, 'Safety incompatible output pair is duplicated');
     seen.add(key);
@@ -79,7 +89,10 @@ function findCredentialNamedPaths(value: unknown, path = '', seen = new WeakSet<
   for (const [key, child] of Object.entries(value)) {
     const childPath = Array.isArray(value) ? `${path}[${key}]` : path ? `${path}.${key}` : key;
     const normalized = key.replace(/[_-]/g, '').toLowerCase();
-    const isCredential = /(?:password|passwd|secret|secretkey|token|apikey|accesskey|privatekey(?:path)?|saskey|credential(?:s)?|bearer|psk)$/.test(normalized);
+    const isCredential =
+      /(?:password|passwd|secret|secretkey|token|apikey|accesskey|privatekey(?:path)?|saskey|credential(?:s)?|bearer|psk)$/.test(
+        normalized,
+      );
     if (isCredential && child !== undefined && child !== null && (typeof child !== 'string' || child.trim().length > 0)) {
       paths.push(childPath);
     }
@@ -105,7 +118,8 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
   }
 
   const rawVersion = project.schemaVersion;
-  if (rawVersion !== undefined && rawVersion !== 1 && rawVersion !== 2) return invalid('schemaVersion', 'Unsupported project schema version');
+  if (rawVersion !== undefined && rawVersion !== 1 && rawVersion !== 2)
+    return invalid('schemaVersion', 'Unsupported project schema version');
   const sourceSchemaVersion: 1 | 2 = rawVersion === 2 ? 2 : 1;
   const changes: ProjectMigrationChange[] = [];
   const changedPaths = new Set<string>();
@@ -166,7 +180,10 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
     if (task.trigger === undefined) {
       change('add', `/tasks/${index}/trigger`);
       task.trigger = hasType && typeof task.type === 'string' ? task.type.toLowerCase() : hasType ? task.type : 'cyclic';
-    } else if (hasType && (typeof task.type !== 'string' || typeof task.trigger !== 'string' || task.type.toLowerCase() !== task.trigger.toLowerCase())) {
+    } else if (
+      hasType &&
+      (typeof task.type !== 'string' || typeof task.trigger !== 'string' || task.type.toLowerCase() !== task.trigger.toLowerCase())
+    ) {
       return invalid(`${path}.type`, 'Legacy type conflicts with trigger');
     }
     if (hasType) {
@@ -199,12 +216,16 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
       delete task.watchdog;
     }
 
-    if (!Array.isArray(task.programs) || task.programs.length === 0 || !task.programs.every(isNonEmptyString)) return invalid(`${path}.programs`, 'Task programs must be a non-empty string array');
-    if (task.trigger !== 'cyclic' && task.trigger !== 'event' && task.trigger !== 'freewheeling') return invalid(`${path}.trigger`, 'Task trigger is invalid');
+    if (!Array.isArray(task.programs) || task.programs.length === 0 || !task.programs.every(isNonEmptyString))
+      return invalid(`${path}.programs`, 'Task programs must be a non-empty string array');
+    if (task.trigger !== 'cyclic' && task.trigger !== 'event' && task.trigger !== 'freewheeling')
+      return invalid(`${path}.trigger`, 'Task trigger is invalid');
     if (!isPositiveInteger(task.interval_ms)) return invalid(`${path}.interval_ms`, 'Task interval must be a positive integer');
     if (!isPriority(task.priority)) return invalid(`${path}.priority`, 'Task priority must be an integer from 0 to 255');
   }
 
-  changes.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : left.op < right.op ? -1 : left.op > right.op ? 1 : 0);
+  changes.sort((left, right) =>
+    left.path < right.path ? -1 : left.path > right.path ? 1 : left.op < right.op ? -1 : left.op > right.op ? 1 : 0,
+  );
   return { ok: true, project: project as unknown as ZPLCProjectV2, sourceSchemaVersion, changed: changes.length > 0, changes };
 }

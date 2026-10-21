@@ -35,7 +35,7 @@ import type { TagDef, TaskDef } from './index';
  */
 function toHex(arr: Uint8Array): string {
     return Array.from(arr)
-        .map(b => b.toString(16).padStart(2, '0'))
+        .map((b) => b.toString(16).padStart(2, '0'))
         .join(' ');
 }
 
@@ -78,10 +78,10 @@ describe('Opcodes', () => {
         expect(Opcode.RET).toBe(0x94);
 
         // Type conversion
-        expect(Opcode.I2F).toBe(0xA0);
-        expect(Opcode.F2I).toBe(0xA1);
-        expect(Opcode.COMM_EXEC).toBe(0xD0);
-        expect(Opcode.COMM_STATUS).toBe(0xD1);
+        expect(Opcode.I2F).toBe(0xa0);
+        expect(Opcode.F2I).toBe(0xa1);
+        expect(Opcode.COMM_EXEC).toBe(0xd0);
+        expect(Opcode.COMM_STATUS).toBe(0xd1);
     });
 
     test('operand sizes are correct', () => {
@@ -106,7 +106,7 @@ describe('Opcodes', () => {
         expect(getOperandSize(Opcode.COMM_EXEC)).toBe(4);
 
         // Special cases: no operand despite range
-        expect(getOperandSize(Opcode.RET)).toBe(0);  // 0x94 is in 16-bit range but has no operand
+        expect(getOperandSize(Opcode.RET)).toBe(0); // 0x94 is in 16-bit range but has no operand
         expect(getOperandSize(Opcode.I2F)).toBe(0);
         expect(getOperandSize(Opcode.F2I)).toBe(0);
         expect(getOperandSize(Opcode.ZEXT16)).toBe(0);
@@ -128,7 +128,7 @@ describe('parseNumber', () => {
     test('hexadecimal numbers', () => {
         expect(parseNumber('0x0')).toBe(0);
         expect(parseNumber('0x1234')).toBe(0x1234);
-        expect(parseNumber('0xABCD')).toBe(0xABCD);
+        expect(parseNumber('0xABCD')).toBe(0xabcd);
         expect(parseNumber('0Xff')).toBe(255);
     });
 
@@ -180,7 +180,7 @@ describe('Simple assembly', () => {
     test('PUSH32 with immediate', () => {
         const result = assembleRaw('PUSH32 0x12345678');
         // PUSH32 = 0xC0, value = 0x12345678 little-endian = 0x78 0x56 0x34 0x12
-        expect(result).toEqual(new Uint8Array([0xC0, 0x78, 0x56, 0x34, 0x12]));
+        expect(result).toEqual(new Uint8Array([0xc0, 0x78, 0x56, 0x34, 0x12]));
     });
 
     test('comments are ignored', () => {
@@ -252,7 +252,7 @@ describe('Label resolution', () => {
         `);
         // NOP at 0, JR at 1, loop at 0
         // Offset = 0 - 3 = -3 = 0xFD (signed byte)
-        expect(result).toEqual(new Uint8Array([0x00, 0x50, 0xFD]));
+        expect(result).toEqual(new Uint8Array([0x00, 0x50, 0xfd]));
     });
 });
 
@@ -268,22 +268,22 @@ describe('Error handling', () => {
 
     test('missing operand', () => {
         const error = validate('LOAD16');
-        expect(error).toContain("requires an operand");
+        expect(error).toContain('requires an operand');
     });
 
     test('unexpected operand', () => {
         const error = validate('NOP 123');
-        expect(error).toContain("takes no operand");
+        expect(error).toContain('takes no operand');
     });
 
     test('undefined label', () => {
         const error = validate('JMP undefined_label');
-        expect(error).toContain("Undefined label");
+        expect(error).toContain('Undefined label');
     });
 
     test('duplicate label', () => {
         const error = validate('foo:\nfoo:');
-        expect(error).toContain("Duplicate label");
+        expect(error).toContain('Duplicate label');
     });
 });
 
@@ -303,17 +303,17 @@ describe('ZPLC file format', () => {
         const view = new DataView(result.zplcFile.buffer);
         expect(view.getUint32(0, true)).toBe(ZPLC_CONSTANTS.MAGIC);
         // Also check the ASCII representation
-        expect(result.zplcFile[0]).toBe(0x5A); // 'Z'
+        expect(result.zplcFile[0]).toBe(0x5a); // 'Z'
         expect(result.zplcFile[1]).toBe(0x50); // 'P'
-        expect(result.zplcFile[2]).toBe(0x4C); // 'L'
+        expect(result.zplcFile[2]).toBe(0x4c); // 'L'
         expect(result.zplcFile[3]).toBe(0x43); // 'C'
     });
 
     test('version is 1.0', () => {
         const result = assemble('HALT');
         const view = new DataView(result.zplcFile.buffer);
-        expect(view.getUint16(4, true)).toBe(1);  // major
-        expect(view.getUint16(6, true)).toBe(0);  // minor
+        expect(view.getUint16(4, true)).toBe(1); // major
+        expect(view.getUint16(6, true)).toBe(0); // minor
     });
 
     // CMP-052: the draft contract counter sits in header word 28, under the CRC, in every artifact.
@@ -325,10 +325,9 @@ describe('ZPLC file format', () => {
     });
 
     test('multi-task artifact carries the draft counter at offset 28', () => {
-        const zplcFile = createMultiTaskZplcFile(
-            new Uint8Array([0x00, 0x01]),
-            [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 }],
-        );
+        const zplcFile = createMultiTaskZplcFile(new Uint8Array([0x00, 0x01]), [
+            { id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 },
+        ]);
         expect(new DataView(zplcFile.buffer).getUint32(28, true)).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
     });
 
@@ -346,13 +345,13 @@ describe('ZPLC file format', () => {
     test('code size is correct', () => {
         const result = assemble('NOP\nNOP\nHALT');
         const view = new DataView(result.zplcFile.buffer);
-        expect(view.getUint32(16, true)).toBe(3);  // code_size
+        expect(view.getUint32(16, true)).toBe(3); // code_size
     });
 
     test('segment count is 2: the code and the build identity', () => {
         const result = assemble('HALT');
         const view = new DataView(result.zplcFile.buffer);
-        expect(view.getUint16(26, true)).toBe(2);  // segment_count
+        expect(view.getUint16(26, true)).toBe(2); // segment_count
     });
 
     test('crc32 is non-zero and verifiable', () => {
@@ -373,7 +372,7 @@ describe('ZPLC file format', () => {
     test('crc32 matches Python zlib.crc32 for same payload', () => {
         // Known test vector: "123456789" -> 0xCBF43926
         const testData = new TextEncoder().encode('123456789');
-        expect(crc32(testData)).toBe(0xCBF43926);
+        expect(crc32(testData)).toBe(0xcbf43926);
     });
 });
 
@@ -418,14 +417,14 @@ describe('Golden file comparison', () => {
 
 describe('Disassembler', () => {
     test('disassemble simple program', () => {
-        const bytecode = new Uint8Array([0x00, 0x01]);  // NOP, HALT
+        const bytecode = new Uint8Array([0x00, 0x01]); // NOP, HALT
         const output = disassemble(bytecode);
         expect(output).toContain('NOP');
         expect(output).toContain('HALT');
     });
 
     test('disassemble with operands', () => {
-        const bytecode = new Uint8Array([0x81, 0x34, 0x12]);  // LOAD16 0x1234
+        const bytecode = new Uint8Array([0x81, 0x34, 0x12]); // LOAD16 0x1234
         const output = disassemble(bytecode);
         expect(output).toContain('LOAD16');
         expect(output).toContain('1234');
@@ -481,11 +480,17 @@ describe('Integration', () => {
         // STORE16 0x1000 = 0x85 0x00 0x10
         // HALT = 0x01
         const expected = new Uint8Array([
-            0x81, 0x00, 0x00,  // LOAD16 0x0000
-            0x81, 0x02, 0x00,  // LOAD16 0x0002
-            0x20,              // ADD
-            0x85, 0x00, 0x10,  // STORE16 0x1000
-            0x01               // HALT
+            0x81,
+            0x00,
+            0x00, // LOAD16 0x0000
+            0x81,
+            0x02,
+            0x00, // LOAD16 0x0002
+            0x20, // ADD
+            0x85,
+            0x00,
+            0x10, // STORE16 0x1000
+            0x01, // HALT
         ]);
 
         expect(toHex(result.bytecode)).toBe(toHex(expected));
@@ -505,7 +510,7 @@ describe('Multi-Task Support', () => {
         const zplcFile = createMultiTaskZplcFile(
             new Uint8Array([0x00, 0x01]),
             [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 }],
-            [{ varAddr: 0x2000, varType: 0x0A, tagId: 2, value: 40001 }],
+            [{ varAddr: 0x2000, varType: 0x0a, tagId: 2, value: 40001 }],
         );
 
         expect(toHex(zplcFile).replaceAll(' ', '')).toBe(fixture);
@@ -531,11 +536,11 @@ describe('Multi-Task Support', () => {
         expect(view.getUint32(0, true)).toBe(ZPLC_CONSTANTS.MAGIC);
 
         // Check version
-        expect(view.getUint16(4, true)).toBe(1);  // major
-        expect(view.getUint16(6, true)).toBe(0);  // minor
+        expect(view.getUint16(4, true)).toBe(1); // major
+        expect(view.getUint16(6, true)).toBe(0); // minor
 
         // Check code_size (at offset 16)
-        expect(view.getUint32(16, true)).toBe(2);  // bytecode length
+        expect(view.getUint32(16, true)).toBe(2); // bytecode length
 
         // Check data_size (task segment 1 task * 16 bytes + build identity 4 bytes)
         expect(view.getUint32(20, true)).toBe(16 + 4);
@@ -549,9 +554,7 @@ describe('Multi-Task Support', () => {
 
     test('createMultiTaskZplcFile generates correct segment table', () => {
         const bytecode = new Uint8Array([0x01]); // HALT
-        const tasks: TaskDef[] = [
-            { id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 },
-        ];
+        const tasks: TaskDef[] = [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 }];
 
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
         const view = new DataView(zplcFile.buffer);
@@ -559,17 +562,17 @@ describe('Multi-Task Support', () => {
         // Segment table starts at offset 32 (after header)
         // Segment 1: CODE
         expect(view.getUint16(32, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_CODE);
-        expect(view.getUint16(34, true)).toBe(0);  // flags
-        expect(view.getUint32(36, true)).toBe(1);  // size = bytecode length
+        expect(view.getUint16(34, true)).toBe(0); // flags
+        expect(view.getUint32(36, true)).toBe(1); // size = bytecode length
 
         // Segment 2: TASK
         expect(view.getUint16(40, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TASK);
-        expect(view.getUint16(42, true)).toBe(0);  // flags
+        expect(view.getUint16(42, true)).toBe(0); // flags
         expect(view.getUint32(44, true)).toBe(16); // size = 1 task * 16 bytes
 
         // Segment 3: BUILD
         expect(view.getUint16(48, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD);
-        expect(view.getUint16(50, true)).toBe(0);  // flags
+        expect(view.getUint16(50, true)).toBe(0); // flags
         expect(view.getUint32(52, true)).toBe(ZPLC_CONSTANTS.BUILD_ENTRY_SIZE);
     });
 
@@ -588,23 +591,23 @@ describe('Multi-Task Support', () => {
         const taskSegmentStart = 32 + 24 + 64;
 
         // Task 1 (16 bytes)
-        expect(view.getUint16(taskSegmentStart + 0, true)).toBe(1);      // id
-        expect(view.getUint8(taskSegmentStart + 2)).toBe(0);             // type (CYCLIC)
-        expect(view.getUint8(taskSegmentStart + 3)).toBe(0);             // priority
-        expect(view.getUint32(taskSegmentStart + 4, true)).toBe(10000);  // interval_us
-        expect(view.getUint16(taskSegmentStart + 8, true)).toBe(0);      // entry_point
-        expect(view.getUint16(taskSegmentStart + 10, true)).toBe(64);    // stack_size
-        expect(view.getUint16(taskSegmentStart + 12, true)).toBe(0);     // call_depth: not declared
-        expect(view.getUint16(taskSegmentStart + 14, true)).toBe(0);     // reserved
+        expect(view.getUint16(taskSegmentStart + 0, true)).toBe(1); // id
+        expect(view.getUint8(taskSegmentStart + 2)).toBe(0); // type (CYCLIC)
+        expect(view.getUint8(taskSegmentStart + 3)).toBe(0); // priority
+        expect(view.getUint32(taskSegmentStart + 4, true)).toBe(10000); // interval_us
+        expect(view.getUint16(taskSegmentStart + 8, true)).toBe(0); // entry_point
+        expect(view.getUint16(taskSegmentStart + 10, true)).toBe(64); // stack_size
+        expect(view.getUint16(taskSegmentStart + 12, true)).toBe(0); // call_depth: not declared
+        expect(view.getUint16(taskSegmentStart + 14, true)).toBe(0); // reserved
 
         // Task 2 (16 bytes, starts at taskSegmentStart + 16)
         const task2Offset = taskSegmentStart + 16;
-        expect(view.getUint16(task2Offset + 0, true)).toBe(2);           // id
-        expect(view.getUint8(task2Offset + 2)).toBe(0);                  // type (CYCLIC)
-        expect(view.getUint8(task2Offset + 3)).toBe(2);                  // priority
-        expect(view.getUint32(task2Offset + 4, true)).toBe(100000);      // interval_us
-        expect(view.getUint16(task2Offset + 8, true)).toBe(50);          // entry_point
-        expect(view.getUint16(task2Offset + 10, true)).toBe(128);        // stack_size
+        expect(view.getUint16(task2Offset + 0, true)).toBe(2); // id
+        expect(view.getUint8(task2Offset + 2)).toBe(0); // type (CYCLIC)
+        expect(view.getUint8(task2Offset + 3)).toBe(2); // priority
+        expect(view.getUint32(task2Offset + 4, true)).toBe(100000); // interval_us
+        expect(view.getUint16(task2Offset + 8, true)).toBe(50); // entry_point
+        expect(view.getUint16(task2Offset + 10, true)).toBe(128); // stack_size
     });
 
     test('total file size is correct for multi-task', () => {
@@ -622,12 +625,8 @@ describe('Multi-Task Support', () => {
 
     test('createMultiTaskZplcFile includes TAGS segment when tags are provided', () => {
         const bytecode = new Uint8Array([0x01]);
-        const tasks: TaskDef[] = [
-            { id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 },
-        ];
-        const tags: TagDef[] = [
-            { varAddr: 0x2000, varType: 0x0A, tagId: 2, value: 40001 },
-        ];
+        const tasks: TaskDef[] = [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 }];
+        const tags: TagDef[] = [{ varAddr: 0x2000, varType: 0x0a, tagId: 2, value: 40001 }];
 
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks, tags);
         const view = new DataView(zplcFile.buffer);
@@ -681,8 +680,7 @@ describe('Multi-Task Support', () => {
 
         expect(ZPLC_CONSTANTS.MAX_TASKS).toBe(16);
         expect(() => createMultiTaskZplcFile(bytecode, maximum)).not.toThrow();
-        expect(() => createMultiTaskZplcFile(bytecode, [...maximum, task(16)]))
-            .toThrow(/at most 16 tasks/i);
+        expect(() => createMultiTaskZplcFile(bytecode, [...maximum, task(16)])).toThrow(/at most 16 tasks/i);
     });
 
     test('admits only the portable loader CODE maximum', () => {
@@ -696,8 +694,7 @@ describe('Multi-Task Support', () => {
         };
 
         expect(() => createMultiTaskZplcFile(new Uint8Array(ZPLC_CONSTANTS.CODE_SIZE_MAX), [task])).not.toThrow();
-        expect(() => createMultiTaskZplcFile(new Uint8Array(ZPLC_CONSTANTS.CODE_SIZE_MAX + 1), [task]))
-            .toThrow(/CODE.*45056/);
+        expect(() => createMultiTaskZplcFile(new Uint8Array(ZPLC_CONSTANTS.CODE_SIZE_MAX + 1), [task])).toThrow(/CODE.*45056/);
     });
 });
 
@@ -709,7 +706,9 @@ describe('Bytecode Relocation', () => {
     test('relocateBytecode adjusts JMP addresses', () => {
         // JMP 0x0010 -> JMP 0x0110 when relocated by 0x100
         const bytecode = new Uint8Array([
-            Opcode.JMP, 0x10, 0x00,  // JMP 0x0010 (little-endian)
+            Opcode.JMP,
+            0x10,
+            0x00, // JMP 0x0010 (little-endian)
             Opcode.HALT,
         ]);
 
@@ -723,7 +722,9 @@ describe('Bytecode Relocation', () => {
     test('relocateBytecode adjusts JZ addresses', () => {
         // JZ 0x0015 -> JZ 0x003d when relocated by 0x28
         const bytecode = new Uint8Array([
-            Opcode.JZ, 0x15, 0x00,  // JZ 0x0015
+            Opcode.JZ,
+            0x15,
+            0x00, // JZ 0x0015
             Opcode.HALT,
         ]);
 
@@ -736,7 +737,9 @@ describe('Bytecode Relocation', () => {
     test('relocateBytecode adjusts JNZ addresses', () => {
         // JNZ 0x0036 -> JNZ 0x0073 when relocated by 0x3d
         const bytecode = new Uint8Array([
-            Opcode.JNZ, 0x36, 0x00,  // JNZ 0x0036
+            Opcode.JNZ,
+            0x36,
+            0x00, // JNZ 0x0036
             Opcode.HALT,
         ]);
 
@@ -749,7 +752,9 @@ describe('Bytecode Relocation', () => {
     test('relocateBytecode adjusts CALL addresses', () => {
         // CALL 0x0020 -> CALL 0x0120 when relocated by 0x100
         const bytecode = new Uint8Array([
-            Opcode.CALL, 0x20, 0x00,  // CALL 0x0020
+            Opcode.CALL,
+            0x20,
+            0x00, // CALL 0x0020
             Opcode.HALT,
         ]);
 
@@ -762,25 +767,32 @@ describe('Bytecode Relocation', () => {
     test('relocateBytecode does NOT adjust relative jumps (JR, JRZ, JRNZ)', () => {
         // Relative jumps use signed 8-bit offset, not absolute address
         const bytecode = new Uint8Array([
-            Opcode.JR, 0x10,    // JR +16
-            Opcode.JRZ, 0xF0,   // JRZ -16 (signed)
-            Opcode.JRNZ, 0x05,  // JRNZ +5
+            Opcode.JR,
+            0x10, // JR +16
+            Opcode.JRZ,
+            0xf0, // JRZ -16 (signed)
+            Opcode.JRNZ,
+            0x05, // JRNZ +5
             Opcode.HALT,
         ]);
 
         relocateBytecode(bytecode, 0x100);
 
         // Relative jumps should be unchanged
-        expect(bytecode[1]).toBe(0x10);  // JR still +16
-        expect(bytecode[3]).toBe(0xF0);  // JRZ still -16
-        expect(bytecode[5]).toBe(0x05);  // JRNZ still +5
+        expect(bytecode[1]).toBe(0x10); // JR still +16
+        expect(bytecode[3]).toBe(0xf0); // JRZ still -16
+        expect(bytecode[5]).toBe(0x05); // JRNZ still +5
     });
 
     test('relocateBytecode does NOT adjust LOAD/STORE addresses', () => {
         // LOAD/STORE use memory addresses, not code addresses
         const bytecode = new Uint8Array([
-            Opcode.LOAD16, 0x00, 0x20,   // LOAD16 0x2000
-            Opcode.STORE16, 0x00, 0x10,  // STORE16 0x1000
+            Opcode.LOAD16,
+            0x00,
+            0x20, // LOAD16 0x2000
+            Opcode.STORE16,
+            0x00,
+            0x10, // STORE16 0x1000
             Opcode.HALT,
         ]);
 
@@ -793,10 +805,7 @@ describe('Bytecode Relocation', () => {
     });
 
     test('relocateBytecode handles zero offset (no-op)', () => {
-        const original = new Uint8Array([
-            Opcode.JMP, 0x10, 0x00,
-            Opcode.HALT,
-        ]);
+        const original = new Uint8Array([Opcode.JMP, 0x10, 0x00, Opcode.HALT]);
         const bytecode = new Uint8Array(original);
 
         relocateBytecode(bytecode, 0);
@@ -807,30 +816,39 @@ describe('Bytecode Relocation', () => {
 
     test('relocateBytecode handles multiple jumps in sequence', () => {
         const bytecode = new Uint8Array([
-            Opcode.PUSH8, 0x01,          // 0x00: PUSH8 1
-            Opcode.JZ, 0x10, 0x00,       // 0x02: JZ 0x0010
-            Opcode.JNZ, 0x15, 0x00,      // 0x05: JNZ 0x0015
-            Opcode.JMP, 0x20, 0x00,      // 0x08: JMP 0x0020
-            Opcode.HALT,                  // 0x0B: HALT
+            Opcode.PUSH8,
+            0x01, // 0x00: PUSH8 1
+            Opcode.JZ,
+            0x10,
+            0x00, // 0x02: JZ 0x0010
+            Opcode.JNZ,
+            0x15,
+            0x00, // 0x05: JNZ 0x0015
+            Opcode.JMP,
+            0x20,
+            0x00, // 0x08: JMP 0x0020
+            Opcode.HALT, // 0x0B: HALT
         ]);
 
         relocateBytecode(bytecode, 0x50);
 
         const view = new DataView(bytecode.buffer);
-        expect(view.getUint16(3, true)).toBe(0x0060);   // JZ 0x0010 + 0x50 = 0x0060
-        expect(view.getUint16(6, true)).toBe(0x0065);   // JNZ 0x0015 + 0x50 = 0x0065
-        expect(view.getUint16(9, true)).toBe(0x0070);   // JMP 0x0020 + 0x50 = 0x0070
+        expect(view.getUint16(3, true)).toBe(0x0060); // JZ 0x0010 + 0x50 = 0x0060
+        expect(view.getUint16(6, true)).toBe(0x0065); // JNZ 0x0015 + 0x50 = 0x0065
+        expect(view.getUint16(9, true)).toBe(0x0070); // JMP 0x0020 + 0x50 = 0x0070
     });
 
     test('relocateBytecode refuses a relocation past 16 bits instead of wrapping it (CMP-049)', () => {
         // Address 0xFF00 + 0x200 = 0x10100 does not fit the 16-bit field
         const bytecode = new Uint8Array([
-            Opcode.JMP, 0x00, 0xFF,  // JMP 0xFF00
+            Opcode.JMP,
+            0x00,
+            0xff, // JMP 0xFF00
             Opcode.HALT,
         ]);
 
         expect(() => relocateBytecode(bytecode, 0x200)).toThrow(/16-bit/);
         expect(bytecode[1]).toBe(0x00);
-        expect(bytecode[2]).toBe(0xFF);
+        expect(bytecode[2]).toBe(0xff);
     });
 });

@@ -15,14 +15,8 @@
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
 
-static void hil_shell_sink(void *context, const char *line)
-{
-    shell_print((const struct shell *)context, "%s", line);
-}
+static void hil_shell_sink(void *context, const char *line) { shell_print((const struct shell *)context, "%s", line); }
 
-void hil_set_shell(const struct shell *sh)
-{
-    hil_set_sink(sh != NULL ? hil_shell_sink : NULL, (void *)sh);
-}
+void hil_set_shell(const struct shell *sh) { hil_set_sink(sh != NULL ? hil_shell_sink : NULL, (void *)sh); }
 
 #endif /* CONFIG_ZPLC_HIL_DEBUG */

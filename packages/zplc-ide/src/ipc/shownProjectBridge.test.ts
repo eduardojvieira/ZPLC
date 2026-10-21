@@ -4,26 +4,56 @@ import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { chooseProjectFolder } from './projectFilesHandles';
 
 // The store reads the example projects with a Vite-only glob; the example list does not matter here.
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { useIDEStore } = await import('../store/useIDEStore');
 const { shownProjectBridge } = await import('./shownProjectBridge');
 
-const NOT_REACHED = async () => { throw new Error('the bridge must not be called'); };
+const NOT_REACHED = async () => {
+  throw new Error('the bridge must not be called');
+};
 const projectFiles = (rootId: string): ProjectFilesBridge => ({
   chooseFolder: async () => ({ ok: true, value: { rootId, name: 'plant' } }),
-  list: NOT_REACHED, stat: NOT_REACHED, read: NOT_REACHED, write: NOT_REACHED, mkdir: NOT_REACHED, remove: NOT_REACHED, rename: NOT_REACHED,
-  listRecent: NOT_REACHED, openRecent: NOT_REACHED, forgetRecent: NOT_REACHED, markOpened: NOT_REACHED,
+  list: NOT_REACHED,
+  stat: NOT_REACHED,
+  read: NOT_REACHED,
+  write: NOT_REACHED,
+  mkdir: NOT_REACHED,
+  remove: NOT_REACHED,
+  rename: NOT_REACHED,
+  listRecent: NOT_REACHED,
+  openRecent: NOT_REACHED,
+  forgetRecent: NOT_REACHED,
+  markOpened: NOT_REACHED,
 });
 
 const sent: Array<{ operation: string; request: unknown }> = [];
 const bridge = {
   registerProjectFile: async () => null,
-  registerProjectRoot: async (request: unknown) => { sent.push({ operation: 'registerProjectRoot', request }); return null; },
+  registerProjectRoot: async (request: unknown) => {
+    sent.push({ operation: 'registerProjectRoot', request });
+    return null;
+  },
   cancel: async () => ({ requested: false }),
-  run: async (request: unknown) => { sent.push({ operation: 'run', request }); return null; },
-  compile: async (request: unknown) => { sent.push({ operation: 'compile', request }); return null; },
-  safetyCheck: async (request: unknown) => { sent.push({ operation: 'safetyCheck', request }); return null; },
-  lessonCheck: async (request: unknown) => { sent.push({ operation: 'lessonCheck', request }); return null; },
+  run: async (request: unknown) => {
+    sent.push({ operation: 'run', request });
+    return null;
+  },
+  compile: async (request: unknown) => {
+    sent.push({ operation: 'compile', request });
+    return null;
+  },
+  safetyCheck: async (request: unknown) => {
+    sent.push({ operation: 'safetyCheck', request });
+    return null;
+  },
+  lessonCheck: async (request: unknown) => {
+    sent.push({ operation: 'lessonCheck', request });
+    return null;
+  },
 };
 
 afterEach(() => {

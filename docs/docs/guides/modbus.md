@@ -3,7 +3,7 @@ slug: /guides/modbus
 id: modbus
 title: Use Modbus RTU and TCP
 sidebar_label: Modbus RTU and TCP
-description: "Make a controller answer a Modbus master, and read or write another Modbus device from the program, with the contract that exists today."
+description: 'Make a controller answer a Modbus master, and read or write another Modbus device from the program, with the contract that exists today.'
 tags: [how-to, modbus, communication]
 ---
 
@@ -60,13 +60,13 @@ A variable of 32 bits (`REAL`, `DINT`, `UDINT`, `DWORD`) occupies two consecutiv
 registers; the others occupy one. The number of the tag says the area, in the notation
 of the Modbus world:
 
-| `N` | Area | Address on the wire | A master can |
-| --- | --- | --- | --- |
-| 10001 to 19999 | Discrete input | `N - 10001` | read it (function 2) |
-| 30001 to 39999 | Input register | `N - 30001` | read it (function 4) |
-| 40001 to 49999 | Holding register | `N - 40001` | read it (function 3) and write it (6, 16) |
-| any other number, a `BOOL` | Coil | `N` | read it (function 1) and write it (5, 15) |
-| any other number, another type | Holding register | `N` | read it (function 3) and write it (6, 16) |
+| `N`                            | Area             | Address on the wire | A master can                              |
+| ------------------------------ | ---------------- | ------------------- | ----------------------------------------- |
+| 10001 to 19999                 | Discrete input   | `N - 10001`         | read it (function 2)                      |
+| 30001 to 39999                 | Input register   | `N - 30001`         | read it (function 4)                      |
+| 40001 to 49999                 | Holding register | `N - 40001`         | read it (function 3) and write it (6, 16) |
+| any other number, a `BOOL`     | Coil             | `N`                 | read it (function 1) and write it (5, 15) |
+| any other number, another type | Holding register | `N`                 | read it (function 3) and write it (6, 16) |
 
 In the example, `Pressure` is the holding register at address 0 and `PumpRun` is the
 coil at address 1. Keep the ranges of two variables of the same area apart.
@@ -190,17 +190,17 @@ endpoints yet.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| Server framing and mapping of every function code, bad lengths, unmapped ranges | Tests that put frames in front of the server | Host and `native_sim` |
-| A master write cannot change run state, forces or the loaded program | Link-level check and an authority test | Host and `native_sim` |
-| A forced variable keeps its value under a master write | A test with a recording exchange | Host and `native_sim` |
-| The four areas are four address spaces, and the whole of WORK and RETAIN is served | A firmware test that loads a program with the tags of the four areas, the edges of WORK and RETAIN and address 65535, and reads and writes them through the seams both servers end in | `native_sim` |
-| Function-block handlers: pins, handshake, status codes, reset while a request is in flight | Tests with a stand-in client | Host and `native_sim` |
-| The Modbus TCP client: success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy | Its transaction code is one file compiled in the controller and in the simulation runtime, and runs against a server written for the test on loopback in both | `native_sim` and host |
-| The Modbus RTU client | Only its interface parameters are checked (the timeout is in the unit the Zephyr Modbus client reads); no serial device is used | `native_sim` |
-| An exchange with a real device, a serial wire, a third-party master | Not tested | None |
-| Timing of a request on a real line, behaviour under line errors | Not tested | None |
+| Part                                                                                                                            | Verified                                                                                                                                                                              | Level                 |
+| ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| Server framing and mapping of every function code, bad lengths, unmapped ranges                                                 | Tests that put frames in front of the server                                                                                                                                          | Host and `native_sim` |
+| A master write cannot change run state, forces or the loaded program                                                            | Link-level check and an authority test                                                                                                                                                | Host and `native_sim` |
+| A forced variable keeps its value under a master write                                                                          | A test with a recording exchange                                                                                                                                                      | Host and `native_sim` |
+| The four areas are four address spaces, and the whole of WORK and RETAIN is served                                              | A firmware test that loads a program with the tags of the four areas, the edges of WORK and RETAIN and address 65535, and reads and writes them through the seams both servers end in | `native_sim`          |
+| Function-block handlers: pins, handshake, status codes, reset while a request is in flight                                      | Tests with a stand-in client                                                                                                                                                          | Host and `native_sim` |
+| The Modbus TCP client: success, a response in pieces, exception, silence, a closed connection, a refused port, reset while busy | Its transaction code is one file compiled in the controller and in the simulation runtime, and runs against a server written for the test on loopback in both                         | `native_sim` and host |
+| The Modbus RTU client                                                                                                           | Only its interface parameters are checked (the timeout is in the unit the Zephyr Modbus client reads); no serial device is used                                                       | `native_sim`          |
+| An exchange with a real device, a serial wire, a third-party master                                                             | Not tested                                                                                                                                                                            | None                  |
+| Timing of a request on a real line, behaviour under line errors                                                                 | Not tested                                                                                                                                                                            | None                  |
 
 ## See also
 

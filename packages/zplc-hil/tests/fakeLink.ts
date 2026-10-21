@@ -106,7 +106,9 @@ export class FakeLink implements DeviceLink {
 
   forces(): Promise<ForceEntry[]> {
     this.enter('forces');
-    return Promise.resolve([...this.forced].map(([address, value]) => ({ address, size: 1, bytesHex: value.toString(16).padStart(2, '0') })));
+    return Promise.resolve(
+      [...this.forced].map(([address, value]) => ({ address, size: 1, bytesHex: value.toString(16).padStart(2, '0') })),
+    );
   }
 
   close(): Promise<void> {

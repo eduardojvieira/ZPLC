@@ -30,7 +30,11 @@ export interface MonitoredValue {
  * The values of `variables` of the program of `sourceRef`, read while a program runs under Studio. A variable the map
  * does not have is returned as not known, and is not asked for. Only these values render the caller again (IDE-013).
  */
-export function useMonitoredVariables(sourceRef: string | undefined, variables: readonly string[], enabled = true): ReadonlyMap<string, MonitoredValue> {
+export function useMonitoredVariables(
+  sourceRef: string | undefined,
+  variables: readonly string[],
+  enabled = true,
+): ReadonlyMap<string, MonitoredValue> {
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const mode = useIDEStore((state) => state.debug.mode);
   const on = enabled && mode !== 'none' && sourceRef !== undefined && debugMap !== null;

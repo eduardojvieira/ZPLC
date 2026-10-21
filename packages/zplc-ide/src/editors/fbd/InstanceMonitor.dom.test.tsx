@@ -43,7 +43,10 @@ describe('Function-block instance monitor (UX-001, UX-025) in a DOM', () => {
     dom.patchStore(useIDEStore, { debug: { ...useIDEStore.getState().debug, mode: 'none' } } as never);
     const { user } = dom.render(<InstanceMonitor instanceName="Timer1" blockType="TON" onClose={() => undefined} />);
     const dialog = dom.screen.getByRole('dialog');
-    for (let step = 0; step < 4; step += 1) { await user.tab(); expect(dialog.contains(document.activeElement)).toBe(true); }
+    for (let step = 0; step < 4; step += 1) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
     expect(dom.screen.getByText(dom.t('editors.fbd.offline'))).toBeTruthy();
     expect(isFocused(document.body)).toBe(false);
   });

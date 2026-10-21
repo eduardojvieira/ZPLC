@@ -25,11 +25,11 @@ export const timerTests: HILTestCase[] = [
         type: 'timing',
         timing: {
           afterMs: 100,
-          tolerancePercent: 15
-        }
-      }
-    ]
-  }
+          tolerancePercent: 15,
+        },
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: timer blocks (HIL-001)', timerTests);

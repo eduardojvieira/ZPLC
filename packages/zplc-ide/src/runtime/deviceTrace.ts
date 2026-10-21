@@ -33,7 +33,11 @@ export interface DeviceTraceSample {
 }
 
 /** Samples from `from` on; `from` is later than asked when the ring overwrote the ones in between. */
-export interface DeviceTraceChunk { from: number; next: number; samples: DeviceTraceSample[] }
+export interface DeviceTraceChunk {
+  from: number;
+  next: number;
+  samples: DeviceTraceSample[];
+}
 
 export interface DeviceTrace {
   status(): Promise<DeviceTraceStatus>;
@@ -55,8 +59,18 @@ function malformed(what: string): never {
 export function parseDeviceTraceStatus(value: unknown): DeviceTraceStatus {
   const record = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   const { available, armed, capacity, in_bytes: inBytes, out_bytes: outBytes, written, first, max_io_bytes: maxIoBytes } = record;
-  if (typeof available !== 'boolean' || typeof armed !== 'boolean' || !isCount(capacity) || !isCount(inBytes) || !isCount(outBytes)
-    || !isCount(written) || !isCount(first) || !isCount(maxIoBytes) || first > written) malformed('status');
+  if (
+    typeof available !== 'boolean' ||
+    typeof armed !== 'boolean' ||
+    !isCount(capacity) ||
+    !isCount(inBytes) ||
+    !isCount(outBytes) ||
+    !isCount(written) ||
+    !isCount(first) ||
+    !isCount(maxIoBytes) ||
+    first > written
+  )
+    malformed('status');
   return { available, armed, capacity, inBytes, outBytes, written, first, maxIoBytes };
 }
 
@@ -70,7 +84,8 @@ export function parseDeviceTraceChunk(value: unknown): DeviceTraceChunk {
   const { from, next, samples } = record;
   if (!isCount(from) || !isCount(next) || !Array.isArray(samples) || next !== from + samples.length) malformed('chunk');
   return {
-    from, next,
+    from,
+    next,
     samples: samples.map((entry: unknown, index) => {
       if (!Array.isArray(entry) || entry.length !== 4 || !isCount(entry[0]) || !isCount(entry[1])) malformed('sample');
       return { seq: from + index, tUs: entry[0], batch: entry[1], inputs: bytesOf(entry[2]), outputs: bytesOf(entry[3]) };
@@ -92,8 +107,10 @@ export function shellDeviceTrace(json: (command: string) => Promise<unknown>): D
 export function nativeDeviceTrace(request: (method: string, params: Record<string, unknown>) => Promise<unknown>): DeviceTrace {
   return {
     status: async () => parseDeviceTraceStatus(await request('trace.status', {})),
-    arm: async (capacity, inBytes, outBytes) => parseDeviceTraceStatus(await request('trace.arm', { capacity, in_bytes: inBytes, out_bytes: outBytes })),
-    read: async (from, count) => parseDeviceTraceChunk(await request('trace.read', { from, count: Math.min(count, DEVICE_TRACE_READ_MAX) })),
+    arm: async (capacity, inBytes, outBytes) =>
+      parseDeviceTraceStatus(await request('trace.arm', { capacity, in_bytes: inBytes, out_bytes: outBytes })),
+    read: async (from, count) =>
+      parseDeviceTraceChunk(await request('trace.read', { from, count: Math.min(count, DEVICE_TRACE_READ_MAX) })),
     clear: async () => parseDeviceTraceStatus(await request('trace.clear', {})),
   };
 }

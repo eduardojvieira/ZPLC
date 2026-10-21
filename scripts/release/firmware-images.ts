@@ -30,7 +30,12 @@ export const LEARNER_BOARDS: readonly string[] = ['rpi_pico', 'esp32s3_devkitc']
 export type ImageFormat = 'uf2' | 'bin' | 'elf';
 export type EvidenceLevel = 'cross-build' | 'human-hil';
 
-export interface BoardEntry { board_id: string; display_name: string; ide_id: string; zephyr_board: string }
+export interface BoardEntry {
+  board_id: string;
+  display_name: string;
+  ide_id: string;
+  zephyr_board: string;
+}
 
 export interface BuildIdentity {
   version: string;
@@ -43,9 +48,14 @@ export interface BuildIdentity {
 }
 
 export interface FlashInfo {
-  /** The flash runner the build names for this image (Zephyr's runners.yaml): `uf2`, `esp32`, `dfu-util`, `stm32cubeprogrammer`, `openocd`. */
+  /**
+   * The flash runner the build names for this image (Zephyr's runners.yaml): `uf2`, `esp32`, `dfu-util`, `stm32cubeprogrammer`, `openocd`.
+   */
   runner: string;
-  /** Where the image is written: the flash base plus the load offset of the build, or the app address of the esp32 runner. Null for UF2, which carries its own addresses. */
+  /**
+   * Where the image is written: the flash base plus the load offset of the build, or the app address of the esp32 runner. Null for UF2,
+   * which carries its own addresses.
+   */
   address: string | null;
   /** The runner arguments that a person needs, without the paths of the build machine. */
   args: Record<string, string>;
@@ -75,7 +85,11 @@ export interface ReleaseManifest {
   builds: Record<string, BuildIdentity>;
 }
 
-export interface BoardEntryFile { board: string; build: BuildIdentity; images: ImageEntry[] }
+export interface BoardEntryFile {
+  board: string;
+  build: BuildIdentity;
+  images: ImageEntry[];
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // What a build says
@@ -111,11 +125,14 @@ export function parseIdentityHeader(text: string): BuildIdentity {
 /** A release image never carries the HIL trace (HIL-013): it is checked in the configuration the build used, not in the profiles. */
 export function hilTraceProblems(config: Map<string, string>, identity: BuildIdentity): string[] {
   const problems: string[] = [];
-  if (config.get('CONFIG_ZPLC_HIL_DEBUG') === 'y') problems.push('the build sets CONFIG_ZPLC_HIL_DEBUG=y: an image with the HIL trace is never shipped');
+  if (config.get('CONFIG_ZPLC_HIL_DEBUG') === 'y')
+    problems.push('the build sets CONFIG_ZPLC_HIL_DEBUG=y: an image with the HIL trace is never shipped');
   if (/(?:^|,)HIL_DEBUG=y(?:,|$)/.test(identity.options)) problems.push('the identity of the build lists HIL_DEBUG=y among its options');
   // The HIL image turns the hardware watchdog on for the RT-020 record run only; it is never a release image.
-  if (config.get('CONFIG_ZPLC_HIL_IMAGE') === 'y') problems.push('the build sets CONFIG_ZPLC_HIL_IMAGE=y: the HIL image of the record run is never shipped (RT-020)');
-  if (/(?:^|,)HIL_IMAGE=y(?:,|$)/.test(identity.options)) problems.push('the identity of the build lists HIL_IMAGE=y among its options: the HIL image is never shipped (RT-020)');
+  if (config.get('CONFIG_ZPLC_HIL_IMAGE') === 'y')
+    problems.push('the build sets CONFIG_ZPLC_HIL_IMAGE=y: the HIL image of the record run is never shipped (RT-020)');
+  if (/(?:^|,)HIL_IMAGE=y(?:,|$)/.test(identity.options))
+    problems.push('the identity of the build lists HIL_IMAGE=y among its options: the HIL image is never shipped (RT-020)');
   return problems;
 }
 
@@ -136,7 +153,10 @@ export function plannedFormats(zephyrBoard: string): Array<{ format: ImageFormat
   const soc = zephyrBoard.split('/')[1] ?? '';
   if (soc === 'rp2040') return [{ format: 'uf2', role: 'flash', source: 'zephyr.uf2' }];
   if (soc === 'esp32s3') return [{ format: 'bin', role: 'flash', source: 'zephyr.bin' }];
-  return [{ format: 'bin', role: 'flash', source: 'zephyr.bin' }, { format: 'elf', role: 'debug', source: 'zephyr.elf' }];
+  return [
+    { format: 'bin', role: 'flash', source: 'zephyr.bin' },
+    { format: 'elf', role: 'debug', source: 'zephyr.elf' },
+  ];
 }
 
 const RUNNER_ARGUMENTS: Record<string, readonly string[]> = {
@@ -166,7 +186,8 @@ export function flashInfo(config: Map<string, string>, runnersYaml: string, form
   if (app !== undefined) return { runner, address: hex(Number(app)), args };
   const base = Number(config.get('CONFIG_FLASH_BASE_ADDRESS') ?? Number.NaN);
   const offset = Number(config.get('CONFIG_FLASH_LOAD_OFFSET') ?? Number.NaN);
-  if (!Number.isFinite(base) || !Number.isFinite(offset)) throw new Error('the build names neither an app address nor a flash base and load offset');
+  if (!Number.isFinite(base) || !Number.isFinite(offset))
+    throw new Error('the build names neither an app address nor a flash base and load offset');
   return { runner, address: hex(base + offset), args };
 }
 
@@ -216,7 +237,8 @@ export function collectBoard(options: CollectOptions): BoardEntryFile {
     problems.push(`the build is for ${config.get('CONFIG_BOARD_TARGET') ?? 'no board'}, not for ${board.zephyr_board} (${board.ide_id})`);
   }
   if (identity.version !== version) problems.push(`the build reports version ${identity.version}, this release is ${version}`);
-  if (options.commit !== undefined && identity.commit !== options.commit) problems.push(`the build reports commit ${identity.commit}, this release is ${options.commit}`);
+  if (options.commit !== undefined && identity.commit !== options.commit)
+    problems.push(`the build reports commit ${identity.commit}, this release is ${options.commit}`);
   if (!/^[0-9a-f]{40}$/.test(identity.commit)) problems.push(`the build has no commit identity (${identity.commit})`);
   if (identity.dirty && options.allowDirty !== true) problems.push('the build was made from a tree with changes that are not committed');
   problems.push(...hilTraceProblems(config, identity));
@@ -262,7 +284,8 @@ function findEntries(directory: string): Array<{ entry: BoardEntryFile; folder: 
   for (const item of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, item.name);
     if (item.isDirectory()) found.push(...findEntries(path));
-    else if (item.name.endsWith('.entry.json')) found.push({ entry: JSON.parse(readFileSync(path, 'utf8')) as BoardEntryFile, folder: directory });
+    else if (item.name.endsWith('.entry.json'))
+      found.push({ entry: JSON.parse(readFileSync(path, 'utf8')) as BoardEntryFile, folder: directory });
   }
   return found;
 }
@@ -284,8 +307,10 @@ export function assembleRelease(options: AssembleOptions): ReleaseManifest {
     if (byBoard.has(item.entry.board)) problems.push(`${item.entry.board} was collected twice`);
     byBoard.set(item.entry.board, item);
   }
-  for (const board of boards) if (!byBoard.has(board.ide_id)) problems.push(`no image set for ${board.ide_id}: a release holds every board of the manifest`);
-  for (const board of byBoard.keys()) if (!boards.some((candidate) => candidate.ide_id === board)) problems.push(`${board} is not a board of the manifest`);
+  for (const board of boards)
+    if (!byBoard.has(board.ide_id)) problems.push(`no image set for ${board.ide_id}: a release holds every board of the manifest`);
+  for (const board of byBoard.keys())
+    if (!boards.some((candidate) => candidate.ide_id === board)) problems.push(`${board} is not a board of the manifest`);
   const commits = new Set([...byBoard.values()].map(({ entry }) => entry.build.commit));
   if (commits.size > 1) problems.push(`the boards were built from different commits: ${[...commits].join(', ')}`);
   const images: ImageEntry[] = [];
@@ -299,9 +324,14 @@ export function assembleRelease(options: AssembleOptions): ReleaseManifest {
     builds[board.ide_id] = entry.build;
     for (const image of entry.images) {
       const path = join(folder, image.file);
-      if (!existsSync(path)) { problems.push(`${image.file} is not beside its entry`); continue; }
-      if (image.file !== imageName(version, board.board_id, image.format)) problems.push(`${image.file} does not follow zplc-runtime-<version>-<board>.<ext>`);
-      if (sha256(path) !== image.sha256 || statSync(path).size !== image.bytes) problems.push(`${image.file} is not the file its entry describes`);
+      if (!existsSync(path)) {
+        problems.push(`${image.file} is not beside its entry`);
+        continue;
+      }
+      if (image.file !== imageName(version, board.board_id, image.format))
+        problems.push(`${image.file} does not follow zplc-runtime-<version>-<board>.<ext>`);
+      if (sha256(path) !== image.sha256 || statSync(path).size !== image.bytes)
+        problems.push(`${image.file} is not the file its entry describes`);
       images.push(image);
     }
   }
@@ -331,7 +361,8 @@ export function verifyFirmwareFolder(directory: string): string[] {
   for (const image of manifest.images) {
     const path = join(directory, image.file);
     if (!existsSync(path)) continue; // a staged installer copy holds only the learner images
-    if (sha256(path) !== image.sha256 || statSync(path).size !== image.bytes) problems.push(`${image.file} does not have the checksum or size that the manifest states`);
+    if (sha256(path) !== image.sha256 || statSync(path).size !== image.bytes)
+      problems.push(`${image.file} does not have the checksum or size that the manifest states`);
   }
   return problems;
 }
@@ -378,8 +409,9 @@ export function evidenceLevels(root = ROOT): Record<string, EvidenceLevel> {
 }
 
 function loadBoards(root = ROOT): BoardEntry[] {
-  return (JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as BoardEntry[])
-    .map(({ board_id, display_name, ide_id, zephyr_board }) => ({ board_id, display_name, ide_id, zephyr_board }));
+  return (JSON.parse(readFileSync(join(root, 'firmware/app/boards/boards.json'), 'utf8')) as BoardEntry[]).map(
+    ({ board_id, display_name, ide_id, zephyr_board }) => ({ board_id, display_name, ide_id, zephyr_board }),
+  );
 }
 
 /** tools/hil/validate_hil_trace_profile.py: no shipped profile turns the HIL trace on. */
@@ -393,9 +425,16 @@ function main(argv: string[]): number {
   const { values } = parseArgs({
     args: rest,
     options: {
-      board: { type: 'string' }, 'build-dir': { type: 'string' }, version: { type: 'string' }, commit: { type: 'string' },
-      out: { type: 'string' }, in: { type: 'string', multiple: true }, bundle: { type: 'string' }, workspace: { type: 'string' },
-      boards: { type: 'string' }, 'allow-dirty': { type: 'boolean' },
+      board: { type: 'string' },
+      'build-dir': { type: 'string' },
+      version: { type: 'string' },
+      commit: { type: 'string' },
+      out: { type: 'string' },
+      in: { type: 'string', multiple: true },
+      bundle: { type: 'string' },
+      workspace: { type: 'string' },
+      boards: { type: 'string' },
+      'allow-dirty': { type: 'boolean' },
     },
   });
   const need = (name: string, value: string | undefined): string => {
@@ -410,16 +449,28 @@ function main(argv: string[]): number {
       const board = boards.find((candidate) => candidate.ide_id === id);
       if (!board) throw new Error(`${id} is not a board of firmware/app/boards/boards.json`);
       const entry = collectBoard({
-        board, buildDir: resolve(need('build-dir', values['build-dir'])), version: need('version', values.version), outDir: resolve(need('out', values.out)),
-        evidenceLevel: evidenceLevels()[id] ?? 'cross-build', allowDirty: values['allow-dirty'] ?? false,
+        board,
+        buildDir: resolve(need('build-dir', values['build-dir'])),
+        version: need('version', values.version),
+        outDir: resolve(need('out', values.out)),
+        evidenceLevel: evidenceLevels()[id] ?? 'cross-build',
+        allowDirty: values['allow-dirty'] ?? false,
         ...(values.commit === undefined ? {} : { commit: values.commit }),
       });
       for (const image of entry.images) console.log(`firmware-images: ${image.file} ${image.bytes} bytes sha256 ${image.sha256}`);
       return 0;
     }
     if (command === 'assemble') {
-      const manifest = assembleRelease({ inDirs: (values.in ?? []).map((directory) => resolve(directory)), outDir: resolve(need('out', values.out)), version: need('version', values.version), boards, allowDirty: values['allow-dirty'] ?? false });
-      console.log(`firmware-images: ${manifest.images.length} images for ${Object.keys(manifest.builds).length} boards, commit ${manifest.commit}`);
+      const manifest = assembleRelease({
+        inDirs: (values.in ?? []).map((directory) => resolve(directory)),
+        outDir: resolve(need('out', values.out)),
+        version: need('version', values.version),
+        boards,
+        allowDirty: values['allow-dirty'] ?? false,
+      });
+      console.log(
+        `firmware-images: ${manifest.images.length} images for ${Object.keys(manifest.builds).length} boards, commit ${manifest.commit}`,
+      );
       return 0;
     }
     if (command === 'stage') {
@@ -439,18 +490,46 @@ function main(argv: string[]): number {
       for (const board of wanted) {
         const buildDir = join(workspace, 'out', 'release', board.ide_id);
         console.log(`firmware-images: west build ${board.zephyr_board}`);
-        const run = Bun.spawnSync(['bash', '-c', `. "${join(ROOT, 'tools/firmware-test/env.sh')}" && cd "${workspace}" && west build -p always -b "${board.zephyr_board}" zplc/firmware/app -d "${buildDir}"`], { env: { ...process.env, ZPLC_FW_WS: workspace }, stdout: 'inherit', stderr: 'inherit' });
-        if (run.exitCode !== 0) { failures.push(`${board.ide_id}: west build failed`); continue; }
+        const run = Bun.spawnSync(
+          [
+            'bash',
+            '-c',
+            `. "${join(ROOT, 'tools/firmware-test/env.sh')}" && cd "${workspace}" && west build -p always -b "${
+              board.zephyr_board
+            }" zplc/firmware/app -d "${buildDir}"`,
+          ],
+          { env: { ...process.env, ZPLC_FW_WS: workspace }, stdout: 'inherit', stderr: 'inherit' },
+        );
+        if (run.exitCode !== 0) {
+          failures.push(`${board.ide_id}: west build failed`);
+          continue;
+        }
         try {
-          const entry = collectBoard({ board, buildDir, version, outDir: join(collected, board.ide_id), evidenceLevel: levels[board.ide_id] ?? 'cross-build', allowDirty: values['allow-dirty'] ?? false });
+          const entry = collectBoard({
+            board,
+            buildDir,
+            version,
+            outDir: join(collected, board.ide_id),
+            evidenceLevel: levels[board.ide_id] ?? 'cross-build',
+            allowDirty: values['allow-dirty'] ?? false,
+          });
           for (const image of entry.images) console.log(`firmware-images: ${image.file} ${image.bytes} bytes sha256 ${image.sha256}`);
         } catch (error) {
           failures.push(error instanceof Error ? error.message : String(error));
         }
       }
-      if (failures.length > 0) { console.error(`firmware-images: ${failures.join('\n')}`); return 1; }
+      if (failures.length > 0) {
+        console.error(`firmware-images: ${failures.join('\n')}`);
+        return 1;
+      }
       if (wanted.length === boards.length) {
-        const manifest = assembleRelease({ inDirs: [collected], outDir: join(out, 'bundle'), version, boards, allowDirty: values['allow-dirty'] ?? false });
+        const manifest = assembleRelease({
+          inDirs: [collected],
+          outDir: join(out, 'bundle'),
+          version,
+          boards,
+          allowDirty: values['allow-dirty'] ?? false,
+        });
         console.log(`firmware-images: ${manifest.images.length} images in ${join(out, 'bundle')}`);
       }
       return 0;
@@ -464,4 +543,3 @@ function main(argv: string[]): number {
 }
 
 if (import.meta.main) process.exitCode = main(Bun.argv.slice(2));
-

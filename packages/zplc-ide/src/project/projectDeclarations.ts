@@ -17,12 +17,20 @@ export interface Declaration {
   column: number;
 }
 
-export interface FileDeclarations { file: string; declarations: Declaration[] }
+export interface FileDeclarations {
+  file: string;
+  declarations: Declaration[];
+}
 
 /** Past this size a file is not parsed here (the live analysis of the editor has the same cap). */
 const SOURCE_LIMIT = 200_000;
 
-type Keyword = typeof TokenType.PROGRAM | typeof TokenType.FUNCTION | typeof TokenType.FUNCTION_BLOCK | typeof TokenType.INTERFACE | typeof TokenType.TYPE;
+type Keyword =
+  | typeof TokenType.PROGRAM
+  | typeof TokenType.FUNCTION
+  | typeof TokenType.FUNCTION_BLOCK
+  | typeof TokenType.INTERFACE
+  | typeof TokenType.TYPE;
 
 export function declarationsOf(file: string, content: string): Declaration[] {
   if (content.length === 0 || content.length > SOURCE_LIMIT) return [];
@@ -41,7 +49,9 @@ export function declarationsOf(file: string, content: string): Declaration[] {
       ...unit.interfaces.map((entry) => at(entry, 'INTERFACE', TokenType.INTERFACE)),
       ...unit.typeDefinitions.map((entry) => at(entry, entry.kind === 'StructDecl' ? 'STRUCT' : 'ENUM', TokenType.TYPE)),
       ...(unit.typeAliases ?? []).map((entry) => at(entry, 'TYPE', TokenType.TYPE)),
-    ].filter((entry): entry is Declaration => entry !== null).sort((left, right) => left.line - right.line || left.column - right.column);
+    ]
+      .filter((entry): entry is Declaration => entry !== null)
+      .sort((left, right) => left.line - right.line || left.column - right.column);
   } catch {
     return [];
   }

@@ -113,8 +113,7 @@ typedef enum {
   ZPLC_SCHED_TRACE_PAUSE      /**< the batch ended at a breakpoint or a step: the runtime paused */
 } zplc_sched_trace_kind_t;
 
-typedef void (*zplc_sched_trace_fn)(void *ctx, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a,
-                                    uint64_t b);
+typedef void (*zplc_sched_trace_fn)(void *ctx, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b);
 
 /* ============================================================================
  * Port: what an adapter supplies
@@ -195,43 +194,43 @@ typedef struct zplc_sched_port {
 
 /** @brief One task as the core sees it. The VM belongs to the adapter; the core runs it. */
 typedef struct {
-  zplc_task_t task;                /**< configuration, state and statistics (the public view) */
-  zplc_vm_t *vm;                   /**< the task's VM */
-  uint64_t release_us;             /**< when the pending release happened: the order key */
-  uint64_t deadline_ref_us;        /**< the instant the deadline is counted from */
-  uint32_t consecutive_misses;     /**< deadline misses since the last scan that was in time */
-  uint32_t run_scans;              /**< scan parts since the run began; 0 means the next scan is the first */
-  uint8_t registered;              /**< the slot holds a task */
-  uint8_t pending;                 /**< a release is admitted and not yet run */
-  uint8_t first_scan_interrupted;  /**< a breakpoint stopped the task's first scan: its rest is still the first */
-  uint8_t period_armed;            /**< last_start_us is the start of the task's previous scan in this run */
-  uint64_t last_start_us;          /**< where the scan period of the task is measured from (HIL-010) */
+  zplc_task_t task;               /**< configuration, state and statistics (the public view) */
+  zplc_vm_t *vm;                  /**< the task's VM */
+  uint64_t release_us;            /**< when the pending release happened: the order key */
+  uint64_t deadline_ref_us;       /**< the instant the deadline is counted from */
+  uint32_t consecutive_misses;    /**< deadline misses since the last scan that was in time */
+  uint32_t run_scans;             /**< scan parts since the run began; 0 means the next scan is the first */
+  uint8_t registered;             /**< the slot holds a task */
+  uint8_t pending;                /**< a release is admitted and not yet run */
+  uint8_t first_scan_interrupted; /**< a breakpoint stopped the task's first scan: its rest is still the first */
+  uint8_t period_armed;           /**< last_start_us is the start of the task's previous scan in this run */
+  uint64_t last_start_us;         /**< where the scan period of the task is measured from (HIL-010) */
 } zplc_sched_slot_t;
 
 typedef struct zplc_sched_core {
-  zplc_sched_slot_t *slot;         /**< the adapter's array */
-  uint8_t capacity;                /**< entries of slot */
-  uint8_t count;                   /**< registered tasks */
-  uint8_t keep_halted_vm;          /**< leave a VM that ended its scan halted, for a debugger to read */
-  uint8_t fault_latched;           /**< a fault is latched: no scan runs until a program is loaded */
-  uint8_t fault_reason;            /**< zplc_sched_fault_reason_t of the first fault */
-  uint16_t fault_task_id;          /**< the task the first fault belongs to */
-  zplc_sched_state_t state;        /**< what the runtime is doing */
-  uint32_t miss_limit;             /**< consecutive misses of a task that latch the fault, at least one */
-  uint32_t last_overrun_us;        /**< how far past its deadline the last late task ended */
-  uint32_t batch_count;            /**< batches whose inputs were latched since the run began */
-  uint32_t run_commit_count;       /**< output commits since the run began */
-  uint32_t input_latch_count;      /**< logical input latches since init */
-  uint32_t output_commit_count;    /**< logical output commits since init */
+  zplc_sched_slot_t *slot;      /**< the adapter's array */
+  uint8_t capacity;             /**< entries of slot */
+  uint8_t count;                /**< registered tasks */
+  uint8_t keep_halted_vm;       /**< leave a VM that ended its scan halted, for a debugger to read */
+  uint8_t fault_latched;        /**< a fault is latched: no scan runs until a program is loaded */
+  uint8_t fault_reason;         /**< zplc_sched_fault_reason_t of the first fault */
+  uint16_t fault_task_id;       /**< the task the first fault belongs to */
+  zplc_sched_state_t state;     /**< what the runtime is doing */
+  uint32_t miss_limit;          /**< consecutive misses of a task that latch the fault, at least one */
+  uint32_t last_overrun_us;     /**< how far past its deadline the last late task ended */
+  uint32_t batch_count;         /**< batches whose inputs were latched since the run began */
+  uint32_t run_commit_count;    /**< output commits since the run began */
+  uint32_t input_latch_count;   /**< logical input latches since init */
+  uint32_t output_commit_count; /**< logical output commits since init */
   zplc_sched_trace_fn trace;
   void *trace_ctx;
 } zplc_sched_core_t;
 
 /** @brief What a scan has to say: kept while the image lock is held and printed after it is released. */
 typedef struct {
-  int error_task;    /**< a task returned an error; -1 when none */
+  int error_task; /**< a task returned an error; -1 when none */
   int error_code;
-  int paused_task;   /**< a task stopped at a breakpoint; -1 when none */
+  int paused_task; /**< a task stopped at a breakpoint; -1 when none */
   unsigned paused_pc;
   int deadline_task; /**< a task latched the fault by missing its deadline; -1 when none */
   int warning_task;  /**< a task missed a deadline below the limit; -1 when none */
@@ -315,8 +314,8 @@ void zplc_sched_core_sort(const zplc_sched_core_t *core, uint8_t *order, uint8_t
  *         the port returned for an input or an output, ZPLC_SCHED_ERR_IO for a watchdog that could not be fed,
  *         or ZPLC_SCHED_ERR_LOCK when a lock could not be taken
  */
-int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order,
-                         uint8_t count, int step_mode, zplc_sched_scan_report_t *report);
+int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port, const uint8_t *order, uint8_t count, int step_mode,
+                         zplc_sched_scan_report_t *report);
 
 /* ============================================================================
  * Fault latch and safe state
@@ -325,23 +324,22 @@ int zplc_sched_core_scan(zplc_sched_core_t *core, const zplc_sched_port_t *port,
 
 /** @brief The outcome of putting the outputs in their safe state. */
 typedef struct {
-  int safe_result;      /**< the image's failure, else the pins', else 0 */
-  int watchdog_result;  /**< the disarm's failure; 0 when it was not attempted */
+  int safe_result;     /**< the image's failure, else the pins', else 0 */
+  int watchdog_result; /**< the disarm's failure; 0 when it was not attempted */
 } zplc_sched_safe_result_t;
 
 /**
  * @brief Latch the fault and reset the output image. The image lock is held by the caller (a scan in progress).
  * @return the failure of the image reset, or 0. The pins are the caller's next step: zplc_sched_core_settle().
  */
-int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port,
-                                      zplc_sched_fault_reason_t reason, uint16_t task_id);
+int zplc_sched_core_latch_fault_image(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason,
+                                      uint16_t task_id);
 
 /**
  * @brief The pins and the watchdog after the image was reset. No lock held.
  * @param image_result what zplc_sched_core_latch_fault_image() or the image reset returned
  */
-zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, const zplc_sched_port_t *port,
-                                                int image_result);
+zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, const zplc_sched_port_t *port, int image_result);
 
 /**
  * @brief Latch the fault from the control plane: take the image lock, latch, reset the image, release it, then
@@ -349,8 +347,7 @@ zplc_sched_safe_result_t zplc_sched_core_settle(const zplc_sched_core_t *core, c
  * @return the first failure of the safe state, or ZPLC_SCHED_ERR_LOCK when the lock failed (the pins were still
  *         driven safe)
  */
-int zplc_sched_core_fault(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason,
-                          uint16_t task_id);
+int zplc_sched_core_fault(zplc_sched_core_t *core, const zplc_sched_port_t *port, zplc_sched_fault_reason_t reason, uint16_t task_id);
 
 /**
  * @brief The image lock could not be taken, so the image cannot be touched coherently: latch the fault, stop
